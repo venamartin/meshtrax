@@ -372,6 +372,91 @@ class AppLocalizationsDe extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Gesundheitscheck';
+
+  @override
+  String get healthCheck_subtitle => 'App- und Funkgeräte-Einstellungen prüfen';
+
+  @override
+  String get healthCheck_running => 'Einstellungen werden geprüft…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Das Funkgerät synchronisiert noch. Die Prüfung beginnt, sobald es fertig ist.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Kein Funkgerät verbunden, daher wurden seine Einstellungen nicht geprüft.';
+
+  @override
+  String get healthCheck_partial =>
+      'Einige Funkgeräte-Einstellungen konnten nicht gelesen werden, daher sind diese Ergebnisse möglicherweise nicht aktuell. Prüfen Sie es gleich noch einmal.';
+
+  @override
+  String get healthCheck_allClear => 'Alles sieht gut aus.';
+
+  @override
+  String get healthCheck_problems => 'Probleme';
+
+  @override
+  String get healthCheck_suggestions => 'Vorschläge';
+
+  @override
+  String get healthCheck_tips => 'Tipps';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Bestandene Prüfungen: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Erneut prüfen';
+
+  @override
+  String get healthCheck_fix => 'Beheben';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Die Änderung wurde nicht übernommen. Prüfen Sie die Verbindung zum Funkgerät und versuchen Sie es erneut.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Diese Einstellungsseite konnte nicht geöffnet werden. Ändern Sie es in den Einstellungen Ihres Geräts.';
+
+  @override
+  String get healthCheck_hide => 'Nicht mehr anzeigen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Ausgeblendete Hinweise anzeigen: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Alle beheben ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Diese Änderungen vornehmen?';
+
+  @override
+  String get healthCheck_promptTitle => 'Gesundheitscheck starten?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Sehen Sie nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte, auch für weniger Benachrichtigungen.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Sehen Sie nach, was in den App- und Funkgeräte-Einstellungen besser laufen könnte.';
+
+  @override
+  String get healthCheck_promptRun => 'Prüfung starten';
+
+  @override
+  String get healthCheck_promptLater => 'Nicht jetzt';
+
+  @override
   String get settings_title => 'Einstellungen';
 
   @override
@@ -502,6 +587,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings_multiAck => 'Mehrere Bestätigungen';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Eine zweite Bestätigung senden, wenn eine Direktnachricht Sie über eine Route erreicht, damit der Absender sie eher hört.';
+
+  @override
   String get settings_telemetryModeUpdated => 'Telemetriemodus aktualisiert';
 
   @override
@@ -594,6 +683,13 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS-Höhendaten: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Fehler melden';
+
+  @override
+  String get settings_reportBugSubtitle =>
+      'Öffnet einen Fehlerbericht auf GitHub';
 
   @override
   String get settings_infoName => 'Name';
@@ -3342,6 +3438,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Kontakt über Anzeige teilen';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Das Funkgerät konnte diesen Kontakt nicht teilen. Es muss zuerst seine Anzeige empfangen.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Kontakt über Anzeige gesendet';
 
@@ -3779,6 +3879,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'noch keiner — die nächste Nachricht wird geflutet und lernt einen';
 
   @override
+  String get routing_noRoutePathfinder => 'noch keiner';
+
+  @override
   String get routing_auto => 'Automatisch';
 
   @override
@@ -3807,6 +3910,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Pfad zurückgesetzt. Die nächste Nachricht wird geflutet und lernt einen neuen.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Pfad zurückgesetzt.';
 
   @override
   String get routing_pathfinder => 'Was Pathfinder weiß';
@@ -3915,7 +4021,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Ihr Funkgerät merkt sich eine Route zu jedem Kontakt und flutet das ganze Mesh, wenn diese Route nicht funktioniert. Pathfinder hört alles mit, was das Funkgerät empfängt: Ankündigungen von Repeatern, Gespräche in Kanälen, Nachrichten anderer Leute. Daraus erstellt Pathfinder eine Karte, die zeigt, welche Repeater einander hören, von welchen Sie gehört werden und von welchen jeder Ihrer Kontakte gehört wird.';
+      'Ihr Funkgerät merkt sich eine Route zu jedem Kontakt. Kommt eine Nachricht auf dieser Route nicht an, flutet MeshTrax stattdessen das ganze Mesh. Pathfinder hört alles mit, was das Funkgerät empfängt: Ankündigungen von Repeatern, Gespräche in Kanälen, Nachrichten anderer Leute. Daraus erstellt Pathfinder eine Karte, die zeigt, welche Repeater einander hören, von welchen Sie gehört werden und von welchen jeder Ihrer Kontakte gehört wird.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3923,7 +4029,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Pathfinder braucht Zeit. Eine neue Karte ist leer, deshalb werden Ihre Nachrichten anfangs genau wie bisher gesendet. Nach einigen Stunden Zuhören an einem Ort beginnt Pathfinder, Routen anzubieten, und jede Zustellung und jeder Fehlschlag bringt ihm mehr bei. Erwarten Sie am ersten Tag nicht viel davon, und nach jedem Ortswechsel zunächst wieder weniger.';
+      'Pathfinder braucht Zeit. Eine neue Karte ist leer, deshalb fluten Ihre Nachrichten anfangs das Netz, bis Pathfinder eine Route gelernt hat. Nach einigen Stunden Zuhören an einem Ort beginnt Pathfinder, Routen anzubieten, und jede Zustellung und jeder Fehlschlag bringt ihm mehr bei. Erwarten Sie am ersten Tag nicht viel davon, und nach jedem Ortswechsel zunächst wieder weniger.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3944,7 +4050,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentell)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4649,18 +4755,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Karten-Download fehlgeschlagen';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Zwischengespeicherte Online-Kartenkacheln löschen';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Die beim Ansehen der Karte gespeicherten Online-Kartenkacheln entfernen? Heruntergeladene Karten bleiben erhalten.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Zwischengespeicherte Online-Kartenkacheln entfernt';
-
-  @override
   String get map_notForNavigation => 'Nicht zur Navigation';
 
   @override
@@ -4691,17 +4785,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Verwenden Sie zur Navigation amtliche, aktuelle NOAA-Seekarten (auf Papier oder NOAA-ENCs in einem zertifizierten Kartenplotter) mit den neuesten Nachrichten für Seefahrer.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Region für mehr Details herunterladen';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Hineinzoomen, um Ihre Offline-Karte zu sehen';
 
   @override
   String get map_noCharts => 'Hier keine Seekarten';
@@ -4787,9 +4871,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nicht heruntergeladen';
-
-  @override
-  String get mapLayers_offlineOnly => 'Nur offline';
 
   @override
   String get mapLayers_details => 'Kartendetails';
@@ -6068,4 +6149,85 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Wer meinen Standort sehen kann';
+
+  @override
+  String get locationSharing_someone => 'Jemand kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_nobody => 'Niemand kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Ihr Funkgerät hat noch keinen Standort, also kann ihn niemand sehen';
+
+  @override
+  String get locationSharing_everyone =>
+      'Jeder, der Ihr Funkgerät hört, kann Ihren Standort sehen';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Alle Ihre Kontakte können Ihren Standort sehen';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakte, denen Sie es erlaubt haben, können Ihren Standort sehen';
+
+  @override
+  String get locationSharing_adverts => 'Standort in Ankündigungen';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Ihre Ankündigungen enthalten Ihren Standort, also sieht ihn jeder, der Ihr Funkgerät hört.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakte, die Ihr Funkgerät abfragen dürfen';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Keine. Ihr Funkgerät beantwortet keine Telemetrieanfragen.';
+
+  @override
+  String get locationSharing_noContacts => 'Kein Kontakt darf abfragen.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Alle Ihre Kontakte ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Standort';
+
+  @override
+  String get locationSharing_partBattery => 'Akku';
+
+  @override
+  String get locationSharing_partSensors => 'Sensoren';
+
+  @override
+  String get dialog_positionHint =>
+      'Koordinaten oder einen Kartenlink einfügen';
+
+  @override
+  String get dialog_positionUnreadable => 'Hier ist keine Position lesbar';
+
+  @override
+  String get dialog_positionLookingUp => 'Link wird aufgelöst…';
+
+  @override
+  String get locationSharing_share => 'Meinen Standort teilen';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Ausschalten, um ihn vor allen zu verbergen';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Einschalten, damit Kontakte mit Erlaubnis ihn sehen';
+
+  @override
+  String get chats_advertise => 'Ankündigen';
 }

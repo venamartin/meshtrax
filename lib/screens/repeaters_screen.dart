@@ -37,9 +37,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   }
 
   void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
-    if (!contact.isActive) {
-      connector.importDiscoveredContact(contact);
-    }
     showDialog(
       context: context,
       builder: (context) => RepeaterLoginDialog(
@@ -61,10 +58,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   }
 
   void _showRepeaterOptions(BuildContext context, MeshCoreConnector connector, Contact contact) {
-    if (!contact.isActive) {
-      connector.importDiscoveredContact(contact);
-    }
-
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -127,6 +120,17 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
               ),
               onTap: () async {
                 Navigator.pop(sheetContext);
+                // A repeater only heard has to be saved to become a favorite.
+                if (!contact.isActive &&
+                    !await connector.importDiscoveredContact(contact)) {
+                  if (context.mounted) {
+                    showDismissibleSnackBar(
+                      context,
+                      content: Text(context.l10n.contacts_contactImportFailed),
+                    );
+                  }
+                  return;
+                }
                 await connector.setContactFlags(
                   contact,
                   isFavorite: !contact.isFavorite,
@@ -162,18 +166,27 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.connect_without_contact),
-              title: Text(context.l10n.contacts_ShareContactZeroHop),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                  connector.shareContactZeroHop(contact.publicKey);
-                showDismissibleSnackBar(
-                  context,
-                  content: Text(context.l10n.settings_advertisementSent),
-                );
-              },
-            ),
+            // The radio only keeps adverts of contacts it has saved.
+            if (contact.isActive)
+              ListTile(
+                leading: const Icon(Icons.connect_without_contact),
+                title: Text(context.l10n.contacts_ShareContactZeroHop),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final shared = await connector.shareContactZeroHop(
+                    contact.publicKey,
+                  );
+                  if (!context.mounted) return;
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(
+                      shared
+                          ? context.l10n.settings_advertisementSent
+                          : context.l10n.contacts_shareByAdvertFailed,
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -319,7 +332,10 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              connector.removeContact(contact);
+              // During a download a saved repeater's row can look only heard.
+              if (contact.isActive || connector.isLoadingContacts) {
+                connector.removeContact(contact);
+              }
               connector.removeDiscoveredContact(contact);
             },
             child: Text(

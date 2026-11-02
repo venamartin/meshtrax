@@ -49,8 +49,13 @@ class PathGraphDatabase extends _$PathGraphDatabase {
   /// from flood paths are wiped with their links and doorstep rows: never
   /// adverted, nothing proven or measured, every sighting in one burst
   /// (field: 3,674 of 5,014 codes).
+  /// v11 (2026-10-25): contact_ingress loses the radio's exact position.
+  /// v12 (2026-10-25): place_doorsteps, which repeaters heard me where.
+  /// v13 (2026-10-31): graph_edges gains failWeight/lastFailed — failed
+  /// attempts fade instead of counting against a link for good (field:
+  /// 242 of a graph's busiest links were unroutable from old failures).
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -95,8 +100,11 @@ class PathGraphDatabase extends _$PathGraphDatabase {
               graphNodes.autoMovingAt,
               graphNodes.autoRidesWithMeAt,
             ]));
-            await m.alterTable(TableMigration(graphEdges,
-                newColumns: [graphEdges.firstObserved]));
+            await m.alterTable(TableMigration(graphEdges, newColumns: [
+              graphEdges.firstObserved,
+              graphEdges.failWeight,
+              graphEdges.lastFailed,
+            ]));
             await addIfMissing(contactIngress, contactIngress.provenAt);
           }
           if (from < 6) {
@@ -174,6 +182,18 @@ class PathGraphDatabase extends _$PathGraphDatabase {
           }
           if (from < 12) {
             await m.createTable(placeDoorsteps);
+          }
+          if (from < 13) {
+            await addIfMissing(graphEdges, graphEdges.failWeight);
+            await addIfMissing(graphEdges, graphEdges.lastFailed);
+            // Failures recorded so far start fading from the link's last
+            // sighting: about now on a busy link, long gone on a quiet one.
+            // Only rows without a fading clock: an older build reopening
+            // the file stamps v12 back and this runs again.
+            await customStatement(
+                'UPDATE graph_edges SET fail_weight = n - s, '
+                'last_failed = last_observed '
+                'WHERE n > s AND last_failed IS NULL');
           }
         },
       );

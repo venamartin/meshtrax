@@ -369,6 +369,92 @@ class AppLocalizationsHu extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Állapotfelmérés';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Az alkalmazás és a rádió beállításainak ellenőrzése';
+
+  @override
+  String get healthCheck_running => 'Beállítások ellenőrzése…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'A rádió még szinkronizál. Az ellenőrzés akkor indul, amikor végzett.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nincs csatlakoztatott rádió, ezért a beállításait nem ellenőriztük.';
+
+  @override
+  String get healthCheck_partial =>
+      'A rádió néhány beállítását nem sikerült kiolvasni, ezért ezek az eredmények elavultak lehetnek. Ellenőrizze újra egy kis idő múlva.';
+
+  @override
+  String get healthCheck_allClear => 'Minden rendben van.';
+
+  @override
+  String get healthCheck_problems => 'Problémák';
+
+  @override
+  String get healthCheck_suggestions => 'Javaslatok';
+
+  @override
+  String get healthCheck_tips => 'Tippek';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Sikeres ellenőrzések: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Újraellenőrzés';
+
+  @override
+  String get healthCheck_fix => 'Javítás';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'A módosítás nem sikerült. Ellenőrizze a rádiókapcsolatot, és próbálja újra.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Ezt a beállítási oldalt nem sikerült megnyitni. Módosítsa az eszköz beállításaiban.';
+
+  @override
+  String get healthCheck_hide => 'Ne jelenjen meg többé';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Rejtett találatok megjelenítése: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Összes javítása ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Elvégzi ezeket a módosításokat?';
+
+  @override
+  String get healthCheck_promptTitle => 'Futtat állapotfelmérést?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban, például hogyan kaphat kevesebb értesítést.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Nézze meg, mi működhetne jobban az alkalmazás és a rádió beállításaiban.';
+
+  @override
+  String get healthCheck_promptRun => 'Felmérés indítása';
+
+  @override
+  String get healthCheck_promptLater => 'Most nem';
+
+  @override
   String get settings_title => 'Beállítások';
 
   @override
@@ -503,6 +589,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get settings_multiAck => 'Többszörös visszaigazolások';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt.';
+
+  @override
   String get settings_telemetryModeUpdated => 'A telemetriamód frissítve';
 
   @override
@@ -597,6 +687,12 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS magassági adatok: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Hiba bejelentése';
+
+  @override
+  String get settings_reportBugSubtitle => 'Hibajelentést nyit a GitHubon';
 
   @override
   String get settings_infoName => 'Név';
@@ -3348,6 +3444,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ossza meg a kapcsolatot hirdetés segítségével';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'A rádió nem tudta megosztani ezt a kapcsolatot. Előbb hallania kell a hirdetését.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Kapcsolatot a hirdetésen keresztül.';
 
@@ -3784,6 +3884,9 @@ class AppLocalizationsHu extends AppLocalizations {
       'még nincs — a következő üzenet elárasztással megy, és tanul egyet';
 
   @override
+  String get routing_noRoutePathfinder => 'még nincs';
+
+  @override
   String get routing_auto => 'Automatikus';
 
   @override
@@ -3812,6 +3915,9 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Útvonal törölve. A következő üzenet elárasztással megy, és újat tanul.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Útvonal törölve.';
 
   @override
   String get routing_pathfinder => 'Amit a Pathfinder tud';
@@ -3920,7 +4026,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'A rádiója minden kapcsolatához egyetlen útvonalat jegyez meg, és ha ez az útvonal nem működik, az üzenetet az egész hálózatra kiküldi. A Pathfinder mindent figyel, amit a rádió hall: a repeaterek hirdetményeit, a csatornákon folyó csevegést, mások üzeneteit. Ebből térképet készít arról, mely repeaterek hallják egymást, melyek hallják Önt, és melyek hallják az egyes kapcsolatait.';
+      'A rádiója minden kapcsolatához egyetlen útvonalat jegyez meg. Ha egy üzenet ezen az útvonalon nem ér célba, a MeshTrax helyette az egész hálózatra kiküldi. A Pathfinder mindent figyel, amit a rádió hall: a repeaterek hirdetményeit, a csatornákon folyó csevegést, mások üzeneteit. Ebből térképet készít arról, mely repeaterek hallják egymást, melyek hallják Önt, és melyek hallják az egyes kapcsolatait.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3928,7 +4034,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei pontosan úgy mennek ki, mint korábban. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
+      'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei az egész hálózatra mennek ki, amíg meg nem tanul egy útvonalat. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3949,7 +4055,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathfinderHelp_ok => 'Rendben';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (kísérleti)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4654,18 +4760,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Sikertelen térképletöltés';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Gyorsítótárazott online térképcsempék törlése';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Törli a böngészés közben mentett online térképcsempéket? A letöltött térképek megmaradnak.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Gyorsítótárazott online térképcsempék törölve';
-
-  @override
   String get map_notForNavigation => 'Navigációra nem alkalmas';
 
   @override
@@ -4696,17 +4790,7 @@ class AppLocalizationsHu extends AppLocalizations {
       'Navigációhoz hivatalos, naprakész NOAA tengeri térképeket használjon (papíron, vagy NOAA ENC-ket tanúsított térképplotteren) a legfrissebb hajózási hirdetményekkel.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Töltsön le egy régiót a részletekhez';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Nagyítson rá az offline térkép megtekintéséhez';
 
   @override
   String get map_noCharts => 'Itt nincs tengeri térkép';
@@ -4793,9 +4877,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nincs letöltve';
-
-  @override
-  String get mapLayers_offlineOnly => 'Csak offline';
 
   @override
   String get mapLayers_details => 'Térkép részletei';
@@ -6069,4 +6150,85 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Ki láthatja a helyzetemet';
+
+  @override
+  String get locationSharing_someone => 'Valaki láthatja a helyzetét';
+
+  @override
+  String get locationSharing_nobody => 'Senki sem láthatja a helyzetét';
+
+  @override
+  String get locationSharing_noPosition =>
+      'A rádiójának még nincs helyzete, így senki sem láthatja';
+
+  @override
+  String get locationSharing_everyone =>
+      'Mindenki, aki hallja a rádióját, láthatja a helyzetét';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Minden partnere láthatja a helyzetét';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Az Ön által engedélyezett partnerek láthatják a helyzetét';
+
+  @override
+  String get locationSharing_adverts => 'Helyzet a bejelentésekben';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'A bejelentései tartalmazzák a helyzetét, így bárki láthatja, aki hallja a rádióját.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Partnerek, akik lekérdezhetik a rádióját';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Senki. A rádiója nem válaszol telemetriai kérésekre.';
+
+  @override
+  String get locationSharing_noContacts => 'Egy partnernek sincs engedélye.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Minden partnere ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Helyzet';
+
+  @override
+  String get locationSharing_partBattery => 'Akku';
+
+  @override
+  String get locationSharing_partSensors => 'Érzékelők';
+
+  @override
+  String get dialog_positionHint =>
+      'Illesszen be koordinátákat vagy térképlinket';
+
+  @override
+  String get dialog_positionUnreadable => 'Itt nem olvasható ki pozíció';
+
+  @override
+  String get dialog_positionLookingUp => 'A link ellenőrzése…';
+
+  @override
+  String get locationSharing_share => 'Helyzetem megosztása';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Kapcsolja ki, hogy mindenki elől elrejtse';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák';
+
+  @override
+  String get chats_advertise => 'Bejelentés';
 }

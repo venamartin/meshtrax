@@ -10,11 +10,14 @@ void main() {
   const est = Estimator(config);
   const hour = 60 * 60 * 1000;
 
+  /// [n] - [s] failures, all just now.
   EdgeState edge({int s = 0, int n = 0, double traffic = 0, int? last,
       double? measuredSnr, int obs = 0}) {
     return EdgeState(source: 'observed')
       ..s = s
       ..n = n
+      ..failWeight = (n - s).toDouble()
+      ..lastFailed = n > s ? 0 : null
       ..trafficWeight = traffic
       ..lastObserved = last
       ..obsCount = obs
@@ -72,6 +75,48 @@ void main() {
         reason: 'passive default clears the threshold');
   });
 
+  // Owner, 2026-10-31: a failure is a suspicion on every hop of the route,
+  // a delivery a fact. Field: two failures shut a link heard 3,942 times
+  // out of routing for good.
+  test('failures fade; deliveries do not', () {
+    final burned = edge(s: 0, n: 2, traffic: 50, last: 0, obs: 50);
+    expect(est.usable(burned, 0), isFalse, reason: 'two fresh failures');
+    final later = (3 * config.failureHalfLifeHours * hour).round();
+    expect(est.decayedFailures(burned, later), closeTo(0.25, 1e-9));
+    expect(est.usable(burned, later), isTrue);
+
+    final proven = edge(s: 3, n: 3, obs: 3);
+    final years = 1000 * 24 * hour;
+    expect(est.calibratedP(proven, years), est.calibratedP(proven, 0),
+        reason: 'deliveries never fade');
+    expect(est.calibratedP(proven, 0), closeTo(0.8, 1e-9));
+  });
+
+  // Review 2026-10-31: adding to the stored weight re-dated every old
+  // failure to now, so a link failing once a week never faded.
+  test('a new failure adds to what is left, not to what was', () {
+    final e = edge(s: 2, n: 19, traffic: 50, last: 0, obs: 3942);
+    final day4 = 4 * 24 * hour;
+    expect(est.decayedFailures(e, day4), closeTo(17 / 16, 1e-9));
+    e.addFailure(day4, config.failureHalfLifeHours);
+    expect(est.decayedFailures(e, day4), closeTo(1 + 17 / 16, 1e-9));
+    expect(est.usable(e, day4), isTrue);
+
+    final weekly = edge(traffic: 50, last: 0, obs: 50);
+    for (var week = 0; week < 20; week++) {
+      weekly.addFailure(week * 7 * 24 * hour, config.failureHalfLifeHours);
+    }
+    expect(weekly.failWeight, lessThan(1.02),
+        reason: 'a week-old failure weighs 2^-7');
+  });
+
+  test('a link that only ever failed is no evidence it exists', () {
+    final failedOnly = edge(s: 0, n: 1);
+    expect(est.hasEvidence(failedOnly), isFalse);
+    expect(est.usable(failedOnly, 365 * 24 * hour), isFalse,
+        reason: 'faded failures do not make it routable either');
+  });
+
   test('edge cost is -log(p) + tau', () {
     final e = edge(measuredSnr: config.snrFullQualityDb);
     expect(est.edgeCost(e, 0), closeTo(config.tau, 1e-9));
@@ -86,11 +131,16 @@ void main() {
     final path = Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]);
 
     graph.reportSendResult(path, true, tripTimeMs: 2100);
+    final delivered = graph.snapshot().edges[('A277', '1312')]!.lastObserved;
     graph.reportSendResult(path, false);
 
     final e = graph.snapshot().edges[('A277', '1312')]!;
     expect(e.s, 1);
     expect(e.n, 2);
+    expect(e.failWeight, 1);
+    expect(e.lastFailed, isNotNull);
+    expect(e.lastObserved, delivered,
+        reason: 'a failed send saw nothing: not a sighting');
     await graph.dispose();
   });
 

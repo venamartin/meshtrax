@@ -355,6 +355,84 @@ class AppLocalizationsZh extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => '健康检查';
+
+  @override
+  String get healthCheck_subtitle => '检查应用和电台设置';
+
+  @override
+  String get healthCheck_running => '正在检查设置…';
+
+  @override
+  String get healthCheck_waitingForSync => '电台仍在同步。同步完成后将开始检查。';
+
+  @override
+  String get healthCheck_noRadio => '未连接电台，因此未检查电台设置。';
+
+  @override
+  String get healthCheck_partial => '部分电台设置无法读取，因此这些结果可能不是最新的。请稍后再检查一次。';
+
+  @override
+  String get healthCheck_allClear => '一切正常。';
+
+  @override
+  String get healthCheck_problems => '问题';
+
+  @override
+  String get healthCheck_suggestions => '建议';
+
+  @override
+  String get healthCheck_tips => '提示';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '通过的检查：$count';
+  }
+
+  @override
+  String get healthCheck_runAgain => '再次检查';
+
+  @override
+  String get healthCheck_fix => '修复';
+
+  @override
+  String get healthCheck_fixFailed => '更改未生效。请检查电台连接后重试。';
+
+  @override
+  String get healthCheck_openFailed => '无法打开该设置页面。请在设备设置中更改。';
+
+  @override
+  String get healthCheck_hide => '不再显示';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '显示已隐藏的项目：$count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return '全部修复（$count）';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '要进行这些更改吗？';
+
+  @override
+  String get healthCheck_promptTitle => '要运行健康检查吗？';
+
+  @override
+  String get healthCheck_promptBody => '查看应用和电台设置中可以改进的地方，包括减少通知的方法。';
+
+  @override
+  String get healthCheck_promptBodyDesktop => '查看应用和电台设置中可以改进的地方。';
+
+  @override
+  String get healthCheck_promptRun => '运行检查';
+
+  @override
+  String get healthCheck_promptLater => '以后再说';
+
+  @override
   String get settings_title => '设置';
 
   @override
@@ -475,6 +553,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_multiAck => '多重ACK';
 
   @override
+  String get settings_multiAckSubtitle => '当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。';
+
+  @override
   String get settings_telemetryModeUpdated => '遥测模式已更新';
 
   @override
@@ -562,6 +643,12 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS 高程数据:Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => '报告问题';
+
+  @override
+  String get settings_reportBugSubtitle => '在 GitHub 上打开问题报告';
 
   @override
   String get settings_infoName => '名称';
@@ -3135,6 +3222,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '通过广播分享联系人';
 
   @override
+  String get contacts_shareByAdvertFailed => '电台无法分享此联系人。它需要先收到该联系人的广播。';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '零跳广播已发送';
 
   @override
@@ -3507,6 +3597,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routing_noRoute => '暂无 — 下一条消息会泛洪发送并学习路径';
 
   @override
+  String get routing_noRoutePathfinder => '暂无';
+
+  @override
   String get routing_auto => '自动';
 
   @override
@@ -3532,6 +3625,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routing_forgetDone => '路径已重置。下一条消息会泛洪发送并学习新路径。';
+
+  @override
+  String get routing_forgetDonePathfinder => '路径已重置。';
 
   @override
   String get routing_pathfinder => 'Pathfinder 掌握的信息';
@@ -3636,7 +3732,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      '您的电台为每个联系人只记住一条路由，这条路由失败时就向整个网络泛洪。Pathfinder 会收听电台听到的一切：转发节点的广播、频道里的聊天、其他人的消息。据此，它会绘制一张地图，标出哪些转发节点能互相听到、哪些能听到您，以及哪些能听到您的每个联系人。';
+      '您的电台为每个联系人只记住一条路由。这条路由上的消息发送失败时，MeshTrax 会改为向整个网络泛洪。Pathfinder 会收听电台听到的一切：转发节点的广播、频道里的聊天、其他人的消息。据此，它会绘制一张地图，标出哪些转发节点能互相听到、哪些能听到您，以及哪些能听到您的每个联系人。';
 
   @override
   String get pathfinderHelp_how =>
@@ -3644,7 +3740,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '学习需要时间。全新的地图一无所知，所以起初您的消息会和以前完全一样地发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
+      '学习需要时间。全新的地图一无所知，所以在学到路由之前，您的消息起初会以泛洪方式发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3664,7 +3760,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinderHelp_ok => '确定';
 
   @override
-  String get settings_pathGraph => 'Pathfinder（实验性）';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4321,15 +4417,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_notificationFailed => '地图下载失败';
 
   @override
-  String get offlineMaps_clearTileCache => '清除在线地图缓存';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt => '删除浏览时保存的在线地图图块？已下载的地图会保留。';
-
-  @override
-  String get offlineMaps_tileCacheCleared => '已清除在线地图缓存';
-
-  @override
   String get map_notForNavigation => '不可用于导航';
 
   @override
@@ -4358,16 +4445,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '导航请使用官方、最新的 NOAA 海图（纸质海图，或在认证海图仪中使用 NOAA ENC），并参考最新的航海通告。';
 
   @override
-  String get map_sourceOnline => '在线';
-
-  @override
-  String get map_sourceOffline => '离线';
-
-  @override
   String get map_downloadForDetail => '下载地区以查看详情';
-
-  @override
-  String get map_zoomInForOfflineMap => '放大以查看离线地图';
 
   @override
   String get map_noCharts => '此处没有海图';
@@ -4450,9 +4528,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '未下载';
-
-  @override
-  String get mapLayers_offlineOnly => '仅离线';
 
   @override
   String get mapLayers_details => '地图详情';
@@ -5683,4 +5758,75 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => '谁能看到我的位置';
+
+  @override
+  String get locationSharing_someone => '有人能看到您的位置';
+
+  @override
+  String get locationSharing_nobody => '没有人能看到您的位置';
+
+  @override
+  String get locationSharing_noPosition => '您的电台还没有位置，所以没有人能看到';
+
+  @override
+  String get locationSharing_everyone => '所有能收到您电台信号的人都能看到您的位置';
+
+  @override
+  String get locationSharing_allContacts => '您的所有联系人都能看到您的位置';
+
+  @override
+  String get locationSharing_someContacts => '您允许的联系人能看到您的位置';
+
+  @override
+  String get locationSharing_adverts => '在广播中包含位置';
+
+  @override
+  String get locationSharing_advertsHint => '您的广播带有您的位置，所以任何收到您电台信号的人都能看到。';
+
+  @override
+  String get locationSharing_contactsHeader => '可以查询您电台的联系人';
+
+  @override
+  String get locationSharing_noTelemetry => '无。您的电台不响应遥测请求。';
+
+  @override
+  String get locationSharing_noContacts => '没有联系人获得允许。';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return '您的所有联系人（$count）';
+  }
+
+  @override
+  String get locationSharing_partLocation => '位置';
+
+  @override
+  String get locationSharing_partBattery => '电池';
+
+  @override
+  String get locationSharing_partSensors => '传感器';
+
+  @override
+  String get dialog_positionHint => '粘贴坐标或地图链接';
+
+  @override
+  String get dialog_positionUnreadable => '无法从这里读取位置';
+
+  @override
+  String get dialog_positionLookingUp => '正在查询链接…';
+
+  @override
+  String get locationSharing_share => '共享我的位置';
+
+  @override
+  String get locationSharing_shareOnHint => '关闭后对所有人隐藏';
+
+  @override
+  String get locationSharing_shareOffHint => '开启后获准的联系人可以看到';
+
+  @override
+  String get chats_advertise => '广播';
 }

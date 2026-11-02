@@ -1,5 +1,13 @@
 # Parks on the map
 
+> **What this is:** How parks show on the offline map: outline, tint, name and a tap that opens the park's sheet, from data users already download.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** partly built. The style, the desert parks and the Parks switch are done; the tap waits on parks as places.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 This file covers the app side of parks: national parks, monuments, preserves and state parks shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Built so far: the style, the desert parks from the map hints and the Parks switch (2026-10-26). Parks as places, for the tap, are still to come.
 
 **Data side:** traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md): §1.9 (map hints) for the desert parks and §1.8 (Points of interest) for parks as places.
@@ -11,7 +19,7 @@ Parks come from data users already download. There's no separate parks download.
 | Part | Where it comes from |
 | --- | --- |
 | Outline and tint | The `park` layer already in the `osm` map packs: every protected area's outline and protection type (`class`), with a center point carrying its name and rank. |
-| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps.md`](offline-maps.md)): traxmapmaker marks a park desert when it lies mostly in the CEC "North American Deserts" ecoregion and has under 0.3 tree cover (ESA WorldCover). The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
+| Green or desert tan | The desert parks list in the map hints (`hints.json`, see [`offline-maps-notes.md`](offline-maps-notes.md)): traxmapmaker marks a park desert when it lies mostly in the CEC "North American Deserts" ecoregion and has under 0.3 tree cover (ESA WorldCover). The style fills in `{list:desert-parks}`; every other park is green. No pack is rebuilt. |
 | Missed state parks | State parks OSM tags only as protected areas (Palomar Mountain, Malibu Creek): the hints' `parks.include` list, which the style fills in as `{list:extra-parks}`. Their names come from the packs, which carry them only from zoom 12. |
 | Name and tap | Parks as places in the Points of interest download, at the park's center, with their Wikipedia text and photo. A tap opens the place sheet. |
 
@@ -23,9 +31,7 @@ Parks come from data users already download. There's no separate parks download.
 | `wilderness_area`, `national_forest` | A thin outline only |
 | Everything else (BLM land, `protected_area`, study areas, refuges and so on) | Nothing. Today's style tints all of these, which colors much of the West. |
 
-**Offline mode only** (Martin, 2026-10-26). In Online mode the map is raster tiles and parks aren't drawn.
-
-**Switch:** a Parks tile in the layers sheet (Map details), on by default, beside Places. It drops the park layers from the style, as the contours switch does. In Online mode it reads "Offline only" and is greyed out, like Contours.
+**Switch:** a Parks tile in the layers sheet (Map details), on by default, beside Places. It drops the park layers from the style, as the contours switch does.
 
 **Names:** where the Points of interest download covers the view, the app draws park names as tappable labels, and the style's own park names step aside (the `appPlaces` mechanism the place icons already use). Elsewhere the style draws the names from the map packs.
 

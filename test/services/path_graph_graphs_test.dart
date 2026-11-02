@@ -19,7 +19,7 @@ class _Connector extends MeshCoreConnector {
   @override
   int get pathHashByteWidth => 2;
   @override
-  int? get currentFreqHz => 910525000;
+  int? get currentFreqHz => 910525;
   @override
   int? get currentBwHz => 62500;
   @override
@@ -28,7 +28,7 @@ class _Connector extends MeshCoreConnector {
   int? get currentCr => 5;
 }
 
-const _preset = 'm910525000_62500_7_5';
+const _preset = 'm910525_62500_7_5';
 
 /// A repeater key: [n] picks it, [area] keeps Monterey's and Washington's
 /// apart, and its first two bytes are the repeater's code.
@@ -53,7 +53,11 @@ void main() {
   });
 
   /// Gives the open graph [count] repeaters of [area], as adverts would.
-  void establish(PathGraphService service, String area, {int count = 25}) {
+  void establish(
+    PathGraphService service,
+    String area, {
+    int count = PathGraphService.meshCheckMinNodes + 5,
+  }) {
     for (var i = 0; i < count; i++) {
       final key = _key(area, i);
       service.graph!.ingestNode(key.substring(0, 4), pubkey: key);
@@ -121,6 +125,27 @@ void main() {
     expect(service.graphEntry!.label, 'Washington');
     expect(opened.last, 'path_graph_${_preset}_g2');
     expect(service.meshSuggestion, isNull);
+    await service.stop();
+  });
+
+  test('a young graph is not offered a new one', () async {
+    final service = PathGraphService();
+    await service.start(_Connector(), openDatabase: open);
+    establish(service, 'aaaa', count: PathGraphService.meshCheckMinNodes - 1);
+    hear(service, 'bbbb');
+    expect(service.meshSuggestion, isNull);
+    await service.stop();
+  });
+
+  test('a young graph is still shown the way back', () async {
+    final service = PathGraphService();
+    await service.start(_Connector(), openDatabase: open);
+    establish(service, 'aaaa'); // Monterey Bay
+    await service.createGraph('Washington'); // saves Monterey's keys
+    establish(service, 'bbbb', count: 30);
+
+    hear(service, 'aaaa'); // back home
+    expect(service.meshSuggestion!.other!.isDefault, isTrue);
     await service.stop();
   });
 

@@ -26,11 +26,18 @@ class _Connector extends MeshCoreConnector {
 Uint8List _key(int seed) =>
     Uint8List.fromList(List.generate(32, (i) => seed + i));
 
-Uint8List _advert(int type, {List<int> path = const []}) {
+Uint8List _advert(int type, {List<int> path = const [], bool shared = false}) {
   final w = BytesBuilder();
   w.add([pushCodeLogRxData, 40, 0xA0]);
-  w.add([(payloadTypeADVERT << 2) | (path.isEmpty ? 0x01 : 0x00), path.length]);
-  w.add(path);
+  if (shared) {
+    w.add([(payloadTypeADVERT << 2) | 0x03, 0, 0, 0, 0, 0]);
+  } else {
+    w.add([
+      (payloadTypeADVERT << 2) | (path.isEmpty ? 0x01 : 0x00),
+      path.length,
+    ]);
+    w.add(path);
+  }
   w.add(_key(0x20));
   w.add((ByteData(4)..setUint32(0, 1752854400, Endian.little)).buffer.asUint8List());
   w.add(Uint8List(64));
@@ -58,5 +65,12 @@ void main() {
     expect(retry.heard, 1, reason: "a companion's advert is no repeater");
     c.handleFrameForTest(_advert(advTypeChat, path: [0xA2]));
     expect(retry.heard, 2, reason: 'relayed: a repeater carried it');
+  });
+
+  test("a neighbour's shared copy of a repeater's advert does not count", () {
+    final retry = _Retry();
+    final c = _Connector()..initialize(retryService: retry);
+    c.handleFrameForTest(_advert(advTypeRepeater, shared: true));
+    expect(retry.heard, 0);
   });
 }

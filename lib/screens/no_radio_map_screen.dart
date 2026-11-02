@@ -12,10 +12,10 @@ import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
 
-/// The map without a radio, opened from the scanner: downloaded and online
-/// maps, the layers sheet and, on charts, their legend, but no nodes or
-/// radio actions. It opens where
-/// the map was last left, else on the latest downloaded map.
+/// The map without a radio, opened from the scanner: downloaded maps and
+/// the base map, the layers sheet and, on charts, their legend, but no nodes
+/// or radio actions. It opens where the map was last left, else on the
+/// latest downloaded map.
 class NoRadioMapScreen extends StatefulWidget {
   const NoRadioMapScreen({super.key});
 

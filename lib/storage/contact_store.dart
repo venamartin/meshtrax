@@ -75,9 +75,11 @@ class ContactStore {
       return;
     }
     final sw = Stopwatch()..start();
+    // The scope can change while this waits for the database.
+    final scope = publicKeyHex;
     await _db.transaction(() async {
       await (_db.delete(_db.contactRows)
-            ..where((r) => r.nodeScope.equals(publicKeyHex)))
+            ..where((r) => r.nodeScope.equals(scope)))
           .go();
       await _db.batch((b) {
         b.insertAll(
@@ -85,7 +87,7 @@ class ContactStore {
           [
             for (final contact in contacts)
               ContactRowsCompanion.insert(
-                nodeScope: publicKeyHex,
+                nodeScope: scope,
                 publicKeyHex: contact.publicKeyHex,
                 payload: jsonEncode(_toJson(contact)),
               ),
@@ -119,6 +121,8 @@ class ContactStore {
       'lastSeen': contact.lastSeen.millisecondsSinceEpoch,
       'lastMessageAt': contact.lastMessageAt.millisecondsSinceEpoch,
       'isActive': contact.isActive,
+      'lastAdvertSecs': contact.lastAdvertSecs,
+      'appLastmodSecs': contact.appLastmodSecs,
       'rawPacket': contact.rawPacket != null
           ? base64Encode(contact.rawPacket!)
           : null,
@@ -157,6 +161,8 @@ class ContactStore {
         lastMessageMs ?? lastSeenMs,
       ),
       isActive: json['isActive'] as bool? ?? true,
+      lastAdvertSecs: json['lastAdvertSecs'] as int?,
+      appLastmodSecs: json['appLastmodSecs'] as int?,
       rawPacket: json['rawPacket'] != null
           ? Uint8List.fromList(base64Decode(json['rawPacket'] as String))
           : null,

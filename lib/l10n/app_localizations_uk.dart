@@ -368,6 +368,92 @@ class AppLocalizationsUk extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Перевірка стану';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Перевірити налаштування програми та радіо';
+
+  @override
+  String get healthCheck_running => 'Перевірка налаштувань…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Радіо ще синхронізується. Перевірка почнеться, коли синхронізація завершиться.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Радіо не підключено, тому його налаштування не перевірялися.';
+
+  @override
+  String get healthCheck_partial =>
+      'Не вдалося прочитати деякі налаштування радіо, тому результати можуть бути неактуальними. Перевірте ще раз трохи згодом.';
+
+  @override
+  String get healthCheck_allClear => 'Усе добре.';
+
+  @override
+  String get healthCheck_problems => 'Проблеми';
+
+  @override
+  String get healthCheck_suggestions => 'Рекомендації';
+
+  @override
+  String get healthCheck_tips => 'Поради';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Пройдено перевірок: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Перевірити знову';
+
+  @override
+  String get healthCheck_fix => 'Виправити';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Зміну не застосовано. Перевірте підключення до радіо та спробуйте ще раз.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Не вдалося відкрити цю сторінку налаштувань. Змініть це в налаштуваннях пристрою.';
+
+  @override
+  String get healthCheck_hide => 'Більше не показувати';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Показати приховані результати: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Виправити все ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Внести ці зміни?';
+
+  @override
+  String get healthCheck_promptTitle => 'Запустити перевірку стану?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Дізнайтеся, що можна покращити в налаштуваннях програми та радіо, зокрема як отримувати менше сповіщень.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Дізнайтеся, що можна покращити в налаштуваннях програми та радіо.';
+
+  @override
+  String get healthCheck_promptRun => 'Запустити';
+
+  @override
+  String get healthCheck_promptLater => 'Не зараз';
+
+  @override
   String get settings_title => 'Налаштування';
 
   @override
@@ -497,6 +583,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settings_multiAck => 'Багато підтверджень';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Надсилати друге підтвердження, коли особисте повідомлення надходить до вас маршрутом, щоб відправник імовірніше його почув.';
+
+  @override
   String get settings_telemetryModeUpdated => 'Режим телеметрії оновлено';
 
   @override
@@ -592,6 +682,13 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'Дані про висоту LOS: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Повідомити про помилку';
+
+  @override
+  String get settings_reportBugSubtitle =>
+      'Відкриває звіт про помилку на GitHub';
 
   @override
   String get settings_infoName => 'Ім\'я';
@@ -3336,6 +3433,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Поділитися контактом за оголошенням';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Радіо не змогло поділитися цим контактом. Спочатку воно має почути його оголошення.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent =>
       'Відправлено контакт за оголошенням';
 
@@ -3776,6 +3877,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'поки немає — наступне повідомлення піде на всю мережу й знайде його';
 
   @override
+  String get routing_noRoutePathfinder => 'поки немає';
+
+  @override
   String get routing_auto => 'Автоматично';
 
   @override
@@ -3804,6 +3908,9 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Шлях скинуто. Наступне повідомлення піде на всю мережу й знайде новий.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Шлях скинуто.';
 
   @override
   String get routing_pathfinder => 'Що знає Pathfinder';
@@ -3917,7 +4024,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Ваше радіо пам\'ятає один маршрут до кожного контакту, а коли він не спрацьовує, надсилає повідомлення на всю мережу. Pathfinder слухає все, що чує радіо: оголошення ретрансляторів, розмови в каналах, чужі повідомлення. З цього він будує карту: які ретранслятори чують один одного, які чують вас і які — кожного з ваших контактів.';
+      'Ваше радіо пам\'ятає один маршрут до кожного контакту. Якщо повідомлення цим маршрутом не доходить, MeshTrax натомість надсилає його на всю мережу. Pathfinder слухає все, що чує радіо: оголошення ретрансляторів, розмови в каналах, чужі повідомлення. З цього він будує карту: які ретранслятори чують один одного, які чують вас і які — кожного з ваших контактів.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3925,7 +4032,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються точно так само, як раніше. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
+      'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються на всю мережу, доки він не вивчить маршрут. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3946,7 +4053,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get pathfinderHelp_ok => 'ОК';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (експериментально)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4653,16 +4760,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Не вдалося завантажити карту';
 
   @override
-  String get offlineMaps_clearTileCache => 'Очистити кеш онлайн-карт';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Видалити фрагменти онлайн-карт, збережені під час перегляду? Завантажені карти залишаться.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'Кеш онлайн-карт очищено';
-
-  @override
   String get map_notForNavigation => 'Не для навігації';
 
   @override
@@ -4693,16 +4790,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Для навігації використовуйте офіційні актуальні карти NOAA (паперові або ENC від NOAA у сертифікованому картплотері) з останніми Повідомленнями мореплавцям.';
 
   @override
-  String get map_sourceOnline => 'Онлайн';
-
-  @override
-  String get map_sourceOffline => 'Офлайн';
-
-  @override
   String get map_downloadForDetail => 'Завантажте регіон, щоб бачити подробиці';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Збільште, щоб побачити офлайн-карту';
 
   @override
   String get map_noCharts => 'Тут немає морських карт';
@@ -4788,9 +4876,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Не завантажено';
-
-  @override
-  String get mapLayers_offlineOnly => 'Лише офлайн';
 
   @override
   String get mapLayers_details => 'Деталі карти';
@@ -6070,4 +6155,84 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Хто бачить моє розташування';
+
+  @override
+  String get locationSharing_someone => 'Хтось може бачити ваше розташування';
+
+  @override
+  String get locationSharing_nobody => 'Ніхто не бачить ваше розташування';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Ваше радіо ще не має розташування, тому його ніхто не бачить';
+
+  @override
+  String get locationSharing_everyone =>
+      'Кожен, хто чує ваше радіо, бачить ваше розташування';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Усі ваші контакти бачать ваше розташування';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Контакти, яким ви дозволили, бачать ваше розташування';
+
+  @override
+  String get locationSharing_adverts => 'Розташування в анонсах';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Ваші анонси містять ваше розташування, тому його бачить кожен, хто чує ваше радіо.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Контакти, які можуть запитувати ваше радіо';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Ніхто. Ваше радіо не відповідає на запити телеметрії.';
+
+  @override
+  String get locationSharing_noContacts => 'Жодному контакту не дозволено.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Усі ваші контакти ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Розташування';
+
+  @override
+  String get locationSharing_partBattery => 'Батарея';
+
+  @override
+  String get locationSharing_partSensors => 'Датчики';
+
+  @override
+  String get dialog_positionHint => 'Вставте координати або посилання на карту';
+
+  @override
+  String get dialog_positionUnreadable => 'Тут не вдається прочитати позицію';
+
+  @override
+  String get dialog_positionLookingUp => 'Перевірка посилання…';
+
+  @override
+  String get locationSharing_share => 'Ділитися моїм розташуванням';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Вимкніть, щоб приховати його від усіх';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Увімкніть, щоб його бачили контакти з дозволом';
+
+  @override
+  String get chats_advertise => 'Анонсувати';
 }

@@ -4,8 +4,6 @@ import 'package:traxmap/traxmap.dart';
 
 import '../../connector/meshcore_connector.dart';
 import '../../l10n/l10n.dart';
-import '../../models/app_settings.dart';
-import '../../services/app_settings_service.dart';
 import '../../services/map_packs_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
@@ -104,10 +102,7 @@ class _RegionList extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _regionSizeText(context, maps, suggested),
-                    style: sizeStyle,
-                  ),
+                  Text(_regionSizeText(maps, suggested), style: sizeStyle),
                   const Icon(Icons.chevron_right),
                 ],
               ),
@@ -246,7 +241,7 @@ class _RegionChip extends StatelessWidget {
       trailing = '${l10n.offlineMaps_inside(inside)} ›';
       onPressed = () => onBrowse(region.path);
     } else if (hasPacks) {
-      trailing = _regionSizeText(context, maps, region);
+      trailing = _regionSizeText(maps, region);
       onPressed = () => onSelect(region.path);
     } else {
       trailing = '—';
@@ -258,7 +253,7 @@ class _RegionChip extends StatelessWidget {
           ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
           : inside > 0 || !hasPacks
           ? null
-          : _SizeDot(_defaultBytes(context, maps, region)),
+          : _SizeDot(_defaultBytes(maps, region)),
       side: selected
           ? BorderSide(color: theme.colorScheme.primary, width: 2)
           : null,
@@ -298,17 +293,8 @@ class _SizeDot extends StatelessWidget {
   );
 }
 
-int _defaultBytes(BuildContext context, MapPacksService maps, Region region) {
-  final units = context.select<AppSettingsService, UnitSystem>(
-    (s) => s.settings.unitSystem,
-  );
-  return maps
-      .defaultSelection(region.path, units)
-      .fold(0, (sum, e) => sum + e.bytes);
-}
+int _defaultBytes(MapPacksService maps, Region region) =>
+    maps.defaultSelection(region.path).fold(0, (sum, e) => sum + e.bytes);
 
-String _regionSizeText(
-  BuildContext context,
-  MapPacksService maps,
-  Region region,
-) => formatBytes(_defaultBytes(context, maps, region));
+String _regionSizeText(MapPacksService maps, Region region) =>
+    formatBytes(_defaultBytes(maps, region));

@@ -37,9 +37,14 @@ class GraphEdges extends Table {
   TextColumn get fromHash => text()();
   TextColumn get toHash => text()();
 
-  /// Attempt-counted evidence (successes / attempts).
+  /// Attempt-counted evidence (successes / attempts over all time).
   IntColumn get s => integer().withDefault(const Constant(0))();
   IntColumn get n => integer().withDefault(const Constant(0))();
+
+  /// Failed attempts still held against the link, fading at read from
+  /// [lastFailed] ([PathGraphConfig.failureHalfLifeHours]).
+  RealColumn get failWeight => real().withDefault(const Constant(0))();
+  IntColumn get lastFailed => integer().nullable()();
 
   /// Passive-sighting EWMA (candidate ranking / tie-breaks, never p).
   RealColumn get trafficWeight => real().withDefault(const Constant(0))();

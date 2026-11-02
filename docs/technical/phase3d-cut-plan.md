@@ -1,5 +1,13 @@
 # Phase 3d Cut Plan — Database as the Single Source of Truth
 
+> **What this is:** The July 2026 plan that made the message database the only place messages are kept. Before it, the app also held messages in lists in memory, which made messages vanish or show in the wrong order.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** finished record. Code comments still point to its sections to explain why a few settings stay outside the database.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 **Principle (owner-directed):** a received message is inserted into the database;
 the database notifies; the UI updates. Nothing else holds message state. Data can
 only be lost by an explicit overwrite or delete. JSON remains only for

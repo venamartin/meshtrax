@@ -3,12 +3,12 @@ import 'package:path_graph/path_graph.dart';
 import 'package:test/test.dart';
 
 const montereyBay =
-    MeshId(freqHz: 910525000, bwHz: 62500, sf: 8, cr: 8);
-const bench = MeshId(freqHz: 920000000, bwHz: 250000, sf: 10, cr: 5);
+    MeshId(freqKHz: 910525, bwHz: 62500, sf: 8, cr: 8);
+const bench = MeshId(freqKHz: 920000, bwHz: 250000, sf: 10, cr: 5);
 
 void main() {
   test('key and label', () {
-    expect(montereyBay.key, 'm910525000_62500_8_8');
+    expect(montereyBay.key, 'm910525_62500_8_8');
     expect(montereyBay.label, '910.525 MHz · 62.5 kHz · SF8 · CR8');
     expect(bench.label, '920.000 MHz · 250 kHz · SF10 · CR5');
     expect(MeshId.fromJson(montereyBay.toJson()), montereyBay);

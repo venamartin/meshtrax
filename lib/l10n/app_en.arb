@@ -164,6 +164,51 @@
   "scanner_enableBluetooth": "Enable Bluetooth",
   "device_quickSwitch": "Quick switch",
   "device_meshcore": "MeshCore",
+  "healthCheck_title": "Health check",
+  "healthCheck_subtitle": "Check your app and radio settings",
+  "healthCheck_running": "Checking your settings…",
+  "healthCheck_waitingForSync": "The radio is still syncing. The check will start when it finishes.",
+  "healthCheck_noRadio": "No radio is connected, so the radio's settings were not checked.",
+  "healthCheck_partial": "Some radio settings could not be read, so these results may be out of date. Check again in a moment.",
+  "healthCheck_allClear": "Everything looks good.",
+  "healthCheck_problems": "Problems",
+  "healthCheck_suggestions": "Suggestions",
+  "healthCheck_tips": "Tips",
+  "healthCheck_passed": "Checks passed: {count}",
+  "@healthCheck_passed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_runAgain": "Check again",
+  "healthCheck_fix": "Fix",
+  "healthCheck_fixFailed": "That change did not go through. Check the radio connection and try again.",
+  "healthCheck_openFailed": "Could not open that settings page. Change it in your device's settings.",
+  "healthCheck_hide": "Don't show again",
+  "healthCheck_showHidden": "Show hidden findings: {count}",
+  "@healthCheck_showHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_fixAll": "Fix all ({count})",
+  "@healthCheck_fixAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "healthCheck_fixAllConfirm": "Make these changes?",
+  "healthCheck_promptTitle": "Run a health check?",
+  "healthCheck_promptBody": "See what could work better in your app and radio settings, including ways to get fewer notifications.",
+  "healthCheck_promptBodyDesktop": "See what could work better in your app and radio settings.",
+  "healthCheck_promptRun": "Run check",
+  "healthCheck_promptLater": "Not now",
   "settings_title": "Settings",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
@@ -204,6 +249,7 @@
   "settings_advertLocation": "Advert Location",
   "settings_advertLocationSubtitle": "Include location in advert.",
   "settings_multiAck": "Multi-ACKs",
+  "settings_multiAckSubtitle": "Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.",
   "settings_telemetryModeUpdated": "Telemetry mode updated",
   "settings_actions": "Actions",
   "settings_sendAdvertisement": "Send Advertisement",
@@ -252,6 +298,8 @@
   "settings_aboutLegalese": "© 2026 MeshTrax Contributors",
   "settings_aboutDescription": "An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.",
   "settings_aboutOpenMeteoAttribution": "LOS elevation data: Open-Meteo (CC BY 4.0)",
+  "settings_reportBug": "Report a bug",
+  "settings_reportBugSubtitle": "Opens a bug report on GitHub",
   "settings_infoName": "Name",
   "settings_infoId": "ID",
   "settings_infoStatus": "Status",
@@ -1889,6 +1937,7 @@
   "contacts_addContactFromClipboard": "Add Contact from Clipboard",
   "contacts_ShareContact": "Copy contact to Clipboard",
   "contacts_ShareContactZeroHop": "Share contact by advert",
+  "contacts_shareByAdvertFailed": "The radio could not share this contact. It has to hear the contact's advert first.",
   "contacts_zeroHopContactAdvertSent": "Sent contact by advert.",
   "contacts_zeroHopContactAdvertFailed": "Failed to send contact.",
   "contacts_contactAdvertCopied": "Advert copied to Clipboard.",
@@ -2101,6 +2150,7 @@
     }
   },
   "routing_noRoute": "none yet — the next message floods and learns one",
+  "routing_noRoutePathfinder": "none stored",
   "routing_auto": "Automatic",
   "routing_autoSubtitle": "Use the radio's stored path. Recommended.",
   "routing_pathfinderOn": "Pathfinder on: tries learned routes first",
@@ -2110,6 +2160,7 @@
   "routing_customSubtitle": "Choose the repeaters yourself",
   "routing_forget": "Reset path",
   "routing_forgetDone": "Path reset. The next message floods and learns a fresh one.",
+  "routing_forgetDonePathfinder": "Path reset.",
   "routing_pathfinder": "What Pathfinder knows",
   "routing_pathfinderSubtitle": "Repeaters that hear you and them, and learned routes there and back",
   "path_direct": "Direct — no repeaters",
@@ -2223,15 +2274,15 @@
   "chat_statusFailedShort": "Failed · tap to resend",
   "chat_resendingByFlood": "Resending by flood",
   "pathfinderHelp_title": "What Pathfinder does",
-  "pathfinderHelp_what": "Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people's messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.",
+  "pathfinderHelp_what": "Your radio remembers one route to each contact. When a message on that route fails, MeshTrax floods the whole mesh instead. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people's messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.",
   "pathfinderHelp_how": "When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.",
-  "pathfinderHelp_learning": "It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.",
+  "pathfinderHelp_learning": "It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.",
   "pathfinderHelp_guessed": "Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.",
   "pathfinderHelp_discover": "When it isn't sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.",
   "pathfinderHelp_off": "Turn Pathfinder off and the radio routes exactly as it did before.",
   "pathfinderHelp_dontShowAgain": "Don't show this again",
   "pathfinderHelp_ok": "OK",
-  "settings_pathGraph": "Pathfinder (experimental)",
+  "settings_pathGraph": "Pathfinder",
   "settings_pathGraphSubtitle": "Learns routes from everything the radio hears and tries its best ones first when you send a DM. An amber path icon marks a message sent on a Pathfinder route.",
   "map_routeAndTrace": "Route & trace",
   "map_pathfinderTrace": "Trace there and back",
@@ -2503,9 +2554,6 @@
   "offlineMaps_notificationRunning": "Downloading map",
   "offlineMaps_notificationPaused": "Map download paused",
   "offlineMaps_notificationFailed": "Map download failed",
-  "offlineMaps_clearTileCache": "Clear cached online map tiles",
-  "offlineMaps_clearTileCachePrompt": "Remove the online map tiles saved while browsing? Downloaded maps stay.",
-  "offlineMaps_tileCacheCleared": "Cached online map tiles removed",
   "map_notForNavigation": "Not for navigation",
   "map_chartsNoticeIntro": "MeshTrax draws these charts from NOAA's chart data to help you see the water around your radios and plan. They are not official charts. Don't steer by them.",
   "map_chartsNoticeWhy": "Why:",
@@ -2514,10 +2562,7 @@
   "map_chartsNoticePositions": "Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.",
   "map_chartsNoticeNotPlotter": "MeshTrax isn't a certified chart plotter.",
   "map_chartsNoticeUse": "To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.",
-  "map_sourceOnline": "Online",
-  "map_sourceOffline": "Offline",
   "map_downloadForDetail": "Download a region for detail",
-  "map_zoomInForOfflineMap": "Zoom in to see your offline map",
   "map_noCharts": "No charts here",
   "map_myLocation": "My location",
   "map_zoomIn": "Zoom in",
@@ -2546,7 +2591,6 @@
   "mapLayers_usgs": "USGS topo",
   "mapLayers_charts": "Charts",
   "mapLayers_notDownloaded": "Not downloaded",
-  "mapLayers_offlineOnly": "Offline only",
   "mapLayers_details": "Map details",
   "mapLayers_contours": "Contours",
   "mapLayers_hillShading": "Hill shading",
@@ -3052,5 +3096,35 @@
   "poiKind_park": "Park",
   "poiKind_protectedArea": "Protected area",
   "common_more": "More",
-  "common_less": "Less"
+  "common_less": "Less",
+  "locationSharing_title": "Who can see my location",
+  "locationSharing_someone": "Someone can see your location",
+  "locationSharing_nobody": "Nobody can see your location",
+  "locationSharing_noPosition": "Your radio has no location yet, so nobody can see it",
+  "locationSharing_everyone": "Everyone who hears your radio can see your location",
+  "locationSharing_allContacts": "All your contacts can see your location",
+  "locationSharing_someContacts": "Contacts you allowed can see your location",
+  "locationSharing_adverts": "Location in adverts",
+  "locationSharing_advertsHint": "Your adverts carry your location, so anyone who hears your radio sees it.",
+  "locationSharing_contactsHeader": "Contacts who can ask your radio",
+  "locationSharing_noTelemetry": "None. Your radio answers no telemetry requests.",
+  "locationSharing_noContacts": "No contact is allowed to ask.",
+  "locationSharing_allContactsRow": "All your contacts ({count})",
+  "@locationSharing_allContactsRow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "locationSharing_partLocation": "Location",
+  "locationSharing_partBattery": "Battery",
+  "locationSharing_partSensors": "Sensors",
+  "dialog_positionHint": "Paste coordinates or a maps link",
+  "dialog_positionUnreadable": "Can't read a position here",
+  "dialog_positionLookingUp": "Looking up the link…",
+  "locationSharing_share": "Share my location",
+  "locationSharing_shareOnHint": "Turn off to hide it from everyone",
+  "locationSharing_shareOffHint": "Turn on to let contacts with permission see it",
+  "chats_advertise": "Advertise"
 }

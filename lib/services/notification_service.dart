@@ -1,6 +1,9 @@
 import 'dart:io' show Platform;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import 'package:url_launcher/url_launcher.dart';
 
 import '../helpers/gif_helper.dart';
 import '../helpers/markdown_helper.dart';
@@ -19,6 +22,11 @@ class NotificationService {
   /// app's [MaterialApp] and used by the tap handler set in the app.
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
+
+  /// Tells the chat screens when a page covers them or comes off them. Wired
+  /// onto the app's [MaterialApp]; dialogs and sheets aren't pages.
+  static final RouteObserver<PageRoute<dynamic>> routeObserver =
+      RouteObserver<PageRoute<dynamic>>();
 
   /// Set by the app to handle a tapped notification's payload (navigation).
   void Function(String payload)? onNotificationTap;
@@ -159,6 +167,73 @@ class NotificationService {
     }
 
     return true;
+  }
+
+  /// False when the device blocks this app's messages, in whole or in part;
+  /// null where that can't be known.
+  Future<bool?> notificationsAllowed() async {
+    if (Platform.isWindows || Platform.isLinux) return null;
+    await _ensureInitialized();
+    if (Platform.isAndroid) {
+      final android = _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final allowed = await android?.areNotificationsEnabled();
+      if (allowed != true) return allowed;
+      // Android can also block one category; mentions share the channel one.
+      // A category does not exist until its first notification.
+      final categories = await android?.getNotificationChannels() ?? const [];
+      return !categories.any(
+        (c) =>
+            (c.id == 'meshtrax_messages' || c.id == 'meshtrax_channels') &&
+            c.importance == Importance.none,
+      );
+    }
+    if (Platform.isIOS) {
+      final options = await _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return options == null ? null : options.isEnabled && options.isAlertEnabled;
+    }
+    if (Platform.isMacOS) {
+      final options = await _notifications
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return options == null ? null : options.isEnabled && options.isAlertEnabled;
+    }
+    return null;
+  }
+
+  /// Asks the device to allow notifications. One that was refused before won't
+  /// ask again and answers at once, so this opens its settings instead. A
+  /// slower no is the user's own answer to the prompt, so it stops there. With
+  /// the permission granted, a blocked category or alerts turned off can still
+  /// keep [notificationsAllowed] false, and only the settings page changes that.
+  Future<void> askToAllow() async {
+    final asked = Stopwatch()..start();
+    if (await requestPermissions()) {
+      if (await notificationsAllowed() != false) return;
+    } else if (asked.elapsed > const Duration(seconds: 1)) {
+      return;
+    }
+    if (Platform.isAndroid) {
+      await const MethodChannel(
+        'meshtrax/system',
+      ).invokeMethod<void>('openNotificationSettings');
+    } else if (Platform.isIOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+    } else if (Platform.isMacOS) {
+      await launchUrl(
+        Uri.parse(
+          'x-apple.systempreferences:com.apple.preference.notifications',
+        ),
+      );
+    }
   }
 
   /// Format special message types for human-readable notifications.

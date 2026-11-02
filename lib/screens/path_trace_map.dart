@@ -62,6 +62,8 @@ class PathTraceMapScreen extends StatefulWidget {
   final Contact? targetContact;
   final int pathHashByteWidth;
   final List<Contact>? pathContacts;
+  // Estimated positions of contacts on the path, by public key.
+  final Map<String, LatLng> guessedPositions;
 
   const PathTraceMapScreen({
     super.key,
@@ -73,6 +75,7 @@ class PathTraceMapScreen extends StatefulWidget {
     this.targetContact,
     required this.pathHashByteWidth,
     this.pathContacts,
+    this.guessedPositions = const {},
   });
 
   @override
@@ -352,6 +355,11 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
       for (final hop in pathData) {
         final contact = pathContacts[hop];
         if (contact != null && contact.hasLocation) continue;
+        final guessed = widget.guessedPositions[contact?.publicKeyHex];
+        if (guessed != null) {
+          inferredPositions[hop] = guessed;
+          continue;
+        }
         final peers = connector.contacts
             .where(
               (c) => c.hasLocation && c.path.isNotEmpty &&

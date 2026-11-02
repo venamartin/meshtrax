@@ -14,7 +14,7 @@ enum OfflineMapsTab { maps, charts, downloaded }
 
 /// Download and manage offline map packs: browse regions (Maps), pick NOAA
 /// chart areas by coast (Charts) and see what's on the device (Downloaded).
-/// Layout and wording follow docs/offline-maps-roadmap.md, screen S3.
+/// Layout and wording follow docs/technical/offline-maps-roadmap.md, screen S3.
 class OfflineMapsScreen extends StatefulWidget {
   /// Opens the Maps tab on this region's detail (a picker `path`).
   final String? initialRegionPath;
@@ -137,29 +137,34 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabs,
-        children: [
-          MapsTab(
-            browsePath: _browsePath,
-            selectedPath: _selectedPath,
-            onBrowse: (path) => setState(() {
-              _browsePath = path;
-              _selectedPath = null;
-            }),
-            onSelect: (path) => setState(() => _selectedPath = path),
-            onOpenCharts: () => _tabs.animateTo(OfflineMapsTab.charts.index),
-          ),
-          ChartsTab(
-            openArea: widget.initialChartArea,
-            selected: _chartSelection,
-            onSelectionChanged: (s) => setState(() => _chartSelection = s),
-          ),
-          DownloadedTab(
-            onOpenRegion: _openRegion,
-            onFindMaps: () => _tabs.animateTo(OfflineMapsTab.maps.index),
-          ),
-        ],
+      // The tabs' lists set their own padding, so they don't leave room for
+      // the phone's navigation buttons by themselves.
+      body: SafeArea(
+        top: false,
+        child: TabBarView(
+          controller: _tabs,
+          children: [
+            MapsTab(
+              browsePath: _browsePath,
+              selectedPath: _selectedPath,
+              onBrowse: (path) => setState(() {
+                _browsePath = path;
+                _selectedPath = null;
+              }),
+              onSelect: (path) => setState(() => _selectedPath = path),
+              onOpenCharts: () => _tabs.animateTo(OfflineMapsTab.charts.index),
+            ),
+            ChartsTab(
+              openArea: widget.initialChartArea,
+              selected: _chartSelection,
+              onSelectionChanged: (s) => setState(() => _chartSelection = s),
+            ),
+            DownloadedTab(
+              onOpenRegion: _openRegion,
+              onFindMaps: () => _tabs.animateTo(OfflineMapsTab.maps.index),
+            ),
+          ],
+        ),
       ),
     );
   }

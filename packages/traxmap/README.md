@@ -105,11 +105,11 @@ controller.fitPoints(points, maxZoom: 15);
     (`StyleInfo.requiredKinds`, from `ovm:requires`) have a tile at the view
     centre. It fires when the camera settles, and only on a change. It's
     false below a pack's lowest zoom, and with no packs.
-  - `baseLayers` takes raw flutter_map layers drawn above the map's tiles
-    and below the overlays. MeshTrax puts online raster tiles there while
-    the view isn't covered.
-  - `extraLayers` and `baseLayers` are the only parts of the API tied to
-    flutter_map.
+  - The bundled base map fills the gaps: a style's `world` source draws
+    only where the required packs have no tile, judged tile by tile at
+    every zoom (`GapFillProvider`), unless the source says
+    `"ovm:mask": false` (the charts styles: chart coverage is opaque).
+  - `extraLayers` is the only part of the API tied to flutter_map.
 - **Sharpness:** tile bitmaps are drawn at twice the screen density, capped
   at 4, so lines stay crisp between whole zoom levels. `tileResolution`
   overrides it on memory-constrained devices.
@@ -172,11 +172,10 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
 ## MeshTrax integration
 
 The app-side notebook (decisions, pitfalls found so far, routing, open
-questions) is [`docs/offline-maps.md`](../../docs/offline-maps.md).
+questions) is [`docs/technical/offline-maps-notes.md`](../../docs/technical/offline-maps-notes.md).
 The integration roadmap (screens, phases, testing on the Pi) is
-[`docs/offline-maps-roadmap.md`](../../docs/offline-maps-roadmap.md). Where it
-differs from the notes below, the roadmap wins. For example, the picker
-draws on online tiles instead of a bundled world pack, and packs pair with
+[`docs/technical/offline-maps-roadmap.md`](../../docs/technical/offline-maps-roadmap.md). Where it
+differs from the notes below, the roadmap wins. For example, packs pair with
 regions by region path.
 
 | MeshTrax today | traxmap |
@@ -276,10 +275,9 @@ from the regions mockup in traxmapmaker
     `regionAt(LatLng)`, pairing with `PackIndexEntry`s), the world pack,
     and `picker.geojson` in `./tmm regions` / `./tmm publish`.
 
-**MeshTrax can then delete:**
-- `map_tile_cache_service.dart` and its provider;
-- `map_cache_screen.dart` and its settings and strings;
-- possibly `flutter_cache_manager`.
+MeshTrax has since deleted its online tiles, tile cache and
+`flutter_cache_manager` (2026-11-02): the bundled base map shows where no
+pack is installed.
 
 ## Host app setup
 

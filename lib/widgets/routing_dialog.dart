@@ -11,6 +11,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../screens/path_graph_screen.dart';
 import '../services/app_settings_service.dart';
+import '../services/path_graph/path_graph_service.dart';
 import 'path_selection_dialog.dart';
 
 enum RoutingMode { auto, flood, custom }
@@ -23,7 +24,8 @@ RoutingMode routingModeOf(Contact contact) {
 }
 
 bool _pathfinderOn(BuildContext context) =>
-    context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false;
+    (context.watch<AppSettingsService?>()?.settings.pathGraphEnabled ?? false) &&
+    context.select<PathGraphService?, bool>((s) => s?.radioCanRoute ?? true);
 
 /// The one path icon: opens routing everywhere and shows the [contact]'s
 /// mode — Automatic (amber while Pathfinder chooses the route), always
@@ -116,9 +118,12 @@ class _RoutingDialog extends StatelessWidget {
     return imported;
   }
 
-  String _routeLabel(BuildContext context, Contact c) {
+  String _routeLabel(BuildContext context, Contact c, bool pathfinderOn) {
     final l10n = context.l10n;
-    if (c.pathLength < 0) return l10n.routing_noRoute;
+    // With Pathfinder on, the next send can go on one of its routes instead.
+    if (c.pathLength < 0) {
+      return pathfinderOn ? l10n.routing_noRoutePathfinder : l10n.routing_noRoute;
+    }
     if (c.pathLength == 0) return l10n.chat_direct;
     final hops = PathHelper.formatPathHex(c.path, stride: c.pathHashSize);
     return '${l10n.chat_hopsCount(c.pathLength)} · $hops';
@@ -271,7 +276,7 @@ class _RoutingDialog extends StatelessWidget {
                         ? () => _showFullPath(context, c)
                         : null,
                     child: Text(
-                      l10n.routing_route(_routeLabel(context, c)),
+                      l10n.routing_route(_routeLabel(context, c, pathfinderOn)),
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ),
@@ -290,9 +295,7 @@ class _RoutingDialog extends StatelessWidget {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(l10n.routing_autoSubtitle),
-                            if (pathfinderOn) ...[
-                              const SizedBox(height: 4),
+                            if (pathfinderOn)
                               Row(
                                 children: [
                                   Icon(RoutingIcon.icon, size: 16, color: amber),
@@ -304,8 +307,9 @@ class _RoutingDialog extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ],
+                              )
+                            else
+                              Text(l10n.routing_autoSubtitle),
                           ],
                         ),
                       ),
@@ -362,7 +366,11 @@ class _RoutingDialog extends StatelessWidget {
                       if (!context.mounted) return;
                       showDismissibleSnackBar(
                         context,
-                        content: Text(l10n.routing_forgetDone),
+                        content: Text(
+                          pathfinderOn
+                              ? l10n.routing_forgetDonePathfinder
+                              : l10n.routing_forgetDone,
+                        ),
                         duration: const Duration(seconds: 2),
                       );
                     },

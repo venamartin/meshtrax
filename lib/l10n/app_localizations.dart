@@ -778,6 +778,150 @@ abstract class AppLocalizations {
   /// **'MeshCore'**
   String get device_meshcore;
 
+  /// No description provided for @healthCheck_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check'**
+  String get healthCheck_title;
+
+  /// No description provided for @healthCheck_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your app and radio settings'**
+  String get healthCheck_subtitle;
+
+  /// No description provided for @healthCheck_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your settings…'**
+  String get healthCheck_running;
+
+  /// No description provided for @healthCheck_waitingForSync.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is still syncing. The check will start when it finishes.'**
+  String get healthCheck_waitingForSync;
+
+  /// No description provided for @healthCheck_noRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected, so the radio\'s settings were not checked.'**
+  String get healthCheck_noRadio;
+
+  /// No description provided for @healthCheck_partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some radio settings could not be read, so these results may be out of date. Check again in a moment.'**
+  String get healthCheck_partial;
+
+  /// No description provided for @healthCheck_allClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything looks good.'**
+  String get healthCheck_allClear;
+
+  /// No description provided for @healthCheck_problems.
+  ///
+  /// In en, this message translates to:
+  /// **'Problems'**
+  String get healthCheck_problems;
+
+  /// No description provided for @healthCheck_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get healthCheck_suggestions;
+
+  /// No description provided for @healthCheck_tips.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get healthCheck_tips;
+
+  /// No description provided for @healthCheck_passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks passed: {count}'**
+  String healthCheck_passed(int count);
+
+  /// No description provided for @healthCheck_runAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get healthCheck_runAgain;
+
+  /// No description provided for @healthCheck_fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix'**
+  String get healthCheck_fix;
+
+  /// No description provided for @healthCheck_fixFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That change did not go through. Check the radio connection and try again.'**
+  String get healthCheck_fixFailed;
+
+  /// No description provided for @healthCheck_openFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open that settings page. Change it in your device\'s settings.'**
+  String get healthCheck_openFailed;
+
+  /// No description provided for @healthCheck_hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show again'**
+  String get healthCheck_hide;
+
+  /// No description provided for @healthCheck_showHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Show hidden findings: {count}'**
+  String healthCheck_showHidden(int count);
+
+  /// No description provided for @healthCheck_fixAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix all ({count})'**
+  String healthCheck_fixAll(int count);
+
+  /// No description provided for @healthCheck_fixAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make these changes?'**
+  String get healthCheck_fixAllConfirm;
+
+  /// No description provided for @healthCheck_promptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run a health check?'**
+  String get healthCheck_promptTitle;
+
+  /// No description provided for @healthCheck_promptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings, including ways to get fewer notifications.'**
+  String get healthCheck_promptBody;
+
+  /// No description provided for @healthCheck_promptBodyDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'See what could work better in your app and radio settings.'**
+  String get healthCheck_promptBodyDesktop;
+
+  /// No description provided for @healthCheck_promptRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run check'**
+  String get healthCheck_promptRun;
+
+  /// No description provided for @healthCheck_promptLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get healthCheck_promptLater;
+
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:
@@ -1018,6 +1162,12 @@ abstract class AppLocalizations {
   /// **'Multi-ACKs'**
   String get settings_multiAck;
 
+  /// No description provided for @settings_multiAckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.'**
+  String get settings_multiAckSubtitle;
+
   /// No description provided for @settings_telemetryModeUpdated.
   ///
   /// In en, this message translates to:
@@ -1179,6 +1329,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'LOS elevation data: Open-Meteo (CC BY 4.0)'**
   String get settings_aboutOpenMeteoAttribution;
+
+  /// No description provided for @settings_reportBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug'**
+  String get settings_reportBug;
+
+  /// No description provided for @settings_reportBugSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens a bug report on GitHub'**
+  String get settings_reportBugSubtitle;
 
   /// No description provided for @settings_infoName.
   ///
@@ -5850,6 +6012,12 @@ abstract class AppLocalizations {
   /// **'Share contact by advert'**
   String get contacts_ShareContactZeroHop;
 
+  /// No description provided for @contacts_shareByAdvertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio could not share this contact. It has to hear the contact\'s advert first.'**
+  String get contacts_shareByAdvertFailed;
+
   /// No description provided for @contacts_zeroHopContactAdvertSent.
   ///
   /// In en, this message translates to:
@@ -6534,6 +6702,12 @@ abstract class AppLocalizations {
   /// **'none yet — the next message floods and learns one'**
   String get routing_noRoute;
 
+  /// No description provided for @routing_noRoutePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'none stored'**
+  String get routing_noRoutePathfinder;
+
   /// No description provided for @routing_auto.
   ///
   /// In en, this message translates to:
@@ -6587,6 +6761,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Path reset. The next message floods and learns a fresh one.'**
   String get routing_forgetDone;
+
+  /// No description provided for @routing_forgetDonePathfinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Path reset.'**
+  String get routing_forgetDonePathfinder;
 
   /// No description provided for @routing_pathfinder.
   ///
@@ -6717,7 +6897,7 @@ abstract class AppLocalizations {
   /// No description provided for @pathfinderHelp_what.
   ///
   /// In en, this message translates to:
-  /// **'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.'**
+  /// **'Your radio remembers one route to each contact. When a message on that route fails, MeshTrax floods the whole mesh instead. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.'**
   String get pathfinderHelp_what;
 
   /// No description provided for @pathfinderHelp_how.
@@ -6729,7 +6909,7 @@ abstract class AppLocalizations {
   /// No description provided for @pathfinderHelp_learning.
   ///
   /// In en, this message translates to:
-  /// **'It needs time. A fresh map knows nothing, so at first your messages go out exactly as before. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
+  /// **'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
   String get pathfinderHelp_learning;
 
   /// No description provided for @pathfinderHelp_guessed.
@@ -6765,7 +6945,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_pathGraph.
   ///
   /// In en, this message translates to:
-  /// **'Pathfinder (experimental)'**
+  /// **'Pathfinder'**
   String get settings_pathGraph;
 
   /// No description provided for @settings_pathGraphSubtitle.
@@ -7872,24 +8052,6 @@ abstract class AppLocalizations {
   /// **'Map download failed'**
   String get offlineMaps_notificationFailed;
 
-  /// No description provided for @offlineMaps_clearTileCache.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear cached online map tiles'**
-  String get offlineMaps_clearTileCache;
-
-  /// No description provided for @offlineMaps_clearTileCachePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove the online map tiles saved while browsing? Downloaded maps stay.'**
-  String get offlineMaps_clearTileCachePrompt;
-
-  /// No description provided for @offlineMaps_tileCacheCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Cached online map tiles removed'**
-  String get offlineMaps_tileCacheCleared;
-
   /// No description provided for @map_notForNavigation.
   ///
   /// In en, this message translates to:
@@ -7938,29 +8100,11 @@ abstract class AppLocalizations {
   /// **'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.'**
   String get map_chartsNoticeUse;
 
-  /// No description provided for @map_sourceOnline.
-  ///
-  /// In en, this message translates to:
-  /// **'Online'**
-  String get map_sourceOnline;
-
-  /// No description provided for @map_sourceOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline'**
-  String get map_sourceOffline;
-
   /// No description provided for @map_downloadForDetail.
   ///
   /// In en, this message translates to:
   /// **'Download a region for detail'**
   String get map_downloadForDetail;
-
-  /// No description provided for @map_zoomInForOfflineMap.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom in to see your offline map'**
-  String get map_zoomInForOfflineMap;
 
   /// No description provided for @map_noCharts.
   ///
@@ -8117,12 +8261,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not downloaded'**
   String get mapLayers_notDownloaded;
-
-  /// No description provided for @mapLayers_offlineOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline only'**
-  String get mapLayers_offlineOnly;
 
   /// No description provided for @mapLayers_details.
   ///
@@ -10445,6 +10583,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Less'**
   String get common_less;
+
+  /// No description provided for @locationSharing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my location'**
+  String get locationSharing_title;
+
+  /// No description provided for @locationSharing_someone.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone can see your location'**
+  String get locationSharing_someone;
+
+  /// No description provided for @locationSharing_nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody can see your location'**
+  String get locationSharing_nobody;
+
+  /// No description provided for @locationSharing_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio has no location yet, so nobody can see it'**
+  String get locationSharing_noPosition;
+
+  /// No description provided for @locationSharing_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who hears your radio can see your location'**
+  String get locationSharing_everyone;
+
+  /// No description provided for @locationSharing_allContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'All your contacts can see your location'**
+  String get locationSharing_allContacts;
+
+  /// No description provided for @locationSharing_someContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts you allowed can see your location'**
+  String get locationSharing_someContacts;
+
+  /// No description provided for @locationSharing_adverts.
+  ///
+  /// In en, this message translates to:
+  /// **'Location in adverts'**
+  String get locationSharing_adverts;
+
+  /// No description provided for @locationSharing_advertsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your adverts carry your location, so anyone who hears your radio sees it.'**
+  String get locationSharing_advertsHint;
+
+  /// No description provided for @locationSharing_contactsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts who can ask your radio'**
+  String get locationSharing_contactsHeader;
+
+  /// No description provided for @locationSharing_noTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'None. Your radio answers no telemetry requests.'**
+  String get locationSharing_noTelemetry;
+
+  /// No description provided for @locationSharing_noContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact is allowed to ask.'**
+  String get locationSharing_noContacts;
+
+  /// No description provided for @locationSharing_allContactsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'All your contacts ({count})'**
+  String locationSharing_allContactsRow(int count);
+
+  /// No description provided for @locationSharing_partLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationSharing_partLocation;
+
+  /// No description provided for @locationSharing_partBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get locationSharing_partBattery;
+
+  /// No description provided for @locationSharing_partSensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get locationSharing_partSensors;
+
+  /// No description provided for @dialog_positionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste coordinates or a maps link'**
+  String get dialog_positionHint;
+
+  /// No description provided for @dialog_positionUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read a position here'**
+  String get dialog_positionUnreadable;
+
+  /// No description provided for @dialog_positionLookingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up the link…'**
+  String get dialog_positionLookingUp;
+
+  /// No description provided for @locationSharing_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location'**
+  String get locationSharing_share;
+
+  /// No description provided for @locationSharing_shareOnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to hide it from everyone'**
+  String get locationSharing_shareOnHint;
+
+  /// No description provided for @locationSharing_shareOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on to let contacts with permission see it'**
+  String get locationSharing_shareOffHint;
+
+  /// No description provided for @chats_advertise.
+  ///
+  /// In en, this message translates to:
+  /// **'Advertise'**
+  String get chats_advertise;
 }
 
 class _AppLocalizationsDelegate

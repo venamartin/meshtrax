@@ -31,7 +31,8 @@
     "world": {
       "type": "vector",
       "url": "pmtiles://{pack:world}",
-      "attribution": "Made with Natural Earth"
+      "attribution": "Made with Natural Earth; © GeoNames (CC BY 4.0)",
+      "ovm:mask": false
     }
   },
   "layers": [
@@ -60,7 +61,6 @@
         false
       ],
       "minzoom": 4,
-      "maxzoom": 6,
       "paint": {
         "fill-color": "#e8dcbc"
       }
@@ -82,7 +82,6 @@
         true,
         false
       ],
-      "maxzoom": 6,
       "paint": {
         "fill-color": "#ffffff"
       }
@@ -92,7 +91,6 @@
       "type": "fill",
       "source": "world",
       "source-layer": "water",
-      "maxzoom": 6,
       "paint": {
         "fill-color": "#ffffff"
       }
@@ -102,7 +100,6 @@
       "type": "line",
       "source": "world",
       "source-layer": "waterway",
-      "maxzoom": 6,
       "paint": {
         "line-color": "#8ec4ec",
         "line-width": [
@@ -116,7 +113,9 @@
           3,
           0.4,
           6,
-          1
+          1,
+          10,
+          1.6
         ]
       }
     },
@@ -145,7 +144,6 @@
         ]
       ],
       "minzoom": 3,
-      "maxzoom": 6,
       "paint": {
         "line-color": "#b7a98a",
         "line-width": [
@@ -159,7 +157,9 @@
           3,
           0.5,
           6,
-          0.9
+          0.9,
+          10,
+          1.3
         ],
         "line-dasharray": [
           3,
@@ -191,7 +191,6 @@
           0
         ]
       ],
-      "maxzoom": 6,
       "paint": {
         "line-color": "#7a6a4a",
         "line-width": [
@@ -205,7 +204,9 @@
           1,
           0.6,
           6,
-          1.4
+          1.4,
+          10,
+          2
         ],
         "line-dasharray": [
           "case",
@@ -254,7 +255,6 @@
         false
       ],
       "minzoom": 4,
-      "maxzoom": 6,
       "paint": {
         "line-color": "#c9bea4",
         "line-width": [
@@ -268,7 +268,9 @@
           4,
           0.5,
           6,
-          1.2
+          1.2,
+          10,
+          2.2
         ]
       }
     },
@@ -2011,7 +2013,6 @@
       "type": "symbol",
       "source": "world",
       "source-layer": "water_name",
-      "maxzoom": 6,
       "layout": {
         "text-field": [
           "get",
@@ -2064,7 +2065,6 @@
         false
       ],
       "minzoom": 4,
-      "maxzoom": 6,
       "layout": {
         "text-field": [
           "get",
@@ -2089,24 +2089,234 @@
       }
     },
     {
+      "id": "world-town-13",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "town"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "rank"
+          ],
+          13
+        ]
+      ],
+      "minzoom": 9,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-max-width": 8,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": "#7a6a4a",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-town-12",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "town"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "rank"
+          ],
+          12
+        ]
+      ],
+      "minzoom": 8,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": "#5b4a2c",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-town-11",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "town"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "rank"
+          ],
+          11
+        ]
+      ],
+      "minzoom": 7,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-max-width": 8,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": "#5b4a2c",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "world-town-10",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "place",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "town"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "rank"
+          ],
+          10
+        ]
+      ],
+      "minzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 10.5,
+        "text-max-width": 8,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": "#5b4a2c",
+        "text-halo-color": "#f3ead0",
+        "text-halo-width": 1.5
+      }
+    },
+    {
       "id": "world-city-dot",
       "type": "circle",
       "source": "world",
       "source-layer": "place",
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "class"
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "city",
+            "town"
+          ],
+          true,
+          false
         ],
         [
-          "city",
-          "town"
-        ],
-        true,
-        false
+          "<=",
+          [
+            "get",
+            "rank"
+          ],
+          9
+        ]
       ],
-      "maxzoom": 6,
       "paint": {
         "circle-radius": 2,
         "circle-color": "#5b4a2c",
@@ -2120,19 +2330,29 @@
       "source": "world",
       "source-layer": "place",
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "class"
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "city",
+            "town"
+          ],
+          true,
+          false
         ],
         [
-          "city",
-          "town"
-        ],
-        true,
-        false
+          "<=",
+          [
+            "get",
+            "rank"
+          ],
+          9
+        ]
       ],
-      "maxzoom": 6,
       "layout": {
         "text-field": [
           "get",
@@ -2199,7 +2419,6 @@
         true,
         false
       ],
-      "maxzoom": 6,
       "layout": {
         "text-field": [
           "get",

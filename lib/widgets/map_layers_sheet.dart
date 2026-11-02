@@ -13,10 +13,6 @@ import 'app_map.dart';
 /// section a screen adds (the Node Map's node types), [onMoreFilters], and
 /// Offline maps.
 ///
-/// Online, the map is the standard online look, so the other map types,
-/// contours, hill shading and dark show "Offline only"; tapping one switches
-/// to Offline and applies it.
-///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
 /// [places]: the map draws Points of interest, so it offers their switch.
 Future<void> showMapLayersSheet(
@@ -53,20 +49,11 @@ class MapLayersSheet extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final settingsService = context.watch<AppSettingsService>();
     final settings = settingsService.settings;
-    final online = mapIsOnline(settings, maps);
-    final current = online
-        ? MapType.osm
-        : MapType.parse(settings.mapType) ?? MapType.osm;
+    final current = MapType.parse(settings.mapType) ?? MapType.osm;
     final dark = settings.mapTheme == 'dark';
     final contours = settings.mapContours;
     final hillShading = settings.mapHillShading;
     final downloadedAreas = settings.mapDownloadedAreas;
-
-    // An Offline-only choice made while Online: go Offline, then apply it.
-    void offline(Future<void> Function() apply) {
-      if (online) settingsService.setMapSource('offline');
-      apply();
-    }
 
     void openOfflineMaps({OfflineMapsTab? tab}) => Navigator.of(context)
       ..pop()
@@ -78,24 +65,17 @@ class MapLayersSheet extends StatelessWidget {
 
     Widget mapTile(MapType type, String picture, String label) {
       final available = maps.hasMap(type);
-      final offlineOnly = online && type != MapType.osm;
       return MapLayerTile(
         picture: _picture(picture),
         label: label,
-        note: !available
-            ? l10n.mapLayers_notDownloaded
-            : offlineOnly
-            ? l10n.mapLayers_offlineOnly
-            : null,
+        note: available ? null : l10n.mapLayers_notDownloaded,
         selected: available && type == current,
-        enabled: available && !offlineOnly,
-        onTap: !available
-            ? () => openOfflineMaps(
+        enabled: available,
+        onTap: available
+            ? () => settingsService.setMapType(type.name)
+            : () => openOfflineMaps(
                 tab: type == MapType.charts ? OfflineMapsTab.charts : null,
-              )
-            : offlineOnly
-            ? () => offline(() => settingsService.setMapType(type.name))
-            : () => settingsService.setMapType(type.name),
+              ),
       );
     }
 
@@ -126,60 +106,35 @@ class MapLayersSheet extends StatelessWidget {
                 MapLayerTile(
                   picture: _picture('contours'),
                   label: l10n.mapLayers_contours,
-                  note: online ? l10n.mapLayers_offlineOnly : null,
-                  selected: !online && contours,
-                  enabled: !online,
-                  onTap: () => offline(
-                    () => settingsService.setMapContours(online || !contours),
-                  ),
+                  selected: contours,
+                  onTap: () => settingsService.setMapContours(!contours),
                 ),
                 MapLayerTile(
                   picture: _picture('hill_shading'),
                   label: l10n.mapLayers_hillShading,
-                  note: online ? l10n.mapLayers_offlineOnly : null,
-                  selected: !online && hillShading,
-                  enabled: !online,
-                  onTap: () => offline(
-                    () => settingsService.setMapHillShading(
-                      online || !hillShading,
-                    ),
-                  ),
+                  selected: hillShading,
+                  onTap: () => settingsService.setMapHillShading(!hillShading),
                 ),
                 MapLayerTile(
                   picture: _picture('parks'),
                   label: l10n.mapLayers_parks,
-                  note: online ? l10n.mapLayers_offlineOnly : null,
-                  selected: !online && settings.mapParks,
-                  enabled: !online,
-                  onTap: () => offline(
-                    () => settingsService.setMapParks(
-                      online || !settings.mapParks,
-                    ),
-                  ),
+                  selected: settings.mapParks,
+                  onTap: () => settingsService.setMapParks(!settings.mapParks),
                 ),
                 if (places)
                   MapLayerTile(
                     picture: _picture('places'),
                     label: l10n.mapLayers_places,
-                    note: online ? l10n.mapLayers_offlineOnly : null,
-                    selected: !online && settings.mapPlaces,
-                    enabled: !online,
-                    onTap: () => offline(
-                      () => settingsService.setMapPlaces(
-                        online || !settings.mapPlaces,
-                      ),
-                    ),
+                    selected: settings.mapPlaces,
+                    onTap: () =>
+                        settingsService.setMapPlaces(!settings.mapPlaces),
                   ),
                 MapLayerTile(
                   picture: _picture('dark'),
                   label: l10n.mapLayers_dark,
-                  note: online ? l10n.mapLayers_offlineOnly : null,
-                  selected: !online && dark,
-                  enabled: !online,
-                  onTap: () => offline(
-                    () => settingsService.setMapTheme(
-                      online || !dark ? 'dark' : 'light',
-                    ),
+                  selected: dark,
+                  onTap: () => settingsService.setMapTheme(
+                    dark ? 'light' : 'dark',
                   ),
                 ),
                 MapLayerTile(
@@ -232,7 +187,7 @@ class MapLayersSheet extends StatelessWidget {
 }
 
 /// The standard map's thumbnail with a downloaded area outlined on it, the
-/// way [AppMap] draws one Online.
+/// way [AppMap] draws one.
 class _DownloadedAreasPicture extends StatelessWidget {
   const _DownloadedAreasPicture();
 
@@ -266,16 +221,14 @@ class _AreaPainter extends CustomPainter {
       ..addPolygon([
         for (final (x, y) in _shape) Offset(x * size.width, y * size.height),
       ], true);
-    canvas
-      ..drawPath(path, Paint()..color = AppMap.areaFill)
-      ..drawPath(
-        path,
-        Paint()
-          ..color = AppMap.areaColor
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..strokeJoin = StrokeJoin.round,
-      );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppMap.areaColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round,
+    );
   }
 
   @override

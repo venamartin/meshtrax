@@ -1,3 +1,5 @@
+import 'channel.dart';
+
 enum UnitSystem { metric, imperial }
 
 extension UnitSystemValue on UnitSystem {
@@ -47,10 +49,6 @@ class AppSettings {
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
 
-  /// Where maps come from: `online` (online tiles wherever nothing is
-  /// downloaded), `offline` (downloaded maps only), or `auto`: online until
-  /// the first map is downloaded, then offline.
-  final String mapSource;
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -82,7 +80,7 @@ class AppSettings {
   final bool autoFavoriteOnChat;
   final bool autoConnectLastDevice;
 
-  /// Bench toggle for the contact download (Debug card). Off = every connect
+  /// Ask the radio only for contacts that changed. Off = every connect
   /// downloads the whole list.
   final bool incrementalContactSync;
 
@@ -106,6 +104,12 @@ class AppSettings {
   /// first draws charts; set when the user checks "don't show again".
   final bool chartsNoticeDismissed;
 
+  /// The one-time "Run a health check?" prompt has been shown.
+  final bool healthCheckPromptSeen;
+
+  /// Health check rule ids the user chose not to see again.
+  final Set<String> dismissedHealthRules;
+
   /// Public-key hexes of blocked direct-message contacts.
   final Set<String> blockedContactKeys;
 
@@ -125,7 +129,7 @@ class AppSettings {
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
     this.mapShowMarkers = true,
-    this.mapShowGuessedLocations = true,
+    this.mapShowGuessedLocations = false,
     this.enableMessageTracing = true,
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
@@ -135,18 +139,17 @@ class AppSettings {
     this.mapParks = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
-    this.mapSource = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
     this.notifyOnMention = true,
     this.notifyOnNewAdvert = false,
-    this.maxMessageRetries = 3,
+    this.maxMessageRetries = 4,
     this.maxChannelMessageRetries = 1,
     this.themeMode = 'dark',
     this.languageOverride,
     this.appDebugLogEnabled = false,
-    this.pathGraphEnabled = false,
+    this.pathGraphEnabled = true,
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
@@ -159,21 +162,36 @@ class AppSettings {
     this.jumpToOldestUnread = true,
     this.autoFavoriteOnChat = true,
     this.autoConnectLastDevice = true,
-    this.incrementalContactSync = false,
+    this.incrementalContactSync = true,
     this.senderNameColors = true,
     this.showTextFormatting = true,
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
     this.chartsNoticeDismissed = false,
+    this.healthCheckPromptSeen = false,
+    Set<String>? dismissedHealthRules,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
     this.recentReactions = const [],
   }) : batteryChemistryByDeviceId = batteryChemistryByDeviceId ?? {},
        batteryChemistryByRepeaterId = batteryChemistryByRepeaterId ?? {},
-       mutedChannels = mutedChannels ?? {},
+       mutedChannels = mutedChannels ?? {Channel.publicChannelPsk},
+       dismissedHealthRules = dismissedHealthRules ?? {},
        mutedContacts = mutedContacts ?? {},
        blockedContactKeys = blockedContactKeys ?? {},
        blockedSenderNames = blockedSenderNames ?? {};
+
+  /// What an install from before these defaults ran on if its user never
+  /// changed a setting, so nothing was saved. Not [fromJson] with no keys: a
+  /// file saved long ago without a key really ran on that key's fallback, and
+  /// for two settings the fallback differs from the old constructor.
+  factory AppSettings.olderInstall() => AppSettings(
+    mapShowGuessedLocations: true,
+    maxMessageRetries: 3,
+    pathGraphEnabled: false,
+    incrementalContactSync: false,
+    mutedChannels: {},
+  );
 
   Map<String, dynamic> toJson() {
     return {
@@ -195,7 +213,6 @@ class AppSettings {
       'map_parks': mapParks,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
-      'map_source': mapSource,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -225,6 +242,8 @@ class AppSettings {
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
       'charts_notice_dismissed': chartsNoticeDismissed,
+      'health_check_prompt_seen': healthCheckPromptSeen,
+      'dismissed_health_rules': dismissedHealthRules.toList(),
       'blocked_contact_keys': blockedContactKeys.toList(),
       'blocked_sender_names': blockedSenderNames.toList(),
       'recent_reactions': recentReactions,
@@ -260,7 +279,6 @@ class AppSettings {
       mapParks: json['map_parks'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
-      mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -304,8 +322,7 @@ class AppSettings {
       jumpToOldestUnread: json['jump_to_oldest_unread'] as bool? ?? false,
       autoFavoriteOnChat: json['auto_favorite_on_chat'] as bool? ?? true,
       autoConnectLastDevice: json['auto_connect_last_device'] as bool? ?? true,
-      incrementalContactSync:
-          json['incremental_contact_sync'] as bool? ?? false,
+      incrementalContactSync: json['incremental_contact_sync'] as bool? ?? false,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       showTextFormatting: json['show_text_formatting'] as bool? ?? true,
       dmIdentityWarningDismissed:
@@ -313,6 +330,13 @@ class AppSettings {
       batterySleepWarningDismissed:
           json['battery_sleep_warning_dismissed'] as bool? ?? false,
       chartsNoticeDismissed: json['charts_notice_dismissed'] as bool? ?? false,
+      healthCheckPromptSeen:
+          json['health_check_prompt_seen'] as bool? ?? false,
+      dismissedHealthRules:
+          ((json['dismissed_health_rules'] as List?)
+              ?.map((e) => e.toString())
+              .toSet()) ??
+          {},
       blockedContactKeys:
           ((json['blocked_contact_keys'] as List?)
               ?.map((e) => e.toString())
@@ -348,7 +372,6 @@ class AppSettings {
     bool? mapParks,
     bool? mapDownloadedAreas,
     String? mapTheme,
-    String? mapSource,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -378,6 +401,8 @@ class AppSettings {
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
     bool? chartsNoticeDismissed,
+    bool? healthCheckPromptSeen,
+    Set<String>? dismissedHealthRules,
     Set<String>? blockedContactKeys,
     Set<String>? blockedSenderNames,
     List<String>? recentReactions,
@@ -402,7 +427,6 @@ class AppSettings {
       mapParks: mapParks ?? this.mapParks,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
-      mapSource: mapSource ?? this.mapSource,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:
@@ -444,6 +468,9 @@ class AppSettings {
           batterySleepWarningDismissed ?? this.batterySleepWarningDismissed,
       chartsNoticeDismissed:
           chartsNoticeDismissed ?? this.chartsNoticeDismissed,
+      healthCheckPromptSeen:
+          healthCheckPromptSeen ?? this.healthCheckPromptSeen,
+      dismissedHealthRules: dismissedHealthRules ?? this.dismissedHealthRules,
       blockedContactKeys: blockedContactKeys ?? this.blockedContactKeys,
       blockedSenderNames: blockedSenderNames ?? this.blockedSenderNames,
       recentReactions: recentReactions ?? this.recentReactions,

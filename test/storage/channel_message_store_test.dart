@@ -442,6 +442,32 @@ void main() {
     expect(loaded.single.sentWireSecs, [1785711172, 1785711202]);
   });
 
+  test('concurrent updates to one row both land', () async {
+    await store.insertIfNew(
+      idKeyA,
+      msg('race', id: 'r1', outgoing: true)
+          .copyWith(status: ChannelMessageStatus.pending),
+    );
+
+    // The radio's OK marks the row sent while the send path is still
+    // recording its wire stamp; neither may overwrite the other.
+    await Future.wait([
+      store.updateAnyByMessageId(
+        'r1',
+        (m) => m.copyWith(status: ChannelMessageStatus.sent),
+      ),
+      store.updateMessage(
+        idKeyA,
+        'r1',
+        (m) => m.copyWith(sentWireSecs: [...m.sentWireSecs, 1785711172]),
+      ),
+    ]);
+
+    final loaded = (await store.loadChannelMessages(idKeyA)).single;
+    expect(loaded.status, ChannelMessageStatus.sent);
+    expect(loaded.sentWireSecs, [1785711172]);
+  });
+
   // A send whose app was killed (or whose timers died with it) is saved as
   // pending and nothing would ever settle it — the timer icon forever.
   group('failPendingSendsBefore', () {

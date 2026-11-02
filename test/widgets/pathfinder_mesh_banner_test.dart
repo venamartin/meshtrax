@@ -28,10 +28,10 @@ class _Service extends PathGraphService {
   Future<void> dismissMeshSuggestion() async => dismissed++;
 }
 
-const _mesh = MeshId(freqHz: 910525000, bwHz: 62500, sf: 7, cr: 5);
-const _monterey = GraphEntry(id: 'm910525000_62500_7_5', mesh: _mesh, name: 'Monterey Bay');
+const _mesh = MeshId(freqKHz: 910525, bwHz: 62500, sf: 7, cr: 5);
+const _monterey = GraphEntry(id: 'm910525_62500_7_5', mesh: _mesh, name: 'Monterey Bay');
 const _washington =
-    GraphEntry(id: 'm910525000_62500_7_5_g2', mesh: _mesh, name: 'Washington');
+    GraphEntry(id: 'm910525_62500_7_5_g2', mesh: _mesh, name: 'Washington');
 
 void main() {
   Future<_Service> pump(WidgetTester tester, MeshSuggestion? suggestion) async {

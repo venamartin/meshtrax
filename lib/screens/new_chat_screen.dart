@@ -212,16 +212,18 @@ class _NewChatScreenState extends State<NewChatScreen> {
               title: Text(context.l10n.contacts_ShareContactZeroHop),
               onTap: () async {
                 Navigator.pop(sheetContext);
-                final exportContactZeroHopFrame = buildZeroHopContact(contact.publicKey);
-                await connector.sendFrame(
-                  exportContactZeroHopFrame,
-                  expectsGenericAck: true,
+                final shared = await connector.shareContactZeroHop(
+                  contact.publicKey,
                 );
                 if (context.mounted) {
-                    showDismissibleSnackBar(
-                      context,
-                      content: Text(context.l10n.settings_advertisementSent),
-                    );
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(
+                      shared
+                          ? context.l10n.settings_advertisementSent
+                          : context.l10n.contacts_shareByAdvertFailed,
+                    ),
+                  );
                 }
               },
             ),
@@ -992,7 +994,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
                             sharesPosition:
-                                connector.sharesPositionWith(contact),
+                                connector.positionVisibleTo(contact),
                             onTap: () async {
                               if (!isDiscovered) {
                                 _openChat(contact);

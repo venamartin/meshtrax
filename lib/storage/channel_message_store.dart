@@ -225,6 +225,61 @@ class ChannelMessageStore {
     return results;
   }
 
+  /// The row [reply] quotes, with its distance from the newest row. A reply
+  /// that never linked (its original arrived late, or fell outside the ingest
+  /// window) is matched here by sender and snippet, over the full history:
+  /// the nearest row before it, else the nearest after it.
+  Future<({ChannelMessage message, int fromNewest})?> findReplyTarget(
+    String idKey,
+    ChannelMessage reply,
+  ) async {
+    if (publicKeyHex.isEmpty) return null;
+    final linked = reply.replyToMessageId;
+    if (linked != null) {
+      final rows = await _rowsWithPosition(idKey, linked);
+      if (rows.isEmpty) return null;
+      final message = _messageFromJson(
+        jsonDecode(rows.first.read<String>('payload')) as Map<String, dynamic>,
+      );
+      return (message: message, fromNewest: rows.first.read<int>('from_newest'));
+    }
+
+    final name = reply.replyToSenderName;
+    final snippet = reply.replyToText;
+    if (name == null || snippet == null || snippet.trim().isEmpty) return null;
+    final own = await _rowsWithPosition(idKey, reply.messageId);
+    final replyAt = own.isEmpty ? -1 : own.first.read<int>('from_newest');
+    ({ChannelMessage message, int fromNewest})? nearestAfter;
+    for (final found in await searchChannelMessages(idKey, name)) {
+      if (found.message.senderName != name ||
+          found.message.messageId == reply.messageId ||
+          !ChannelMessage.snippetMatches(found.message.text, snippet)) {
+        continue;
+      }
+      if (found.fromNewest > replyAt) return found;
+      nearestAfter = found;
+    }
+    return nearestAfter;
+  }
+
+  Future<List<QueryRow>> _rowsWithPosition(String idKey, String messageId) =>
+      _db
+          .customSelect(
+            'SELECT payload, from_newest FROM ('
+            ' SELECT payload, message_id, ROW_NUMBER() OVER ('
+            '   ORDER BY received_at_us DESC, id DESC) - 1 AS from_newest'
+            ' FROM channel_message_rows'
+            ' WHERE node_scope = ? AND channel_id_key = ?'
+            ') WHERE message_id = ?',
+            variables: [
+              Variable.withString(publicKeyHex),
+              Variable.withString(idKey),
+              Variable.withString(messageId),
+            ],
+            readsFrom: {_db.channelMessageRows},
+          )
+          .get();
+
   /// Whether the SQL payload prefilter can serve [query] without missing
   /// rows: SQLite's lower() folds ASCII only, and the payload stores JSON,
   /// which escapes quotes and backslashes.
@@ -295,25 +350,27 @@ class ChannelMessageStore {
     ChannelMessage Function(ChannelMessage) transform,
   ) async {
     if (publicKeyHex.isEmpty) return (false, null);
-    final row =
-        await (_db.select(_db.channelMessageRows)
-              ..where(
-                (r) =>
-                    r.nodeScope.equals(publicKeyHex) &
-                    r.messageId.equals(messageId),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (row == null) return (false, null);
-    try {
-      final msg = _messageFromJson(
-        jsonDecode(row.payload) as Map<String, dynamic>,
-      );
-      await upsertMessage(row.channelIdKey, transform(msg));
-      return (true, row.channelIdKey);
-    } catch (_) {
-      return (false, null);
-    }
+    return _db.transaction(() async {
+      final row =
+          await (_db.select(_db.channelMessageRows)
+                ..where(
+                  (r) =>
+                      r.nodeScope.equals(publicKeyHex) &
+                      r.messageId.equals(messageId),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (row == null) return (false, null);
+      try {
+        final msg = _messageFromJson(
+          jsonDecode(row.payload) as Map<String, dynamic>,
+        );
+        await upsertMessage(row.channelIdKey, transform(msg));
+        return (true, row.channelIdKey);
+      } catch (_) {
+        return (false, null);
+      }
+    });
   }
 
   /// Fails own sends still `pending` from before [cutoff]: their attempt
@@ -356,16 +413,20 @@ class ChannelMessageStore {
   }
 
   /// Load-transform-upsert of a single row; returns false when the row
-  /// does not exist. The only mutation primitive live paths may use.
+  /// does not exist. The only mutation primitive live paths may use. One
+  /// transaction, so an update racing it (the radio's OK against the send
+  /// path's wire stamp) is kept rather than overwritten.
   Future<bool> updateMessage(
     String idKey,
     String messageId,
     ChannelMessage Function(ChannelMessage) transform,
-  ) async {
-    final existing = await findByMessageId(idKey, messageId);
-    if (existing == null) return false;
-    await upsertMessage(idKey, transform(existing));
-    return true;
+  ) {
+    return _db.transaction(() async {
+      final existing = await findByMessageId(idKey, messageId);
+      if (existing == null) return false;
+      await upsertMessage(idKey, transform(existing));
+      return true;
+    });
   }
 
   /// Rewrites one row's payload in place, so its id, arrival stamp and

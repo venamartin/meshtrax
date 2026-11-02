@@ -639,6 +639,20 @@ class $GraphEdgesTable extends GraphEdges
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _failWeightMeta =
+      const VerificationMeta('failWeight');
+  @override
+  late final GeneratedColumn<double> failWeight = GeneratedColumn<double>(
+      'fail_weight', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _lastFailedMeta =
+      const VerificationMeta('lastFailed');
+  @override
+  late final GeneratedColumn<int> lastFailed = GeneratedColumn<int>(
+      'last_failed', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _trafficWeightMeta =
       const VerificationMeta('trafficWeight');
   @override
@@ -684,6 +698,8 @@ class $GraphEdgesTable extends GraphEdges
         toHash,
         s,
         n,
+        failWeight,
+        lastFailed,
         trafficWeight,
         lastObserved,
         obsCount,
@@ -718,6 +734,18 @@ class $GraphEdgesTable extends GraphEdges
     }
     if (data.containsKey('n')) {
       context.handle(_nMeta, n.isAcceptableOrUnknown(data['n']!, _nMeta));
+    }
+    if (data.containsKey('fail_weight')) {
+      context.handle(
+          _failWeightMeta,
+          failWeight.isAcceptableOrUnknown(
+              data['fail_weight']!, _failWeightMeta));
+    }
+    if (data.containsKey('last_failed')) {
+      context.handle(
+          _lastFailedMeta,
+          lastFailed.isAcceptableOrUnknown(
+              data['last_failed']!, _lastFailedMeta));
     }
     if (data.containsKey('traffic_weight')) {
       context.handle(
@@ -770,6 +798,10 @@ class $GraphEdgesTable extends GraphEdges
           .read(DriftSqlType.int, data['${effectivePrefix}s'])!,
       n: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}n'])!,
+      failWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fail_weight'])!,
+      lastFailed: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}last_failed']),
       trafficWeight: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}traffic_weight'])!,
       lastObserved: attachedDatabase.typeMapping
@@ -795,9 +827,14 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
   final String fromHash;
   final String toHash;
 
-  /// Attempt-counted evidence (successes / attempts).
+  /// Attempt-counted evidence (successes / attempts over all time).
   final int s;
   final int n;
+
+  /// Failed attempts still held against the link, fading at read from
+  /// [lastFailed] ([PathGraphConfig.failureHalfLifeHours]).
+  final double failWeight;
+  final int? lastFailed;
 
   /// Passive-sighting EWMA (candidate ranking / tie-breaks, never p).
   final double trafficWeight;
@@ -818,6 +855,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       required this.toHash,
       required this.s,
       required this.n,
+      required this.failWeight,
+      this.lastFailed,
       required this.trafficWeight,
       this.lastObserved,
       required this.obsCount,
@@ -831,6 +870,10 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
     map['to_hash'] = Variable<String>(toHash);
     map['s'] = Variable<int>(s);
     map['n'] = Variable<int>(n);
+    map['fail_weight'] = Variable<double>(failWeight);
+    if (!nullToAbsent || lastFailed != null) {
+      map['last_failed'] = Variable<int>(lastFailed);
+    }
     map['traffic_weight'] = Variable<double>(trafficWeight);
     if (!nullToAbsent || lastObserved != null) {
       map['last_observed'] = Variable<int>(lastObserved);
@@ -852,6 +895,10 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       toHash: Value(toHash),
       s: Value(s),
       n: Value(n),
+      failWeight: Value(failWeight),
+      lastFailed: lastFailed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastFailed),
       trafficWeight: Value(trafficWeight),
       lastObserved: lastObserved == null && nullToAbsent
           ? const Value.absent()
@@ -875,6 +922,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       toHash: serializer.fromJson<String>(json['toHash']),
       s: serializer.fromJson<int>(json['s']),
       n: serializer.fromJson<int>(json['n']),
+      failWeight: serializer.fromJson<double>(json['failWeight']),
+      lastFailed: serializer.fromJson<int?>(json['lastFailed']),
       trafficWeight: serializer.fromJson<double>(json['trafficWeight']),
       lastObserved: serializer.fromJson<int?>(json['lastObserved']),
       obsCount: serializer.fromJson<int>(json['obsCount']),
@@ -891,6 +940,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       'toHash': serializer.toJson<String>(toHash),
       's': serializer.toJson<int>(s),
       'n': serializer.toJson<int>(n),
+      'failWeight': serializer.toJson<double>(failWeight),
+      'lastFailed': serializer.toJson<int?>(lastFailed),
       'trafficWeight': serializer.toJson<double>(trafficWeight),
       'lastObserved': serializer.toJson<int?>(lastObserved),
       'obsCount': serializer.toJson<int>(obsCount),
@@ -905,6 +956,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           String? toHash,
           int? s,
           int? n,
+          double? failWeight,
+          Value<int?> lastFailed = const Value.absent(),
           double? trafficWeight,
           Value<int?> lastObserved = const Value.absent(),
           int? obsCount,
@@ -916,6 +969,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
         toHash: toHash ?? this.toHash,
         s: s ?? this.s,
         n: n ?? this.n,
+        failWeight: failWeight ?? this.failWeight,
+        lastFailed: lastFailed.present ? lastFailed.value : this.lastFailed,
         trafficWeight: trafficWeight ?? this.trafficWeight,
         lastObserved:
             lastObserved.present ? lastObserved.value : this.lastObserved,
@@ -931,6 +986,10 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
       toHash: data.toHash.present ? data.toHash.value : this.toHash,
       s: data.s.present ? data.s.value : this.s,
       n: data.n.present ? data.n.value : this.n,
+      failWeight:
+          data.failWeight.present ? data.failWeight.value : this.failWeight,
+      lastFailed:
+          data.lastFailed.present ? data.lastFailed.value : this.lastFailed,
       trafficWeight: data.trafficWeight.present
           ? data.trafficWeight.value
           : this.trafficWeight,
@@ -954,6 +1013,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           ..write('toHash: $toHash, ')
           ..write('s: $s, ')
           ..write('n: $n, ')
+          ..write('failWeight: $failWeight, ')
+          ..write('lastFailed: $lastFailed, ')
           ..write('trafficWeight: $trafficWeight, ')
           ..write('lastObserved: $lastObserved, ')
           ..write('obsCount: $obsCount, ')
@@ -965,8 +1026,19 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
   }
 
   @override
-  int get hashCode => Object.hash(fromHash, toHash, s, n, trafficWeight,
-      lastObserved, obsCount, source, measuredSnr, firstObserved);
+  int get hashCode => Object.hash(
+      fromHash,
+      toHash,
+      s,
+      n,
+      failWeight,
+      lastFailed,
+      trafficWeight,
+      lastObserved,
+      obsCount,
+      source,
+      measuredSnr,
+      firstObserved);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -975,6 +1047,8 @@ class GraphEdge extends DataClass implements Insertable<GraphEdge> {
           other.toHash == this.toHash &&
           other.s == this.s &&
           other.n == this.n &&
+          other.failWeight == this.failWeight &&
+          other.lastFailed == this.lastFailed &&
           other.trafficWeight == this.trafficWeight &&
           other.lastObserved == this.lastObserved &&
           other.obsCount == this.obsCount &&
@@ -988,6 +1062,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
   final Value<String> toHash;
   final Value<int> s;
   final Value<int> n;
+  final Value<double> failWeight;
+  final Value<int?> lastFailed;
   final Value<double> trafficWeight;
   final Value<int?> lastObserved;
   final Value<int> obsCount;
@@ -1000,6 +1076,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     this.toHash = const Value.absent(),
     this.s = const Value.absent(),
     this.n = const Value.absent(),
+    this.failWeight = const Value.absent(),
+    this.lastFailed = const Value.absent(),
     this.trafficWeight = const Value.absent(),
     this.lastObserved = const Value.absent(),
     this.obsCount = const Value.absent(),
@@ -1013,6 +1091,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     required String toHash,
     this.s = const Value.absent(),
     this.n = const Value.absent(),
+    this.failWeight = const Value.absent(),
+    this.lastFailed = const Value.absent(),
     this.trafficWeight = const Value.absent(),
     this.lastObserved = const Value.absent(),
     this.obsCount = const Value.absent(),
@@ -1028,6 +1108,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     Expression<String>? toHash,
     Expression<int>? s,
     Expression<int>? n,
+    Expression<double>? failWeight,
+    Expression<int>? lastFailed,
     Expression<double>? trafficWeight,
     Expression<int>? lastObserved,
     Expression<int>? obsCount,
@@ -1041,6 +1123,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       if (toHash != null) 'to_hash': toHash,
       if (s != null) 's': s,
       if (n != null) 'n': n,
+      if (failWeight != null) 'fail_weight': failWeight,
+      if (lastFailed != null) 'last_failed': lastFailed,
       if (trafficWeight != null) 'traffic_weight': trafficWeight,
       if (lastObserved != null) 'last_observed': lastObserved,
       if (obsCount != null) 'obs_count': obsCount,
@@ -1056,6 +1140,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       Value<String>? toHash,
       Value<int>? s,
       Value<int>? n,
+      Value<double>? failWeight,
+      Value<int?>? lastFailed,
       Value<double>? trafficWeight,
       Value<int?>? lastObserved,
       Value<int>? obsCount,
@@ -1068,6 +1154,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
       toHash: toHash ?? this.toHash,
       s: s ?? this.s,
       n: n ?? this.n,
+      failWeight: failWeight ?? this.failWeight,
+      lastFailed: lastFailed ?? this.lastFailed,
       trafficWeight: trafficWeight ?? this.trafficWeight,
       lastObserved: lastObserved ?? this.lastObserved,
       obsCount: obsCount ?? this.obsCount,
@@ -1092,6 +1180,12 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
     }
     if (n.present) {
       map['n'] = Variable<int>(n.value);
+    }
+    if (failWeight.present) {
+      map['fail_weight'] = Variable<double>(failWeight.value);
+    }
+    if (lastFailed.present) {
+      map['last_failed'] = Variable<int>(lastFailed.value);
     }
     if (trafficWeight.present) {
       map['traffic_weight'] = Variable<double>(trafficWeight.value);
@@ -1124,6 +1218,8 @@ class GraphEdgesCompanion extends UpdateCompanion<GraphEdge> {
           ..write('toHash: $toHash, ')
           ..write('s: $s, ')
           ..write('n: $n, ')
+          ..write('failWeight: $failWeight, ')
+          ..write('lastFailed: $lastFailed, ')
           ..write('trafficWeight: $trafficWeight, ')
           ..write('lastObserved: $lastObserved, ')
           ..write('obsCount: $obsCount, ')
@@ -3113,6 +3209,8 @@ typedef $$GraphEdgesTableCreateCompanionBuilder = GraphEdgesCompanion Function({
   required String toHash,
   Value<int> s,
   Value<int> n,
+  Value<double> failWeight,
+  Value<int?> lastFailed,
   Value<double> trafficWeight,
   Value<int?> lastObserved,
   Value<int> obsCount,
@@ -3126,6 +3224,8 @@ typedef $$GraphEdgesTableUpdateCompanionBuilder = GraphEdgesCompanion Function({
   Value<String> toHash,
   Value<int> s,
   Value<int> n,
+  Value<double> failWeight,
+  Value<int?> lastFailed,
   Value<double> trafficWeight,
   Value<int?> lastObserved,
   Value<int> obsCount,
@@ -3155,6 +3255,12 @@ class $$GraphEdgesTableFilterComposer
 
   ColumnFilters<int> get n => $composableBuilder(
       column: $table.n, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get failWeight => $composableBuilder(
+      column: $table.failWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lastFailed => $composableBuilder(
+      column: $table.lastFailed, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get trafficWeight => $composableBuilder(
       column: $table.trafficWeight, builder: (column) => ColumnFilters(column));
@@ -3195,6 +3301,12 @@ class $$GraphEdgesTableOrderingComposer
 
   ColumnOrderings<int> get n => $composableBuilder(
       column: $table.n, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get failWeight => $composableBuilder(
+      column: $table.failWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lastFailed => $composableBuilder(
+      column: $table.lastFailed, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get trafficWeight => $composableBuilder(
       column: $table.trafficWeight,
@@ -3238,6 +3350,12 @@ class $$GraphEdgesTableAnnotationComposer
 
   GeneratedColumn<int> get n =>
       $composableBuilder(column: $table.n, builder: (column) => column);
+
+  GeneratedColumn<double> get failWeight => $composableBuilder(
+      column: $table.failWeight, builder: (column) => column);
+
+  GeneratedColumn<int> get lastFailed => $composableBuilder(
+      column: $table.lastFailed, builder: (column) => column);
 
   GeneratedColumn<double> get trafficWeight => $composableBuilder(
       column: $table.trafficWeight, builder: (column) => column);
@@ -3288,6 +3406,8 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             Value<String> toHash = const Value.absent(),
             Value<int> s = const Value.absent(),
             Value<int> n = const Value.absent(),
+            Value<double> failWeight = const Value.absent(),
+            Value<int?> lastFailed = const Value.absent(),
             Value<double> trafficWeight = const Value.absent(),
             Value<int?> lastObserved = const Value.absent(),
             Value<int> obsCount = const Value.absent(),
@@ -3301,6 +3421,8 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             toHash: toHash,
             s: s,
             n: n,
+            failWeight: failWeight,
+            lastFailed: lastFailed,
             trafficWeight: trafficWeight,
             lastObserved: lastObserved,
             obsCount: obsCount,
@@ -3314,6 +3436,8 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             required String toHash,
             Value<int> s = const Value.absent(),
             Value<int> n = const Value.absent(),
+            Value<double> failWeight = const Value.absent(),
+            Value<int?> lastFailed = const Value.absent(),
             Value<double> trafficWeight = const Value.absent(),
             Value<int?> lastObserved = const Value.absent(),
             Value<int> obsCount = const Value.absent(),
@@ -3327,6 +3451,8 @@ class $$GraphEdgesTableTableManager extends RootTableManager<
             toHash: toHash,
             s: s,
             n: n,
+            failWeight: failWeight,
+            lastFailed: lastFailed,
             trafficWeight: trafficWeight,
             lastObserved: lastObserved,
             obsCount: obsCount,

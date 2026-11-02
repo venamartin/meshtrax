@@ -220,7 +220,7 @@ void main() {
       radio.copy(async, carol);
       expect(radio.writes, isEmpty);
       radio.sending.clear();
-      radio.keeper.reassert(carol.publicKeyHex);
+      radio.keeper.onLadderEnded(carol.publicKeyHex, delivered: true);
       async.flushMicrotasks();
       expect(radio.writes, ['CAROL:PF1']);
     });
@@ -248,8 +248,9 @@ void main() {
       async.elapse(RadioRouteKeeper.syncDelay);
       expect(radio.writes, ['RECENT:PF1', 'FAV:PF1']);
 
-      // Pathfinder's best moved: within the cooldown it waits.
-      radio.routes = [_pf2];
+      // Pathfinder's best moved but the stored route is still listed: within
+      // the cooldown it waits.
+      radio.routes = [_pf2, _pf1];
       radio.keeper.scheduleSync();
       async.elapse(RadioRouteKeeper.syncDelay);
       expect(radio.writes, hasLength(2));
@@ -281,6 +282,74 @@ void main() {
       radio.keeper.scheduleSync();
       async.elapse(RadioRouteKeeper.syncDelay);
       expect(radio.writes, hasLength(2), reason: 'a new route still waits');
+    });
+  });
+
+  test('a route Pathfinder drops for another is replaced inside the cooldown',
+      () {
+    fakeAsync((async) {
+      final radio = _Radio([_contact()]);
+      radio.recent = {radio.contacts.first.publicKeyHex};
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, ['CAROL:PF1']);
+
+      // PF1 is gone from Pathfinder's list: the radio must not ACK on it.
+      radio.routes = [_pf2, _pf3];
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, ['CAROL:PF1', 'CAROL:PF2']);
+
+      // Demoted but still listed: that waits for the cooldown.
+      radio.routes = [_pf3, _pf2];
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, hasLength(2));
+
+      radio.routes = [_pf3];
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes.last, 'CAROL:PF3');
+    });
+  });
+
+  // Field 2026-10-17: a ladder of mine ran out, the graph was told of its
+  // failures 5 minutes later, and meanwhile the keeper re-stored the route
+  // that had just failed; the next DM's ACK rode it and was lost.
+  test('after a ladder of mine ran out the contact is left alone, then held '
+      'again', () {
+    fakeAsync((async) {
+      final radio = _Radio([_contact()]); // the ladder cleared the route
+      final carol = radio.contacts.first;
+      radio.keeper.onLadderEnded(carol.publicKeyHex, delivered: false);
+      async.flushMicrotasks();
+      expect(radio.writes, isEmpty,
+          reason: 'Pathfinder still ranks the failed route first');
+      radio.copy(async, carol); // their DM, ACKed by flood
+      expect(radio.writes, isEmpty);
+      async.elapse(RadioRouteKeeper.failedLadderHold);
+      expect(radio.writes, ['CAROL:PF1']);
+    });
+  });
+
+  test('a delivery ends the hold at once', () {
+    fakeAsync((async) {
+      final radio = _Radio([_contact()]);
+      final carol = radio.contacts.first;
+      radio.keeper.onLadderEnded(carol.publicKeyHex, delivered: false);
+      radio.keeper.reassert(carol.publicKeyHex);
+      async.flushMicrotasks();
+      expect(radio.writes, isEmpty);
+      radio.keeper.onDelivered(carol.publicKeyHex, _pf2);
+      radio.keeper.reassert(carol.publicKeyHex);
+      async.flushMicrotasks();
+      expect(radio.writes, ['CAROL:PF1']);
+
+      radio.keeper.onLadderEnded(carol.publicKeyHex, delivered: false);
+      radio.routes = [_pf2];
+      radio.keeper.onLadderEnded(carol.publicKeyHex, delivered: true);
+      async.flushMicrotasks();
+      expect(radio.writes, ['CAROL:PF1', 'CAROL:PF2']);
     });
   });
 
@@ -371,6 +440,23 @@ void main() {
         radio.keeper.onDelivered(carol.publicKeyHex, oneGuess);
         radio.copy(async, radio.contacts.first, stamp: 2000, text: 'next');
         expect(radio.contacts.first.path, oneGuess.pathBytes);
+      });
+    });
+
+    test('a loss on a route Pathfinder had dropped blames nothing: the splice '
+        'that replaced it is not retired', () {
+      fakeAsync((async) {
+        final radio = _Radio([_contact(stored: _pf1)])
+          ..routes = [oneGuess, _pf2];
+        final carol = radio.contacts.first;
+        radio.copy(async, carol); // ACKed on PF1, which Pathfinder dropped
+        expect(radio.writes, ['CAROL:other']);
+        // Same message again: the PF1 ACK was lost, not the splice's.
+        radio.copy(async, radio.contacts.first);
+        expect(radio.writes, ['CAROL:other', 'CAROL:PF2']);
+        radio.copy(async, radio.contacts.first, stamp: 2000, text: 'next');
+        expect(radio.contacts.first.path, oneGuess.pathBytes,
+            reason: 'the splice was never blamed');
       });
     });
   });

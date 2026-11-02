@@ -45,11 +45,42 @@ void main() {
       expect(graph.snapshot().edges, hasLength(1));
     });
 
-    test('attempt-counted infrastructure never ages out by idleness', () {
+    test('a link delivered on never ages out by idleness', () {
       graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), true);
       nowMs += 400 * dayMs;
       expect(graph.sweepStale().edgesAged, 0);
       expect(graph.snapshot().edges.keys, contains(('A277', '1312')));
+    });
+
+    // Owner, 2026-10-31: 342 of a field graph's 379 kept-forever links had
+    // never delivered anything.
+    test('a link that only ever failed ages out like hearsay', () {
+      hear([0xA2, 0x77, 0x13, 0x12]);
+      graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), false);
+      nowMs += 40 * dayMs;
+      expect(graph.sweepStale().edgesAged, 1);
+      expect(graph.snapshot().edges, isEmpty);
+    });
+
+    test('a failure on a link never heard is kept 30 days, from the failure',
+        () {
+      graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), false);
+      nowMs += 10 * dayMs;
+      expect(graph.sweepStale().totalRemoved, 0);
+      nowMs += 25 * dayMs;
+      final report = graph.sweepStale();
+      expect(report.edgesAged, 1);
+      expect(report.nodesAged, 2);
+    });
+
+    test('a failed send does not refresh a link or its repeaters', () {
+      hear([0xA2, 0x77, 0x13, 0x12]);
+      nowMs += 29 * dayMs;
+      graph.reportSendResult(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), false);
+      nowMs += 2 * dayMs;
+      final report = graph.sweepStale();
+      expect(report.edgesAged, 1);
+      expect(report.nodesAged, 2);
     });
 
     test('traced links never age out', () {
@@ -115,6 +146,21 @@ void main() {
       expect(nodes, contains('AD00'), reason: 'advert metadata');
       expect(nodes, isNot(contains('CCCC')));
     });
+
+    // Field 2026-10-22: every row was linked, so the cap ranked on time
+    // alone and 'DTM Repeater' left while nameless codes stayed.
+    test('node cap keeps a quiet named repeater over a fresh nameless code',
+        () {
+      graph.ingestNode('AD00', name: 'Advert', pubkey: 'ad' * 32);
+      hear([0xAD, 0x00, 0x13, 0x12]);
+      nowMs += 20 * dayMs;
+      hear([0xA2, 0x77, 0xB2, 0x22]);
+      final report = graph.sweepStale(
+          policy: const RetentionPolicy(maxNodes: 1, maxEdges: 1000));
+      expect(report.nodesEvicted, 3);
+      expect(graph.snapshot().nodes.keys, ['AD00'],
+          reason: 'the fresh nameless pair went before the quiet named one');
+    });
   });
 
   group('clear learned data', () {
@@ -165,6 +211,35 @@ void main() {
       await g2.init();
       expect(g2.snapshot().edges, isEmpty);
       expect(g2.snapshot().nodes, isEmpty);
+      await g2.dispose();
+      dir.deleteSync(recursive: true);
+    });
+
+    // Field 2026-10-22: rows re-heard through paths kept their first time
+    // on disk, read as 8 days quiet after a restart and the cap took them.
+    test('a repeater heard again keeps its time across a reopen', () async {
+      final dir = Directory.systemTemp.createTempSync('path_graph_heard');
+      final file = File('${dir.path}/heard.db');
+
+      final g1 = PathGraph(NativeDatabase(file),
+          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs),
+          config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+      await g1.init();
+      g1.setRadioIdentity(selfPk, 2);
+      g1.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous());
+      await g1.flush();
+      nowMs += 20 * dayMs;
+      g1.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous());
+      await g1.dispose();
+
+      final g2 = PathGraph(NativeDatabase(file),
+          now: () => DateTime.fromMillisecondsSinceEpoch(nowMs),
+          config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+      await g2.init();
+      expect(g2.snapshot().nodes['A277']!.lastHeard, nowMs);
+      expect(g2.snapshot().nodes['1312']!.lastHeard, nowMs);
       await g2.dispose();
       dir.deleteSync(recursive: true);
     });

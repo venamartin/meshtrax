@@ -370,6 +370,92 @@ class AppLocalizationsSk extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Kontrola stavu';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Skontrolovať nastavenia aplikácie a rádia';
+
+  @override
+  String get healthCheck_running => 'Kontrolujú sa nastavenia…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Rádio sa ešte synchronizuje. Kontrola sa začne, keď sa to dokončí.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Nie je pripojené žiadne rádio, preto sa jeho nastavenia nekontrolovali.';
+
+  @override
+  String get healthCheck_partial =>
+      'Niektoré nastavenia rádia sa nepodarilo načítať, preto tieto výsledky nemusia byť aktuálne. O chvíľu to skontrolujte znova.';
+
+  @override
+  String get healthCheck_allClear => 'Všetko vyzerá v poriadku.';
+
+  @override
+  String get healthCheck_problems => 'Problémy';
+
+  @override
+  String get healthCheck_suggestions => 'Návrhy';
+
+  @override
+  String get healthCheck_tips => 'Tipy';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Úspešné kontroly: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Skontrolovať znova';
+
+  @override
+  String get healthCheck_fix => 'Opraviť';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Zmena sa neuplatnila. Skontrolujte pripojenie k rádiu a skúste to znova.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Túto stránku nastavení sa nepodarilo otvoriť. Zmeňte to v nastaveniach zariadenia.';
+
+  @override
+  String get healthCheck_hide => 'Už nezobrazovať';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Zobraziť skryté výsledky: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Opraviť všetko ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Vykonať tieto zmeny?';
+
+  @override
+  String get healthCheck_promptTitle => 'Spustiť kontrolu stavu?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia, aj ako dostávať menej upozornení.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Pozrite si, čo by mohlo lepšie fungovať v nastaveniach aplikácie a rádia.';
+
+  @override
+  String get healthCheck_promptRun => 'Spustiť kontrolu';
+
+  @override
+  String get healthCheck_promptLater => 'Teraz nie';
+
+  @override
   String get settings_title => 'Nastavenia';
 
   @override
@@ -497,6 +583,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get settings_multiAck => 'Viaceré ACK';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul.';
+
+  @override
   String get settings_telemetryModeUpdated =>
       'Režim telemetrie bol aktualizovaný';
 
@@ -591,6 +681,12 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'Údaje o nadmorskej výške LOS: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Nahlásiť chybu';
+
+  @override
+  String get settings_reportBugSubtitle => 'Otvorí hlásenie chyby na GitHube';
 
   @override
   String get settings_infoName => 'Meno';
@@ -3313,6 +3409,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Zdieľať kontakt cez inzerát';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Rádio nemohlo zdieľať tento kontakt. Najprv musí počuť jeho inzerát.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Poslal kontakt cez inzerát.';
 
   @override
@@ -3745,6 +3845,9 @@ class AppLocalizationsSk extends AppLocalizations {
       'zatiaľ žiadna — ďalšia správa pôjde záplavou a nejakú sa naučí';
 
   @override
+  String get routing_noRoutePathfinder => 'zatiaľ žiadna';
+
+  @override
   String get routing_auto => 'Automaticky';
 
   @override
@@ -3773,6 +3876,9 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Cesta resetovaná. Ďalšia správa pôjde záplavou a naučí sa novú.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Cesta resetovaná.';
 
   @override
   String get routing_pathfinder => 'Čo vie Pathfinder';
@@ -3893,7 +3999,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Vaše rádio si pamätá jednu trasu ku každému kontaktu. Keď táto trasa zlyhá, pošle správu záplavou do celej siete. Pathfinder počúva všetko, čo rádio počuje: ohlásenia opakovačov, rozhovory v kanáloch, správy iných ľudí. Z toho si zostavuje mapu: ktoré opakovače sa navzájom počujú, ktoré počujú vás a ktoré počujú jednotlivé vaše kontakty.';
+      'Vaše rádio si pamätá jednu trasu ku každému kontaktu. Keď správa na tejto trase zlyhá, MeshTrax ju namiesto toho pošle záplavou do celej siete. Pathfinder počúva všetko, čo rádio počuje: ohlásenia opakovačov, rozhovory v kanáloch, správy iných ľudí. Z toho si zostavuje mapu: ktoré opakovače sa navzájom počujú, ktoré počujú vás a ktoré počujú jednotlivé vaše kontakty.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3901,7 +4007,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú presne tak ako predtým. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
+      'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú záplavou, kým sa nenaučí trasu. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3922,7 +4028,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathfinderHelp_ok => 'OK';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentálne)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4628,18 +4734,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Sťahovanie mapy zlyhalo';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Vymazať uložené dlaždice online máp';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Odstrániť dlaždice online máp uložené pri prehliadaní? Stiahnuté mapy zostanú.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Uložené dlaždice online máp boli odstránené';
-
-  @override
   String get map_notForNavigation => 'Nie na navigáciu';
 
   @override
@@ -4670,17 +4764,7 @@ class AppLocalizationsSk extends AppLocalizations {
       'Na navigáciu používajte oficiálne, aktuálne mapy NOAA (papierové alebo NOAA ENC v certifikovanom plotri) s najnovšími Oznámeniami pre námorníkov.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Stiahnite región pre podrobnosti';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Priblížte, aby ste videli offline mapu';
 
   @override
   String get map_noCharts => 'Tu nie sú žiadne námorné mapy';
@@ -4766,9 +4850,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nestiahnuté';
-
-  @override
-  String get mapLayers_offlineOnly => 'Len offline';
 
   @override
   String get mapLayers_details => 'Podrobnosti mapy';
@@ -6042,4 +6123,84 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Kto vidí moju polohu';
+
+  @override
+  String get locationSharing_someone => 'Niekto môže vidieť vašu polohu';
+
+  @override
+  String get locationSharing_nobody => 'Nikto nevidí vašu polohu';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Vaše rádio ešte nemá polohu, takže ju nikto nevidí';
+
+  @override
+  String get locationSharing_everyone =>
+      'Každý, kto počuje vaše rádio, vidí vašu polohu';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Všetky vaše kontakty vidia vašu polohu';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakty, ktorým ste to povolili, vidia vašu polohu';
+
+  @override
+  String get locationSharing_adverts => 'Poloha v oznámeniach';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Vaše oznámenia obsahujú vašu polohu, takže ju vidí každý, kto počuje vaše rádio.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakty, ktoré sa môžu pýtať vášho rádia';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Žiadne. Vaše rádio neodpovedá na žiadosti o telemetriu.';
+
+  @override
+  String get locationSharing_noContacts => 'Žiadny kontakt nemá povolenie.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Všetky vaše kontakty ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Poloha';
+
+  @override
+  String get locationSharing_partBattery => 'Batéria';
+
+  @override
+  String get locationSharing_partSensors => 'Senzory';
+
+  @override
+  String get dialog_positionHint => 'Vložte súradnice alebo odkaz na mapu';
+
+  @override
+  String get dialog_positionUnreadable => 'Tu sa nedá prečítať poloha';
+
+  @override
+  String get dialog_positionLookingUp => 'Overuje sa odkaz…';
+
+  @override
+  String get locationSharing_share => 'Zdieľať moju polohu';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Vypnite, aby ste ju skryli pred všetkými';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Zapnite, aby ju videli kontakty s povolením';
+
+  @override
+  String get chats_advertise => 'Oznámiť';
 }

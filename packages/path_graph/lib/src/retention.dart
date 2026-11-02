@@ -53,10 +53,10 @@ class RetentionReport {
 /// Staleness sweep and growth caps.
 ///
 /// Infrastructure is protected: repeater links do not get worse because
-/// nobody used them this week, so an edge with attempt counts (we sent
-/// through it, traced it, or a handshake proved it) is never aged out by
-/// idleness. Only unconfirmed hearsay ages, plus the genuinely
-/// perishable doorstep lists — people move even though repeaters don't.
+/// nobody used them this week, so an edge we delivered on or traced is
+/// never aged out by idleness. Hearsay ages, a link that only ever failed
+/// among it, plus the genuinely perishable doorstep lists — people move
+/// even though repeaters don't.
 class Retention {
   const Retention(this._store, this._evidence, this._estimator, this._places);
 
@@ -68,7 +68,7 @@ class Retention {
   static const _trafficEpsilon = 0.05;
   static const _dayMillis = 24 * 60 * 60 * 1000;
 
-  static bool _edgeProtected(EdgeState e) => e.n > 0 || e.measuredSnr != null;
+  static bool _edgeProtected(EdgeState e) => e.s > 0 || e.measuredSnr != null;
 
   RetentionReport sweep(int nowMillis, RetentionPolicy policy) {
     var edgesAged = 0, nodesAged = 0, ingressAged = 0;
@@ -80,7 +80,9 @@ class Retention {
       for (final key in _store.edges.keys.toList()) {
         final e = _store.edges[key]!;
         if (_edgeProtected(e)) continue;
-        if ((e.lastObserved ?? 0) >= cutoff) continue;
+        // A link only ever failed on has no sighting: its failure is the
+        // clock, so the suspicion lives its 30 days like other hearsay.
+        if ((e.lastObserved ?? e.lastFailed ?? 0) >= cutoff) continue;
         if (_estimator.decayedTraffic(e, nowMillis) >= _trafficEpsilon) {
           continue;
         }
@@ -155,14 +157,19 @@ class Retention {
     if (over <= 0) return 0;
 
     final referenced = _referencedNodes();
-    bool protectedNode(String hash, NodeState n) =>
-        n.source != NodeSource.observed || referenced.contains(hash);
+    // Loose nameless codes go first, linked ones next; a repeater that
+    // adverted goes last, however long it has been quiet (field
+    // 2026-10-22: a named repeater left while nameless codes stayed).
+    int tier(String hash, NodeState n) => n.source != NodeSource.observed
+        ? 2
+        : referenced.contains(hash)
+            ? 1
+            : 0;
 
     final ranked = _store.nodes.entries.toList()
       ..sort((a, b) {
-        final pa = protectedNode(a.key, a.value);
-        final pb = protectedNode(b.key, b.value);
-        if (pa != pb) return pa ? 1 : -1;
+        final ta = tier(a.key, a.value), tb = tier(b.key, b.value);
+        if (ta != tb) return ta - tb;
         return (a.value.lastHeard ?? 0).compareTo(b.value.lastHeard ?? 0);
       });
 

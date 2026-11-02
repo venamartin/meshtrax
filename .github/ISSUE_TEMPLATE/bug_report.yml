@@ -1,0 +1,88 @@
+name: Bug report
+description: Something in MeshTrax doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please search the
+        [existing issues](https://github.com/venamartin/meshtrax/issues?q=is%3Aissue) first.
+
+        This repository is public. Don't post private keys, channel secrets,
+        passwords or anything else you don't want everyone to see.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: MeshTrax version
+      description: Settings → About.
+      placeholder: "1.8.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - iOS
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone or computer
+      description: Model and OS version.
+      placeholder: "Pixel 8, Android 15"
+  - type: input
+    id: radio
+    attributes:
+      label: Radio and firmware
+      description: Radio model and MeshCore firmware version.
+      placeholder: "Heltec V4, companion firmware 1.18"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Bluetooth
+        - USB
+        - TCP / Wi-Fi
+        - Not connected
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Debug log
+      description: |
+        Turn on App Settings → Debug → App Debug Logging, make the problem
+        happen again, then open Settings → App Debug Log and save the log to
+        a file. Drag the file here. The log can hold contact, channel and
+        place names, so read it before you attach it.
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or video
+      description: Drag files here.

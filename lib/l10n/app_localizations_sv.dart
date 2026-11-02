@@ -367,6 +367,92 @@ class AppLocalizationsSv extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Hälsokontroll';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Kontrollera inställningarna för appen och radion';
+
+  @override
+  String get healthCheck_running => 'Kontrollerar inställningarna…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'Radion synkroniserar fortfarande. Kontrollen startar när den är klar.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'Ingen radio är ansluten, så radions inställningar kontrollerades inte.';
+
+  @override
+  String get healthCheck_partial =>
+      'Vissa av radions inställningar kunde inte läsas, så resultaten kanske inte är aktuella. Kontrollera igen om en stund.';
+
+  @override
+  String get healthCheck_allClear => 'Allt ser bra ut.';
+
+  @override
+  String get healthCheck_problems => 'Problem';
+
+  @override
+  String get healthCheck_suggestions => 'Förslag';
+
+  @override
+  String get healthCheck_tips => 'Tips';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Godkända kontroller: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Kontrollera igen';
+
+  @override
+  String get healthCheck_fix => 'Åtgärda';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'Ändringen gick inte igenom. Kontrollera anslutningen till radion och försök igen.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'Det gick inte att öppna den inställningssidan. Ändra det i enhetens inställningar.';
+
+  @override
+  String get healthCheck_hide => 'Visa inte igen';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Visa dolda resultat: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Åtgärda alla ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'Göra dessa ändringar?';
+
+  @override
+  String get healthCheck_promptTitle => 'Köra en hälsokontroll?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Se vad som kan fungera bättre i appens och radions inställningar, bland annat för att få färre notiser.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Se vad som kan fungera bättre i appens och radions inställningar.';
+
+  @override
+  String get healthCheck_promptRun => 'Kör kontroll';
+
+  @override
+  String get healthCheck_promptLater => 'Inte nu';
+
+  @override
   String get settings_title => 'Inställningar';
 
   @override
@@ -495,6 +581,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings_multiAck => 'Flera bekräftelser';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den.';
+
+  @override
   String get settings_telemetryModeUpdated => 'Telemetri-läge uppdaterat';
 
   @override
@@ -586,6 +676,12 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS-höjddata: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Rapportera ett fel';
+
+  @override
+  String get settings_reportBugSubtitle => 'Öppnar en felrapport på GitHub';
 
   @override
   String get settings_infoName => 'Namn';
@@ -3299,6 +3395,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Dela kontakt via annons';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'Radion kunde inte dela den här kontakten. Den måste först höra dess annons.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Skickat kontakt via annons.';
 
   @override
@@ -3729,6 +3829,9 @@ class AppLocalizationsSv extends AppLocalizations {
       'ingen än — nästa meddelande skickas som översvämning och lär sig en';
 
   @override
+  String get routing_noRoutePathfinder => 'ingen än';
+
+  @override
   String get routing_auto => 'Automatisk';
 
   @override
@@ -3757,6 +3860,9 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Sökvägen återställd. Nästa meddelande skickas som översvämning och lär sig en ny.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Sökvägen återställd.';
 
   @override
   String get routing_pathfinder => 'Vad Pathfinder vet';
@@ -3865,7 +3971,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Din radio kommer ihåg en rutt till varje kontakt och skickar meddelandet som översvämning till hela nätet om den rutten inte fungerar. Pathfinder lyssnar på allt radion hör: annonser från repeatrar, prat i kanaler och andras meddelanden. Utifrån det bygger Pathfinder en karta över vilka repeatrar som hör varandra, vilka som hör dig och vilka som hör var och en av dina kontakter.';
+      'Din radio kommer ihåg en rutt till varje kontakt. När ett meddelande på den rutten misslyckas skickar MeshTrax det i stället som översvämning till hela nätet. Pathfinder lyssnar på allt radion hör: annonser från repeatrar, prat i kanaler och andras meddelanden. Utifrån det bygger Pathfinder en karta över vilka repeatrar som hör varandra, vilka som hör dig och vilka som hör var och en av dina kontakter.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3873,7 +3979,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden precis som förut. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
+      'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden med översvämning tills den har lärt sig en rutt. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3894,7 +4000,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathfinderHelp_ok => 'Okej';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimentell)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4594,17 +4700,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Kartnedladdning misslyckades';
 
   @override
-  String get offlineMaps_clearTileCache => 'Rensa cachade onlinekartrutor';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Ta bort onlinekartrutorna som sparats medan du tittat på kartan? Nedladdade kartor finns kvar.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Cachade onlinekartrutor borttagna';
-
-  @override
   String get map_notForNavigation => 'Inte för navigering';
 
   @override
@@ -4635,16 +4730,7 @@ class AppLocalizationsSv extends AppLocalizations {
       'Använd för navigering officiella, aktuella NOAA-sjökort (på papper, eller NOAA-ENC i en certifierad sjökortsplotter) med de senaste Underrättelserna för sjöfarande.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Ladda ner en region för fler detaljer';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Zooma in för att se din offlinekarta';
 
   @override
   String get map_noCharts => 'Inga sjökort här';
@@ -4730,9 +4816,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Inte nedladdad';
-
-  @override
-  String get mapLayers_offlineOnly => 'Endast offline';
 
   @override
   String get mapLayers_details => 'Kartdetaljer';
@@ -6001,4 +6084,84 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Vem kan se min plats';
+
+  @override
+  String get locationSharing_someone => 'Någon kan se din plats';
+
+  @override
+  String get locationSharing_nobody => 'Ingen kan se din plats';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Din radio har ingen plats än, så ingen kan se den';
+
+  @override
+  String get locationSharing_everyone =>
+      'Alla som hör din radio kan se din plats';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Alla dina kontakter kan se din plats';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Kontakter du har tillåtit kan se din plats';
+
+  @override
+  String get locationSharing_adverts => 'Plats i annonseringar';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Dina annonseringar innehåller din plats, så alla som hör din radio ser den.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Kontakter som får fråga din radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Inga. Din radio svarar inte på telemetriförfrågningar.';
+
+  @override
+  String get locationSharing_noContacts => 'Ingen kontakt har tillåtelse.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Alla dina kontakter ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Plats';
+
+  @override
+  String get locationSharing_partBattery => 'Batteri';
+
+  @override
+  String get locationSharing_partSensors => 'Sensorer';
+
+  @override
+  String get dialog_positionHint => 'Klistra in koordinater eller en kartlänk';
+
+  @override
+  String get dialog_positionUnreadable => 'Kan inte läsa en position här';
+
+  @override
+  String get dialog_positionLookingUp => 'Slår upp länken…';
+
+  @override
+  String get locationSharing_share => 'Dela min plats';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Stäng av för att dölja den för alla';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Slå på så att kontakter med tillåtelse ser den';
+
+  @override
+  String get chats_advertise => 'Annonsera';
 }

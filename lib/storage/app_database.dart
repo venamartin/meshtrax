@@ -251,6 +251,16 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// CREATE INDEX that a second run skips. drift runs onUpgrade outside a
+  /// transaction and stamps the new version only after beforeOpen, so a
+  /// first launch that stops in between keeps the index at the old version;
+  /// a plain CREATE INDEX then fails on every launch after, and the
+  /// database never opens.
+  Future<void> _createIndexIfMissing(Index index) => customStatement(
+    index.createStatementsByDialect.values.first
+        .replaceFirst('CREATE INDEX ', 'CREATE INDEX IF NOT EXISTS '),
+  );
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
@@ -319,8 +329,8 @@ class AppDatabase extends _$AppDatabase {
       }
       // v8: reactions and replies search only recent arrivals.
       if (from < 8) {
-        await m.createIndex(idxChannelArrival);
-        await m.createIndex(idxContactArrival);
+        await _createIndexIfMissing(idxChannelArrival);
+        await _createIndexIfMissing(idxContactArrival);
       }
     },
     beforeOpen: (details) async {

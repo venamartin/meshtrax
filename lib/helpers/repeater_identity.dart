@@ -143,9 +143,13 @@ class RepeaterIdentityHelper {
     if (hashPrefix.isEmpty) return const [];
     final wanted = PathHelper.hopHex(hashPrefix);
     final width = hashPrefix.length;
+    // Once per key: a saved contact is often also in the discovered list,
+    // and counted twice its own code looked shared.
+    final seen = <String>{};
     return contacts
         .where(
           (c) =>
+              seen.add(c.publicKeyHex) &&
               c.publicKey.length >= width &&
               (c.type == advTypeRepeater || c.type == advTypeRoom) &&
               PathHelper.hopHex(
@@ -172,9 +176,35 @@ class RepeaterIdentityHelper {
   static String ambiguousLabel(List<Contact> candidates) =>
       candidates.map((c) => c.name).join(' | ');
 
+  /// Every candidate with its distance from [from], nearest first; those
+  /// with no known position (or no [from]) last, by name. For showing all
+  /// the nodes a short hash could be — display only, like
+  /// [nearestCandidate].
+  static List<({Contact contact, double? meters})> byDistance(
+    List<Contact> candidates,
+    LatLng? from,
+  ) {
+    const distance = Distance();
+    return [
+      for (final c in candidates)
+        (
+          contact: c,
+          meters: from == null || !c.hasLocation
+              ? null
+              : distance(from, LatLng(c.latitude!, c.longitude!)),
+        ),
+    ]..sort((a, b) {
+        final am = a.meters, bm = b.meters;
+        if (am != null && bm != null) return am.compareTo(bm);
+        if (am != null) return -1;
+        if (bm != null) return 1;
+        return a.contact.name.compareTo(b.contact.name);
+      });
+  }
+
   /// The candidate with a known position nearest to [from], and how far it
   /// is: the likeliest of several nodes sharing a short hash to be the one
-  /// heard directly. A guess, never an identity — show it as "possibly",
+  /// heard directly. A guess, never an identity — show it marked as one,
   /// and never address, log into or learn routes from it.
   static ({Contact contact, double meters})? nearestCandidate(
     List<Contact> candidates,

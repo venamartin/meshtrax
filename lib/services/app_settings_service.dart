@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../helpers/quick_reactions.dart';
+import '../helpers/terms_gate.dart';
 import '../models/app_settings.dart';
 
 import '../storage/prefs_manager.dart';
@@ -37,10 +38,21 @@ class AppSettingsService extends ChangeNotifier {
         _settings = AppSettings.fromJson(json);
         notifyListeners();
       } catch (e) {
-        // If parsing fails, use defaults
-        _settings = AppSettings();
+        // If parsing fails, keep what an older install was running on.
+        _settings = AppSettings.olderInstall();
       }
+      return;
     }
+
+    // Settings are saved only on a change, so nothing saved can also mean an
+    // older install whose user never changed one. New defaults are for new
+    // installs, so that one keeps what it was running on. Saved now, so the
+    // answer never changes.
+    final olderInstall =
+        TermsGate.isAccepted || prefs.containsKey('last_ble_device_id');
+    await updateSettings(
+      olderInstall ? AppSettings.olderInstall() : AppSettings(),
+    );
   }
 
   Future<void> updateSettings(AppSettings newSettings) async {
@@ -122,10 +134,6 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setMapTheme(String value) async {
     await updateSettings(_settings.copyWith(mapTheme: value));
-  }
-
-  Future<void> setMapSource(String value) async {
-    await updateSettings(_settings.copyWith(mapSource: value));
   }
 
   Future<void> setNotificationsEnabled(bool value) async {
@@ -274,6 +282,22 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(
       _settings.copyWith(batterySleepWarningDismissed: true),
     );
+  }
+
+  Future<void> setHealthCheckPromptSeen() async {
+    await updateSettings(_settings.copyWith(healthCheckPromptSeen: true));
+  }
+
+  Future<void> dismissHealthRule(String id) async {
+    await updateSettings(
+      _settings.copyWith(
+        dismissedHealthRules: {..._settings.dismissedHealthRules, id},
+      ),
+    );
+  }
+
+  Future<void> restoreHealthRules() async {
+    await updateSettings(_settings.copyWith(dismissedHealthRules: {}));
   }
 
   Future<void> setChartsNoticeDismissed(bool value) async {

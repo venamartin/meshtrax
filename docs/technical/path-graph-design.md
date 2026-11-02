@@ -1,5 +1,13 @@
 # Weighted Graph Path Determination Module for DMs
 
+> **What this is:** The full design record for Pathfinder, the feature that learns routes for private messages (plain explainer: [pathfinder.md](../pathfinder.md)). It holds the decisions, the rules for what counts as proof that a link works, and how each decision was reached.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** live. Pathfinder has shipped and this file is still updated as it changes; the status lines just below date from its early days.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 Status: **implementation underway.** Start at **§ TODO — active work**
 for what happens next; everything after it is rationale, history, and
 the record of how each decision was reached.
@@ -8,7 +16,7 @@ Design complete; Phase 0 (the
 `packages/path_graph` module) and most of Phase 1 (the `test/path_lab`
 harness) are built and running against real hardware on branch
 `feat/path-graph-package` (draft PR #71, held unmerged through the
-verification campaign). See `docs/path-graph-implementation.md` for the
+verification campaign). See `docs/technical/path-graph-implementation.md` for the
 phase plan and "Implementation status" below for what exists and what
 the bench has already corrected.
 Last updated: 2026-08-05.
@@ -397,7 +405,7 @@ own view. Consequences:
   buckets; overlap essentially disappears — a 2-byte hash derived from a
   Corescope pubkey is near-unique. MeshTrax already supports variable widths
   end to end: the wire `path_len` byte encodes hash size in bits [7:6] per
-  packet (`docs/meshcore-protocol.md`), device info byte 81 (fw v10+) sets
+  packet (`docs/technical/meshcore-protocol.md`), device info byte 81 (fw v10+) sets
   `connector.pathHashByteWidth`, and every stored record
   (`Contact.pathHashSize`, `ChannelMessage.pathHashSize`) carries its width.
   Note for the 4-byte future: the path_len width field can encode up to
@@ -1093,7 +1101,7 @@ multiple region files.
 
 Branch `feat/path-graph-package`, draft **PR #71 — held unmerged**
 through the verification campaign (user directive). Phases per
-`docs/path-graph-implementation.md`.
+`docs/technical/path-graph-implementation.md`.
 
 **Phase 0 — the package: BUILT.** `packages/path_graph/` — pure Dart,
 `drift` only, injected `QueryExecutor`, compiler-enforced isolation
@@ -1374,6 +1382,22 @@ accumulating extra trust — and (b) the **ingress/egress doorstep
 lists**, which are genuinely perishable because *people* move even
 though repeaters don't. That asymmetry is the whole point of the
 design's "movement invalidates exactly one hop" observation.
+
+**Failures fade (owner, 2026-10-31).** The paragraph above pictured
+links we delivered on. A failed send cannot say which hop broke, so a
+failure is a suspicion spread over every link of the route, not a fact
+about any of them — the contact was off, or my first hop did not hear
+me. Once the imported prior went (2026-09-23) nearly every link sat at
+q₀ = 0.5, and two failures on a link with no delivery put it below the
+0.40 threshold for good whatever its traffic (0.5·n₀/(2+n₀) < 0.40 for
+every n₀); a field graph had 242 of its busiest links shut out that way
+(10-23 export: 1000→A277 heard 3,942 times, 2 delivered / 19 tried).
+So: a **delivery is a fact and stays; a failure fades**, half-life
+`failureHalfLifeHours` (24 h), `p = (s + q₀·n₀)/(s + f(t) + n₀)`. Only a
+link delivered on or traced is protected from the age sweep below; one
+that only ever failed is hearsay. A failed attempt is no longer a
+sighting either: it leaves `lastObserved` and the nodes' `lastHeard`
+alone.
 
 * **Automatic — a retention policy setting**, default on. Simplest
   shape that covers the real needs: *"forget unused data older than

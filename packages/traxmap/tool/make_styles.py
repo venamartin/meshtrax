@@ -25,7 +25,7 @@ ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "serv
 # steps and pedestrian areas; only these subclasses are trails.
 TRAIL = ["all", ["==", ["get", "class"], "path"],
          ["match", ["get", "subclass"], ["path", "bridleway"], True, False]]
-# Parks (docs/park-maps.md): national parks, monuments, preserves and state
+# Parks (docs/technical/park-maps.md): national parks, monuments, preserves and state
 # parks get a tint, an outline and their name; wilderness and national
 # forests a thin outline; other protected land (BLM, study areas, refuges)
 # nothing. Desert parks are tan: their names come from the map hints

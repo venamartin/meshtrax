@@ -13,11 +13,10 @@ may also be rejected. [See more](#ai-use)
 
 * **Ensure the bug was not already reported** by searching on GitHub under the repository's Issues tab.
 
-* If you're unable to find an open issue addressing the problem, open a new one.
-Be sure to include a **title and clear description**, as much relevant
-information as possible, and a **code sample** or an **executable test case**
-demonstrating the expected behavior that is not occurring. You can also include
-screenshots or video.
+* If you're unable to find an open issue addressing the problem, open a new one
+with the **Bug report** form. Be sure to include a **title and clear
+description**, the steps to reproduce it, and the app's debug log if you can.
+You can also include screenshots or video.
 
 * DO NOT start work and submit a PR at this time, please discuss the issue and
 your implementation plan first.
@@ -30,7 +29,7 @@ be accepted.
 
 ### **Do you intend to add a new feature or change an existing one?**
 
-* Suggest your change in a new issue as a feature request.
+* Suggest your change in a new issue with the **Feature request** form.
 
 * DO NOT start work and submit a PR at this time, please discuss the change and
 your implementation plan first.

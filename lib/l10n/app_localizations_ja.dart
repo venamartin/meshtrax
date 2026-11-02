@@ -358,6 +358,86 @@ class AppLocalizationsJa extends AppLocalizations {
   String get device_meshcore => 'メッシュコア';
 
   @override
+  String get healthCheck_title => 'ヘルスチェック';
+
+  @override
+  String get healthCheck_subtitle => 'アプリと無線機の設定を確認します';
+
+  @override
+  String get healthCheck_running => '設定を確認しています…';
+
+  @override
+  String get healthCheck_waitingForSync => '無線機はまだ同期中です。同期が終わると確認を開始します。';
+
+  @override
+  String get healthCheck_noRadio => '無線機が接続されていないため、無線機の設定は確認していません。';
+
+  @override
+  String get healthCheck_partial =>
+      '無線機の設定の一部を読み取れなかったため、この結果は最新ではない可能性があります。少し待ってからもう一度確認してください。';
+
+  @override
+  String get healthCheck_allClear => '問題はありません。';
+
+  @override
+  String get healthCheck_problems => '問題';
+
+  @override
+  String get healthCheck_suggestions => '提案';
+
+  @override
+  String get healthCheck_tips => 'ヒント';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '合格したチェック: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'もう一度確認';
+
+  @override
+  String get healthCheck_fix => '修正';
+
+  @override
+  String get healthCheck_fixFailed => '変更を適用できませんでした。無線機との接続を確認して、もう一度お試しください。';
+
+  @override
+  String get healthCheck_openFailed => 'その設定画面を開けませんでした。デバイスの設定から変更してください。';
+
+  @override
+  String get healthCheck_hide => '今後表示しない';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '非表示の項目を表示: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'すべて修正 ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => 'これらの変更を行いますか？';
+
+  @override
+  String get healthCheck_promptTitle => 'ヘルスチェックを実行しますか？';
+
+  @override
+  String get healthCheck_promptBody =>
+      'アプリと無線機の設定で改善できる点を確認できます。通知を減らす方法も含まれます。';
+
+  @override
+  String get healthCheck_promptBodyDesktop => 'アプリと無線機の設定で改善できる点を確認できます。';
+
+  @override
+  String get healthCheck_promptRun => 'チェックを実行';
+
+  @override
+  String get healthCheck_promptLater => '後で';
+
+  @override
   String get settings_title => '設定';
 
   @override
@@ -480,6 +560,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_multiAck => '複数のACK（応答）';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'ダイレクトメッセージがルート経由で届いたときに2回目のACKを送信し、送信者に届きやすくします。';
+
+  @override
   String get settings_telemetryModeUpdated => 'テレメトリモードが更新されました';
 
   @override
@@ -569,6 +653,12 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS 標高データ：Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => '不具合を報告';
+
+  @override
+  String get settings_reportBugSubtitle => 'GitHub で不具合報告を開きます';
 
   @override
   String get settings_infoName => '名前';
@@ -3198,6 +3288,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '広告を通じて連絡先を共有する';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      '無線機はこの連絡先を共有できませんでした。先にこの連絡先の広告を受信する必要があります。';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '広告を通じて連絡先を得た。';
 
   @override
@@ -3597,6 +3691,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routing_noRoute => 'まだありません — 次のメッセージはフラッドで送られ、経路を学習します';
 
   @override
+  String get routing_noRoutePathfinder => 'まだありません';
+
+  @override
   String get routing_auto => '自動';
 
   @override
@@ -3622,6 +3719,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get routing_forgetDone => '経路をリセットしました。次のメッセージはフラッドで送られ、新しい経路を学習します。';
+
+  @override
+  String get routing_forgetDonePathfinder => '経路をリセットしました。';
 
   @override
   String get routing_pathfinder => 'Pathfinderが知っていること';
@@ -3727,7 +3827,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      '無線機は連絡先ごとにルートを1つだけ覚えていて、そのルートで届かないとメッシュ全体にフラッドします。Pathfinderは、リピーターのアドバート、チャンネルでの会話、ほかの人のメッセージなど、無線機が受信するものすべてに耳を傾けます。そこから、どのリピーター同士がつながっているか、どのリピーターにあなたの電波が届くか、そしてどのリピーターに各連絡先の電波が届くかを示す地図を作ります。';
+      '無線機は連絡先ごとにルートを1つだけ覚えています。そのルートでメッセージが届かないと、MeshTraxが代わりにメッシュ全体にフラッドします。Pathfinderは、リピーターのアドバート、チャンネルでの会話、ほかの人のメッセージなど、無線機が受信するものすべてに耳を傾けます。そこから、どのリピーター同士がつながっているか、どのリピーターにあなたの電波が届くか、そしてどのリピーターに各連絡先の電波が届くかを示す地図を作ります。';
 
   @override
   String get pathfinderHelp_how =>
@@ -3735,7 +3835,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '学習には時間がかかります。まっさらな地図は何も知らないので、最初のうちはメッセージがこれまでとまったく同じように送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
+      '学習には時間がかかります。まっさらな地図は何も知らないので、ルートを学習するまで、最初のうちはメッセージがフラッドで送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3755,7 +3855,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pathfinderHelp_ok => '了解';
 
   @override
-  String get settings_pathGraph => 'Pathfinder（試験的）';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4423,16 +4523,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineMaps_notificationFailed => '地図のダウンロードに失敗しました';
 
   @override
-  String get offlineMaps_clearTileCache => 'オンライン地図のキャッシュを消去';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '閲覧中に保存されたオンライン地図のタイルを削除しますか？ダウンロードした地図は残ります。';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'オンライン地図のキャッシュを削除しました';
-
-  @override
   String get map_notForNavigation => '航海用ではありません';
 
   @override
@@ -4462,16 +4552,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '航海には、公式で最新のNOAA海図（紙の海図、または認定チャートプロッターでのNOAA ENC）と、最新の水路通報を使ってください。';
 
   @override
-  String get map_sourceOnline => 'オンライン';
-
-  @override
-  String get map_sourceOffline => 'オフライン';
-
-  @override
   String get map_downloadForDetail => '詳細を見るには地域をダウンロード';
-
-  @override
-  String get map_zoomInForOfflineMap => '拡大するとオフライン地図が表示されます';
 
   @override
   String get map_noCharts => 'ここには海図がありません';
@@ -4555,9 +4636,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '未ダウンロード';
-
-  @override
-  String get mapLayers_offlineOnly => 'オフラインのみ';
 
   @override
   String get mapLayers_details => '地図の詳細';
@@ -5790,4 +5868,76 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => '位置情報を見られる人';
+
+  @override
+  String get locationSharing_someone => '誰かがあなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_nobody => '誰もあなたの位置情報を見られません';
+
+  @override
+  String get locationSharing_noPosition => '無線機にまだ位置情報がないため、誰にも見られません';
+
+  @override
+  String get locationSharing_everyone => 'あなたの無線機を受信できる人は誰でも位置情報を見られます';
+
+  @override
+  String get locationSharing_allContacts => 'すべての連絡先があなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_someContacts => '許可した連絡先があなたの位置情報を見られます';
+
+  @override
+  String get locationSharing_adverts => 'アドバートに位置情報を含める';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'アドバートに位置情報が含まれるため、あなたの無線機を受信した人は誰でも見られます。';
+
+  @override
+  String get locationSharing_contactsHeader => '無線機に問い合わせできる連絡先';
+
+  @override
+  String get locationSharing_noTelemetry => 'なし。無線機はテレメトリー要求に応答しません。';
+
+  @override
+  String get locationSharing_noContacts => '許可されている連絡先はありません。';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'すべての連絡先（$count）';
+  }
+
+  @override
+  String get locationSharing_partLocation => '位置情報';
+
+  @override
+  String get locationSharing_partBattery => 'バッテリー';
+
+  @override
+  String get locationSharing_partSensors => 'センサー';
+
+  @override
+  String get dialog_positionHint => '座標または地図のリンクを貼り付け';
+
+  @override
+  String get dialog_positionUnreadable => '位置を読み取れません';
+
+  @override
+  String get dialog_positionLookingUp => 'リンクを確認しています…';
+
+  @override
+  String get locationSharing_share => '位置情報を共有';
+
+  @override
+  String get locationSharing_shareOnHint => 'オフにすると全員に非表示になります';
+
+  @override
+  String get locationSharing_shareOffHint => 'オンにすると許可した連絡先が見られます';
+
+  @override
+  String get chats_advertise => 'アドバート';
 }

@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 // could not tell which repeaters answered. Only a tagged answer marks a row
 // answered, with the level the repeater heard me at.
 class _Connector extends MeshCoreConnector {
+  final sent = <int>[];
+
   @override
   bool get isConnected => true;
 
@@ -22,7 +24,9 @@ class _Connector extends MeshCoreConnector {
     Uint8List data, {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
-  }) async {}
+  }) async {
+    sent.add(data[0]);
+  }
 }
 
 Uint8List _key(int seed) =>
@@ -111,6 +115,27 @@ void main() {
       expect(r.answeredAt, isNotNull);
     },
   );
+
+  test('an answer never looks the repeater up', () async {
+    await c.sendRepeaterDiscovery();
+    c.handleFrameForTest(_answer(_key(0x10), c.pendingDiscoverTag!));
+    expect(c.sent, isNot(contains(cmdGetContactByKey)));
+
+    c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
+    c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
+    expect(c.sent, isNot(contains(cmdGetContactByKey)));
+  });
+
+  test('with auto-add on, an answer lists a heard row, not a saved one',
+      () async {
+    await c.sendRepeaterDiscovery();
+    c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
+    c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
+
+    expect(c.contacts, isEmpty);
+    expect(c.discoveredContacts.single.isActive, isFalse);
+    expect(c.sent, isNot(contains(cmdGetContactByKey)));
+  });
 
   test('an advert heard during the scan is not an answer', () async {
     await c.sendRepeaterDiscovery();

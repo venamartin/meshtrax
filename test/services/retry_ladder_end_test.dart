@@ -24,7 +24,7 @@ void main() {
 
   late MessageRetryService svc;
   late List<({String text, int attempt, int ts})> sends;
-  late List<String> ended;
+  late List<(String, bool)> ended;
   late List<({String key, bool delivered, bool? echoHeard})> outcomes;
   late List<bool> floods;
 
@@ -49,7 +49,8 @@ void main() {
       calculateTimeout: (_, _, {contact}) => _timeoutMs,
       getSelfPublicKey: () => selfKey,
       pathHashByteWidth: () => 2,
-      onLadderEnded: ended.add,
+      onLadderEnded: (key, {required delivered}) =>
+          ended.add((key, delivered)),
     ));
   });
 
@@ -69,7 +70,7 @@ void main() {
       svc.updateMessageFromSent(ackFor(1), _timeoutMs);
       svc.handleAckReceived(ackFor(1), 100);
       async.flushMicrotasks();
-      expect(ended, [bob.publicKeyHex]);
+      expect(ended, [(bob.publicKeyHex, true)]);
       expect(svc.isSendingTo(bob.publicKeyHex), isFalse);
       expect(outcomes.map((o) => o.delivered), [true, true],
           reason: 'one outcome per message, as each is resolved');
@@ -146,7 +147,7 @@ void main() {
       async.flushMicrotasks();
       svc.updateMessageFromSent(ackFor(0), _timeoutMs);
       async.elapse(const Duration(milliseconds: _timeoutMs + 1));
-      expect(ended, [bob.publicKeyHex]);
+      expect(ended, [(bob.publicKeyHex, false)]);
       async.elapse(MessageRetryService.lateAckGrace);
     });
   });

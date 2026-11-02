@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,15 +10,19 @@ import 'package:meshtrax/widgets/elements_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../health/health_rules.dart';
 import '../helpers/path_helper.dart';
 import '../l10n/l10n.dart';
 import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/app_settings_service.dart';
+import '../services/battery_sleep_service.dart';
+import '../services/notification_service.dart';
 import '../storage/app_database.dart';
 import '../utils/app_logger.dart';
 import '../widgets/app_bar.dart';
@@ -26,6 +31,7 @@ import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
+import 'health_check_screen.dart';
 import 'wifi_settings_screen.dart';
 import '../widgets/radio_stats_entry.dart';
 
@@ -45,7 +51,10 @@ int _toDeviceCodingRate(int uiCr, int? deviceCr) {
 }
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  /// Goes straight on to the health check once the screen is up.
+  final bool openHealthCheck;
+
+  const SettingsScreen({super.key, this.openHealthCheck = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -60,6 +69,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadVersionInfo();
+    if (widget.openHealthCheck) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openHealthCheck(context, thenLeave: true);
+      });
+    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -87,6 +101,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _buildHealthCheckCard(context),
+                const SizedBox(height: 16),
                 _buildDeviceInfoCard(context, connector),
                 const SizedBox(height: 16),
                 _buildAppSettingsCard(context),
@@ -200,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (connector.currentFreqHz != null)
                     _buildInfoRow(
                       'Frequency',
-                      '${(connector.currentFreqHz! / 1000).toStringAsFixed(2)} MHz',
+                      '${(connector.currentFreqHz! / 1000).toStringAsFixed(3)} MHz',
                     ),
                   if (connector.currentBwHz != null)
                     _buildInfoRow(
@@ -296,6 +312,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }
           : null,
     );
+  }
+
+  Widget _buildHealthCheckCard(BuildContext context) {
+    final l10n = context.l10n;
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.health_and_safety_outlined),
+        title: Text(l10n.healthCheck_title),
+        subtitle: Text(l10n.healthCheck_subtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _openHealthCheck(context),
+      ),
+    );
+  }
+
+  /// [thenLeave]: run by itself after the first sync, so finishing returns to
+  /// the screen it was offered on, not to Settings (owner, 2026-11-02).
+  Future<void> _openHealthCheck(
+    BuildContext context, {
+    bool thenLeave = false,
+  }) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HealthCheckScreen(openDialog: _openHealthDialog),
+      ),
+    );
+    if (!thenLeave || !context.mounted) return;
+    // Removed while the check slides away, so Settings is never seen.
+    final route = ModalRoute.of(context);
+    if (route != null) Navigator.of(context).removeRoute(route);
+  }
+
+  Future<void> _openHealthDialog(BuildContext context, HealthDialog dialog) {
+    final connector = context.read<MeshCoreConnector>();
+    return switch (dialog) {
+      HealthDialog.name => _editNodeName(context, connector),
+      HealthDialog.radioSettings => _showRadioSettings(context, connector),
+      HealthDialog.location => _editLocation(context, connector),
+      HealthDialog.batterySettings => BatterySleepService.openSettings(),
+      HealthDialog.notificationSettings => NotificationService().askToAllow(),
+    };
   }
 
   Widget _buildAppSettingsCard(BuildContext context) {
@@ -425,7 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(l10n.settings_privacy),
             subtitle: Text(l10n.settings_privacySubtitle),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _privacySettings(context, connector),
+            onTap: () => showPrivacySettings(context, connector),
           ),
         ],
       ),
@@ -583,15 +641,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutCard(BuildContext context) {
     final l10n = context.l10n;
     return Card(
-      child: ListTile(
-        leading: const Icon(Icons.info_outline),
-        title: Text(l10n.settings_about),
-        subtitle: Text(
-          l10n.settings_aboutVersion(
-            _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(l10n.settings_about),
+            subtitle: Text(
+              l10n.settings_aboutVersion(
+                _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+              ),
+            ),
+            onTap: () => _showAbout(context),
           ),
-        ),
-        onTap: () => _showAbout(context),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: Text(l10n.settings_reportBug),
+            subtitle: Text(l10n.settings_reportBugSubtitle),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => launchUrl(
+              Uri.parse(
+                'https://github.com/venamartin/meshtrax/issues/new?template=bug_report.yml',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -757,10 +832,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return row;
   }
 
-  void _editNodeName(BuildContext context, MeshCoreConnector connector) {
+  Future<void> _editNodeName(BuildContext context, MeshCoreConnector connector) {
     final l10n = context.l10n;
     final controller = TextEditingController(text: connector.selfName ?? '');
-    showDialog(
+    return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.settings_nodeName),
@@ -781,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await connector.setNodeName(controller.text);
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -795,14 +870,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showRadioSettings(BuildContext context, MeshCoreConnector connector) {
-    showDialog(
+  Future<void> _showRadioSettings(BuildContext context, MeshCoreConnector connector) {
+    return showDialog<void>(
       context: context,
       builder: (context) => _RadioSettingsDialog(connector: connector),
     );
   }
 
-  void _editLocation(BuildContext context, MeshCoreConnector connector) {
+  Future<void> _editLocation(BuildContext context, MeshCoreConnector connector) {
     final l10n = context.l10n;
     final latController = TextEditingController();
     final lonController = TextEditingController();
@@ -814,7 +889,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
 
-    showDialog(
+    return showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -908,7 +983,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 await connector.setNodeLocation(lat: lat, lon: lon);
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1017,7 +1092,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
                 await connector.setPathHashMode(currentMode);
                 await Future.delayed(const Duration(milliseconds: 200));
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1678,14 +1753,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-void _privacySettings(BuildContext context, MeshCoreConnector connector) {
+void showPrivacySettings(BuildContext context, MeshCoreConnector connector) {
   final l10n = context.l10n;
 
   int telemetryMode = connector.telemetryModeBase;
   int telemetryLocMode = connector.telemetryModeLoc;
   int telemetryEnvMode = connector.telemetryModeEnv;
   bool advertLocPolicy = connector.advertLocationPolicy == 0 ? false : true;
-  int multiAcks = connector.multiAcks;
 
   final telemModeBase = [
     DropdownMenuItem(value: teleModeDeny, child: Text(l10n.settings_denyAll)),
@@ -1718,15 +1792,6 @@ void _privacySettings(BuildContext context, MeshCoreConnector connector) {
                 onChanged: (value) {
                   setDialogState(() => advertLocPolicy = value);
                 },
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                title: Text(l10n.settings_multiAck),
-                value: multiAcks == 1,
-                onChanged: (value) {
-                  setDialogState(() => multiAcks = value ? 1 : 0);
-                },
-                contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
@@ -1786,9 +1851,9 @@ void _privacySettings(BuildContext context, MeshCoreConnector connector) {
                 telemetryLocMode,
                 telemetryEnvMode,
                 advertLocPolicy ? 1 : 0,
-                multiAcks,
+                connector.multiAcks,
               );
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -2174,7 +2239,15 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
         ),
       );
       await widget.connector.sendFrame(buildSetRadioTxPowerFrame(txPower));
-      await widget.connector.refreshDeviceInfo();
+      widget.connector.noteRadioSettingsSaved(
+        freqKhz: freqHz,
+        bwHz: bwHz,
+        sf: sf,
+        cr: cr,
+        txPower: txPower,
+        clientRepeat: knownRepeat ? _clientRepeat : null,
+      );
+      unawaited(widget.connector.refreshRadioSettings());
       final rememberedSnapshot = _clientRepeat
           ? _lastNonRepeatSnapshot
           : _currentSnapshot();

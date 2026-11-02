@@ -117,6 +117,20 @@ flutter run -d linux
 
 ---
 
+## Reporting bugs and suggesting features
+
+- **Found a bug?** [Open a bug report](https://github.com/venamartin/meshtrax/issues/new?template=bug_report.yml). In the app: Settings → Report a bug, under About.
+- **Have an idea?** [Suggest a feature](https://github.com/venamartin/meshtrax/issues/new?template=feature_request.yml).
+- **Want to send a fix?** Read [CONTRIBUTING.md](CONTRIBUTING.md) first, and open an issue to talk it over before you start a pull request.
+
+---
+
+## Documentation
+
+[docs/](docs/README.md) has plain guides to Pathfinder and offline maps, a glossary of mesh terms, and the detailed technical material for contributors.
+
+---
+
 ## Privacy & Terms
 
 - [Privacy Policy](docs/privacy.md)
@@ -135,4 +149,4 @@ MeshTrax is released under the **MIT License**. It is a fork of [MeshCore Open](
 - The **[MeshCore](https://meshcore.io/)** project and its creators — the protocol, firmware, and official apps that make all of this possible.
 - **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the upstream client MeshTrax is built from.
 - Built with [Flutter](https://flutter.dev/).
-- Map tiles from [OpenStreetMap](https://www.openstreetmap.org/); elevation data from [Open-Meteo](https://open-meteo.com/); GIFs from [Giphy](https://giphy.com/).
+- Offline maps from [OpenStreetMap](https://www.openstreetmap.org/) contributors; the base map that comes with the app from [Natural Earth](https://www.naturalearthdata.com/) and [GeoNames](https://www.geonames.org/); elevation data from [Open-Meteo](https://open-meteo.com/); GIFs from [Giphy](https://giphy.com/).

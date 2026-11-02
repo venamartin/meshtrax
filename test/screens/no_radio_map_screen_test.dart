@@ -11,7 +11,6 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/no_radio_map_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
@@ -69,7 +68,6 @@ void main() {
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: viewState),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -131,17 +129,15 @@ void main() {
     expect(tester.getTopLeft(find.text('Map details')).dy, lessThan(before));
   });
 
-  testWidgets('the legend button shows on offline maps with symbols', (
-    tester,
-  ) async {
+  testWidgets('the legend button shows on maps with symbols', (tester) async {
     await pumpScreen(tester);
-    expect(find.byTooltip('Legend'), findsNothing, reason: 'online');
-    await settings.setMapSource('offline');
-    await tester.pump();
-    expect(find.byTooltip('Legend'), findsOneWidget, reason: 'OSM icons');
+    expect(
+      find.byTooltip('Legend'),
+      findsNothing,
+      reason: 'the base map has no symbols to explain',
+    );
 
     await settings.setChartsNoticeDismissed(true);
-    await settings.setMapSource('offline');
     await settings.setMapType('charts');
     await tester.pump();
     await tester.tap(find.byTooltip('Legend'));

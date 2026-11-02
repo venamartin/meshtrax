@@ -18,13 +18,16 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/screens/map_screen.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
+import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
+import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/map_legend_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
+import 'package:meshtrax/widgets/room_login_dialog.dart';
 
 import '../helpers/map_fakes.dart';
 
@@ -46,6 +49,11 @@ class _FakeConnector extends MeshCoreConnector {
   Future<void> setGps(bool on) async {
     gpsSets.add(on);
     gps = on ? '1' : '0';
+    notifyListeners();
+  }
+
+  void replaceNode(int index, Contact node) {
+    nodes[index] = node;
     notifyListeners();
   }
 
@@ -72,6 +80,50 @@ class _FakeConnector extends MeshCoreConnector {
   @override
   Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
   watchChannelLatest() => const Stream.empty();
+}
+
+// The values a real radio reports: frequency in kHz despite the getter's name.
+class _RadioConnector extends _FakeConnector {
+  _RadioConnector({required super.nodes});
+
+  final written = <String>{};
+  @override
+  bool wroteContactPath(Contact contact) =>
+      written.contains(contact.publicKeyHex);
+
+  @override
+  int? get currentFreqHz => 910525;
+  @override
+  int? get currentBwHz => 62500;
+  @override
+  int? get currentSf => 7;
+  @override
+  int? get currentTxPower => 22;
+  @override
+  Future<void> sendFrame(
+    Uint8List data, {
+    String? channelSendQueueId,
+    bool expectsGenericAck = false,
+  }) async {}
+  @override
+  set pendingTraceTag(int? tag) {} // the real one starts a 60 s timer
+}
+
+/// A radio that answers an add with [saves].
+class _AddingConnector extends _FakeConnector {
+  _AddingConnector({required super.nodes, required this.saves});
+
+  final bool saves;
+  final adds = <String>[];
+
+  @override
+  Future<bool> importDiscoveredContact(
+    Contact contact, {
+    int? lastAdvertEpochSeconds,
+  }) async {
+    adds.add(contact.publicKeyHex);
+    return saves;
+  }
 }
 
 class _NoDownloads implements PackDownloader {
@@ -120,6 +172,8 @@ void main() {
   });
   tearDown(() => tmp.delete(recursive: true));
 
+  var guessedLocationsOn = false;
+
   Future<void> pumpMap(
     WidgetTester tester,
     MeshCoreConnector connector, {
@@ -132,10 +186,14 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(value: connector),
-          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider(
+            create: (_) =>
+                AppSettingsService()
+                  ..setMapShowGuessedLocations(guessedLocationsOn),
+          ),
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
+          ChangeNotifierProvider.value(value: PathGraphService()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -163,6 +221,77 @@ void main() {
   T overlay<T extends MapOverlay>(WidgetTester tester, String id) =>
       overlays(tester).whereType<T>().firstWhere((o) => o.id == id);
 
+  // The chat or room login opened at once while the add ran behind it, so a
+  // radio that refused the node (a full table with overwrite off) left a chat
+  // whose DMs all failed with no reason given.
+  group('a node not saved yet', () {
+    const openChat = 'Open Chat';
+    const joinRoom = 'Join Room';
+    const refused = 'Failed to import contact.';
+
+    Future<_AddingConnector> showNode(
+      WidgetTester tester,
+      Contact node, {
+      required bool radioSaves,
+    }) async {
+      final radio = _AddingConnector(
+        nodes: [node.copyWith(isActive: false)],
+        saves: radioSaves,
+      );
+      await pumpMap(tester, radio);
+      overlay<MapMarker>(tester, 'node:${node.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      return radio;
+    }
+
+    Future<void> press(WidgetTester tester, String button) async {
+      await tester.tap(find.text(button));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('Open chat says so when the radio cannot save it', (
+      tester,
+    ) async {
+      final alice = _node('Alice', advTypeChat, 2, 41.82, -71.41);
+      final radio = await showNode(tester, alice, radioSaves: false);
+
+      await press(tester, openChat);
+
+      expect(radio.adds, [alice.publicKeyHex]);
+      expect(find.text(refused), findsOneWidget);
+      expect(find.text(openChat), findsOneWidget, reason: 'no chat opened');
+    });
+
+    testWidgets('Join room says so when the radio cannot save it', (
+      tester,
+    ) async {
+      final room = _node('Clubhouse', advTypeRoom, 3, 41.82, -71.41);
+      final radio = await showNode(tester, room, radioSaves: false);
+
+      await press(tester, joinRoom);
+
+      expect(radio.adds, [room.publicKeyHex]);
+      expect(find.text(refused), findsOneWidget);
+      expect(find.byType(RoomLoginDialog), findsNothing);
+    });
+
+    testWidgets('Join room asks for the password once the radio saved it', (
+      tester,
+    ) async {
+      final room = _node('Clubhouse', advTypeRoom, 3, 41.82, -71.41);
+      final radio = await showNode(tester, room, radioSaves: true);
+
+      await press(tester, joinRoom);
+
+      expect(radio.adds, [room.publicKeyHex]);
+      expect(find.text(refused), findsNothing);
+      expect(find.text(joinRoom), findsNothing, reason: 'the node dialog closed');
+      expect(find.byType(RoomLoginDialog), findsOneWidget);
+    });
+  });
+
   testWidgets('nodes and the radio are map markers, labelled from zoom 13', (
     tester,
   ) async {
@@ -189,6 +318,338 @@ void main() {
     expect(self.label, 'You');
     expect(self.interactive, isFalse);
     expect(find.byType(QuickSwitchBar), findsOneWidget);
+  });
+
+  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not', (
+    tester,
+  ) async {
+    Contact target(int seed, int routeHop) => Contact(
+      publicKey: Uint8List.fromList(List.filled(32, seed)),
+      name: 'T$seed',
+      type: advTypeChat,
+      pathLength: 1,
+      path: Uint8List.fromList([routeHop]),
+      pathHashSize: 1,
+      lastSeen: DateTime.now(),
+      inboundPath: Uint8List.fromList(const [0x01]),
+      inboundHopCount: 1,
+      inboundPathHashSize: 1,
+    );
+    final near = target(0x10, 0x02);
+    final across = target(0x11, 0x03);
+    final tooFar = target(0x12, 0x04);
+    await pumpMap(
+      tester,
+      _RadioConnector(
+        nodes: [
+          _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
+          _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
+          _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
+          _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
+          near,
+          across,
+          tooFar,
+        ],
+      ),
+    );
+    await tester
+        .element(find.byType(AppMap))
+        .read<AppSettingsService>()
+        .setMapShowGuessedLocations(true);
+    await tester.pump();
+
+    final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
+    expect(guess.position.latitude, closeTo(37.4, 0.01));
+    expect(guess.position.longitude, closeTo(-122.1, 0.01));
+    expect(
+      overlays(tester).map((o) => o.id),
+      contains('guess:${across.publicKeyHex}'),
+    );
+    expect(
+      overlays(tester).map((o) => o.id),
+      isNot(contains('guess:${tooFar.publicKeyHex}')),
+    );
+  });
+
+  group('guessed pins', () {
+    setUp(() => guessedLocationsOn = true);
+    tearDown(() => guessedLocationsOn = false);
+
+    final anchor = _node('Anchor', advTypeRepeater, 0x01, 37.3, -122.0);
+    Contact heardVia(int seed, int type) => Contact(
+      publicKey: Uint8List.fromList(List.filled(32, seed)),
+      name: 'T$seed',
+      type: type,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 1,
+      lastSeen: DateTime.now(),
+      inboundPath: Uint8List.fromList(const [0x01]),
+      inboundHopCount: 1,
+      inboundPathHashSize: 1,
+    );
+    final chat = heardVia(0x10, advTypeChat);
+    final repeater = heardVia(0x11, advTypeRepeater);
+    final room = heardVia(0x12, advTypeRoom);
+
+    String guessId(Contact c) => 'guess:${c.publicKeyHex}';
+    Iterable<String?> ids(WidgetTester tester) =>
+        overlays(tester).map((o) => o.id);
+    AppSettingsService settingsOf(WidgetTester tester) =>
+        tester.element(find.byType(AppMap)).read<AppSettingsService>();
+    int legendGuesses(WidgetTester tester) => tester
+        .widget<MapLegendButton>(find.byType(MapLegendButton))
+        .counts!()
+        .guessed;
+
+    testWidgets('follow the node layers, and the legend counts what is drawn', (
+      tester,
+    ) async {
+      await pumpMap(
+        tester,
+        _RadioConnector(nodes: [anchor, chat, repeater, room]),
+      );
+      final settings = settingsOf(tester);
+      expect(
+        ids(tester),
+        containsAll([guessId(chat), guessId(repeater), guessId(room)]),
+      );
+      expect(legendGuesses(tester), 3);
+
+      await settings.setMapShowChatNodes(false);
+      await tester.pump();
+      expect(ids(tester), isNot(contains(guessId(chat))));
+      expect(ids(tester), contains(guessId(repeater)));
+      expect(legendGuesses(tester), 2);
+
+      await settings.setMapShowRepeaters(false);
+      await tester.pump();
+      expect(ids(tester), isNot(contains(guessId(repeater))));
+      expect(legendGuesses(tester), 1);
+
+      await settings.setMapShowOtherNodes(false);
+      await tester.pump();
+      expect(ids(tester), isNot(contains(guessId(room))));
+      expect(legendGuesses(tester), 0);
+    });
+
+    testWidgets('are off in the overlaps view, and off the legend', (
+      tester,
+    ) async {
+      // Sharing a first byte, so the filter alone would keep them in this view.
+      Contact sharing(int fill) => Contact(
+        publicKey: Uint8List.fromList([0x20, ...List.filled(31, fill)]),
+        name: 'S$fill',
+        type: advTypeRepeater,
+        pathLength: -1,
+        path: Uint8List(0),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+        inboundPath: Uint8List.fromList(const [0x01]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 1,
+      );
+      final first = sharing(0x21);
+      final second = sharing(0x22);
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, first, second]));
+      expect(ids(tester), containsAll([guessId(first), guessId(second)]));
+
+      await settingsOf(tester).setMapShowOverlaps(true);
+      await tester.pump();
+
+      expect(ids(tester), isNot(contains(guessId(first))));
+      expect(ids(tester), isNot(contains(guessId(second))));
+      expect(legendGuesses(tester), 0);
+    });
+
+    testWidgets('in a trace: no chat nodes, repeaters whatever the layer', (
+      tester,
+    ) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, chat, repeater]));
+      await settingsOf(tester).setMapShowRepeaters(false);
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+
+      expect(ids(tester), isNot(contains(guessId(chat))));
+      expect(ids(tester), contains(guessId(repeater)));
+    });
+
+    testWidgets('show the contact as it is now, not as it was first guessed', (
+      tester,
+    ) async {
+      final connector = _RadioConnector(nodes: [anchor, chat]);
+      await pumpMap(tester, connector);
+      final before = overlay<MapMarker>(tester, guessId(chat));
+
+      connector.replaceNode(1, chat.copyWith(name: 'Renamed'));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final after = overlay<MapMarker>(tester, guessId(chat));
+      expect(after.label, 'Renamed');
+      expect(after.position, before.position);
+
+      after.onTap!();
+      await tester.pump();
+      expect(find.text('Renamed'), findsWidgets);
+    });
+
+    testWidgets('long-press in a trace keeps the estimated location', (
+      tester,
+    ) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+
+      overlay<MapMarker>(tester, guessId(repeater)).onLongPress!();
+      await tester.pump();
+
+      expect(find.textContaining('Est. Location'), findsOneWidget);
+    });
+
+    testWidgets('a guess in a trace stays an estimate, off the contact', (
+      tester,
+    ) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      final marker = overlay<MapMarker>(tester, guessId(repeater));
+
+      marker.onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.pathContacts!.single.hasLocation, isFalse);
+      final position = trace.guessedPositions[repeater.publicKeyHex]!;
+      expect(position.latitude, marker.position.latitude);
+      expect(position.longitude, marker.position.longitude);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a route the app wrote is no anchor, as soon as it is written', (
+      tester,
+    ) async {
+      final routed = Contact(
+        publicKey: Uint8List.fromList(List.filled(32, 0x13)),
+        name: 'Routed',
+        type: advTypeChat,
+        pathLength: 1,
+        path: Uint8List.fromList(const [0x01]),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+      );
+      final connector = _RadioConnector(nodes: [anchor, routed]);
+      await pumpMap(tester, connector);
+      expect(ids(tester), contains(guessId(routed)));
+
+      connector.written.add(routed.publicKeyHex);
+      connector.replaceNode(1, routed);
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(ids(tester), isNot(contains(guessId(routed))));
+    });
+
+    testWidgets('a return trace carries the estimate too', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.replay));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, contains(repeater.publicKeyHex));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a new trace starts with no old estimates', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      Navigator.of(tester.element(find.byType(PathTraceMapScreen))).pop();
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+      overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('undoing a guessed hop drops its estimate', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
+      await tester.tap(find.byIcon(Icons.radar));
+      await tester.pump();
+
+      overlay<MapMarker>(tester, guessId(repeater)).onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_forward_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final trace = tester.widget<PathTraceMapScreen>(
+        find.byType(PathTraceMapScreen),
+      );
+      expect(trace.guessedPositions, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('frame the map only when nothing else can', (tester) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, chat]));
+      // A map with content opens on it, not on where it was last left.
+      tester
+          .element(find.byType(AppMap))
+          .read<UiViewStateService>()
+          .setMapCamera(const MapCamera(center: LatLng(10, 10), zoom: 5));
+      // Anchors count whatever the filter; a key prefix leaves only the guess.
+      final settings = settingsOf(tester);
+      await settings.setMapKeyPrefixEnabled(true);
+      await settings.setMapKeyPrefix('10');
+      await tester.pump();
+      expect(ids(tester), contains(guessId(chat)));
+      expect(ids(tester), isNot(contains('node:${anchor.publicKeyHex}')));
+
+      final camera = tester.widget<AppMap>(find.byType(AppMap)).initialCamera!;
+      expect(camera.center.latitude, closeTo(37.3, 0.01));
+      expect(camera.center.longitude, closeTo(-122.0, 0.01));
+    });
+
+    testWidgets('leave the framing to real positions when there are any', (
+      tester,
+    ) async {
+      await pumpMap(tester, _RadioConnector(nodes: [anchor, chat]));
+
+      final camera = tester.widget<AppMap>(find.byType(AppMap)).initialCamera!;
+      expect(camera.center.latitude, 37.3);
+      expect(camera.center.longitude, -122.0);
+    });
   });
 
   testWidgets('a POI link: back button, labelled pin, no quick-switch bar', (
@@ -246,21 +707,11 @@ void main() {
       findsNWidgets(2),
       reason: 'USGS and charts: no packs',
     );
-    expect(
-      find.text('Offline only'),
-      findsNWidgets(5),
-      reason:
-          'nothing downloaded, so Online: contours, hill shading, parks, '
-          'places, dark',
-    );
     expect(find.text('Nodes'), findsOneWidget);
 
-    // An Offline-only choice made Online switches to Offline.
     await tester.tap(find.text('Dark map'));
     await tester.pump();
-    expect(settings.settings.mapSource, 'offline');
     expect(settings.settings.mapTheme, 'dark');
-    expect(find.text('Offline only'), findsNothing);
 
     await tester.tap(find.text('Contours'));
     await tester.pump();
@@ -314,7 +765,11 @@ void main() {
     await tester.tap(find.byTooltip('My location'));
     await tester.pump();
     expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
-    expect(camera(tester).zoom, greaterThanOrEqualTo(14));
+    expect(
+      camera(tester).zoom,
+      10,
+      reason: "nothing downloaded: as close as the base map's detail goes",
+    );
     expect(
       overlay<MapMarker>(tester, 'self').label,
       isNull,

@@ -11,6 +11,7 @@ import '../helpers/geo_format.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../screens/channel_chat_screen.dart';
@@ -158,8 +159,9 @@ class StructuredMessageCard extends StatelessWidget {
   /// The clock for an event's Today / Past chip; tests pin it.
   final DateTime? now;
 
-  /// Whose message this is. A Location without a label is the sender's
-  /// own position: "My location" on yours, "{name}'s location" on others.
+  /// Whose message this is. A Location titled "My location" is the
+  /// sender's own position: "My location" on yours, "{name}'s location" on
+  /// others ([locationTitle]).
   final bool isOutgoing;
   final String? senderName;
 
@@ -171,6 +173,24 @@ class StructuredMessageCard extends StatelessWidget {
     this.isOutgoing = false,
     this.senderName,
   });
+
+  /// What a location is called on screen: the sender's own position by
+  /// whose it is, any other title as written, no title just "Location".
+  static String locationTitle(
+    AppLocalizations l10n,
+    LocationMessage m, {
+    required bool isOutgoing,
+    String? senderName,
+  }) {
+    if (!m.isSendersOwn) {
+      final label = m.label;
+      return label == null || label.isEmpty ? l10n.chat_location : label;
+    }
+    if (isOutgoing) return l10n.tray_myLocation;
+    return senderName == null || senderName.isEmpty
+        ? l10n.chat_location
+        : l10n.structured_locationOf(senderName);
+  }
 
   /// The icon that stands for a message type in previews and pinned rows.
   static IconData iconFor(StructuredMessage message) => switch (message) {
@@ -213,31 +233,7 @@ class StructuredMessageCard extends StatelessWidget {
     final l10n = context.l10n;
     final p = StructuredPalette.of(context, message);
     return switch (message) {
-      LocationMessage m => _scaffold(
-          context,
-          p,
-          lead: _badge(p, Icons.location_on),
-          overline: m.label == null ? null : l10n.chat_location,
-          title: m.label ??
-              (isOutgoing
-                  ? l10n.tray_myLocation
-                  : senderName == null || senderName!.isEmpty
-                      ? l10n.chat_location
-                      : l10n.structured_locationOf(senderName!)),
-          lines: [?m.note],
-          position: m.position,
-          positionLabel: m.label,
-          actions: [
-            _Action(Icons.map_outlined, l10n.structured_openMap,
-                () => LinkHandler.openMapAt(context, m.position, label: m.label)),
-            _Action(
-              Icons.near_me_outlined,
-              l10n.structured_navigate,
-              () => LinkHandler.openInMapsApp(context, m.position, label: m.label),
-              primary: false,
-            ),
-          ],
-        ),
+      LocationMessage m => _locationCard(context, p, m),
       SosMessage m => _scaffold(
           context,
           p,
@@ -438,6 +434,42 @@ class StructuredMessageCard extends StatelessWidget {
         .firstOrNull;
     // A room asks for its password when none is remembered.
     if (contact != null) ChatScreen.open(context, contact);
+  }
+
+  Widget _locationCard(
+    BuildContext context,
+    StructuredPalette p,
+    LocationMessage m,
+  ) {
+    final l10n = context.l10n;
+    final title = locationTitle(
+      l10n,
+      m,
+      isOutgoing: isOutgoing,
+      senderName: senderName,
+    );
+    // A place without a title gets no name on the map either.
+    final pinLabel = m.label == null ? null : title;
+    return _scaffold(
+      context,
+      p,
+      lead: _badge(p, Icons.location_on),
+      overline: m.label == null || m.isSendersOwn ? null : l10n.chat_location,
+      title: title,
+      lines: [?m.note],
+      position: m.position,
+      positionLabel: pinLabel,
+      actions: [
+        _Action(Icons.map_outlined, l10n.structured_openMap,
+            () => LinkHandler.openMapAt(context, m.position, label: pinLabel)),
+        _Action(
+          Icons.near_me_outlined,
+          l10n.structured_navigate,
+          () => LinkHandler.openInMapsApp(context, m.position, label: pinLabel),
+          primary: false,
+        ),
+      ],
+    );
   }
 
   Widget _scaffold(

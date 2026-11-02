@@ -8,7 +8,6 @@ import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
-import 'app_map.dart';
 import 'charts_notice_dialog.dart';
 
 /// What the legend's Mesh part counts on the map.
@@ -19,16 +18,15 @@ typedef MeshLegendCounts = ({
   int guessed,
 });
 
-/// Whether the map draws charts: they're offline only.
+/// Whether the map draws charts.
 bool mapShowsCharts(AppSettings settings, MapPacksService maps) =>
-    !mapIsOnline(settings, maps) &&
     MapType.parse(settings.mapType) == MapType.charts;
 
-/// Whether the map is the offline OSM map, which draws park and trail
-/// features as icons (online, the online tiles draw their own).
+/// Whether the map is the OSM map with a downloaded region, which draws park
+/// and trail features as icons (the bundled base map has none).
 bool mapShowsParkIcons(AppSettings settings, MapPacksService maps) =>
-    !mapIsOnline(settings, maps) &&
-    (MapType.parse(settings.mapType) ?? MapType.osm) == MapType.osm;
+    (MapType.parse(settings.mapType) ?? MapType.osm) == MapType.osm &&
+    maps.installed.any((p) => p.kind == PackKind.osm);
 
 /// Opens the map legend: the Mesh symbols and [counts] (none without a
 /// radio), then the symbols of the map shown: park and trail icons on the

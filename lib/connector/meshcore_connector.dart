@@ -79,13 +79,24 @@ class DirectRepeater {
 
   String get prefixHex => PathHelper.hopHex(pubkeyPrefix);
 
-  /// True when [hash] (a hop hash or public key) agrees with this repeater's
-  /// prefix on their common leading bytes.
-  bool matchesHash(List<int> hash) {
-    if (pubkeyPrefix.isEmpty || hash.isEmpty) return false;
-    final n = math.min(pubkeyPrefix.length, hash.length);
-    for (var i = 0; i < n; i++) {
-      if (pubkeyPrefix[i] != hash[i]) return false;
+  /// Heard by exactly this code before: the same bytes, the same width.
+  bool hasCode(List<int> hash) =>
+      hash.isNotEmpty &&
+      pubkeyPrefix.length == hash.length &&
+      _startsWith(pubkeyPrefix, hash);
+
+  /// Known by a full key that [hash] is the start of.
+  bool keyStartsWith(List<int> hash) {
+    final key = publicKey;
+    return key != null &&
+        hash.isNotEmpty &&
+        key.length >= hash.length &&
+        _startsWith(key, hash);
+  }
+
+  static bool _startsWith(List<int> bytes, List<int> prefix) {
+    for (var i = 0; i < prefix.length; i++) {
+      if (bytes[i] != prefix[i]) return false;
     }
     return true;
   }
@@ -113,20 +124,22 @@ class DirectRepeater {
   }
 
   /// The entry in [tracked] that a newly heard node refers to, or null when a
-  /// new one should be started.
+  /// new one should be started. One row per code: a code used to match every
+  /// row it agreed with on their shared bytes, so a 1-byte A3 fitted both an
+  /// A3 row and an A377 row, refreshed neither and started another, until
+  /// the list was the same repeater twenty times (owner, 2026-10-26).
   ///
-  /// A node heard by its full key matches on that key alone. It may still adopt
-  /// an entry we had only ever heard by hash — that is how a neighbour learns
-  /// its own identity — but never when two such entries answer to the same
-  /// hash, because then the hash names neither of them.
+  /// A node heard by its full key matches on that key alone. It may still
+  /// adopt the one entry heard only by this same code — that is how a
+  /// neighbour learns its own identity — but never when two such entries
+  /// hold it, because then the code names neither of them.
   ///
-  /// A node heard by hash alone may refresh any single entry that answers to
-  /// it. That only moves an SNR and a timestamp; identity is never written
-  /// from a hash, and requiring a collision *within the handful of
-  /// neighbours we can hear directly* is a far stronger test than requiring
-  /// one across a whole contact book. A keyed entry needs a hash of at least
-  /// two bytes: one byte names a quarter of the band, and refreshing a keyed
-  /// row from it put another repeater's level next to its own answer.
+  /// A node heard by its code alone refreshes the entry heard by that code
+  /// before. Failing that it may refresh the one keyed entry whose key starts
+  /// with the code, if the code is at least two bytes: one byte names a
+  /// quarter of the band, and refreshing a keyed row from it put another
+  /// repeater's level next to its own answer. That only moves an SNR and a
+  /// timestamp; identity is never written from a code.
   static DirectRepeater? findTracked(
     List<DirectRepeater> tracked, {
     Uint8List? fullKey,
@@ -137,17 +150,32 @@ class DirectRepeater {
       for (final r in tracked) {
         if (r.publicKey != null && pubKeyToHex(r.publicKey!) == hex) return r;
       }
+      // Rows the key starts with: its own code, or a code of 2+ bytes
+      // heard on longer paths (a zero-hop advert arrives with a 1-byte
+      // code on a 2-byte mesh). The longest is the most specific.
       final adoptable = tracked
-          .where((r) => r.publicKey == null && r.matchesHash(hashPrefix))
+          .where((r) =>
+              r.publicKey == null &&
+              (r.hasCode(hashPrefix) ||
+                  (r.pubkeyPrefix.length >= 2 &&
+                      r.pubkeyPrefix.length <= fullKey.length &&
+                      _startsWith(fullKey, r.pubkeyPrefix))))
           .toList();
-      return adoptable.length == 1 ? adoptable.first : null;
+      if (adoptable.isEmpty) return null;
+      final longest = adoptable
+          .map((r) => r.pubkeyPrefix.length)
+          .reduce(math.max);
+      final best =
+          adoptable.where((r) => r.pubkeyPrefix.length == longest).toList();
+      return best.length == 1 ? best.first : null;
     }
-    final matches = tracked
-        .where((r) =>
-            r.matchesHash(hashPrefix) &&
-            (r.publicKey == null || hashPrefix.length >= 2))
-        .toList();
-    return matches.length == 1 ? matches.first : null;
+    for (final r in tracked) {
+      if (r.publicKey == null && r.hasCode(hashPrefix)) return r;
+    }
+    if (hashPrefix.length < 2) return null;
+    final keyed =
+        tracked.where((r) => r.keyStartsWith(hashPrefix)).toList();
+    return keyed.length == 1 ? keyed.first : null;
   }
 
   static int compare(DirectRepeater a, DirectRepeater b) {
@@ -692,9 +720,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _contactFullResyncPending = false;
   // A full contact download asked for while a partial one was streaming.
   bool _fullContactSyncAfterStream = false;
-  // Route overrides of the list a full download is replacing, by key; each
-  // is put back on its contact as the radio's frame for it arrives.
-  Map<String, Contact> _overridesAcrossRefresh = {};
+  // During a full download, the saved contacts the radio has not re-sent yet.
+  Set<String>? _unconfirmedContactKeys;
+  // DMs from a sender not in the list yet; the radio has no other copy.
+  final List<Uint8List> _heldContactMessages = [];
+  // Sender prefixes a whole list showed the radio no longer holds, so the rest
+  // of their queued messages do not each cost a download.
+  final Set<String> _absentSenders = {};
+  static const _heldContactMessageCap = 32;
+  // Adverts the radio saved during a download, to fetch when it ends.
+  final Map<String, Uint8List> _fetchAfterDownload = {};
+  // Contacts whose next frame carries a lastmod from accepting a shared copy.
+  final Set<String> _sharedCopyKeys = {};
+  // The last advert heard, if a neighbour shared it. The radio logs a packet
+  // and then handles it, so what it pushes next is about this same copy.
+  ({String key, int secs})? _lastSharedAdvert;
+  Timer? _contactPersistTimer;
   bool _isLoadingChannels = false;
   bool _hasLoadedChannels = false;
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -715,6 +756,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _pollingInterval = 30;
   bool _batteryRequested = false;
   bool _awaitingSelfInfo = false;
+  // CONTACTS_START has arrived for the contact pass in progress.
+  bool _contactStreamStarted = false;
+  // SELF_INFOs still owed to readRadioSettings. A late one is still a read.
+  int _unansweredSettingsReads = 0;
+  bool _shareReplyPending = false;
   bool _hasReceivedDeviceInfo = false;
   bool _pendingInitialChannelSync = false;
   bool _pendingInitialContactsSync = false;
@@ -735,7 +781,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _telemetryModeLoc = 0;
   int _telemetryModeEnv = 0;
   int _advertLocPolicy = 0;
-  int _multiAcks = 1; // Default to enabled (1 ACK)
+  int _multiAcks = 1; // Extra ACKs: 1 = 2 ACKs sent. Replaced by the radio's value.
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
@@ -811,6 +857,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, _RepeaterAckContext> _pendingRepeaterAcks = {};
   String? _activeContactKey;
   int? _activeChannelIndex;
+
+  /// The chats on screen, as the chat screens report them.
+  String? get activeContactKey => _activeContactKey;
+  int? get activeChannelIndex => _activeChannelIndex;
+
+  /// Backgrounded, from paused or hidden until fully resumed. An open chat
+  /// isn't being read meanwhile. Inactive alone doesn't count: the
+  /// notification shade doesn't take the chat off the screen.
+  bool _appAway = false;
   List<int> _channelOrder = [];
 
   int _storageUsedKb = -1;
@@ -962,6 +1017,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get channelsVerified => _channelsVerified;
   bool get isConnected => _state == MeshCoreConnectionState.connected;
   bool get isLoadingContacts => _isLoadingContacts;
+
+  /// True once this connection's first sync has finished and the radio is not
+  /// streaming anything.
+  bool get isSynced =>
+      _initialSyncComplete &&
+      !_awaitingSelfInfo &&
+      !_isLoadingContacts &&
+      !_isLoadingChannels &&
+      !_isSyncingChannels &&
+      !_isSyncingQueuedMessages;
+
   bool get isLoadingChannels => _isLoadingChannels;
   Stream<Uint8List> get receivedFrames => _receivedFramesController.stream;
   Stream<int> get errorStream => _errorStreamController.stream;
@@ -992,6 +1058,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return _selfHex;
   }
   String? get selfName => _selfName;
+
+  /// True when the radio still has a name its firmware gave it: the first 4
+  /// bytes of its public key as hex, its MAC address as hex (some BLE builds,
+  /// and the app can't read the MAC, so 12 hex characters counts), or a name
+  /// fixed in the build. False while the name is not known yet.
+  bool get hasFactoryName {
+    final name = _selfName?.trim();
+    if (name == null) return false;
+    if (name.isEmpty || name == 'NONAME' || name == 'ME25LS01 Chat') {
+      return true;
+    }
+    final key = selfPublicKeyHex;
+    if (key.length >= 8 &&
+        name.toLowerCase() == key.substring(0, 8).toLowerCase()) {
+      return true;
+    }
+    return RegExp(r'^[0-9a-fA-F]{12}$').hasMatch(name);
+  }
+
   double? get selfLatitude => _selfLatitude;
   double? get selfLongitude => _selfLongitude;
   List<DirectRepeater> get directRepeaters => _directRepeaters;
@@ -1123,6 +1208,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void markInitialSyncCompleteForTest() => _initialSyncComplete = true;
 
   @visibleForTesting
+  void markSelfPositionLiveForTest() => _selfPositionLive = true;
+
+  @visibleForTesting
+  void markChannelsVerifiedForTest() => _channelsVerified = true;
+
+  @visibleForTesting
   Future<void> probeWifiForTest() => _probeWifi();
 
   Future<void> _probeWifi() async {
@@ -1152,18 +1243,56 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int get telemetryModeLoc => _telemetryModeLoc;
   int get telemetryModeEnv => _telemetryModeEnv;
 
-  /// Whether [contact] gets this radio's position when it asks for
-  /// telemetry. The firmware answers only with base allowed and adds the
-  /// position only with location allowed, each by the radio's own setting
-  /// or, on "Allow by contact flags", by the contact's flag. Only chat
-  /// contacts ask, and only those the radio holds: it cannot read a
-  /// request from anyone else.
-  bool sharesPositionWith(Contact contact) {
-    if (contact.type != advTypeChat || !contact.isActive) return false;
+  /// What [contact] gets when it asks this radio for telemetry. The
+  /// firmware answers only with base allowed and adds location and
+  /// environment on top, each by the radio's own setting or, on "Allow by
+  /// contact flags", by the contact's flag. Only chat contacts ask, and
+  /// only those the radio holds: it cannot read a request from anyone else.
+  ({bool base, bool location, bool environment}) telemetryGrantedTo(
+    Contact contact,
+  ) {
+    if (contact.type != advTypeChat || !contact.isActive) {
+      return (base: false, location: false, environment: false);
+    }
     bool allowed(int mode, bool flag) =>
         mode == teleModeAllowAll || (mode == teleModeAllowFlags && flag);
-    return allowed(telemetryModeBase, contact.teleBaseEnabled) &&
-        allowed(telemetryModeLoc, contact.teleLocEnabled);
+    final base = allowed(telemetryModeBase, contact.teleBaseEnabled);
+    return (
+      base: base,
+      location: base && allowed(telemetryModeLoc, contact.teleLocEnabled),
+      environment: base && allowed(telemetryModeEnv, contact.teleEnvEnabled),
+    );
+  }
+
+  /// Whether [contact] is allowed this radio's position when it asks for
+  /// telemetry.
+  bool sharesPositionWith(Contact contact) =>
+      telemetryGrantedTo(contact).location;
+
+  /// The radio has a position to give away: typed in, or from its GPS.
+  bool get hasSelfPosition => hasValidLocation(selfLatitude, selfLongitude);
+
+  /// Everyone who hears this radio's adverts sees its position.
+  bool get advertsSharePosition =>
+      advertLocationPolicy != 0 && hasSelfPosition;
+
+  /// [contact] sees this radio's position if it asks now. Counted with the
+  /// GPS on or off: boards with their own GPS code (T1000-E, Wireless
+  /// Tracker, ...) answer with the last fix or the typed position, the rest
+  /// only while the GPS runs, and the app cannot tell them apart.
+  bool positionVisibleTo(Contact contact) =>
+      hasSelfPosition && sharesPositionWith(contact);
+
+  /// Someone can see this radio's position now: everyone who hears its
+  /// adverts, or a contact that may ask for it.
+  bool get positionVisible {
+    if (!hasSelfPosition) return false;
+    if (advertLocationPolicy != 0) return true;
+    if (telemetryModeBase == teleModeDeny ||
+        telemetryModeLoc == teleModeDeny) {
+      return false;
+    }
+    return contacts.any(sharesPositionWith);
   }
 
   int get advertLocationPolicy => _advertLocPolicy;
@@ -1307,6 +1436,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       searchChannelMessages(Channel channel, String query) =>
           _channelMessageStore.searchChannelMessages(channel.idKey, query);
 
+  /// The stored row [reply] quotes, and how far it sits from the newest row.
+  Future<({ChannelMessage message, int fromNewest})?> findChannelReplyTarget(
+    Channel channel,
+    ChannelMessage reply,
+  ) =>
+      _channelMessageStore.findReplyTarget(channel.idKey, reply);
+
   /// Watched unread counts per channel identity (chats-screen badges).
   Stream<Map<String, int>> watchChannelUnreadCounts() =>
       _channelMessageStore.watchUnreadCounts();
@@ -1385,10 +1521,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return _channelUnreadByIdKey[channel.idKey] ?? 0;
   }
 
+  /// The contacts Chats lists: the saved ones, and any the radio overwrote
+  /// while they had unread messages, until those are read (owner, 2026-11-02).
+  /// Hidden, such messages were easy to never see.
+  List<Contact> get chatContacts => [
+        ..._contacts,
+        for (final row in _discoveredContacts)
+          if (!row.isActive &&
+              !_knownContactKeys.contains(row.publicKeyHex) &&
+              getUnreadCountForContact(row) > 0)
+            row,
+      ];
+
   int getTotalUnreadCount() {
     var total = 0;
     // Both sides come from watched COUNT queries (DB-authoritative).
-    for (final contact in _contacts) {
+    for (final contact in chatContacts) {
       total += getUnreadCountForContact(contact);
     }
     for (final count in _channelUnreadByIdKey.values) {
@@ -1401,13 +1549,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// channels are the ones the chats list shows ([channels]): during a
   /// resync the live table is half refilled.
   int get unreadChatCount =>
-      _contacts.where((c) => getUnreadCountForContact(c) > 0).length +
+      chatContacts.where((c) => getUnreadCountForContact(c) > 0).length +
       channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
 
   /// Marks every chat with unread messages read. Channels by identity:
   /// a slot index may point elsewhere mid-resync.
   void markAllRead() {
-    for (final contact in _contacts) {
+    for (final contact in chatContacts) {
       if (getUnreadCountForContact(contact) > 0) {
         markContactRead(contact.publicKeyHex);
       }
@@ -1565,7 +1713,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         onAttemptStarted: (contact, selection, attempt) =>
             onSendAttemptStarted?.call(contact, selection, attempt),
         onAckMatched: (contact, hash) => onAckHeard?.call(contact, hash),
-        onLadderEnded: (contactKey) => onSendLadderEnded?.call(contactKey),
+        onLadderEnded: (contactKey, {required delivered}) =>
+            onSendLadderEnded?.call(contactKey, delivered: delivered),
         onSendOutcome: (contactKey, {required delivered, required echoHeard}) =>
             onSendOutcome?.call(contactKey,
                 delivered: delivered, echoHeard: echoHeard),
@@ -1590,13 +1739,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _loadDiscoveredContactCache() async {
+  Future<void> _loadDiscoveredContactCache(Future<void> contactsLoaded) async {
     final cached = await _discoveryContactStore.loadContacts();
+    await contactsLoaded;
     // Merge, never clobber: anything discovered while this load was in
     // flight is newer than its cached row and must survive.
     final live = {for (final c in _discoveredContacts) c.publicKeyHex};
+    // Rows are stored unsaved. Left so, each saved contact would be listed
+    // twice until a download ends, and tapping the row would overwrite the
+    // radio's record of it.
     _discoveredContacts.addAll(
-      cached.where((c) => !live.contains(c.publicKeyHex)),
+      cached
+          .where((c) => !live.contains(c.publicKeyHex))
+          .map(
+            (c) => c.copyWith(
+              isActive: _knownContactKeys.contains(c.publicKeyHex),
+            ),
+          ),
     );
   }
 
@@ -1739,8 +1898,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// has nothing recent (see [estimatedHopsTo]).
   int? Function(Contact contact)? graphDistanceTo;
 
-  /// The last DM ladder to this contact (pubkey hex) ended.
-  void Function(String contactKey)? onSendLadderEnded;
+  /// The last DM ladder to this contact (pubkey hex) ended, [delivered] or
+  /// out of attempts.
+  void Function(String contactKey, {required bool delivered})?
+      onSendLadderEnded;
 
   /// One message's ladder to this contact (pubkey hex) is over: whether it
   /// was delivered, and whether a repeater was heard echoing a flood of it
@@ -3197,6 +3358,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingDeferredChannelSyncAfterContacts = false;
     _pendingChannelSyncAfterQueueSync = false;
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _pathHashByteWidth = 1;
   }
 
@@ -3484,7 +3647,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// shows once something is written. Both are fixed up here.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _appAway = true;
+    }
     if (state != AppLifecycleState.resumed) return;
+    _appAway = false;
     if (_activeTransport == MeshCoreTransportType.tcp &&
         _state == MeshCoreConnectionState.connected) {
       unawaited(_probeTcpAfterResume());
@@ -3619,8 +3787,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _txCharacteristic = null;
     _deviceDisplayName = null;
     _deviceId = null;
+    _giveUpOnAllHeldMessages();
+    _flushContactPersist();
     _contacts.clear();
-    _overridesAcrossRefresh = {};
+    _unconfirmedContactKeys = null;
+    _absentSenders.clear();
+    _fetchAfterDownload.clear();
+    _sharedCopyKeys.clear();
     _discoveredContacts.clear();
     _roomAdminPasswords.clear();
     _lastRoomLoginEvents.clear();
@@ -3665,6 +3838,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _batteryRequested = false;
     _awaitingSelfInfo = false;
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _hasReceivedDeviceInfo = false;
     _pendingInitialChannelSync = false;
     _pendingInitialContactsSync = false;
@@ -3753,6 +3928,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
     _recordOutgoing(data);
 
+    try {
+      await writeToTransport(data);
+    } catch (_) {
+      if (expectsGenericAck) _forgetPendingAck(data[0], channelSendQueueId);
+      rethrow;
+    }
+  }
+
+  @visibleForTesting
+  Future<void> writeToTransport(Uint8List data) async {
     if (_activeTransport == MeshCoreTransportType.usb) {
       await _usbManager.write(data);
       // Brief pause so the device firmware can process each frame before the
@@ -3782,6 +3967,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<bool> _sendAndWaitForAck(
     Uint8List data, {
     Duration timeout = const Duration(seconds: 2),
+    bool expectsGenericAck = false,
   }) async {
     if (!isConnected) return false;
     final completer = Completer<bool>();
@@ -3795,8 +3981,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     });
 
     try {
-      await sendFrame(data);
+      await sendFrame(data, expectsGenericAck: expectsGenericAck);
       return await completer.future.timeout(timeout);
+    } on TimeoutException {
+      // The radio answers these in order, so a late reply must still find this
+      // entry: taken by the next command, an ERR would fail that send. Only one
+      // that stays unanswered is dropped, see _dropLostAcks.
+      final index = _pendingGenericAckQueue.lastIndexWhere(
+        (a) => a.commandCode == data[0],
+      );
+      if (expectsGenericAck && index >= 0) {
+        _pendingGenericAckQueue[index].givenUpAt = DateTime.now();
+      }
+      return false;
     } catch (_) {
       return false;
     } finally {
@@ -3918,6 +4115,132 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setPathHashMode(int mode) async {
     if (!isConnected) return;
     await sendFrame(buildSetPathHashModeFrame(mode.clamp(0, 2)));
+    _pathHashByteWidth = mode.clamp(0, 2) + 1;
+    notifyListeners();
+  }
+
+  /// Waits for this connection's sync to finish. False if the radio drops, or
+  /// is still busy after [timeout].
+  Future<bool> waitUntilSynced({
+    Duration timeout = const Duration(seconds: 90),
+  }) async {
+    const step = Duration(milliseconds: 250);
+    for (var waited = Duration.zero; isConnected && !isSynced; waited += step) {
+      if (waited >= timeout) return false;
+      await Future<void>.delayed(step);
+    }
+    return isConnected;
+  }
+
+  Future<bool> _askRadio(
+    Uint8List frame,
+    int replyCode, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (!isConnected) return false;
+    final replied = Completer<bool>();
+    final subscription = receivedFrames.listen((reply) {
+      if (reply.isNotEmpty && reply[0] == replyCode && !replied.isCompleted) {
+        replied.complete(true);
+      }
+    });
+    try {
+      await sendFrame(frame);
+      return await replied.future.timeout(timeout, onTimeout: () => false);
+    } catch (_) {
+      return false;
+    } finally {
+      await subscription.cancel();
+    }
+  }
+
+  /// Waits until the radio has handled everything sent so far. It handles
+  /// frames in order, and a settings write finishes its flash save first. An
+  /// ESP32 BLE radio holds only four frames and silently drops the rest, so
+  /// settings writes in a row need this between them.
+  Future<bool> waitForRadio({Duration timeout = const Duration(seconds: 3)}) =>
+      _askRadio(
+        buildGetBattAndStorageFrame(),
+        respCodeBattAndStorage,
+        timeout: timeout,
+      );
+
+  /// Reads the radio's current settings and leaves everything else alone: no
+  /// contact download, and no change to the contact or channel lists.
+  ///
+  /// Waits for the sync first, because CMD_APP_START stops a running contact
+  /// stream (companion_radio MyMesh.cpp). Asks for one thing at a time, for the
+  /// same reason as [waitForRadio].
+  ///
+  /// False when the radio was still busy or did not answer. The last known
+  /// values then stay in place.
+  Future<bool> readRadioSettings({
+    Duration syncTimeout = const Duration(seconds: 90),
+    Duration replyTimeout = const Duration(seconds: 3),
+  }) async {
+    if (!await waitUntilSynced(timeout: syncTimeout)) return false;
+    var answered = await _askRadio(
+      buildDeviceQueryFrame(),
+      respCodeDeviceInfo,
+      timeout: replyTimeout,
+    );
+    _unansweredSettingsReads++;
+    answered =
+        await _askRadio(
+          buildAppStartFrame(),
+          respCodeSelfInfo,
+          timeout: replyTimeout,
+        ) &&
+        answered;
+    answered = await waitForRadio(timeout: replyTimeout) && answered;
+    if (firmwareSupports(
+      RadioSetting.autoAdd,
+      _firmwareVerCode,
+      _firmwareVersion,
+    )) {
+      answered =
+          await _askRadio(
+            buildGetAutoAddFlagsFrame(),
+            respCodeAutoAddConfig,
+            timeout: replyTimeout,
+          ) &&
+          answered;
+    }
+    final skew = await _readDeviceClockSkew(timeout: replyTimeout);
+    if (skew == null) return false;
+    _lastDeviceClockSkew = skew;
+    _deviceClockStuckAhead =
+        decideDeviceClockAction(skew) == DeviceClockAction.stuckAhead;
+    notifyListeners();
+    return answered;
+  }
+
+  /// After a settings save, shows what the radio now holds. Not awaited by
+  /// the screens: it waits for a running sync, however long a big table takes.
+  Future<void> refreshRadioSettings() async {
+    if (!await readRadioSettings(syncTimeout: const Duration(minutes: 10))) {
+      return;
+    }
+    await _askRadio(buildGetCustomVarsFrame(), respCodeCustomVars);
+  }
+
+  /// What the radio was just told. The read that confirms it can wait for a
+  /// sync, and until then a reopened dialog would write the old values back.
+  void noteRadioSettingsSaved({
+    required int freqKhz,
+    required int bwHz,
+    required int sf,
+    required int cr,
+    required int txPower,
+    bool? clientRepeat,
+  }) {
+    _currentFreqHz = freqKhz;
+    _currentBwHz = bwHz;
+    _currentSf = sf;
+    _currentCr = cr;
+    _currentTxPower = txPower;
+    _clientRepeat = clientRepeat ?? _clientRepeat;
+    notifyListeners();
   }
 
   Future<void> refreshDeviceInfo() async {
@@ -4004,18 +4327,25 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
+  /// Fills in a contact frame from the radio. The frame's own coordinates win:
+  /// a saved contact's discovered row stops updating, so it can be far out of
+  /// date. Frames carry no inbound path, so that comes from the live list, or
+  /// from the row when the live copy has none.
   Contact getFromDiscovered(Contact contact) {
-    final tmp = _discoveredContacts.firstWhere(
-      (c) => c.publicKeyHex == contact.publicKeyHex,
+    final key = contact.publicKeyHex;
+    final row = _discoveredContacts.firstWhere(
+      (c) => c.publicKeyHex == key,
       orElse: () => contact,
     );
+    final live = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
+    final inbound = live?.inboundHopCount != null ? live! : row;
     return contact.copyWith(
-      rawPacket: tmp.rawPacket,
-      latitude: tmp.latitude,
-      longitude: tmp.longitude,
-      inboundPath: tmp.inboundPath,
-      inboundHopCount: tmp.inboundHopCount,
-      inboundPathHashSize: tmp.inboundPathHashSize,
+      rawPacket: row.rawPacket,
+      latitude: contact.latitude ?? live?.latitude ?? row.latitude,
+      longitude: contact.longitude ?? live?.longitude ?? row.longitude,
+      inboundPath: inbound.inboundPath,
+      inboundHopCount: inbound.inboundHopCount,
+      inboundPathHashSize: inbound.inboundPathHashSize,
     );
   }
 
@@ -4039,9 +4369,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (!isConnected) return;
     // The radio streams one contact list at a time and refuses a second
     // request mid-stream (ERR_CODE_BAD_STATE) while the first keeps coming.
-    // Clearing here would cut that list short and drop the route choices
-    // stashed for it. A full download already streaming covers this call;
-    // during a partial one, a full request runs when it ends.
+    // A full download already streaming covers this call; during a partial
+    // one, a full request runs when it ends.
     if (_isLoadingContacts) {
       if (!preserveExisting && _preserveContactsOnRefresh) {
         _fullContactSyncAfterStream = true;
@@ -4050,34 +4379,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     _isLoadingContacts = true;
+    _contactStreamStarted = false;
     _preserveContactsOnRefresh = preserveExisting;
-    List<Contact>? replaced;
-    if (!preserveExisting) {
-      // The radio knows nothing of the user's route choices; a full download
-      // rebuilds the list from its frames, so carry them across by key.
-      _overridesAcrossRefresh = {
-        for (final c in _contacts)
-          if (c.pathOverride != null) c.publicKeyHex: c,
-      };
-      replaced = List.of(_contacts);
-      _contacts.clear();
-      notifyListeners();
-    }
-
     _contactSyncSince = since ?? 0;
     _contactSyncStopwatch = Stopwatch()..start();
     try {
       await sendFrame(buildGetContactsFrame(since: since));
     } catch (_) {
-      // Nothing is coming: put the list back and leave the sync state as
-      // END_OF_CONTACTS would, or the next cache write stores an empty list
-      // and persistence and the sync banner stay stuck for the session.
-      if (replaced != null) {
-        _contacts
-          ..clear()
-          ..addAll(replaced);
-        _overridesAcrossRefresh = {};
-      }
+      // Nothing is coming: leave the sync state as END_OF_CONTACTS would, or
+      // the sync banner stays stuck for the session.
       _isLoadingContacts = false;
       _preserveContactsOnRefresh = false;
       _contactSyncStopwatch = null;
@@ -4210,7 +4520,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             name: live.name,
             lat: live.latitude,
             lon: live.longitude,
-            lastModified: live.lastSeen,
+            lastModified: _stampRadioWrite(live.publicKeyHex),
             lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
           ),
         );
@@ -4237,8 +4547,24 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           pathHashSize: width,
         );
         notifyListeners();
+        unawaited(_persistContacts());
       }
     });
+  }
+
+  /// The lastmod for a contact write. The radio evicts the lowest lastmod from a
+  /// full table, so a write sends the time now, or a contact in use could look
+  /// oldest. Remembered so the next sync does not read it as hearing the contact.
+  DateTime _stampRadioWrite(String keyHex) {
+    final now = DateTime.now();
+    final index = _contacts.indexWhere((c) => c.publicKeyHex == keyHex);
+    if (index >= 0) {
+      _contacts[index] = _contacts[index].copyWith(
+        appLastmodSecs: now.millisecondsSinceEpoch ~/ 1000,
+      );
+      _persistContactsSoon();
+    }
+    return now;
   }
 
   /// Runs [body] with no other route write in between. Re-entrant: a route
@@ -4356,7 +4682,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: latestContact.name,
         lat: latestContact.latitude,
         lon: latestContact.longitude,
-        lastModified: latestContact.lastSeen,
+        lastModified: _stampRadioWrite(latestContact.publicKeyHex),
         lastAdvertEpochSeconds: latestContact.lastAdvertSecs ?? 0,
       ),
     );
@@ -4436,28 +4762,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       clearPathOverride: pathLen == null, // Clear if pathLen is null
     );
 
-    final fullDownloadInFlight =
-        _isLoadingContacts && !_preserveContactsOnRefresh;
-    if (fullDownloadInFlight) {
-      // The list is being rebuilt from the radio's frames; the choice must
-      // be waiting for this contact's frame, in place of any older one.
-      if (pathLen == null) {
-        _overridesAcrossRefresh.remove(contact.publicKeyHex);
-      } else {
-        _overridesAcrossRefresh[contact.publicKeyHex] = updated;
-      }
-    }
     if (index == -1) {
-      if (!fullDownloadInFlight) {
-        appLogger.warn(
-          'setPathOverride: Contact not found in list: ${contact.name}',
-          tag: 'Connector',
-        );
-        return;
-      }
-    } else {
-      _contacts[index] = updated;
+      appLogger.warn(
+        'setPathOverride: Contact not found in list: ${contact.name}',
+        tag: 'Connector',
+      );
+      return;
     }
+    _contacts[index] = updated;
 
     appLogger.info(
       'Override for ${contact.name}: ${updated.pathOverride}, '
@@ -4945,7 +5257,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: live.name,
         lat: live.latitude,
         lon: live.longitude,
-        lastModified: live.lastSeen,
+        lastModified: _stampRadioWrite(live.publicKeyHex),
         lastAdvertEpochSeconds: live.lastAdvertSecs ?? 0,
       ),
     );
@@ -4957,6 +5269,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
     return readded;
   }
+
+  /// The radio overwrote this contact, as far as this connection knows: it has
+  /// an unsaved row and no saved entry. Not being in [contacts] alone proves
+  /// nothing: the list is empty for a moment on every reconnect, and rows load
+  /// only after it, so during that moment this is false.
+  bool wasDroppedByRadio(Contact contact) =>
+      !_contacts.any((c) => c.publicKeyHex == contact.publicKeyHex) &&
+      _discoveredContacts.any(
+        (c) => c.publicKeyHex == contact.publicKeyHex && !c.isActive,
+      );
 
   /// [lastAdvertEpochSeconds] is the advert time the radio records (default:
   /// the heard advert's own, else 0); it drops any later advert that is not
@@ -4978,7 +5300,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         name: contact.name,
         lat: contact.latitude,
         lon: contact.longitude,
-        lastModified: contact.lastSeen,
+        // Added now, however long ago it was heard: the radio keeps this as
+        // lastmod, and a full table evicts the oldest.
+        lastModified: DateTime.now(),
         lastAdvertEpochSeconds:
             lastAdvertEpochSeconds ?? contact.lastAdvertSecs ?? 0,
       ),
@@ -5331,6 +5655,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setNodeName(String name) async {
     if (!isConnected) return;
     await sendFrame(buildSetAdvertNameFrame(name));
+    _selfName = name;
+    notifyListeners();
   }
 
   Future<void> setNodeLocation({
@@ -5339,6 +5665,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) async {
     if (!isConnected) return;
     await sendFrame(buildSetAdvertLatLonFrame(lat, lon));
+    _selfLatitude = lat;
+    _selfLongitude = lon;
+    _selfPositionLive = false;
+    notifyListeners();
   }
 
   /// Asks a radio with its GPS on for its position, answered in
@@ -5469,7 +5799,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     int advert,
     int multiAcks,
   ) async {
-    if (!isConnected) return;
+    // Before SELF_INFO the other values in this frame, and the manual-add byte,
+    // are only defaults.
+    if (!isConnected || _selfPublicKey == null) return;
     _telemetryModeBase = base.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _telemetryModeLoc = location.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _telemetryModeEnv = env.clamp(teleModeDeny, teleModeAllowAll).toInt();
@@ -5482,6 +5814,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             _telemetryModeBase,
         _advertLocPolicy,
         _multiAcks,
+        // Firmware without per-type auto-add has only this on/off switch, so
+        // it keeps what it has.
+        manualAdd:
+            firmwareSupports(
+              RadioSetting.autoAdd,
+              _firmwareVerCode,
+              _firmwareVersion,
+            )
+            ? 0x01
+            : _manualAddRaw,
       ),
     );
     notifyListeners();
@@ -5985,9 +6327,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         break;
       case respCodeContactsStart:
         debugPrint('Got CONTACTS_START');
-        if (!_preserveContactsOnRefresh) {
-          _contacts.clear();
-        }
+        _contactStreamStarted = true;
+        // The list stays on screen while the radio re-sends it; END_OF_CONTACTS
+        // removes what the radio did not. A contact added meanwhile is not on
+        // trial.
+        _unconfirmedContactKeys = _preserveContactsOnRefresh
+            ? null
+            : {for (final c in _contacts) c.publicKeyHex};
         if (frame.length >= 5) {
           final reader = BufferReader(frame);
           reader.skipBytes(1);
@@ -6014,16 +6360,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // it in the contact list within a moment of the advert.
         final pubKey = frame.sublist(1, 33);
         final pubKeyHex = pubKeyToHex(pubKey);
-        _localDiscoveredTimes[pubKeyHex] = DateTime.now();
-        final known =
-            _contacts.any((c) => c.publicKeyHex == pubKeyHex) ||
-            _discoveredContacts.any((c) => c.publicKeyHex == pubKeyHex);
-        if (!known) {
-          appLogger.info(
-            'Advert from unknown contact $pubKeyHex — fetching record',
-            tag: 'Connector',
-          );
-          unawaited(getContactByKey(pubKey));
+        // The radio took a neighbour's shared copy. That is no hearing, but its
+        // record changed, advert time included, and route writes send that back.
+        final sharedCopy = _lastSharedAdvert?.key == pubKeyHex;
+        if (sharedCopy) {
+          _sharedCopyKeys.add(pubKeyHex);
+          _lastSharedAdvert = null;
+        } else {
+          _localDiscoveredTimes[pubKeyHex] = DateTime.now();
+        }
+        // Only the saved list counts: a discovered row is no record of what the
+        // radio holds. A running download may be past this contact's slot.
+        final known = _contacts.any((c) => c.publicKeyHex == pubKeyHex) &&
+            !(_unconfirmedContactKeys?.contains(pubKeyHex) ?? false);
+        if (!known || sharedCopy) {
+          if (_isLoadingContacts) {
+            _fetchAfterDownload[pubKeyHex] = pubKey;
+          } else {
+            appLogger.info(
+              sharedCopy
+                  ? 'Radio took a shared copy of $pubKeyHex — fetching record'
+                  : 'Advert from unknown contact $pubKeyHex — fetching record',
+              tag: 'Connector',
+            );
+            unawaited(getContactByKey(pubKey));
+          }
         }
         notifyListeners();
         break;
@@ -6039,7 +6400,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeEndOfContacts:
         debugPrint('Got END_OF_CONTACTS');
         // Whatever the radio did not re-send no longer exists there.
-        _overridesAcrossRefresh = {};
+        final unconfirmed = _unconfirmedContactKeys
+          ?..removeAll(_fetchAfterDownload.keys);
+        _unconfirmedContactKeys = null;
+        if (unconfirmed != null && unconfirmed.isNotEmpty) {
+          _contacts.removeWhere((c) => unconfirmed.contains(c.publicKeyHex));
+        }
         final syncElapsedMs = _contactSyncStopwatch?.elapsedMilliseconds;
         _contactSyncStopwatch = null;
         final syncSince = _contactSyncSince;
@@ -6073,8 +6439,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             tag: 'Connector',
           );
         }
+        // A full download checked the list. A contact the radio overwrote while
+        // no app was connected is gone, and no push ever said so. Still counted
+        // as known, its row would stay hidden and its next advert ignored.
+        if (!_preserveContactsOnRefresh) {
+          _knownContactKeys
+            ..clear()
+            ..addAll(_contacts.map((c) => c.publicKeyHex));
+        }
         _isLoadingContacts = false;
         _preserveContactsOnRefresh = false;
+        _settleHeldContactMessages(wholeList: syncSince == 0);
+        for (final pubKey in _fetchAfterDownload.values) {
+          unawaited(getContactByKey(pubKey));
+        }
+        _fetchAfterDownload.clear();
         if (_fullContactSyncAfterStream) {
           _fullContactSyncAfterStream = false;
           unawaited(getContacts());
@@ -6196,9 +6575,38 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeErr:
         _handleErrorFrame(frame);
         break;
+      case pushCodeContactDeleted:
+        _handleContactDeleted(frame);
+        break;
       default:
         debugPrint('Unknown frame code: $code');
     }
+  }
+
+  /// The radio overwrote this contact to make room for a new one. It is gone
+  /// from the radio, so it moves to the discovered list, where it can be added
+  /// back. Its messages stay for when it is.
+  void _handleContactDeleted(Uint8List frame) {
+    if (frame.length < 1 + pubKeySize) return;
+    _moveSavedToDiscovered(pubKeyToHex(frame.sublist(1, 1 + pubKeySize)));
+    notifyListeners();
+    unawaited(_persistContacts());
+  }
+
+  void _moveSavedToDiscovered(String key) {
+    final removed = _contacts.where((c) => c.publicKeyHex == key).firstOrNull;
+    final row = _discoveredContacts
+        .where((c) => c.publicKeyHex == key)
+        .firstOrNull;
+    _knownContactKeys.remove(key);
+    _contacts.removeWhere((c) => c.publicKeyHex == key);
+    // The saved copy has the current name, position and permissions; a row is
+    // only a snapshot from when the contact was first heard.
+    final listed = removed ?? row;
+    if (listed != null) {
+      _handleDiscovery(listed, row?.rawPacket ?? Uint8List(0), noNotify: true);
+    }
+    if (removed != null) unawaited(_persistContacts());
   }
 
   void _handleErrorFrame(Uint8List frame) {
@@ -6208,10 +6616,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       tag: 'Protocol',
     );
     _errorStreamController.add(errCode);
-    if (errCode == errCodeTableFull && contactTableFull) {
+    if (errCode == errCodeTableFull && contactTableFull && !_shareReplyPending) {
       _contactTableFullController.add(null);
     }
 
+    _dropLostAcks();
     if (_pendingGenericAckQueue.isEmpty) {
       return;
     }
@@ -6256,12 +6665,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // [45] = advert_loc_policy
     // [46] = telemetry modes
     // [47] = manual_add_contacts
-    // [48-51] = freq (uint32 LE, in Hz)
+    // [48-51] = freq (uint32 LE, in kHz)
     // [52-55] = bw (uint32 LE, in Hz)
     // [56] = sf
     // [57] = cr
     // [58+] = node_name
     final wasAwaitingSelfInfo = _awaitingSelfInfo;
+    final wasPositionLive = _selfPositionLive;
     final reader = BufferReader(frame);
     try {
       reader.skipBytes(2);
@@ -6312,6 +6722,40 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       unawaited(_persistLastBleDevice());
     }
 
+    // CMD_APP_START stops the radio's contact stream, and END_OF_CONTACTS only
+    // comes from that stream. Replies arrive in order, so a SELF_INFO after
+    // CONTACTS_START means the stream is over. Left set, the flag stops the
+    // download below from asking again and parks the message queue behind it
+    // for the rest of the connection.
+    final streamStopped = _isLoadingContacts && _contactStreamStarted;
+    if (streamStopped) {
+      _unconfirmedContactKeys = null;
+      _isLoadingContacts = false;
+      _preserveContactsOnRefresh = false;
+      _contactSyncStopwatch = null;
+    }
+    // readRadioSettings only wants the values above. A contact download from
+    // here would clear the list, and a DM from a sender not yet back in it is
+    // dropped for good.
+    final settingsOnly =
+        _unansweredSettingsReads > 0 &&
+        !wasAwaitingSelfInfo &&
+        !streamStopped &&
+        _lastLoadedNodeKey == selfPublicKeyHex;
+    if (_unansweredSettingsReads > 0) _unansweredSettingsReads--;
+    if (settingsOnly) {
+      // The radio has not restarted, so a position that was live still is.
+      _selfPositionLive = wasPositionLive;
+      notifyListeners();
+      return;
+    }
+
+    // Armed for the radio before: it must not fire into this radio's scope.
+    if (_lastLoadedNodeKey != selfPublicKeyHex) {
+      _contactPersistTimer?.cancel();
+      _contactPersistTimer = null;
+    }
+
     //set all the stores' public key so they can load the correct data
     _channelMessageStore.setPublicKeyHex = selfPublicKeyHex;
     _messageStore.setPublicKeyHex = selfPublicKeyHex;
@@ -6356,7 +6800,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     loadCachedChannels().then((_) async {
       await loadChannelSettings();
     });
-    _loadDiscoveredContactCache();
+    _loadDiscoveredContactCache(cacheLoaded);
 
     _awaitingSelfInfo = false;
     _selfInfoRetryTimer?.cancel();
@@ -6526,15 +6970,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _checkManualAddContacts() async {
-    // If manual add contacts is enabled, set auto add config and other params.
-    // and disable it after
+    // This bit clear means the radio auto-adds everything it hears. That is the
+    // factory state, but also any radio whose owner never chose otherwise in
+    // another app. Only a radio nobody has named is moved to the values the
+    // health check recommends (lib/health/health_rules.dart); keep the two in
+    // step, or a new user is flagged for our own defaults. A used radio keeps
+    // what it does today, and the check offers the rest with a confirm.
     if (_manualAddContacts) {
+      final fresh = hasFactoryName;
+      _autoAddUsers = true;
+      _autoAddRepeaters = !fresh;
+      _autoAddRoomServers = !fresh;
+      _autoAddSensors = !fresh;
+      if (fresh) {
+        _overwriteOldest = true;
+        _multiAcks = 1;
+      }
       await sendFrame(
         buildSetAutoAddConfigFrame(
-          autoAddChat: true,
-          autoAddRepeater: true,
-          autoAddRoomServer: true,
-          autoAddSensor: true,
+          autoAddChat: _autoAddUsers,
+          autoAddRepeater: _autoAddRepeaters,
+          autoAddRoomServer: _autoAddRoomServers,
+          autoAddSensor: _autoAddSensors,
           overwriteOldest: _overwriteOldest,
         ),
       );
@@ -6547,6 +7004,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _multiAcks,
         ),
       );
+      if (fresh && (_firmwareVerCode ?? 0) >= 10) {
+        _pathHashByteWidth = 2;
+        await setPathHashMode(1);
+      }
       _manualAddContacts = false;
       _manualAddRaw = 1;
     }
@@ -6640,6 +7101,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (contactTmp != null) {
       if (isContact) {
         _loadedContactsCount++;
+        _unconfirmedContactKeys?.remove(contactTmp.publicKeyHex);
       }
       if (listEquals(contactTmp.publicKey, _selfPublicKey)) {
         appLogger.info(
@@ -6649,13 +7111,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         removeContact(contactTmp);
         return;
       }
+      // The shared copy, as the radio passes it on with its clock as lastmod.
+      if (!isContact &&
+          _lastSharedAdvert?.key == contactTmp.publicKeyHex &&
+          _lastSharedAdvert?.secs == contactTmp.lastAdvertSecs) {
+        return;
+      }
       final contact = getFromDiscovered(contactTmp);
       if (!isContact) {
-        _handleDiscovery(contact, frame, noNotify: true, addActive: true);
+        // The radio says it did not save this node (firmware onDiscoveredContact:
+        // a node it holds gets key-only ADVERT). If the list says otherwise, the
+        // radio overwrote it while no app was connected.
+        _moveSavedToDiscovered(contact.publicKeyHex);
+        _handleDiscovery(contact, contact.rawPacket ?? frame, noNotify: true);
+        notifyListeners();
+        return;
       }
+      _fetchAfterDownload.remove(contact.publicKeyHex);
+      final sharedCopy = _sharedCopyKeys.remove(contact.publicKeyHex);
+      final heardRow = _discoveredContacts
+          .where((c) => c.publicKeyHex == contact.publicKeyHex)
+          .firstOrNull;
 
-      if (contact.type == advTypeRepeater) {
-      }
       // Check if this is a new contact
       final isNewContact = !_knownContactKeys.contains(contact.publicKeyHex);
       final existingIndex = _contacts.indexWhere(
@@ -6664,19 +7141,26 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       if (existingIndex >= 0) {
         final existing = _contacts[existingIndex];
+        // A lastmod this app caused says nothing about hearing the contact. An
+        // older one is a frame sent before the write, or a write that did not
+        // land; anything the radio hears after a write is newer than it.
+        final appStamp = existing.appLastmodSecs;
+        final notHeard = sharedCopy ||
+            (appStamp != null &&
+                contact.radioLastmodSecs != null &&
+                contact.radioLastmodSecs! <= appStamp);
+        // The frame's lastMessageAt is its lastmod too.
         final mergedLastMessageAt =
-            existing.lastMessageAt.isAfter(contact.lastMessageAt)
+            notHeard || existing.lastMessageAt.isAfter(contact.lastMessageAt)
             ? existing.lastMessageAt
             : contact.lastMessageAt;
 
-        appLogger.info(
-          'Refreshing contact ${contact.name}: devicePath=${contact.pathLength}, existingOverride=${existing.pathOverride}',
-          tag: 'Connector',
-        );
-
         // Preserve user-selected path settings and previously known GPS when
         // refreshed frames omit coordinates (lat/lon encoded as 0,0).
-        _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
+        _contacts[existingIndex] = contact.copyWith(
+          lastSeen: notHeard ? existing.lastSeen : null,
+          appLastmodSecs:
+              sharedCopy ? contact.radioLastmodSecs : existing.appLastmodSecs,
           lastMessageAt: mergedLastMessageAt,
           pathOverride: existing.pathOverride, // Preserve user's path choice
           pathOverrideBytes: existing.pathOverrideBytes,
@@ -6686,42 +7170,42 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           // Device DB rows can be legitimately old, so skew is only assessed
           // on live adverts; carry the last assessment through syncs.
           clockCorrected: existing.clockCorrected,
-          // Device frames carry no inbound advert path.
-          inboundPath: existing.inboundPath,
-          inboundHopCount: existing.inboundHopCount,
-          inboundPathHashSize: existing.inboundPathHashSize,
-        ));
-
-        appLogger.info(
-          'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-          tag: 'Connector',
         );
       } else {
-        if ((_autoAddUsers && contact.type == advTypeChat) ||
-            (_autoAddRepeaters && contact.type == advTypeRepeater) ||
-            (_autoAddRoomServers && contact.type == advTypeRoom) ||
-            (_autoAddSensors && contact.type == advTypeSensor) ||
-            isContact) {
-          _contacts.add(_restoreKeptOverride(contact));
-          appLogger.info(
-            'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
-            tag: 'Connector',
-          );
-        } else {
-          appLogger.info(
-            "Discovered contact ${contact.name} (type ${contact.typeLabel}) not added due to auto-add settings",
-            tag: 'Connector',
-          );
-          return;
-        }
+        _contacts.add(
+          sharedCopy
+              ? contact.copyWith(
+                  lastSeen: heardRow?.lastSeen,
+                  lastMessageAt: heardRow?.lastSeen,
+                  appLastmodSecs: contact.radioLastmodSecs,
+                )
+              : contact,
+        );
+        appLogger.info(
+          'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
+          tag: 'Connector',
+        );
       }
       _knownContactKeys.add(contact.publicKeyHex);
+      // Fetched on its own, a saved contact's row goes active here, or
+      // allContacts lists it twice. A download does them all at its end.
+      if (!_isLoadingContacts) {
+        final row = _discoveredContacts.indexWhere(
+          (c) => c.publicKeyHex == contact.publicKeyHex,
+        );
+        if (row >= 0 && !_discoveredContacts[row].isActive) {
+          _discoveredContacts[row] = _discoveredContacts[row].copyWith(
+            isActive: true,
+          );
+        }
+      }
       _loadMessagesForContact(contact.publicKeyHex);
 
       notifyListeners();
 
-      // Show notification for new contact (advertisement)
-      if (isNewContact && _appSettingsService != null) {
+      // Show notification for new contact (advertisement). Its heard row
+      // already gave one if it has a row.
+      if (isNewContact && heardRow == null && _appSettingsService != null) {
         final settings = _appSettingsService!.settings;
         if (settings.notificationsEnabled && settings.notifyOnNewAdvert) {
           _notificationService.showAdvertNotification(
@@ -6734,6 +7218,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       if (!_isLoadingContacts) {
         unawaited(_persistContacts());
+        _replayHeldContactMessages();
       }
     }
   }
@@ -6758,13 +7243,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ? existing.lastMessageAt
           : contact.lastMessageAt;
 
-      appLogger.info(
-        'Refreshing contact ${contact.name}: devicePath=${contact.pathLength}, existingOverride=${existing.pathOverride}',
-        tag: 'Connector',
-      );
-
       // CRITICAL: Preserve user's path override when contact is refreshed from device
-      _contacts[existingIndex] = _restoreKeptOverride(contact.copyWith(
+      _contacts[existingIndex] = contact.copyWith(
         lastMessageAt: mergedLastMessageAt,
         pathOverride: existing.pathOverride, // Preserve user's path choice
         pathOverrideBytes: existing.pathOverrideBytes,
@@ -6775,20 +7255,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         inboundHopCount: contact.inboundHopCount ?? existing.inboundHopCount,
         inboundPathHashSize:
             contact.inboundPathHashSize ?? existing.inboundPathHashSize,
-      ));
-
-      appLogger.info(
-        'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-        tag: 'Connector',
       );
     } else {
-      _contacts.add(_restoreKeptOverride(contact));
+      _contacts.add(contact);
       appLogger.info(
         'Added new contact ${contact.name}: pathLen=${contact.pathLength}',
         tag: 'Connector',
       );
     }
     _knownContactKeys.add(contact.publicKeyHex);
+    _unconfirmedContactKeys?.remove(contact.publicKeyHex);
     _loadMessagesForContact(contact.publicKeyHex);
 
     notifyListeners();
@@ -6810,28 +7286,26 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
   }
 
-  Future<void> _persistContacts() async {
-    // A full download rebuilds the list from empty; writing the partial list
-    // would replace the cache with a truncated one if the link dropped
-    // mid-way. END_OF_CONTACTS persists the complete list.
-    if (_isLoadingContacts && !_preserveContactsOnRefresh) return;
-    await _contactStore.saveContacts(_contacts);
+  /// A busy mesh brings many adverts a minute, and each save rewrites the whole
+  /// contact table.
+  void _persistContactsSoon() {
+    _contactPersistTimer ??= Timer(const Duration(seconds: 10), () {
+      _contactPersistTimer = null;
+      unawaited(_persistContacts());
+    });
   }
 
-  /// Puts a route override stashed by a full download back on the contact
-  /// the radio just re-sent, unless it already has one. Both the contact
-  /// frame and a live advert can be the first to add a contact mid-download.
-  Contact _restoreKeptOverride(Contact c) {
-    // Look up, never pop: a live advert can add the contact before
-    // CONTACTS_START clears the list again, and the contact's own frame
-    // still needs the entry. END_OF_CONTACTS empties the stash.
-    final kept = _overridesAcrossRefresh[c.publicKeyHex];
-    if (kept == null || c.pathOverride != null) return c;
-    return c.copyWith(
-      pathOverride: kept.pathOverride,
-      pathOverrideBytes: kept.pathOverrideBytes,
-      pathOverrideHashSize: kept.pathOverrideHashSize,
-    );
+  void _flushContactPersist() {
+    if (_contactPersistTimer == null) return;
+    _contactPersistTimer!.cancel();
+    _contactPersistTimer = null;
+    unawaited(_persistContacts());
+  }
+
+  Future<void> _persistContacts() async {
+    // A copy: the store reads it after an await, and a disconnect can empty the
+    // list right after this call.
+    await _contactStore.saveContacts(List.of(_contacts));
   }
 
   // Discovered contacts have no radio backstop, so the store is append-only
@@ -6931,37 +7405,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         .any((hop) => _matchesPrefix(publicKey, hop));
   }
 
-  void _handleIncomingMessage(Uint8List frame) async {
+  void _handleIncomingMessage(
+    Uint8List frame, {
+    bool replay = false,
+    Contact? unlisted,
+  }) {
     if (_selfPublicKey == null) return;
+
+    // A replayed frame was already counted when it first came off the queue.
+    void nextQueued() {
+      if (!replay) _handleQueuedMessageReceived();
+    }
 
     final layout = parseContactMsgLayout(frame);
     if (layout != null && layout.txtType == txtTypeCliCommand) {
       _reportBlockedCliCommand(layout.senderPrefix, layout.text);
-      _handleQueuedMessageReceived();
+      nextQueued();
       return;
     }
 
-    var message = _parseContactMessage(frame);
+    var message = _parseContactMessage(frame, unlisted: unlisted);
 
-    // If message parsing failed due to unknown contact, refresh contacts and retry
-    if (message == null && !_isLoadingContacts) {
-      final senderPrefix = _extractSenderPrefix(frame);
-      if (senderPrefix != null) {
-        final hasContact = _contacts.any(
-          (c) => _matchesPrefix(c.publicKey, senderPrefix),
-        );
-        if (!hasContact) {
-          debugPrint(
-            'Received message from unknown contact, refreshing contacts...',
-          );
-          await refreshContactsSinceLastmod();
-          // Retry parsing after refresh
-          message = _parseContactMessage(frame);
-          if (message != null) {
-            debugPrint('Successfully parsed message after contact refresh');
-          }
-        }
+    if (message == null && unlisted == null && !_senderIsListed(frame)) {
+      if (_absentSenders.contains(_senderPrefixHex(frame))) {
+        _giveUpOnHeldMessage(frame);
+        nextQueued();
+      } else {
+        _holdContactMessage(frame);
       }
+      return;
     }
 
     if (message != null) {
@@ -6994,13 +7466,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             frame[0] == respCodeContactMsgRecvV3 ? frame[1].toSigned(8) : null,
           );
         }
-        _handleQueuedMessageReceived();
+        nextQueued();
         return;
       }
 
       final contact = _contacts.cast<Contact?>().firstWhere(
         (c) => c?.publicKeyHex == message!.senderKeyHex,
-        orElse: () => null,
+        orElse: () => unlisted,
       );
       if (contact != null) {
         final layout = parseContactMsgLayout(frame);
@@ -7078,10 +7550,126 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
       }());
       notifyListeners();
-      _handleQueuedMessageReceived();
+      nextQueued();
     } else if (_isSyncingQueuedMessages) {
-      _handleQueuedMessageReceived();
+      nextQueued();
     }
+  }
+
+  String _senderPrefixHex(Uint8List frame) {
+    final prefix = _extractSenderPrefix(frame);
+    return prefix == null ? '?' : pubKeyToHex(prefix);
+  }
+
+  bool _senderIsListed(Uint8List frame) {
+    final prefix = _extractSenderPrefix(frame);
+    return prefix == null ||
+        _contacts.any((c) => _matchesPrefix(c.publicKey, prefix));
+  }
+
+  /// The radio has already taken this message off its queue, and it usually
+  /// still holds the sender, so the record is there to fetch. The queue drain
+  /// waits behind the download, then carries on.
+  void _holdContactMessage(Uint8List frame) {
+    if (_heldContactMessages.length >= _heldContactMessageCap) {
+      _giveUpOnHeldMessage(_heldContactMessages.removeAt(0));
+    }
+    _heldContactMessages.add(frame);
+    if (_isSyncingQueuedMessages) {
+      _queueSyncTimeout?.cancel();
+      _queuedMessageSyncInFlight = false;
+      _isSyncingQueuedMessages = false;
+      _pendingQueueSync = true;
+      notifyListeners();
+    }
+    if (!_isLoadingContacts) unawaited(_fetchWholeContactList());
+  }
+
+  /// With `since` a sender whose lastmod is older would not come back.
+  Future<void> _fetchWholeContactList() async {
+    try {
+      await refreshContacts();
+    } catch (e) {
+      _appDebugLogService?.warn(
+        'Contact fetch for a held message failed: $e',
+        tag: 'Connector',
+      );
+      // No END_OF_CONTACTS is coming to restart the drain.
+      if (_pendingQueueSync) {
+        _pendingQueueSync = false;
+        unawaited(syncQueuedMessages(force: true));
+      }
+    }
+  }
+
+  void _replayHeldContactMessages() {
+    if (_heldContactMessages.isEmpty) return;
+    final frames = List.of(_heldContactMessages);
+    _heldContactMessages.clear();
+    for (final frame in frames) {
+      if (_senderIsListed(frame)) {
+        _handleIncomingMessage(frame, replay: true);
+      } else {
+        _heldContactMessages.add(frame);
+      }
+    }
+  }
+
+  /// At the end of a download. [wholeList] false: a `since` pass can leave out
+  /// the sender, so ask once more for everything before giving up.
+  void _settleHeldContactMessages({required bool wholeList}) {
+    _replayHeldContactMessages();
+    // A record on its way may be the sender's; its frame replays them.
+    final waiting = _heldContactMessages
+        .where(
+          (f) => _fetchAfterDownload.keys.any(
+            (k) => k.startsWith(_senderPrefixHex(f)),
+          ),
+        )
+        .toList();
+    if (_heldContactMessages.length == waiting.length) return;
+    if (!wholeList) {
+      unawaited(_fetchWholeContactList());
+      return;
+    }
+    final frames = List.of(_heldContactMessages);
+    _heldContactMessages
+      ..clear()
+      ..addAll(waiting);
+    for (final frame in frames.where((f) => !waiting.contains(f))) {
+      _absentSenders.add(_senderPrefixHex(frame));
+      _giveUpOnHeldMessage(frame);
+    }
+  }
+
+  void _giveUpOnAllHeldMessages() {
+    final frames = List.of(_heldContactMessages);
+    _heldContactMessages.clear();
+    frames.forEach(_giveUpOnHeldMessage);
+  }
+
+  /// The radio queued this and then lost the sender, say by overwriting it.
+  /// With a heard row the message can still be filed; without one it is gone.
+  void _giveUpOnHeldMessage(Uint8List frame) {
+    final prefix = _extractSenderPrefix(frame);
+    final row = prefix == null
+        ? null
+        : _discoveredContacts
+              .where((c) => _matchesPrefix(c.publicKey, prefix))
+              .firstOrNull;
+    if (row != null) {
+      _handleIncomingMessage(frame, replay: true, unlisted: row);
+      return;
+    }
+    _dropHeldContactMessage(frame);
+  }
+
+  void _dropHeldContactMessage(Uint8List frame) {
+    _appDebugLogService?.warn(
+      'Dropped a message from a sender the radio did not send: '
+      '${_senderPrefixHex(frame)}',
+      tag: 'Connector',
+    );
   }
 
   /// Firmware 1.18 queues a CLI command a contact tried to run on our radio
@@ -7152,7 +7740,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  Message? _parseContactMessage(Uint8List frame) {
+  Message? _parseContactMessage(Uint8List frame, {Contact? unlisted}) {
     if (frame.isEmpty) {
       appLogger.warn('Received empty frame, ignoring');
       return null;
@@ -7190,7 +7778,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final senderPrefix = layout.senderPrefix;
       final contact = _contacts.cast<Contact?>().firstWhere(
         (c) => c != null && _matchesPrefix(c.publicKey, senderPrefix),
-        orElse: () => null,
+        orElse: () => unlisted,
       );
       if (contact == null) {
         appLogger.warn(
@@ -7554,7 +8142,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // carried). Node type is the flags byte after key, time, signature.
       if (packet.payloadType == payloadTypeADVERT &&
           packet.payload.length > 100 &&
-          (packet.payload[100] & 0x0F) == advTypeRepeater) {
+          (packet.payload[100] & 0x0F) == advTypeRepeater &&
+          !_isSharedAdvertRoute(packet.routeType, packet.pathBytes.length)) {
         _retryService?.noteRepeaterHeard();
       }
       // Message liveness, any hash width (the raw copy of my own flooded
@@ -7775,14 +8364,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           )..markAnswered(uplink, _discoverScan));
         }
 
-        if (pubKey != null && hex != null) {
-          final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex);
-          if (!alreadyKnown) {
-            appLogger.info('Discovered repeater is unknown to app contacts. Querying companion database for $hex...');
-            unawaited(sendFrame(buildGetContactByKeyFrame(pubKey)));
-          }
-        }
-
         if (hasFullPubKey && (_autoAddRepeaters == true)) {
           final alreadyKnown = _contacts.any((c) => c.publicKeyHex == hex!);
           if (!alreadyKnown && !_discoveredContacts.any((c) => c.publicKeyHex == hex!)) {
@@ -7797,14 +8378,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               path: Uint8List(0),
               pathHashSize: _pathHashByteWidth,
               lastSeen: DateTime.now(),
-              isActive: true, // Set to true since we are adding it as an active contact
             );
             
-            // Route through standard contact handling so it appears in the UI and routing tables
-            _handleContactAdvert(newContact);
-            _handleDiscovery(newContact, Uint8List(0), noNotify: true, addActive: true);
+            // A heard row only: a Discover answer changes nothing on the radio
+            // (firmware onControlDataRecv), so it did not save this repeater.
+            _handleDiscovery(newContact, Uint8List(0));
             
-            appLogger.info('Automatically added newly discovered repeater: ${newContact.name} (${newContact.publicKeyHex})');
           }
         }
 
@@ -7954,6 +8533,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void _handleOk() {
+    _dropLostAcks();
     if (_pendingGenericAckQueue.isEmpty) {
       return;
     }
@@ -8503,7 +9083,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
     if (!isNew) return false;
     // Viewing this conversation: the read watermark rides along.
-    if (_activeContactKey == pubKeyHex) {
+    if (!_appAway && _activeContactKey == pubKeyHex) {
       unawaited(_messageStore.markRead(pubKeyHex));
     }
     // A stored MeshCore One reaction is a parked orphan (its target wasn't
@@ -9718,7 +10298,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     // Viewing this channel: the read watermark rides along so the message
     // never accrues as unread (parity with the old active-channel rule).
-    if (_activeChannelIndex != null &&
+    if (!_appAway &&
+        _activeChannelIndex != null &&
         _findChannelByIndex(_activeChannelIndex!)?.idKey == idKey) {
       unawaited(_channelMessageStore.markRead(idKey));
     }
@@ -10119,6 +10700,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // A drop mid-handshake must also clear the device-info wait, or the
     // banner sticks on "Reading device info" until the next attempt.
     _initialSyncComplete = false;
+    _channelHealthWarnings.clear();
+    _unansweredSettingsReads = 0;
     _resetSecondApp();
     _requestSentClaims.clear();
     _awaitingSelfInfo = false;
@@ -10138,6 +10721,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
+    _giveUpOnAllHeldMessages();
+    _flushContactPersist();
     // See disconnect(): END_OF_CONTACTS never arrives on a dropped link, so the
     // sync banner has to be cleared here or it sticks at its last count.
     _isLoadingContacts = false;
@@ -10147,7 +10732,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _contactSyncRadioTotal = 0;
     _contactFullResyncPending = false;
     _fullContactSyncAfterStream = false;
-    _overridesAcrossRefresh = {};
+    _unconfirmedContactKeys = null;
+    _absentSenders.clear();
+    _fetchAfterDownload.clear();
+    _sharedCopyKeys.clear();
     // The slot map is untrusted from ANY disconnect (this is the
     // unexpected-drop path; disconnect() covers the manual one) until a
     // channel sync completes on the next connection. hasLoaded must fall with
@@ -10194,6 +10782,42 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ),
     );
   }
+
+  void _forgetPendingAck(int commandCode, String? channelSendQueueId) {
+    final index = _pendingGenericAckQueue.lastIndexWhere(
+      (a) =>
+          a.commandCode == commandCode &&
+          a.channelSendQueueId == channelSendQueueId,
+    );
+    if (index >= 0) _pendingGenericAckQueue.removeAt(index);
+    // A message's row has its own timer; a reaction's id has nothing else to
+    // clear it, and keeps hasSendsInFlight true until a disconnect.
+    if (channelSendQueueId != null &&
+        _isReactionSendQueueId(channelSendQueueId)) {
+      _pendingChannelSentQueue.remove(channelSendQueueId);
+    }
+  }
+
+  /// Long enough for a slow reply, short enough that a lost one only delays the
+  /// send right behind it: left at the head, it would use up that send's OK,
+  /// and the message would wait out its timer and go on the air twice.
+  @visibleForTesting
+  static Duration givenUpAckWindow = const Duration(seconds: 10);
+
+  void _dropLostAcks() {
+    while (_pendingGenericAckQueue.isNotEmpty) {
+      final givenUpAt = _pendingGenericAckQueue.first.givenUpAt;
+      if (givenUpAt == null ||
+          DateTime.now().difference(givenUpAt) < givenUpAckWindow) {
+        return;
+      }
+      _pendingGenericAckQueue.removeAt(0);
+    }
+  }
+
+  @visibleForTesting
+  List<String?> get pendingGenericAckIdsForTest =>
+      [for (final a in _pendingGenericAckQueue) a.channelSendQueueId];
 
   String _nextReactionSendQueueId() {
     _reactionSendQueueSequence++;
@@ -10314,6 +10938,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @override
   void dispose() {
     if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
+    _contactPersistTimer?.cancel();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();
@@ -11004,9 +11629,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    // A neighbour passing on a stored advert (firmware shareContactZeroHop:
+    // zero hop with transport codes). The copy can be old, and it says nothing
+    // about how the contact reaches us or when it last spoke, so it only
+    // introduces a contact we have never heard of.
+    final shared = _isSharedAdvertRoute(routeType, path.length);
+    _lastSharedAdvert = shared ? (key: contactKeyHex, secs: timestamp) : null;
+
     // Update our own location if the companion sends its advert, but ignore it as a contact
     if (listEquals(publicKey, _selfPublicKey)) {
-      if (hasLocation && hasValidLocation(latitude, longitude)) {
+      if (!shared && hasLocation && hasValidLocation(latitude, longitude)) {
         if (_selfLatitude != latitude || _selfLongitude != longitude) {
           _selfLatitude = latitude;
           _selfLongitude = longitude;
@@ -11019,11 +11651,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Check if this is a new contact
     final isNewContact = !_knownContactKeys.contains(contactKeyHex);
 
+    if (shared &&
+        (!isNewContact ||
+            _discoveredContacts.any((c) => c.publicKeyHex == contactKeyHex))) {
+      return;
+    }
+
     final hopCount = PathHelper.pathLenHops(pathLenRaw);
     final hashSize = PathHelper.pathLenWidth(pathLenRaw);
-    final advertTime = _parseAdvertTimestamp(timestamp);
+    final claimedTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    final advertTime = shared && claimedTime.isBefore(DateTime.now())
+        ? (time: claimedTime, corrected: false)
+        : _parseAdvertTimestamp(timestamp);
 
-    if (!_isLoadingContacts) {
+    if (!_isLoadingContacts && !shared) {
       _localDiscoveredTimes[contactKeyHex] = DateTime.now();
     }
 
@@ -11037,28 +11678,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathHashSize: hashSize,
         path: Uint8List(0),
         inboundPath: path,
-        inboundHopCount: hopCount,
-        inboundPathHashSize: hashSize,
+        inboundHopCount: shared ? null : hopCount,
+        inboundPathHashSize: shared ? null : hashSize,
         latitude: latitude,
         longitude: longitude,
         lastSeen: advertTime.time,
         clockCorrected: advertTime.corrected,
       );
-      if ((_autoAddUsers && type == advTypeChat) ||
-          (_autoAddRepeaters && type == advTypeRepeater) ||
-          (_autoAddRoomServers && type == advTypeRoom) ||
-          (_autoAddSensors && type == advTypeSensor)) {
-        _handleContactAdvert(newContact);
-        _handleDiscovery(
-          newContact,
-          rawPacket,
-          noNotify: true,
-          addActive: true,
-        );
+      // The radio logs a packet before it decides, so this can only be a heard
+      // row. A node it saves comes back as key-only ADVERT, fetched from there;
+      // one it refuses comes back as NEW_ADVERT.
+      _handleDiscovery(newContact, rawPacket);
+      if (shared) {
+        notifyListeners();
       } else {
-        _handleDiscovery(newContact, rawPacket);
+        _updateDirectRepeater(newContact, snr, path, pathLenRaw);
       }
-      _updateDirectRepeater(newContact, snr, path, pathLenRaw);
       return;
     }
 
@@ -11071,11 +11706,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final mergedLastMessageAt = existing.lastMessageAt.isAfter(DateTime.now())
           ? DateTime.now()
           : existing.lastMessageAt;
-
-      appLogger.info(
-        'Refreshing contact ${existing.name}: devicePath=${existing.pathLength}, existingOverride=${existing.pathOverride}',
-        tag: 'Connector',
-      );
 
       // The firmware's route (path/pathLength) is untouched: an advert only
       // tells us how the contact reaches us.
@@ -11095,13 +11725,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
 
       _updateDirectRepeater(_contacts[existingIndex], snr, path, pathLenRaw);
-
-      appLogger.info(
-        'After merge: pathOverride=${_contacts[existingIndex].pathOverride}, devicePath=${_contacts[existingIndex].pathLength}',
-        tag: 'Connector',
-      );
+      _persistContactsSoon();
     }
   }
+
+  static bool _isSharedAdvertRoute(int routeType, int pathBytes) =>
+      routeType == _routeTransportDirect && pathBytes == 0;
 
   void _updateDirectRepeater(
     Contact contact,
@@ -11138,12 +11767,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
       if (matches.length == 1) {
         lastHopPublicKey = matches.first.publicKey;
-      } else if (matches.length > 1) {
-        appLogger.info(
-          'Advert last hop 0x${PathHelper.hopHex(pubkeyPrefix)} matches '
-          '${matches.length} contacts — left unidentified',
-          tag: 'Connector',
-        );
       }
     }
 
@@ -11227,10 +11850,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Contact contact,
     Uint8List rawPacket, {
     bool noNotify = false,
-    bool addActive = false,
   }) {
-    appLogger.info('Discovered new contact: ${contact.name}', tag: 'Connector');
-
     final existingIndex = _discoveredContacts.indexWhere(
       (c) => c.publicKeyHex == contact.publicKeyHex,
     );
@@ -11253,7 +11873,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         longitude: contact.longitude,
         lastSeen: contact.lastSeen,
         flags: strippedFlags,
-        isActive: addActive,
+        isActive: false,
       );
       _discoveredContacts[existingIndex] = updated;
       notifyListeners();
@@ -11261,6 +11881,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
+    appLogger.info('Discovered new contact: ${contact.name}', tag: 'Connector');
     final disContact = Contact(
       rawPacket: rawPacket,
       publicKey: contact.publicKey,
@@ -11276,7 +11897,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       longitude: contact.longitude,
       lastSeen: contact.lastSeen,
       lastMessageAt: contact.lastMessageAt,
-      isActive: addActive,
+      isActive: false,
       flags: strippedFlags,
     );
     _discoveredContacts.add(disContact);
@@ -11356,12 +11977,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
 
-  Future<void> shareContactZeroHop(Uint8List contactPubKey) async {
-    if (!isConnected) return;
-    final payload = Uint8List(33);
-    payload[0] = cmdShareContact;
-    payload.setRange(1, 33, contactPubKey);
-    await sendFrame(payload);
+  /// False when nothing went out. The radio keeps a contact's advert only if
+  /// it has heard one since saving the contact, and refuses without it. It
+  /// refuses with ERR_CODE_TABLE_FULL, which here says nothing about table space.
+  Future<bool> shareContactZeroHop(Uint8List contactPubKey) async {
+    if (!isConnected) return false;
+    _shareReplyPending = true;
+    try {
+      return await _sendAndWaitForAck(
+        buildZeroHopContact(contactPubKey),
+        expectsGenericAck: true,
+      );
+    } finally {
+      _shareReplyPending = false;
+    }
   }
 
   /// Deletes the chat's history on this device, or with [olderThan] only
@@ -11395,6 +12024,35 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     unawaited(_channelMessageStore.clearChannelMessages(channel.idKey));
     markChannelRead(channelIndex);
+    notifyListeners();
+  }
+
+  /// Changes the named auto-add settings and keeps the rest. The new values
+  /// are held at once, so a second change right after this one keeps the first.
+  /// Nothing is read back here: a reply to an earlier read could land between
+  /// two changes and bring the old values back.
+  Future<void> setAutoAddConfig({
+    bool? users,
+    bool? repeaters,
+    bool? rooms,
+    bool? sensors,
+    bool? overwriteOldest,
+  }) async {
+    _autoAddUsers = users ?? _autoAddUsers;
+    _autoAddRepeaters = repeaters ?? _autoAddRepeaters;
+    _autoAddRoomServers = rooms ?? _autoAddRoomServers;
+    _autoAddSensors = sensors ?? _autoAddSensors;
+    _overwriteOldest = overwriteOldest ?? _overwriteOldest;
+    await sendFrame(
+      buildSetAutoAddConfigFrame(
+        autoAddChat: _autoAddUsers,
+        autoAddRepeater: _autoAddRepeaters,
+        autoAddRoomServer: _autoAddRoomServers,
+        autoAddSensor: _autoAddSensors,
+        overwriteOldest: _overwriteOldest,
+        maxHops: _autoAddMaxHops,
+      ),
+    );
     notifyListeners();
   }
 
@@ -11506,6 +12164,8 @@ class _RepeaterAckContext {
 class _PendingCommandAck {
   final int commandCode;
   final String? channelSendQueueId;
+  // The sender stopped waiting for this reply. It may still come.
+  DateTime? givenUpAt;
 
   _PendingCommandAck({required this.commandCode, this.channelSendQueueId});
 }

@@ -44,8 +44,7 @@ class _RegionDetailState extends State<RegionDetail> {
     super.initState();
     final maps = context.read<MapPacksService>();
     final units = context.read<AppSettingsService>().settings.unitSystem;
-    final defaults = maps.defaultSelection(widget.region.path, units);
-    _ticked = {for (final e in defaults) e.id};
+    _ticked = {for (final e in maps.defaultSelection(widget.region.path)) e.id};
     final contours = maps
         .packsForRegion(widget.region.path)
         .where((e) => e.kind == PackKind.contours)
@@ -55,8 +54,7 @@ class _RegionDetailState extends State<RegionDetail> {
             .where((e) => maps.installedPack(e.id) != null)
             .firstOrNull
             ?.id ??
-        defaults.where((e) => e.kind == PackKind.contours).firstOrNull?.id ??
-        contours.firstOrNull?.id;
+        maps.preferredContours(widget.region.path, units)?.id;
   }
 
   @override

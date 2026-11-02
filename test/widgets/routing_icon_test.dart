@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/routing_dialog.dart';
 
@@ -21,6 +22,15 @@ class _Connector extends MeshCoreConnector {
 
   @override
   List<Contact> get contacts => [contact];
+}
+
+class _Pathfinder extends PathGraphService {
+  bool canRoute = true;
+
+  @override
+  bool get radioCanRoute => canRoute;
+
+  void changed() => notifyListeners();
 }
 
 Contact _contact({int? override}) => Contact(
@@ -45,7 +55,7 @@ void main() {
   });
 
   Future<Icon> pump(WidgetTester tester,
-      {int? override, bool pathfinder = true}) async {
+      {int? override, bool pathfinder = true, PathGraphService? service}) async {
     final settings = AppSettingsService();
     await settings.loadSettings();
     await settings
@@ -56,6 +66,8 @@ void main() {
         ChangeNotifierProvider<MeshCoreConnector>.value(
             value: _Connector(contact)),
         ChangeNotifierProvider<AppSettingsService>.value(value: settings),
+        if (service != null)
+          ChangeNotifierProvider<PathGraphService>.value(value: service),
       ],
       child: MaterialApp(home: RoutingIcon(contact: contact)),
     ));
@@ -67,6 +79,19 @@ void main() {
     final icon = await pump(tester);
     expect(icon.icon, RoutingIcon.icon);
     expect(icon.color, isNotNull);
+  });
+
+  testWidgets('a radio Pathfinder cannot route for: the plain path icon',
+      (tester) async {
+    final service = _Pathfinder();
+    final icon = await pump(tester, service: service);
+    expect(icon.color, isNotNull);
+
+    service
+      ..canRoute = false
+      ..changed();
+    await tester.pump();
+    expect(tester.widget<Icon>(find.byType(Icon)).color, isNull);
   });
 
   testWidgets('Automatic with Pathfinder off: the plain path icon',

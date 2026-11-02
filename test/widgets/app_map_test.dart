@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -16,7 +15,6 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/app_map.dart';
@@ -99,7 +97,6 @@ void main() {
           ),
           ChangeNotifierProvider<AppSettingsService>.value(value: settings),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           theme: ThemeData(brightness: brightness ?? Brightness.light),
@@ -122,59 +119,36 @@ void main() {
     }
   }
 
-  Set<bool> switchState(WidgetTester tester) => tester
-      .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
-      .selected;
+  double maxZoom(WidgetTester tester) =>
+      tester.widget<OfflineMapView>(find.byType(OfflineMapView)).maxZoom;
 
-  testWidgets('with nothing downloaded: online tiles and the OSM credit', (
-    tester,
-  ) async {
-    await pumpMap(tester);
-    expect(find.byType(OfflineMapView), findsOneWidget);
+  testWidgets('with nothing downloaded: the base map, with no card until the '
+      'zoom stops', (tester) async {
+    await pumpMap(tester, zoom: 4);
     expect(
       tester.widget<OfflineMapView>(find.byType(OfflineMapView)).styleId,
       'osm-light',
     );
-    expect(switchState(tester), {true}, reason: 'auto: online');
-    expect(find.byType(fm.TileLayer), findsOneWidget);
-    expect(find.textContaining('OpenStreetMap contributors'), findsOneWidget);
+    expect(maxZoom(tester), 10, reason: "the base map's detail");
     expect(find.text('Download a region for detail'), findsNothing);
+    expect(find.textContaining('OpenStreetMap'), findsNothing);
     expect(find.text('Not for navigation'), findsNothing);
   });
 
-  testWidgets('offline: no online tiles, and a card where nothing is drawn', (
+  testWidgets('where the zoom stops, the card says what to download', (
     tester,
   ) async {
-    await settings.setMapSource('offline');
-    await pumpMap(tester);
-    expect(switchState(tester), {false});
-    expect(find.byType(fm.TileLayer), findsNothing);
-    expect(find.textContaining('OpenStreetMap contributors'), findsNothing);
+    await pumpMap(tester, zoom: 10);
+    expect(maxZoom(tester), 10);
     expect(find.text('Download a region for detail'), findsOneWidget);
     expect(find.text('Offline maps'), findsOneWidget, reason: 'no catalogue');
   });
 
-  double maxZoom(WidgetTester tester) =>
-      tester.widget<OfflineMapView>(find.byType(OfflineMapView)).maxZoom;
-
-  testWidgets('online, zooming in goes on', (tester) async {
-    await pumpMap(tester);
-    expect(maxZoom(tester), 17);
-  });
-
-  testWidgets('offline, where nothing is downloaded, zooming in stops', (
-    tester,
-  ) async {
-    await settings.setMapSource('offline');
-    await pumpMap(tester, zoom: 4);
-    expect(maxZoom(tester), 6, reason: "the world map's detail");
-  });
-
-  testWidgets('offline, a view already zoomed in where nothing is downloaded '
-      'stays there', (tester) async {
-    await settings.setMapSource('offline');
-    await pumpMap(tester, zoom: 10);
-    expect(maxZoom(tester), 10);
+  testWidgets('a view already zoomed in where nothing is downloaded stays '
+      'there', (tester) async {
+    await pumpMap(tester, zoom: 13);
+    expect(maxZoom(tester), 13);
+    expect(find.text('Download a region for detail'), findsOneWidget);
   });
 
   /// [maps] with the live charts catalogue, following [downloads], and with
@@ -212,7 +186,6 @@ void main() {
       await maps.start();
       await maps.refresh();
     });
-    await settings.setMapSource('offline');
     await settings.setMapType('charts');
     // The "Not for navigation" dialog has its own test.
     await settings.setChartsNoticeDismissed(true);
@@ -235,12 +208,7 @@ void main() {
       }
     }
 
-    await settings.setMapSource('online');
     await pumpMap(tester);
-    expect(find.byType(AlertDialog), findsNothing, reason: 'no charts online');
-
-    await settings.setMapSource('offline');
-    await reopen();
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.textContaining('Notices to Mariners'), findsOneWidget);
     await ok();
@@ -266,7 +234,6 @@ void main() {
   testWidgets('mini maps draw charts without the notice', (tester) async {
     await withCharts(tester, _Downloads());
     await settings.setChartsNoticeDismissed(false);
-    await settings.setMapSource('offline');
     await pumpMap(tester, compact: true);
     expect(find.byType(AlertDialog), findsNothing);
     // A full map still shows it.
@@ -275,7 +242,7 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
   });
 
-  testWidgets('offline on the Charts map: the card offers the area here', (
+  testWidgets('on the Charts map: the card offers the area here', (
     tester,
   ) async {
     final downloads = _Downloads();
@@ -334,7 +301,7 @@ void main() {
     expect(find.text('Offline maps'), findsOneWidget);
   });
 
-  testWidgets('downloaded areas: the map showing, filled online, optional', (
+  testWidgets('downloaded areas: outlined for the map showing, optional', (
     tester,
   ) async {
     await withCharts(tester, _Downloads(), regions: true);
@@ -357,19 +324,19 @@ void main() {
         .toList();
 
     await pumpMap(tester);
-    expect(areas(), isNotEmpty, reason: 'offline charts');
+    expect(areas(), isNotEmpty, reason: 'charts');
     for (final area in areas()) {
       expect(area.id, startsWith('downloaded-area:charts/us/rhode-island:'));
       expect(area.strokeColor, AppMap.areaColor);
       expect(area.fillColor, Colors.transparent);
     }
 
-    await settings.setMapSource('online');
+    await settings.setMapType('osm');
     await tester.pump();
-    expect(areas(), isNotEmpty, reason: 'online is the street map');
+    expect(areas(), isNotEmpty, reason: 'the street map');
     for (final area in areas()) {
       expect(area.id, startsWith('downloaded-area:$_ri:'));
-      expect(area.fillColor, AppMap.areaFill);
+      expect(area.fillColor, Colors.transparent);
     }
 
     await settings.setMapDownloadedAreas(false);
@@ -382,31 +349,7 @@ void main() {
     expect(areas(), isEmpty, reason: 'none on small maps');
   });
 
-  testWidgets('auto goes offline with a street map, not charts or contours', (
-    tester,
-  ) async {
-    Future<void> install(String id, String kind, String region) =>
-        tester.runAsync(() async {
-          await maps.manager.root.create(recursive: true);
-          File('${maps.manager.root.path}/$id.pmtiles').writeAsBytesSync(
-            fakePmTiles(metadata: {'kind': kind, 'region': region}),
-          );
-          await maps.reloadInstalled();
-        });
-    await install('charts-us-ri-charts', 'charts', 'charts/us/rhode-island');
-    await install('us-ri-contours-20ft', 'contours', _ri);
-    expect(maps.installed, hasLength(2));
-    await pumpMap(tester);
-    expect(switchState(tester), {true});
-    expect(find.text('Download a region for detail'), findsNothing);
-
-    await install('us-rhode-island-osm', 'osm', _ri);
-    await tester.pump();
-    expect(switchState(tester), {false});
-  });
-
   testWidgets("the card sits beside a screen's map buttons", (tester) async {
-    await settings.setMapSource('offline');
     await pumpMap(tester, controlsWidth: 80);
     final slot = tester.widget<Positioned>(
       find
@@ -420,26 +363,29 @@ void main() {
     expect(slot.bottom, 40, reason: 'above the credits chip');
   });
 
-  testWidgets('compact: no switch and no card, but follows the setting', (
-    tester,
-  ) async {
-    await settings.setMapSource('offline');
-    await pumpMap(tester, compact: true);
-    expect(find.byType(SegmentedButton<bool>), findsNothing);
+  testWidgets("compact: no card; opens at the base map's detail where "
+      'nothing is downloaded, close in where a region is', (tester) async {
+    double opensAt() => tester
+        .widget<OfflineMapView>(find.byType(OfflineMapView))
+        .initialCamera!
+        .zoom;
+    await pumpMap(tester, compact: true, zoom: 13);
     expect(find.text('Download a region for detail'), findsNothing);
-    expect(find.byType(fm.TileLayer), findsNothing, reason: 'offline');
-    expect(find.textContaining('OpenStreetMap'), findsNothing);
-  });
+    expect(opensAt(), 10);
+    expect(maxZoom(tester), 10);
 
-  testWidgets('the switch changes the setting', (tester) async {
-    await pumpMap(tester);
-    await tester.tap(find.text('Offline'));
-    for (var i = 0; i < 5; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    expect(settings.settings.mapSource, 'offline');
-    expect(switchState(tester), {false});
-    expect(find.byType(fm.TileLayer), findsNothing);
+    await withCharts(tester, _Downloads(), regions: true);
+    await settings.setMapType('osm');
+    await tester.runAsync(() async {
+      await maps.manager.root.create(recursive: true);
+      File(
+        '${maps.manager.root.path}/us-rhode-island-osm.pmtiles',
+      ).writeAsBytesSync(fakePmTiles(metadata: {'kind': 'osm', 'region': _ri}));
+      await maps.reloadInstalled();
+    });
+    await tester.pumpWidget(const SizedBox());
+    await pumpMap(tester, compact: true, zoom: 13);
+    expect(opensAt(), 13, reason: 'Providence, in the Rhode Island download');
   });
 
   testWidgets('the map is light, even in a dark app, unless set dark', (
@@ -447,17 +393,12 @@ void main() {
   ) async {
     String styleId() =>
         tester.widget<OfflineMapView>(find.byType(OfflineMapView)).styleId;
-    await settings.setMapSource('offline');
     await pumpMap(tester, brightness: Brightness.dark);
     expect(styleId(), 'osm-light');
 
     await settings.setMapTheme('dark');
     await tester.pump();
     expect(styleId(), 'osm-dark');
-
-    await settings.setMapSource('online');
-    await tester.pump();
-    expect(styleId(), 'osm-light', reason: 'online is the standard look');
   });
 
   testWidgets('the park hints are credited while the street map draws parks', (
@@ -469,7 +410,6 @@ void main() {
       );
       await maps.start();
     });
-    await settings.setMapSource('offline');
     await pumpMap(tester);
     expect(find.textContaining('ESA WorldCover'), findsOneWidget);
 
@@ -478,8 +418,7 @@ void main() {
     expect(find.textContaining('ESA WorldCover'), findsNothing);
 
     await settings.setMapParks(true);
-    await settings.setMapSource('online');
     await tester.pump();
-    expect(find.textContaining('ESA WorldCover'), findsNothing);
+    expect(find.textContaining('ESA WorldCover'), findsOneWidget);
   });
 }

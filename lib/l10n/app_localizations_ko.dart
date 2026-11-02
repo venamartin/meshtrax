@@ -357,6 +357,88 @@ class AppLocalizationsKo extends AppLocalizations {
   String get device_meshcore => '메쉬코어';
 
   @override
+  String get healthCheck_title => '상태 점검';
+
+  @override
+  String get healthCheck_subtitle => '앱과 무전기 설정을 확인합니다';
+
+  @override
+  String get healthCheck_running => '설정을 확인하는 중…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      '무전기가 아직 동기화 중입니다. 동기화가 끝나면 점검을 시작합니다.';
+
+  @override
+  String get healthCheck_noRadio => '연결된 무전기가 없어 무전기 설정은 확인하지 않았습니다.';
+
+  @override
+  String get healthCheck_partial =>
+      '일부 무전기 설정을 읽지 못해 이 결과가 최신이 아닐 수 있습니다. 잠시 후 다시 확인하세요.';
+
+  @override
+  String get healthCheck_allClear => '모두 양호합니다.';
+
+  @override
+  String get healthCheck_problems => '문제';
+
+  @override
+  String get healthCheck_suggestions => '제안';
+
+  @override
+  String get healthCheck_tips => '팁';
+
+  @override
+  String healthCheck_passed(int count) {
+    return '통과한 점검: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => '다시 점검';
+
+  @override
+  String get healthCheck_fix => '수정';
+
+  @override
+  String get healthCheck_fixFailed =>
+      '변경 사항이 적용되지 않았습니다. 무전기 연결을 확인하고 다시 시도하세요.';
+
+  @override
+  String get healthCheck_openFailed => '해당 설정 화면을 열지 못했습니다. 기기 설정에서 변경하세요.';
+
+  @override
+  String get healthCheck_hide => '다시 표시 안 함';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return '숨긴 항목 표시: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return '모두 수정 ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '이 변경 사항을 적용할까요?';
+
+  @override
+  String get healthCheck_promptTitle => '상태 점검을 실행할까요?';
+
+  @override
+  String get healthCheck_promptBody =>
+      '앱과 무전기 설정에서 개선할 수 있는 점을 확인하세요. 알림을 줄이는 방법도 포함됩니다.';
+
+  @override
+  String get healthCheck_promptBodyDesktop => '앱과 무전기 설정에서 개선할 수 있는 점을 확인하세요.';
+
+  @override
+  String get healthCheck_promptRun => '점검 실행';
+
+  @override
+  String get healthCheck_promptLater => '나중에';
+
+  @override
   String get settings_title => '설정';
 
   @override
@@ -480,6 +562,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_multiAck => '다중 ACK';
 
   @override
+  String get settings_multiAckSubtitle =>
+      '다이렉트 메시지가 경로를 통해 도착하면 두 번째 ACK를 보내 발신자가 받을 가능성을 높입니다.';
+
+  @override
   String get settings_telemetryModeUpdated => '텔레메트리 모드 업데이트 완료';
 
   @override
@@ -569,6 +655,12 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'LOS 고도 데이터: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => '버그 신고';
+
+  @override
+  String get settings_reportBugSubtitle => 'GitHub에서 버그 신고를 엽니다';
 
   @override
   String get settings_infoName => '이름';
@@ -3197,6 +3289,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_ShareContactZeroHop => '광고를 통해 연락처 공유';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      '무전기가 이 연락처를 공유하지 못했습니다. 먼저 이 연락처의 광고를 수신해야 합니다.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => '광고를 통해 연락처를 받았습니다.';
 
   @override
@@ -3596,6 +3692,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get routing_noRoute => '아직 없음 — 다음 메시지가 플러드로 전송되며 경로를 학습합니다';
 
   @override
+  String get routing_noRoutePathfinder => '아직 없음';
+
+  @override
   String get routing_auto => '자동';
 
   @override
@@ -3622,6 +3721,9 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       '경로를 초기화했습니다. 다음 메시지가 플러드로 전송되며 새 경로를 학습합니다.';
+
+  @override
+  String get routing_forgetDonePathfinder => '경로를 초기화했습니다.';
 
   @override
   String get routing_pathfinder => 'Pathfinder가 아는 정보';
@@ -3727,7 +3829,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      '무전기는 연락처마다 경로를 하나만 기억하고, 그 경로가 실패하면 메시 전체에 플러드로 보냅니다. Pathfinder는 리피터 애드버트, 채널 대화, 다른 사람의 메시지 등 무전기가 듣는 모든 것에 귀를 기울입니다. 이를 바탕으로 어떤 리피터끼리 서로 듣는지, 어떤 리피터가 내 신호를 듣는지, 어떤 리피터가 각 연락처의 신호를 듣는지 보여 주는 지도를 만듭니다.';
+      '무전기는 연락처마다 경로를 하나만 기억합니다. 그 경로로 보낸 메시지가 실패하면 MeshTrax가 대신 메시 전체에 플러드로 보냅니다. Pathfinder는 리피터 애드버트, 채널 대화, 다른 사람의 메시지 등 무전기가 듣는 모든 것에 귀를 기울입니다. 이를 바탕으로 어떤 리피터끼리 서로 듣는지, 어떤 리피터가 내 신호를 듣는지, 어떤 리피터가 각 연락처의 신호를 듣는지 보여 주는 지도를 만듭니다.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3735,7 +3837,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 처음에는 메시지가 예전과 똑같이 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
+      '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 경로를 배울 때까지 처음에는 메시지가 플러드로 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3755,7 +3857,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pathfinderHelp_ok => '알겠습니다';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (실험적)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4429,16 +4531,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_notificationFailed => '지도 다운로드 실패';
 
   @override
-  String get offlineMaps_clearTileCache => '온라인 지도 캐시 지우기';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '둘러보는 동안 저장된 온라인 지도 타일을 삭제할까요? 다운로드한 지도는 그대로 남습니다.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => '온라인 지도 캐시를 삭제했습니다';
-
-  @override
   String get map_notForNavigation => '항해용 아님';
 
   @override
@@ -4468,16 +4560,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '항해할 때는 최신 항행통보와 함께 공식 최신 NOAA 해도(종이 해도 또는 인증된 차트 플로터의 NOAA ENC)를 사용하세요.';
 
   @override
-  String get map_sourceOnline => '온라인';
-
-  @override
-  String get map_sourceOffline => '오프라인';
-
-  @override
   String get map_downloadForDetail => '자세히 보려면 지역 다운로드';
-
-  @override
-  String get map_zoomInForOfflineMap => '확대하면 오프라인 지도가 보입니다';
 
   @override
   String get map_noCharts => '이곳에는 해도가 없습니다';
@@ -4560,9 +4643,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '다운로드 안 됨';
-
-  @override
-  String get mapLayers_offlineOnly => '오프라인 전용';
 
   @override
   String get mapLayers_details => '지도 세부 정보';
@@ -5796,4 +5876,76 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => '내 위치를 볼 수 있는 사람';
+
+  @override
+  String get locationSharing_someone => '누군가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_nobody => '아무도 내 위치를 볼 수 없어요';
+
+  @override
+  String get locationSharing_noPosition => '무전기에 아직 위치가 없어서 아무도 볼 수 없어요';
+
+  @override
+  String get locationSharing_everyone => '내 무전기를 수신하는 누구나 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_allContacts => '모든 연락처가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_someContacts => '허용한 연락처가 내 위치를 볼 수 있어요';
+
+  @override
+  String get locationSharing_adverts => '광고에 위치 포함';
+
+  @override
+  String get locationSharing_advertsHint =>
+      '광고에 내 위치가 담겨서 내 무전기를 수신하는 누구나 볼 수 있어요.';
+
+  @override
+  String get locationSharing_contactsHeader => '내 무전기에 요청할 수 있는 연락처';
+
+  @override
+  String get locationSharing_noTelemetry => '없음. 무전기가 텔레메트리 요청에 응답하지 않아요.';
+
+  @override
+  String get locationSharing_noContacts => '허용된 연락처가 없어요.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return '모든 연락처 ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => '위치';
+
+  @override
+  String get locationSharing_partBattery => '배터리';
+
+  @override
+  String get locationSharing_partSensors => '센서';
+
+  @override
+  String get dialog_positionHint => '좌표나 지도 링크를 붙여 넣으세요';
+
+  @override
+  String get dialog_positionUnreadable => '여기서 위치를 읽을 수 없어요';
+
+  @override
+  String get dialog_positionLookingUp => '링크를 확인하는 중…';
+
+  @override
+  String get locationSharing_share => '내 위치 공유';
+
+  @override
+  String get locationSharing_shareOnHint => '끄면 모두에게 숨겨져요';
+
+  @override
+  String get locationSharing_shareOffHint => '켜면 허용한 연락처가 볼 수 있어요';
+
+  @override
+  String get chats_advertise => '광고';
 }

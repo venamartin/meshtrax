@@ -371,6 +371,92 @@ class AppLocalizationsEs extends AppLocalizations {
   String get device_meshcore => 'MeshCore';
 
   @override
+  String get healthCheck_title => 'Revisión de estado';
+
+  @override
+  String get healthCheck_subtitle =>
+      'Comprueba la configuración de la app y de la radio';
+
+  @override
+  String get healthCheck_running => 'Comprobando la configuración…';
+
+  @override
+  String get healthCheck_waitingForSync =>
+      'La radio aún se está sincronizando. La comprobación empezará cuando termine.';
+
+  @override
+  String get healthCheck_noRadio =>
+      'No hay ninguna radio conectada, así que no se comprobó su configuración.';
+
+  @override
+  String get healthCheck_partial =>
+      'No se pudo leer parte de la configuración de la radio, así que estos resultados pueden estar desactualizados. Vuelve a comprobarlo en un momento.';
+
+  @override
+  String get healthCheck_allClear => 'Todo parece correcto.';
+
+  @override
+  String get healthCheck_problems => 'Problemas';
+
+  @override
+  String get healthCheck_suggestions => 'Sugerencias';
+
+  @override
+  String get healthCheck_tips => 'Consejos';
+
+  @override
+  String healthCheck_passed(int count) {
+    return 'Comprobaciones superadas: $count';
+  }
+
+  @override
+  String get healthCheck_runAgain => 'Comprobar de nuevo';
+
+  @override
+  String get healthCheck_fix => 'Corregir';
+
+  @override
+  String get healthCheck_fixFailed =>
+      'El cambio no se aplicó. Comprueba la conexión con la radio e inténtalo de nuevo.';
+
+  @override
+  String get healthCheck_openFailed =>
+      'No se pudo abrir esa página de configuración. Cámbialo en la configuración de tu dispositivo.';
+
+  @override
+  String get healthCheck_hide => 'No volver a mostrar';
+
+  @override
+  String healthCheck_showHidden(int count) {
+    return 'Mostrar avisos ocultos: $count';
+  }
+
+  @override
+  String healthCheck_fixAll(int count) {
+    return 'Corregir todo ($count)';
+  }
+
+  @override
+  String get healthCheck_fixAllConfirm => '¿Hacer estos cambios?';
+
+  @override
+  String get healthCheck_promptTitle => '¿Hacer una revisión de estado?';
+
+  @override
+  String get healthCheck_promptBody =>
+      'Mira qué podría funcionar mejor en la configuración de la app y de la radio, incluidas formas de recibir menos notificaciones.';
+
+  @override
+  String get healthCheck_promptBodyDesktop =>
+      'Mira qué podría funcionar mejor en la configuración de la app y de la radio.';
+
+  @override
+  String get healthCheck_promptRun => 'Revisar';
+
+  @override
+  String get healthCheck_promptLater => 'Ahora no';
+
+  @override
   String get settings_title => 'Configuración';
 
   @override
@@ -502,6 +588,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings_multiAck => 'Múltiples respuestas de confirmación';
 
   @override
+  String get settings_multiAckSubtitle =>
+      'Envía una segunda confirmación cuando un mensaje directo te llega por una ruta, para que el remitente tenga más probabilidades de oírla.';
+
+  @override
   String get settings_telemetryModeUpdated => 'Modo de telemetría actualizado';
 
   @override
@@ -597,6 +687,12 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settings_aboutOpenMeteoAttribution =>
       'Datos de elevación LOS: Open-Meteo (CC BY 4.0)';
+
+  @override
+  String get settings_reportBug => 'Informar de un error';
+
+  @override
+  String get settings_reportBugSubtitle => 'Abre un informe de error en GitHub';
 
   @override
   String get settings_infoName => 'Nombre';
@@ -3338,6 +3434,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get contacts_ShareContactZeroHop => 'Compartir contacto por anuncio';
 
   @override
+  String get contacts_shareByAdvertFailed =>
+      'La radio no pudo compartir este contacto. Primero tiene que oír su anuncio.';
+
+  @override
   String get contacts_zeroHopContactAdvertSent => 'Envió contacto por anuncio.';
 
   @override
@@ -3773,6 +3873,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'ninguna aún — el próximo mensaje irá por inundación y aprenderá una';
 
   @override
+  String get routing_noRoutePathfinder => 'ninguna aún';
+
+  @override
   String get routing_auto => 'Automático';
 
   @override
@@ -3801,6 +3904,9 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get routing_forgetDone =>
       'Ruta restablecida. El próximo mensaje irá por inundación y aprenderá una nueva.';
+
+  @override
+  String get routing_forgetDonePathfinder => 'Ruta restablecida.';
 
   @override
   String get routing_pathfinder => 'Lo que sabe Pathfinder';
@@ -3914,7 +4020,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Tu radio recuerda una ruta hacia cada contacto y, cuando esa ruta falla, envía el mensaje por inundación a toda la red mesh. Pathfinder escucha todo lo que oye la radio: anuncios de repetidores, conversaciones en los canales, mensajes de otras personas. Con todo eso construye un mapa de qué repetidores se oyen entre sí, cuáles te oyen a ti y cuáles oyen a cada uno de tus contactos.';
+      'Tu radio recuerda una ruta hacia cada contacto. Cuando un mensaje por esa ruta falla, MeshTrax lo envía por inundación a toda la red mesh. Pathfinder escucha todo lo que oye la radio: anuncios de repetidores, conversaciones en los canales, mensajes de otras personas. Con todo eso construye un mapa de qué repetidores se oyen entre sí, cuáles te oyen a ti y cuáles oyen a cada uno de tus contactos.';
 
   @override
   String get pathfinderHelp_how =>
@@ -3922,7 +4028,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pathfinderHelp_learning =>
-      'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes salen exactamente igual que antes. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
+      'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes usan la inundación hasta que aprende una ruta. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
 
   @override
   String get pathfinderHelp_guessed =>
@@ -3943,7 +4049,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pathfinderHelp_ok => 'De acuerdo';
 
   @override
-  String get settings_pathGraph => 'Pathfinder (experimental)';
+  String get settings_pathGraph => 'Pathfinder';
 
   @override
   String get settings_pathGraphSubtitle =>
@@ -4646,16 +4752,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Error en la descarga del mapa';
 
   @override
-  String get offlineMaps_clearTileCache => 'Vaciar la caché de mapas en línea';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '¿Quitar las teselas de mapas en línea guardadas al explorar el mapa? Los mapas descargados se conservan.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'Caché de mapas en línea vaciada';
-
-  @override
   String get map_notForNavigation => 'No apto para navegar';
 
   @override
@@ -4686,18 +4782,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para navegar, usa cartas oficiales y actualizadas de NOAA (en papel, o ENC de NOAA en un plóter certificado) con los últimos Avisos a los Navegantes.';
 
   @override
-  String get map_sourceOnline => 'En línea';
-
-  @override
-  String get map_sourceOffline => 'Sin conexión';
-
-  @override
   String get map_downloadForDetail =>
       'Descarga una región para ver más detalle';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Acerca el zoom para ver tu mapa sin conexión';
 
   @override
   String get map_noCharts => 'No hay cartas aquí';
@@ -4783,9 +4869,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'No descargado';
-
-  @override
-  String get mapLayers_offlineOnly => 'Solo sin conexión';
 
   @override
   String get mapLayers_details => 'Detalles del mapa';
@@ -6059,4 +6142,84 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get common_less => 'Less';
+
+  @override
+  String get locationSharing_title => 'Quién puede ver mi ubicación';
+
+  @override
+  String get locationSharing_someone => 'Alguien puede ver tu ubicación';
+
+  @override
+  String get locationSharing_nobody => 'Nadie puede ver tu ubicación';
+
+  @override
+  String get locationSharing_noPosition =>
+      'Tu radio aún no tiene ubicación, así que nadie puede verla';
+
+  @override
+  String get locationSharing_everyone =>
+      'Cualquiera que oiga tu radio puede ver tu ubicación';
+
+  @override
+  String get locationSharing_allContacts =>
+      'Todos tus contactos pueden ver tu ubicación';
+
+  @override
+  String get locationSharing_someContacts =>
+      'Los contactos que permitiste pueden ver tu ubicación';
+
+  @override
+  String get locationSharing_adverts => 'Ubicación en los anuncios';
+
+  @override
+  String get locationSharing_advertsHint =>
+      'Tus anuncios llevan tu ubicación, así que cualquiera que oiga tu radio la ve.';
+
+  @override
+  String get locationSharing_contactsHeader =>
+      'Contactos que pueden consultar tu radio';
+
+  @override
+  String get locationSharing_noTelemetry =>
+      'Ninguno. Tu radio no responde a solicitudes de telemetría.';
+
+  @override
+  String get locationSharing_noContacts => 'Ningún contacto tiene permiso.';
+
+  @override
+  String locationSharing_allContactsRow(int count) {
+    return 'Todos tus contactos ($count)';
+  }
+
+  @override
+  String get locationSharing_partLocation => 'Ubicación';
+
+  @override
+  String get locationSharing_partBattery => 'Batería';
+
+  @override
+  String get locationSharing_partSensors => 'Sensores';
+
+  @override
+  String get dialog_positionHint => 'Pega coordenadas o un enlace de mapas';
+
+  @override
+  String get dialog_positionUnreadable => 'No se puede leer una posición aquí';
+
+  @override
+  String get dialog_positionLookingUp => 'Consultando el enlace…';
+
+  @override
+  String get locationSharing_share => 'Compartir mi ubicación';
+
+  @override
+  String get locationSharing_shareOnHint =>
+      'Desactívalo para ocultarla a todos';
+
+  @override
+  String get locationSharing_shareOffHint =>
+      'Actívalo para que la vean los contactos con permiso';
+
+  @override
+  String get chats_advertise => 'Anunciar';
 }

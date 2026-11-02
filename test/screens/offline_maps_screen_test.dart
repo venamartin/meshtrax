@@ -14,7 +14,6 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 
 import '../../packages/traxmap/test/support/fake_pmtiles.dart';
 import '../helpers/map_fakes.dart';
@@ -100,7 +99,6 @@ void main() {
             create: (_) => AppSettingsService(),
           ),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),
@@ -112,6 +110,28 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('phone: the download button clears the navigation buttons',
+      (tester) async {
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    await open(tester, size: const Size(400, 500));
+    await tester.tap(find.textContaining('North America'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('United States'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Rhode Island'));
+    await tester.pumpAndSettle();
+
+    final button = find.byType(FilledButton);
+    await tester.dragUntilVisible(
+      button,
+      find.byType(ListView).first,
+      const Offset(0, -200),
+    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(button).bottom, lessThanOrEqualTo(500 - 48));
+  });
 
   testWidgets('phone: browse to Rhode Island and download it', (tester) async {
     await open(tester, size: const Size(400, 900));
@@ -126,8 +146,8 @@ void main() {
     await tester.tap(find.textContaining('United States'));
     await tester.pumpAndSettle();
     expect(find.text('Regions in United States of America'), findsOneWidget);
-    // Map 34.1 MB + metric contours 1.0 MB (the default units).
-    expect(find.textContaining('Rhode Island  35 MB'), findsOneWidget);
+    // The map alone, 34.1 MB: contours and hill shading are opt-in.
+    expect(find.textContaining('Rhode Island  34 MB'), findsOneWidget);
     expect(find.textContaining('California  2 inside'), findsOneWidget);
 
     await tester.tap(find.textContaining('Rhode Island'));
@@ -138,22 +158,19 @@ void main() {
       find.text('North America › United States of America'),
       findsOneWidget,
     );
-    expect(find.text('Download 35 MB'), findsOneWidget);
+    expect(find.text('Download 34 MB'), findsOneWidget);
 
-    await tester.tap(find.text('Download 35 MB'));
+    await tester.tap(find.text('Download 34 MB'));
     // Queued rows show an indeterminate bar, which never settles.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(downloader.started, [
-      'us-rhode-island-osm',
-      'us-rhode-island-contours-10m',
-    ]);
-    expect(find.text('Waiting…'), findsNWidgets(2));
+    expect(downloader.started, ['us-rhode-island-osm']);
+    expect(find.text('Waiting…'), findsOneWidget);
 
     // Back to the list.
     await tester.tap(find.text('United States of America'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Rhode Island  35 MB'), findsOneWidget);
+    expect(find.textContaining('Rhode Island  34 MB'), findsOneWidget);
   });
 
   testWidgets('wide: one column, the detail in place of the list', (
@@ -184,10 +201,10 @@ void main() {
       region: 'north-america/us/rhode-island',
     );
     expect(find.text('Rhode Island'), findsOneWidget);
-    expect(find.text('Download 35 MB'), findsOneWidget);
+    expect(find.text('Download 34 MB'), findsOneWidget);
   });
 
-  testWidgets('hill shading is offered and ticked where a region has it', (
+  testWidgets('hill shading is offered, not ticked, where a region has it', (
     tester,
   ) async {
     final index = jsonDecode(_index) as Map<String, Object?>;
@@ -213,8 +230,8 @@ void main() {
       find.text('Hills and mountains, shaded under the map'),
       findsOneWidget,
     );
-    // Map 34.1 MB + metric contours 1.0 MB + hill shading 2.0 MB.
-    expect(find.text('Download 37 MB'), findsOneWidget);
+    // The map alone (34.1 MB): hill shading (2.0 MB) is opt-in.
+    expect(find.text('Download 34 MB'), findsOneWidget);
   });
 
   testWidgets('Downloaded is empty until something is installed', (

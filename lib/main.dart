@@ -29,13 +29,11 @@ import 'services/companion_cli_service.dart';
 import 'services/ble_debug_log_service.dart';
 import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
-import 'services/map_tile_cache_service.dart';
 import 'services/map_packs_service.dart';
 import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
-import 'services/keyboard_inset_logger.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 import 'utils/scroll_jank_reporter.dart';
@@ -55,7 +53,6 @@ void main() async {
   final bleDebugLogService = BleDebugLogService();
   final appDebugLogService = AppDebugLogService();
   final backgroundService = BackgroundService();
-  final mapTileCacheService = MapTileCacheService();
   final chatTextScaleService = ChatTextScaleService();
   final uiViewStateService = UiViewStateService();
 
@@ -95,7 +92,6 @@ void main() async {
     SchedulerBinding.instance
         .addTimingsCallback(ScrollJankReporter.instance.onTimings);
   }
-  KeyboardInsetLogger().start();
 
   // Initialize notification service
   final notificationService = NotificationService();
@@ -156,7 +152,6 @@ void main() async {
       appSettingsService: appSettingsService,
       bleDebugLogService: bleDebugLogService,
       appDebugLogService: appDebugLogService,
-      mapTileCacheService: mapTileCacheService,
       mapPacksService: mapPacksService,
       routingService: routingService,
       poiService: poiService,
@@ -184,6 +179,16 @@ Creative Commons Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 ''',
     );
+    yield const LicenseEntryWithLineBreaks(
+      <String>['GeoNames'],
+      '''
+The town names and positions in the base map that comes with the app are
+from GeoNames (cities1000): https://www.geonames.org/
+
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+''',
+    );
   });
 }
 
@@ -195,7 +200,6 @@ class MeshTraxApp extends StatefulWidget {
   final AppSettingsService appSettingsService;
   final BleDebugLogService bleDebugLogService;
   final AppDebugLogService appDebugLogService;
-  final MapTileCacheService mapTileCacheService;
 
   /// Null on the web, where offline maps aren't available.
   final MapPacksService? mapPacksService;
@@ -213,7 +217,6 @@ class MeshTraxApp extends StatefulWidget {
     required this.appSettingsService,
     required this.bleDebugLogService,
     required this.appDebugLogService,
-    required this.mapTileCacheService,
     required this.mapPacksService,
     this.routingService,
     this.poiService,
@@ -296,6 +299,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     } else if (payload.startsWith('channel:')) {
       final index = int.tryParse(payload.substring('channel:'.length));
       if (index == null) return;
+      // Already on screen, and catching up on what it missed.
+      if (connector.activeChannelIndex == index) return;
       Channel? channel;
       for (final c in connector.channels) {
         if (c.index == index) {
@@ -308,8 +313,11 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel!)),
       );
     } else {
+      if (connector.activeContactKey == payload) return;
+      // allContacts: the radio may have overwritten the sender since, and the
+      // messages are still here.
       Contact? contact;
-      for (final c in connector.contacts) {
+      for (final c in connector.allContacts) {
         if (c.publicKeyHex == payload) {
           contact = c;
           break;
@@ -342,7 +350,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.chatTextScaleService),
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
-        Provider.value(value: widget.mapTileCacheService),
         if (widget.mapPacksService case final maps?)
           ChangeNotifierProvider.value(value: maps),
         if (widget.routingService case final routing?)
@@ -354,6 +361,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         builder: (context, settingsService, child) {
           return MaterialApp(
             navigatorKey: NotificationService.navigatorKey,
+            navigatorObservers: [NotificationService.routeObserver],
             title: 'MeshTrax',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
@@ -369,8 +377,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
               useMaterial3: true,
-              fontFamily: 'DejaVu Sans',
-              fontFamilyFallback: const ['Noto Color Emoji'],
+              fontFamily: 'Liberation Sans',
+              fontFamilyFallback: const ['Noto Color Emoji', 'DejaVu Sans'],
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),
@@ -381,8 +389,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
-              fontFamily: 'DejaVu Sans',
-              fontFamilyFallback: const ['Noto Color Emoji'],
+              fontFamily: 'Liberation Sans',
+              fontFamilyFallback: const ['Noto Color Emoji', 'DejaVu Sans'],
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),

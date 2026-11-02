@@ -98,11 +98,12 @@ class ComposerAttachTray extends StatelessWidget {
       color: scheme.surface,
       child: SizedBox(
         height: 118,
-        child: ListView.separated(
+        // Tiles side by side: 14 dp between the squares (owner, 2026-10-27),
+        // and the widest one-word labels still fit.
+        child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemCount: tiles.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
             final tile = tiles[index];
             final color = tile.color ?? scheme.secondaryContainer;
@@ -113,7 +114,7 @@ class ComposerAttachTray extends StatelessWidget {
               onTap: tile.onTap,
               borderRadius: BorderRadius.circular(16),
               child: SizedBox(
-                width: 76,
+                width: 74,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

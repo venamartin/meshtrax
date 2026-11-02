@@ -67,8 +67,11 @@ class RetryServiceConfig {
   // The radio confirmed an ACK for a message to this contact (uint32 hash).
   final void Function(Contact, int ackHash)? onAckMatched;
   // The last ladder to this contact (pubkey hex) ended: the route it left
-  // on the radio is no longer the ladder's to hold.
-  final void Function(String contactKey)? onLadderEnded;
+  // on the radio is no longer the ladder's to hold. [delivered] is that
+  // last message's outcome; a ladder that ran out cleared the route, and
+  // the graph hears of its failures only after [lateAckGrace].
+  final void Function(String contactKey, {required bool delivered})?
+      onLadderEnded;
   // One message's ladder is over: delivered or not, and whether a repeater
   // was heard echoing a flood of it (null: no flood of it was observable).
   final void Function(String contactKey,
@@ -380,7 +383,9 @@ class MessageRetryService extends ChangeNotifier {
                 ? false
                 : null);
     _sendNextForContact(contactKey);
-    if (!isSendingTo(contactKey)) _config?.onLadderEnded?.call(contactKey);
+    if (!isSendingTo(contactKey)) {
+      _config?.onLadderEnded?.call(contactKey, delivered: delivered);
+    }
   }
 
   // Messages a flood of which could be seen echoed, and those one was.
