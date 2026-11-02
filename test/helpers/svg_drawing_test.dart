@@ -155,6 +155,19 @@ void main() {
       );
     });
 
+    test('a line that starts where the last one ended just carries on', () {
+      final d = encode([
+        SvgSubpath(p(0, 0), [SvgSegment.line(p(10, 10))]),
+        SvgSubpath(p(10, 10), [SvgSegment.line(p(20, 10))]),
+      ]);
+      expect(d, 'M0 0l10 10h10');
+      expect(read(d)!.polylines()!.single, [
+        (x: 0.0, y: 0.0),
+        (x: 10.0, y: 10.0),
+        (x: 20.0, y: 10.0),
+      ]);
+    });
+
     test('after a circle the position is back on whole numbers', () {
       final d = encode([
         SvgSubpath(p(90, 50), [SvgSegment.arc(p(90, 49.9), 40, 40)],

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
@@ -68,6 +69,10 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
   /// How near the last point a tap finishes a route, in pad units.
   static const _routeEnd = 12.0;
 
+  /// How near something already drawn a line, arrow or route point snaps
+  /// onto it, in pad units: so an arrow can start right where a route ends.
+  static const _snapReach = 20.0;
+
   /// The zoom a map opens at on the radio's position: about 760 m across.
   static const _openZoom = 16;
 
@@ -80,6 +85,9 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
   List<SvgPoint>? _stroke;
   SvgPoint? _start;
   var _routeOpen = false;
+
+  /// The point the finger is snapped to, so it ticks once per snap.
+  SvgPoint? _snappedTo;
   SvgFit? _fit;
 
   /// The message's drawing, in pad units, to draw over what you drew.
@@ -186,29 +194,67 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
         y: (at.dy / size.height * _pad.height).clamp(0, _pad.height),
       );
 
+  /// Where other lines can join [item]: a route's points, and the ends of a
+  /// stroke, line or arrow.
+  static List<SvgPoint> _joints(SvgItem item) => switch (item) {
+        SvgRoute(:final points) => points,
+        SvgStroke(:final points) => [points.first, points.last],
+        SvgLineItem(:final a, :final b) || SvgArrow(:final a, :final b) => [
+            a,
+            b,
+          ],
+        _ => const [],
+      };
+
+  /// [p], or the nearest joint within reach of anything drawn but [except].
+  SvgPoint _snap(SvgPoint p, {SvgItem? except}) {
+    SvgPoint? nearest;
+    var reach = _snapReach;
+    for (final item in _items) {
+      if (identical(item, except)) continue;
+      for (final joint in _joints(item)) {
+        final d = _distance(joint, p);
+        if (d < reach) {
+          nearest = joint;
+          reach = d;
+        }
+      }
+    }
+    if (nearest != _snappedTo) {
+      _snappedTo = nearest;
+      if (nearest != null) HapticFeedback.selectionClick();
+    }
+    return nearest ?? p;
+  }
+
   void _down(Offset at, Size size) {
-    final p = _toPad(at, size);
-    _start = p;
+    final raw = _toPad(at, size);
+    _start = raw;
     switch (_tool) {
       case _Tool.pen:
         _routeOpen = false;
-        _stroke = [p];
+        _stroke = [raw];
         _items.add(SvgStroke(_stroke!));
       case _Tool.route:
         final route = _routeOpen ? _items.last as SvgRoute : null;
-        if (route == null) {
-          _items.add(SvgRoute([p]));
-          _routeOpen = true;
-        } else if (_distance(route.points.last, p) < _routeEnd) {
+        if (route != null && _distance(route.points.last, raw) < _routeEnd) {
           // Tapping the last point again finishes the route.
           _routeOpen = false;
           _start = null;
+        } else if (route == null) {
+          _items.add(SvgRoute([_snap(raw)]));
+          _routeOpen = true;
         } else {
-          _items.last = SvgRoute([...route.points, p]);
+          _items.last = SvgRoute([...route.points, _snap(raw, except: route)]);
         }
-      default:
+      case _Tool.line || _Tool.arrow:
+        final p = _snap(raw);
+        _start = p;
         _routeOpen = false;
         _items.add(_shape(p, p));
+      default:
+        _routeOpen = false;
+        _items.add(_shape(raw, raw));
     }
     setState(() {});
   }
@@ -228,8 +274,10 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
         final route = _items.last as SvgRoute;
         _items.last = SvgRoute([
           ...route.points.take(route.points.length - 1),
-          p,
+          _snap(p, except: route),
         ]);
+      case _Tool.line || _Tool.arrow:
+        _items.last = _shape(start, _snap(p, except: _items.last));
       default:
         _items.last = _shape(start, p);
     }
@@ -237,6 +285,7 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
   }
 
   void _up() {
+    _snappedTo = null;
     if (_start == null) return;
     _start = null;
     _stroke = null;

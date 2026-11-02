@@ -270,6 +270,32 @@ void main() {
       expect(d.polylines()!.first.length, 2);
     });
 
+    testWidgets('an arrow started near the end of a route starts right on it', (
+      tester,
+    ) async {
+      final wire = await open(tester);
+      await tester.tap(find.byTooltip('Route'));
+      await tester.pump();
+      await drag(tester, [const Offset(0.1, 0.5)]);
+      await drag(tester, [const Offset(0.5, 0.5)]);
+      await drag(tester, [const Offset(0.5, 0.5)]);
+      await tester.tap(find.byTooltip('Arrow'));
+      await tester.pump();
+      // A little off the route's end, as a finger would be.
+      await drag(tester, [const Offset(0.52, 0.53), const Offset(0.9, 0.5)]);
+      await tester.tap(find.text('Insert'));
+      await tester.pumpAndSettle();
+      final lines = (StructuredMessage.parse(wire()!) as SvgMessage)
+          .drawing
+          .polylines()!;
+      // The route and the arrow's shaft are one line now; the head is apart.
+      expect(lines.first, [
+        (x: 0.0, y: 0.0),
+        (x: 50.0, y: 0.0),
+        (x: 99.0, y: 0.0),
+      ]);
+    });
+
     testWidgets('a tapped X on its own fills the drawing', (tester) async {
       final wire = await open(tester);
       await tester.tap(find.byTooltip('X mark'));

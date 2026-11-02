@@ -504,6 +504,10 @@ small.
   of where it started, then `z`. The `z` puts the position back on whole
   numbers.
 - An X is two crossing lines. A route keeps every point that was tapped.
+- A line, arrow or route point started near a route's points, or near the
+  end of a line, arrow or stroke, snaps onto it. A line that starts exactly
+  where the one before ended carries on from it with no move, so an arrow
+  on the end of a route costs no move at all.
 - Finger strokes are simplified with Ramer–Douglas–Peucker, at the finest
   tolerance whose message still fits. Shapes and routes stay exact.
 - **Over a map**, the user pans and zooms, then taps **Draw here**: the map

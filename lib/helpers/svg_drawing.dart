@@ -451,9 +451,12 @@ abstract final class SvgWriter {
 
     for (final sp in subpaths) {
       final s = sp.start;
-      take(first
-          ? [('M', [s.x, s.y])]
-          : [('M', [s.x, s.y]), ('m', [s.x - cur.x, s.y - cur.y])]);
+      // A line that starts where the last one ended just carries on.
+      if (first || s != cur) {
+        take(first
+            ? [('M', [s.x, s.y])]
+            : [('M', [s.x, s.y]), ('m', [s.x - cur.x, s.y - cur.y])]);
+      }
       first = false;
       cur = s;
       for (final seg in sp.segments) {
