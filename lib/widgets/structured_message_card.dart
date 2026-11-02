@@ -19,6 +19,7 @@ import '../screens/chat_screen.dart';
 import '../services/app_settings_service.dart';
 import '../utils/calendar_export.dart';
 import 'drawing_canvas.dart';
+import 'drawing_map_view.dart';
 import 'message_text.dart';
 import 'mini_map.dart';
 import 'structured_message_dialogs.dart';
@@ -282,6 +283,7 @@ class StructuredMessageCard extends StatelessWidget {
       );
     }
     final caption = m.drawing.caption;
+    final onMap = m.drawing.map != null && DrawingMapView.available(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -289,6 +291,16 @@ class StructuredMessageCard extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
+            if (onMap) {
+              return DrawingMapView(
+                drawing: m.drawing,
+                look: look,
+                width: width,
+                onTap: () => StructuredMessageDialogs.drawingViewer(context, m),
+                noteColor: p.tonal,
+                onNoteColor: p.onTonal,
+              );
+            }
             return Stack(
               children: [
                 DrawingCanvas(

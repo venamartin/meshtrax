@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/helpers/drawing_map.dart';
 import 'package:meshtrax/helpers/svg_drawing.dart';
 import 'package:meshtrax/helpers/svg_paste.dart';
 
@@ -338,6 +339,128 @@ void main() {
             '<path d="M0 0 1 1" fill="none"/></svg>'),
         SvgPasteProblem.nothing,
       );
+    });
+  });
+
+  group('a drawing over a map', () {
+    const frame = DrawingMap(
+      zoom: 16,
+      lat: 36.9695,
+      lon: -121.9525,
+      type: DrawingMapType.charts,
+    );
+
+    test('reads its map line, then the caption', () {
+      final d = read(
+        'M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c\nAnchored here',
+      )!;
+      expect(d.pathData, 'M55 33l8 8m0-8-8 8');
+      expect(d.map, frame);
+      expect(d.caption, 'Anchored here');
+    });
+
+    test('wrapped path data still joins up before the map line', () {
+      final d = read('M0 0 9 9\n10 20\nmap=3/0/0')!;
+      expect(d.pathData, 'M0 0 9 9 10 20');
+      expect(d.map!.zoom, 3);
+      expect(d.caption, '');
+    });
+
+    test('a map line that does not read is part of the caption', () {
+      final d = read('M0 0 9 9\nmap=99/1/2')!;
+      expect(d.map, isNull);
+      expect(d.caption, 'map=99/1/2');
+    });
+
+    test('the writer puts things on the frame instead of fitting them', () {
+      // Pad units are the frame's map pixels, 4 to a grid step.
+      final x = SvgWriter.fit(
+        [const SvgCross((x: 236, y: 148), 16)],
+        budget: 148,
+        caption: 'Anchored here',
+        map: frame,
+      );
+      expect(x.pathData, 'M55 33l8 8m0-8-8 8');
+      expect(
+        x.wire,
+        'SVG:M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c\nAnchored here',
+      );
+      expect(x.bytes, 63);
+      expect(x.fits, isTrue);
+      final line = SvgWriter.fit(
+        [const SvgLineItem((x: 0, y: 0), (x: 40, y: 0))],
+        budget: 148,
+        map: frame,
+      );
+      expect(line.pathData, 'M0 0h10');
+      expect((line.origin, line.scale), ((x: 0.0, y: 0.0), 0.25));
+    });
+
+    test('a route keeps every point it was given', () {
+      const route = SvgRoute([
+        (x: 0, y: 0),
+        (x: 40, y: 40),
+        (x: 80, y: 40),
+        (x: 80, y: 40),
+      ]);
+      expect(
+        SvgWriter.fit([route], budget: 148, map: frame).pathData,
+        'M0 0l10 10h10',
+      );
+      final alone = SvgWriter.fit([route], budget: 148);
+      expect(alone.pathData, 'M0 0l50 50h49');
+      expect(alone.points, 3);
+    });
+
+    test('an X on its own fills the drawing, and one route tap is a dot', () {
+      expect(
+        SvgWriter.fit([const SvgCross((x: 9, y: 9), 3)], budget: 148).pathData,
+        // Absolute is a byte shorter here than m0-99-99 99.
+        'M0 0l99 99M99 0 0 99',
+      );
+      expect(
+        SvgWriter.fit(
+          [const SvgRoute([(x: 40, y: 40)])],
+          budget: 148,
+          map: frame,
+        ).pathData,
+        'M10 10h0',
+      );
+    });
+
+    test('the map line takes room from the drawing', () {
+      final items = [
+        SvgStroke([
+          for (var i = 0; i < 60; i++) (x: i * 6.0, y: 150 + 100 * sin(i / 3)),
+        ]),
+      ];
+      final fitted = SvgWriter.fit(items, budget: 120, map: frame);
+      expect(fitted.bytes, lessThanOrEqualTo(120));
+      expect(fitted.wire, contains('\nmap=16/36.9695/-121.9525/c'));
+      expect(SvgWriter.fit(items, budget: 30, map: frame).fits, isFalse);
+    });
+
+    test('items move and scale with the ground', () {
+      SvgPoint shift(SvgPoint p) => (x: p.x * 2 + 1, y: p.y * 2 + 1);
+      final items = <SvgItem>[
+        const SvgStroke([(x: 1, y: 1)]),
+        const SvgRoute([(x: 1, y: 1), (x: 2, y: 2)]),
+        const SvgLineItem((x: 1, y: 1), (x: 2, y: 2)),
+        const SvgRect((x: 1, y: 1), (x: 2, y: 2)),
+        const SvgArrow((x: 1, y: 1), (x: 2, y: 2)),
+        const SvgEllipse((x: 1, y: 1), 3, 4),
+        const SvgCross((x: 1, y: 1), 5),
+      ];
+      final moved = [for (final item in items) item.transformed(shift, 2)];
+      final ellipse = moved[5] as SvgEllipse;
+      expect(ellipse.center, (x: 3.0, y: 3.0));
+      expect((ellipse.rx, ellipse.ry), (6.0, 8.0));
+      expect((moved[6] as SvgCross).half, 10);
+      expect((moved[1] as SvgRoute).points.last, (x: 5.0, y: 5.0));
+      for (final item in moved) {
+        expect(item.outline, isNotEmpty);
+        expect(item.outline.every((line) => line.length >= 2), isTrue);
+      }
     });
   });
 }

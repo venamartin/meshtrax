@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:path_parsing/path_parsing.dart';
 
+import 'drawing_map.dart';
+
 typedef SvgPoint = ({double x, double y});
 
 /// The limits on a received drawing, part of the format in
@@ -78,9 +80,13 @@ class SvgDrawing {
 
   /// Empty when there is none.
   final String caption;
+
+  /// The map the drawing is drawn over, if any. Its numbers are then
+  /// positions on the map's frame rather than a shape to fit.
+  final DrawingMap? map;
   final List<_Segment> _segments;
 
-  SvgDrawing._(this.pathData, this.caption, this._segments);
+  SvgDrawing._(this.pathData, this.caption, this.map, this._segments);
 
   static final _hasDigit = RegExp(r'\d');
 
@@ -93,9 +99,12 @@ class SvgDrawing {
     var segments = _read(path);
     if (segments == null) return null;
     // Another tool may have wrapped long path data: a line that only reads
-    // as more path data continues it. Anything else starts the caption.
+    // as more path data continues it. A map line comes next; anything else
+    // starts the caption.
     var next = 1;
-    while (next < lines.length && _hasDigit.hasMatch(lines[next])) {
+    while (next < lines.length &&
+        _hasDigit.hasMatch(lines[next]) &&
+        DrawingMap.tryParse(lines[next]) == null) {
       final joined = '$path ${lines[next].trim()}';
       final more = _read(joined);
       if (more == null) break;
@@ -103,9 +112,11 @@ class SvgDrawing {
       segments = more;
       next++;
     }
+    final map = next < lines.length ? DrawingMap.tryParse(lines[next]) : null;
+    if (map != null) next++;
     final caption = lines.skip(next).join('\n').trim();
     if (utf8.encode(caption).length > SvgLimits.captionBytes) return null;
-    final drawing = SvgDrawing._(path, caption, segments!);
+    final drawing = SvgDrawing._(path, caption, map, segments!);
     final lines0 = drawing.polylines();
     if (lines0 == null || lines0.isEmpty) return null;
     return drawing;
@@ -224,12 +235,87 @@ class SvgDrawing {
 /// Something drawn on the sketch pad, in the pad's own units.
 sealed class SvgItem {
   const SvgItem();
+
+  /// This item with every point passed through [to] and every length
+  /// multiplied by [scale]: how a drawing follows the ground when its map
+  /// moves.
+  SvgItem transformed(SvgPoint Function(SvgPoint) to, double scale) =>
+      switch (this) {
+        SvgStroke(:final points) => SvgStroke([for (final p in points) to(p)]),
+        SvgRoute(:final points) => SvgRoute([for (final p in points) to(p)]),
+        SvgLineItem(:final a, :final b) => SvgLineItem(to(a), to(b)),
+        SvgRect(:final a, :final b) => SvgRect(to(a), to(b)),
+        SvgArrow(:final a, :final b) => SvgArrow(to(a), to(b)),
+        SvgEllipse(:final center, :final rx, :final ry) =>
+          SvgEllipse(to(center), rx * scale, ry * scale),
+        SvgCross(:final center, :final half) =>
+          SvgCross(to(center), half * scale),
+      };
+
+  /// The lines this item draws, near enough to show what was drawn. The
+  /// message's own lines come from [SvgWriter].
+  List<List<SvgPoint>> get outline {
+    SvgPoint p(double x, double y) => (x: x, y: y);
+    return switch (this) {
+      SvgStroke(:final points) || SvgRoute(:final points) => [
+          points.length == 1 ? [points.first, points.first] : points,
+        ],
+      SvgLineItem(:final a, :final b) => [
+          [a, b],
+        ],
+      SvgRect(:final a, :final b) => [
+          [a, p(b.x, a.y), b, p(a.x, b.y), a],
+        ],
+      SvgEllipse(:final center, :final rx, :final ry) => [
+          [
+            for (var i = 0; i <= 48; i++)
+              p(
+                center.x + rx * math.cos(i * math.pi / 24),
+                center.y + ry * math.sin(i * math.pi / 24),
+              ),
+          ],
+        ],
+      SvgCross(:final center, :final half) => [
+          [p(center.x - half, center.y - half), p(center.x + half, center.y + half)],
+          [p(center.x + half, center.y - half), p(center.x - half, center.y + half)],
+        ],
+      SvgArrow(:final a, :final b) => () {
+          final dx = b.x - a.x, dy = b.y - a.y;
+          final length = math.max(math.sqrt(dx * dx + dy * dy), 1e-9);
+          final head = (length * 0.18).clamp(6.0, 48.0);
+          final ux = dx / length, uy = dy / length;
+          final c = math.cos(math.pi / 6), s = math.sin(math.pi / 6);
+          return [
+            [a, b],
+            [
+              p(b.x - head * (ux * c - uy * s), b.y - head * (uy * c + ux * s)),
+              b,
+              p(b.x - head * (ux * c + uy * s), b.y - head * (uy * c - ux * s)),
+            ],
+          ];
+        }(),
+    };
+  }
 }
 
 /// A finger stroke. The writer simplifies these to fit.
 final class SvgStroke extends SvgItem {
   final List<SvgPoint> points;
   const SvgStroke(this.points);
+}
+
+/// Straight segments through tapped points, written exactly.
+final class SvgRoute extends SvgItem {
+  final List<SvgPoint> points;
+  const SvgRoute(this.points);
+}
+
+/// An X: two lines through [center], each end [half] from it across and
+/// down.
+final class SvgCross extends SvgItem {
+  final SvgPoint center;
+  final double half;
+  const SvgCross(this.center, this.half);
 }
 
 final class SvgLineItem extends SvgItem {
@@ -436,37 +522,48 @@ abstract final class SvgWriter {
     ];
   }
 
+  /// Over a [map] the grid is the map's frame (pad units are its map
+  /// pixels, 4 to a grid step); without one it's fitted to the drawing.
   static (List<SvgSubpath>, int, SvgPoint, double) _subpaths(
     List<SvgItem> items,
-    double tolerance,
-  ) {
-    final all = <SvgPoint>[];
-    for (final item in items) {
-      switch (item) {
-        case SvgStroke(:final points):
-          all.addAll(points);
-        case SvgEllipse(:final center, :final rx, :final ry):
-          all
-            ..add((x: center.x - rx, y: center.y - ry))
-            ..add((x: center.x + rx, y: center.y + ry));
-        case SvgLineItem(:final a, :final b) ||
-              SvgRect(:final a, :final b) ||
-              SvgArrow(:final a, :final b):
-          all
-            ..add(a)
-            ..add(b);
+    double tolerance, {
+    DrawingMap? map,
+  }) {
+    var minX = 0.0, minY = 0.0;
+    var scale = 100 / DrawingMap.width;
+    if (map == null) {
+      final all = <SvgPoint>[];
+      for (final item in items) {
+        switch (item) {
+          case SvgStroke(:final points) || SvgRoute(:final points):
+            all.addAll(points);
+          case SvgEllipse(:final center, :final rx, :final ry):
+            all
+              ..add((x: center.x - rx, y: center.y - ry))
+              ..add((x: center.x + rx, y: center.y + ry));
+          case SvgCross(:final center, :final half):
+            all
+              ..add((x: center.x - half, y: center.y - half))
+              ..add((x: center.x + half, y: center.y + half));
+          case SvgLineItem(:final a, :final b) ||
+                SvgRect(:final a, :final b) ||
+                SvgArrow(:final a, :final b):
+            all
+              ..add(a)
+              ..add(b);
+        }
       }
+      minX = minY = double.infinity;
+      var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+      for (final p in all) {
+        minX = math.min(minX, p.x);
+        maxX = math.max(maxX, p.x);
+        minY = math.min(minY, p.y);
+        maxY = math.max(maxY, p.y);
+      }
+      final span = math.max(maxX - minX, maxY - minY);
+      scale = span > 0 ? 99 / span : 1.0;
     }
-    var minX = double.infinity, minY = double.infinity;
-    var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-    for (final p in all) {
-      minX = math.min(minX, p.x);
-      maxX = math.max(maxX, p.x);
-      minY = math.min(minY, p.y);
-      maxY = math.max(maxY, p.y);
-    }
-    final span = math.max(maxX - minX, maxY - minY);
-    final scale = span > 0 ? 99 / span : 1.0;
     SvgPoint grid(SvgPoint p) =>
         (x: (p.x - minX) * scale, y: (p.y - minY) * scale);
     SvgPoint round(SvgPoint p) =>
@@ -488,6 +585,27 @@ abstract final class SvgWriter {
             for (final p in kept.length > 1 ? kept.skip(1) : kept)
               SvgSegment.line(p),
           ]));
+        case SvgRoute(points: final route):
+          final kept = <SvgPoint>[];
+          for (final p in route.map((p) => round(grid(p)))) {
+            if (kept.isEmpty || kept.last != p) kept.add(p);
+          }
+          points += kept.length;
+          out.add(SvgSubpath(kept.first, [
+            for (final p in kept.length > 1 ? kept.skip(1) : kept)
+              SvgSegment.line(p),
+          ]));
+        case SvgCross(:final center, :final half):
+          // From its rounded corners, which never pass 99 as a rounded
+          // centre plus a rounded reach can.
+          final a = round(grid((x: center.x - half, y: center.y - half)));
+          final b = round(grid((x: center.x + half, y: center.y + half)));
+          points += 4;
+          out
+            ..add(SvgSubpath(a, [SvgSegment.line(b)]))
+            ..add(SvgSubpath((x: b.x, y: a.y), [
+              SvgSegment.line((x: a.x, y: b.y)),
+            ]));
         case SvgLineItem(:final a, :final b):
           points += 2;
           out.add(SvgSubpath(round(grid(a)), [SvgSegment.line(round(grid(b)))]));
@@ -537,19 +655,22 @@ abstract final class SvgWriter {
     return (out, points, (x: minX, y: minY), scale);
   }
 
-  /// The finest simplification of [items] whose message, with `SVG:` and
-  /// [caption], fits [budget] bytes. Shapes stay exact; only finger strokes
-  /// are simplified. When even the coarsest doesn't fit, [SvgFit.fits] is
-  /// false and the coarsest is returned.
+  /// The finest simplification of [items] whose message, with `SVG:`, the
+  /// [map] line and [caption], fits [budget] bytes. Shapes stay exact; only
+  /// finger strokes are simplified. When even the coarsest doesn't fit,
+  /// [SvgFit.fits] is false and the coarsest is returned.
   static SvgFit fit(
     List<SvgItem> items, {
     required int budget,
     String caption = '',
+    DrawingMap? map,
   }) {
-    final tail = caption.isEmpty ? '' : '\n$caption';
+    final tail = '${map == null ? '' : '\n${map.toLine()}'}'
+        '${caption.isEmpty ? '' : '\n$caption'}';
     final room = budget - _bytes('SVG:$tail');
     SvgFit at(double tolerance, {bool fits = true}) {
-      final (subpaths, points, origin, scale) = _subpaths(items, tolerance);
+      final (subpaths, points, origin, scale) =
+          _subpaths(items, tolerance, map: map);
       final path = encode(subpaths);
       final wire = 'SVG:$path$tail';
       return SvgFit(

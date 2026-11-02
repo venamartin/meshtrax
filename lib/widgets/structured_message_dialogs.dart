@@ -15,6 +15,7 @@ import '../screens/map_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/short_link_resolver.dart';
 import 'drawing_canvas.dart';
+import 'drawing_map_view.dart';
 
 /// The dialogs behind the composer tray tiles. Each returns the wire text to
 /// insert into the composer, or null when cancelled.
@@ -159,8 +160,11 @@ class _DrawingViewer extends StatelessWidget {
       return r == r.roundToDouble() ? r.round().toString() : r.toString();
     }
 
-    final viewBox = '${n(minX - 3)} ${n(minY - 3)} '
-        '${n(maxX - minX + 6)} ${n(maxY - minY + 6)}';
+    // Over a map the numbers are places on its frame: keep the frame.
+    final viewBox = message.drawing.map != null
+        ? '0 0 100 75'
+        : '${n(minX - 3)} ${n(minY - 3)} '
+            '${n(maxX - minX + 6)} ${n(maxY - minY + 6)}';
     final hex = (pen.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0');
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="$viewBox">'
         '<path d="${message.drawing.pathData}" fill="none" stroke="#$hex" '
@@ -177,21 +181,28 @@ class _DrawingViewer extends StatelessWidget {
     // An explicit size: an AlertDialog asks its content for an intrinsic
     // width, which a LayoutBuilder can't answer.
     final width = math.min(MediaQuery.sizeOf(context).width - 80, 480.0);
-    final caption = message.drawing.caption;
+    final drawing = message.drawing;
+    final caption = drawing.caption;
     return _trayDialog(
       context,
       icon: Icons.draw,
       title: l10n.tray_drawing,
       children: [
-        DrawingCanvas(
-          drawing: message.drawing,
-          look: look,
-          size: Size(width, width * 0.75),
-        ),
+        if (drawing.map != null && DrawingMapView.available(context))
+          SizedBox(
+            width: width,
+            child: DrawingMapView(drawing: drawing, look: look, width: width),
+          )
+        else
+          DrawingCanvas(
+            drawing: drawing,
+            look: look,
+            size: Size(width, width * 0.75),
+          ),
         if (caption.isNotEmpty) ...[_gap, Text(caption)],
         _gap,
         SelectableText(
-          message.drawing.pathData,
+          [drawing.pathData, ?drawing.map?.toLine()].join('\n'),
           style: drawingCodeStyle.copyWith(fontSize: 13),
         ),
       ],

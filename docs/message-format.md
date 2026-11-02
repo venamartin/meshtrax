@@ -404,11 +404,12 @@ are welcome to draw these too.
    pen color with round ends and joins. That convention is part of the
    format: SVG's own default would fill the path black and draw no line.
 3. **Caption.** Everything after the first line is a caption, shown under
-   the picture. The one exception is for path data that another tool wrapped
-   onto more lines: a following line that holds a digit, and that still reads
-   as path data when joined to the path with a space, continues the path. So
-   a caption of numbers alone, such as `10 20`, is read as more path; give it
-   a word.
+   the picture. There are two exceptions. A map line may come right after
+   the path data; see [Map background](#map-background). And for path data
+   that another tool wrapped onto more lines, a following line that holds a
+   digit, and that still reads as path data when joined to the path with a
+   space, continues the path. So a caption of numbers alone, such as
+   `10 20`, is read as more path; give it a word.
 4. **Path data only.** Readers never read markup from a message. `SVG:`
    followed by `<svg>` is ordinary text. That keeps what a stranger can send
    down to numbers and one-letter commands, with no loops, so the work a
@@ -453,6 +454,43 @@ switch drawings off to see the code instead.
   `#010A03` with faint scanlines, and a pen of `#33FF33` drawing 2 dp lines
   with a soft glow.
 
+## Map background
+
+A drawing can sit on a map, to mark where a boat is anchored, point at a
+building or show the way to a spot. The map goes on its own line, right
+after the path data and before any caption:
+
+```
+SVG:M55 33l8 8m0-8-8 8
+map=16/36.9695/-121.9525/c
+Anchored here
+```
+
+- **Map line.** `map=`, then the zoom, latitude and longitude separated by
+  `/`, the way openstreetmap.org writes a view:
+  `openstreetmap.org/#map=16/36.9695/-121.9525` shows the same place. The
+  zoom is a whole number from 0 to 18, counting 256-pixel tiles. Latitude
+  is within ±85.0511 and longitude within ±180, in decimal degrees. MeshTrax
+  writes 4 decimals, leaving off trailing zeros.
+- **Map type.** An optional last part of one letter: `u` for a USGS topo
+  map, `c` for NOAA charts. No letter means the standard street map. A
+  reader that doesn't know the letter shows the standard map. Readers
+  accept any case.
+- **Frame.** The map shows 400 × 300 map pixels at that zoom, centred on the
+  point. Near 37° N that is 763 m across at zoom 16 and 191 m at zoom 18.
+- **Coordinates.** Over a map, path data isn't fitted to its own size. Its
+  numbers are places on the frame, 0 to 100 across and 0 to 75 down, one
+  unit being 4 map pixels, with y down. Lines past the frame's edge are cut.
+- **Not a map line.** A line starting `map=` that doesn't read this way is
+  part of the caption, and the drawing has no map.
+- **Showing it.** Show the map type that was sent where the reader has it,
+  otherwise the standard map. MeshTrax fills the standard map with its base
+  map where nothing is downloaded. The base map has no detail at street
+  zooms, so there MeshTrax says the area isn't downloaded. Over a map,
+  MeshTrax draws the lines in the pen color with a thin dark edge instead of
+  the glow, and shows the map's credits under the frame, never over the
+  drawing.
+
 ## How MeshTrax writes them
 
 Other apps don't need to follow this. It's how MeshTrax keeps drawings
@@ -465,8 +503,13 @@ small.
 - A circle or ellipse is one arc from its rightmost point, ending 0.1 short
   of where it started, then `z`. The `z` puts the position back on whole
   numbers.
+- An X is two crossing lines. A route keeps every point that was tapped.
 - Finger strokes are simplified with Ramer–Douglas–Peucker, at the finest
-  tolerance whose message still fits. Shapes stay exact.
+  tolerance whose message still fits. Shapes and routes stay exact.
+- **Over a map**, the user pans and zooms, then taps **Draw here**: the map
+  snaps to a whole zoom step and a centre rounded to 4 decimals, so the
+  frame they draw on is exactly the one every reader gets. Moving the map
+  afterwards carries the drawing along with the ground.
 - **Paste** reads a whole SVG file, but only one the user pastes on their own
   phone. MeshTrax keeps the visible paths, breaks them into lines and writes
   path data. Colors, fills and text don't travel.
@@ -484,6 +527,8 @@ Bytes include the `SVG:` header, and `↵` is a line break.
 | Arrow with a caption | `SVG:M10 50h70m-8-6 8 6-8 6↵To the hut` | 37 |
 | Circle | `SVG:M90 50a40 40 0 1 1 0-.1z` | 28 |
 | Stick figure | `SVG:M58 18a8 8 0 1 1 0-.1zM50 26v34l-14 30m14-30 14 30M26 44l12 6 12-6 12 6 12-6` | 80 |
+| X on a chart | `SVG:M55 33l8 8m0-8-8 8↵map=16/36.9695/-121.9525/c↵Anchored here` | 63 |
+| Arrow on the street map | `SVG:M30 64l27-21m-7 1 7-1-3 6↵map=18/36.9643/-122.0177↵Meet at the carousel` | 75 |
 
 ## Byte budget
 
@@ -491,5 +536,6 @@ The header costs 4 bytes. That leaves 156 for path data in a direct message,
 146 in a room post, and 144 in a channel for a sender with a 10-byte name.
 MeshTrax keeps a direct message with a drawing to 158 bytes in all, so 154
 for path data, because a longer direct message gets fewer send attempts. A
-caption costs its bytes plus 1 for the line break. A finger stroke costs 4
-to 5 bytes a point, so a channel message holds about 30 points.
+caption costs its bytes plus 1 for the line break, and a map line about 26
+plus 1. A finger stroke costs 4 to 5 bytes a point, so a channel message
+holds about 30 points, or about 25 over a map.

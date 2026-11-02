@@ -48,6 +48,14 @@ class AppMap extends StatefulWidget {
   /// nothing is downloaded it opens no closer than the base map's detail.
   final bool compact;
 
+  /// A drawing's frame: the camera stays exactly where it's put, past the
+  /// base map's detail too, so the drawing lines up with the map.
+  final bool exact;
+
+  /// Takes the credits the data's licences require, for the caller to show
+  /// (a drawing keeps them off its frame). Without it the map shows them.
+  final ValueChanged<List<String>>? onCreditsChanged;
+
   /// Width of the screen's map buttons at the right edge: the offline card
   /// sits beside them rather than above.
   final double controlsWidth;
@@ -71,6 +79,8 @@ class AppMap extends StatefulWidget {
     this.mapType,
     this.contours,
     this.compact = false,
+    this.exact = false,
+    this.onCreditsChanged,
     this.controlsWidth = 0,
   });
 
@@ -137,18 +147,6 @@ class _AppMapState extends State<AppMap> {
     });
   }
 
-  /// Whether a region of [type]'s map is downloaded at [point].
-  static bool _downloadedAt(MapPacksService maps, MapType type, LatLng point) {
-    final areas = maps.downloadedAreas(type);
-    final here = type == MapType.charts
-        ? [
-            for (final a in maps.chartAreas?.areasAt(point) ?? const [])
-              a.packRegion,
-          ]
-        : [?maps.regions?.regionAt(point)?.path];
-    return here.any(areas.containsKey);
-  }
-
   List<MapOverlay> _withAreas(
     MapPacksService maps, {
     required MapType type,
@@ -202,8 +200,9 @@ class _AppMapState extends State<AppMap> {
     final initialCamera = switch (widget.initialCamera) {
       final c?
           when widget.compact &&
+              !widget.exact &&
               c.zoom > _baseMapZoom &&
-              !_downloadedAt(maps, type, c.center) =>
+              !maps.downloadedAt(type, c.center) =>
         c.copyWith(zoom: _baseMapZoom),
       final c => c,
     };
@@ -233,7 +232,7 @@ class _AppMapState extends State<AppMap> {
           initialCamera: initialCamera,
           initialFit: widget.initialFit,
           minZoom: widget.minZoom,
-          maxZoom: _covered == false
+          maxZoom: _covered == false && !widget.exact
               ? math.min(widget.maxZoom, _uncoveredMaxZoom)
               : widget.maxZoom,
           overlays: _withAreas(
@@ -253,6 +252,7 @@ class _AppMapState extends State<AppMap> {
           }),
           onStyleLoaded: (s) {
             setState(() => _style = s);
+            widget.onCreditsChanged?.call([...s.credits, ...s.notices]);
             // Mini maps draw charts too, but the notice is for the map
             // screens, not a pop-up over a chat or a dialog.
             if (s.disclaimer != null && !widget.compact) {
@@ -273,7 +273,7 @@ class _AppMapState extends State<AppMap> {
                   : _NoOfflineMap(regionPath: _regionPath),
             ),
           ),
-        if (credits.isNotEmpty)
+        if (credits.isNotEmpty && widget.onCreditsChanged == null)
           Positioned(
             left: 8,
             bottom: 8,

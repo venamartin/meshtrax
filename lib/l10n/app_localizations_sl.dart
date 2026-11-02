@@ -5995,4 +5995,38 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get drawingSettings_scanlines => 'Scanlines';
+
+  @override
+  String get drawing_toolRoute => 'Route';
+
+  @override
+  String get drawing_toolX => 'X mark';
+
+  @override
+  String get drawing_routeHint =>
+      'Tap to add points. Tap the last one again to finish.';
+
+  @override
+  String get drawing_mapNone => 'No map';
+
+  @override
+  String get drawing_mapUsgs => 'USGS';
+
+  @override
+  String get drawing_drawHere => 'Draw here';
+
+  @override
+  String get drawing_moveMap => 'Move map';
+
+  @override
+  String get drawing_mapHint =>
+      'Pan and zoom to the place, then tap Draw here.';
+
+  @override
+  String drawing_mapAcross(String map, String distance) {
+    return '$map, $distance across';
+  }
+
+  @override
+  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
 }

@@ -1,15 +1,38 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/helpers/drawing_map.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/screens/drawing_compose_screen.dart';
 import 'package:meshtrax/screens/drawing_settings_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/drawing_canvas.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxmap/traxmap.dart';
+
+import '../helpers/map_fakes.dart';
+
+class _NoDownloads implements PackDownloader {
+  @override
+  Stream<PackDownload> get updates => const Stream.empty();
+  @override
+  List<PackDownload> get downloads => const [];
+  @override
+  Future<void> start(PackIndexEntry entry) async {}
+  @override
+  Future<void> pause(String packId) async {}
+  @override
+  Future<void> resume(String packId) async {}
+  @override
+  Future<void> cancel(String packId) async {}
+}
 
 void main() {
   setUp(() async {
@@ -18,9 +41,12 @@ void main() {
     await PrefsManager.initialize();
   });
 
-  Widget app(AppSettingsService service, Widget home) =>
-      ChangeNotifierProvider.value(
-        value: service,
+  Widget app(AppSettingsService service, Widget home, {MapPacksService? maps}) =>
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: service),
+          if (maps != null) ChangeNotifierProvider.value(value: maps),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -37,7 +63,11 @@ void main() {
 
   group('the drawing page', () {
     /// Opens it from a button, returning a getter for what it popped.
-    Future<String? Function()> open(WidgetTester tester, {int maxBytes = 148}) async {
+    Future<String? Function()> open(
+      WidgetTester tester, {
+      int maxBytes = 148,
+      MapPacksService? maps,
+    }) async {
       phone(tester);
       String? wire;
       await tester.pumpWidget(app(
@@ -55,6 +85,7 @@ void main() {
             ),
           ),
         ),
+        maps: maps,
       ));
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
@@ -180,7 +211,16 @@ void main() {
         tester.view.devicePixelRatio = 3;
         await tester.pumpAndSettle();
         final rects = [
-          for (final tool in ['Pen', 'Line', 'Rectangle', 'Circle', 'Ellipse', 'Arrow'])
+          for (final tool in [
+            'Pen',
+            'Route',
+            'Line',
+            'Arrow',
+            'X mark',
+            'Rectangle',
+            'Circle',
+            'Ellipse',
+          ])
             tester.getRect(find.byTooltip(tool)),
         ];
         for (var i = 0; i < rects.length; i++) {
@@ -201,6 +241,122 @@ void main() {
       await tester.pumpAndSettle();
       final m = StructuredMessage.parse(wire()!) as SvgMessage;
       expect(m.drawing.pathData, matches(RegExp(r'^M99 \d+a50 \d+ 0 1 1 0-\.1z$')));
+    });
+
+    testWidgets('a route takes a point a tap, and Undo takes the last back', (
+      tester,
+    ) async {
+      final wire = await open(tester);
+      await tester.tap(find.byTooltip('Route'));
+      await tester.pump();
+      expect(
+        find.text('Tap to add points. Tap the last one again to finish.'),
+        findsOneWidget,
+      );
+      for (final f in const [Offset(0.1, 0.1), Offset(0.5, 0.9), Offset(0.9, 0.1)]) {
+        await drag(tester, [f]);
+      }
+      expect(find.textContaining('3 points'), findsOneWidget);
+      await tester.tap(find.byTooltip('Undo'));
+      await tester.pump();
+      expect(find.textContaining('2 points'), findsOneWidget);
+      // The last point again finishes the route; the next tap starts one.
+      await drag(tester, [const Offset(0.5, 0.9)]);
+      await drag(tester, [const Offset(0.9, 0.9)]);
+      await tester.tap(find.text('Insert'));
+      await tester.pumpAndSettle();
+      final d = (StructuredMessage.parse(wire()!) as SvgMessage).drawing;
+      expect(d.polylines()!.length, 2);
+      expect(d.polylines()!.first.length, 2);
+    });
+
+    testWidgets('a tapped X on its own fills the drawing', (tester) async {
+      final wire = await open(tester);
+      await tester.tap(find.byTooltip('X mark'));
+      await tester.pump();
+      await drag(tester, [const Offset(0.5, 0.5)]);
+      await tester.tap(find.text('Insert'));
+      await tester.pumpAndSettle();
+      expect(wire(), 'SVG:M0 0l99 99M99 0 0 99');
+    });
+
+    testWidgets('with no map packs service there is no map to pick', (
+      tester,
+    ) async {
+      await open(tester);
+      expect(find.text('No map'), findsNothing);
+    });
+
+    group('over a map', () {
+      late Directory tmp;
+      setUp(() async => tmp = await Directory.systemTemp.createTemp('drawmap'));
+      tearDown(() async {
+        try {
+          await tmp.delete(recursive: true);
+        } on FileSystemException {
+          // Windows can hold a map file a moment longer.
+        }
+      });
+
+      MapPacksService maps() => MapPacksService(
+            manager: PackManager(Directory('${tmp.path}/packs')),
+            downloader: _NoDownloads(),
+            cacheDir: tmp,
+            styles: StyleRegistry(MemoryStyles(maps: ['osm', 'usgs', 'charts'])),
+          );
+
+      Future<void> settle(WidgetTester tester) async {
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      testWidgets('pick a map, draw here, and the message carries the map', (
+        tester,
+      ) async {
+        final wire = await open(tester, maps: maps());
+        expect(find.text('No map'), findsOneWidget);
+        // Nothing is downloaded, so only Standard can be picked.
+        await tester.tap(find.text('Charts'));
+        await settle(tester);
+        expect(find.text('Draw here'), findsNothing);
+        await tester.tap(find.text('Standard'));
+        await settle(tester);
+        expect(find.byType(AppMap), findsOneWidget);
+        expect(find.text('Draw here'), findsOneWidget);
+        expect(
+          find.text('Pan and zoom to the place, then tap Draw here.'),
+          findsOneWidget,
+        );
+        expect(insert(tester).onPressed, isNull);
+
+        await tester.tap(find.text('Draw here'));
+        await settle(tester);
+        expect(find.byTooltip('Move map'), findsOneWidget);
+        expect(tester.widget<AppMap>(find.byType(AppMap)).exact, isTrue);
+        await tester.tap(find.byTooltip('X mark'));
+        await tester.pump();
+        await drag(tester, [const Offset(0.5, 0.5)]);
+        expect(find.textContaining('Standard,'), findsOneWidget);
+        final first = insert(tester);
+        expect(first.onPressed, isNotNull);
+
+        // Move map, then Draw here on the same spot: the same drawing.
+        await tester.tap(find.byTooltip('Move map'));
+        await settle(tester);
+        expect(insert(tester).onPressed, isNull);
+        await tester.tap(find.text('Draw here'));
+        await settle(tester);
+
+        await tester.tap(find.text('Insert'));
+        await settle(tester);
+        final m = StructuredMessage.parse(wire()!) as SvgMessage;
+        expect(m.drawing.map, isNotNull);
+        expect(m.drawing.map!.type, DrawingMapType.standard);
+        expect(m.drawing.map!.toLine(), 'map=3/0/0');
+        // A tapped X, 8 grid steps across, in the middle of the frame.
+        expect(m.drawing.pathData, 'M46 34l8 8m0-8-8 8');
+      });
     });
 
     testWidgets('it fits a phone with the keyboard open', (tester) async {

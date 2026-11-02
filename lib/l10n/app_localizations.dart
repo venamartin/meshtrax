@@ -10307,6 +10307,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scanlines'**
   String get drawingSettings_scanlines;
+
+  /// No description provided for @drawing_toolRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get drawing_toolRoute;
+
+  /// No description provided for @drawing_toolX.
+  ///
+  /// In en, this message translates to:
+  /// **'X mark'**
+  String get drawing_toolX;
+
+  /// No description provided for @drawing_routeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add points. Tap the last one again to finish.'**
+  String get drawing_routeHint;
+
+  /// No description provided for @drawing_mapNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No map'**
+  String get drawing_mapNone;
+
+  /// No description provided for @drawing_mapUsgs.
+  ///
+  /// In en, this message translates to:
+  /// **'USGS'**
+  String get drawing_mapUsgs;
+
+  /// No description provided for @drawing_drawHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw here'**
+  String get drawing_drawHere;
+
+  /// No description provided for @drawing_moveMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Move map'**
+  String get drawing_moveMap;
+
+  /// No description provided for @drawing_mapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pan and zoom to the place, then tap Draw here.'**
+  String get drawing_mapHint;
+
+  /// No description provided for @drawing_mapAcross.
+  ///
+  /// In en, this message translates to:
+  /// **'{map}, {distance} across'**
+  String drawing_mapAcross(String map, String distance);
+
+  /// No description provided for @drawing_mapNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'This area isn\'t downloaded'**
+  String get drawing_mapNotDownloaded;
 }
 
 class _AppLocalizationsDelegate

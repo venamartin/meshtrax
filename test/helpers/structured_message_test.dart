@@ -70,6 +70,8 @@ void main() {
               'M26 44l12 6 12-6 12 6 12-6',
           80,
         ),
+        ('SVG:M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c\nAnchored here', 63),
+        ('SVG:M30 64l27-21m-7 1 7-1-3 6\nmap=18/36.9643/-122.0177\nMeet at the carousel', 75),
       ]) {
         final m = StructuredMessage.parse(text);
         expect(m, isA<SvgMessage>(), reason: text);
@@ -82,6 +84,19 @@ void main() {
       final wrapped = StructuredMessage.parse('SVG:M10 10 90 90\n10 20') as SvgMessage;
       expect(wrapped.drawing.pathData, 'M10 10 90 90 10 20');
       expect(wrapped.drawing.caption, '');
+    });
+
+    test('a drawing over a map carries its map line, and is no map pin', () {
+      const text = 'SVG:M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c\nAnchored here';
+      final m = StructuredMessage.parse(text) as SvgMessage;
+      expect(m.drawing.map!.zoom, 16);
+      expect(m.drawing.caption, 'Anchored here');
+      expect(m.toWire(), text);
+      expect(m.position, isNull);
+      expect(
+        (StructuredMessage.parse('SVG:M0 0 9 9\nmap=3/0/0') as SvgMessage).toWire(),
+        'SVG:M0 0 9 9\nmap=3/0/0',
+      );
     });
 
     test('keeps out of SMAZ compression, as cards do', () {

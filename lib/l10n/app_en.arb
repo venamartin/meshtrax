@@ -3074,5 +3074,25 @@
   "drawingSettings_colorCode": "Color code",
   "drawingSettings_lineWidth": "Line width",
   "drawingSettings_glow": "Glow",
-  "drawingSettings_scanlines": "Scanlines"
+  "drawingSettings_scanlines": "Scanlines",
+  "drawing_toolRoute": "Route",
+  "drawing_toolX": "X mark",
+  "drawing_routeHint": "Tap to add points. Tap the last one again to finish.",
+  "drawing_mapNone": "No map",
+  "drawing_mapUsgs": "USGS",
+  "drawing_drawHere": "Draw here",
+  "drawing_moveMap": "Move map",
+  "drawing_mapHint": "Pan and zoom to the place, then tap Draw here.",
+  "drawing_mapAcross": "{map}, {distance} across",
+  "@drawing_mapAcross": {
+    "placeholders": {
+      "map": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "drawing_mapNotDownloaded": "This area isn't downloaded"
 }

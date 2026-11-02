@@ -682,6 +682,8 @@ class SvgMessage extends StructuredMessage {
         _fromHeader(body, header) != null;
   }
 
+  /// None, even over a map: drawings aren't pins on the Map tab (Martin,
+  /// 2026-11-02).
   @override
   LatLng? get position => null;
 
@@ -692,9 +694,11 @@ class SvgMessage extends StructuredMessage {
   String get summary => 'Drawing';
 
   @override
-  String toWire() => drawing.caption.isEmpty
-      ? 'SVG:${drawing.pathData}'
-      : 'SVG:${drawing.pathData}\n${drawing.caption}';
+  String toWire() => [
+        'SVG:${drawing.pathData}',
+        ?drawing.map?.toLine(),
+        if (drawing.caption.isNotEmpty) drawing.caption,
+      ].join('\n');
 }
 
 /// What a meshcore:// share link adds to the radio.

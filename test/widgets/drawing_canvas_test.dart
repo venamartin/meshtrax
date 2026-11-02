@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -7,11 +9,32 @@ import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/helpers/svg_drawing.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/drawing_canvas.dart';
+import 'package:meshtrax/widgets/drawing_map_view.dart';
 import 'package:meshtrax/widgets/structured_message_card.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxmap/traxmap.dart';
+
+import '../helpers/map_fakes.dart';
+
+class _NoDownloads implements PackDownloader {
+  @override
+  Stream<PackDownload> get updates => const Stream.empty();
+  @override
+  List<PackDownload> get downloads => const [];
+  @override
+  Future<void> start(PackIndexEntry entry) async {}
+  @override
+  Future<void> pause(String packId) async {}
+  @override
+  Future<void> resume(String packId) async {}
+  @override
+  Future<void> cancel(String packId) async {}
+}
 
 void main() {
   const plain = DrawingLook(
@@ -108,14 +131,18 @@ void main() {
       String text, {
       Brightness brightness = Brightness.dark,
       double width = 322,
+      MapPacksService? maps,
     }) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
       final settings = AppSettingsService();
       await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: settings,
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: settings),
+            if (maps != null) ChangeNotifierProvider.value(value: maps),
+          ],
           child: MaterialApp(
             theme: ThemeData(brightness: brightness),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -213,6 +240,104 @@ void main() {
       expect(copied, startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="7 7 86 86">'));
       expect(copied, contains('d="M10 10h80v80H10z" fill="none" stroke="#33ff33"'));
       expect(copied, contains('stroke-linecap="round"'));
+    });
+
+    const anchored =
+        'SVG:M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c\nAnchored here';
+
+    testWidgets('without maps, a map drawing still draws on the green screen', (
+      tester,
+    ) async {
+      await pumpCard(tester, anchored);
+      expect(find.byType(DrawingCanvas), findsOneWidget);
+      expect(find.byType(DrawingMapView), findsNothing);
+      expect(find.text('Anchored here'), findsOneWidget);
+    });
+
+    group('over a map', () {
+      late Directory tmp;
+      setUp(() async => tmp = await Directory.systemTemp.createTemp('cardmap'));
+      tearDown(() async {
+        try {
+          await tmp.delete(recursive: true);
+        } on FileSystemException {
+          // Windows can hold a map file a moment longer.
+        }
+      });
+
+      MapPacksService maps() => MapPacksService(
+            manager: PackManager(Directory('${tmp.path}/packs')),
+            downloader: _NoDownloads(),
+            cacheDir: tmp,
+            styles: StyleRegistry(MemoryStyles(maps: ['osm', 'usgs', 'charts'])),
+          );
+
+      Future<void> settle(WidgetTester tester) async {
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      testWidgets('the card shows the exact frame, Standard without charts, '
+          'and says the area is not downloaded', (tester) async {
+        await pumpCard(tester, anchored, maps: maps());
+        await settle(tester);
+        final view = tester.widget<DrawingMapView>(find.byType(DrawingMapView));
+        final map = tester.widget<AppMap>(find.byType(AppMap));
+        expect(map.exact, isTrue);
+        expect(map.compact, isTrue);
+        expect(map.mapType, MapType.osm);
+        expect(map.initialCamera!.center, const LatLng(36.9695, -121.9525));
+        expect(
+          map.initialCamera!.zoom,
+          closeTo(15 + math.log(view.width / 400) / math.ln2, 1e-9),
+        );
+        final box = tester.getSize(find.byType(AppMap));
+        expect(box.height, closeTo(box.width * 0.75, 0.01));
+        expect(find.text("This area isn't downloaded"), findsOneWidget);
+        expect(find.text('Anchored here'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a far-out frame needs no download', (tester) async {
+        await pumpCard(tester, 'SVG:M10 10 90 60\nmap=9/36.97/-121.95', maps: maps());
+        await settle(tester);
+        expect(find.byType(DrawingMapView), findsOneWidget);
+        expect(find.text("This area isn't downloaded"), findsNothing);
+      });
+
+      testWidgets('a tap opens the viewer with the map, and Copy keeps the frame', (
+        tester,
+      ) async {
+        String? copied;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copied = (call.arguments as Map)['text'] as String;
+            }
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+        await pumpCard(tester, anchored, maps: maps());
+        await settle(tester);
+        await tester.tap(find.byType(InkWell).first);
+        await settle(tester);
+        expect(find.byType(DrawingMapView), findsNWidgets(2));
+        expect(
+          find.text('M55 33l8 8m0-8-8 8\nmap=16/36.9695/-121.9525/c'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Copy SVG'));
+        await settle(tester);
+        expect(copied, startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 75">'));
+      });
     });
   });
 }
