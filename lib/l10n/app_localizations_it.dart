@@ -4021,7 +4021,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'La tua radio ricorda un percorso per ogni contatto e, quando quel percorso fallisce, manda il messaggio in inondazione a tutta la rete mesh. Pathfinder ascolta tutto ciò che la radio sente: annunci dei ripetitori, conversazioni nei canali, messaggi di altre persone. Da tutto questo costruisce una mappa di quali ripetitori si sentono tra loro, quali sentono te e quali sentono ciascuno dei tuoi contatti.';
+      'La tua radio ricorda un percorso per ogni contatto. Quando un messaggio su quel percorso fallisce, MeshTrax lo manda in inondazione a tutta la rete mesh. Pathfinder ascolta tutto ciò che la radio sente: annunci dei ripetitori, conversazioni nei canali, messaggi di altre persone. Da tutto questo costruisce una mappa di quali ripetitori si sentono tra loro, quali sentono te e quali sentono ciascuno dei tuoi contatti.';
 
   @override
   String get pathfinderHelp_how =>
