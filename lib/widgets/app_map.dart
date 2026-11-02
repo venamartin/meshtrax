@@ -44,7 +44,8 @@ class AppMap extends StatefulWidget {
   /// Overrides the contours setting.
   final bool? contours;
 
-  /// A small map (e.g. in a dialog): no "Download a region" card.
+  /// A small map (e.g. in a dialog): no "Download a region" card, and where
+  /// nothing is downloaded it opens no closer than the base map's detail.
   final bool compact;
 
   /// Width of the screen's map buttons at the right edge: the offline card
@@ -136,6 +137,18 @@ class _AppMapState extends State<AppMap> {
     });
   }
 
+  /// Whether a region of [type]'s map is downloaded at [point].
+  static bool _downloadedAt(MapPacksService maps, MapType type, LatLng point) {
+    final areas = maps.downloadedAreas(type);
+    final here = type == MapType.charts
+        ? [
+            for (final a in maps.chartAreas?.areasAt(point) ?? const [])
+              a.packRegion,
+          ]
+        : [?maps.regions?.regionAt(point)?.path];
+    return here.any(areas.containsKey);
+  }
+
   List<MapOverlay> _withAreas(
     MapPacksService maps, {
     required MapType type,
@@ -183,6 +196,18 @@ class _AppMapState extends State<AppMap> {
     final styleId = maps.styleId(type, dark: dark);
     if (styleId == null) return const SizedBox.expand();
 
+    // A small map close in where nothing is downloaded would show a single
+    // stretched colour: it opens where the base map's detail ends instead,
+    // with the town around its pin.
+    final initialCamera = switch (widget.initialCamera) {
+      final c?
+          when widget.compact &&
+              c.zoom > _baseMapZoom &&
+              !_downloadedAt(maps, type, c.center) =>
+        c.copyWith(zoom: _baseMapZoom),
+      final c => c,
+    };
+
     final style = _style;
     final credits = [...?style?.credits, ...?style?.notices];
     // Charts say at any zoom that none is drawn here; the street and topo
@@ -205,7 +230,7 @@ class _AppMapState extends State<AppMap> {
               ? Units.imperial
               : Units.metric,
           controller: widget.controller,
-          initialCamera: widget.initialCamera,
+          initialCamera: initialCamera,
           initialFit: widget.initialFit,
           minZoom: widget.minZoom,
           maxZoom: _covered == false

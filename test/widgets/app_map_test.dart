@@ -363,12 +363,29 @@ void main() {
     expect(slot.bottom, 40, reason: 'above the credits chip');
   });
 
-  testWidgets('compact: no card, and a mini map keeps its close zoom', (
-    tester,
-  ) async {
+  testWidgets("compact: no card; opens at the base map's detail where "
+      'nothing is downloaded, close in where a region is', (tester) async {
+    double opensAt() => tester
+        .widget<OfflineMapView>(find.byType(OfflineMapView))
+        .initialCamera!
+        .zoom;
     await pumpMap(tester, compact: true, zoom: 13);
     expect(find.text('Download a region for detail'), findsNothing);
-    expect(maxZoom(tester), 13, reason: 'the base map, stretched');
+    expect(opensAt(), 10);
+    expect(maxZoom(tester), 10);
+
+    await withCharts(tester, _Downloads(), regions: true);
+    await settings.setMapType('osm');
+    await tester.runAsync(() async {
+      await maps.manager.root.create(recursive: true);
+      File(
+        '${maps.manager.root.path}/us-rhode-island-osm.pmtiles',
+      ).writeAsBytesSync(fakePmTiles(metadata: {'kind': 'osm', 'region': _ri}));
+      await maps.reloadInstalled();
+    });
+    await tester.pumpWidget(const SizedBox());
+    await pumpMap(tester, compact: true, zoom: 13);
+    expect(opensAt(), 13, reason: 'Providence, in the Rhode Island download');
   });
 
   testWidgets('the map is light, even in a dark app, unless set dark', (
