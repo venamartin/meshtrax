@@ -1,5 +1,13 @@
 # Park maps (overlays)
 
+> **What this is:** A plan for showing national park maps (boundaries, trails, ranger stations and so on) on top of the offline map.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** plan. Nothing is built yet.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 This file covers the app side of park maps: how MeshTrax shows NPS-style park maps, and later state parks, BLM land and open space, as vector overlays on the offline map. Planned for Phase 8 of [`offline-maps-roadmap.md`](offline-maps-roadmap.md). Nothing is built yet.
 
 **Data side** (sources, pipeline, the Death Valley pilot): traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md).

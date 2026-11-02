@@ -1,8 +1,16 @@
 # Offline maps: integration roadmap
 
+> **What this is:** The plan for moving MeshTrax from online maps to downloadable offline maps: the screens, the order of work and how each step is tested. Its Status section says what is done and what comes next.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** active plan.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 This file says how traxmap's offline vector maps replace MeshTrax's online raster maps: the screens, the order of work, and how each step is tested. Agreed with Martin on 2026-10-17, 18 and 19. Companion files:
 
-- [`offline-maps.md`](offline-maps.md): decisions, pitfalls and open questions.
+- [`offline-maps-notes.md`](offline-maps-notes.md): decisions, pitfalls and open questions.
 - [`park-maps.md`](park-maps.md): park overlays on the app side.
 - traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md) §1: the server contract. Everything the app downloads from `maps.meshtrax.io`, one module per data set (1.1 common, 1.2 regions, 1.3 map packs, 1.4 charts, 1.5 routing, 1.6 overlays).
 
@@ -16,7 +24,7 @@ Last updated 2026-10-22. **Resume here.**
   - `feature/terrain` (the terrain kind and the USGS base), when traxmapmaker's pilot packs arrive.
 - **Before the next store release from master:** the release gate in Phase 5.
 - **Phone GPS is parked (Martin, 2026-10-22).** My location uses the radio's position only, so the next release asks for no new location permission and needs no store-form changes or review videos.
-  - **Shipped in #184** (squash `64ce6fdc`, 1.7.109+119), with the radio GPS work: the top-bar GPS icon and dialog, the blue dot, and a fresh radio position (see M7 below and [`offline-maps.md`](offline-maps.md), 2026-10-22).
+  - **Shipped in #184** (squash `64ce6fdc`, 1.7.109+119), with the radio GPS work: the top-bar GPS icon and dialog, the blue dot, and a fresh radio position (see M7 below and [`offline-maps-notes.md`](offline-maps-notes.md), 2026-10-22).
   - Phone GPS comes back later as its own project: see "Phone GPS (parked)" under Later.
 - **Pushing:** only when Martin asks. He also pushes to feature branches from his other machine, so fetch first.
 
@@ -114,7 +122,7 @@ Last updated 2026-10-22. **Resume here.**
    - review the privacy-policy draft (`a35a2a6`), which no longer says "no servers";
    - translations: about 400 strings are English only (offline maps, structured messages, markdown, Pathfinder, GPS), and `tools/translate.py` needs Ollama;
    - assumed defaults: Wi‑Fi-only on (phones), time filter "all time";
-   - **traxmapmaker's full-data charts** (2026-10-20). MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps.md, renderer notes).
+   - **traxmapmaker's full-data charts** (2026-10-20). MeshTrax measured the style side: arithmetic works and per-class layers are cheap (offline-maps-notes.md, renderer notes).
      - **Chosen (Martin, 2026-10-21): Option B, the navigational set**, about 1.2–1.3 GB for all 42 areas. Option A's routes, regulated areas and overhead clearances, plus:
        - submarine cables and pipelines;
        - harbour structures and facilities;
@@ -626,7 +634,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
 **Parked 2026-10-22 (Martin):** he wants it back, but after offline maps and other features. The store side (forms, review videos, approval) needs time he doesn't have now.
 
 **Bringing it back:**
-- Bring back the phone parts that #184 (`64ce6fdc`) removed. The working code is in #169 (`25f17ee`), and its pitfalls are in [`offline-maps.md`](offline-maps.md) ("Phone location"). Not a plain revert: #184 also added the radio's GPS (blue dot, GPS icon, self-telemetry reads), so the phone becomes a second source beside it.
+- Bring back the phone parts that #184 (`64ce6fdc`) removed. The working code is in #169 (`25f17ee`), and its pitfalls are in [`offline-maps-notes.md`](offline-maps-notes.md) ("Phone location"). Not a plain revert: #184 also added the radio's GPS (blue dot, GPS icon, self-telemetry reads), so the phone becomes a second source beside it.
 - **Store work it brings back:**
   - the privacy policy wording;
   - Play Data safety;
@@ -641,7 +649,7 @@ Needs traxmapmaker 1.6. See [`park-maps.md`](park-maps.md).
   - Play Console's foreground-service declaration needs the location type added, with a video.
   - **Android 14 won't start a location-type service from the background.** MeshTrax restarts its service on background reconnects, so those restarts must use `connectedDevice` only, or Android throws.
 - **iOS:**
-  - The `location` background mode. Reviewers ask why an app uses a background mode (Guideline 2.5.4), so [`app-review-notes.md`](app-review-notes.md) needs a section and a video.
+  - The `location` background mode. Reviewers ask why an app uses a background mode (Guideline 2.5.4), so [`app-review-notes.md`](../app-review-notes.md) needs a section and a video.
   - With while-in-use permission, iOS always shows the blue location indicator.
 - **The prompt:** a screen before the OS prompt that says the position goes out over the radio and who can read it. Adverts are signed, not encrypted, so anyone on the mesh can.
 - **Store forms:** answer Data safety and the App Store label the same way as for messages, which also leave the device over the mesh.
