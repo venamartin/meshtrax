@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 /// Re-expresses plain (not gzipped) vector tile bytes as the tile [dz]
@@ -6,10 +7,12 @@ import 'dart:typed_data';
 ///
 /// Nothing is clipped or scaled: each layer's extent shrinks by 2^[dz] and
 /// each feature's first point moves by the child's offset (MVT geometry is
-/// relative after that), so coordinates stay exact and the renderer drops
-/// what falls outside the tile.
+/// relative after that), so coordinates stay exact and the renderer clips
+/// what crosses the tile's edge. Features that don't reach the child tile
+/// (give or take an eighth of it, for line ends and labels) are left out,
+/// so a child costs what it shows, not its whole parent.
 Uint8List reframeMvt(Uint8List tile, int dz, int dx, int dy) {
-  final out = BytesBuilder(copy: false);
+  final out = _Writer(tile.length >> dz);
   final r = _Reader(tile, 0, tile.length);
   while (!r.atEnd) {
     final start = r.pos;
@@ -17,16 +20,24 @@ Uint8List reframeMvt(Uint8List tile, int dz, int dx, int dy) {
     if (tag == 26) {
       // field 3: layer
       final (s, e) = r.slice();
-      _message(out, 26, _layer(tile, s, e, dz, dx, dy));
+      _layer(out, tile, s, e, dz, dx, dy);
     } else {
       r.skip(tag & 7);
-      out.add(Uint8List.sublistView(tile, start, r.pos));
+      out.bytes(tile, start, r.pos);
     }
   }
-  return out.takeBytes();
+  return out.result();
 }
 
-Uint8List _layer(Uint8List b, int start, int end, int dz, int dx, int dy) {
+void _layer(
+  _Writer out,
+  Uint8List b,
+  int start,
+  int end,
+  int dz,
+  int dx,
+  int dy,
+) {
   var extent = 4096;
   for (final r = _Reader(b, start, end); !r.atEnd;) {
     final tag = r.varint();
@@ -37,7 +48,14 @@ Uint8List _layer(Uint8List b, int start, int end, int dz, int dx, int dy) {
     }
   }
   final size = extent >> dz;
-  final out = BytesBuilder(copy: false);
+  final margin = math.max(size >> 3, 1);
+  final x0 = dx * size;
+  final y0 = dy * size;
+
+  // What the layer keeps, in order: raw fields as (start, end), features
+  // as _Feature. Its length must be known before it's written.
+  final parts = <Object>[];
+  var length = 0;
   for (final r = _Reader(b, start, end); !r.atEnd;) {
     final fieldStart = r.pos;
     final tag = r.varint();
@@ -46,64 +64,207 @@ Uint8List _layer(Uint8List b, int start, int end, int dz, int dx, int dy) {
     } else if (tag == 18) {
       // field 2: feature
       final (s, e) = r.slice();
-      _message(out, 18, _feature(b, s, e, -dx * size, -dy * size));
+      final f = _Feature.read(b, s, e);
+      if (f != null &&
+          f.maxX >= x0 - margin &&
+          f.minX <= x0 + size + margin &&
+          f.maxY >= y0 - margin &&
+          f.minY <= y0 + size + margin) {
+        f.moveTo(x0, y0);
+        parts.add(f);
+        length += 1 + _varintSize(f.length) + f.length;
+      }
     } else {
       r.skip(tag & 7);
-      out.add(Uint8List.sublistView(b, fieldStart, r.pos));
+      parts.add((fieldStart, r.pos));
+      length += r.pos - fieldStart;
     }
   }
-  _varint(out, 40);
-  _varint(out, size);
-  return out.takeBytes();
+  length += 1 + _varintSize(size);
+
+  out
+    ..varint(26)
+    ..varint(length);
+  for (final part in parts) {
+    switch (part) {
+      case (final int s, final int e):
+        out.bytes(b, s, e);
+      case final _Feature f:
+        f.write(out);
+    }
+  }
+  out
+    ..varint(40)
+    ..varint(size);
 }
 
-Uint8List _feature(Uint8List b, int start, int end, int shiftX, int shiftY) {
-  final out = BytesBuilder(copy: false);
-  for (final r = _Reader(b, start, end); !r.atEnd;) {
-    final fieldStart = r.pos;
-    final tag = r.varint();
-    if (tag == 34) {
+/// A feature to copy with its first point moved: everything else is copied
+/// byte for byte from [b].
+class _Feature {
+  final Uint8List b;
+  final int start, end;
+
+  /// Where the geometry field starts (its tag), and its content.
+  final int field, geomStart, geomEnd;
+
+  /// The first point, and where its two parameters lie in [b].
+  final int x, y, pointStart, pointEnd;
+
+  /// The geometry's bounds, in tile units.
+  final int minX, minY, maxX, maxY;
+
+  int _x = 0, _y = 0;
+
+  _Feature._(
+    this.b,
+    this.start,
+    this.end,
+    this.field,
+    this.geomStart,
+    this.geomEnd,
+    this.x,
+    this.y,
+    this.pointStart,
+    this.pointEnd,
+    this.minX,
+    this.minY,
+    this.maxX,
+    this.maxY,
+  );
+
+  /// Reads the feature in [b] from [start] to [end]; null unless its
+  /// geometry starts with a MoveTo (decoders drop the rest anyway).
+  static _Feature? read(Uint8List b, int start, int end) {
+    for (final r = _Reader(b, start, end); !r.atEnd;) {
+      final field = r.pos;
+      final tag = r.varint();
+      if (tag != 34) {
+        r.skip(tag & 7);
+        continue;
+      }
       // field 4: geometry, packed commands and zigzag parameters
       final (s, e) = r.slice();
-      final geometry = <int>[];
-      for (final g = _Reader(b, s, e); !g.atEnd;) {
-        geometry.add(g.varint());
+      final g = _Reader(b, s, e);
+      if (g.atEnd || g.varint() & 7 != 1) return null;
+      final pointStart = g.pos;
+      g.pos = s;
+      var x = 0, y = 0, firstX = 0, firstY = 0, pointEnd = 0;
+      var minX = 1 << 40, minY = 1 << 40, maxX = -(1 << 40);
+      var maxY = -(1 << 40);
+      while (!g.atEnd) {
+        final command = g.varint();
+        if (command & 7 == 7) continue;
+        for (var count = command >> 3; count > 0; count--) {
+          x += _unzigzag(g.varint());
+          y += _unzigzag(g.varint());
+          if (pointEnd == 0) {
+            firstX = x;
+            firstY = y;
+            pointEnd = g.pos;
+          }
+          minX = math.min(minX, x);
+          maxX = math.max(maxX, x);
+          minY = math.min(minY, y);
+          maxY = math.max(maxY, y);
+        }
       }
-      if (geometry.length >= 3 &&
-          geometry[0] & 7 == 1 &&
-          geometry[0] >> 3 > 0) {
-        geometry[1] = _zigzag(_unzigzag(geometry[1]) + shiftX);
-        geometry[2] = _zigzag(_unzigzag(geometry[2]) + shiftY);
-      }
-      final packed = BytesBuilder(copy: false);
-      for (final v in geometry) {
-        _varint(packed, v);
-      }
-      _message(out, 34, packed.takeBytes());
-    } else {
-      r.skip(tag & 7);
-      out.add(Uint8List.sublistView(b, fieldStart, r.pos));
+      if (pointEnd == 0) return null;
+      return _Feature._(
+        b,
+        start,
+        end,
+        field,
+        s,
+        e,
+        firstX,
+        firstY,
+        pointStart,
+        pointEnd,
+        minX,
+        minY,
+        maxX,
+        maxY,
+      );
     }
+    return null;
   }
-  return out.takeBytes();
+
+  /// Moves the first point into a frame whose origin is ([x0], [y0]).
+  void moveTo(int x0, int y0) {
+    _x = _zigzag(x - x0);
+    _y = _zigzag(y - y0);
+  }
+
+  int get _geomLength =>
+      geomEnd -
+      geomStart -
+      (pointEnd - pointStart) +
+      _varintSize(_x) +
+      _varintSize(_y);
+
+  int get length =>
+      (field - start) +
+      1 +
+      _varintSize(_geomLength) +
+      _geomLength +
+      (end - geomEnd);
+
+  void write(_Writer out) => out
+    ..varint(18)
+    ..varint(length)
+    ..bytes(b, start, field)
+    ..varint(34)
+    ..varint(_geomLength)
+    ..bytes(b, geomStart, pointStart)
+    ..varint(_x)
+    ..varint(_y)
+    ..bytes(b, pointEnd, end);
 }
 
 int _unzigzag(int n) => (n >> 1) ^ -(n & 1);
 
 int _zigzag(int n) => (n << 1) ^ (n >> 63);
 
-void _message(BytesBuilder out, int tag, Uint8List body) {
-  _varint(out, tag);
-  _varint(out, body.length);
-  out.add(body);
+int _varintSize(int v) {
+  var size = 1;
+  while (v >= 0x80) {
+    v >>= 7;
+    size++;
+  }
+  return size;
 }
 
-void _varint(BytesBuilder out, int v) {
-  while (v >= 0x80) {
-    out.addByte((v & 0x7f) | 0x80);
-    v >>= 7;
+class _Writer {
+  Uint8List _buf;
+  int _length = 0;
+
+  _Writer(int capacity) : _buf = Uint8List(math.max(capacity, 256));
+
+  void _reserve(int n) {
+    if (_length + n <= _buf.length) return;
+    var capacity = _buf.length * 2;
+    while (capacity < _length + n) {
+      capacity *= 2;
+    }
+    _buf = Uint8List(capacity)..setRange(0, _length, _buf);
   }
-  out.addByte(v);
+
+  void varint(int v) {
+    _reserve(10);
+    while (v >= 0x80) {
+      _buf[_length++] = (v & 0x7f) | 0x80;
+      v >>= 7;
+    }
+    _buf[_length++] = v;
+  }
+
+  void bytes(Uint8List b, int start, int end) {
+    _reserve(end - start);
+    _buf.setRange(_length, _length + end - start, b, start);
+    _length += end - start;
+  }
+
+  Uint8List result() => Uint8List.sublistView(_buf, 0, _length);
 }
 
 class _Reader {

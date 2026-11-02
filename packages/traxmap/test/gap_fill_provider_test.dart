@@ -16,7 +16,7 @@ void main() {
   late CompositePmTilesProvider region;
   final town = encodeMvt({
     'place': [
-      (id: 1, type: 1, points: [(3000, 1000)]),
+      (id: 1, type: 1, points: [(3000, 3000)]),
     ],
   });
 
@@ -81,7 +81,7 @@ void main() {
     final child = (await load(p, 3, 3, 3)) as vt.TileResponseData;
     final place = decodeMvt(child.bytes)['place']!;
     expect(place.extent, 2048);
-    expect(place.features.single.points, [(3000 - 2048, 1000 - 2048)]);
+    expect(place.features.single.points, [(3000 - 2048, 3000 - 2048)]);
 
     expect(
       await load(p, 3, 2, 2),
@@ -95,7 +95,7 @@ void main() {
     );
     final far = (await load(p, 4, 6, 6)) as vt.TileResponseData;
     expect(decodeMvt(far.bytes)['place']!.features.single.points, [
-      (3000 - 2 * 1024, 1000 - 2 * 1024),
+      (3000 - 2 * 1024, 3000 - 2 * 1024),
     ]);
   });
 
