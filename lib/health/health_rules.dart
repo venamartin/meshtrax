@@ -347,8 +347,8 @@ final List<HealthRule> healthRules = [
     why:
         'When the contact list is full, new contacts are not saved. This '
         'setting makes room by replacing the oldest contact that is not a '
-        'favorite. A replaced contact leaves your chats until you add it back, '
-        'and its messages are kept.',
+        'favorite. A replaced contact leaves your chats once its messages are '
+        'read, and they are kept. Replying adds it back.',
     needsRadio: true,
     check: (ctx) async =>
         _radioHasAutoAdd(ctx.connector) &&

@@ -1521,10 +1521,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return _channelUnreadByIdKey[channel.idKey] ?? 0;
   }
 
+  /// The contacts Chats lists: the saved ones, and any the radio overwrote
+  /// while they had unread messages, until those are read (owner, 2026-11-02).
+  /// Hidden, such messages were easy to never see.
+  List<Contact> get chatContacts => [
+        ..._contacts,
+        for (final row in _discoveredContacts)
+          if (!row.isActive &&
+              !_knownContactKeys.contains(row.publicKeyHex) &&
+              getUnreadCountForContact(row) > 0)
+            row,
+      ];
+
   int getTotalUnreadCount() {
     var total = 0;
     // Both sides come from watched COUNT queries (DB-authoritative).
-    for (final contact in _contacts) {
+    for (final contact in chatContacts) {
       total += getUnreadCountForContact(contact);
     }
     for (final count in _channelUnreadByIdKey.values) {
@@ -1537,13 +1549,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// channels are the ones the chats list shows ([channels]): during a
   /// resync the live table is half refilled.
   int get unreadChatCount =>
-      _contacts.where((c) => getUnreadCountForContact(c) > 0).length +
+      chatContacts.where((c) => getUnreadCountForContact(c) > 0).length +
       channels.where((ch) => getUnreadCountForChannel(ch) > 0).length;
 
   /// Marks every chat with unread messages read. Channels by identity:
   /// a slot index may point elsewhere mid-resync.
   void markAllRead() {
-    for (final contact in _contacts) {
+    for (final contact in chatContacts) {
       if (getUnreadCountForContact(contact) > 0) {
         markContactRead(contact.publicKeyHex);
       }

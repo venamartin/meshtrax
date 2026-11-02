@@ -236,6 +236,31 @@ void main() {
       );
     });
 
+    test('stays in chats until its messages are read', () async {
+      c.handleFrameForTest(_contact(_sender, 'Ann'));
+      c.handleFrameForTest(_dm(_sender, 'unread'));
+      await stored(_sender);
+      await pumpEventQueue(times: 200);
+      expect(c.getTotalUnreadCount(), 1);
+
+      c.handleFrameForTest([pushCodeContactDeleted, ..._sender]);
+      expect(c.contacts, isEmpty);
+      expect(c.chatContacts.map((x) => x.name), ['Ann']);
+      expect(c.getTotalUnreadCount(), 1);
+      expect(c.unreadChatCount, 1);
+
+      c.markContactRead(pubKeyToHex(_sender));
+      await pumpEventQueue(times: 200);
+      expect(c.chatContacts, isEmpty);
+      expect(c.getTotalUnreadCount(), 0);
+    });
+
+    test('an unsaved node with no unread messages is not a chat', () async {
+      c.handleFrameForTest(_contact(_sender, 'Ann'));
+      c.handleFrameForTest([pushCodeContactDeleted, ..._sender]);
+      expect(c.chatContacts, isEmpty);
+    });
+
     test('comes back if the radio saves it again', () async {
       await lostOnce();
       c.handleFrameForTest(_contact(_sender, 'Ann'));
