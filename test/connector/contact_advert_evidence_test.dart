@@ -1127,6 +1127,32 @@ void main() {
       expect((await cached())!.inboundPath, [0xCC]);
     });
 
+    test('a room history reload saves its not-a-hearing mark', () async {
+      Future<void> answer(int command, List<int> reply) async {
+        for (var i = 0;
+            i < 500 && !c.sent.any((f) => f[0] == command);
+            i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        expect(c.sent.map((f) => f[0]), contains(command));
+        c.handleFrameForTest(reply);
+      }
+
+      final reload = c.resetRoomSyncCursor(saved()!);
+      await answer(cmdGetContactByKey, _record());
+      await answer(cmdRemoveContact, [respCodeOk]);
+      await answer(cmdAddUpdateContact, [respCodeOk]);
+      expect(await reload, isTrue);
+      final stamp = saved()!.appLastmodSecs;
+      expect(stamp, isNotNull);
+
+      // Only the write's own save covers it: a disconnect saves what is due.
+      await c.disconnect();
+      await pumpEventQueue(times: 200);
+
+      expect((await cached())!.appLastmodSecs, stamp);
+    });
+
     test('keeps the advert time the radio needs for a route write', () async {
       await fullDownload(_record(advertSecs: 1234));
       await pumpEventQueue(times: 200);
