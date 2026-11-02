@@ -384,9 +384,11 @@ int maxContactMessageBytes() {
   return _minPositive(byFrame, maxTextPayloadBytes);
 }
 
-// Matches room server firmware MAX_POST_TEXT_LEN: a longer post is accepted
-// but silently truncated before it is stored and pushed to other members.
-const int maxRoomPostTextBytes = 151;
+// One less than room server firmware MAX_POST_TEXT_LEN (151), which it passes
+// to StrHelper::strncpy as a buffer size, so 150 bytes get stored. A longer
+// post is accepted but silently truncated before it is stored and pushed to
+// other members.
+const int maxRoomPostTextBytes = 150;
 
 int maxRoomMessageBytes() =>
     _minPositive(maxContactMessageBytes(), maxRoomPostTextBytes);

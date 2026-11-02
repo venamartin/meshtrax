@@ -300,6 +300,31 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(showTextFormatting: value));
   }
 
+  Future<void> setShowDrawings(bool value) async {
+    await updateSettings(_settings.copyWith(showDrawings: value));
+  }
+
+  Future<void> setDrawingLook({
+    int? penColor,
+    double? lineWidth,
+    int? glow,
+    int? scanlines,
+  }) async {
+    await updateSettings(_settings.copyWith(
+      drawingPenColor: penColor,
+      drawingLineWidth: lineWidth,
+      drawingGlow: glow,
+      drawingScanlines: scanlines,
+    ));
+  }
+
+  Future<void> resetDrawingLook() => setDrawingLook(
+        penColor: AppSettings.defaultDrawingPenColor,
+        lineWidth: AppSettings.defaultDrawingLineWidth,
+        glow: AppSettings.defaultDrawingGlow,
+        scanlines: AppSettings.defaultDrawingScanlines,
+      );
+
   Future<void> rememberReaction(String emoji) async {
     await updateSettings(_settings.copyWith(
       recentReactions:

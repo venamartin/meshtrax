@@ -3015,5 +3015,84 @@
   "locationSharing_share": "Share my location",
   "locationSharing_shareOnHint": "Turn off to hide it from everyone",
   "locationSharing_shareOffHint": "Turn on to let contacts with permission see it",
-  "chats_advertise": "Advertise"
+  "chats_advertise": "Advertise",
+  "tray_drawing": "Drawing",
+  "drawing_tabDraw": "Draw",
+  "drawing_tabPaste": "Paste",
+  "drawing_toolPen": "Pen",
+  "drawing_toolLine": "Line",
+  "drawing_toolRect": "Rectangle",
+  "drawing_toolCircle": "Circle",
+  "drawing_toolEllipse": "Ellipse",
+  "drawing_toolArrow": "Arrow",
+  "drawing_undo": "Undo",
+  "drawing_caption": "Caption",
+  "drawing_captionHint": "Optional, shown under the picture",
+  "drawing_bytes": "{used} / {max} bytes",
+  "@drawing_bytes": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "drawing_points": "{count, plural, =1{1 point} other{{count} points}}",
+  "@drawing_points": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "drawing_keptAll": "Every point you drew is kept.",
+  "drawing_simplified": "Simplified: lines stay within {percent}% of the drawing's size.",
+  "@drawing_simplified": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "drawing_tooDetailed": "Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.",
+  "drawing_empty": "Draw with your finger, or pick a shape.",
+  "drawing_pasteHint": "Paste an SVG file, or path data such as M10 10h80v80H10z",
+  "drawing_pasteUse": "Use this SVG",
+  "drawing_pasteNote": "Colors and fills don't travel: it's sent as lines in the reader's pen color.",
+  "drawing_pasteEmpty": "Paste some SVG or path data first.",
+  "drawing_pasteTooBig": "That is too big or too detailed to read. Paste a smaller SVG.",
+  "drawing_pasteUnreadable": "That isn't SVG the app can read.",
+  "drawing_pasteNothing": "Nothing visible to draw in that SVG.",
+  "drawing_copySvg": "Copy SVG",
+  "appSettings_drawings": "Drawings",
+  "appSettings_drawingsSubtitle": "Pictures sent as SVG, and how they look here",
+  "drawingSettings_show": "Show drawings",
+  "drawingSettings_showSubtitle": "Off shows the SVG code instead",
+  "drawingSettings_penColor": "Pen color",
+  "drawingSettings_colorCode": "Color code",
+  "drawingSettings_lineWidth": "Line width",
+  "drawingSettings_glow": "Glow",
+  "drawingSettings_scanlines": "Scanlines",
+  "drawing_toolRoute": "Route",
+  "drawing_toolX": "X mark",
+  "drawing_routeHint": "Tap to add points. Tap the last one again to finish.",
+  "drawing_mapNone": "No map",
+  "drawing_mapUsgs": "USGS",
+  "drawing_drawHere": "Draw here",
+  "drawing_moveMap": "Move map",
+  "drawing_mapHint": "Pan and zoom to the place, then tap Draw here.",
+  "drawing_mapAcross": "{map}, {distance} across",
+  "@drawing_mapAcross": {
+    "placeholders": {
+      "map": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "drawing_mapNotDownloaded": "This area isn't downloaded"
 }

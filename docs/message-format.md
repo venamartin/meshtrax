@@ -7,10 +7,10 @@
 > exact text that travels over the radio is called the "wire text".
 
 MeshCore chat carries plain text. Everything MeshTrax adds on top of it,
-replies, reactions, GIFs, markdown and cards, is plain text too, so a
-message is still readable on an app that understands none of it. This page
-lists everything MeshTrax sends and everything it reads, including formats
-from other apps that it reads but never sends.
+replies, reactions, GIFs, markdown, cards and drawings, is plain text too,
+so a message is still readable on an app that understands none of it. This
+page lists everything MeshTrax sends and everything it reads, including
+formats from other apps that it reads but never sends.
 
 | Feature | MeshTrax sends | MeshTrax also reads |
 |---|---|---|
@@ -20,6 +20,7 @@ from other apps that it reads but never sends.
 | GIF | Giphy link (default) or `g:ID` | `media.giphy.com` links |
 | Markdown | whatever the user types | |
 | Cards | `Location:`, `SOS:`, `Event:`, `Notice:` | `m:` marker, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
+| Drawings | `SVG:` and path data | |
 | Compression | `s:` SMAZ, only when switched on | `s:` SMAZ, always |
 
 A channel message arrives from the radio as `Name: body`; the firmware adds
@@ -242,9 +243,10 @@ longer message fits. Base64 writes the squeezed bytes as plain characters.
 MeshTrax decodes any message that starts with `s:` followed by Base64 SMAZ
 data (the meshcore-open format). It sends one only when **SMAZ compression**
 is switched on for that channel or contact, and only when the result is
-shorter than the plain text. GIFs and cards are never compressed. Apps that
-don't know the format show the raw `s:` text, so only switch it on when
-everyone in the conversation uses an app that reads it.
+shorter than the plain text. GIFs, cards and drawings are never
+compressed. Apps that don't know the format show the raw `s:` text, so
+only switch it on when everyone in the conversation uses an app that
+reads it.
 
 ---
 
@@ -268,7 +270,8 @@ field
    `Notice`, then a colon. `POI` is accepted as an alias for `Location`.
    Case does not matter on receive; MeshTrax sends it capitalised. Reply and
    mention markup (`@[Name]`, a quoted `>` line) may come before it. An
-   unknown type word is ordinary text.
+   unknown type word is ordinary text. `SVG:` is a keyword too, but what
+   follows it is path data rather than fields; see [Drawings](#drawings).
 2. **Separator.** Fields are separated by line breaks or by `|`; both are
    accepted. MeshTrax sends one field per line. Free text never contains
    `|` (it becomes `/`) or a line break (it becomes a space).
@@ -366,8 +369,177 @@ A byte is roughly one plain character; an emoji or an accented letter
 takes 2 to 4. LoRa messages are small, so every extra takes room from your text.
 
 A channel message has roughly 125 to 140 bytes for text, a direct message
-158, a room post 151 and a room announcement (the server's `room.post`
+158, a room post 150 and a room announcement (the server's `room.post`
 command) 147. The type header costs 5 to 9 bytes, a position 22 plus a
 1-byte separator, a when 10 to 30, an `expires=` 19 to 25. An event with
 title, time, place and position needs about 60 bytes plus the title and the
 place.
+
+---
+
+# Drawings
+
+A message can carry a small line drawing as SVG path data. MeshTrax draws
+it. Any other app shows the text, and the path data pastes into any SVG
+editor as the `d` of a `<path>`.
+
+```
+SVG:M10 50h70m-8-6 8 6-8 6
+To the hut
+```
+
+A drawing is one ordinary text message, so it costs the airtime of any text
+that long. There is no way to split one across messages. Other MeshCore apps
+are welcome to draw these too.
+
+## Rules
+
+1. **Header.** The body starts with `SVG:`. MeshTrax sends no space after the
+   colon. Readers accept any case and spaces or tabs around the colon, but
+   the path data must start on the same line. Reply and mention markup may
+   come before it.
+2. **Drawing.** The rest of that line is SVG path data, exactly as in the
+   `d` attribute of an SVG `<path>`: the commands `M L H V C S Q T A Z`, in
+   either case. It means a path with `fill="none"`, stroked in the reader's
+   pen color with round ends and joins. That convention is part of the
+   format: SVG's own default would fill the path black and draw no line.
+3. **Caption.** Everything after the first line is a caption, shown under
+   the picture. There are two exceptions. A map line may come right after
+   the path data; see [Map background](#map-background). And for path data
+   that another tool wrapped onto more lines, a following line that holds a
+   digit, and that still reads as path data when joined to the path with a
+   space, continues the path. So a caption of numbers alone, such as
+   `10 20`, is read as more path; give it a word.
+4. **Path data only.** Readers never read markup from a message. `SVG:`
+   followed by `<svg>` is ordinary text. That keeps what a stranger can send
+   down to numbers and one-letter commands, with no loops, so the work a
+   message causes grows only with its length.
+5. **Not a drawing.** Path data that doesn't read, goes past a limit below,
+   or draws no line (only `M` commands) makes the message ordinary text, so
+   `SVG: coming soon` stays a sentence.
+
+## Limits
+
+These are part of the format, so that everyone accepts the same messages.
+Past any of them the message is ordinary text.
+
+| Limit | Value |
+|---|---|
+| Path data | 300 bytes, after joining wrapped lines |
+| Lines | 2,000, counting each line a curve or arc is broken into |
+| Coordinates | Finite, and within ±1,000,000, control points included |
+| Caption | 200 bytes |
+
+Curves are broken into lines this way, so that every reader counts the same
+lines:
+
+- An arc becomes one cubic curve for each quarter turn or part of one, split
+  evenly. A quadratic becomes one cubic.
+- A cubic becomes `ceil(40 × L / S)` lines, at least 1 and at most 64. L is
+  the length of its control polygon: from the current point through both
+  control points to its end. S is the longer side of the box around every
+  point of the path, control points included.
+
+## Drawing it
+
+The path data only says what to draw. How it looks is up to the reader, and
+MeshTrax users can change it under **Drawings** in the app settings, or
+switch drawings off to see the code instead.
+
+- y points down, as in SVG.
+- Scale the drawing to fit, keeping its shape, with a margin. Lines keep
+  their width whatever the scale. A line of zero length, such as `h0`, is a
+  dot.
+- MeshTrax's look is modelled on a green Apple II monitor: a screen of
+  `#010A03` with faint scanlines, and a pen of `#33FF33` drawing 2 dp lines
+  with a soft glow.
+
+## Map background
+
+A drawing can sit on a map, to mark where a boat is anchored, point at a
+building or show the way to a spot. The map goes on its own line, right
+after the path data and before any caption:
+
+```
+SVG:M55 33l8 8m0-8-8 8
+map=16/36.9695/-121.9525/c
+Anchored here
+```
+
+- **Map line.** `map=`, then the zoom, latitude and longitude separated by
+  `/`, the way openstreetmap.org writes a view:
+  `openstreetmap.org/#map=16/36.9695/-121.9525` shows the same place. The
+  zoom is a whole number from 0 to 18, counting 256-pixel tiles. Latitude
+  is within ±85.0511 and longitude within ±180, in decimal degrees. MeshTrax
+  writes 4 decimals, leaving off trailing zeros.
+- **Map type.** An optional last part of one letter: `u` for a USGS topo
+  map, `c` for NOAA charts. No letter means the standard street map. A
+  reader that doesn't know the letter shows the standard map. Readers
+  accept any case.
+- **Frame.** The map shows 400 × 300 map pixels at that zoom, centred on the
+  point. Near 37° N that is 763 m across at zoom 16 and 191 m at zoom 18.
+- **Coordinates.** Over a map, path data isn't fitted to its own size. Its
+  numbers are places on the frame, 0 to 100 across and 0 to 75 down, one
+  unit being 4 map pixels, with y down. Lines past the frame's edge are cut.
+- **Not a map line.** A line starting `map=` that doesn't read this way is
+  part of the caption, and the drawing has no map.
+- **Showing it.** Show the map type that was sent where the reader has it,
+  otherwise the standard map. MeshTrax fills the standard map with its base
+  map where nothing is downloaded. The base map has no detail at street
+  zooms, so there MeshTrax says the area isn't downloaded. Over a map,
+  MeshTrax draws the lines in the pen color with a thin dark edge instead of
+  the glow, and shows the map's credits under the frame, never over the
+  drawing.
+
+## How MeshTrax writes them
+
+Other apps don't need to follow this. It's how MeshTrax keeps drawings
+small.
+
+- Whole numbers on a 0–99 grid, fitted to the drawing's bounds.
+- Each command absolute or relative, whichever is shorter. Commands repeat
+  without their letter, and a minus sign doubles as the separator.
+- A tap is `h0`.
+- A circle or ellipse is one arc from its rightmost point, ending 0.1 short
+  of where it started, then `z`. The `z` puts the position back on whole
+  numbers.
+- An X is two crossing lines. A route keeps every point that was tapped.
+- A line, arrow or route point started near a route's points, or near the
+  end of a line, arrow or stroke, snaps onto it. A line that starts exactly
+  where the one before ended carries on from it with no move, so an arrow
+  on the end of a route costs no move at all.
+- Finger strokes are simplified with Ramer–Douglas–Peucker, at the finest
+  tolerance whose message still fits. Shapes and routes stay exact.
+- **Over a map**, the user pans and zooms, then taps **Draw here**: the map
+  snaps to a whole zoom step and a centre rounded to 4 decimals, so the
+  frame they draw on is exactly the one every reader gets. Moving the map
+  afterwards carries the drawing along with the ground.
+- **Paste** reads a whole SVG file, but only one the user pastes on their own
+  phone. MeshTrax keeps the visible paths, breaks them into lines and writes
+  path data. Colors, fills and text don't travel.
+
+## Examples
+
+Bytes include the `SVG:` header, and `↵` is a line break.
+
+| Drawing | Wire text | Bytes |
+|---|---|---|
+| Dot | `SVG:M5 5h0` | 10 |
+| Line | `SVG:M10 10 90 90` | 16 |
+| Rectangle | `SVG:M10 10h80v80H10z` | 20 |
+| Arrow | `SVG:M10 50h70m-8-6 8 6-8 6` | 26 |
+| Arrow with a caption | `SVG:M10 50h70m-8-6 8 6-8 6↵To the hut` | 37 |
+| Circle | `SVG:M90 50a40 40 0 1 1 0-.1z` | 28 |
+| Stick figure | `SVG:M58 18a8 8 0 1 1 0-.1zM50 26v34l-14 30m14-30 14 30M26 44l12 6 12-6 12 6 12-6` | 80 |
+| X on a chart | `SVG:M55 33l8 8m0-8-8 8↵map=16/36.9695/-121.9525/c↵Anchored here` | 63 |
+| Arrow on the street map | `SVG:M30 64l27-21m-7 1 7-1-3 6↵map=18/36.9643/-122.0177↵Meet at the carousel` | 75 |
+
+## Byte budget
+
+The header costs 4 bytes. That leaves 156 for path data in a direct message,
+146 in a room post, and 144 in a channel for a sender with a 10-byte name.
+MeshTrax keeps a direct message with a drawing to 158 bytes in all, so 154
+for path data, because a longer direct message gets fewer send attempts. A
+caption costs its bytes plus 1 for the line break, and a map line about 26
+plus 1. A finger stroke costs 4 to 5 bytes a point, so a channel message
+holds about 30 points, or about 25 over a map.

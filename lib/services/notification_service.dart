@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/reaction_helper.dart';
+import '../helpers/structured_message.dart';
 import '../l10n/app_localizations.dart';
 
 class NotificationService {
@@ -247,6 +248,9 @@ class NotificationService {
     }
     if (GifHelper.isGifOnly(trimmed)) {
       return 'Sent a GIF';
+    }
+    if (SvgMessage.isDrawing(trimmed)) {
+      return 'Sent a drawing';
     }
     return MarkdownHelper.toPlainText(text, formatting: formatting);
   }

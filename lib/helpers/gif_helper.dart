@@ -1,5 +1,6 @@
 class GifHelper {
-  static final _codePattern = RegExp(r'g:([A-Za-z0-9_-]{12,})');
+  // Not right after a letter: `svg:M5-5l3-3-3-3-3-3` is a drawing.
+  static final _codePattern = RegExp(r'(?<![A-Za-z])g:([A-Za-z0-9_-]{12,})');
 
   // Links must stand alone as a whitespace-separated token, so a GIF still
   // renders after a leading @[mention] or inside a reply body.
