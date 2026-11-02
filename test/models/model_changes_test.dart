@@ -284,15 +284,14 @@ void main() {
   });
 
   group('AppSettings — map choice', () {
-    test('defaults: OSM, contours, hill shading and areas on, a light map, '
-        'source auto', () {
+    test('defaults: OSM, contours, hill shading and areas on, a light '
+        'map', () {
       for (final s in [AppSettings(), AppSettings.fromJson({})]) {
         expect(s.mapType, 'osm');
         expect(s.mapContours, isTrue);
         expect(s.mapHillShading, isTrue);
         expect(s.mapDownloadedAreas, isTrue);
         expect(s.mapTheme, 'light');
-        expect(s.mapSource, 'auto');
       }
     });
 
@@ -304,7 +303,6 @@ void main() {
             mapHillShading: false,
             mapDownloadedAreas: false,
             mapTheme: 'dark',
-            mapSource: 'offline',
           )
           .toJson();
       final s = AppSettings.fromJson(json);
@@ -313,7 +311,11 @@ void main() {
       expect(s.mapHillShading, isFalse);
       expect(s.mapDownloadedAreas, isFalse);
       expect(s.mapTheme, 'dark');
-      expect(s.mapSource, 'offline');
+    });
+
+    test('the old Online | Offline setting is dropped', () {
+      final s = AppSettings.fromJson({'map_source': 'online'});
+      expect(s.toJson(), isNot(contains('map_source')));
     });
   });
 

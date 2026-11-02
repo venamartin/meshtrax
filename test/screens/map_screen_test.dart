@@ -21,7 +21,6 @@ import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -176,7 +175,6 @@ void main() {
           ),
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
           ChangeNotifierProvider.value(value: PathGraphService()),
         ],
         child: MaterialApp(
@@ -620,19 +618,11 @@ void main() {
       findsNWidgets(2),
       reason: 'USGS and charts: no packs',
     );
-    expect(
-      find.text('Offline only'),
-      findsNWidgets(3),
-      reason: 'nothing downloaded, so Online: contours, hill shading, dark',
-    );
     expect(find.text('Nodes'), findsOneWidget);
 
-    // An Offline-only choice made Online switches to Offline.
     await tester.tap(find.text('Dark map'));
     await tester.pump();
-    expect(settings.settings.mapSource, 'offline');
     expect(settings.settings.mapTheme, 'dark');
-    expect(find.text('Offline only'), findsNothing);
 
     await tester.tap(find.text('Contours'));
     await tester.pump();
@@ -686,7 +676,11 @@ void main() {
     await tester.tap(find.byTooltip('My location'));
     await tester.pump();
     expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
-    expect(camera(tester).zoom, greaterThanOrEqualTo(14));
+    expect(
+      camera(tester).zoom,
+      10,
+      reason: "nothing downloaded: as close as the base map's detail goes",
+    );
     expect(
       overlay<MapMarker>(tester, 'self').label,
       isNull,

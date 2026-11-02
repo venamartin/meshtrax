@@ -12,7 +12,6 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/line_of_sight_map_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
@@ -62,7 +61,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => MeshCoreConnector()),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -108,7 +106,10 @@ void main() {
       reason: 'the control panel is docked between the app bar and the map',
     );
 
-    await tester.longPressAt(mapRect.center);
+    // Above the "Download a region for detail" card: nothing is downloaded.
+    await tester.longPressAt(
+      Offset(mapRect.center.dx, mapRect.top + mapRect.height / 4),
+    );
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

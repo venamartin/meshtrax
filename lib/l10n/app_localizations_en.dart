@@ -4666,16 +4666,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Map download failed';
 
   @override
-  String get offlineMaps_clearTileCache => 'Clear cached online map tiles';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Remove the online map tiles saved while browsing? Downloaded maps stay.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'Cached online map tiles removed';
-
-  @override
   String get map_notForNavigation => 'Not for navigation';
 
   @override
@@ -4706,16 +4696,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Download a region for detail';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Zoom in to see your offline map';
 
   @override
   String get map_noCharts => 'No charts here';
@@ -4801,9 +4782,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Not downloaded';
-
-  @override
-  String get mapLayers_offlineOnly => 'Offline only';
 
   @override
   String get mapLayers_details => 'Map details';

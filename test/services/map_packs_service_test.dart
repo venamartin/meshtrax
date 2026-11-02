@@ -429,33 +429,42 @@ void main() {
     await maps.manager.install(terrain, id: 'us-rhode-island-terrain');
     await maps.reloadInstalled();
     List<String> kinds({required bool hillShading}) => [
-      for (final p in maps.mapPacks(
-        contours: true,
-        hillShading: hillShading,
-        world: true,
-      ))
+      for (final p in maps.mapPacks(contours: true, hillShading: hillShading))
         p.kind.name,
     ];
     expect(kinds(hillShading: true), containsAll(['osm', 'terrain']));
     expect(kinds(hillShading: false), ['osm']);
   });
 
-  test('offline maps draw the bundled world map', () async {
+  test('maps draw the bundled base map', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     final maps = service();
     await maps.start();
     await maps.openWorld();
     expect(maps.world?.kind, PackKind.world);
-    List<PackKind> kinds({required bool world}) => [
-      for (final p in maps.mapPacks(
-        contours: true,
-        hillShading: true,
-        world: world,
-      ))
-        p.kind,
-    ];
-    expect(kinds(world: true), [PackKind.world]);
-    expect(kinds(world: false), isEmpty, reason: 'online tiles show it');
+    expect(
+      [for (final p in maps.mapPacks(contours: true, hillShading: true)) p.kind],
+      [PackKind.world],
+    );
+  });
+
+  test('the old online tile cache is removed, and nothing else', () async {
+    final temp = Directory('${tmp.path}/temp')..createSync();
+    final support = Directory('${tmp.path}/support')..createSync();
+    File('${temp.path}/map_tile_cache/a/1.png').createSync(recursive: true);
+    final keep = File('${temp.path}/other.txt')..createSync();
+    for (final name in ['map_tile_cache.db', 'map_tile_cache.json']) {
+      File('${support.path}/$name').createSync();
+    }
+    final maps = Directory('${support.path}/maps')..createSync();
+
+    await MapPacksService.removeOnlineTileCache(temp: temp, support: support);
+    expect(Directory('${temp.path}/map_tile_cache').existsSync(), isFalse);
+    expect(support.listSync().map((e) => e.path), [maps.path]);
+    expect(keep.existsSync(), isTrue);
+
+    // Nothing left to remove the next time.
+    await MapPacksService.removeOnlineTileCache(temp: temp, support: support);
   });
 
   test('pack status follows downloads, installs and builds', () async {

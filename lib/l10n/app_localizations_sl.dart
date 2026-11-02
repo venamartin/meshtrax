@@ -4733,18 +4733,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Prenos zemljevida ni uspel';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Počisti predpomnjene ploščice spletnih zemljevidov';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Želite odstraniti ploščice spletnih zemljevidov, shranjene med brskanjem? Preneseni zemljevidi ostanejo.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Predpomnjene ploščice spletnih zemljevidov odstranjene';
-
-  @override
   String get map_notForNavigation => 'Ni za navigacijo';
 
   @override
@@ -4775,17 +4763,7 @@ class AppLocalizationsSl extends AppLocalizations {
       'Za navigacijo uporabljajte uradne, posodobljene karte NOAA (papirnate ali NOAA ENC v certificiranem kartnem ploterju) z najnovejšimi Obvestili pomorščakom.';
 
   @override
-  String get map_sourceOnline => 'Na spletu';
-
-  @override
-  String get map_sourceOffline => 'Brez povezave';
-
-  @override
   String get map_downloadForDetail => 'Prenesite regijo za podrobnosti';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Povečajte za prikaz zemljevida brez povezave';
 
   @override
   String get map_noCharts => 'Tu ni pomorskih kart';
@@ -4871,9 +4849,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Ni preneseno';
-
-  @override
-  String get mapLayers_offlineOnly => 'Samo brez povezave';
 
   @override
   String get mapLayers_details => 'Podrobnosti zemljevida';

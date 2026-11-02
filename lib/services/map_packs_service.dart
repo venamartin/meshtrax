@@ -104,9 +104,14 @@ class MapPacksService extends ChangeNotifier {
   /// Builds the service on the app's storage, restores downloads from the
   /// previous run, and starts an update check if the catalogue is stale.
   static Future<MapPacksService> create(AppSettingsService settings) async {
-    final root = Directory(
-      '${(await getApplicationSupportDirectory()).path}/maps',
+    final support = await getApplicationSupportDirectory();
+    unawaited(
+      removeOnlineTileCache(
+        temp: await getTemporaryDirectory(),
+        support: support,
+      ),
     );
+    final root = Directory('${support.path}/maps');
     await keepOutOfBackups(root);
     final manager = PackManager(Directory('${root.path}/packs'));
     final service = MapPacksService(
@@ -120,14 +125,34 @@ class MapPacksService extends ChangeNotifier {
     return service;
   }
 
-  /// Opens the bundled world base map, which offline maps draw where no
-  /// region pack reaches. A failure leaves those parts empty, as before.
+  /// Opens the base map bundled with the app, which maps draw where no
+  /// region pack reaches. A failure leaves those parts empty.
   Future<void> openWorld({AssetBundle? bundle}) async {
     try {
       _world = await openBundledWorld(cacheDir, bundle: bundle);
       notifyListeners();
     } on Object catch (e) {
       appLogger.warn('Opening the world map failed: $e', tag: 'Maps');
+    }
+  }
+
+  /// Deletes what the online map tiles left on the device before the app
+  /// dropped them (1.9.0): up to 200,000 cached tiles in [temp] and their
+  /// index in [support] (flutter_cache_manager's `map_tile_cache`).
+  static Future<void> removeOnlineTileCache({
+    required Directory temp,
+    required Directory support,
+  }) async {
+    try {
+      final tiles = Directory('${temp.path}/map_tile_cache');
+      if (await tiles.exists()) await tiles.delete(recursive: true);
+      // The index: SQLite on Android, iOS and macOS, else JSON.
+      for (final suffix in const ['db', 'db-journal', 'db-wal', 'db-shm', 'json']) {
+        final file = File('${support.path}/map_tile_cache.$suffix');
+        if (await file.exists()) await file.delete();
+      }
+    } on Object catch (e) {
+      appLogger.warn('Removing the online tile cache failed: $e', tag: 'Maps');
     }
   }
 
@@ -444,19 +469,15 @@ class MapPacksService extends ChangeNotifier {
   final _requiredKinds = <MapType, Set<PackKind>>{};
 
   /// Whether [type] has anything to draw: an installed pack of a kind its
-  /// style needs. OSM always does, from online tiles where there's none.
+  /// style needs. OSM always does, from the bundled base map.
   bool hasMap(MapType type) =>
       type == MapType.osm ||
       _installed.any((p) => _requiredKinds[type]?.contains(p.kind) ?? false);
 
   /// The installed packs a map draws from; the style uses those it needs.
   /// Contours come last so the map's own credit leads the credits, and the
-  /// world map (offline maps) after them.
-  List<Pack> mapPacks({
-    required bool contours,
-    required bool hillShading,
-    required bool world,
-  }) => [
+  /// bundled base map after them.
+  List<Pack> mapPacks({required bool contours, required bool hillShading}) => [
     for (final pack in _installed)
       if (pack.kind != PackKind.unknown &&
           pack.kind != PackKind.contours &&
@@ -465,7 +486,7 @@ class MapPacksService extends ChangeNotifier {
     if (contours)
       for (final pack in _installed)
         if (pack.kind == PackKind.contours) pack,
-    if (world) ?_world,
+    ?_world,
   ];
 
   // --- Catalogue queries ---------------------------------------------------

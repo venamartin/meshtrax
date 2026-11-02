@@ -4758,17 +4758,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'Download della mappa non riuscito';
 
   @override
-  String get offlineMaps_clearTileCache => 'Svuota la cache delle mappe online';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Rimuovere i riquadri di mappa online salvati durante la consultazione? Le mappe scaricate restano.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Cache delle mappe online svuotata';
-
-  @override
   String get map_notForNavigation => 'Non per la navigazione';
 
   @override
@@ -4799,18 +4788,8 @@ class AppLocalizationsIt extends AppLocalizations {
       'Per navigare, usa carte NOAA ufficiali e aggiornate (cartacee, o ENC NOAA in un plotter cartografico certificato) con gli ultimi Avvisi ai naviganti.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail =>
       'Scarica una regione per vedere i dettagli';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Ingrandisci per vedere la tua mappa offline';
 
   @override
   String get map_noCharts => 'Nessuna carta qui';
@@ -4896,9 +4875,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Non scaricata';
-
-  @override
-  String get mapLayers_offlineOnly => 'Solo offline';
 
   @override
   String get mapLayers_details => 'Dettagli mappa';

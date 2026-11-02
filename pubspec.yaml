@@ -49,15 +49,12 @@ dependencies:
   # screen. pubspec.lock is untracked, so fresh clones and CI would pick it up.
   shared_preferences_android: ">=2.4.23 <2.5.0"
   uuid: ^4.3.3
-  flutter_map: ^8.3.2
   latlong2: ^0.9.1
   # Notifications for Android/iOS (Disabled on Windows if ATL headers are missing)
   flutter_local_notifications: ^21.0.0
   crypto: ^3.0.3
   pointycastle: ^4.0.0
   http: ^1.2.0
-  cached_network_image: ^3.4.1
-  flutter_cache_manager: ^3.4.1
   flutter_foreground_task: ^9.2.0
   characters: ^1.4.0
   package_info_plus: any

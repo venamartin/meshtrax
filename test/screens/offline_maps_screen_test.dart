@@ -14,7 +14,6 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 
 import '../../packages/traxmap/test/support/fake_pmtiles.dart';
 import '../helpers/map_fakes.dart';
@@ -100,7 +99,6 @@ void main() {
             create: (_) => AppSettingsService(),
           ),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),

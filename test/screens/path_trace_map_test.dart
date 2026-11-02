@@ -16,7 +16,6 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
@@ -131,7 +130,6 @@ void main() {
           ChangeNotifierProvider<MeshCoreConnector>.value(value: connector),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -186,7 +184,6 @@ void main() {
           ChangeNotifierProvider<MeshCoreConnector>.value(value: connector),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

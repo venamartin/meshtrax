@@ -4531,16 +4531,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_notificationFailed => '지도 다운로드 실패';
 
   @override
-  String get offlineMaps_clearTileCache => '온라인 지도 캐시 지우기';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '둘러보는 동안 저장된 온라인 지도 타일을 삭제할까요? 다운로드한 지도는 그대로 남습니다.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => '온라인 지도 캐시를 삭제했습니다';
-
-  @override
   String get map_notForNavigation => '항해용 아님';
 
   @override
@@ -4570,16 +4560,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '항해할 때는 최신 항행통보와 함께 공식 최신 NOAA 해도(종이 해도 또는 인증된 차트 플로터의 NOAA ENC)를 사용하세요.';
 
   @override
-  String get map_sourceOnline => '온라인';
-
-  @override
-  String get map_sourceOffline => '오프라인';
-
-  @override
   String get map_downloadForDetail => '자세히 보려면 지역 다운로드';
-
-  @override
-  String get map_zoomInForOfflineMap => '확대하면 오프라인 지도가 보입니다';
 
   @override
   String get map_noCharts => '이곳에는 해도가 없습니다';
@@ -4662,9 +4643,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '다운로드 안 됨';
-
-  @override
-  String get mapLayers_offlineOnly => '오프라인 전용';
 
   @override
   String get mapLayers_details => '지도 세부 정보';

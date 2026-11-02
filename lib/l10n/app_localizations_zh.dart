@@ -4417,15 +4417,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_notificationFailed => '地图下载失败';
 
   @override
-  String get offlineMaps_clearTileCache => '清除在线地图缓存';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt => '删除浏览时保存的在线地图图块？已下载的地图会保留。';
-
-  @override
-  String get offlineMaps_tileCacheCleared => '已清除在线地图缓存';
-
-  @override
   String get map_notForNavigation => '不可用于导航';
 
   @override
@@ -4454,16 +4445,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '导航请使用官方、最新的 NOAA 海图（纸质海图，或在认证海图仪中使用 NOAA ENC），并参考最新的航海通告。';
 
   @override
-  String get map_sourceOnline => '在线';
-
-  @override
-  String get map_sourceOffline => '离线';
-
-  @override
   String get map_downloadForDetail => '下载地区以查看详情';
-
-  @override
-  String get map_zoomInForOfflineMap => '放大以查看离线地图';
 
   @override
   String get map_noCharts => '此处没有海图';
@@ -4546,9 +4528,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '未下载';
-
-  @override
-  String get mapLayers_offlineOnly => '仅离线';
 
   @override
   String get mapLayers_details => '地图详情';

@@ -10,7 +10,6 @@ import 'package:traxmap/traxmap.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/mini_map.dart';
@@ -58,7 +57,6 @@ void main() {
               styles: StyleRegistry(MemoryStyles()),
             ),
           ),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -4760,16 +4760,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Не вдалося завантажити карту';
 
   @override
-  String get offlineMaps_clearTileCache => 'Очистити кеш онлайн-карт';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Видалити фрагменти онлайн-карт, збережені під час перегляду? Завантажені карти залишаться.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'Кеш онлайн-карт очищено';
-
-  @override
   String get map_notForNavigation => 'Не для навігації';
 
   @override
@@ -4800,16 +4790,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Для навігації використовуйте офіційні актуальні карти NOAA (паперові або ENC від NOAA у сертифікованому картплотері) з останніми Повідомленнями мореплавцям.';
 
   @override
-  String get map_sourceOnline => 'Онлайн';
-
-  @override
-  String get map_sourceOffline => 'Офлайн';
-
-  @override
   String get map_downloadForDetail => 'Завантажте регіон, щоб бачити подробиці';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Збільште, щоб побачити офлайн-карту';
 
   @override
   String get map_noCharts => 'Тут немає морських карт';
@@ -4895,9 +4876,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Не завантажено';
-
-  @override
-  String get mapLayers_offlineOnly => 'Лише офлайн';
 
   @override
   String get mapLayers_details => 'Деталі карти';

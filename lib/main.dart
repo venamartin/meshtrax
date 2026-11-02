@@ -28,7 +28,6 @@ import 'services/companion_cli_service.dart';
 import 'services/ble_debug_log_service.dart';
 import 'services/app_debug_log_service.dart';
 import 'services/background_service.dart';
-import 'services/map_tile_cache_service.dart';
 import 'services/map_packs_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
@@ -51,7 +50,6 @@ void main() async {
   final bleDebugLogService = BleDebugLogService();
   final appDebugLogService = AppDebugLogService();
   final backgroundService = BackgroundService();
-  final mapTileCacheService = MapTileCacheService();
   final chatTextScaleService = ChatTextScaleService();
   final uiViewStateService = UiViewStateService();
 
@@ -144,7 +142,6 @@ void main() async {
       appSettingsService: appSettingsService,
       bleDebugLogService: bleDebugLogService,
       appDebugLogService: appDebugLogService,
-      mapTileCacheService: mapTileCacheService,
       mapPacksService: mapPacksService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
@@ -181,7 +178,6 @@ class MeshTraxApp extends StatefulWidget {
   final AppSettingsService appSettingsService;
   final BleDebugLogService bleDebugLogService;
   final AppDebugLogService appDebugLogService;
-  final MapTileCacheService mapTileCacheService;
 
   /// Null on the web, where offline maps aren't available.
   final MapPacksService? mapPacksService;
@@ -197,7 +193,6 @@ class MeshTraxApp extends StatefulWidget {
     required this.appSettingsService,
     required this.bleDebugLogService,
     required this.appDebugLogService,
-    required this.mapTileCacheService,
     required this.mapPacksService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
@@ -327,7 +322,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.chatTextScaleService),
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         Provider.value(value: widget.storage),
-        Provider.value(value: widget.mapTileCacheService),
         if (widget.mapPacksService case final maps?)
           ChangeNotifierProvider.value(value: maps),
       ],

@@ -128,10 +128,6 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapTheme: value));
   }
 
-  Future<void> setMapSource(String value) async {
-    await updateSettings(_settings.copyWith(mapSource: value));
-  }
-
   Future<void> setNotificationsEnabled(bool value) async {
     await updateSettings(_settings.copyWith(notificationsEnabled: value));
   }

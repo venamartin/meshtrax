@@ -4755,18 +4755,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Karten-Download fehlgeschlagen';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Zwischengespeicherte Online-Kartenkacheln löschen';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Die beim Ansehen der Karte gespeicherten Online-Kartenkacheln entfernen? Heruntergeladene Karten bleiben erhalten.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Zwischengespeicherte Online-Kartenkacheln entfernt';
-
-  @override
   String get map_notForNavigation => 'Nicht zur Navigation';
 
   @override
@@ -4797,17 +4785,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Verwenden Sie zur Navigation amtliche, aktuelle NOAA-Seekarten (auf Papier oder NOAA-ENCs in einem zertifizierten Kartenplotter) mit den neuesten Nachrichten für Seefahrer.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Region für mehr Details herunterladen';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Hineinzoomen, um Ihre Offline-Karte zu sehen';
 
   @override
   String get map_noCharts => 'Hier keine Seekarten';
@@ -4893,9 +4871,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nicht heruntergeladen';
-
-  @override
-  String get mapLayers_offlineOnly => 'Nur offline';
 
   @override
   String get mapLayers_details => 'Kartendetails';
