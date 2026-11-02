@@ -57,6 +57,33 @@ void main() {
       }
     });
 
+    test('the examples in docs/message-format.md read, at their sizes', () {
+      for (final (text, bytes) in [
+        ('SVG:M5 5h0', 10),
+        ('SVG:M10 10 90 90', 16),
+        ('SVG:M10 10h80v80H10z', 20),
+        ('SVG:M10 50h70m-8-6 8 6-8 6', 26),
+        ('SVG:M10 50h70m-8-6 8 6-8 6\nTo the hut', 37),
+        ('SVG:M90 50a40 40 0 1 1 0-.1z', 28),
+        (
+          'SVG:M58 18a8 8 0 1 1 0-.1zM50 26v34l-14 30m14-30 14 30'
+              'M26 44l12 6 12-6 12 6 12-6',
+          80,
+        ),
+      ]) {
+        final m = StructuredMessage.parse(text);
+        expect(m, isA<SvgMessage>(), reason: text);
+        expect(m!.toWire(), text);
+        expect(utf8.encode(text).length, bytes, reason: text);
+      }
+      expect(StructuredMessage.parse('SVG :$box'), isA<SvgMessage>());
+      expect(StructuredMessage.parse('SVG: coming soon'), isNull);
+      expect(StructuredMessage.parse('SVG:M10 10 M20 20'), isNull);
+      final wrapped = StructuredMessage.parse('SVG:M10 10 90 90\n10 20') as SvgMessage;
+      expect(wrapped.drawing.pathData, 'M10 10 90 90 10 20');
+      expect(wrapped.drawing.caption, '');
+    });
+
     test('keeps out of SMAZ compression, as cards do', () {
       expect(StructuredMessage.hasPrefix('SVG:$box'), isTrue);
     });
