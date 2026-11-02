@@ -14,7 +14,7 @@ enum OfflineMapsTab { maps, charts, downloaded }
 
 /// Download and manage offline map packs: browse regions (Maps), pick NOAA
 /// chart areas by coast (Charts) and see what's on the device (Downloaded).
-/// Layout and wording follow docs/offline-maps-roadmap.md, screen S3.
+/// Layout and wording follow docs/technical/offline-maps-roadmap.md, screen S3.
 class OfflineMapsScreen extends StatefulWidget {
   /// Opens the Maps tab on this region's detail (a picker `path`).
   final String? initialRegionPath;

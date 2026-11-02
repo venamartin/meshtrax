@@ -3971,7 +3971,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Din radio kommer ihåg en rutt till varje kontakt och skickar meddelandet som översvämning till hela nätet om den rutten inte fungerar. Pathfinder lyssnar på allt radion hör: annonser från repeatrar, prat i kanaler och andras meddelanden. Utifrån det bygger Pathfinder en karta över vilka repeatrar som hör varandra, vilka som hör dig och vilka som hör var och en av dina kontakter.';
+      'Din radio kommer ihåg en rutt till varje kontakt. När ett meddelande på den rutten misslyckas skickar MeshTrax det i stället som översvämning till hela nätet. Pathfinder lyssnar på allt radion hör: annonser från repeatrar, prat i kanaler och andras meddelanden. Utifrån det bygger Pathfinder en karta över vilka repeatrar som hör varandra, vilka som hör dig och vilka som hör var och en av dina kontakter.';
 
   @override
   String get pathfinderHelp_how =>

@@ -1,5 +1,13 @@
 # MeshCore BLE Protocol Documentation
 
+> **What this is:** An older, more narrative walk through how the app connects to its radio over Bluetooth and the commands it sends.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** reference. [meshcore-protocol.md](meshcore-protocol.md) is the fuller one, checked against the firmware; where the two disagree, trust that one.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 ## Overview
 
 The MeshCore BLE protocol implements a binary frame-based communication system using Nordic UART Service (NUS) for low-level transport. The protocol supports mesh networking operations including contact management, text messaging, channel communication, and device configuration.

@@ -3995,7 +3995,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Je radio onthoudt één route naar elk contact. Werkt die route niet, dan gaat je bericht als flood naar de hele mesh. Pathfinder luistert naar alles wat de radio hoort: aankondigingen van repeaters, gesprekken in kanalen, berichten van anderen. Daarmee bouwt Pathfinder een kaart: welke repeaters elkaar horen, welke jou horen en welke elk van je contacten horen.';
+      'Je radio onthoudt één route naar elk contact. Komt een bericht via die route niet aan, dan stuurt MeshTrax het in plaats daarvan als flood naar de hele mesh. Pathfinder luistert naar alles wat de radio hoort: aankondigingen van repeaters, gesprekken in kanalen, berichten van anderen. Daarmee bouwt Pathfinder een kaart: welke repeaters elkaar horen, welke jou horen en welke elk van je contacten horen.';
 
   @override
   String get pathfinderHelp_how =>

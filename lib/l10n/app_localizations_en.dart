@@ -3939,7 +3939,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Your radio remembers one route to each contact and floods the whole mesh when that route fails. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
+      'Your radio remembers one route to each contact. When a message on that route fails, MeshTrax floods the whole mesh instead. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people\'s messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.';
 
   @override
   String get pathfinderHelp_how =>

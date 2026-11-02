@@ -298,8 +298,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       );
     } else {
       if (connector.activeContactKey == payload) return;
+      // allContacts: the radio may have overwritten the sender since, and the
+      // messages are still here.
       Contact? contact;
-      for (final c in connector.contacts) {
+      for (final c in connector.allContacts) {
         if (c.publicKeyHex == payload) {
           contact = c;
           break;

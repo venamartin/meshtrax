@@ -3732,7 +3732,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      '您的电台为每个联系人只记住一条路由，这条路由失败时就向整个网络泛洪。Pathfinder 会收听电台听到的一切：转发节点的广播、频道里的聊天、其他人的消息。据此，它会绘制一张地图，标出哪些转发节点能互相听到、哪些能听到您，以及哪些能听到您的每个联系人。';
+      '您的电台为每个联系人只记住一条路由。这条路由上的消息发送失败时，MeshTrax 会改为向整个网络泛洪。Pathfinder 会收听电台听到的一切：转发节点的广播、频道里的聊天、其他人的消息。据此，它会绘制一张地图，标出哪些转发节点能互相听到、哪些能听到您，以及哪些能听到您的每个联系人。';
 
   @override
   String get pathfinderHelp_how =>

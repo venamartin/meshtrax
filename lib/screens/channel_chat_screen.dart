@@ -226,7 +226,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   Timer? _searchDebounce;
   List<({ChannelMessage message, int fromNewest})> _searchMatches = const [];
   int _searchPos = -1;
-  String? _pendingSearchJumpId;
+  String? _pendingJumpId;
+  // The grown list a jump waited for: not a new row to follow.
+  bool _jumpArriving = false;
+
+  // The original a tapped quote jumped to, tinted for a moment: when it is
+  // already on screen the list barely moves.
+  String? _flashedMessageId;
+  Timer? _flashTimer;
 
   void _subscribeMessages(MeshCoreConnector connector) {
     _messagesSub?.cancel();
@@ -234,12 +241,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         .watchChannelMessages(widget.channel, limit: _watchLimit)
         .listen((messages) {
       if (!mounted) return;
-      // A search jump whose target was outside the watched window waits
-      // here for the grown window to deliver the row.
-      final pendingJump = _pendingSearchJumpId;
+      // A jump whose target was outside the watched window waits here for
+      // the grown window to deliver the row.
+      final pendingJump = _pendingJumpId;
       if (pendingJump != null &&
           messages.any((m) => m.messageId == pendingJump)) {
-        _pendingSearchJumpId = null;
+        _pendingJumpId = null;
+        _jumpArriving = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _scrollToMessage(pendingJump);
         });
@@ -908,6 +916,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _disarmAdvertWatch();
     _messagesSub?.cancel();
     _searchDebounce?.cancel();
+    _flashTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     _clockTimer?.cancel();
@@ -952,7 +961,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       _searchActive = false;
       _searchMatches = const [];
       _searchPos = -1;
-      _pendingSearchJumpId = null;
+      _pendingJumpId = null;
     });
   }
 
@@ -1009,16 +1018,41 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   void _jumpToMatch(int pos) {
     final match = _searchMatches[pos];
     setState(() => _searchPos = pos);
-    if (_messages.any((m) => m.messageId == match.message.messageId)) {
-      _scrollToMessage(match.message.messageId);
+    _jumpToRow(match.message.messageId, match.fromNewest);
+  }
+
+  void _jumpToRow(String messageId, int fromNewest) {
+    if (_messages.any((m) => m.messageId == messageId)) {
+      _scrollToMessage(messageId);
       return;
     }
     // Outside the watched window: grow it past the target and jump when
     // the subscription delivers the row (see _subscribeMessages).
-    final needed = ((match.fromNewest + 51) ~/ 200 + 1) * 200;
+    final needed = ((fromNewest + 51) ~/ 200 + 1) * 200;
     if (needed > _watchLimit) _watchLimit = needed;
-    _pendingSearchJumpId = match.message.messageId;
+    _pendingJumpId = messageId;
     _subscribeMessages(context.read<MeshCoreConnector>());
+  }
+
+  Future<void> _openReplyTarget(ChannelMessage reply) async {
+    final target = await context
+        .read<MeshCoreConnector>()
+        .findChannelReplyTarget(widget.channel, reply);
+    if (!mounted) return;
+    if (target == null) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.chat_originalMessageNotFound),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+    _flashTimer?.cancel();
+    setState(() => _flashedMessageId = target.message.messageId);
+    _flashTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _flashedMessageId = null);
+    });
+    _jumpToRow(target.message.messageId, target.fromNewest);
   }
 
   Future<void> _scrollToMessage(String messageId) async {
@@ -1296,9 +1330,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     MeshCoreConnector connector,
   ) {
     _catchUpClock();
-    final focusedMatchId = _searchActive && _searchPos >= 0
-        ? _searchMatches[_searchPos].message.messageId
-        : null;
+    final focusedMatchId = _flashedMessageId ??
+        (_searchActive && _searchPos >= 0
+            ? _searchMatches[_searchPos].message.messageId
+            : null);
     final key = (
       messages,
       connector.selfName,
@@ -1339,7 +1374,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final grew = currentMessageCount > _previousMessageCount;
     // Auto-scroll if: the user is already at the bottom, OR they just
     // sent the newest message.
-    if (((_atBottom.value && (newRow || grew)) || justSent) &&
+    final jumping = _pendingJumpId != null || _jumpArriving;
+    _jumpArriving = false;
+    if (!jumping &&
+        ((_atBottom.value && (newRow || grew)) || justSent) &&
         _itemScrollController.isAttached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_itemScrollController.isAttached) return;
@@ -1618,7 +1656,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                       ],
                       if (message.replyToSenderName != null) ...[
                         _buildReplyPreview(context, message, textScale),
-                        const SizedBox(height: 8),
                       ],
                       if (structured != null) ...[
                         StructuredMessageCard(
@@ -2023,11 +2060,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       );
     }
 
+    // Always takes its own tap, or it would fall through to the bubble's path
+    // screen. The width floor keeps a short quote big enough for a thumb.
     return GestureDetector(
-      onTap: message.replyToMessageId != null
-          ? () => _scrollToMessage(message.replyToMessageId!)
-          : null,
-      child: Container(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openReplyTarget(message),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Container(
+        constraints: const BoxConstraints(minWidth: 160),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: ChatColors.isLight(context)
@@ -2067,6 +2108,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             contentPreview,
           ],
         ),
+      ),
       ),
     );
   }

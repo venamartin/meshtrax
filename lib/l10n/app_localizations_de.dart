@@ -4021,7 +4021,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Ihr Funkgerät merkt sich eine Route zu jedem Kontakt und flutet das ganze Mesh, wenn diese Route nicht funktioniert. Pathfinder hört alles mit, was das Funkgerät empfängt: Ankündigungen von Repeatern, Gespräche in Kanälen, Nachrichten anderer Leute. Daraus erstellt Pathfinder eine Karte, die zeigt, welche Repeater einander hören, von welchen Sie gehört werden und von welchen jeder Ihrer Kontakte gehört wird.';
+      'Ihr Funkgerät merkt sich eine Route zu jedem Kontakt. Kommt eine Nachricht auf dieser Route nicht an, flutet MeshTrax stattdessen das ganze Mesh. Pathfinder hört alles mit, was das Funkgerät empfängt: Ankündigungen von Repeatern, Gespräche in Kanälen, Nachrichten anderer Leute. Daraus erstellt Pathfinder eine Karte, die zeigt, welche Repeater einander hören, von welchen Sie gehört werden und von welchen jeder Ihrer Kontakte gehört wird.';
 
   @override
   String get pathfinderHelp_how =>

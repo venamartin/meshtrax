@@ -723,7 +723,7 @@ class _ChatsScreenState extends State<ChatsScreen>
 
         // Add Active Contacts (exclude repeaters) — "latest" comes from the
         // watched SQL query, so ordering can never disagree with the DB.
-        for (final contact in connector.contacts) {
+        for (final contact in connector.chatContacts) {
           if (contact.type == advTypeRepeater) continue;
           final lastMessage = connector.latestContactMessage(contact);
           if (lastMessage != null) {

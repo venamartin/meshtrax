@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -388,23 +389,313 @@ void main() {
       expect(listed().length, 1);
     });
 
-    test('auto-add on: saved and listed once', () {
+    test('auto-add on: the radio refused it, so it stays unsaved', () {
       autoAdd(chat: true);
       c.handleFrameForTest(_record(code: pushCodeNewAdvert));
 
-      expect(saved(), isNotNull);
-      expect(row()!.isActive, isTrue);
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
       expect(listed().length, 1);
     });
 
-    test('for a contact already saved: listed once', () async {
+    test('for a contact the list has: the radio no longer holds it', () async {
       autoAdd();
       await fullDownload(_record());
       c.handleFrameForTest(_record(code: pushCodeNewAdvert));
 
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(listed().length, 1);
+    });
+  });
+
+  group('a new node with auto-add on', () {
+    Uint8List heard() => _heard(
+          route: _routeFlood,
+          path: const [0xAA],
+          timestamp: _secondsAgo(const Duration(minutes: 1)),
+        );
+    bool asked() => c.sent.any((f) => f[0] == cmdGetContactByKey);
+
+    setUp(() => autoAdd(chat: true));
+
+    test('is only a heard row until the radio decides', () {
+      c.handleFrameForTest(heard());
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(listed().length, 1);
+    });
+
+    test('that the radio refuses stays a heard row, and is not looked up', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest(_record(code: pushCodeNewAdvert));
+      expect(saved(), isNull);
+      expect(row()!.isActive, isFalse);
+      expect(asked(), isFalse);
+    });
+
+    test('that the radio saves is fetched and keeps its advert path', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(asked(), isTrue);
+
+      c.handleFrameForTest(_record(lastmod: _secondsAgo(Duration.zero)));
+      expect(saved()!.inboundPath, [0xAA]);
       expect(row()!.isActive, isTrue);
       expect(listed().length, 1);
     });
+
+    test('first met through a share is dated by its advert', () {
+      final node = _secondsAgo(const Duration(days: 2));
+      c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: node));
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(
+        _record(advertSecs: node, lastmod: _secondsAgo(Duration.zero)),
+      );
+      expect(saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000, node);
+      expect(saved()!.lastMessageAt.millisecondsSinceEpoch ~/ 1000, node);
+    });
+
+    test('saved during a download is fetched when it ends', () async {
+      c.handleFrameForTest(heard());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(asked(), isFalse, reason: 'the radio refuses a second stream');
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(asked(), isTrue);
+    });
+
+    test('a saved node adding a row later is announced once by its row', () {
+      c.handleFrameForTest(heard());
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(_record());
+      expect(listed().length, 1);
+    });
+
+    test('saved during a download and streamed anyway is not fetched', () async {
+      c.handleFrameForTest(heard());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      c.handleFrameForTest(_record());
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(asked(), isFalse);
+    });
+  });
+
+  group('during a full download', () {
+    Future<void> downloading() async {
+      autoAdd();
+      await fullDownload(_record());
+      await c.getContacts();
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.sent.clear();
+    }
+
+    test('one overwritten and added back stays listed', () async {
+      await downloading();
+      c.handleFrameForTest([pushCodeContactDeleted, ..._key]);
+      expect(saved(), isNull);
+
+      final added = c.importDiscoveredContact(row()!);
+      await pumpEventQueue();
+      c.handleFrameForTest([respCodeOk]);
+      expect(await added, isTrue);
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(saved(), isNotNull);
+    });
+
+    test('one still on trial that the radio just re-saved is fetched', () async {
+      await downloading();
+      c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      expect(c.sent, isEmpty);
+
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+
+      expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
+      expect(saved(), isNotNull, reason: 'its record is on the way');
+    });
+
+    test('the trial starts with the stream, not the request', () async {
+      autoAdd();
+      await fullDownload(_record());
+      await c.getContacts();
+      // A cache landing between the two is what the radio then checks.
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      expect(saved(), isNull);
+    });
+  });
+
+  group('wasDroppedByRadio', () {
+    Contact asSaved() => Contact(
+          publicKey: _key,
+          name: 'NODE',
+          type: advTypeChat,
+          pathLength: -1,
+          path: Uint8List(0),
+          pathHashSize: 1,
+          lastSeen: DateTime.now(),
+        );
+
+    test('not while the list is empty, with no row to go by', () {
+      expect(c.contacts, isEmpty);
+      expect(c.wasDroppedByRadio(asSaved()), isFalse);
+    });
+
+    test('not for a saved contact', () async {
+      autoAdd();
+      await fullDownload(_record());
+      expect(c.wasDroppedByRadio(saved()!), isFalse);
+    });
+
+    test('once the radio overwrote it', () async {
+      autoAdd();
+      await fullDownload(_record());
+      c.handleFrameForTest([pushCodeContactDeleted, ..._key]);
+      expect(c.wasDroppedByRadio(asSaved()), isTrue);
+    });
+  });
+
+  test('a stored row of a saved contact does not list it twice on connect',
+      () async {
+    c.handleFrameForTest(_selfInfo());
+    await pumpEventQueue(times: 200);
+    c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+    await savedWithFrozenRow();
+    await pumpEventQueue(times: 200);
+
+    final next = _Connector();
+    next.handleFrameForTest(_selfInfo());
+    await pumpEventQueue(times: 400);
+
+    expect(next.isLoadingContacts, isTrue);
+    expect(next.allContacts.where((x) => x.publicKeyHex == _hex), hasLength(1));
+    expect(
+      next.discoveredContacts.where((x) => x.publicKeyHex == _hex).single.isActive,
+      isTrue,
+    );
+  });
+
+  group('the lastmod on a contact', () {
+    final heardAt = _secondsAgo(const Duration(hours: 5));
+
+    int sentLastmod() {
+      final write = c.sent.lastWhere((f) => f[0] == cmdAddUpdateContact);
+      return ByteData.sublistView(
+        write,
+        write.length - 4,
+      ).getUint32(0, Endian.little);
+    }
+
+    int seen() => saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000;
+
+    setUp(() async {
+      autoAdd();
+      await fullDownload(_record(lastmod: heardAt));
+      expect(seen(), heardAt);
+    });
+
+    test('a route write dates the contact now on the radio', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      expect(sentLastmod(), closeTo(_secondsAgo(Duration.zero), 5));
+    });
+
+    test('the next sync does not read that write as hearing it', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      await fullDownload(_record(lastmod: sentLastmod()));
+
+      expect(seen(), heardAt);
+      expect(saved()!.appLastmodSecs, sentLastmod());
+    });
+
+    test('a restart still knows the write was not a hearing', () async {
+      c.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 200);
+      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+      c.handleFrameForTest(_record(lastmod: heardAt));
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await pumpEventQueue(times: 200);
+      final stamp = sentLastmod();
+
+      await c.loadContactCache();
+      expect(saved()!.appLastmodSecs, stamp);
+    });
+
+    test('the write does not move the time last heard from either', () async {
+      final before = saved()!.lastMessageAt;
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      await fullDownload(_record(lastmod: sentLastmod()));
+
+      expect(saved()!.lastMessageAt, before);
+    });
+
+    test('a frame sent before the write is not a hearing either', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+
+      c.handleFrameForTest(_record(lastmod: sentLastmod() - 3600));
+
+      expect(seen(), heardAt);
+    });
+
+    test('a later lastmod is the radio hearing it', () async {
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      final later = sentLastmod() + 60;
+
+      await fullDownload(_record(lastmod: later));
+
+      expect(saved()!.radioLastmodSecs, later);
+      expect(
+        saved()!.lastSeen.isAfter(
+          DateTime.fromMillisecondsSinceEpoch(heardAt * 1000),
+        ),
+        isTrue,
+      );
+    });
+
+    group('after the radio accepts a shared copy', () {
+      final radioNow = _secondsAgo(Duration.zero);
+      final advert = _secondsAgo(const Duration(hours: 2));
+
+      void radioTakesShare() {
+        c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: advert));
+        c.handleFrameForTest([pushCodeAdvert, ..._key]);
+      }
+
+      test('the record is fetched', () {
+        c.sent.clear();
+        radioTakesShare();
+        expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
+      });
+
+      test('it does not look just heard, then or at the next sync', () async {
+        radioTakesShare();
+        final before = saved()!.lastMessageAt;
+        c.handleFrameForTest(_record(advertSecs: advert, lastmod: radioNow));
+        expect(seen(), heardAt);
+        expect(saved()!.lastMessageAt, before);
+        expect(saved()!.lastAdvertSecs, advert);
+
+        await fullDownload(_record(advertSecs: advert, lastmod: radioNow));
+        expect(seen(), heardAt);
+      });
+
+      test('a real advert afterwards counts as usual', () {
+        radioTakesShare();
+        c.handleFrameForTest(_record(advertSecs: advert, lastmod: radioNow));
+        final at = _secondsAgo(const Duration(minutes: 1));
+        c.handleFrameForTest(_heard(route: _routeFlood, timestamp: at));
+        expect(seen(), at);
+      });
+    });
+
   });
 
   group('a contact shared by a neighbour', () {
@@ -760,6 +1051,113 @@ void main() {
       write.length - 4,
     ).getUint32(0, Endian.little);
     expect(lastmod, closeTo(_secondsAgo(Duration.zero), 5));
+  });
+
+  group('a shared copy of my own advert', () {
+    Uint8List selfAdvert({required int route, required double lat}) {
+      final frame = _heard(
+        route: route,
+        timestamp: _secondsAgo(const Duration(days: 30)),
+        lat: lat,
+        lon: 2,
+      );
+      final keyAt = frame.length - 4 - 8 - 1 - 64 - 4 - 32;
+      frame.fillRange(keyAt, keyAt + 32, 0x77);
+      return frame;
+    }
+
+    setUp(() => c.handleFrameForTest(_selfInfo()));
+
+    test('leaves my position alone', () {
+      c.handleFrameForTest(selfAdvert(route: _routeTransportDirect, lat: 40));
+      expect(c.selfLatitude, 0);
+    });
+
+    test('while a real copy still updates it', () {
+      c.handleFrameForTest(selfAdvert(route: _routeFlood, lat: 40));
+      expect(c.selfLatitude, 40);
+    });
+  });
+
+  group('an advert on a saved contact', () {
+    Future<Contact?> cached() async {
+      final store = ContactStore()
+        ..setPublicKeyHex = pubKeyToHex(
+          Uint8List.fromList(List.filled(32, 0x77)),
+        );
+      final rows = await store.loadContacts();
+      return rows.where((x) => x.publicKeyHex == _hex).firstOrNull;
+    }
+
+    setUp(() async {
+      c.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 200);
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      await savedWithFrozenRow();
+      await pumpEventQueue(times: 200);
+    });
+
+    test('reaches the cache within ten seconds', () {
+      fakeAsync((clock) {
+        c.handleFrameForTest(
+          _heard(
+            route: _routeFlood,
+            path: const [0xCC],
+            timestamp: _secondsAgo(const Duration(minutes: 5)),
+          ),
+        );
+        clock.elapse(const Duration(seconds: 11));
+      });
+      return pumpEventQueue(times: 200).then((_) async {
+        expect((await cached())!.inboundPath, [0xCC]);
+      });
+    });
+
+    test('a disconnect saves it, and does not empty the cache', () async {
+      c.handleFrameForTest(
+        _heard(
+          route: _routeFlood,
+          path: const [0xCC],
+          timestamp: _secondsAgo(const Duration(minutes: 5)),
+        ),
+      );
+      await c.disconnect();
+      await pumpEventQueue(times: 200);
+      expect((await cached())!.inboundPath, [0xCC]);
+    });
+
+    test('a room history reload saves its not-a-hearing mark', () async {
+      Future<void> answer(int command, List<int> reply) async {
+        for (var i = 0;
+            i < 500 && !c.sent.any((f) => f[0] == command);
+            i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        expect(c.sent.map((f) => f[0]), contains(command));
+        c.handleFrameForTest(reply);
+      }
+
+      final reload = c.resetRoomSyncCursor(saved()!);
+      await answer(cmdGetContactByKey, _record());
+      await answer(cmdRemoveContact, [respCodeOk]);
+      await answer(cmdAddUpdateContact, [respCodeOk]);
+      expect(await reload, isTrue);
+      final stamp = saved()!.appLastmodSecs;
+      expect(stamp, isNotNull);
+
+      // Only the write's own save covers it: a disconnect saves what is due.
+      await c.disconnect();
+      await pumpEventQueue(times: 200);
+
+      expect((await cached())!.appLastmodSecs, stamp);
+    });
+
+    test('keeps the advert time the radio needs for a route write', () async {
+      await fullDownload(_record(advertSecs: 1234));
+      await pumpEventQueue(times: 200);
+      expect((await cached())!.lastAdvertSecs, 1234);
+    });
   });
 
   test('a zero-hop advert sent to us is a real hearing', () async {

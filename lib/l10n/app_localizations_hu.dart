@@ -4026,7 +4026,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'A rádiója minden kapcsolatához egyetlen útvonalat jegyez meg, és ha ez az útvonal nem működik, az üzenetet az egész hálózatra kiküldi. A Pathfinder mindent figyel, amit a rádió hall: a repeaterek hirdetményeit, a csatornákon folyó csevegést, mások üzeneteit. Ebből térképet készít arról, mely repeaterek hallják egymást, melyek hallják Önt, és melyek hallják az egyes kapcsolatait.';
+      'A rádiója minden kapcsolatához egyetlen útvonalat jegyez meg. Ha egy üzenet ezen az útvonalon nem ér célba, a MeshTrax helyette az egész hálózatra kiküldi. A Pathfinder mindent figyel, amit a rádió hall: a repeaterek hirdetményeit, a csatornákon folyó csevegést, mások üzeneteit. Ebből térképet készít arról, mely repeaterek hallják egymást, melyek hallják Önt, és melyek hallják az egyes kapcsolatait.';
 
   @override
   String get pathfinderHelp_how =>

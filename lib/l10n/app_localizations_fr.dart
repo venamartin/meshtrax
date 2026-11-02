@@ -4039,7 +4039,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Votre radio mémorise un seul itinéraire vers chaque contact et, quand cet itinéraire échoue, envoie le message à tout le réseau. Pathfinder écoute tout ce que la radio entend : les annonces des répéteurs, les conversations des canaux, les messages des autres. Il en tire une carte des répéteurs qui s\'entendent entre eux, de ceux qui vous entendent et de ceux qui entendent chacun de vos contacts.';
+      'Votre radio mémorise un seul itinéraire vers chaque contact. Quand un message échoue sur cet itinéraire, MeshTrax l\'envoie à tout le réseau à la place. Pathfinder écoute tout ce que la radio entend : les annonces des répéteurs, les conversations des canaux, les messages des autres. Il en tire une carte des répéteurs qui s\'entendent entre eux, de ceux qui vous entendent et de ceux qui entendent chacun de vos contacts.';
 
   @override
   String get pathfinderHelp_how =>

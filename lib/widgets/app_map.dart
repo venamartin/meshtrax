@@ -25,7 +25,7 @@ import 'charts_notice_dialog.dart';
 /// off, a teal outline marks the downloaded areas of the map that's showing.
 ///
 /// The map, contours and light/dark come from the user's settings unless a
-/// screen overrides them. See docs/offline-maps-roadmap.md, "App
+/// screen overrides them. See docs/technical/offline-maps-roadmap.md, "App
 /// architecture".
 class AppMap extends StatefulWidget {
   final List<MapOverlay> overlays;

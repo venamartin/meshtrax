@@ -3999,7 +3999,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Vaše rádio si pamätá jednu trasu ku každému kontaktu. Keď táto trasa zlyhá, pošle správu záplavou do celej siete. Pathfinder počúva všetko, čo rádio počuje: ohlásenia opakovačov, rozhovory v kanáloch, správy iných ľudí. Z toho si zostavuje mapu: ktoré opakovače sa navzájom počujú, ktoré počujú vás a ktoré počujú jednotlivé vaše kontakty.';
+      'Vaše rádio si pamätá jednu trasu ku každému kontaktu. Keď správa na tejto trase zlyhá, MeshTrax ju namiesto toho pošle záplavou do celej siete. Pathfinder počúva všetko, čo rádio počuje: ohlásenia opakovačov, rozhovory v kanáloch, správy iných ľudí. Z toho si zostavuje mapu: ktoré opakovače sa navzájom počujú, ktoré počujú vás a ktoré počujú jednotlivé vaše kontakty.';
 
   @override
   String get pathfinderHelp_how =>

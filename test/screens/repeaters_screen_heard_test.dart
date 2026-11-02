@@ -144,6 +144,8 @@ void main() {
     expect(radio.contacts.single.isFavorite, isTrue);
     expect(radio.allContacts, hasLength(1));
     expect(find.text('Hilltop'), findsOneWidget);
+    // The route write's cache save.
+    await tester.pump(const Duration(seconds: 11));
   });
 
   testWidgets('one only heard offers no share by advert', (tester) async {
