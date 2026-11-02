@@ -167,6 +167,16 @@ Creative Commons Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 ''',
     );
+    yield const LicenseEntryWithLineBreaks(
+      <String>['GeoNames'],
+      '''
+The town names and positions in the base map that comes with the app are
+from GeoNames (cities1000): https://www.geonames.org/
+
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+''',
+    );
   });
 }
 
