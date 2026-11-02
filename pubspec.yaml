@@ -70,6 +70,10 @@ dependencies:
   material_symbols_icons: ^4.2906.0
   web: ^1.1.1
   flutter_svg: ^2.0.10+1
+  # Both already came in with flutter_svg. path_parsing reads drawings in
+  # messages; vector_graphics_compiler reads SVG files you paste yourself.
+  path_parsing: ^1.1.0
+  vector_graphics_compiler: ^1.1.0
   flutter_blue_plus_platform_interface: ^8.2.1
 
   file_selector: ^1.1.0
