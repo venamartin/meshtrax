@@ -1,7 +1,8 @@
-"""The world base map's layers (traxmapmaker SCHEMA.md "World base map"):
-Natural Earth at z0-5, bundled in assets/world/, drawn up to zoom 6 so the
-map isn't empty where no region pack reaches. One design, each style's
-colours. Rerun after editing it:
+"""The base map's layers (traxmapmaker SCHEMA.md "World base map"): Natural
+Earth plus GeoNames towns, bundled in assets/world/. It is drawn at every
+zoom where no region pack reaches, stretched past its own data, so the map
+is never empty: traxmap's GapFillProvider leaves out each tile a region pack
+has. One design, each style's colours. Rerun after editing it:
 
     python3 tool/make_world_layers.py assets/styles
     python3 tool/make_dark_variants.py assets/styles
@@ -13,9 +14,13 @@ and make_styles.py adds them to the OSM styles itself.
 import json
 import sys
 
-# Region packs start at zoom 6.
-MAXZOOM = 6
-SOURCE = {"type": "vector", "url": "pmtiles://{pack:world}", "attribution": "Made with Natural Earth"}
+SOURCE = {"type": "vector", "url": "pmtiles://{pack:world}",
+          "attribution": "Made with Natural Earth; © GeoNames (CC BY 4.0)"}
+
+# Under charts the base map isn't masked: chart coverage is opaque where it
+# draws, and the base map's towns show beside it. False stops the base map
+# at zoom 6 there instead, where chart packs start.
+CHARTS_UNDER = True
 
 PALETTES = {
     "osm-light": dict(water="#a9d4f5", ice="#f7fafc", urban="#e8e2da", river="#8cc3ee", country="#9b88b8",
@@ -45,13 +50,14 @@ def cls(*names):
     return ["match", ["get", "class"], list(names), True, False]
 
 
-def layer(id_, type_, source_layer, paint, filter_=None, minzoom=None, layout=None):
+def layer(id_, type_, source_layer, paint, filter_=None, minzoom=None, layout=None, maxzoom=None):
     out = {"id": id_, "type": type_, "source": "world", "source-layer": source_layer}
     if filter_ is not None:
         out["filter"] = filter_
     if minzoom is not None:
         out["minzoom"] = minzoom
-    out["maxzoom"] = MAXZOOM
+    if maxzoom is not None:
+        out["maxzoom"] = maxzoom
     if layout:
         out["layout"] = layout
     out["paint"] = paint
@@ -69,44 +75,63 @@ def label(P, color, size, font=REG, width=8, **layout):
 def layers(style_id):
     """(fills and lines for under the map, labels for above it)."""
     P = PALETTES[style_id]
+    # Chart packs start at zoom 6, where the base map stops unless it's drawn
+    # under them (CHARTS_UNDER).
+    stop = 6 if style_id.startswith("charts") and not CHARTS_UNDER else None
+    layer_ = lambda *args, **kwargs: layer(*args, **kwargs, maxzoom=stop)
     zoom = lambda *stops: ["interpolate", ["linear"], ["zoom"], *stops]
     land = ["==", ["get", "maritime"], 0]
+    rank = ["get", "rank"]
     under = [
-        layer("world-urban", "fill", "landuse", {"fill-color": P["urban"]}, cls("residential"), 4),
-        layer("world-ice", "fill", "landcover", {"fill-color": P["ice"]}, cls("ice")),
-        layer("world-water", "fill", "water", {"fill-color": P["water"]}),
-        layer("world-river", "line", "waterway", {"line-color": P["river"], "line-width": zoom(3, 0.4, 6, 1)}),
-        layer("world-state", "line", "boundary",
-              {"line-color": P["state"], "line-width": zoom(3, 0.5, 6, 0.9), "line-dasharray": [3, 2]},
-              ["all", ["==", ["get", "admin_level"], 4], land], 3),
-        layer("world-country", "line", "boundary",
-              {"line-color": P["country"], "line-width": zoom(1, 0.6, 6, 1.4),
-               "line-dasharray": ["case", ["==", ["get", "disputed"], 1], ["literal", [3, 2]],
-                                  ["literal", [1, 0]]]},
-              ["all", ["==", ["get", "admin_level"], 2], land]),
-        layer("world-road", "line", "transportation",
-              {"line-color": P["road"], "line-width": zoom(4, 0.5, 6, 1.2)},
-              cls("motorway", "trunk", "primary"), 4),
+        layer_("world-urban", "fill", "landuse", {"fill-color": P["urban"]}, cls("residential"), 4),
+        layer_("world-ice", "fill", "landcover", {"fill-color": P["ice"]}, cls("ice")),
+        layer_("world-water", "fill", "water", {"fill-color": P["water"]}),
+        layer_("world-river", "line", "waterway",
+               {"line-color": P["river"], "line-width": zoom(3, 0.4, 6, 1, 10, 1.6)}),
+        layer_("world-state", "line", "boundary",
+               {"line-color": P["state"], "line-width": zoom(3, 0.5, 6, 0.9, 10, 1.3), "line-dasharray": [3, 2]},
+               ["all", ["==", ["get", "admin_level"], 4], land], 3),
+        layer_("world-country", "line", "boundary",
+               {"line-color": P["country"], "line-width": zoom(1, 0.6, 6, 1.4, 10, 2),
+                "line-dasharray": ["case", ["==", ["get", "disputed"], 1], ["literal", [3, 2]],
+                                   ["literal", [1, 0]]]},
+               ["all", ["==", ["get", "admin_level"], 2], land]),
+        layer_("world-road", "line", "transportation",
+               {"line-color": P["road"], "line-width": zoom(4, 0.5, 6, 1.2, 10, 2.2)},
+               cls("motorway", "trunk", "primary"), 4),
     ]
     sea_layout, sea_paint = label(P, P["water_label"], zoom(1, 10, 6, 12), ITA, 10,
                                   **{"text-letter-spacing": 0.1})
     state_layout, state_paint = label(P, P["label"], 10, width=14, **{"text-transform": "uppercase",
                                                                        "text-letter-spacing": 0.08})
     city_layout, city_paint = label(
-        P, P["place"], ["case", ["==", ["get", "capital"], 2], 12, ["<=", ["get", "rank"], 3], 11.5, 10.5],
+        P, P["place"], ["case", ["==", ["get", "capital"], 2], 12, ["<=", rank, 3], 11.5, 10.5],
         **{"text-variable-anchor": ["left", "right", "top", "bottom"], "text-radial-offset": 0.45})
     country_layout, country_paint = label(
-        P, P["country"], ["step", ["get", "rank"], 15, 3, 13, 5, 11], MED, 12,
+        P, P["country"], ["step", rank, 15, 3, 13, 5, 11], MED, 12,
         **{"text-transform": "uppercase", "text-letter-spacing": 0.05})
+    # GeoNames towns (rank 10-13 for 100,000, 25,000, 5,000 and 1,000 people,
+    # below Natural Earth's 1-9) are names alone, centred on the town: a dot
+    # can't hide with its name, and thousands of unnamed dots would crowd the
+    # map. Each tier waits for its zoom however deep the data goes.
+    town = lambda r: ["all", cls("town"), ["==", rank, r]]
+    big_layout, big_paint = label(P, P["place"], 10.5)
+    mid_layout, mid_paint = label(P, P["place"], 10)
+    small_layout, small_paint = label(P, P["label"], 9.5)
+    natural_earth = ["all", cls("city", "town"), ["<=", rank, 9]]
     labels = [
-        layer("world-sea-name", "symbol", "water_name", sea_paint, layout=sea_layout),
-        layer("world-state-label", "symbol", "place", state_paint, cls("state"), 4, state_layout),
+        layer_("world-sea-name", "symbol", "water_name", sea_paint, layout=sea_layout),
+        layer_("world-state-label", "symbol", "place", state_paint, cls("state"), 4, state_layout),
+        layer_("world-town-13", "symbol", "place", small_paint, town(13), 9, small_layout),
+        layer_("world-town-12", "symbol", "place", mid_paint, town(12), 8, mid_layout),
+        layer_("world-town-11", "symbol", "place", mid_paint, town(11), 7, mid_layout),
+        layer_("world-town-10", "symbol", "place", big_paint, town(10), 6, big_layout),
         # The city's position, which its label sits beside.
-        layer("world-city-dot", "circle", "place",
-              {"circle-radius": 2, "circle-color": P["place"], "circle-stroke-color": P["halo"],
-               "circle-stroke-width": 0.8}, cls("city", "town")),
-        layer("world-city", "symbol", "place", city_paint, cls("city", "town"), layout=city_layout),
-        layer("world-country-label", "symbol", "place", country_paint, cls("country"), layout=country_layout),
+        layer_("world-city-dot", "circle", "place",
+               {"circle-radius": 2, "circle-color": P["place"], "circle-stroke-color": P["halo"],
+                "circle-stroke-width": 0.8}, natural_earth),
+        layer_("world-city", "symbol", "place", city_paint, natural_earth, layout=city_layout),
+        layer_("world-country-label", "symbol", "place", country_paint, cls("country"), layout=country_layout),
     ]
     return under, labels
 
@@ -114,7 +139,8 @@ def layers(style_id):
 def add_to(style, style_id):
     """Puts the world source and layers into a style, replacing earlier ones:
     fills after the background, labels before the first symbol layer."""
-    style["sources"] = {**style["sources"], "world": SOURCE}
+    under_charts = style_id.startswith("charts") and CHARTS_UNDER
+    style["sources"] = {**style["sources"], "world": {**SOURCE, "ovm:mask": False} if under_charts else SOURCE}
     under, labels = layers(style_id)
     rest = [l for l in style["layers"] if not l["id"].startswith("world-")]
     at = next(i for i, l in enumerate(rest) if l["type"] == "background") + 1

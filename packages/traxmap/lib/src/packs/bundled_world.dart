@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -10,24 +11,23 @@ import 'pack_manager.dart';
 /// The world base map bundled with this package (`assets/world/`), copied
 /// into [dir] so it reads like any pack (PMTiles needs a file).
 ///
-/// The copy is named after the bundled file's header, directories and
-/// metadata (the first 16 kB, where a rebuild changes its build date), so an
-/// app update writes a new file rather than replacing one a map may have
-/// open, which Windows refuses. Older copies are removed when they can be.
+/// The copy is named after the bundled file's id (`assets/world/world.id`,
+/// see [worldIdOf]), so an app update writes a new file rather than
+/// replacing one a map may have open, which Windows refuses, and a start
+/// that finds its copy doesn't read the bundled map at all. Older copies are
+/// removed when they can be.
 Future<Pack> openBundledWorld(Directory dir, {AssetBundle? bundle}) async {
-  final bytes = await _load(bundle ?? rootBundle);
-  final head = bytes.sublist(0, bytes.length < 16384 ? bytes.length : 16384);
-  // The length too, for files that share their first 16 kB.
-  final id = sha256
-      .convert([...head, ...'${bytes.length}'.codeUnits])
-      .toString()
-      .substring(0, 12);
+  bundle ??= rootBundle;
+  final id = utf8.decode(_bytes(await _load(bundle, 'world.id'))).trim();
   final name = 'world@$id.pmtiles';
   final file = File('${dir.path}/$name');
   if (!await file.exists()) {
     await dir.create(recursive: true);
     final tmp = File('${file.path}.tmp');
-    await tmp.writeAsBytes(bytes, flush: true);
+    await tmp.writeAsBytes(
+      _bytes(await _load(bundle, 'world.pmtiles')),
+      flush: true,
+    );
     await tmp.rename(file.path);
   }
   // By name: Windows lists `C:\app/maps` with `\`, so paths don't compare.
@@ -44,19 +44,34 @@ Future<Pack> openBundledWorld(Directory dir, {AssetBundle? bundle}) async {
   return PackManager.open(file);
 }
 
+/// The id `assets/world/world.id` holds for the bundled map [bytes]: a hash
+/// of its first 16 kB (header, directories and metadata, where a rebuild
+/// changes its build date) and its length. Rewrite that file whenever the
+/// map is replaced; bundled_world_test says if it's stale, and with what.
+String worldIdOf(Uint8List bytes) {
+  final head = bytes.sublist(0, bytes.length < 16384 ? bytes.length : 16384);
+  // The length too, for files that share their first 16 kB.
+  return sha256
+      .convert([...head, ...'${bytes.length}'.codeUnits])
+      .toString()
+      .substring(0, 12);
+}
+
 /// Apps see package assets under `packages/traxmap/`; the package's own
 /// tests see them at the bare path.
-Future<Uint8List> _load(AssetBundle bundle) async {
+Future<ByteData> _load(AssetBundle bundle, String name) async {
   for (final path in [
-    'packages/traxmap/assets/world/world.pmtiles',
-    'assets/world/world.pmtiles',
+    'packages/traxmap/assets/world/$name',
+    'assets/world/$name',
   ]) {
     try {
-      final data = await bundle.load(path);
-      return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      return await bundle.load(path);
     } on FlutterError {
       continue;
     }
   }
-  throw StateError('world.pmtiles is not bundled');
+  throw StateError('$name is not bundled');
 }
+
+Uint8List _bytes(ByteData data) =>
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
