@@ -173,6 +173,36 @@ void main() {
       expect(wire(), 'SVG:M0 50h99M50 0v99');
     });
 
+    testWidgets('every tool shows in full, even on a small phone', (tester) async {
+      await open(tester);
+      for (final width in [411.0, 360.0]) {
+        tester.view.physicalSize = Size(width * 3, 2400);
+        tester.view.devicePixelRatio = 3;
+        await tester.pumpAndSettle();
+        final rects = [
+          for (final tool in ['Pen', 'Line', 'Rectangle', 'Circle', 'Ellipse', 'Arrow'])
+            tester.getRect(find.byTooltip(tool)),
+        ];
+        for (var i = 0; i < rects.length; i++) {
+          expect(rects[i].left, greaterThanOrEqualTo(16), reason: '$width $i');
+          expect(rects[i].right, lessThanOrEqualTo(width - 16), reason: '$width $i');
+          if (i > 0) expect(rects[i].left, greaterThanOrEqualTo(rects[i - 1].right - 1));
+        }
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('the ellipse tool draws an ellipse', (tester) async {
+      final wire = await open(tester);
+      await tester.tap(find.byTooltip('Ellipse'));
+      await tester.pump();
+      await drag(tester, [const Offset(0.2, 0.3), const Offset(0.8, 0.6)]);
+      await tester.tap(find.text('Insert'));
+      await tester.pumpAndSettle();
+      final m = StructuredMessage.parse(wire()!) as SvgMessage;
+      expect(m.drawing.pathData, matches(RegExp(r'^M99 \d+a50 \d+ 0 1 1 0-\.1z$')));
+    });
+
     testWidgets('it fits a phone with the keyboard open', (tester) async {
       await open(tester);
       tester.view.viewInsets = const FakeViewPadding(bottom: 800);

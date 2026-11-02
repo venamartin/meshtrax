@@ -191,51 +191,23 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
 
   Widget _tools() {
     final l10n = context.l10n;
-    return Row(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<_Tool>(
-              showSelectedIcon: false,
-              style: const ButtonStyle(visualDensity: VisualDensity.compact),
-              segments: [
-                for (final (tool, icon, label) in [
-                  (_Tool.pen, Icons.gesture, l10n.drawing_toolPen),
-                  (_Tool.line, Icons.horizontal_rule, l10n.drawing_toolLine),
-                  (_Tool.rect, Icons.crop_square, l10n.drawing_toolRect),
-                  (_Tool.circle, Icons.circle_outlined, l10n.drawing_toolCircle),
-                  (_Tool.ellipse, Icons.egg_outlined, l10n.drawing_toolEllipse),
-                  (_Tool.arrow, Icons.arrow_right_alt, l10n.drawing_toolArrow),
-                ])
-                  ButtonSegment(value: tool, icon: Icon(icon), tooltip: label),
-              ],
-              selected: {_tool},
-              onSelectionChanged: (s) => setState(() => _tool = s.first),
-            ),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.undo),
-          tooltip: l10n.drawing_undo,
-          onPressed: _items.isEmpty
-              ? null
-              : () {
-                  _items.removeLast();
-                  _refit();
-                },
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          tooltip: l10n.common_clear,
-          onPressed: _items.isEmpty
-              ? null
-              : () {
-                  _items.clear();
-                  _refit();
-                },
-        ),
+    return SegmentedButton<_Tool>(
+      showSelectedIcon: false,
+      expandedInsets: EdgeInsets.zero,
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      segments: [
+        for (final (tool, icon, label) in [
+          (_Tool.pen, const Icon(Icons.gesture), l10n.drawing_toolPen),
+          (_Tool.line, const Icon(Icons.horizontal_rule), l10n.drawing_toolLine),
+          (_Tool.rect, const Icon(Icons.crop_square), l10n.drawing_toolRect),
+          (_Tool.circle, const Icon(Icons.circle_outlined), l10n.drawing_toolCircle),
+          (_Tool.ellipse, const _OvalIcon(), l10n.drawing_toolEllipse),
+          (_Tool.arrow, const Icon(Icons.arrow_right_alt), l10n.drawing_toolArrow),
+        ])
+          ButtonSegment(value: tool, icon: icon, tooltip: label),
       ],
+      selected: {_tool},
+      onSelectionChanged: (s) => setState(() => _tool = s.first),
     );
   }
 
@@ -316,6 +288,28 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
       appBar: AppBar(
         title: AdaptiveAppBarTitle(l10n.tray_drawing),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: l10n.drawing_undo,
+            onPressed: _items.isEmpty
+                ? null
+                : () {
+                    _items.removeLast();
+                    _refit();
+                  },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: l10n.common_clear,
+            onPressed: _items.isEmpty
+                ? null
+                : () {
+                    _items.clear();
+                    _refit();
+                  },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           tabs: [
@@ -334,9 +328,11 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
               if (_tabs.index == 0) _tools() else _pastePanel(),
               const SizedBox(height: 12),
               // Not in a scroll view: a drag on the pad must draw, not
-              // scroll.
-              Expanded(
-                child: Center(
+              // scroll. Its 4:3 is the card's shape; the keyboard shrinks it.
+              Flexible(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: 1,
                   child: AspectRatio(
                     aspectRatio: _pad.width / _pad.height,
                     child: LayoutBuilder(
@@ -389,6 +385,35 @@ class _DrawingComposeScreenState extends State<DrawingComposeScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// An ellipse outline the size and color of the icons around it. Neither
+/// icon set has one; its egg reads as a teardrop.
+class _OvalIcon extends StatelessWidget {
+  const _OvalIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = IconTheme.of(context);
+    final size = theme.size ?? 24;
+    return SizedBox.square(
+      dimension: size,
+      child: Center(
+        child: Container(
+          width: size * 0.92,
+          height: size * 0.6,
+          decoration: ShapeDecoration(
+            shape: OvalBorder(
+              side: BorderSide(
+                color: theme.color ?? Theme.of(context).colorScheme.onSurface,
+                width: size / 12,
+              ),
+            ),
           ),
         ),
       ),
