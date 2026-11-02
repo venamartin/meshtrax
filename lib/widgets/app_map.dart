@@ -293,13 +293,10 @@ class _NoOfflineMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final maps = context.watch<MapPacksService>();
-    final units = context.select<AppSettingsService, UnitSystem>(
-      (s) => s.settings.unitSystem,
-    );
     final region = regionPath == null ? null : maps.regions?[regionPath!];
     final packs = region == null
         ? const <PackIndexEntry>[]
-        : maps.defaultSelection(region.path, units);
+        : maps.defaultSelection(region.path);
     final size = packs.fold(0, (sum, e) => sum + e.bytes);
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 400),

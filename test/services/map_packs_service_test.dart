@@ -378,22 +378,25 @@ void main() {
     expect(maps.index!.packs, hasLength(9));
   });
 
-  test('default selection: the map and the contours for the units', () async {
+  test('default selection: the map alone; contours follow the units', () async {
     final maps = service();
     await maps.start();
     await maps.refresh();
-    expect(maps.defaultSelection(_ri, UnitSystem.imperial).map((e) => e.id), [
+    expect(maps.defaultSelection(_ri).map((e) => e.id), [
       'us-rhode-island-osm',
-      'us-rhode-island-contours-20ft',
     ]);
     expect(
-      maps.defaultSelection(_ri, UnitSystem.metric).last.id,
+      maps.preferredContours(_ri, UnitSystem.imperial)?.id,
+      'us-rhode-island-contours-20ft',
+    );
+    expect(
+      maps.preferredContours(_ri, UnitSystem.metric)?.id,
       'us-rhode-island-contours-10m',
     );
     expect(maps.packsForRegion(_ri), hasLength(4));
   });
 
-  test('default selection adds hill shading where a region has it', () async {
+  test('hill shading is opt-in too', () async {
     final index = jsonDecode(_index) as Map<String, Object?>;
     final packs = (index['packs']! as List).cast<Map<String, Object?>>();
     final usgs = packs.firstWhere((p) => p['id'] == 'us-rhode-island');
@@ -410,10 +413,12 @@ void main() {
     final maps = service();
     await maps.start();
     await maps.refresh();
-    expect(maps.defaultSelection(_ri, UnitSystem.imperial).map((e) => e.id), [
+    expect(
+      maps.packsForRegion(_ri).map((e) => e.id),
+      contains('us-rhode-island-terrain'),
+    );
+    expect(maps.defaultSelection(_ri).map((e) => e.id), [
       'us-rhode-island-osm',
-      'us-rhode-island-contours-20ft',
-      'us-rhode-island-terrain',
     ]);
   });
 
@@ -443,7 +448,10 @@ void main() {
     await maps.openWorld();
     expect(maps.world?.kind, PackKind.world);
     expect(
-      [for (final p in maps.mapPacks(contours: true, hillShading: true)) p.kind],
+      [
+        for (final p in maps.mapPacks(contours: true, hillShading: true))
+          p.kind,
+      ],
       [PackKind.world],
     );
   });

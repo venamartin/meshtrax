@@ -146,8 +146,8 @@ void main() {
     await tester.tap(find.textContaining('United States'));
     await tester.pumpAndSettle();
     expect(find.text('Regions in United States of America'), findsOneWidget);
-    // Map 34.1 MB + metric contours 1.0 MB (the default units).
-    expect(find.textContaining('Rhode Island  35 MB'), findsOneWidget);
+    // The map alone, 34.1 MB: contours and hill shading are opt-in.
+    expect(find.textContaining('Rhode Island  34 MB'), findsOneWidget);
     expect(find.textContaining('California  2 inside'), findsOneWidget);
 
     await tester.tap(find.textContaining('Rhode Island'));
@@ -158,22 +158,19 @@ void main() {
       find.text('North America › United States of America'),
       findsOneWidget,
     );
-    expect(find.text('Download 35 MB'), findsOneWidget);
+    expect(find.text('Download 34 MB'), findsOneWidget);
 
-    await tester.tap(find.text('Download 35 MB'));
+    await tester.tap(find.text('Download 34 MB'));
     // Queued rows show an indeterminate bar, which never settles.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(downloader.started, [
-      'us-rhode-island-osm',
-      'us-rhode-island-contours-10m',
-    ]);
-    expect(find.text('Waiting…'), findsNWidgets(2));
+    expect(downloader.started, ['us-rhode-island-osm']);
+    expect(find.text('Waiting…'), findsOneWidget);
 
     // Back to the list.
     await tester.tap(find.text('United States of America'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Rhode Island  35 MB'), findsOneWidget);
+    expect(find.textContaining('Rhode Island  34 MB'), findsOneWidget);
   });
 
   testWidgets('wide: one column, the detail in place of the list', (
@@ -204,10 +201,10 @@ void main() {
       region: 'north-america/us/rhode-island',
     );
     expect(find.text('Rhode Island'), findsOneWidget);
-    expect(find.text('Download 35 MB'), findsOneWidget);
+    expect(find.text('Download 34 MB'), findsOneWidget);
   });
 
-  testWidgets('hill shading is offered and ticked where a region has it', (
+  testWidgets('hill shading is offered, not ticked, where a region has it', (
     tester,
   ) async {
     final index = jsonDecode(_index) as Map<String, Object?>;
@@ -233,8 +230,8 @@ void main() {
       find.text('Hills and mountains, shaded under the map'),
       findsOneWidget,
     );
-    // Map 34.1 MB + metric contours 1.0 MB + hill shading 2.0 MB.
-    expect(find.text('Download 37 MB'), findsOneWidget);
+    // The map alone (34.1 MB): hill shading (2.0 MB) is opt-in.
+    expect(find.text('Download 34 MB'), findsOneWidget);
   });
 
   testWidgets('Downloaded is empty until something is installed', (

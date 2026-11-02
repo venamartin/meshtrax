@@ -147,7 +147,13 @@ class MapPacksService extends ChangeNotifier {
       final tiles = Directory('${temp.path}/map_tile_cache');
       if (await tiles.exists()) await tiles.delete(recursive: true);
       // The index: SQLite on Android, iOS and macOS, else JSON.
-      for (final suffix in const ['db', 'db-journal', 'db-wal', 'db-shm', 'json']) {
+      for (final suffix in const [
+        'db',
+        'db-journal',
+        'db-wal',
+        'db-shm',
+        'json',
+      ]) {
         final file = File('${support.path}/map_tile_cache.$suffix');
         if (await file.exists()) await file.delete();
       }
@@ -495,22 +501,20 @@ class MapPacksService extends ChangeNotifier {
   List<PackIndexEntry> packsForRegion(String path) =>
       _index?.forRegion(path) ?? const [];
 
-  /// The packs a region's Download button starts with: the map, the
-  /// contours variant for [units] (or the first one) and hill shading.
-  /// USGS is opt-in.
-  List<PackIndexEntry> defaultSelection(String path, UnitSystem units) {
-    final packs = packsForRegion(path);
-    final contours = packs.where((e) => e.kind == PackKind.contours).toList();
+  /// The packs a region's Download button starts with: the map alone.
+  /// Contours, hill shading and USGS are opt-in (Martin, 2026-11-02).
+  List<PackIndexEntry> defaultSelection(String path) => [
+    ...packsForRegion(path).where((e) => e.kind == PackKind.osm),
+  ];
+
+  /// The region's contours in [units], else its first contours; null where
+  /// it has none.
+  PackIndexEntry? preferredContours(String path, UnitSystem units) {
+    final contours = packsForRegion(path)
+        .where((e) => e.kind == PackKind.contours);
     final wanted = Units.parse(units.value);
-    return [
-      ...packs.where((e) => e.kind == PackKind.osm),
-      if (contours.isNotEmpty)
-        contours.firstWhere(
-          (e) => e.units == wanted,
-          orElse: () => contours.first,
-        ),
-      ...packs.where((e) => e.kind == PackKind.terrain),
-    ];
+    return contours.where((e) => e.units == wanted).firstOrNull ??
+        contours.firstOrNull;
   }
 
   /// The installed pack with [id], if any.
