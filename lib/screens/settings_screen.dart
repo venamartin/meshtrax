@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadVersionInfo();
     if (widget.openHealthCheck) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openHealthCheck(context);
+        if (mounted) _openHealthCheck(context, thenLeave: true);
       });
     }
   }
@@ -327,13 +327,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _openHealthCheck(BuildContext context) {
-    Navigator.push(
+  /// [thenLeave]: run by itself after the first sync, so finishing returns to
+  /// the screen it was offered on, not to Settings (owner, 2026-11-02).
+  Future<void> _openHealthCheck(
+    BuildContext context, {
+    bool thenLeave = false,
+  }) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => HealthCheckScreen(openDialog: _openHealthDialog),
       ),
     );
+    if (!thenLeave || !context.mounted) return;
+    // Removed while the check slides away, so Settings is never seen.
+    final route = ModalRoute.of(context);
+    if (route != null) Navigator.of(context).removeRoute(route);
   }
 
   Future<void> _openHealthDialog(BuildContext context, HealthDialog dialog) {
