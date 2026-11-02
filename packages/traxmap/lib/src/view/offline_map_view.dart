@@ -65,23 +65,14 @@ class OfflineMapView extends StatefulWidget {
   final MapLabelStyle labelStyle;
 
   /// Escape hatch: extra flutter_map 8.x layer widgets, drawn above
-  /// everything else (e.g. layers not yet ported to [MapOverlay]s). This and
-  /// [baseLayers] are the only parts of the API tied to flutter_map.
+  /// everything else (e.g. layers not yet ported to [MapOverlay]s). This is
+  /// the only part of the API tied to flutter_map.
   final List<Widget> extraLayers;
-
-  /// flutter_map 8.x layers drawn above the map's own tiles and below the
-  /// overlays: e.g. online raster tiles in the gaps [onTileCoverage]
-  /// reports.
-  final List<Widget> baseLayers;
 
   /// Whether the style's required packs ([StyleInfo.requiredKinds]) have a
   /// tile at the view centre, reported when the camera settles and only
   /// when it changes. False below a pack's lowest zoom, and with no packs.
   final ValueChanged<bool>? onCoverageChanged;
-
-  /// The tiles the style's required packs draw, whenever the style or the
-  /// packs change: [TileCoverage.covers] lets [baseLayers] skip them.
-  final ValueChanged<TileCoverage>? onTileCoverage;
 
   final ValueChanged<MapCamera>? onCameraChanged;
 
@@ -117,9 +108,7 @@ class OfflineMapView extends StatefulWidget {
     this.overlays = const [],
     this.labelStyle = const MapLabelStyle(),
     this.extraLayers = const [],
-    this.baseLayers = const [],
     this.onCoverageChanged,
-    this.onTileCoverage,
     this.onCameraChanged,
     this.onTap,
     this.onLongPress,
@@ -259,11 +248,9 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       overlays: widget.overlays,
       labelStyle: widget.labelStyle,
       extraLayers: widget.extraLayers,
-      baseLayers: widget.baseLayers,
       coverageSources: _coverageSources,
       fillSources: _fillSources,
       onCoverageChanged: widget.onCoverageChanged,
-      onTileCoverage: widget.onTileCoverage,
       onCameraChanged: _onCamera,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,

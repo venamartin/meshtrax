@@ -39,10 +39,6 @@ class FlutterMapRenderer extends StatefulWidget {
   final MapLabelStyle labelStyle;
   final List<Widget> extraLayers;
 
-  /// Raw flutter_map layers drawn above the vector tiles and below the
-  /// overlays, e.g. online raster tiles where no pack covers the view.
-  final List<Widget> baseLayers;
-
   /// Style sources whose tiles count as "the map is covered here".
   final Set<String> coverageSources;
 
@@ -54,9 +50,6 @@ class FlutterMapRenderer extends StatefulWidget {
   /// at the view centre. Called only when the answer changes.
   final ValueChanged<bool>? onCoverageChanged;
 
-  /// Called with the tiles [coverageSources] draw whenever they change (a
-  /// new style or set of packs), for drawing other tiles only in the gaps.
-  final ValueChanged<TileCoverage>? onTileCoverage;
   final OfflineMapController? controller;
   final ValueChanged<MapCamera>? onCameraChanged;
   final ValueChanged<LatLng>? onTap;
@@ -81,11 +74,9 @@ class FlutterMapRenderer extends StatefulWidget {
     this.overlays = const [],
     this.labelStyle = const MapLabelStyle(),
     this.extraLayers = const [],
-    this.baseLayers = const [],
     this.coverageSources = const {},
     this.fillSources = const {},
     this.onCoverageChanged,
-    this.onTileCoverage,
     this.controller,
     this.onCameraChanged,
     this.onTap,
@@ -215,18 +206,9 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   }
 
   void _updateCoverage() {
-    final coverage = _coverage = TileCoverage([
+    _coverage = TileCoverage([
       for (final source in widget.coverageSources) ?_local[source],
     ]);
-    // After the frame: listeners usually call setState, and this can run
-    // while the tree builds (a style without packs loads synchronously).
-    WidgetsBinding.instance
-      ..addPostFrameCallback((_) {
-        if (mounted && identical(coverage, _coverage)) {
-          widget.onTileCoverage?.call(coverage);
-        }
-      })
-      ..ensureVisualUpdate();
     _scheduleCoverage();
   }
 
@@ -422,7 +404,6 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
             );
           },
         ),
-        ...widget.baseLayers,
         if (o.passivePolygons.isNotEmpty)
           fm.PolygonLayer(polygons: o.passivePolygons),
         if (o.activePolygons.isNotEmpty)
@@ -624,8 +605,8 @@ class _MarkerLabelLayer extends StatelessWidget {
   }
 }
 
-/// The web map tiles a map's packs draw, so an app can draw other tiles
-/// (online ones, say) only in the gaps.
+/// The web map tiles a map's required packs draw: whether the view is
+/// covered ([FlutterMapRenderer.onCoverageChanged]).
 class TileCoverage {
   final List<CompositePmTilesProvider> _sources;
 
