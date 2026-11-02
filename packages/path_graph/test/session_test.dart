@@ -287,7 +287,8 @@ void main() {
     source.reportSendResult(path, false);
     source.reportSendResult(path, false);
     final live = source.snapshot().edges[('A277', '1312')]!;
-    expect(live.failWeight, 2);
+    // Fading starts at once: a fraction of a millisecond passes before this.
+    expect(live.failWeight, closeTo(2, 1e-6));
     expect(live.n - live.s, 2);
     final doc = source.saveSession();
     await source.dispose();
@@ -302,7 +303,7 @@ void main() {
     await old.init();
     await old.loadSession(doc);
     final edge = old.snapshot().edges[('A277', '1312')]!;
-    expect(edge.failWeight, 2);
+    expect(edge.failWeight, closeTo(2, 1e-6));
     expect(edge.lastFailed, live.lastObserved);
     await old.dispose();
   });
