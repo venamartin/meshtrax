@@ -125,6 +125,12 @@ flutter run -d linux
 
 ---
 
+## Documentation
+
+[docs/](docs/README.md) has plain guides to Pathfinder and offline maps, a glossary of mesh terms, and the detailed technical material for contributors.
+
+---
+
 ## Privacy & Terms
 
 - [Privacy Policy](docs/privacy.md)

@@ -8,7 +8,7 @@ const String kMapTileUrlTemplate =
 
 /// Online OpenStreetMap tiles, loaded on demand and kept in a disk cache of
 /// the tiles already viewed. Where an offline map pack is installed the app
-/// draws that instead (docs/offline-maps.md). Bulk downloading of these
+/// draws that instead (docs/technical/offline-maps-notes.md). Bulk downloading of these
 /// tiles is against OSM's tile policy, so there is none.
 class MapTileCacheService {
   static const String cacheKey = 'map_tile_cache';

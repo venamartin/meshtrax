@@ -3,7 +3,7 @@
 // (yet) in the app. At Phase 3 this file's parsers migrate into the
 // connector unchanged. Wire layouts verified against MeshCore firmware
 // (Packet.h, AdvertDataHelpers.h, simple_repeater/MyMesh.cpp) and
-// docs/meshcore-protocol.md.
+// docs/technical/meshcore-protocol.md.
 
 import 'dart:convert';
 import 'dart:typed_data';

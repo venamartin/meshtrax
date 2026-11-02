@@ -43,7 +43,7 @@ bool mapIsOnline(AppSettings settings, MapPacksService maps) =>
 ///
 /// The map, contours and light/dark come from the user's settings (in
 /// Offline mode; Online it's the standard light map) unless a screen
-/// overrides them. See docs/offline-maps-roadmap.md, "App architecture".
+/// overrides them. See docs/technical/offline-maps-roadmap.md, "App architecture".
 class AppMap extends StatefulWidget {
   final List<MapOverlay> overlays;
   final OfflineMapController? controller;

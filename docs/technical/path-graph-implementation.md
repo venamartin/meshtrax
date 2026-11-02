@@ -1,7 +1,15 @@
 # Path Graph Module — Implementation Plan
 
+> **What this is:** The original step-by-step build plan for Pathfinder, written in August 2026 before any of its code was merged.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** finished record. What was actually built, and what changed on the way, is in [path-graph-design.md](path-graph-design.md).
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 Status: plan approved pending review — no code yet.
-Design reference: `docs/path-graph-design.md` (design complete, all
+Design reference: `docs/technical/path-graph-design.md` (design complete, all
 questions resolved).
 Created: 2026-08-05.
 

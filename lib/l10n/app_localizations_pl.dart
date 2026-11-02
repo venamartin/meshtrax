@@ -4023,7 +4023,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get pathfinderHelp_what =>
-      'Twoje radio pamięta jedną trasę do każdego kontaktu, a gdy ta trasa zawiedzie, wysyła wiadomość zalewem do całej sieci. Pathfinder słucha wszystkiego, co słyszy radio: rozgłoszeń przekaźników, rozmów na kanałach, wiadomości innych osób. Na tej podstawie buduje mapę: które przekaźniki słyszą się nawzajem, które słyszą Ciebie, a które każdego z Twoich kontaktów.';
+      'Twoje radio pamięta jedną trasę do każdego kontaktu. Gdy wiadomość na tej trasie zawiedzie, MeshTrax wysyła ją zamiast tego zalewem do całej sieci. Pathfinder słucha wszystkiego, co słyszy radio: rozgłoszeń przekaźników, rozmów na kanałach, wiadomości innych osób. Na tej podstawie buduje mapę: które przekaźniki słyszą się nawzajem, które słyszą Ciebie, a które każdego z Twoich kontaktów.';
 
   @override
   String get pathfinderHelp_how =>

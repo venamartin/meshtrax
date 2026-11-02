@@ -1,5 +1,13 @@
 # Weighted Graph Path Determination Module for DMs
 
+> **What this is:** The full design record for Pathfinder, the feature that learns routes for private messages (plain explainer: [pathfinder.md](../pathfinder.md)). It holds the decisions, the rules for what counts as proof that a link works, and how each decision was reached.
+>
+> **Who it's for:** developers working on MeshTrax.
+>
+> **Status:** live. Pathfinder has shipped and this file is still updated as it changes; the status lines just below date from its early days.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 Status: **implementation underway.** Start at **§ TODO — active work**
 for what happens next; everything after it is rationale, history, and
 the record of how each decision was reached.
@@ -8,7 +16,7 @@ Design complete; Phase 0 (the
 `packages/path_graph` module) and most of Phase 1 (the `test/path_lab`
 harness) are built and running against real hardware on branch
 `feat/path-graph-package` (draft PR #71, held unmerged through the
-verification campaign). See `docs/path-graph-implementation.md` for the
+verification campaign). See `docs/technical/path-graph-implementation.md` for the
 phase plan and "Implementation status" below for what exists and what
 the bench has already corrected.
 Last updated: 2026-08-05.
@@ -397,7 +405,7 @@ own view. Consequences:
   buckets; overlap essentially disappears — a 2-byte hash derived from a
   Corescope pubkey is near-unique. MeshTrax already supports variable widths
   end to end: the wire `path_len` byte encodes hash size in bits [7:6] per
-  packet (`docs/meshcore-protocol.md`), device info byte 81 (fw v10+) sets
+  packet (`docs/technical/meshcore-protocol.md`), device info byte 81 (fw v10+) sets
   `connector.pathHashByteWidth`, and every stored record
   (`Contact.pathHashSize`, `ChannelMessage.pathHashSize`) carries its width.
   Note for the 4-byte future: the path_len width field can encode up to
@@ -1093,7 +1101,7 @@ multiple region files.
 
 Branch `feat/path-graph-package`, draft **PR #71 — held unmerged**
 through the verification campaign (user directive). Phases per
-`docs/path-graph-implementation.md`.
+`docs/technical/path-graph-implementation.md`.
 
 **Phase 0 — the package: BUILT.** `packages/path_graph/` — pure Dart,
 `drift` only, injected `QueryExecutor`, compiler-enforced isolation

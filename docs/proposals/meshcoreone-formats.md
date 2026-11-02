@@ -1,5 +1,13 @@
 # Feature request: read MeshCore One replies and reactions
 
+> **What this is:** A feature request to the meshcore-open app, asking it to read the reply and reaction format that MeshCore One and MeshTrax send. The complete format is in [message-format.md](../message-format.md).
+>
+> **Who it's for:** the meshcore-open developers.
+>
+> **Status:** request text, written August 2026, updated September 2026.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 MeshCore One (iOS) sends replies and reactions as plain, human-readable text.
 Supporting them on **receive** would make reactions and reply quoting interop
 across clients — and unlike index-based encodings, these degrade gracefully:
