@@ -4734,18 +4734,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Sťahovanie mapy zlyhalo';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Vymazať uložené dlaždice online máp';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Odstrániť dlaždice online máp uložené pri prehliadaní? Stiahnuté mapy zostanú.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Uložené dlaždice online máp boli odstránené';
-
-  @override
   String get map_notForNavigation => 'Nie na navigáciu';
 
   @override
@@ -4776,17 +4764,7 @@ class AppLocalizationsSk extends AppLocalizations {
       'Na navigáciu používajte oficiálne, aktuálne mapy NOAA (papierové alebo NOAA ENC v certifikovanom plotri) s najnovšími Oznámeniami pre námorníkov.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Stiahnite región pre podrobnosti';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Priblížte, aby ste videli offline mapu';
 
   @override
   String get map_noCharts => 'Tu nie sú žiadne námorné mapy';
@@ -4872,9 +4850,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nestiahnuté';
-
-  @override
-  String get mapLayers_offlineOnly => 'Len offline';
 
   @override
   String get mapLayers_details => 'Podrobnosti mapy';

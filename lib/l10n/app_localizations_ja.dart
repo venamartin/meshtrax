@@ -4523,16 +4523,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineMaps_notificationFailed => '地図のダウンロードに失敗しました';
 
   @override
-  String get offlineMaps_clearTileCache => 'オンライン地図のキャッシュを消去';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '閲覧中に保存されたオンライン地図のタイルを削除しますか？ダウンロードした地図は残ります。';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'オンライン地図のキャッシュを削除しました';
-
-  @override
   String get map_notForNavigation => '航海用ではありません';
 
   @override
@@ -4562,16 +4552,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '航海には、公式で最新のNOAA海図（紙の海図、または認定チャートプロッターでのNOAA ENC）と、最新の水路通報を使ってください。';
 
   @override
-  String get map_sourceOnline => 'オンライン';
-
-  @override
-  String get map_sourceOffline => 'オフライン';
-
-  @override
   String get map_downloadForDetail => '詳細を見るには地域をダウンロード';
-
-  @override
-  String get map_zoomInForOfflineMap => '拡大するとオフライン地図が表示されます';
 
   @override
   String get map_noCharts => 'ここには海図がありません';
@@ -4655,9 +4636,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => '未ダウンロード';
-
-  @override
-  String get mapLayers_offlineOnly => 'オフラインのみ';
 
   @override
   String get mapLayers_details => '地図の詳細';

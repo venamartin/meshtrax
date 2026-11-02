@@ -14,7 +14,7 @@ You download maps one region at a time. Each region can have several kinds of **
 | USGS topo map | Trails, streams and reserves (United States only). USGS is the US Geological Survey; a topo map shows the shape of the land. |
 | NOAA charts | Nautical charts for US coasts, picked by coast in the Charts tab. NOAA is the US ocean and weather agency. |
 
-The app also includes a simple world map, so there is always something to see.
+The app also comes with a base map of the whole world, down to towns and major roads, so there is always something to see, even with no signal and nothing downloaded.
 
 ## Downloading
 
@@ -28,16 +28,11 @@ The **Downloaded** tab lists what's on your device, how much space it uses, and 
 
 When you open the app with offline maps installed and a day has passed since the last check, MeshTrax looks for newer versions. **Check for new maps** in Offline maps does it any time. Regions with an update show **Update available**, and **Update all** fetches them together. A downloaded map stays exactly as it is until you update it.
 
-## Online or Offline
+## Where nothing is downloaded
 
-The map has an **Online | Offline** switch:
+The map shows the base map that comes with the app: borders, water, major roads and cities, and towns of 1,000 people or more as you zoom in. It needs no signal. You can zoom in until the map is about 25 km across a phone screen; there it stops, and a card offers to download the region for detail.
 
-- **Offline** shows only what works without signal: your downloaded maps and the world map. Where you haven't downloaded a region, the map shows a card offering a download, and it won't zoom in further there.
-- **Online** fills in everything you haven't downloaded with online OpenStreetMap tiles. It's the standard light street map: contours, hill shading and the dark map theme show only in Offline.
-
-Downloaded areas are outlined in teal in both modes, and filled in Online so you can tell them from the online tiles. A setting in App Settings turns the outline off. Until you download a street or topo map, the map stays online.
-
-Online **map tiles** you've viewed are kept for up to a year so they load faster. You can clear them in the **Downloaded** tab of Offline maps.
+Downloaded areas are outlined in teal. A setting in App Settings turns the outline off.
 
 ## Charts are not for navigation
 

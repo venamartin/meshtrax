@@ -4752,16 +4752,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Error en la descarga del mapa';
 
   @override
-  String get offlineMaps_clearTileCache => 'Vaciar la caché de mapas en línea';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      '¿Quitar las teselas de mapas en línea guardadas al explorar el mapa? Los mapas descargados se conservan.';
-
-  @override
-  String get offlineMaps_tileCacheCleared => 'Caché de mapas en línea vaciada';
-
-  @override
   String get map_notForNavigation => 'No apto para navegar';
 
   @override
@@ -4792,18 +4782,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para navegar, usa cartas oficiales y actualizadas de NOAA (en papel, o ENC de NOAA en un plóter certificado) con los últimos Avisos a los Navegantes.';
 
   @override
-  String get map_sourceOnline => 'En línea';
-
-  @override
-  String get map_sourceOffline => 'Sin conexión';
-
-  @override
   String get map_downloadForDetail =>
       'Descarga una región para ver más detalle';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Acerca el zoom para ver tu mapa sin conexión';
 
   @override
   String get map_noCharts => 'No hay cartas aquí';
@@ -4889,9 +4869,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'No descargado';
-
-  @override
-  String get mapLayers_offlineOnly => 'Solo sin conexión';
 
   @override
   String get mapLayers_details => 'Detalles del mapa';

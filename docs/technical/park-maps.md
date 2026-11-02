@@ -106,6 +106,6 @@ These come from flutter_map_vector_tiles 2.9.1, checked 2026-10-18:
 | 6 | Hide OSM duplicates inside the boundary at render time | No `within` in the renderer; pilot first. |
 | 7 | One pack per park | One pack per region and overlay id. |
 | 8 | POIs down to z16 | z14 tiles with overzoom, plus a `min_zoom` attribute for types shown from z15–16. |
-| 9 | "Fully offline, no Internet" | True wherever packs are installed. Elsewhere the app shows online OSM raster tiles (decided 2026-10-17). |
+| 9 | "Fully offline, no Internet" | True everywhere: where no pack is installed the app shows the base map bundled with it. (Online OSM raster tiles, decided 2026-10-17, were removed 2026-11-02.) |
 | 10 | A minimal Flutter prototype for the pilot | traxmapmaker's browser viewer first, then MeshTrax on the Pi. |
 | 11 | NPS as a data source | Approved: public domain, credited "National Park Service". No NPS seal or arrowhead. |

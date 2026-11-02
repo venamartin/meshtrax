@@ -18,7 +18,6 @@ import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/chat_text_scale_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
@@ -166,7 +165,6 @@ void main() {
           ),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),

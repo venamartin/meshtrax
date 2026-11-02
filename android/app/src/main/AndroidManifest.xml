@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Internet permission (required for map tiles) -->
+    <!-- Internet permission (offline map downloads, terrain, GIFs) -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Bluetooth permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>

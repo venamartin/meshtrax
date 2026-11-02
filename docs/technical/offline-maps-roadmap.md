@@ -16,7 +16,9 @@ This file says how traxmap's offline vector maps replace MeshTrax's online raste
 
 ## Status
 
-Last updated 2026-10-22. **Resume here.**
+Last updated 2026-11-02. **Resume here.**
+
+**Online tiles are gone (Martin, 2026-11-02, `feat/offline-base-map`, ahead of PR #210).** Every map draws downloaded packs and, elsewhere, the bundled base map: Natural Earth plus GeoNames towns, data to z7, drawn to z10. The Online | Offline switch, `map_source`, `TileCoverage`-gap raster tiles and the tile cache below are history; see [`offline-maps-notes.md`](offline-maps-notes.md), 2026-11-02.
 
 **PR #169 is merged** (squash `25f17ee`, 2026-10-22): Phases 1–4 and 6 below are on master.
 - **New work goes in small PRs off master,** one topic each:
@@ -245,7 +247,7 @@ Test: auto-connect firing while either of these is open.
 └──────────────────────────────────────────────┘
 ```
 
-**Source switch, Online | Offline** (Martin, 2026-10-20; replaces the coverage banner):
+**Source switch, Online | Offline** (Martin, 2026-10-20; replaces the coverage banner; **removed 2026-11-02** with the online tiles, so maps are always what the Offline side below describes, over the bundled base map):
 - **Offline:** downloaded maps only, exactly what works without signal. Where nothing is drawn at the view centre, a card says "No offline map here · Download {region} · {size} ›" (opens S3b) or, inside a downloaded region below the packs' lowest zoom, "Zoom in to see your offline map".
 - **Online:** online OSM raster tiles wherever the packs draw nothing. Tiles the packs cover are never fetched (`TileCoverage`). Raster tiles load on demand only, with a disk cache.
 - **Both:** a teal outline (`#00897B`) of the downloaded areas of the map showing, filled Online only; Map details › Downloaded areas turns it off (2026-10-22, replaced the dashed pink region edges).

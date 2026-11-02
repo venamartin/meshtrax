@@ -3,10 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
-import '../../helpers/snack_bar_builder.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
-import '../../services/map_tile_cache_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 
@@ -167,15 +165,6 @@ class DownloadedTab extends StatelessWidget {
           ),
         ],
       ],
-      const SizedBox(height: 24),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          icon: const Icon(Icons.cleaning_services_outlined),
-          label: Text(l10n.offlineMaps_clearTileCache),
-          onPressed: () => _clearTileCache(context),
-        ),
-      ),
     ];
 
     return Center(
@@ -184,35 +173,6 @@ class DownloadedTab extends StatelessWidget {
         child: ListView(padding: const EdgeInsets.all(16), children: children),
       ),
     );
-  }
-
-  Future<void> _clearTileCache(BuildContext context) async {
-    final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.offlineMaps_clearTileCache),
-        content: Text(l10n.offlineMaps_clearTileCachePrompt),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.common_clear),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !context.mounted) return;
-    await context.read<MapTileCacheService>().clearCache();
-    if (context.mounted) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(l10n.offlineMaps_tileCacheCleared),
-      );
-    }
   }
 }
 

@@ -15,7 +15,6 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/screens/channel_message_path_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 
@@ -101,7 +100,6 @@ void main() {
           ),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

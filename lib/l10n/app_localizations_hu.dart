@@ -4760,18 +4760,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Sikertelen térképletöltés';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Gyorsítótárazott online térképcsempék törlése';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Törli a böngészés közben mentett online térképcsempéket? A letöltött térképek megmaradnak.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Gyorsítótárazott online térképcsempék törölve';
-
-  @override
   String get map_notForNavigation => 'Navigációra nem alkalmas';
 
   @override
@@ -4802,17 +4790,7 @@ class AppLocalizationsHu extends AppLocalizations {
       'Navigációhoz hivatalos, naprakész NOAA tengeri térképeket használjon (papíron, vagy NOAA ENC-ket tanúsított térképplotteren) a legfrissebb hajózási hirdetményekkel.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Töltsön le egy régiót a részletekhez';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Nagyítson rá az offline térkép megtekintéséhez';
 
   @override
   String get map_noCharts => 'Itt nincs tengeri térkép';
@@ -4899,9 +4877,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nincs letöltve';
-
-  @override
-  String get mapLayers_offlineOnly => 'Csak offline';
 
   @override
   String get mapLayers_details => 'Térkép részletei';

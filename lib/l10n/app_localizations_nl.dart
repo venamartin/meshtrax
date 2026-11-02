@@ -4727,17 +4727,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Kaartdownload mislukt';
 
   @override
-  String get offlineMaps_clearTileCache => 'Gecachte online kaarttegels wissen';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'De online kaarttegels verwijderen die tijdens het bekijken zijn opgeslagen? Gedownloade kaarten blijven staan.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Gecachte online kaarttegels verwijderd';
-
-  @override
   String get map_notForNavigation => 'Niet voor navigatie';
 
   @override
@@ -4768,16 +4757,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Gebruik voor navigatie officiële, actuele NOAA-zeekaarten (op papier, of NOAA-ENC\'s in een gecertificeerde kaartplotter) met de nieuwste Berichten aan Zeevarenden.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Download een regio voor meer detail';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Zoom in om je offline kaart te zien';
 
   @override
   String get map_noCharts => 'Hier geen zeekaarten';
@@ -4863,9 +4843,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Niet gedownload';
-
-  @override
-  String get mapLayers_offlineOnly => 'Alleen offline';
 
   @override
   String get mapLayers_details => 'Kaartdetails';

@@ -1,5 +1,23 @@
 ## Unreleased
 
+- **The bundled base map fills the gaps between downloaded regions.** A
+  style source with world packs is served by `GapFillProvider`: a tile is
+  left out wherever the style's required packs have one, judged at each
+  tile's own zoom, so the base map and region packs never draw over each
+  other. Deeper than its data, the base map's top-zoom tiles are reframed
+  for each tile (`reframeMvt`), keeping only the features that reach it.
+  A source marked `"ovm:mask": false` is drawn unmasked (the charts
+  styles). The world layers no longer stop at zoom 6.
+- **Removed (breaking):** `OfflineMapView.baseLayers`, `onTileCoverage`
+  and the `TileCoverage` export. MeshTrax dropped its online tiles, their
+  only user.
+- **`openBundledWorld` reads `assets/world/world.id`** to name its copy,
+  so a start that finds the copy no longer reads the whole bundled map.
+  `worldIdOf` gives the id for a rebuilt map; `bundled_world_test` says
+  when the file is stale.
+- **`tool/world_preview.dart`** renders map pictures headless on the
+  tester device: packs, styles and shots from `--dart-define`.
+
 - **Park and trail icons on the OSM map.** Campsites, picnic sites,
   shelters, toilets, drinking water, parking, viewpoints and attractions
   from z15, and gates, telephones, information boards and guideposts from

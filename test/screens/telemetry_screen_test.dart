@@ -16,7 +16,6 @@ import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/screens/telemetry_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
-import 'package:meshtrax/services/map_tile_cache_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/structured_message_card.dart';
 
@@ -111,7 +110,6 @@ void main() {
               styles: StyleRegistry(MemoryStyles()),
             ),
           ),
-          Provider<MapTileCacheService>.value(value: BlankTileCache()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

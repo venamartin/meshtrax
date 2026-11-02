@@ -4700,17 +4700,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Kartnedladdning misslyckades';
 
   @override
-  String get offlineMaps_clearTileCache => 'Rensa cachade onlinekartrutor';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Ta bort onlinekartrutorna som sparats medan du tittat på kartan? Nedladdade kartor finns kvar.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Cachade onlinekartrutor borttagna';
-
-  @override
   String get map_notForNavigation => 'Inte för navigering';
 
   @override
@@ -4741,16 +4730,7 @@ class AppLocalizationsSv extends AppLocalizations {
       'Använd för navigering officiella, aktuella NOAA-sjökort (på papper, eller NOAA-ENC i en certifierad sjökortsplotter) med de senaste Underrättelserna för sjöfarande.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Ladda ner en region för fler detaljer';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Zooma in för att se din offlinekarta';
 
   @override
   String get map_noCharts => 'Inga sjökort här';
@@ -4836,9 +4816,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Inte nedladdad';
-
-  @override
-  String get mapLayers_offlineOnly => 'Endast offline';
 
   @override
   String get mapLayers_details => 'Kartdetaljer';

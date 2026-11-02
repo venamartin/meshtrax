@@ -8052,24 +8052,6 @@ abstract class AppLocalizations {
   /// **'Map download failed'**
   String get offlineMaps_notificationFailed;
 
-  /// No description provided for @offlineMaps_clearTileCache.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear cached online map tiles'**
-  String get offlineMaps_clearTileCache;
-
-  /// No description provided for @offlineMaps_clearTileCachePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove the online map tiles saved while browsing? Downloaded maps stay.'**
-  String get offlineMaps_clearTileCachePrompt;
-
-  /// No description provided for @offlineMaps_tileCacheCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Cached online map tiles removed'**
-  String get offlineMaps_tileCacheCleared;
-
   /// No description provided for @map_notForNavigation.
   ///
   /// In en, this message translates to:
@@ -8118,29 +8100,11 @@ abstract class AppLocalizations {
   /// **'To navigate, use official, up-to-date NOAA charts (paper, or NOAA ENCs in a certified chart plotter) with the latest Notices to Mariners.'**
   String get map_chartsNoticeUse;
 
-  /// No description provided for @map_sourceOnline.
-  ///
-  /// In en, this message translates to:
-  /// **'Online'**
-  String get map_sourceOnline;
-
-  /// No description provided for @map_sourceOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline'**
-  String get map_sourceOffline;
-
   /// No description provided for @map_downloadForDetail.
   ///
   /// In en, this message translates to:
   /// **'Download a region for detail'**
   String get map_downloadForDetail;
-
-  /// No description provided for @map_zoomInForOfflineMap.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom in to see your offline map'**
-  String get map_zoomInForOfflineMap;
 
   /// No description provided for @map_noCharts.
   ///
@@ -8297,12 +8261,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not downloaded'**
   String get mapLayers_notDownloaded;
-
-  /// No description provided for @mapLayers_offlineOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline only'**
-  String get mapLayers_offlineOnly;
 
   /// No description provided for @mapLayers_details.
   ///

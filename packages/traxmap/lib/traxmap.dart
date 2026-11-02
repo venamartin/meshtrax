@@ -13,7 +13,6 @@ export 'src/legend/chart_legend.dart';
 export 'src/legend/legend_symbol.dart';
 export 'src/legend/park_legend.dart';
 export 'src/packs/bundled_world.dart';
-export 'src/renderer/flutter_map_renderer.dart' show TileCoverage;
 export 'src/styles/asset_style_source.dart';
 export 'src/view/attribution.dart' show AttributionChip;
 export 'src/view/camera.dart';

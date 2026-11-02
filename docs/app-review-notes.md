@@ -143,7 +143,7 @@ PRIVACY FIRST
 • No MeshTrax servers — the developer receives none of your data
 • Block and report tools to keep conversations civil
 
-Optional online features (maps, terrain, GIFs) connect to third-party services only when you use them. See the privacy policy for details.
+Optional online features (offline map downloads, terrain, GIFs) connect only when you use them. See the privacy policy for details.
 
 BUILT ON MESHCORE
 MeshTrax builds on the open MeshCore ecosystem and is forked from the open-source MeshCore Open client. All credit for the protocol, firmware, and official apps goes to the MeshCore project.

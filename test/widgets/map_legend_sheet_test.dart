@@ -13,6 +13,8 @@ import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/map_legend_sheet.dart';
 
+import '../../packages/traxmap/test/support/fake_pmtiles.dart';
+
 class _NoDownloads implements PackDownloader {
   @override
   Stream<PackDownload> get updates => const Stream.empty();
@@ -92,7 +94,6 @@ void main() {
   });
 
   testWidgets('the chart map adds its symbols by section', (tester) async {
-    await settings.setMapSource('offline');
     await settings.setMapType('charts');
     await pump(tester);
     expect(find.text('Chart symbols'), findsOneWidget);
@@ -109,10 +110,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the offline OSM map adds its park and trail icons', (
-    tester,
-  ) async {
-    await settings.setMapSource('offline');
+  testWidgets('the OSM map adds its park and trail icons', (tester) async {
+    await tester.runAsync(() async {
+      final osm = File('${tmp.path}/osm.src')
+        ..writeAsBytesSync(fakePmTiles(metadata: {'kind': 'osm'}));
+      await maps.manager.install(osm, id: 'us-rhode-island-osm');
+      await maps.reloadInstalled();
+    });
     await pump(tester, styles: (MapType.osm, false));
     expect(find.text('Park and trail symbols'), findsOneWidget);
     expect(find.text('Chart symbols'), findsNothing);
@@ -125,8 +129,12 @@ void main() {
     );
   });
 
+  testWidgets('the base map alone has no park icons', (tester) async {
+    await pump(tester, styles: (MapType.osm, false));
+    expect(find.text('Park and trail symbols'), findsNothing);
+  });
+
   testWidgets('depth areas read in the user\'s units', (tester) async {
-    await settings.setMapSource('offline');
     await settings.setMapType('charts');
     await settings.setUnitSystem(UnitSystem.imperial);
     await pump(tester);

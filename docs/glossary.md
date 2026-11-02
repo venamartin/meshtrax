@@ -66,8 +66,6 @@ Words you will meet in MeshTrax and in these docs, in plain language.
 
 **Map pack**: A downloaded map file covering one region, so the map works with no internet. See [Offline maps](offline-maps.md).
 
-**Map tile**: A small square piece of an online map. Online maps load tiles as you scroll; MeshTrax keeps recently viewed tiles for a while so they load faster.
-
 ## In the technical docs
 
 **Frame**: One message between the app and its companion radio, such as one command or one reply.

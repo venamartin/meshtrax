@@ -47,10 +47,6 @@ class AppSettings {
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
 
-  /// Where maps come from: `online` (online tiles wherever nothing is
-  /// downloaded), `offline` (downloaded maps only), or `auto`: online until
-  /// the first map is downloaded, then offline.
-  final String mapSource;
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -135,7 +131,6 @@ class AppSettings {
     this.mapHillShading = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
-    this.mapSource = 'auto',
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -207,7 +202,6 @@ class AppSettings {
       'map_hill_shading': mapHillShading,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
-      'map_source': mapSource,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -271,7 +265,6 @@ class AppSettings {
       mapHillShading: json['map_hill_shading'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
-      mapSource: json['map_source'] as String? ?? 'auto',
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -361,7 +354,6 @@ class AppSettings {
     bool? mapHillShading,
     bool? mapDownloadedAreas,
     String? mapTheme,
-    String? mapSource,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -414,7 +406,6 @@ class AppSettings {
       mapHillShading: mapHillShading ?? this.mapHillShading,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
-      mapSource: mapSource ?? this.mapSource,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:

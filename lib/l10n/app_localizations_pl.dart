@@ -4765,18 +4765,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pobieranie mapy nie powiodło się';
 
   @override
-  String get offlineMaps_clearTileCache =>
-      'Wyczyść zapisane kafelki map online';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Usunąć kafelki map online zapisane podczas przeglądania? Pobrane mapy pozostaną.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Usunięto zapisane kafelki map online';
-
-  @override
   String get map_notForNavigation => 'Nie do nawigacji';
 
   @override
@@ -4807,16 +4795,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Do nawigacji używaj oficjalnych, aktualnych map NOAA (papierowych lub NOAA ENC w certyfikowanym ploterze) z najnowszymi Wiadomościami Żeglarskimi.';
 
   @override
-  String get map_sourceOnline => 'Online';
-
-  @override
-  String get map_sourceOffline => 'Offline';
-
-  @override
   String get map_downloadForDetail => 'Pobierz region, by zobaczyć szczegóły';
-
-  @override
-  String get map_zoomInForOfflineMap => 'Przybliż, aby zobaczyć mapę offline';
 
   @override
   String get map_noCharts => 'Brak map morskich w tym miejscu';
@@ -4902,9 +4881,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Nie pobrano';
-
-  @override
-  String get mapLayers_offlineOnly => 'Tylko offline';
 
   @override
   String get mapLayers_details => 'Szczegóły mapy';

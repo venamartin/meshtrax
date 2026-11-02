@@ -35,7 +35,6 @@ void main() {
     WidgetTester tester, {
     List<MapOverlay> overlays = const [],
     List<Widget> extraLayers = const [],
-    List<Widget> baseLayers = const [],
     ValueChanged<bool>? onCoverageChanged,
     MapCamera? camera = _camera,
     MapFit? fit,
@@ -51,7 +50,6 @@ void main() {
           initialFit: fit,
           overlays: overlays,
           extraLayers: extraLayers,
-          baseLayers: baseLayers,
           onCoverageChanged: onCoverageChanged,
           controller: controller,
           onTap: taps.add,
@@ -233,36 +231,6 @@ void main() {
     expect(
       identical(tester.state(find.byType(fm.FlutterMap)), mapState),
       isTrue,
-    );
-  });
-
-  testWidgets('baseLayers sit between the map tiles and the overlays', (
-    tester,
-  ) async {
-    const base = SizedBox(key: Key('base'));
-    await pumpMap(
-      tester,
-      baseLayers: const [base],
-      overlays: const [
-        MapPolygon(
-          id: 'p',
-          points: [_center, LatLng(36.9, -121.8), LatLng(36.9, -121.7)],
-        ),
-        MapMarker(id: 'm', position: _center),
-      ],
-    );
-    final children = tester
-        .widget<fm.FlutterMap>(find.byType(fm.FlutterMap))
-        .children;
-    final baseAt = children.indexWhere((w) => w.key == const Key('base'));
-    expect(baseAt, 1, reason: 'right after the vector tile layer');
-    expect(
-      children.indexWhere((w) => w is fm.PolygonLayer),
-      greaterThan(baseAt),
-    );
-    expect(
-      children.indexWhere((w) => w is fm.MarkerLayer),
-      greaterThan(baseAt),
     );
   });
 

@@ -4739,17 +4739,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get offlineMaps_notificationFailed => 'Неуспешно изтегляне на картата';
 
   @override
-  String get offlineMaps_clearTileCache => 'Изчисти кеша на онлайн картите';
-
-  @override
-  String get offlineMaps_clearTileCachePrompt =>
-      'Да се премахнат ли плочките от онлайн картите, запазени при разглеждане? Изтеглените карти остават.';
-
-  @override
-  String get offlineMaps_tileCacheCleared =>
-      'Кешът на онлайн картите е изчистен';
-
-  @override
   String get map_notForNavigation => 'Не е за навигация';
 
   @override
@@ -4780,17 +4769,7 @@ class AppLocalizationsBg extends AppLocalizations {
       'За навигация използвайте официални, актуални карти на NOAA (хартиени или ENC на NOAA в сертифициран картплотер) с последните Известия до мореплавателите.';
 
   @override
-  String get map_sourceOnline => 'Онлайн';
-
-  @override
-  String get map_sourceOffline => 'Офлайн';
-
-  @override
   String get map_downloadForDetail => 'Изтеглете регион за повече подробности';
-
-  @override
-  String get map_zoomInForOfflineMap =>
-      'Увеличете, за да видите офлайн картата';
 
   @override
   String get map_noCharts => 'Тук няма морски карти';
@@ -4876,9 +4855,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get mapLayers_notDownloaded => 'Не е изтеглено';
-
-  @override
-  String get mapLayers_offlineOnly => 'Само офлайн';
 
   @override
   String get mapLayers_details => 'Детайли на картата';
