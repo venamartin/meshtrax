@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/screens/settings_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/health_check_prompt.dart';
@@ -164,13 +165,43 @@ void main() {
     expect(settings.settings.healthCheckPromptSeen, isFalse);
   });
 
-  testWidgets('Run check opens the health check over Settings', (tester) async {
+  testWidgets('Run check opens the health check, and back leads home', (
+    tester,
+  ) async {
     await show(tester);
     await tester.tap(find.text('Run check'));
     await tester.pumpAndSettle();
 
     expect(settings.settings.healthCheckPromptSeen, isTrue);
     expect(find.text('Health check'), findsOneWidget);
+    expect(find.textContaining('Checks passed'), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    // Run by itself after the first sync: back where it was offered, not in
+    // Settings (owner, 2026-11-02).
+    expect(find.text('Settings'), findsNothing);
+    expect(find.text('go'), findsOneWidget);
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    expect(navigator.canPop(), isFalse);
+  });
+
+  testWidgets('opened from Settings, back returns to Settings', (
+    tester,
+  ) async {
+    await show(tester);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    unawaited(
+      navigator.push(MaterialPageRoute<void>(
+        builder: (_) => const SettingsScreen(),
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Health check'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Checks passed'), findsOneWidget);
 
     await tester.tap(find.byType(BackButton));

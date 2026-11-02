@@ -273,7 +273,11 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
     final keeper = _keeper = RadioRouteKeeper(
-      contacts: () => connector.contacts,
+      // Not during a download: a contact the radio dropped is still listed, and
+      // writing its route would add it back and evict another.
+      contacts: () => connector.isLoadingContacts
+          ? const <Contact>[]
+          : connector.contacts,
       routesFor: candidatesFor,
       radioWidth: () => connector.pathHashByteWidth,
       budget: () => connector.messageAttemptBudget,

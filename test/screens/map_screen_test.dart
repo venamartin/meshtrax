@@ -28,6 +28,7 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/map_legend_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
+import 'package:meshtrax/widgets/room_login_dialog.dart';
 
 import '../helpers/map_fakes.dart';
 
@@ -107,6 +108,23 @@ class _RadioConnector extends _FakeConnector {
   }) async {}
   @override
   set pendingTraceTag(int? tag) {} // the real one starts a 60 s timer
+}
+
+/// A radio that answers an add with [saves].
+class _AddingConnector extends _FakeConnector {
+  _AddingConnector({required super.nodes, required this.saves});
+
+  final bool saves;
+  final adds = <String>[];
+
+  @override
+  Future<bool> importDiscoveredContact(
+    Contact contact, {
+    int? lastAdvertEpochSeconds,
+  }) async {
+    adds.add(contact.publicKeyHex);
+    return saves;
+  }
 }
 
 class _NoDownloads implements PackDownloader {
@@ -204,6 +222,77 @@ void main() {
 
   T overlay<T extends MapOverlay>(WidgetTester tester, String id) =>
       overlays(tester).whereType<T>().firstWhere((o) => o.id == id);
+
+  // The chat or room login opened at once while the add ran behind it, so a
+  // radio that refused the node (a full table with overwrite off) left a chat
+  // whose DMs all failed with no reason given.
+  group('a node not saved yet', () {
+    const openChat = 'Open Chat';
+    const joinRoom = 'Join Room';
+    const refused = 'Failed to import contact.';
+
+    Future<_AddingConnector> showNode(
+      WidgetTester tester,
+      Contact node, {
+      required bool radioSaves,
+    }) async {
+      final radio = _AddingConnector(
+        nodes: [node.copyWith(isActive: false)],
+        saves: radioSaves,
+      );
+      await pumpMap(tester, radio);
+      overlay<MapMarker>(tester, 'node:${node.publicKeyHex}').onTap!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      return radio;
+    }
+
+    Future<void> press(WidgetTester tester, String button) async {
+      await tester.tap(find.text(button));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('Open chat says so when the radio cannot save it', (
+      tester,
+    ) async {
+      final alice = _node('Alice', advTypeChat, 2, 41.82, -71.41);
+      final radio = await showNode(tester, alice, radioSaves: false);
+
+      await press(tester, openChat);
+
+      expect(radio.adds, [alice.publicKeyHex]);
+      expect(find.text(refused), findsOneWidget);
+      expect(find.text(openChat), findsOneWidget, reason: 'no chat opened');
+    });
+
+    testWidgets('Join room says so when the radio cannot save it', (
+      tester,
+    ) async {
+      final room = _node('Clubhouse', advTypeRoom, 3, 41.82, -71.41);
+      final radio = await showNode(tester, room, radioSaves: false);
+
+      await press(tester, joinRoom);
+
+      expect(radio.adds, [room.publicKeyHex]);
+      expect(find.text(refused), findsOneWidget);
+      expect(find.byType(RoomLoginDialog), findsNothing);
+    });
+
+    testWidgets('Join room asks for the password once the radio saved it', (
+      tester,
+    ) async {
+      final room = _node('Clubhouse', advTypeRoom, 3, 41.82, -71.41);
+      final radio = await showNode(tester, room, radioSaves: true);
+
+      await press(tester, joinRoom);
+
+      expect(radio.adds, [room.publicKeyHex]);
+      expect(find.text(refused), findsNothing);
+      expect(find.text(joinRoom), findsNothing, reason: 'the node dialog closed');
+      expect(find.byType(RoomLoginDialog), findsOneWidget);
+    });
+  });
 
   testWidgets('nodes and the radio are map markers, labelled from zoom 13', (
     tester,

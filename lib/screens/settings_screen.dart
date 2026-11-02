@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -70,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadVersionInfo();
     if (widget.openHealthCheck) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openHealthCheck(context);
+        if (mounted) _openHealthCheck(context, thenLeave: true);
       });
     }
   }
@@ -326,13 +327,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _openHealthCheck(BuildContext context) {
-    Navigator.push(
+  /// [thenLeave]: run by itself after the first sync, so finishing returns to
+  /// the screen it was offered on, not to Settings (owner, 2026-11-02).
+  Future<void> _openHealthCheck(
+    BuildContext context, {
+    bool thenLeave = false,
+  }) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => HealthCheckScreen(openDialog: _openHealthDialog),
       ),
     );
+    if (!thenLeave || !context.mounted) return;
+    // Removed while the check slides away, so Settings is never seen.
+    final route = ModalRoute.of(context);
+    if (route != null) Navigator.of(context).removeRoute(route);
   }
 
   Future<void> _openHealthDialog(BuildContext context, HealthDialog dialog) {
@@ -846,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await connector.setNodeName(controller.text);
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -973,7 +983,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 await connector.setNodeLocation(lat: lat, lon: lon);
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1082,7 +1092,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
                 await connector.setPathHashMode(currentMode);
                 await Future.delayed(const Duration(milliseconds: 200));
-                await connector.refreshDeviceInfo();
+                unawaited(connector.refreshRadioSettings());
                 if (!context.mounted) return;
                 showDismissibleSnackBar(
                   context,
@@ -1843,7 +1853,7 @@ void showPrivacySettings(BuildContext context, MeshCoreConnector connector) {
                 advertLocPolicy ? 1 : 0,
                 connector.multiAcks,
               );
-              await connector.refreshDeviceInfo();
+              unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;
               showDismissibleSnackBar(
                 context,
@@ -2229,7 +2239,15 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
         ),
       );
       await widget.connector.sendFrame(buildSetRadioTxPowerFrame(txPower));
-      await widget.connector.refreshDeviceInfo();
+      widget.connector.noteRadioSettingsSaved(
+        freqKhz: freqHz,
+        bwHz: bwHz,
+        sf: sf,
+        cr: cr,
+        txPower: txPower,
+        clientRepeat: knownRepeat ? _clientRepeat : null,
+      );
+      unawaited(widget.connector.refreshRadioSettings());
       final rememberedSnapshot = _clientRepeat
           ? _lastNonRepeatSnapshot
           : _currentSnapshot();
