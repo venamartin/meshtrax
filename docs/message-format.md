@@ -1,5 +1,11 @@
 # MeshTrax message format
 
+> **What this is:** how MeshTrax writes replies, reactions, GIFs, cards and
+> other extras into a message, so other apps can read them. You don't need
+> this to use MeshTrax. It's for people building or testing apps that talk to
+> MeshTrax users. Terms are explained in the [glossary](glossary.md); the
+> exact text that travels over the radio is called the "wire text".
+
 MeshCore chat carries plain text. Everything MeshTrax adds on top of it,
 replies, reactions, GIFs, markdown and cards, is plain text too, so a
 message is still readable on an app that understands none of it. This page
@@ -103,6 +109,11 @@ the format still shows a readable `@[GWQ∆🍓]👍`.
 4-byte little-endian unsigned integer)`, written as 8 characters of
 lowercase Crockford Base32 (`0123456789abcdefghjkmnpqrstvwxyz`, no i, l, o
 or u).
+
+_In plain words: the hash is a short fingerprint of the original message,
+so the reaction can say which message it belongs to without repeating it.
+SHA-256 is a standard way to compute such a fingerprint; Crockford Base32
+writes it with letters and digits that are hard to confuse._
 
 - **Text**: in a channel, the body after `Name: ` with spaces and tabs
   trimmed from both ends (never newlines). Mentions and reply markup are
@@ -224,6 +235,9 @@ A message of nothing but emoji, at most 5, is drawn large without a bubble
 colour.
 
 ## SMAZ compression (`s:`)
+
+SMAZ is a simple way to squeeze short English text into fewer bytes, so a
+longer message fits. Base64 writes the squeezed bytes as plain characters.
 
 MeshTrax decodes any message that starts with `s:` followed by Base64 SMAZ
 data (the meshcore-open format). It sends one only when **SMAZ compression**
@@ -347,6 +361,9 @@ Event: Mesh meetup | 2026-10-18 14:00-16:00 | Hauptplatz
   an announcement card. With a type keyword it is that card instead.
 
 ## Byte budget
+
+A byte is roughly one plain character; an emoji or an accented letter
+takes 2 to 4. LoRa messages are small, so every extra takes room from your text.
 
 A channel message has roughly 125 to 140 bytes for text, a direct message
 158, a room post 151 and a room announcement (the server's `room.post`

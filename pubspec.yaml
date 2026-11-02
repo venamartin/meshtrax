@@ -83,7 +83,7 @@ dependencies:
   # Learns mesh routes from the radio's raw frames; observe-only hook
   path_graph:
     path: packages/path_graph
-  # Offline vector maps: renders and downloads map packs (docs/offline-maps.md)
+  # Offline vector maps: renders and downloads map packs (docs/technical/offline-maps-notes.md)
   traxmap:
     path: packages/traxmap
   emoji_picker_flutter: ^4.4.0

@@ -1,5 +1,13 @@
 # BLE auto-connect / naming — diagnosis in progress
 
+> **What this is:** The August 2026 investigation of three Bluetooth auto-connect bugs: auto-connect couldn't be cancelled, disconnecting reconnected straight away, and a renamed radio sometimes showed its old name.
+>
+> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+>
+> **Status:** finished record. All three were fixed. Line numbers refer to the code as it was then.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 Branch: `fix/ble-autoconnect-control` (off master @ 1.7.16+25).
 All three are diagnosed and fixed; this is the record of why.
 Line numbers are from the pre-fix file.

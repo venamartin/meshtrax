@@ -1,7 +1,7 @@
 name: path_graph
 description: >
   Self-contained weighted-graph path determination for MeshCore DMs.
-  Pure Dart, push-in-never-read-out — see docs/path-graph-design.md.
+  Pure Dart, push-in-never-read-out — see docs/technical/path-graph-design.md.
 version: 0.1.0
 publish_to: none
 

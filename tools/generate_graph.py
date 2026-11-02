@@ -10,7 +10,7 @@ a single symmetric SNR (verified: no edge ever appears in both
 directions), so `a -> b` and `b -> a` were the same number pretending to
 be two measurements. The module now imports `meshtrax-graph-v2` only — a
 true directed graph where each direction carries its own measurement —
-produced by MeshTrax's own export. See docs/path-graph-design.md,
+produced by MeshTrax's own export. See docs/technical/path-graph-design.md,
 "§ HISTORICAL — Corescope export utility".
 
 Kept for the fetch/resolve/geo-filter logic and as the record of what
@@ -21,7 +21,7 @@ Generate MeshTrax path-graph seed files from Corescope instances.
 For each known Corescope instance, fetches the neighbor graph and node
 list, then writes one `meshtrax-graph-v1` node-link JSON file per region
 (the format is the D3/NetworkX node-link convention — see
-docs/path-graph-design.md, "Corescope export utility").
+docs/technical/path-graph-design.md, "Corescope export utility").
 
 The file is lossless: full 64-hex pubkeys as node ids, positions and
 last-heard included. The app geo-filters and collapses to 2-byte hash

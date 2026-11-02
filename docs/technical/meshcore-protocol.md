@@ -1,5 +1,13 @@
 # MeshCore Protocol Reference
 
+> **What this is:** The byte-by-byte reference for how MeshCore radios talk: the packets radios send each other over the air, and the frames (messages) the app exchanges with its own radio over Bluetooth, USB or Wi-Fi. It is checked against the MeshCore firmware source.
+>
+> **Who it's for:** developers and AI coding sessions working on MeshTrax.
+>
+> **Status:** live reference, kept up to date.
+>
+> New to the terms? See the [glossary](../glossary.md).
+
 > **Purpose:** Reference for humans and AI agents working on MeshTrax. Read this BEFORE opening
 > any `MeshCore/` C++ files. Everything here is verified directly against the firmware source in
 > `./MeshCore` (companion radio `FIRMWARE_VER_CODE 14`, v1.18.0). When you discover new protocol
