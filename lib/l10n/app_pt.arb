@@ -1135,28 +1135,6 @@
     }
   },
   "channelPath_noLocationData": "Não há dados de localização.",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Desconhecido",
   "channelPath_floodPath": "Inundação",
   "channelPath_directPath": "Salvar",

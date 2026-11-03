@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ import '../utils/platform_info.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/message_facts.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
@@ -1452,7 +1452,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Text(
-                              DateFormat('E, d MMMM').format(message.timestamp), 
+                              DateTimeHelper.dayHeading(context, message.timestamp),
                               style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
                             ),
                           ),
@@ -3135,7 +3135,7 @@ class _MessageBubble extends StatelessWidget {
                           StructuredCardFooter(
                             message: structured,
                             time: enableTracing
-                                ? _formatTime(message.timestamp)
+                                ? DateTimeHelper.time(context, message.timestamp)
                                 : null,
                             path: enableTracing ? viaLabel : null,
                             extra: [
@@ -3171,7 +3171,7 @@ class _MessageBubble extends StatelessWidget {
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Text(
-                                  _formatTime(message.timestamp),
+                                  DateTimeHelper.time(context, message.timestamp),
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: displayMetaColor,
@@ -3614,12 +3614,6 @@ class _MessageBubble extends StatelessWidget {
     }
 
     return Icon(icon, size: 12, color: color);
-  }
-
-  String _formatTime(DateTime time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
   }
 }
 

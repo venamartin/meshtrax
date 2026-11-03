@@ -1135,28 +1135,6 @@
     }
   },
   "channelPath_noLocationData": "Aucune donnée de localisation",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Inconnu",
   "channelPath_floodPath": "Tout le réseau",
   "channelPath_directPath": "Afficher",

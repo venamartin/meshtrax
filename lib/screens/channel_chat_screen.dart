@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
@@ -12,6 +11,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../connector/meshcore_connector.dart';
 import '../utils/platform_info.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/report_helper.dart';
@@ -1486,7 +1486,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
-                            DateFormat('E, d MMMM').format(message.timestamp), 
+                            DateTimeHelper.dayHeading(context, message.timestamp),
                             style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
                           ),
                         ),
@@ -2784,14 +2784,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inDays > 0) {
-      return '${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    }
+    final clock = DateTimeHelper.time(context, time);
+    return DateTime.now().difference(time).inDays > 0
+        ? '${DateTimeHelper.dayMonth(context, time)} $clock'
+        : clock;
   }
 
   void _showMessagePathInfo(ChannelMessage message) {

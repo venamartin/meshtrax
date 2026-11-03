@@ -1328,28 +1328,6 @@
     }
   },
   "channelPath_noLocationData": "場所に関するデータはありません",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "不明",
   "channelPath_floodPath": "洪水",
   "channelPath_directPath": "直接",

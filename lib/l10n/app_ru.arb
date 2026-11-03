@@ -663,8 +663,6 @@
   "channelPath_observedLabel": "Наблюдаемый",
   "channelPath_observedPathTitle": "Наблюдаемый путь {index} • {hops}",
   "channelPath_noLocationData": "Нет данных о местоположении",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "channelPath_timeOnly": "{time}",
   "channelPath_unknownPath": "Неизвестный",
   "channelPath_floodPath": "Рассылка",
   "channelPath_directPath": "Прямой",

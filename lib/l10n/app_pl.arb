@@ -1145,28 +1145,6 @@
     }
   },
   "channelPath_noLocationData": "Brak danych lokalizacyjnych",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Nieznane",
   "channelPath_floodPath": "Zalew",
   "channelPath_directPath": "Bezpośrednio",

@@ -2924,16 +2924,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get channelPath_noLocationData => 'Немає даних про розташування';
 
   @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
-
-  @override
   String get channelPath_unknownPath => 'Невідомий';
 
   @override

@@ -11,6 +11,7 @@ import '../services/app_settings_service.dart';
 import '../services/repeater_command_service.dart';
 import '../utils/battery_utils.dart';
 import '../widgets/routing_dialog.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 
 class RepeaterStatusScreen extends StatefulWidget {
@@ -572,10 +573,8 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   String _clockText() {
     if (_statusRequestedAt == null) return '—';
     final dt = _statusRequestedAt!;
-    final date = '${dt.day}/${dt.month}/${dt.year}';
-    final time =
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    return '$date $time';
+    return '${DateTimeHelper.date(context, dt)} '
+        '${DateTimeHelper.time(context, dt)}';
   }
 
   String _formatDuration(int? seconds) {

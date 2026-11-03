@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/maps_link.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
@@ -667,7 +668,7 @@ class _NoticeDialogState extends State<_NoticeDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     final day = _expiryDay;
     return _trayDialog(
       context,
@@ -892,7 +893,7 @@ class _EventDialogState extends State<_EventDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     return _trayDialog(
       context,
       icon: Icons.event,

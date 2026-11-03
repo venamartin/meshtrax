@@ -1328,28 +1328,6 @@
     }
   },
   "channelPath_noLocationData": "위치 정보 없음",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "알 수 없음",
   "channelPath_floodPath": "홍수",
   "channelPath_directPath": "직접",

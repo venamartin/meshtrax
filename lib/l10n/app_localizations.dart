@@ -5181,18 +5181,6 @@ abstract class AppLocalizations {
   /// **'No location data'**
   String get channelPath_noLocationData;
 
-  /// No description provided for @channelPath_timeWithDate.
-  ///
-  /// In en, this message translates to:
-  /// **'{day}/{month} {time}'**
-  String channelPath_timeWithDate(int day, int month, String time);
-
-  /// No description provided for @channelPath_timeOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'{time}'**
-  String channelPath_timeOnly(String time);
-
   /// No description provided for @channelPath_unknownPath.
   ///
   /// In en, this message translates to:

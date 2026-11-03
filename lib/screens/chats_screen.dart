@@ -18,6 +18,7 @@ import '../utils/disconnect_navigation_mixin.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/route_transitions.dart';
 import '../utils/telemetry_dialog.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -252,13 +253,11 @@ class _ChatsScreenState extends State<ChatsScreen>
     final difference = now.difference(timestamp);
 
     if (difference.inDays == 0 && now.day == timestamp.day) {
-      return TimeOfDay.fromDateTime(timestamp).format(context);
+      return DateTimeHelper.time(context, timestamp);
     } else if (difference.inDays < 7) {
-      // Poor man's week day string, rely on app locale if needed or package `intl`
-      final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return weekDays[timestamp.weekday - 1];
+      return DateTimeHelper.weekday(context, timestamp);
     } else {
-      return '${timestamp.month}/${timestamp.day}/${timestamp.year}';
+      return DateTimeHelper.date(context, timestamp);
     }
   }
 

@@ -2931,16 +2931,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get channelPath_noLocationData => 'No datos de ubicación';
 
   @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month a las $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
-
-  @override
   String get channelPath_unknownPath => 'Desconocido';
 
   @override
