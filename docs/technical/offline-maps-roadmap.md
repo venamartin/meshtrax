@@ -616,7 +616,11 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 
 - Night style
 - **Map legend, more screens:** parks when the overlays come; a switch for only the chart symbols in view. (Built 2026-10-23: the "i" button opens a sheet with the MeshCore symbols and, on the chart map, the chart symbols by section, drawn from the chart style itself.)
-- Offline line-of-sight elevation
+- **Line of sight from the contours packs, offline only** (Martin, 2026-11-03). The Open-Meteo lookup goes, with its credit and licence entry.
+  - **Heights:** where the line crosses each contour (the installed contours pack's z13 tiles, `ele_m`), straight between crossings. The source is 3DEP 1″ against Open-Meteo's 90 m grid, and no ridge falls between samples (today: at most 81). The error is at most one interval (20 ft or 10 m); a hilltop inside its last ring can be up to one interval higher, and Points of interest peaks with `ele` fill some.
+  - **Needs the contours pack** of every region the line crosses, drawn or not. They aren't ticked by default since 2026-11-02, so the screen offers to download them where a stretch has none. US only until Canada and Mexico contours are built.
+  - **360° sweep from a point:** the same check along rays all round (e.g. every 1°) out to a chosen range, shading where a node at a given height would be seen. Runs off the UI thread.
+  - **Credits:** the contours pack's (USGS 3DEP, the GLO-30 notice) instead of Open-Meteo's.
 - Cutting areas on the device
 - Online vector tiles streamed from R2
 - Per-park toggles
