@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_scanner_widget.dart';
+import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 
 /// Scans a contact QR code and returns the raw scanned string to the caller.
 ///
-/// Accepts three formats:
+/// Accepts four formats:
 /// - URL with `?public_key=HEX64` — meshcore://contact/add or letsmesh.net links
 /// - URL with `?public_key=HEX64` — letsmesh.net share link
 /// - 64-char hex string — bare 32-byte public key
+/// - `meshcore://` and the hex of an advert — a contact card
 class ContactQrScannerScreen extends StatefulWidget {
   const ContactQrScannerScreen({super.key});
 
@@ -31,7 +33,7 @@ class _ContactQrScannerScreenState extends State<ContactQrScannerScreen> {
     if (data.length == 64 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(data)) {
       return true;
     }
-    return false;
+    return MeshCoreQr.parseAdvertCard(data) != null;
   }
 
   void _handleScanned(BuildContext context, String data) {
