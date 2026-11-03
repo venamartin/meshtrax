@@ -1426,6 +1426,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_messageCopied => 'メッセージがコピーされました';
 
   @override
+  String get chat_selectText => 'テキストを選択';
+
+  @override
   String get chat_messageDeleted => 'メッセージは削除されました';
 
   @override
@@ -2800,16 +2803,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => '場所に関するデータはありません';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => '不明';

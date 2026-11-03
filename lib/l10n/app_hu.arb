@@ -613,6 +613,7 @@
     }
   },
   "chat_messageCopied": "Üzenet másolva",
+  "chat_selectText": "Szöveg kijelölése",
   "chat_messageDeleted": "Üzenet törölve",
   "chat_sendGif": "Küldj GIF-ot",
   "chat_reply": "Válasz",
@@ -1327,28 +1328,6 @@
     }
   },
   "channelPath_noLocationData": "Nincs helyszínadat.",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Megfejt",
   "channelPath_floodPath": "Árvíz",
   "channelPath_directPath": "Közvetlen",

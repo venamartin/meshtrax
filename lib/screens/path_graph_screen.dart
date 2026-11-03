@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../l10n/l10n.dart';
@@ -220,13 +221,11 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
 
   static String _db(double? v) => v == null ? '—' : v.toStringAsFixed(1);
 
-  static String _timeOf(int millis) {
+  static String _timeOf(BuildContext context, int millis) {
     if (millis == 0) return '—';
     final t = DateTime.fromMillisecondsSinceEpoch(millis);
-    return '${t.month}/${t.day} '
-        '${t.hour.toString().padLeft(2, '0')}:'
-        '${t.minute.toString().padLeft(2, '0')}:'
-        '${t.second.toString().padLeft(2, '0')}';
+    return '${DateTimeHelper.dayMonth(context, t)} '
+        '${DateTimeHelper.time(context, t, seconds: true)}';
   }
 
   String _hashOf(PathGraph graph, Contact c) => PathHelper.hopHex(
@@ -1058,9 +1057,9 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
                     '${c.provenCount}'),
                 _infoRow('How it heard me', '${_db(c.uplinkSnr)} dB'),
                 _infoRow('How I heard it', '${_db(c.downlinkSnr)} dB'),
-                _infoRow('Last seen', _timeOf(c.lastSeen)),
+                _infoRow('Last seen', _timeOf(context, c.lastSeen)),
                 _infoRow('Last proof',
-                    c.provenAt == null ? 'never' : _timeOf(c.provenAt!)),
+                    c.provenAt == null ? 'never' : _timeOf(context, c.provenAt!)),
                 _infoRow('Evidence', switch (c.tier) {
                   EvidenceTier.inferred => 'heard only',
                   EvidenceTier.proven => 'confirmed',

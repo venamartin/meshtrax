@@ -1491,6 +1491,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chat_messageCopied => 'Mensaje copiado';
 
   @override
+  String get chat_selectText => 'Seleccionar texto';
+
+  @override
   String get chat_messageDeleted => 'Mensaje borrado';
 
   @override
@@ -2926,16 +2929,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'No datos de ubicación';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month a las $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Desconocido';

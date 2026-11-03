@@ -1479,6 +1479,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_messageCopied => 'Správa skopírovaná';
 
   @override
+  String get chat_selectText => 'Označiť text';
+
+  @override
   String get chat_messageDeleted => 'Posolstvo odstránené';
 
   @override
@@ -2906,16 +2909,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'Žiadne údaje o polohe';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Neznáme';

@@ -1423,6 +1423,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_messageCopied => '메시지가 복사되었습니다';
 
   @override
+  String get chat_selectText => '텍스트 선택';
+
+  @override
   String get chat_messageDeleted => '메시지가 삭제되었습니다.';
 
   @override
@@ -2801,16 +2804,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => '위치 정보 없음';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => '알 수 없음';

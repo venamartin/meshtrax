@@ -1481,6 +1481,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_messageCopied => 'Повідомлення скопійовано';
 
   @override
+  String get chat_selectText => 'Виділити текст';
+
+  @override
   String get chat_messageDeleted => 'Повідомлення видалено';
 
   @override
@@ -2919,16 +2922,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'Немає даних про розташування';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Невідомий';

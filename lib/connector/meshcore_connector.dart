@@ -9074,6 +9074,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ));
     }
 
+    if (!processedMessage.isOutgoing &&
+        await _isContactRepeat(pubKeyHex, processedMessage)) {
+      return false;
+    }
+
     // The unique constraint is the dedup authority; a duplicate id is a
     // no-op (parity with the old recent-scan early return).
     final isNew = await _messageStore.insertIfNew(
@@ -10569,7 +10574,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final diffMs =
         (wireTimestampMs(existing) - wireTimestampMs(incoming)).abs();
     // Allow up to 5 minutes difference to account for resent messages
-    if (diffMs > 300000) {
+    if (diffMs > _repeatWindowMs) {
       appLogger.info('Repeat rejected for time diff: $diffMs ms', tag: 'Connector');
       return false;
     }
@@ -10588,6 +10593,38 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     return false;
+  }
+
+  /// How far apart in wire time two copies of one text from one sender can
+  /// be and still be one message: a resend carries a new timestamp.
+  static const int _repeatWindowMs = 300000;
+
+  /// A DM whose first copy got here but whose ACK was lost comes again with
+  /// a new timestamp when the sender resends it (MeshTrax's Retry button
+  /// does). The same text from the same sender, in a room the same author,
+  /// within [_repeatWindowMs] of wire time is that message, as on channels.
+  /// A copy with the same timestamp is the unique key's to drop.
+  Future<bool> _isContactRepeat(String pubKeyHex, Message incoming) async {
+    final wireSecs = _messageWireSecs(incoming);
+    final near = await _messageStore.loadIncomingNear(
+      pubKeyHex,
+      incoming.timestamp,
+      const Duration(milliseconds: _repeatWindowMs),
+    );
+    final first = near
+        .where((m) =>
+            m.messageId != incoming.messageId &&
+            m.text == incoming.text &&
+            listEquals(
+                m.fourByteRoomContactKey, incoming.fourByteRoomContactKey) &&
+            (_messageWireSecs(m) - wireSecs).abs() * 1000 <= _repeatWindowMs)
+        .firstOrNull;
+    if (first == null) return false;
+    appLogger.info(
+        'DM repeat dropped: same text ${wireSecs - _messageWireSecs(first)} s '
+        'after the first copy',
+        tag: 'Connector');
+    return true;
   }
 
   bool _shouldDropSelfChannelMessage(String senderName, Uint8List pathBytes) {

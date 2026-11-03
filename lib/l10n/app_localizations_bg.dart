@@ -1491,6 +1491,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_messageCopied => 'Съобщението е копирано';
 
   @override
+  String get chat_selectText => 'Избери текст';
+
+  @override
   String get chat_messageDeleted => 'Съобщението е изтрито';
 
   @override
@@ -2928,16 +2931,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'Няма данни за местоположение.';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Неизвестно';

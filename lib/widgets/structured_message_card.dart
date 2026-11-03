@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -375,10 +376,10 @@ class StructuredMessageCard extends StatelessWidget {
 
   /// "Thu, Oct 30" for the end of a day, else "Thu, Oct 30, 6:00 PM".
   static String _expiryText(BuildContext context, NoticeMessage m) {
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     final day = DateFormat.MMMEd(locale).format(m.expiryDay);
     if (m.expiresAtDayEnd) return day;
-    return '$day, ${DateFormat.jm(locale).format(m.expires!)}';
+    return '$day, ${DateTimeHelper.time(context, m.expires!)}';
   }
 
   Widget _event(BuildContext context, StructuredPalette p, EventMessage m) {
@@ -672,7 +673,7 @@ class StructuredMessageCard extends StatelessWidget {
   /// Month over day; a multi-day event shows its range, "OCT / 20–22" or
   /// "OCT–NOV / 30–2".
   Widget _dateTile(BuildContext context, StructuredPalette p, EventWhen when) {
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     final month = DateFormat.MMM(locale);
     final day = DateFormat.d(locale);
     final start = when.start;
@@ -891,9 +892,7 @@ class StructuredMessageCard extends StatelessWidget {
   /// or "6:00 PM – Sat 12:00 PM" when it ends on another day.
   static String _timeChip(BuildContext context, EventWhen when) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
-    final weekday = DateFormat.E(locale);
-    final time = DateFormat.jm(locale);
+    String time(DateTime t) => DateTimeHelper.time(context, t);
     final start = when.start;
     final end = when.end;
     if (when.allDay) {
@@ -901,16 +900,15 @@ class StructuredMessageCard extends StatelessWidget {
           ? l10n.structured_days(when.dayCount)
           : l10n.structured_allDay;
     }
-    if (end == null) return time.format(start);
-    if (_sameDay(start, end)) return '${time.format(start)} – ${time.format(end)}';
-    return '${time.format(start)} – ${weekday.format(end)} ${time.format(end)}';
+    if (end == null) return time(start);
+    if (_sameDay(start, end)) return '${time(start)} – ${time(end)}';
+    return '${time(start)} – ${DateTimeHelper.weekday(context, end)} ${time(end)}';
   }
 
   static String _whenText(BuildContext context, EventWhen when) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
-    final day = DateFormat.yMMMEd(locale);
-    final time = DateFormat.jm(locale);
+    final day = DateFormat.yMMMEd(DateTimeHelper.localeOf(context));
+    String time(DateTime t) => DateTimeHelper.time(context, t);
     final start = when.start;
     final end = when.end;
     if (when.allDay) {
@@ -918,10 +916,10 @@ class StructuredMessageCard extends StatelessWidget {
       if (end == null || _sameDay(start, end)) return '$text · ${l10n.structured_allDay}';
       return '$text – ${day.format(end)}';
     }
-    final head = '${day.format(start)} ${time.format(start)}';
+    final head = '${day.format(start)} ${time(start)}';
     if (end == null) return head;
-    if (_sameDay(start, end)) return '$head – ${time.format(end)}';
-    return '$head – ${day.format(end)} ${time.format(end)}';
+    if (_sameDay(start, end)) return '$head – ${time(end)}';
+    return '$head – ${day.format(end)} ${time(end)}';
   }
 
   static bool _sameDay(DateTime a, DateTime b) =>

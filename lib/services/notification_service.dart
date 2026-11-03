@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -28,6 +29,20 @@ class NotificationService {
   /// onto the app's [MaterialApp]; dialogs and sheets aren't pages.
   static final RouteObserver<PageRoute<dynamic>> routeObserver =
       RouteObserver<PageRoute<dynamic>>();
+
+  /// The pages showing a chat (a DM, a room or a channel), each added by its
+  /// chat screen and removed when it goes.
+  static final Set<Route<dynamic>> chatRoutes = {};
+
+  /// Opens [chat] from a notification the way other messaging apps do: in
+  /// place of the chat pages on top, so taps one after another never stack
+  /// chats and Back leaves the chat. Any other page stays where it is, since
+  /// one may be in the middle of something (a backup saves its file only
+  /// while Settings is open).
+  static void openChat(NavigatorState navigator, Widget chat) {
+    navigator.popUntil((r) => r.isFirst || !chatRoutes.contains(r));
+    navigator.push(MaterialPageRoute(builder: (_) => chat));
+  }
 
   /// Set by the app to handle a tapped notification's payload (navigation).
   void Function(String payload)? onNotificationTap;

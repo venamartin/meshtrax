@@ -1,3 +1,8 @@
+import '../connector/meshcore_protocol.dart'
+    show hex2Uint8List, payloadTypeADVERT;
+import '../services/path_graph/frame_adapter.dart'
+    show parseAdvert, parseRawPacket;
+
 class ChannelQrData {
   final String name;
   final String pskHex;
@@ -9,15 +14,20 @@ class ContactQrData {
   final String name;
   final String pubKeyHex;
   final int type;
+  final double? latitude;
+  final double? longitude;
 
   ContactQrData({
     required this.name,
     required this.pubKeyHex,
     required this.type,
+    this.latitude,
+    this.longitude,
   });
 }
 
 class MeshCoreQr {
+  static const String _scheme = 'meshcore://';
   static const String _channelPrefix = 'meshcore://channel/add';
   static const String _contactPrefix = 'meshcore://contact/add';
 
@@ -90,6 +100,32 @@ class MeshCoreQr {
       name: name,
       pubKeyHex: key.group(1)!,
       type: int.tryParse(type?.group(1) ?? '') ?? 1,
+    );
+  }
+
+  /// A contact card: `meshcore://` and the hex of a raw advert packet, as
+  /// the firmware's `card` command and CMD_EXPORT_CONTACT give it. The
+  /// signature is not checked, so a card is trusted as far as a
+  /// contact/add link.
+  static ContactQrData? parseAdvertCard(String data) {
+    final text = data.trim();
+    if (!text.toLowerCase().startsWith(_scheme)) return null;
+    final hex = text.substring(_scheme.length).replaceAll(RegExp(r'\s'), '');
+    if (hex.isEmpty ||
+        hex.length.isOdd ||
+        !RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex)) {
+      return null;
+    }
+    final packet = parseRawPacket(hex2Uint8List(hex));
+    if (packet == null || packet.payloadType != payloadTypeADVERT) return null;
+    final advert = parseAdvert(packet.payload);
+    if (advert == null) return null;
+    return ContactQrData(
+      name: advert.name ?? '',
+      pubKeyHex: advert.pubkeyHex,
+      type: advert.type,
+      latitude: advert.lat,
+      longitude: advert.lon,
     );
   }
 }

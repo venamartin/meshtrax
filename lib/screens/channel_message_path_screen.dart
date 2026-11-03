@@ -16,6 +16,7 @@ import '../models/channel_message.dart';
 import '../models/app_settings.dart';
 import '../models/contact.dart';
 import '../models/resolved_hop.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/path_resolver.dart';
 import '../widgets/adaptive_app_bar_title.dart';
@@ -146,7 +147,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
             _buildDetailRow(l10n.channelPath_senderLabel, message.senderName),
             _buildDetailRow(
               l10n.channelPath_timeLabel,
-              _formatTime(message.timestamp, l10n),
+              _formatTime(context, message.timestamp),
             ),
             if (message.repeatCount > 0)
               _buildDetailRow(
@@ -222,18 +223,11 @@ class ChannelMessagePathScreen extends StatelessWidget {
     ];
   }
 
-  String _formatTime(DateTime time, AppLocalizations l10n) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inDays > 0) {
-      final timeLabel =
-          '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-      return l10n.channelPath_timeWithDate(time.day, time.month, timeLabel);
-    }
-    return l10n.channelPath_timeOnly(
-      '${time.hour}:${time.minute.toString().padLeft(2, '0')}',
-    );
+  String _formatTime(BuildContext context, DateTime time) {
+    final clock = DateTimeHelper.time(context, time);
+    return DateTime.now().difference(time).inDays > 0
+        ? '${DateTimeHelper.dayMonth(context, time)} $clock'
+        : clock;
   }
 
   String _formatPathLabel(int? pathLength, AppLocalizations l10n) {

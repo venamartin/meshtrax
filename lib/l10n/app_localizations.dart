@@ -2722,6 +2722,12 @@ abstract class AppLocalizations {
   /// **'Message copied'**
   String get chat_messageCopied;
 
+  /// No description provided for @chat_selectText.
+  ///
+  /// In en, this message translates to:
+  /// **'Select text'**
+  String get chat_selectText;
+
   /// No description provided for @chat_messageDeleted.
   ///
   /// In en, this message translates to:
@@ -5174,18 +5180,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No location data'**
   String get channelPath_noLocationData;
-
-  /// No description provided for @channelPath_timeWithDate.
-  ///
-  /// In en, this message translates to:
-  /// **'{day}/{month} {time}'**
-  String channelPath_timeWithDate(int day, int month, String time);
-
-  /// No description provided for @channelPath_timeOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'{time}'**
-  String channelPath_timeOnly(String time);
 
   /// No description provided for @channelPath_unknownPath.
   ///

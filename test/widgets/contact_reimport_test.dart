@@ -134,6 +134,55 @@ void main() {
     expect(c.advertTimes.single, 0);
   });
 
+  String card(List<int> key, {int flags = 0x81, List<int> latLon = const []}) {
+    final bytes = [
+      0x11, 0x00, // flood advert, no path
+      ...key,
+      0x93, 0x64, 0xE7, 0x6A, // timestamp
+      ...List.filled(64, 0x5A), // signature
+      flags,
+      ...latLon,
+      0xC2, 0xBF, 0xF0, 0x9F, 0x9F, 0xA6, 0x3F, // ¿🟦?
+    ];
+    return 'meshcore://'
+        '${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}';
+  }
+
+  testWidgets('a contact card imports the contact its advert names',
+      (tester) async {
+    await pumpHost(tester);
+    final key = List.generate(32, (i) => 0x77 + i);
+    final ll = ByteData(8)
+      ..setInt32(0, 36974000, Endian.little)
+      ..setInt32(4, -122030000, Endian.little);
+
+    ContactImportHelper.importFromScannedData(
+        ctx, card(key, flags: 0x91, latLon: ll.buffer.asUint8List()));
+    await tester.pump();
+
+    final added = c.imported.single;
+    expect(added.publicKey, key);
+    expect(added.name, '¿🟦?');
+    expect(added.type, advTypeChat);
+    expect(added.latitude, 36.974);
+    expect(added.longitude, -122.03);
+    expect(c.advertTimes.single, 0);
+    await tester.pump();
+    expect(find.text('Contact has been imported.'), findsOneWidget);
+  });
+
+  testWidgets('a card for a saved contact leaves it untouched',
+      (tester) async {
+    await pumpHost(tester);
+
+    ContactImportHelper.importFromScannedData(ctx, card(_key));
+    await tester.pump();
+
+    expect(c.imported, isEmpty);
+    expect(find.text('Hilltop RPT is already in your contacts.'),
+        findsOneWidget);
+  });
+
   testWidgets('a key already heard on air imports what its advert said',
       (tester) async {
     await pumpHost(tester);

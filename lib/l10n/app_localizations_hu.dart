@@ -1496,6 +1496,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_messageCopied => 'Üzenet másolva';
 
   @override
+  String get chat_selectText => 'Szöveg kijelölése';
+
+  @override
   String get chat_messageDeleted => 'Üzenet törölve';
 
   @override
@@ -2935,16 +2938,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'Nincs helyszínadat.';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Megfejt';

@@ -1469,6 +1469,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_messageCopied => 'Meddelandet kopierades';
 
   @override
+  String get chat_selectText => 'Markera text';
+
+  @override
   String get chat_messageDeleted => 'Meddelandet raderat';
 
   @override
@@ -2894,16 +2897,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get channelPath_noLocationData => 'Ingen platsdata';
-
-  @override
-  String channelPath_timeWithDate(int day, int month, String time) {
-    return '$day/$month kl. $time';
-  }
-
-  @override
-  String channelPath_timeOnly(String time) {
-    return '$time';
-  }
 
   @override
   String get channelPath_unknownPath => 'Okänt';
