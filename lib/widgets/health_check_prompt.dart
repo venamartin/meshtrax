@@ -11,6 +11,9 @@ import '../utils/platform_info.dart';
 /// finished syncing. New defaults only reach new installs, so this is how
 /// people who update find out what they could change. If the radio drops, or
 /// the user has moved on to another screen, it asks on a later launch.
+///
+/// Not shown for now (owner, 2026-11-03: users pushed back on the check
+/// asking by itself); Settings runs it on request.
 Future<void> showHealthCheckPromptIfNeeded(BuildContext context) async {
   final settingsService = context.read<AppSettingsService>();
   if (settingsService.settings.healthCheckPromptSeen) return;
