@@ -158,6 +158,10 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, bool> _parkedReady = {};
   final Map<String, Timer> _cooldownTimers = {};
   final Map<String, int> _autoResends = {};
+  // The attempt numbers those sends went out with, and the number the
+  // radio was last given for each message.
+  final Map<String, Set<int>> _resendAttempts = {};
+  final Map<String, int> _wireAttempts = {};
 
   /// Sends a parked message gets on repeaters coming into range, outside
   /// Max Message Retries; after that its ladder moves on.
@@ -397,7 +401,26 @@ class MessageRetryService extends ChangeNotifier {
   bool isSendingTo(String contactKey) => _activeMessages
       .any((id) => _pendingContacts[id]?.publicKeyHex == contactKey);
 
-  Future<void> _attemptSend(String messageId) async {
+  /// The attempt number a parked rung is sent again with. Its own number
+  /// would repeat the packet exactly, and every radio that heard it drops
+  /// a packet it has seen, unforwarded and unACKed (Mesh.cpp, wasSeen). A
+  /// number above the ladder's with the rung's low two bits is a new packet
+  /// whose ACK still names the rung: the firmware hides the number in a
+  /// tail byte and hashes only its low two bits into the ACK
+  /// (BaseChatMesh::composeMsgPacket). A text too long for the tail byte
+  /// goes out as before.
+  int _resendAttempt(String messageId, int rung) {
+    if (_nearMaxText.contains(messageId)) return rung;
+    final used = _resendAttempts[messageId] ??= {};
+    var attempt = (rung & 3) + 4;
+    while (attempt < _attemptBudget(messageId) || used.contains(attempt)) {
+      attempt += 4;
+    }
+    used.add(attempt);
+    return attempt;
+  }
+
+  Future<void> _attemptSend(String messageId, {bool resend = false}) async {
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final config = _config;
@@ -415,6 +438,7 @@ class MessageRetryService extends ChangeNotifier {
     );
 
     final attempt = message.retryCount;
+    final wireAttempt = resend ? _resendAttempt(messageId, attempt) : attempt;
     final timestampSeconds = message.timestamp.millisecondsSinceEpoch ~/ 1000;
     Future<void> send() async {
       // Re-validate after the route write — a timer or ACK could have
@@ -432,12 +456,15 @@ class MessageRetryService extends ChangeNotifier {
         );
         return;
       }
-      _registerExpectedAck(messageId, message, contact, attempt, timestampSeconds);
+      _wireAttempts[messageId] = wireAttempt;
+      _registerExpectedAck(
+          messageId, message, contact, wireAttempt, timestampSeconds);
       config.onAttemptStarted?.call(contact, selection, attempt);
       // Before the send, as always: its RESP_CODE_SENT replaces this timer
       // with the real one, and can arrive while the send is awaited.
       _startPreSentTimer(messageId);
-      await config.sendMessage(contact, message.text, attempt, timestampSeconds);
+      await config.sendMessage(
+          contact, message.text, wireAttempt, timestampSeconds);
     }
 
     final onRoute = config.sendOnRoute;
@@ -652,7 +679,10 @@ class MessageRetryService extends ChangeNotifier {
         config.prepareContactOutboundText?.call(contact, message.text) ??
             message.text;
     final width = config.pathHashByteWidth?.call() ?? contact.pathHashSize;
-    if (!isContactEchoObservable(outboundText, width)) return;
+    if (!isContactEchoObservable(outboundText, width,
+        attempt: _wireAttempts[messageId] ?? message.retryCount)) {
+      return;
+    }
     final textBytes = utf8.encode(outboundText).length;
     final waitMs = TimeoutHelper.echoWaitMs(
         airtime(txtMsgPacketBytes(textBytes, hops: width)), attemptTimeoutMs);
@@ -742,7 +772,7 @@ class MessageRetryService extends ChangeNotifier {
           'again (${n + 1}/$maxAutoResends)',
           tag: 'AckHash',
         );
-        _attemptSend(id);
+        _attemptSend(id, resend: true);
       } else {
         _handleTimeout(id);
       }
@@ -860,6 +890,8 @@ class MessageRetryService extends ChangeNotifier {
     _parkedReady.remove(messageId);
     _cooldownTimers.remove(messageId)?.cancel();
     _autoResends.remove(messageId);
+    _resendAttempts.remove(messageId);
+    _wireAttempts.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -1131,6 +1163,8 @@ class MessageRetryService extends ChangeNotifier {
     _parkedReady.clear();
     _cooldownTimers.clear();
     _autoResends.clear();
+    _resendAttempts.clear();
+    _wireAttempts.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();
