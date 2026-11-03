@@ -418,12 +418,15 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     connector.recordRoomLogin(keyHex, password, true);
   }
 
+  PageRoute<dynamic>? _route;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
       NotificationService.routeObserver.subscribe(this, route);
+      NotificationService.chatRoutes.add(_route = route);
     }
   }
 
@@ -814,6 +817,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     _atBottom.dispose();
     _lifecycleListener.dispose();
     NotificationService.routeObserver.unsubscribe(this);
+    NotificationService.chatRoutes.remove(_route);
     _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);

@@ -323,12 +323,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     });
   }
 
+  PageRoute<dynamic>? _route;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
       NotificationService.routeObserver.subscribe(this, route);
+      NotificationService.chatRoutes.add(_route = route);
     }
   }
 
@@ -926,6 +929,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _atBottom.dispose();
     _lifecycleListener.dispose();
     NotificationService.routeObserver.unsubscribe(this);
+    NotificationService.chatRoutes.remove(_route);
     _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);

@@ -272,13 +272,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         }
       }
       if (channel == null) return;
-      navigator.push(
-        MaterialPageRoute(
-          builder: (_) => ChannelChatScreen(
-            channel: channel!,
-            scrollToMessageId: messageId,
-          ),
-        ),
+      // Even over the same channel: the new page lands on the message.
+      NotificationService.openChat(
+        navigator,
+        ChannelChatScreen(channel: channel, scrollToMessageId: messageId),
       );
     } else if (payload.startsWith('channel:')) {
       final index = int.tryParse(payload.substring('channel:'.length));
@@ -293,9 +290,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         }
       }
       if (channel == null) return;
-      navigator.push(
-        MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel!)),
-      );
+      NotificationService.openChat(
+          navigator, ChannelChatScreen(channel: channel));
     } else {
       if (connector.activeContactKey == payload) return;
       // allContacts: the radio may have overwritten the sender since, and the
@@ -308,9 +304,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         }
       }
       if (contact == null) return;
-      navigator.push(
-        MaterialPageRoute(builder: (_) => ChatScreen(contact: contact!)),
-      );
+      NotificationService.openChat(navigator, ChatScreen(contact: contact));
     }
   }
 
