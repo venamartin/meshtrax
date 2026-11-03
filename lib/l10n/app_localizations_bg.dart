@@ -1491,6 +1491,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_messageCopied => 'Съобщението е копирано';
 
   @override
+  String get chat_selectText => 'Избери текст';
+
+  @override
   String get chat_messageDeleted => 'Съобщението е изтрито';
 
   @override

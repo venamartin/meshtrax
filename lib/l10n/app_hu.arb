@@ -613,6 +613,7 @@
     }
   },
   "chat_messageCopied": "Üzenet másolva",
+  "chat_selectText": "Szöveg kijelölése",
   "chat_messageDeleted": "Üzenet törölve",
   "chat_sendGif": "Küldj GIF-ot",
   "chat_reply": "Válasz",

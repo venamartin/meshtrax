@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Meddelandet kopierades",
+  "chat_selectText": "Markera text",
   "chat_messageDeleted": "Meddelandet raderat",
   "chat_sendGif": "Skicka GIF",
   "chat_reply": "Svara",

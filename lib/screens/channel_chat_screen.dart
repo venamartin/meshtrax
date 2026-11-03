@@ -1592,7 +1592,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                 onTap: PlatformInfo.isDesktop
                     ? null
                     : () => _showMessagePathInfo(message),
-                onLongPress: () => _showMessageActions(message),
+                onLongPress: () => _showMessageActions(message,
+                    plainText: gifId == null && structured == null),
                 child: Container(
                   padding: structured != null
                       ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
@@ -2801,7 +2802,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
 
   /// The message's actions: a sheet after a long-press, a menu at [at]
   /// after a right-click on desktop.
-  void _showMessageActions(ChannelMessage message, {Offset? at}) {
+  /// [plainText]: the bubble shows text, not a card or a GIF.
+  void _showMessageActions(ChannelMessage message,
+      {Offset? at, bool plainText = false}) {
     final l10n = context.l10n;
     showMessageActions(context, position: at, [
       MessageAction(Icons.reply, l10n.chat_reply, () => _setReplyingTo(message)),
@@ -2823,6 +2826,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       // Keep brackets in clipboard for clarity (especially with emoji names)
       MessageAction(
           Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      // A desktop bubble is selectable itself.
+      if (plainText && !PlatformInfo.isDesktop)
+        MessageAction(Icons.select_all, l10n.chat_selectText,
+            () => showSelectTextDialog(context, message.text)),
       MessageAction(Icons.delete_outline, l10n.common_delete,
           () => _deleteMessage(message)),
       if (!message.isOutgoing) ...[

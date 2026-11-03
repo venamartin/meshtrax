@@ -1426,6 +1426,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_messageCopied => 'メッセージがコピーされました';
 
   @override
+  String get chat_selectText => 'テキストを選択';
+
+  @override
   String get chat_messageDeleted => 'メッセージは削除されました';
 
   @override

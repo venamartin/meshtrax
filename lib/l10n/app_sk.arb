@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Správa skopírovaná",
+  "chat_selectText": "Označiť text",
   "chat_messageDeleted": "Posolstvo odstránené",
   "chat_sendGif": "Odoslať GIF",
   "chat_reply": "Odpovedať",

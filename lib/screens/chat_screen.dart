@@ -1353,7 +1353,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                         message.status == MessageStatus.failed
                     ? _retryMessage(message)
                     : _openMessagePath(message),
-                onLongPress: () => _showMessageActions(message, contact),
+                onLongPress: () => _showMessageActions(message, contact,
+                    plainText: facts.gifId == null && facts.structured == null),
                 onRetryReaction: (msg, emoji) => _sendReaction(msg, emoji),
               );
               if (isRoom && !message.isOutgoing && !PlatformInfo.isDesktop) {
@@ -2593,8 +2594,10 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   }
 
   /// The message's actions: a sheet after a long-press, a menu at [at]
-  /// after a right-click on desktop.
-  void _showMessageActions(Message message, Contact contact, {Offset? at}) {
+  /// after a right-click on desktop. [plainText]: the bubble shows text,
+  /// not a card or a GIF.
+  void _showMessageActions(Message message, Contact contact,
+      {Offset? at, bool plainText = false}) {
     final l10n = context.l10n;
     final chatContact = _resolveContact(context.read<MeshCoreConnector>());
     final isRoom = chatContact.type == advTypeRoom;
@@ -2620,6 +2623,10 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
             Icons.route, l10n.chat_path, () => _openMessagePath(message)),
       MessageAction(
           Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      // A desktop bubble is selectable itself.
+      if (plainText && !PlatformInfo.isDesktop)
+        MessageAction(Icons.select_all, l10n.chat_selectText,
+            () => showSelectTextDialog(context, message.text)),
       MessageAction(Icons.delete_outline, l10n.common_delete,
           () => _deleteMessage(message)),
       if (message.isOutgoing && message.status == MessageStatus.failed)

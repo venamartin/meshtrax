@@ -748,6 +748,7 @@
     }
   },
   "chat_messageCopied": "Message copied",
+  "chat_selectText": "Select text",
   "chat_messageDeleted": "Message deleted",
   "chat_sendGif": "Send GIF",
   "chat_reply": "Reply",

@@ -1469,6 +1469,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_messageCopied => 'Meddelandet kopierades';
 
   @override
+  String get chat_selectText => 'Markera text';
+
+  @override
   String get chat_messageDeleted => 'Meddelandet raderat';
 
   @override

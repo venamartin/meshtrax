@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Mensaje copiado",
+  "chat_selectText": "Seleccionar texto",
   "chat_messageDeleted": "Mensaje borrado",
   "chat_sendGif": "Enviar GIF",
   "chat_reply": "Responder",

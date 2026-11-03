@@ -461,6 +461,7 @@
     }
   },
   "chat_messageCopied": "Повідомлення скопійовано",
+  "chat_selectText": "Виділити текст",
   "chat_messageDeleted": "Повідомлення видалено",
   "chat_sendGif": "Надіслати GIF",
   "chat_reply": "Відповісти",

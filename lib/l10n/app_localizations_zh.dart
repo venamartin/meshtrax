@@ -1406,6 +1406,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_messageCopied => '消息已复制';
 
   @override
+  String get chat_selectText => '选择文本';
+
+  @override
   String get chat_messageDeleted => '消息已删除';
 
   @override

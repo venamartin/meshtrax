@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Bericht gekopieerd",
+  "chat_selectText": "Tekst selecteren",
   "chat_messageDeleted": "Bericht verwijderd",
   "chat_sendGif": "GIF verzenden",
   "chat_reply": "Reageren",

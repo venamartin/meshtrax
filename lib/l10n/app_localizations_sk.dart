@@ -1479,6 +1479,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_messageCopied => 'Správa skopírovaná';
 
   @override
+  String get chat_selectText => 'Označiť text';
+
+  @override
   String get chat_messageDeleted => 'Posolstvo odstránené';
 
   @override

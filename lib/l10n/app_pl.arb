@@ -470,6 +470,7 @@
     }
   },
   "chat_messageCopied": "Wiadomość skopiowana",
+  "chat_selectText": "Zaznacz tekst",
   "chat_messageDeleted": "Wiadomość usunięta",
   "chat_sendGif": "Wyślij GIF",
   "chat_reply": "Odpowiedz",

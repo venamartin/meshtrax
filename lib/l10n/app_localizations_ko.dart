@@ -1423,6 +1423,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_messageCopied => '메시지가 복사되었습니다';
 
   @override
+  String get chat_selectText => '텍스트 선택';
+
+  @override
   String get chat_messageDeleted => '메시지가 삭제되었습니다.';
 
   @override

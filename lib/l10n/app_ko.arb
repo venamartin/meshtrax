@@ -613,6 +613,7 @@
     }
   },
   "chat_messageCopied": "메시지가 복사되었습니다",
+  "chat_selectText": "텍스트 선택",
   "chat_messageDeleted": "메시지가 삭제되었습니다.",
   "chat_sendGif": "GIF 보내기",
   "chat_reply": "답변",

@@ -2722,6 +2722,12 @@ abstract class AppLocalizations {
   /// **'Message copied'**
   String get chat_messageCopied;
 
+  /// No description provided for @chat_selectText.
+  ///
+  /// In en, this message translates to:
+  /// **'Select text'**
+  String get chat_selectText;
+
   /// No description provided for @chat_messageDeleted.
   ///
   /// In en, this message translates to:

@@ -1496,6 +1496,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_messageCopied => 'Üzenet másolva';
 
   @override
+  String get chat_selectText => 'Szöveg kijelölése';
+
+  @override
   String get chat_messageDeleted => 'Üzenet törölve';
 
   @override

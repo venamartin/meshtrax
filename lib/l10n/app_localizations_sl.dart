@@ -1470,6 +1470,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_messageCopied => 'Sporočilo poslano';
 
   @override
+  String get chat_selectText => 'Izberi besedilo';
+
+  @override
   String get chat_messageDeleted => 'Sporočilo izbrisano';
 
   @override

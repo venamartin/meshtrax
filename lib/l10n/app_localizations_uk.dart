@@ -1481,6 +1481,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_messageCopied => 'Повідомлення скопійовано';
 
   @override
+  String get chat_selectText => 'Виділити текст';
+
+  @override
   String get chat_messageDeleted => 'Повідомлення видалено';
 
   @override

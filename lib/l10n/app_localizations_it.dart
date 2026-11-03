@@ -1490,6 +1490,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chat_messageCopied => 'Messaggio copiato';
 
   @override
+  String get chat_selectText => 'Seleziona testo';
+
+  @override
   String get chat_messageDeleted => 'Messaggio eliminato';
 
   @override

@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Съобщението е копирано",
+  "chat_selectText": "Избери текст",
   "chat_messageDeleted": "Съобщението е изтрито",
   "chat_sendGif": "Изпрати GIF",
   "chat_reply": "Отговори",

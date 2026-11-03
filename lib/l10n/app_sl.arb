@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Sporočilo poslano",
+  "chat_selectText": "Izberi besedilo",
   "chat_messageDeleted": "Sporočilo izbrisano",
   "chat_sendGif": "Pošlji GIF",
   "chat_reply": "Odgovori",

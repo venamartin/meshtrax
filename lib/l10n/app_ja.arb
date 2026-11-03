@@ -613,6 +613,7 @@
     }
   },
   "chat_messageCopied": "メッセージがコピーされました",
+  "chat_selectText": "テキストを選択",
   "chat_messageDeleted": "メッセージは削除されました",
   "chat_sendGif": "GIFを送信する",
   "chat_reply": "返信",
