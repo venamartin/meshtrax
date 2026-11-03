@@ -464,11 +464,15 @@ void main() {
     for (final name in ['map_tile_cache.db', 'map_tile_cache.json']) {
       File('${support.path}/$name').createSync();
     }
-    final maps = Directory('${support.path}/maps')..createSync();
+    Directory('${support.path}/maps').createSync();
 
     await MapPacksService.removeOnlineTileCache(temp: temp, support: support);
     expect(Directory('${temp.path}/map_tile_cache').existsSync(), isFalse);
-    expect(support.listSync().map((e) => e.path), [maps.path]);
+    // Names, not paths: a listing joins with the system's separator, `\` on
+    // Windows, where the test's own paths use `/`.
+    expect(
+        support.listSync().map((e) => e.path.split(Platform.pathSeparator).last),
+        ['maps']);
     expect(keep.existsSync(), isTrue);
 
     // Nothing left to remove the next time.
