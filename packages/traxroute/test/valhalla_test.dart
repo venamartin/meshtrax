@@ -13,7 +13,11 @@ void main() {
     expect(valhallaCosting(PathType.paved).$1, 'auto');
     expect(valhallaCosting(PathType.paved).$2, {'exclude_unpaved': true});
     expect(valhallaCosting(PathType.dirt).$1, 'auto');
-    expect(valhallaCosting(PathType.dirt).$2, {'use_tracks': 1.0});
+    expect(valhallaCosting(PathType.dirt).$2, {
+      'use_tracks': 1.0,
+      'use_distance': 0.8,
+      'disable_hierarchy_pruning': true,
+    });
     final (costing, options) = valhallaCosting(PathType.hiking);
     expect(costing, 'pedestrian');
     expect(options, {

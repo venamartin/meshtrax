@@ -41,6 +41,10 @@ void main() {
             as Map<String, dynamic>;
     expect(config['mjolnir']['tile_extract'], tiles.absolute.path);
     expect(config['mjolnir']['tile_dir'], endsWith('/none'));
+    expect(
+      config['service_limits']['max_distance_disable_hierarchy_culling'],
+      100000,
+    );
   });
 
   test("routes with Valhalla's answer from the native side", () async {

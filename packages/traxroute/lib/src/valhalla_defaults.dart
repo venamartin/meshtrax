@@ -11,6 +11,11 @@ Map<String, dynamic> valhallaConfig(File tiles, Directory workDir) {
     ..['tile_dir'] = '${workDir.path}/none';
   (config['additional_data'] as Map<String, dynamic>)['elevation'] =
       '${workDir.path}/none/';
+  // How far apart a dirt route's points may be for it to search every road
+  // (valhallaCosting); further, Valhalla prunes as usual.
+  (config['service_limits']
+          as Map<String, dynamic>)['max_distance_disable_hierarchy_culling'] =
+      100000;
   return config;
 }
 

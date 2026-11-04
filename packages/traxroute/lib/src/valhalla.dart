@@ -2,9 +2,18 @@ import 'route.dart';
 
 /// Valhalla's costing and options for each path type: the app defaults
 /// MeshTrax and traxmapmaker agreed (FINDINGS §9).
+///
+/// Dirt weighs distance 0.8 against time, so a dirt road that saves real
+/// distance beats a faster paved way round, but a crawl over sand tracks to
+/// save a little doesn't (Martin, 2026-11-04). It searches every road, up to
+/// [valhallaConfig]'s limit: Valhalla otherwise skips minor roads far from
+/// both ends, and Berdoo Canyon Road with them.
 (String, Map<String, Object>) valhallaCosting(PathType type) => switch (type) {
   PathType.paved => ('auto', {'exclude_unpaved': true}),
-  PathType.dirt => ('auto', {'use_tracks': 1.0}),
+  PathType.dirt => (
+    'auto',
+    {'use_tracks': 1.0, 'use_distance': 0.8, 'disable_hierarchy_pruning': true},
+  ),
   PathType.hiking => (
     'pedestrian',
     {
