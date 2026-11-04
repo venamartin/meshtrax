@@ -470,7 +470,11 @@ class _MapScreenState extends State<MapScreen> {
             settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
 
         return PopScope(
-          canPop: allowBack,
+          // Back closes a route before anything else.
+          canPop: allowBack && _routeTo == null,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && _routeTo != null) _clearRoute();
+          },
           child: Scaffold(
             appBar: AppBar(
               // The map needs no name, and the room goes to the map; picking
@@ -715,6 +719,7 @@ class _MapScreenState extends State<MapScreen> {
                     onDestinationSelected: (index) =>
                         _handleQuickSwitch(index, context),
                   ),
+            floatingActionButtonLocation: MapControls.aboveSheet,
             floatingActionButton: MapControls(
               controller: _mapController,
               onMyLocation: connector.hasGps

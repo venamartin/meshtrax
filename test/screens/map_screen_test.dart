@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxcoords/traxcoords.dart';
 import 'package:traxmap/traxmap.dart';
+import 'package:traxroute/traxroute.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -22,12 +24,15 @@ import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:meshtrax/services/routing_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/map_legend_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import 'package:meshtrax/widgets/room_login_dialog.dart';
+import 'package:meshtrax/widgets/route_panel.dart';
 
 import '../helpers/map_fakes.dart';
 
@@ -141,6 +146,37 @@ class _NoDownloads implements PackDownloader {
   Future<void> cancel(String packId) async {}
 }
 
+/// Routing data on hand, and a straight line for every route.
+class _Routing extends RoutingService {
+  _Routing(MapPacksService maps)
+    : super(
+        maps: maps,
+        store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
+        engine: null,
+      );
+
+  @override
+  bool get available => true;
+  @override
+  bool get hasRoutingData => true;
+  @override
+  Future<RouteResult> route(
+    LatLon from,
+    LatLon to,
+    PathType type, {
+    String language = 'en-US',
+  }) async => RouteResult(
+    pathType: type,
+    points: [from, to],
+    elevations: const [10, 12],
+    elevationIntervalM: 30,
+    km: 1.1,
+    seconds: 900,
+    maneuvers: const [],
+    kmShortOfDestination: 0,
+  );
+}
+
 Contact _node(String name, int type, int seed, double lat, double lon) =>
     Contact(
       publicKey: Uint8List.fromList(List.filled(32, seed)),
@@ -178,6 +214,7 @@ void main() {
     WidgetTester tester,
     MeshCoreConnector connector, {
     Widget screen = const MapScreen(),
+    RoutingService? routing,
   }) async {
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -194,6 +231,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           ChangeNotifierProvider.value(value: PathGraphService()),
+          if (routing != null) ChangeNotifierProvider.value(value: routing),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -289,6 +327,55 @@ void main() {
       expect(find.text(refused), findsNothing);
       expect(find.text(joinRoom), findsNothing, reason: 'the node dialog closed');
       expect(find.byType(RoomLoginDialog), findsOneWidget);
+    });
+  });
+
+  // On a phone the layers button straddled the route panel's top edge and
+  // covered its X, the only way to close the route.
+  group('a route', () {
+    Future<void> showRoute(WidgetTester tester) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: _Routing(maps),
+      );
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+        const LatLng(41.8, -71.4),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Route here'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(RoutePanel), findsOneWidget);
+    }
+
+    testWidgets('keeps the map buttons clear of its X', (tester) async {
+      await showRoute(tester);
+
+      final close = tester.getRect(find.byTooltip('Clear route'));
+      final layers = tester.getRect(find.byTooltip('Map layers'));
+      expect(layers.overlaps(close), isFalse);
+      expect(
+        tester.getRect(find.byType(MapControls)).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(RoutePanel)).top),
+      );
+    });
+
+    testWidgets('closes on back, and back then leaves the map', (tester) async {
+      await showRoute(tester);
+
+      // The panel slides away.
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(RoutePanel), findsNothing);
+      expect(find.byType(MapScreen), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(MapScreen), findsNothing);
     });
   });
 
