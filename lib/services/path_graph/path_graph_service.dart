@@ -936,9 +936,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           estDelivery: r.estDelivery,
           guessedLinks: r.guessedLinks,
         );
-    final key = contact.publicKeyHex;
+    final found = graph.findRoutes(contact.publicKeyHex, count: 3);
     return [
-      switch (graph.findPath(key)) {
+      switch (found.best) {
         DirectResult() => PathSelection(
             pathBytes: const [],
             hopCount: 0,
@@ -948,7 +948,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         RouteResult r => route(r),
         FloodResult() => null,
       },
-      for (final r in graph.findAlternatives(key, count: 3)) route(r),
+      for (final r in found.alternatives) route(r),
     ].nonNulls.toList();
   }
 

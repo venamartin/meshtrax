@@ -256,7 +256,8 @@ class RadioRouteKeeper {
         for (final k in await recentChats(DateTime.now().subtract(recentWindow)))
           _key(k),
       };
-      for (final contact in contacts()) {
+      // A copy: the pass lets frames through, and the list may change.
+      for (final contact in List.of(contacts())) {
         if (_disposed) return;
         if (!_eligible(contact)) continue;
         final key = _key(contact.publicKeyHex);
@@ -269,6 +270,10 @@ class RadioRouteKeeper {
         await _apply(key,
             inCooldown: last != null &&
                 DateTime.now().difference(last) < rewriteCooldown);
+        // Let a frame through. With nothing to write nothing in a pass
+        // waits, so it ran as one block on the UI thread (phone profile
+        // 2026-11-05: 250–300 ms once a minute).
+        await Future<void>.delayed(Duration.zero);
       }
     } catch (e) {
       appLogger.warn('stored route check failed: $e', tag: 'PathGraph');
@@ -294,11 +299,13 @@ class RadioRouteKeeper {
             isSendingTo(contact.publicKeyHex)) {
           return;
         }
-        final want = _wanted(contact);
+        // Searched once: the search is most of what a check costs.
+        final routes = routesFor(contact);
+        final want = _wanted(contact, routes);
         if (want == null || holds(contact, want)) return;
         final dropped = !want.useFlood &&
             contact.pathLength >= 0 &&
-            !(routesFor(contact)?.any((r) => holds(contact, r)) ?? true);
+            !(routes?.any((r) => holds(contact, r)) ?? true);
         if (inCooldown && !want.useFlood && !dropped) return;
         _lastWrite[key] = DateTime.now();
         final guessed = want.guessedHops;
@@ -316,42 +323,42 @@ class RadioRouteKeeper {
   }
 
   /// Pathfinder's current best until a retry shows an ACK lost; from the
-  /// first step on, the ladder planned at that step.
-  PathSelection? _wanted(Contact contact) {
+  /// first step on, the ladder planned at that step. [routes] are
+  /// Pathfinder's, as [routesFor] gave them.
+  PathSelection? _wanted(Contact contact, List<PathSelection>? routes) {
     final episode = _episodes[_key(contact.publicKeyHex)];
     final rung = episode == null
         ? 0
         : rungFor(
             directCopies: episode.directCopies,
             newestDirect: episode.newestDirect);
-    if (rung == 0) return _rung0(contact);
+    if (rung == 0) return _rung0(contact, routes);
     // The ladder a send would have run from the held route: that route
     // first (its rung is the one that failed), then proven routes only.
     final ladder = episode!.ladder ??=
-        _ladderFor(contact, provenOnly: true, first: episode.held);
+        _ladderFor(contact, routes, provenOnly: true, first: episode.held);
     if (ladder == null) return null;
     return rung < ladder.length ? ladder[rung] : PathSelection.flood(radioWidth());
   }
 
   /// The route held before any step down: Pathfinder's best among routes
   /// with at most [maxGuessedHopsHeld] guessed hops that are not retired.
-  PathSelection? _rung0(Contact contact) {
+  PathSelection? _rung0(Contact contact, List<PathSelection>? routes) {
     final retired = _retired[_key(contact.publicKeyHex)] ?? const <String>{};
-    return _ladderFor(contact,
+    return _ladderFor(contact, routes,
         keep: (r) =>
             r.guessedHops <= maxGuessedHopsHeld &&
             linkKeys(r, guessedOnly: true).every((l) => !retired.contains(l)))
         ?.first;
   }
 
-  /// The DM ladder for [contact] over Pathfinder's routes, [keep] only;
+  /// The DM ladder for [contact] over Pathfinder's [routes], [keep] only;
   /// [provenOnly] keeps routes with no guessed hop (the step-down rungs);
   /// [first] goes ahead of them whatever it is.
-  List<PathSelection>? _ladderFor(Contact contact,
+  List<PathSelection>? _ladderFor(Contact contact, List<PathSelection>? routes,
       {bool provenOnly = false,
       bool Function(PathSelection)? keep,
       PathSelection? first}) {
-    final routes = routesFor(contact);
     if (routes == null) return null;
     return planAttempts(contact,
         radioWidth: radioWidth(),
