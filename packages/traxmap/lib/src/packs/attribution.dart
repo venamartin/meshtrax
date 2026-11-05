@@ -2,19 +2,29 @@ import 'pack.dart';
 import '../styles/style_registry.dart';
 
 /// Credits for [packs], one per source and de-duplicated, as plain text
-/// (HTML stripped). A pack joins its sources' credits with "; ", so packs
-/// that share a source (Copernicus in Hawaii's base, contours and terrain)
-/// show it once.
-List<String> attributionOf(Iterable<Pack> packs) {
+/// (HTML stripped). See [creditsIn].
+List<String> attributionOf(Iterable<Pack> packs) =>
+    creditsIn([for (final pack in packs) pack.attribution]);
+
+/// [attributions] as plain-text credits (HTML stripped), one per source,
+/// each shown once. Packs and routing regions join their sources' credits
+/// with "; ", so data that shares a source (Copernicus in Hawaii's base,
+/// contours and terrain) shows it once. A credit another one already holds
+/// is left out: the street map's "© OpenMapTiles © OpenStreetMap
+/// contributors" covers the routing data's OpenStreetMap credit.
+List<String> creditsIn(Iterable<String?> attributions) {
   final out = <String>[];
-  for (final pack in packs) {
-    final raw = pack.attribution;
+  for (final raw in attributions) {
     if (raw == null) continue;
     for (final credit in _credits(_plain(raw))) {
       if (!out.contains(credit)) out.add(credit);
     }
   }
-  return out;
+  return [
+    for (final credit in out)
+      if (!out.any((other) => other != credit && other.contains(credit)))
+        credit,
+  ];
 }
 
 /// [text] split into its sources' credits. Copernicus's own credit ends
@@ -35,12 +45,17 @@ List<String> _credits(String text) {
 }
 
 /// Notices the packs' licences require the app to show with the credits
-/// (pack metadata `notice`, one per line), de-duplicated.
-List<String> noticesOf(Iterable<Pack> packs) {
+/// (pack metadata `notice`), de-duplicated.
+List<String> noticesOf(Iterable<Pack> packs) => noticesIn([
+  for (final pack in packs)
+    if (pack.metadata['notice'] case final String notice) notice,
+]);
+
+/// The distinct lines of [notices], each one notice per line.
+List<String> noticesIn(Iterable<String?> notices) {
   final out = <String>[];
-  for (final pack in packs) {
-    final raw = pack.metadata['notice'];
-    if (raw is! String) continue;
+  for (final raw in notices) {
+    if (raw == null) continue;
     for (final line in raw.split('\n')) {
       final text = line.trim();
       if (text.isNotEmpty && !out.contains(text)) out.add(text);

@@ -608,6 +608,7 @@ Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapma
   - Android: valhalla-mobile 0.6.4 from Maven, in `MeshTraxRouting.kt` on the `meshtrax/routing` channel.
   - iOS: valhalla-mobile 0.6.4 as a Swift package, in the local plugin `packages/traxroute_ios` on the same channel. It needs iOS 16.4, so the app's minimum went from 15.5 to 16.4.
 - **Data:** one routing build for every region (builds can't be mixed), a plain tar on the device; points of interest per region.
+- **Credits:** each region's `attribution` and `notice` from the catalogue are kept with its routing data and join the map credits while it's installed.
 - **Checked on the Pi:** the San Juans test region, routing and places, from the local catalogue.
 - **Gate, next:** route time, memory and app size on a phone. Routing, places and hints move to the live catalogue (Martin, 2026-11-05), so a plain `flutter build apk` will do once traxmapmaker publishes them there; `test/` stays for experiments on the Pi. Until then a phone build needs `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
 

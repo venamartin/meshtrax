@@ -4,12 +4,20 @@ import 'dart:io';
 import 'catalog.dart';
 import 'tar.dart';
 
-/// A region's installed routing bundle.
+/// A region's installed routing bundle, with the credits the catalogue gave
+/// it, so they show offline.
 class InstalledRouting {
   final String sha256;
   final List<String> tiles;
+  final String? attribution;
+  final String? notice;
 
-  const InstalledRouting(this.sha256, this.tiles);
+  const InstalledRouting(
+    this.sha256,
+    this.tiles, {
+    this.attribution,
+    this.notice,
+  });
 }
 
 /// The routing data on the device: one build at a time (tiles from two
@@ -68,12 +76,12 @@ class RoutingStore {
     }.where(catalog.regions.containsKey).toSet();
   }
 
-  /// Installs downloaded [bundles] (region → `.tar.gz` file and sha256) of
-  /// [build]. A new build replaces the old one in one step: pass every
-  /// region the device should keep, as [downloadsFor] lists them.
+  /// Installs downloaded [bundles] (region → `.tar.gz` file and its catalogue
+  /// entry) of [build]. A new build replaces the old one in one step: pass
+  /// every region the device should keep, as [downloadsFor] lists them.
   Future<void> install(
     String build,
-    Map<String, (File, String)> bundles,
+    Map<String, (File, RoutingBundle)> bundles,
   ) async {
     final old = _read();
     final sameBuild = old != null && old.build == build;
@@ -88,7 +96,8 @@ class RoutingStore {
       written,
       sizes,
     ) async {
-      for (final MapEntry(key: region, value: (file, sha)) in bundles.entries) {
+      for (final MapEntry(key: region, value: (file, entry))
+          in bundles.entries) {
         final names = <String>[];
         await copyTiles(file.openRead().transform(gzip.decoder), out, (
           name,
@@ -98,7 +107,12 @@ class RoutingStore {
           sizes[name] = size;
           return written.add(name);
         });
-        added[region] = InstalledRouting(sha, names);
+        added[region] = InstalledRouting(
+          entry.sha256,
+          names,
+          attribution: entry.attribution,
+          notice: entry.notice,
+        );
       }
     }, keep: {for (final r in kept.values) ...r.tiles});
     _write(build, {...kept, ...added}, sizes);
@@ -169,7 +183,12 @@ class RoutingStore {
       'build': build,
       'regions': {
         for (final MapEntry(:key, :value) in regions.entries)
-          key: {'sha256': value.sha256, 'tiles': value.tiles},
+          key: {
+            'sha256': value.sha256,
+            'tiles': value.tiles,
+            'attribution': ?value.attribution,
+            'notice': ?value.notice,
+          },
       },
       'sizes': sizes,
     };
@@ -194,6 +213,8 @@ class RoutingStore {
         key as String: InstalledRouting(
           value['sha256'] as String,
           (value['tiles'] as List).cast<String>(),
+          attribution: value['attribution'] as String?,
+          notice: value['notice'] as String?,
         ),
     }, ((json['sizes'] as Map?) ?? const {}).cast<String, int>());
   }

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:traxcoords/traxcoords.dart';
+import 'package:traxmap/traxmap.dart' show creditsIn, noticesIn;
 import 'package:traxroute/traxroute.dart';
 
 import '../utils/app_logger.dart';
@@ -32,6 +33,8 @@ class RoutingService extends ChangeNotifier {
   final Map<String, double> _progress = {};
   String? _error;
   bool _busy = false;
+  List<String> _credits = const [];
+  List<String> _notices = const [];
 
   RoutingService({
     required this.maps,
@@ -62,6 +65,7 @@ class RoutingService extends ChangeNotifier {
     );
     maps.addListener(service._readCatalog);
     service._readCatalog();
+    service._readCredits();
     await service._openEngine();
     return service;
   }
@@ -85,6 +89,14 @@ class RoutingService extends ChangeNotifier {
 
   /// Regions with routing data on the device.
   Set<String> get installedRegions => store.regions.keys.toSet();
+
+  /// Credits for the routing data on the device, one per source: routes
+  /// draw on every map, so the maps show them with their own (FINDINGS
+  /// §1.5).
+  List<String> get credits => _credits;
+
+  /// The notices the routing data's licences require with the credits.
+  List<String> get notices => _notices;
 
   /// What [region]'s routing data takes (tiles it shares count for each
   /// region that uses them).
@@ -127,6 +139,7 @@ class RoutingService extends ChangeNotifier {
         await maps.refresh();
         await _install(regions);
       }
+      _readCredits();
       await _openEngine();
     } on Object catch (e) {
       appLogger.warn('Routing download failed: $e', tag: 'Routing');
@@ -149,7 +162,7 @@ class RoutingService extends ChangeNotifier {
     final temp = Directory('${store.root.path}-downloads')
       ..createSync(recursive: true);
     try {
-      final bundles = <String, (File, String)>{};
+      final bundles = <String, (File, RoutingBundle)>{};
       for (final region in todo) {
         final b = c.regions[region]!;
         final file = File('${temp.path}/${region.replaceAll('/', '_')}.tar.gz');
@@ -165,7 +178,7 @@ class RoutingService extends ChangeNotifier {
             notifyListeners();
           },
         );
-        bundles[region] = (file, b.sha256);
+        bundles[region] = (file, b);
       }
       await store.install(c.build, bundles);
     } finally {
@@ -176,6 +189,7 @@ class RoutingService extends ChangeNotifier {
   Future<void> remove(String region) async {
     if (!isInstalled(region)) return;
     await store.remove(region);
+    _readCredits();
     await _openEngine();
     notifyListeners();
   }
@@ -214,6 +228,14 @@ class RoutingService extends ChangeNotifier {
       _error = '$err';
     }
     notifyListeners();
+  }
+
+  /// The installed regions' credits, which the store keeps from the
+  /// catalogue, so they show offline too.
+  void _readCredits() {
+    final regions = store.regions.values;
+    _credits = creditsIn([for (final r in regions) r.attribution]);
+    _notices = noticesIn([for (final r in regions) r.notice]);
   }
 
   void _readCatalog() {

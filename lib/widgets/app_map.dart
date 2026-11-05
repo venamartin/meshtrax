@@ -11,6 +11,7 @@ import '../models/app_settings.dart';
 import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
+import '../services/routing_service.dart';
 import '../utils/format_bytes.dart';
 import 'charts_notice_dialog.dart';
 
@@ -213,12 +214,22 @@ class _AppMapState extends State<AppMap> {
     };
 
     final style = _style;
+    final routingCredits = context.select<RoutingService?, List<String>?>(
+      (r) => r?.credits,
+    );
+    final routingNotices = context.select<RoutingService?, List<String>?>(
+      (r) => r?.notices,
+    );
     final credits = [
-      ...?style?.credits,
-      // The hints' park lists color the street map's parks.
-      if (type == MapType.osm && settings.mapParks)
-        ...?maps.hints?.parkCredits,
-      ...?style?.notices,
+      ...creditsIn([
+        ...?style?.credits,
+        // Routes draw on any map while routing data is installed.
+        ...?routingCredits,
+        // The hints' park lists color the street map's parks.
+        if (type == MapType.osm && settings.mapParks)
+          ...?maps.hints?.parkCredits,
+      ]),
+      ...noticesIn([...?style?.notices, ...?routingNotices]),
     ];
     // Charts say at any zoom that none is drawn here; the street and topo
     // maps have the base map until it stops zooming in.

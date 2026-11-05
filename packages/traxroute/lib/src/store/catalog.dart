@@ -9,7 +9,21 @@ class RoutingBundle {
   final int unpackedBytes;
   final String sha256;
 
-  const RoutingBundle(this.url, this.bytes, this.unpackedBytes, this.sha256);
+  /// The sources' credits, joined with "; " as in the packs' metadata.
+  final String? attribution;
+
+  /// What the sources' licences require shown with the credits, one notice
+  /// per line; null when none does.
+  final String? notice;
+
+  const RoutingBundle(
+    this.url,
+    this.bytes,
+    this.unpackedBytes,
+    this.sha256, {
+    this.attribution,
+    this.notice,
+  });
 }
 
 /// The catalogue's `routing` entry for [routingEngineKey]: one build, with
@@ -47,6 +61,8 @@ class RoutingCatalog {
         value['bytes'] as int,
         value['unpacked_bytes'] as int,
         value['sha256'] as String,
+        attribution: value['attribution'] as String?,
+        notice: value['notice'] as String?,
       );
     }
     return RoutingCatalog(

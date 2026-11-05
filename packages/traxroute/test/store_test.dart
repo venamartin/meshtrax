@@ -47,16 +47,27 @@ void main() {
     return out;
   }
 
+  /// The catalogue's entry for a bundle, as passed to install.
+  RoutingBundle entry(String sha256, {String? attribution, String? notice}) =>
+      RoutingBundle(
+        Uri(),
+        0,
+        0,
+        sha256,
+        attribution: attribution,
+        notice: notice,
+      );
+
   const shared = '0/002/898.gph';
   const a1 = '2/000/734/688.gph';
   const b1 = '2/000/736/128.gph';
 
   test('two regions share tiles in one combined file', () async {
     await store.install('b1', {
-      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
+      'test/a': (await bundle('a', [shared, a1], 'b1'), entry('sha-a')),
     });
     await store.install('b1', {
-      'test/b': (await bundle('b', [shared, b1], 'b1'), 'sha-b'),
+      'test/b': (await bundle('b', [shared, b1], 'b1'), entry('sha-b')),
     });
     expect(store.build, 'b1');
     expect(store.regions.keys, unorderedEquals(['test/a', 'test/b']));
@@ -68,8 +79,8 @@ void main() {
 
   test('removing a region keeps the tiles another region uses', () async {
     await store.install('b1', {
-      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
-      'test/b': (await bundle('b', [shared, b1], 'b1'), 'sha-b'),
+      'test/a': (await bundle('a', [shared, a1], 'b1'), entry('sha-a')),
+      'test/b': (await bundle('b', [shared, b1], 'b1'), entry('sha-b')),
     });
     await store.remove('test/a');
     expect(store.regions.keys, ['test/b']);
@@ -80,10 +91,10 @@ void main() {
 
   test('a new build replaces every region in one step', () async {
     await store.install('b1', {
-      'test/a': (await bundle('a1', [shared, a1], 'old'), 'sha-a1'),
+      'test/a': (await bundle('a1', [shared, a1], 'old'), entry('sha-a1')),
     });
     await store.install('b2', {
-      'test/a': (await bundle('a2', [shared, a1], 'new'), 'sha-a2'),
+      'test/a': (await bundle('a2', [shared, a1], 'new'), entry('sha-a2')),
     });
     expect(store.build, 'b2');
     final contents = tarContents(store.tileFile!);
@@ -95,7 +106,7 @@ void main() {
     'what to download: new regions, and everything on a new build',
     () async {
       await store.install('b1', {
-        'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
+        'test/a': (await bundle('a', [shared, a1], 'b1'), entry('sha-a')),
       });
       RoutingCatalog catalog(String build, String shaA) =>
           RoutingCatalog(build, '3.9.1', null, {
@@ -124,7 +135,7 @@ void main() {
     final gz = File('${tmp.path}/evil.tar.gz')
       ..writeAsBytesSync(gzip.encode(bytes));
     expect(
-      () => store.install('b1', {'test/evil': (gz, 'x')}),
+      () => store.install('b1', {'test/evil': (gz, entry('x'))}),
       throwsFormatException,
     );
     expect(store.tileFile, isNull);
@@ -133,13 +144,13 @@ void main() {
 
   test('a failed install keeps what was there', () async {
     await store.install('b1', {
-      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
+      'test/a': (await bundle('a', [shared, a1], 'b1'), entry('sha-a')),
     });
     final before = tarContents(store.tileFile!);
     final broken = File('${tmp.path}/broken.tar.gz')
       ..writeAsBytesSync([0x1f, 0x8b, 1, 2, 3]);
     await expectLater(
-      store.install('b1', {'test/b': (broken, 'sha-b')}),
+      store.install('b1', {'test/b': (broken, entry('sha-b'))}),
       throwsA(anything),
     );
     expect(store.regions.keys, ['test/a']);
@@ -148,8 +159,8 @@ void main() {
 
   test('sizes, and no loose tiles on disk', () async {
     await store.install('b1', {
-      'test/a': (await bundle('a', [shared, a1], 'b1'), 'sha-a'),
-      'test/b': (await bundle('b', [shared, b1], 'b1'), 'sha-b'),
+      'test/a': (await bundle('a', [shared, a1], 'b1'), entry('sha-a')),
+      'test/b': (await bundle('b', [shared, b1], 'b1'), entry('sha-b')),
     });
     expect(store.sizeOf('test/a'), 'b1 $shared'.length + 'b1 $a1'.length);
     final files =
@@ -160,6 +171,28 @@ void main() {
             .toList()
           ..sort();
     expect(files, ['b1/tiles.tar', 'manifest.json']);
+  });
+
+  test("each region's credits stay on the device with it", () async {
+    const osm = '© OpenStreetMap contributors; USGS 3DEP';
+    await store.install('b1', {
+      'test/a': (
+        await bundle('a', [shared, a1], 'b1'),
+        entry('sha-a', attribution: osm),
+      ),
+      'test/b': (
+        await bundle('b', [shared, b1], 'b1'),
+        entry('sha-b', attribution: 'Copernicus', notice: 'Not liable.'),
+      ),
+    });
+    final installed = RoutingStore(Directory('${tmp.path}/routing')).regions;
+    expect(installed['test/a']!.attribution, osm);
+    expect(installed['test/a']!.notice, isNull);
+    expect(installed['test/b']!.notice, 'Not liable.');
+
+    await store.remove('test/b');
+    expect(store.regions.keys, ['test/a']);
+    expect(store.regions['test/a']!.attribution, osm);
   });
 
   test("reads the catalogue's routing entry", () {
@@ -176,6 +209,7 @@ void main() {
               'bytes': 7846913,
               'unpacked_bytes': 17428480,
               'sha256': 'da8b',
+              'attribution': '© OpenStreetMap contributors; USGS 3DEP',
             },
           },
         },
@@ -183,10 +217,13 @@ void main() {
       },
     }, Uri.parse('http://127.0.0.1:8770/index.json'))!;
     expect(c.build, '2026102502');
+    final sanJuans = c.regions['test/san-juans']!;
     expect(
-      c.regions['test/san-juans']!.url.toString(),
+      sanJuans.url.toString(),
       'http://127.0.0.1:8770/routing/valhalla-3.9/2026102502/test/san-juans.tar.gz',
     );
+    expect(sanJuans.attribution, '© OpenStreetMap contributors; USGS 3DEP');
+    expect(sanJuans.notice, isNull);
     expect(RoutingCatalog.fromIndex({'packs': []}, Uri()), isNull);
   });
 

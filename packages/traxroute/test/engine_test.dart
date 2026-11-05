@@ -26,7 +26,9 @@ void main() {
     setUpAll(() async {
       tmp = Directory.systemTemp.createTempSync('traxroute-e2e');
       final store = RoutingStore(Directory('${tmp.path}/routing'));
-      await store.install('test', {'test/san-juans': (File(bundle!), 'x')});
+      await store.install('test', {
+        'test/san-juans': (File(bundle!), RoutingBundle(Uri(), 0, 0, 'x')),
+      });
       engine = ValhallaServiceEngine(
         executable: service!,
         workDir: Directory('${tmp.path}/engine'),

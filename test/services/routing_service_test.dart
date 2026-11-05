@@ -57,8 +57,12 @@ void main() {
   tearDown(() => tmp.delete(recursive: true));
 
   /// The catalogue's routing entry for [build], with [regions]' bundles,
-  /// which the server then holds.
-  Map<String, Object> routing(String build, List<String> regions) {
+  /// which the server then holds, and their [credits].
+  Map<String, Object> routing(
+    String build,
+    List<String> regions, {
+    Map<String, Map<String, String>> credits = const {},
+  }) {
     final entries = <String, Object>{};
     for (final (i, region) in regions.indexed) {
       final path = 'routing/valhalla-3.9/$build/$region.tar.gz';
@@ -68,6 +72,7 @@ void main() {
         'bytes': bytes.length,
         'unpacked_bytes': 2048,
         'sha256': sha256.convert(bytes).toString(),
+        ...?credits[region],
       };
     }
     return {
@@ -135,6 +140,47 @@ void main() {
     expect(service.store.build, 'b1');
     expect(service.installedRegions, {'test/a'});
     expect(service.hasRoutingData, isTrue);
+  });
+
+  test("the installed regions' credits, offline too", () async {
+    const osm = '© OpenStreetMap contributors; USGS 3DEP';
+    const glo30 =
+        'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © '
+        'Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by '
+        'the European Union and ESA; all rights reserved';
+    const notice =
+        'The organisations in charge of the Copernicus programme by law or by '
+        'delegation do not incur any liability for any use of the Copernicus '
+        'WorldDEM-30.';
+    catalogue = routing(
+      'b1',
+      ['test/a', 'test/b'],
+      credits: {
+        'test/a': {'attribution': osm},
+        'test/b': {'attribution': '$osm; $glo30', 'notice': notice},
+      },
+    );
+    final (maps, service) = await services();
+    expect(service.credits, isEmpty);
+
+    await service.download({'test/a', 'test/b'});
+    expect(service.credits, [
+      '© OpenStreetMap contributors',
+      'USGS 3DEP',
+      glo30,
+    ]);
+    expect(service.notices, [notice]);
+
+    // The next start without a catalogue: they come from the device.
+    File('${tmp.path}/maps/index.json').deleteSync();
+    final offline = await RoutingService.create(maps);
+    expect(offline.catalog, isNull);
+    expect(offline.credits, service.credits);
+    expect(offline.notices, service.notices);
+
+    await service.remove('test/b');
+    expect(service.credits, ['© OpenStreetMap contributors', 'USGS 3DEP']);
+    expect(service.notices, isEmpty);
   });
 
   test('routing only for a newer engine needs a newer app', () async {
