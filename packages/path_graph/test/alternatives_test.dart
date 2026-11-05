@@ -49,4 +49,27 @@ void main() {
   test('no candidates yields no alternatives', () {
     expect(graph.findAlternatives(bobPk), isEmpty);
   });
+
+  // The stored-route keeper asks for both for every recent contact: one
+  // link map serves both searches.
+  test('findRoutes gives what findPath and findAlternatives give', () {
+    expect(graph.findRoutes(bobPk).best, isA<FloodResult>());
+    expect(graph.findRoutes(bobPk).alternatives, isEmpty);
+
+    graph.reportSendResult(path([0xA2, 0x77]), true);
+    graph.observePath(path([0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk), lastHopHeard: false);
+    link([0xA2, 0x77], [0x13, 0x12]);
+    link([0xA2, 0x77], [0x5C, 0xBB]);
+    link([0x5C, 0xBB], [0x13, 0x12]);
+
+    final both = graph.findRoutes(bobPk.toUpperCase(), count: 3);
+    final best = both.best as RouteResult;
+    final alone = graph.findPath(bobPk) as RouteResult;
+    expect(best.pathBytes, alone.pathBytes);
+    expect(best.estDelivery, closeTo(alone.estDelivery, 1e-6));
+    expect(both.alternatives.map((r) => r.pathBytes),
+        graph.findAlternatives(bobPk, count: 3).map((r) => r.pathBytes));
+    expect(both.alternatives, hasLength(2));
+  });
 }
