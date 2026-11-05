@@ -8,7 +8,7 @@
 >
 > New to the terms? See the [glossary](../glossary.md).
 
-This file covers the app side of parks: national parks, monuments, preserves and state parks shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Built so far: the style, the desert parks from the map hints and the Parks switch (2026-10-26). Parks as places, for the tap, are still to come.
+This file covers the app side of parks: national parks, monuments, preserves, seashores, state parks and beaches, and the other park kinds below, shown on the offline map with an outline, a light tint and their name, and a tap that opens the park's sheet. Built so far: the style, the desert parks from the map hints and the Parks switch (2026-10-26). Parks as places, for the tap, are still to come.
 
 **Data side:** traxmapmaker's [`FINDINGS.md`](https://github.com/venamartin/traxmapmaker/blob/main/FINDINGS.md): §1.9 (map hints) for the desert parks and §1.8 (Points of interest) for parks as places.
 
@@ -28,8 +28,9 @@ Parks come from data users already download. There's no separate parks download.
 | Class | Shown as |
 | --- | --- |
 | `national_park`, `national_monument`, `national_preserve`, `state_park` | Tint, outline and centered name |
+| Since 2026-11-04 (Martin), the same: `national_seashore`, `national_lakeshore`, `national_recreation_area`, `national_historical_park`, `national_scenic_area`, `state_beach`, `state_historic_park`, `state_recreation_area`, `state_natural_reserve`, `state_reserve`, `state_vehicular_recreation_area`, `provincial_park`, `parque_nacional` | Tint, outline and centered name |
 | `wilderness_area`, `national_forest` | A thin outline only |
-| Everything else (BLM land, `protected_area`, study areas, refuges and so on) | Nothing. Today's style tints all of these, which colors much of the West. |
+| Everything else (BLM land, `protected_area`, study areas, refuges, state forests, national historic sites, marine reserves and so on) | Nothing. Today's style tints all of these, which colors much of the West. |
 
 **Switch:** a Parks tile in the layers sheet (Map details), on by default, beside Places. It drops the park layers from the style, as the contours switch does.
 

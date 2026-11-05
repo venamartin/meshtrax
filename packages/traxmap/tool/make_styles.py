@@ -25,14 +25,23 @@ ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "serv
 # steps and pedestrian areas; only these subclasses are trails.
 TRAIL = ["all", ["==", ["get", "class"], "path"],
          ["match", ["get", "subclass"], ["path", "bridleway"], True, False]]
-# Parks (docs/technical/park-maps.md): national parks, monuments, preserves and state
-# parks get a tint, an outline and their name; wilderness and national
-# forests a thin outline; other protected land (BLM, study areas, refuges)
-# nothing. Desert parks are tan: their names come from the map hints
-# (MapHints, filled in as {list:desert-parks}); the rest are green. The
-# Parks switch drops the "parks" group.
-PARKS = ["any", ["match", ["get", "class"], ["national_park", "national_monument", "national_preserve", "state_park"],
-                  True, False],
+# Parks (docs/technical/park-maps.md): national parks, monuments, preserves,
+# seashores and the other park kinds below get a tint, an outline and their
+# name; wilderness and national forests a thin outline; other protected land
+# (BLM, study areas, refuges, state forests) nothing. Desert parks are tan:
+# their names come from the map hints (MapHints, filled in as
+# {list:desert-parks}); the rest are green. The Parks switch drops the
+# "parks" group.
+PARK_CLASSES = [
+    "national_park", "national_monument", "national_preserve", "state_park",
+    # Martin, 2026-11-04: Point Reyes and Point Lobos had no outline.
+    "national_seashore", "national_lakeshore", "national_recreation_area",
+    "national_historical_park", "national_scenic_area",
+    "state_beach", "state_historic_park", "state_recreation_area", "state_natural_reserve",
+    "state_reserve", "state_vehicular_recreation_area",
+    "provincial_park", "parque_nacional",
+]
+PARKS = ["any", ["match", ["get", "class"], PARK_CLASSES, True, False],
          # Parks the packs class as something else, from the map hints.
          ["match", ["get", "name"], ["{list:extra-parks}"], True, False]]
 OUTLINED = ["match", ["get", "class"], ["wilderness_area", "national_forest"], True, False]
