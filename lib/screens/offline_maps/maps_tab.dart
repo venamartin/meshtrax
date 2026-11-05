@@ -5,6 +5,7 @@ import 'package:traxmap/traxmap.dart';
 import '../../connector/meshcore_connector.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/routing_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 import 'region_detail.dart';
@@ -78,6 +79,7 @@ class _RegionList extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
+    final routing = context.watch<RoutingService?>();
     final children = regions.childrenOf(browse);
     final suggested = _suggestedRegion(context, maps);
     return ListView(
@@ -85,7 +87,9 @@ class _RegionList extends StatelessWidget {
       children: [
         if (maps.status == CatalogueStatus.error)
           StaleNotice(maps, at: maps.fetchedAt),
-        if (maps.index!.needsNewerApp || regions.needsNewerApp)
+        if (maps.index!.needsNewerApp ||
+            regions.needsNewerApp ||
+            (routing?.needsNewerApp ?? false))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Callout(l10n.offlineMaps_needsNewerApp),

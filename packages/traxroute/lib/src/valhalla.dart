@@ -83,18 +83,17 @@ RouteResult parseValhallaRoute(
     );
   }
   final points = <LatLon>[];
-  final elevations = <double>[];
+  final heights = <double>[];
   final maneuvers = <Maneuver>[];
   var interval = 30.0;
   for (final leg in (trip['legs'] as List).cast<Map<String, dynamic>>()) {
     final offset = points.isEmpty ? 0 : points.length - 1;
     final shape = decodePolyline6(leg['shape'] as String);
     points.addAll(points.isEmpty ? shape : shape.skip(1));
-    elevations.addAll(
-      ((leg['elevation'] as List?) ?? const [])
-          .cast<num>()
-          .map((h) => h.toDouble())
-          .where((h) => h > -500),
+    heights.addAll(
+      ((leg['elevation'] as List?) ?? const []).cast<num>().map(
+        (h) => h.toDouble(),
+      ),
     );
     interval = (leg['elevation_interval'] as num?)?.toDouble() ?? interval;
     for (final m in (leg['maneuvers'] as List).cast<Map<String, dynamic>>()) {
@@ -109,6 +108,11 @@ RouteResult parseValhallaRoute(
     }
   }
   final summary = trip['summary'] as Map<String, dynamic>;
+  // Where its tiles have no heights (a region built without elevation),
+  // Valhalla answers about −500 m; the lowest land, the Dead Sea's shore,
+  // is −430 m. The heights are evenly spaced, so one such gap spoils them
+  // all: the route has none.
+  final elevations = heights.any((h) => h < -490) ? const <double>[] : heights;
   return RouteResult(
     pathType: request.pathType,
     points: points,

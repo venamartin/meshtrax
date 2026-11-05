@@ -17,6 +17,7 @@ Future<void> downloadVerified(
   void Function(int received, int? total)? onProgress,
 }) async {
   final response = await client.send(http.Request('GET', url));
+  if (response.statusCode == 404) throw MissingDownload(url);
   if (response.statusCode != 200) {
     throw HttpException('HTTP ${response.statusCode}', uri: url);
   }
@@ -40,6 +41,11 @@ Future<void> downloadVerified(
     to.deleteSync();
     throw HttpException('Checksum mismatch', uri: url);
   }
+}
+
+/// The server has no file at [uri] (HTTP 404).
+class MissingDownload extends HttpException {
+  MissingDownload(Uri uri) : super('HTTP 404', uri: uri);
 }
 
 class _DigestSink implements Sink<Digest> {

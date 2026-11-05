@@ -3028,6 +3028,8 @@
   "route_startNow": "Start now: {start}",
   "@route_startNow": {"placeholders": {"start": {"type": "String"}}},
   "route_startNowYou": "Start now: your position",
+  "route_noHeights": "No heights for this area.",
+  "route_noHeightsHiking": "No heights for this area, so the time leaves out climbs.",
   "route_options": "Route options",
   "route_optionsReset": "Reset",
   "route_prefer": "Prefer",

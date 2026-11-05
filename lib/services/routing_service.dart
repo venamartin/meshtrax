@@ -26,6 +26,7 @@ class RoutingService extends ChangeNotifier {
   final http.Client _client;
 
   RoutingCatalog? _catalog;
+  bool _needsNewerApp = false;
   DateTime? _catalogRead;
   bool _catalogChecked = false;
   final Map<String, double> _progress = {};
@@ -39,7 +40,10 @@ class RoutingService extends ChangeNotifier {
     http.Client? client,
   }) : _client = client ?? http.Client();
 
-  static Future<RoutingService> create(MapPacksService maps) async {
+  static Future<RoutingService> create(
+    MapPacksService maps, {
+    http.Client? client,
+  }) async {
     final root = Directory('${maps.cacheDir.path}/routing');
     final workDir = Directory('${maps.cacheDir.path}/routing-engine');
     const executable = String.fromEnvironment('VALHALLA_SERVICE');
@@ -54,6 +58,7 @@ class RoutingService extends ChangeNotifier {
           : executable.isEmpty
           ? null
           : ValhallaServiceEngine(executable: executable, workDir: workDir),
+      client: client,
     );
     maps.addListener(service._readCatalog);
     service._readCatalog();
@@ -65,6 +70,9 @@ class RoutingService extends ChangeNotifier {
   bool get available => engine != null;
 
   RoutingCatalog? get catalog => _catalog;
+
+  /// The catalogue has routing, but only for engines a newer app reads.
+  bool get needsNewerApp => _needsNewerApp;
 
   /// The last download or install error, for the region page.
   String? get error => _error;
@@ -105,13 +113,39 @@ class RoutingService extends ChangeNotifier {
       isInstalled(region) && downloadsFor(const {}).contains(region);
 
   Future<void> download(Set<String> regions) async {
-    final c = _catalog;
-    if (c == null || _busy) return;
-    final todo = downloadsFor(regions);
-    if (todo.isEmpty) return;
+    if (_catalog == null || _busy || downloadsFor(regions).isEmpty) return;
     _busy = true;
     _error = null;
     notifyListeners();
+    try {
+      try {
+        await _install(regions);
+      } on MissingDownload {
+        // A bundle the catalogue lists is gone: the server has moved on to
+        // a newer build, keeping the old one only for a while (FINDINGS
+        // §1.5). Read the catalogue again and take the current build.
+        await maps.refresh();
+        await _install(regions);
+      }
+      await _openEngine();
+    } on Object catch (e) {
+      appLogger.warn('Routing download failed: $e', tag: 'Routing');
+      _error = '$e';
+    } finally {
+      _progress.clear();
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Downloads what [regions] take from the current catalogue and
+  /// installs it.
+  Future<void> _install(Set<String> regions) async {
+    // Nothing listed (a catalogue mid-publish, or routing only a newer app
+    // reads): installing nothing of a new build would remove the old one.
+    final c = _catalog;
+    final todo = downloadsFor(regions);
+    if (c == null || todo.isEmpty) return;
     final temp = Directory('${store.root.path}-downloads')
       ..createSync(recursive: true);
     try {
@@ -134,15 +168,8 @@ class RoutingService extends ChangeNotifier {
         bundles[region] = (file, b.sha256);
       }
       await store.install(c.build, bundles);
-      await _openEngine();
-    } on Object catch (e) {
-      appLogger.warn('Routing download failed: $e', tag: 'Routing');
-      _error = '$e';
     } finally {
       if (temp.existsSync()) temp.deleteSync(recursive: true);
-      _progress.clear();
-      _busy = false;
-      notifyListeners();
     }
   }
 
@@ -196,10 +223,9 @@ class RoutingService extends ChangeNotifier {
     final file = File('${maps.cacheDir.path}/index.json');
     if (!file.existsSync()) return;
     try {
-      _catalog = RoutingCatalog.fromIndex(
-        jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
-        maps.indexUrl,
-      );
+      final index = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      _catalog = RoutingCatalog.fromIndex(index, maps.indexUrl);
+      _needsNewerApp = RoutingCatalog.needsNewerApp(index);
       notifyListeners();
     } on Object catch (e) {
       appLogger.warn('Routing catalogue unreadable: $e', tag: 'Routing');

@@ -5873,6 +5873,13 @@ class AppLocalizationsSv extends AppLocalizations {
   String get route_startNowYou => 'Start now: your position';
 
   @override
+  String get route_noHeights => 'No heights for this area.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'No heights for this area, so the time leaves out climbs.';
+
+  @override
   String get route_options => 'Route options';
 
   @override

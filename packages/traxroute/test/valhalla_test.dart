@@ -117,6 +117,31 @@ void main() {
     expect(r.maneuvers.last.startIndex, lessThan(r.points.length));
   });
 
+  test('a route through tiles without heights has none', () {
+    final json =
+        jsonDecode(
+              File(
+                'test/fixtures/ouray_camp_bird_auto.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    // Valhalla's answer where a region was built without elevation: about
+    // -500 m, here over the last part of the route.
+    final leg = (json['trip']['legs'] as List).first as Map<String, dynamic>;
+    final heights = (leg['elevation'] as List).cast<num>().toList();
+    for (var i = heights.length ~/ 2; i < heights.length; i++) {
+      heights[i] = i.isEven ? -500.0 : -499.9;
+    }
+    leg['elevation'] = heights;
+    final r = parseValhallaRoute(
+      const RouteRequest([ouray, campBird], PathType.dirt),
+      json,
+    );
+    expect(r.elevations, isEmpty);
+    expect(r.climb, (up: 0.0, down: 0.0));
+    expect(r.km, closeTo(9.492, 1e-9));
+  });
+
   test('an error answer is a RouteError', () {
     expect(
       () => parseValhallaRoute(

@@ -173,10 +173,19 @@ class _RoutePanelState extends State<RoutePanel> {
                 [
                   GeoFormat.distanceText(r.km * 1000, units),
                   routeDuration(context, r.seconds),
-                  '↑ ${GeoFormat.heightText(r.climb.up, units)}',
+                  if (r.elevations.isNotEmpty)
+                    '↑ ${GeoFormat.heightText(r.climb.up, units)}',
                 ].join(' · '),
                 style: theme.textTheme.titleSmall,
               ),
+              // Routing data built without heights (FINDINGS §1.5).
+              if (r.elevations.isEmpty)
+                Text(
+                  r.pathType == PathType.hiking
+                      ? l10n.route_noHeightsHiking
+                      : l10n.route_noHeights,
+                  style: theme.textTheme.bodySmall,
+                ),
               if (!r.reachesDestination) ...[
                 const SizedBox(height: 8),
                 _EndsShort(result: r, destination: destination, units: units),

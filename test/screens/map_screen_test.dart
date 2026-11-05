@@ -148,7 +148,7 @@ class _NoDownloads implements PackDownloader {
 
 /// Routing data on hand, and a straight line for every route.
 class _Routing extends RoutingService {
-  _Routing(MapPacksService maps)
+  _Routing(MapPacksService maps, {this.elevations = const [10, 12]})
     : super(
         maps: maps,
         store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
@@ -156,6 +156,7 @@ class _Routing extends RoutingService {
       );
 
   final requests = <(PathType, RouteOptions)>[];
+  final List<double> elevations;
 
   @override
   bool get available => true;
@@ -171,12 +172,12 @@ class _Routing extends RoutingService {
   }) async {
     requests.add((type, options));
     return RouteResult(
-    pathType: type,
-    points: [from, to],
-    elevations: const [10, 12],
-    elevationIntervalM: 30,
-    km: 1.1,
-    seconds: 900,
+      pathType: type,
+      points: [from, to],
+      elevations: elevations,
+      elevationIntervalM: 30,
+      km: 1.1,
+      seconds: 900,
       maneuvers: const [],
       kmShortOfDestination: 0,
     );
@@ -331,7 +332,11 @@ void main() {
 
       expect(radio.adds, [room.publicKeyHex]);
       expect(find.text(refused), findsNothing);
-      expect(find.text(joinRoom), findsNothing, reason: 'the node dialog closed');
+      expect(
+        find.text(joinRoom),
+        findsNothing,
+        reason: 'the node dialog closed',
+      );
       expect(find.byType(RoomLoginDialog), findsOneWidget);
     });
   });
@@ -341,8 +346,11 @@ void main() {
   group('a route', () {
     late _Routing routing;
 
-    Future<void> showRoute(WidgetTester tester) async {
-      routing = _Routing(maps);
+    Future<void> showRoute(
+      WidgetTester tester, {
+      List<double> heights = const [10, 12],
+    }) async {
+      routing = _Routing(maps, elevations: heights);
       await pumpMap(
         tester,
         _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
@@ -359,6 +367,20 @@ void main() {
       expect(find.byType(RoutePanel), findsOneWidget);
     }
 
+    testWidgets('without heights, says so instead of a climb', (tester) async {
+      await showRoute(tester, heights: const []);
+      expect(find.textContaining('↑'), findsNothing);
+      expect(
+        find.text('No heights for this area, so the time leaves out climbs.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Paved'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('No heights for this area.'), findsOneWidget);
+    });
+
     testWidgets('keeps the map buttons clear of its X', (tester) async {
       await showRoute(tester);
 
@@ -371,9 +393,7 @@ void main() {
       );
     });
 
-    testWidgets('options re-route, are remembered, and reset', (
-      tester,
-    ) async {
+    testWidgets('options re-route, are remembered, and reset', (tester) async {
       Future<void> tap(String text) async {
         await tester.tap(find.text(text));
         await tester.pump();
@@ -480,56 +500,57 @@ void main() {
     expect(find.byType(QuickSwitchBar), findsOneWidget);
   });
 
-  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not', (
-    tester,
-  ) async {
-    Contact target(int seed, int routeHop) => Contact(
-      publicKey: Uint8List.fromList(List.filled(32, seed)),
-      name: 'T$seed',
-      type: advTypeChat,
-      pathLength: 1,
-      path: Uint8List.fromList([routeHop]),
-      pathHashSize: 1,
-      lastSeen: DateTime.now(),
-      inboundPath: Uint8List.fromList(const [0x01]),
-      inboundHopCount: 1,
-      inboundPathHashSize: 1,
-    );
-    final near = target(0x10, 0x02);
-    final across = target(0x11, 0x03);
-    final tooFar = target(0x12, 0x04);
-    await pumpMap(
-      tester,
-      _RadioConnector(
-        nodes: [
-          _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
-          _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
-          _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
-          _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
-          near,
-          across,
-          tooFar,
-        ],
-      ),
-    );
-    await tester
-        .element(find.byType(AppMap))
-        .read<AppSettingsService>()
-        .setMapShowGuessedLocations(true);
-    await tester.pump();
+  testWidgets(
+    'guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not',
+    (tester) async {
+      Contact target(int seed, int routeHop) => Contact(
+        publicKey: Uint8List.fromList(List.filled(32, seed)),
+        name: 'T$seed',
+        type: advTypeChat,
+        pathLength: 1,
+        path: Uint8List.fromList([routeHop]),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+        inboundPath: Uint8List.fromList(const [0x01]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 1,
+      );
+      final near = target(0x10, 0x02);
+      final across = target(0x11, 0x03);
+      final tooFar = target(0x12, 0x04);
+      await pumpMap(
+        tester,
+        _RadioConnector(
+          nodes: [
+            _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
+            _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
+            _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
+            _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
+            near,
+            across,
+            tooFar,
+          ],
+        ),
+      );
+      await tester
+          .element(find.byType(AppMap))
+          .read<AppSettingsService>()
+          .setMapShowGuessedLocations(true);
+      await tester.pump();
 
-    final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
-    expect(guess.position.latitude, closeTo(37.4, 0.01));
-    expect(guess.position.longitude, closeTo(-122.1, 0.01));
-    expect(
-      overlays(tester).map((o) => o.id),
-      contains('guess:${across.publicKeyHex}'),
-    );
-    expect(
-      overlays(tester).map((o) => o.id),
-      isNot(contains('guess:${tooFar.publicKeyHex}')),
-    );
-  });
+      final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
+      expect(guess.position.latitude, closeTo(37.4, 0.01));
+      expect(guess.position.longitude, closeTo(-122.1, 0.01));
+      expect(
+        overlays(tester).map((o) => o.id),
+        contains('guess:${across.publicKeyHex}'),
+      );
+      expect(
+        overlays(tester).map((o) => o.id),
+        isNot(contains('guess:${tooFar.publicKeyHex}')),
+      );
+    },
+  );
 
   group('guessed pins', () {
     setUp(() => guessedLocationsOn = true);
@@ -690,28 +711,29 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('a route the app wrote is no anchor, as soon as it is written', (
-      tester,
-    ) async {
-      final routed = Contact(
-        publicKey: Uint8List.fromList(List.filled(32, 0x13)),
-        name: 'Routed',
-        type: advTypeChat,
-        pathLength: 1,
-        path: Uint8List.fromList(const [0x01]),
-        pathHashSize: 1,
-        lastSeen: DateTime.now(),
-      );
-      final connector = _RadioConnector(nodes: [anchor, routed]);
-      await pumpMap(tester, connector);
-      expect(ids(tester), contains(guessId(routed)));
+    testWidgets(
+      'a route the app wrote is no anchor, as soon as it is written',
+      (tester) async {
+        final routed = Contact(
+          publicKey: Uint8List.fromList(List.filled(32, 0x13)),
+          name: 'Routed',
+          type: advTypeChat,
+          pathLength: 1,
+          path: Uint8List.fromList(const [0x01]),
+          pathHashSize: 1,
+          lastSeen: DateTime.now(),
+        );
+        final connector = _RadioConnector(nodes: [anchor, routed]);
+        await pumpMap(tester, connector);
+        expect(ids(tester), contains(guessId(routed)));
 
-      connector.written.add(routed.publicKeyHex);
-      connector.replaceNode(1, routed);
-      await tester.pump(const Duration(milliseconds: 200));
+        connector.written.add(routed.publicKeyHex);
+        connector.replaceNode(1, routed);
+        await tester.pump(const Duration(milliseconds: 200));
 
-      expect(ids(tester), isNot(contains(guessId(routed))));
-    });
+        expect(ids(tester), isNot(contains(guessId(routed))));
+      },
+    );
 
     testWidgets('a return trace carries the estimate too', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));

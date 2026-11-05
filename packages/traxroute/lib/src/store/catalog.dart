@@ -27,6 +27,14 @@ class RoutingCatalog {
     this.regions,
   );
 
+  /// Whether [index] has routing, but only for engines a newer app reads.
+  static bool needsNewerApp(Map<String, dynamic> index) {
+    final routing = index['routing'];
+    return routing is Map &&
+        routing.isNotEmpty &&
+        routing[routingEngineKey] is! Map;
+  }
+
   /// Null when the catalogue has no routing this app can read.
   static RoutingCatalog? fromIndex(Map<String, dynamic> index, Uri base) {
     final entry = (index['routing'] as Map?)?[routingEngineKey];

@@ -189,4 +189,25 @@ void main() {
     );
     expect(RoutingCatalog.fromIndex({'packs': []}, Uri()), isNull);
   });
+
+  test('routing only for other engines needs a newer app', () {
+    expect(
+      RoutingCatalog.needsNewerApp({
+        'routing': {
+          'valhalla-4.0': {'build': 'x', 'regions': {}},
+        },
+      }),
+      isTrue,
+    );
+    expect(
+      RoutingCatalog.needsNewerApp({
+        'routing': {
+          'valhalla-3.9': {'build': 'x', 'regions': {}},
+          'valhalla-4.0': {'build': 'y', 'regions': {}},
+        },
+      }),
+      isFalse,
+    );
+    expect(RoutingCatalog.needsNewerApp({'packs': []}), isFalse);
+  });
 }

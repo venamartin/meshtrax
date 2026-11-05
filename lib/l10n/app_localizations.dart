@@ -10164,6 +10164,18 @@ abstract class AppLocalizations {
   /// **'Start now: your position'**
   String get route_startNowYou;
 
+  /// No description provided for @route_noHeights.
+  ///
+  /// In en, this message translates to:
+  /// **'No heights for this area.'**
+  String get route_noHeights;
+
+  /// No description provided for @route_noHeightsHiking.
+  ///
+  /// In en, this message translates to:
+  /// **'No heights for this area, so the time leaves out climbs.'**
+  String get route_noHeightsHiking;
+
   /// No description provided for @route_options.
   ///
   /// In en, this message translates to:
