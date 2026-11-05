@@ -5775,6 +5775,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get route_here => 'Route here';
 
   @override
+  String route_destinationNow(String destination) {
+    return 'Destination now: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Start now: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Start now: your position';
+
+  @override
   String get route_options => 'Route options';
 
   @override

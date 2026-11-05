@@ -77,8 +77,8 @@ class OfflineMapView extends StatefulWidget {
 
   final ValueChanged<MapCamera>? onCameraChanged;
 
-  /// Taps and long-presses on the map itself (not on an overlay that
-  /// handles them).
+  /// Taps and long-presses (or right-clicks) on the map itself, not on an
+  /// overlay that handles them.
   final ValueChanged<LatLng>? onTap;
   final ValueChanged<LatLng>? onLongPress;
 

@@ -10056,6 +10056,24 @@ abstract class AppLocalizations {
   /// **'Route here'**
   String get route_here;
 
+  /// No description provided for @route_destinationNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination now: {destination}'**
+  String route_destinationNow(String destination);
+
+  /// No description provided for @route_startNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Start now: {start}'**
+  String route_startNow(String start);
+
+  /// No description provided for @route_startNowYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Start now: your position'**
+  String get route_startNowYou;
+
   /// No description provided for @route_options.
   ///
   /// In en, this message translates to:

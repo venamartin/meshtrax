@@ -1488,12 +1488,20 @@ class _MapScreenState extends State<MapScreen> {
   }) {
     final routing = context.read<RoutingService?>();
     final canRoute = routing != null && routing.available;
-    final lines = positionLines(
-      position.latitude,
-      position.longitude,
-      coordFormatOf(context.read<AppSettingsService>().settings),
-    );
+    final format = coordFormatOf(context.read<AppSettingsService>().settings);
+    final lines = positionLines(position.latitude, position.longitude, format);
     final name = title ?? lines.first;
+    // What's set already, so it's clear whether a route goes from or to.
+    final l10n = context.l10n;
+    final to = _routeTo;
+    final from = _routeFrom;
+    final startNow = from != null
+        ? l10n.route_startNow(
+            positionLines(from.latitude, from.longitude, format).first,
+          )
+        : to != null
+        ? l10n.route_startNowYou
+        : null;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -1514,6 +1522,9 @@ class _MapScreenState extends State<MapScreen> {
               ListTile(
                 leading: const Icon(Icons.directions),
                 title: Text(context.l10n.route_here),
+                subtitle: to == null
+                    ? null
+                    : Text(l10n.route_destinationNow(to.name)),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _routeHere(name, position, selfPosition);
@@ -1522,6 +1533,7 @@ class _MapScreenState extends State<MapScreen> {
               ListTile(
                 leading: const Icon(Icons.trip_origin),
                 title: Text(context.l10n.route_fromHere),
+                subtitle: startNow == null ? null : Text(startNow),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _routeFromHere(position, selfPosition);

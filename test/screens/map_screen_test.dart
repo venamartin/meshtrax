@@ -399,6 +399,42 @@ void main() {
       expect(find.text('Reset'), findsNothing);
     });
 
+    testWidgets('the long-press sheet says what is set already', (
+      tester,
+    ) async {
+      Future<void> longPress(LatLng at) async {
+        tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(at);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      Future<void> choose(String text) async {
+        await tester.tap(find.text(text));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      routing = _Routing(maps);
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: routing,
+      );
+      await longPress(const LatLng(41.7, -71.3));
+      expect(find.textContaining('now:'), findsNothing);
+      await choose('Route from here');
+
+      await longPress(const LatLng(41.8, -71.4));
+      expect(find.textContaining('Start now: 41.7'), findsOneWidget);
+      expect(find.textContaining('Destination now:'), findsNothing);
+      await choose('Route here');
+      expect(routing.requests, hasLength(1));
+
+      await longPress(const LatLng(41.9, -71.5));
+      expect(find.textContaining('Start now: 41.7'), findsOneWidget);
+      expect(find.textContaining('Destination now: 41.8'), findsOneWidget);
+    });
+
     testWidgets('closes on back, and back then leaves the map', (tester) async {
       await showRoute(tester);
 
