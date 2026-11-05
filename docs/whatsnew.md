@@ -2,6 +2,12 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.9.8
+
+- Map downloads work again on Windows: a region failed with "Download failed" and a page of text instead of installing.
+- If a region still shows as failed, cancel it and download it again.
+- A failed download now shows a short error code instead of a web page.
+
 ## 1.9.5
 
 - Drawings in messages: sketch, or use shapes, routes and X marks, even over a map.
