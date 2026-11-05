@@ -1889,6 +1889,8 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
   bool _clientRepeat = false;
   int? _selectedPresetIndex;
   _RadioSettingsSnapshot? _lastNonRepeatSnapshot;
+  List<({int lowerKhz, int upperKhz})>? _allowedRepeat;
+  bool _saving = false;
 
   AppDebugLogService get _appLog =>
       Provider.of<AppDebugLogService>(context, listen: false);
@@ -1954,10 +1956,17 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
     } else {
       _lastNonRepeatSnapshot = _nonRepeatSnapshotForCurrentSelection();
     }
+    if (widget.connector.clientRepeat != null) unawaited(_loadAllowedRepeat());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _logRadioSettingsState('Dialog initialized');
     });
+  }
+
+  Future<void> _loadAllowedRepeat() async {
+    final allowed = await widget.connector.getAllowedRepeatFrequencies();
+    if (!mounted || allowed == null) return;
+    setState(() => _allowedRepeat = allowed);
   }
 
   @override
@@ -2020,11 +2029,12 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
     return RadioSettings.presets[index].$1.startsWith('Off-Grid ');
   }
 
-  double _offGridFrequencyForBaseFrequency(double baseFrequencyMHz) {
-    if (baseFrequencyMHz < 500) return 433.0;
-    if (baseFrequencyMHz < 900) return 869.0;
-    return 918.0;
-  }
+  double _offGridFrequencyForBaseFrequency(double baseFrequencyMHz) =>
+      RadioSettings.offGridFrequencyMHz(
+        baseFrequencyMHz,
+        allowed: _allowedRepeat,
+        firmwareVerCode: widget.connector.firmwareVerCode,
+      );
 
   double _normalFrequencyForBand(double frequencyMHz) {
     if (frequencyMHz < 500) return 433.650;
@@ -2229,15 +2239,33 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
 
     try {
       _logRadioSettingsState('Saving radio settings');
-      await widget.connector.sendFrame(
-        buildSetRadioParamsFrame(
-          freqHz,
-          bwHz,
-          sf,
-          cr,
-          clientRepeat: knownRepeat ? _clientRepeat : null,
-        ),
+      final repeat = knownRepeat ? _clientRepeat : null;
+      setState(() => _saving = true);
+      final accepted = await widget.connector.setRadioParams(
+        freqHz,
+        bwHz,
+        sf,
+        cr,
+        clientRepeat: repeat,
       );
+      if (mounted) setState(() => _saving = false);
+      if (!accepted) {
+        // The radio keeps all its old settings when it refuses the frame.
+        _appLog.warn(
+          'Radio did not accept radio settings (repeat: $repeat)',
+          tag: 'RadioSettings',
+        );
+        if (!mounted) return;
+        showDismissibleSnackBar(
+          context,
+          content: Text(
+            repeat == true
+                ? l10n.settings_clientRepeatFreqWarning
+                : l10n.healthCheck_fixFailed,
+          ),
+        );
+        return;
+      }
       await widget.connector.sendFrame(buildSetRadioTxPowerFrame(txPower));
       widget.connector.noteRadioSettingsSaved(
         freqKhz: freqHz,
@@ -2449,7 +2477,10 @@ class _RadioSettingsDialogState extends State<_RadioSettingsDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.common_cancel),
         ),
-        FilledButton(onPressed: _saveSettings, child: Text(l10n.common_save)),
+        FilledButton(
+          onPressed: _saving ? null : _saveSettings,
+          child: Text(l10n.common_save),
+        ),
       ],
     );
   }

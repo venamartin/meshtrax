@@ -49,15 +49,15 @@ Uint8List _selfInfo() {
 // RESP_CODE_CHANNEL_DATA_RECV as companion firmware 1.18 writes it
 // (MeshCore/examples/companion_radio/MyMesh.cpp onChannelDataRecv).
 Uint8List _datagram() => Uint8List.fromList([
-      respCodeChannelDataRecv,
-      0x14, // SNR x4
-      0, 0, // reserved
-      1, // channel slot
-      0xFF, // arrived direct
-      0x54, 0xFF, // data type, little-endian
-      3, // data length
-      1, 2, 3,
-    ]);
+  respCodeChannelDataRecv,
+  0x14, // SNR x4
+  0, 0, // reserved
+  1, // channel slot
+  0xFF, // arrived direct
+  0x54, 0xFF, // data type, little-endian
+  3, // data length
+  1, 2, 3,
+]);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

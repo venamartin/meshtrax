@@ -4243,6 +4243,33 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Writes frequency, bandwidth, SF and CR, and says whether the radio took
+  /// them. With repeat on, firmware refuses the whole frame unless the
+  /// frequency is one it allows (MyMesh.cpp CMD_SET_RADIO_PARAMS).
+  Future<bool> setRadioParams(
+    int freqKhz,
+    int bwHz,
+    int sf,
+    int cr, {
+    bool? clientRepeat,
+  }) => _sendAndWaitForAck(
+    buildSetRadioParamsFrame(freqKhz, bwHz, sf, cr, clientRepeat: clientRepeat),
+    timeout: const Duration(seconds: 10),
+    expectsGenericAck: true,
+  );
+
+  /// The frequency ranges, in kHz, this radio allows repeat on; null when it
+  /// does not answer (CMD_GET_ALLOWED_REPEAT_FREQ, firmware ver code 9+).
+  Future<List<({int lowerKhz, int upperKhz})>?>
+  getAllowedRepeatFrequencies() async {
+    final frame = await _sendAndWaitForFrame(
+      buildGetAllowedRepeatFreqFrame(),
+      (f) => f[0] == respCodeAllowedRepeatFreq || f[0] == respCodeErr,
+    );
+    if (frame == null || frame[0] != respCodeAllowedRepeatFreq) return null;
+    return parseAllowedRepeatFreqFrame(frame);
+  }
+
   Future<void> refreshDeviceInfo() async {
     if (!isConnected) return;
     if (PlatformInfo.isWeb &&
@@ -6575,6 +6602,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeExportContact:
       case respCodeTuningParams:
       case respCodeDefaultFloodScope:
+      case respCodeAllowedRepeatFreq:
       case respCodeCliReply:
         break;
       // RESP_CODE_ERR is a defined firmware response (code 1), not an unknown frame.
