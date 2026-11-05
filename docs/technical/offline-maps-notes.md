@@ -50,7 +50,7 @@ traxmap moved into this repository.
 | 2026-10-16 | **OSM covers the whole world.** USGS and NOAA packs are US-only extras. First release: USA by state, Canada by province, Mexico, UK. |
 | 2026-10-16 | **The region picker is a native MeshTrax "Offline maps" screen** (replacing `map_cache_screen.dart`), as close to the web mockup as possible in MeshTrax's own style. It draws on a small bundled world pack (z0–6), and fetches simplified outlines (`picker.geojson`) from R2. Design in the traxmap README. |
 | 2026-10-16 | **Pack downloads use background_downloader**, not Android's DownloadManager: scoped tasks, Android 14+ UIDT, range-request resume, restore at launch, SHA-256 check, then `PackManager.install(move: true)`. |
-| 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** See "Routing" below. |
+| 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** Superseded on 2026-10-25 by Valhalla, which runs on iOS too: see "Routing" below. |
 | 2026-10-17 | **Routing is an opt-in download, off by default** (Android only). |
 | 2026-10-17 | **Online OSM raster tiles where no pack is installed.** They load on demand only, from a disk cache of tiles already viewed. The bulk "Offline Map Cache" prefetch goes (it breaks OSM's tile policy), the User-Agent becomes `com.vena.meshtrax`, and "© OpenStreetMap contributors" shows whenever raster tiles do. The bundled world pack is deferred. Martin: about 95% of users are online. |
 | 2026-10-17 | **Phone GPS** (geolocator, when-in-use, asked on the first tap of centre-on-me) arrives with the main map. (Parked 2026-10-22: the radio only.) The radio's position is the fallback, and the only source on Linux. privacy.md and the store forms change in the same step. |
@@ -190,50 +190,47 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
 - `_collectSharedMarkers` starts an unawaited message-store reload on every build of the main map (which rebuilds on every connector notify).
 - The "radar" path-trace button force-unwraps `selfLatitude!`.
 
-## Routing (Android only; planned, nothing built)
+## Routing (Valhalla, on PR #210)
 
-**Engine:** the BRouter library (MIT), run in Android-native code.
-- **Where:** recommended as a small separate Flutter plugin (`packages/traxroute`,
-  method channel), keeping traxmap map-only. Still to confirm.
-- **Other platforms:** routing is hidden on iOS and desktop.
-- **Result:** a polyline with elevation per point, distance and ascent,
-  drawn as a `MapLine`. GPX export and an elevation profile come free.
+BRouter was the first plan, Android only. Martin dropped it on 2026-10-25
+for Valhalla, which runs on iOS too. The roadmap's Phase 7 has the status,
+and traxmapmaker's FINDINGS 1.5 the data contract.
 
-**Data:** BRouter `.rd5` files, 5°×5° tiles named by their south-west corner.
-- **Built by traxmapmaker** from the same OSM extracts as the maps, with 3DEP
-  or Copernicus elevation.
-- **brouter.de's files are for testing only.** Their CGIAR elevation can't
-  be re-hosted without permission.
+**Engine:** Valhalla 3.9.1 on every platform, the same version as the tiles,
+behind `packages/traxroute` (requests and results, the store, the catalogue).
+- **Linux:** Valhalla's own `valhalla_service`, named with
+  `--dart-define=VALHALLA_SERVICE=<path>`. Without it, routing isn't offered.
+- **Android:** valhalla-mobile 0.6.4 in `MeshTraxRouting.kt`, on the
+  `meshtrax/routing` channel.
+- **iOS:** valhalla-mobile 0.6.4 in the plugin `packages/traxroute_ios`, on
+  the same channel (iOS 16.4 at least).
 
-**On R2:**
-- **Tile storage:** one shared copy per tile at `routing/l11/<tile>.rd5`
-  (`l11` = BRouter's `lookupversion`). That's 2.4 GB for the first release.
-- **Index:** a separate top-level `routing` section in `index.json`, never in
-  `packs`. Today's app parses unknown kinds as `PackKind.unknown` and would
-  list them. Shape:
-  `{"routing": {"lookup_version": 11, "tiles": {"W125_N35": {bytes, sha256, build_date, url}}, "regions": {"<region path>": ["W125_N35", …]}}}`.
+**Data:** the catalogue's top-level `routing` key, never in `packs`, entry
+`valhalla-3.9`: one build for every region, since tiles from two builds
+break routing, and a `.tar.gz` bundle per picker region with its size,
+sha256 and credits.
+- **On the device:** one plain tar, `routing/<build>/tiles.tar`, holding each
+  tile once, and `manifest.json` with each region's tiles and credits. A new
+  build replaces every installed region in one step; removing a region keeps
+  the tiles another one uses.
+- **A bundle gone from the server** (the build moved on): the app reads the
+  catalogue again and installs the current build. A catalogue that lists no
+  regions never removes what's installed.
+- **Without heights:** a region built with `"elevation": false` gives heights
+  of −500, so the route has no climb or profile, and the panel says so.
 
-**In the app:**
-- **Opt-in, off by default:** a "Routing (trails & dirt roads)" checkbox
-  after Map and Contours, shown only on Android.
-- **Sizes:** the median region adds 139 MB (NorCal 146, SoCal 192). The app
-  shows only tiles not yet installed, since neighbours share tiles.
-- **Download, install, delete, update:**
-  - downloads go through `PackDownloader` (resume, SHA-256) into a `routing/`
-    folder that BRouter reads;
-  - deleting a region removes only tiles no other installed region uses;
-  - a changed sha256 in the index offers an update.
-- **Profiles:** bundled with the matching `lookups.dat`: hiking, trekking
-  and MTB, plus a MeshTrax profile with per-request "prefer dirt / avoid
-  paved / max `sac_scale`" variables.
+**Path types** (Martin, 2026-10-25): one per route, no drive-then-walk. Where
+the destination can't be reached that way, the route stops at the nearest
+point it reaches and says how far short.
+- **Paved:** `auto` with `exclude_unpaved`.
+- **Dirt:** `auto` with `use_tracks` 1, `use_distance` 0.8 (Balanced; 0 is
+  Fastest, 1 Direct) and hierarchy pruning off.
+- **Hiking:** `pedestrian` with `use_tracks` 1, `max_hiking_difficulty` (the
+  hardest trail), `use_hills` from the climbs option, and the pace as the
+  walking speed.
 
-**Measured on the Pi (2026-10-16):** routes take 0.4–0.8 s, and the route
-server runs in 128 MB. On Mt Diablo, hiking used 90% trails, MTB 88% dirt
-roads, and gravel mostly dirt and minor roads. Elevation changes the chosen
-route, not just the stats.
-
-**Next:** try the embedded library on a real Android phone, measuring route
-time, memory and APK size.
+**Next:** route time, memory and app size on a phone, once routing is in the
+live catalogue.
 
 ## Open questions for the app
 

@@ -186,7 +186,7 @@ Last updated 2026-11-02. **Resume here.**
 
 ### On the Pi
 
-All UI testing is done on the Raspberry Pi as a Linux desktop app, with hot reload. Phones are only used at gates G1 and G2, and for phone-only features: Android 14 UIDT, iOS background transfers, GPS permissions, BRouter.
+All UI testing is done on the Raspberry Pi as a Linux desktop app, with hot reload. Phones are only used at gates G1 and G2, and for phone-only features: Android 14 UIDT, iOS background transfers, GPS permissions, the routing engine.
 
 ```sh
 flutter run -d linux
@@ -704,7 +704,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 | Root index 404 until the first real publish | "No maps available yet" state; `dev/` via `--dart-define` meanwhile |
 | Auto-connect replacing a screen opened from the scanner | M5b test |
 | Testing on the Pi only hides phone behaviour | G1, G2, phone-only checks |
-| BRouter build and APK size | Phase 7 gate |
+| Routing engine size, memory and route time on phones | Phase 7 gate |
 
 ## Still to confirm (defaults assumed)
 
