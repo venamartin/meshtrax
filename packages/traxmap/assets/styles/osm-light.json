@@ -759,7 +759,7 @@
       },
       "paint": {
         "line-color": "#dcd6cd",
-        "line-gap-width": [
+        "line-width": [
           "interpolate",
           [
             "exponential",
@@ -779,10 +779,10 @@
               "motorway",
               "trunk"
             ],
-            1.38,
+            3.38,
             "primary",
-            0.9199999999999999,
-            0.345
+            2.92,
+            2.345
           ],
           16,
           [
@@ -795,20 +795,19 @@
               "motorway",
               "trunk"
             ],
-            13.799999999999999,
+            15.8,
             [
               "primary",
               "secondary"
             ],
-            10.35,
+            12.35,
             "tertiary",
-            8.049999999999999,
+            10.05,
             "minor",
-            5.75,
-            3.4499999999999997
+            7.75,
+            5.45
           ]
-        ],
-        "line-width": 1
+        ]
       }
     },
     {

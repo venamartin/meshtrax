@@ -80,6 +80,17 @@ APP_PLACES = ["campsite", "picnic_site", "shelter", "toilets", "drinking_water",
 
 def O(id, type, sl, **kw): return {"id": id, "type": type, "source": "osm", "source-layer": sl, **kw}
 
+def widened(width, by):
+    """[width], an interpolate over per-class matches, [by] px wider at every
+    stop. Exponential interpolation is linear in the stop values, so the
+    result is exactly [by] wider at every zoom."""
+    def add(v):
+        if isinstance(v, list) and v[0] == "match":
+            return [*v[:2], *[round(out + by, 3) if i % 2 else out for i, out in enumerate(v[2:-1])],
+                    round(v[-1] + by, 3)]
+        return round(v + by, 3)
+    return [*width[:3], *[add(v) if i % 2 else v for i, v in enumerate(width[3:])]]
+
 def units_twins(layer, metric_field):
     imp = {**layer, "metadata": {"ovm:units": "imperial"}}
     met = json.loads(json.dumps(imp)); met["id"] += "-m"; met["metadata"]["ovm:units"] = "metric"
@@ -137,10 +148,14 @@ def style(name, P, note):
           paint={"line-color": P["aeroway"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 14]}),
         O("building", "fill", "building", minzoom=13, paint={"fill-color": P["building"],
             "fill-outline-color": P["building_line"], "fill-opacity": P["building_op"]}),
+        # The casing is a wider line under the road, not line-gap-width: the
+        # renderer gives each gap-width feature its own offscreen layer (2,619
+        # in one zoom 12 tile of downtown LA, profiled on a phone, PR #210),
+        # and the road covers the gap anyway.
         O("road-casing", "line", "transportation", minzoom=11,
           filter=["match", ["get", "class"], ROADS, True, False],
           layout={"line-cap": "round", "line-join": "round"},
-          paint={"line-color": P["casing"], "line-gap-width": road_width, "line-width": P["casing_w"]}),
+          paint={"line-color": P["casing"], "line-width": widened(road_width, 2 * P["casing_w"])}),
         O("road", "line", "transportation", filter=["match", ["get", "class"], ROADS, True, False],
           layout={"line-cap": "round", "line-join": "round"},
           paint={"line-color": road_color, "line-width": road_width}),

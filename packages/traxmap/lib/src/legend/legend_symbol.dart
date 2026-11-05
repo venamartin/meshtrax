@@ -238,15 +238,6 @@ class _LegendPainter extends CustomPainter {
     final paint = Paint()
       ..color = _fade(layer.color.eval(ctx), opacity)
       ..strokeWidth = width;
-    // A casing: a line either side of the gap the road fills.
-    final gap = layer.gapWidth.eval(ctx);
-    if (gap > 0) {
-      for (final side in [-1, 1]) {
-        final dy = side * (gap + width) / 2;
-        canvas.drawLine(Offset(from, y + dy), Offset(to, y + dy), paint);
-      }
-      return;
-    }
     final dashes = layer.dashArray?.eval(ctx) ?? const [];
     if (dashes.length < 2) {
       canvas.drawLine(Offset(from, y), Offset(to, y), paint);
