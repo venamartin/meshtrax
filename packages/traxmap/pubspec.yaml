@@ -13,7 +13,10 @@ dependencies:
   crypto: ^3.0.7
   path: ^1.9.1
   flutter_map: ^8.3.2
-  flutter_map_vector_tiles: ^2.9.1
+  # 2.10.x until 2.11 is checked: 2.11 makes expression types strict (a
+  # mistyped filter drops its features) and changes text metrics. The app's
+  # pubspec.lock isn't committed, so builds take the newest version allowed.
+  flutter_map_vector_tiles: ">=2.10.1 <2.11.0"
   # MeshTrax pins ^0.9.1; flutter_map 8.3 and flutter_map_vector_tiles accept both.
   latlong2: ">=0.9.1 <0.11.0"
   meta: ^1.16.0
