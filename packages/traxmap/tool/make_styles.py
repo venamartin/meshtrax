@@ -22,9 +22,23 @@ SOURCES = {
 }
 ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service"]
 # Real trails only. OSM class=path also holds sidewalks (footway), cycleways,
-# steps and pedestrian areas; only these subclasses are trails.
+# steps and pedestrian areas; only these subclasses are trails. An unpaved
+# footway is a trail too: Santa Cruz Island's Pelican Bay Trail is one, and
+# sidewalks are paved or untagged (Martin, 2026-11-05).
 TRAIL = ["all", ["==", ["get", "class"], "path"],
-         ["match", ["get", "subclass"], ["path", "bridleway"], True, False]]
+         ["any", ["match", ["get", "subclass"], ["path", "bridleway"], True, False],
+          ["all", ["==", ["get", "subclass"], "footway"], ["==", ["get", "surface"], "unpaved"]]]]
+# The trail names. transportation_name carries no surface, so every named
+# footway takes the trail label; road-label leaves these to it.
+TRAIL_NAME = ["all", ["==", ["get", "class"], "path"],
+              ["match", ["get", "subclass"], ["path", "bridleway", "footway"], True, False]]
+# Route shields, by the first route's network: Interstates, US routes and
+# state routes (Martin, 2026-11-05: the big highways were hard to pick out).
+# Express lanes and other networks get none.
+SHIELD_KIND = ["match", ["get", "route_1_network"], "US:I", "interstate", "US:US", "us",
+               ["case", ["==", ["get", "network"], "us-state"], "state", ""]]
+SHIELD = ["all", ["has", "route_1_ref"], ["!=", SHIELD_KIND, ""],
+          ["<=", ["length", ["get", "route_1_ref"]], 3]]
 # Parks (docs/technical/park-maps.md): national parks, monuments, preserves,
 # seashores and the other park kinds below get a tint, an outline and their
 # name; wilderness and national forests a thin outline; other protected land
@@ -153,13 +167,25 @@ def style(name, P, note):
         O("waterway-name", "symbol", "waterway", minzoom=13,
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ""], "text-font": ITA, "text-size": 10},
           paint={"text-color": P["water_label"], "text-halo-color": P["halo"], "text-halo-width": 1}),
-        O("road-label", "symbol", "transportation_name", minzoom=12,
+        O("road-label", "symbol", "transportation_name", minzoom=12, filter=["!", TRAIL_NAME],
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ["get", "ref"]],
                   "text-font": REG, "text-size": 11}, paint=halo),
-        O("trail-label", "symbol", "transportation_name", minzoom=13,
-          filter=["all", ["==", ["get", "class"], "path"], ["!=", ["get", "subclass"], "footway"]],
+        O("trail-label", "symbol", "transportation_name", minzoom=13, filter=TRAIL_NAME,
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ""], "text-font": ITA, "text-size": 11},
           paint={"text-color": P["trail"], "text-halo-color": P["halo"], "text-halo-width": 1.5}),
+        # Upright on the road, in its sign; Interstates first, then US and
+        # state routes. Shield names: tool/make_sprites.py.
+        O("road-shield", "symbol", "transportation_name", minzoom=7,
+          filter=["all", SHIELD, ["any", ["==", SHIELD_KIND, "interstate"], [">=", ["zoom"], 9]]],
+          layout={"symbol-placement": "line", "symbol-spacing": 220,
+                  "symbol-sort-key": ["match", SHIELD_KIND, "interstate", 0, "us", 1, 2],
+                  "icon-image": ["concat", "shield-", SHIELD_KIND,
+                                 ["case", [">", ["length", ["get", "route_1_ref"]], 2], "-3", "-2"]],
+                  "icon-rotation-alignment": "viewport",
+                  "text-field": ["get", "route_1_ref"], "text-font": ["Noto Sans Bold"], "text-size": 9,
+                  "text-rotation-alignment": "viewport",
+                  "text-offset": ["match", SHIELD_KIND, "interstate", ["literal", [0, 0.25]], ["literal", [0, 0]]]},
+          paint={"text-color": ["match", SHIELD_KIND, "interstate", "#ffffff", "#222222"]}),
         *[O(id_, "symbol", "poi", minzoom=z, filter=["all", ["!=", POI_ICON, ""], tier],
             layout={"icon-image": POI_ICON, "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 0.85, 17, 1],
                     "symbol-sort-key": ["get", "rank"],

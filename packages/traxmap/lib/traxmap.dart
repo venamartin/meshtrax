@@ -12,6 +12,7 @@ export 'src/packs/background_pack_downloader.dart';
 export 'src/legend/chart_legend.dart';
 export 'src/legend/legend_symbol.dart';
 export 'src/legend/park_legend.dart';
+export 'src/legend/road_legend.dart';
 export 'src/packs/bundled_world.dart';
 export 'src/styles/asset_style_source.dart';
 export 'src/view/attribution.dart' show AttributionChip;

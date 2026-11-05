@@ -183,6 +183,11 @@ void main() {
       'subclass': ['viewpoint', 'guidepost', 'route_marker', 'board', null],
       'rank': [1],
     }),
+    'transportation_name': combos({
+      'network': ['us-interstate', 'us-highway', 'us-state', 'road', null],
+      'route_1_network': ['US:I', 'US:US', 'US:CA', 'US:I:Express', null],
+      'route_1_ref': ['5', '101', '1234', null],
+    }),
   };
 
   for (final id in ['charts-light', 'charts-dark', 'osm-light', 'osm-dark']) {

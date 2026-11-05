@@ -9726,6 +9726,96 @@ abstract class AppLocalizations {
   /// **'Guidepost'**
   String get parkLegend_guidepost;
 
+  /// No description provided for @roadLegend_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Roads, trails and lines'**
+  String get roadLegend_title;
+
+  /// No description provided for @roadLegend_freeway.
+  ///
+  /// In en, this message translates to:
+  /// **'Freeway'**
+  String get roadLegend_freeway;
+
+  /// No description provided for @roadLegend_majorRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Highway or major road'**
+  String get roadLegend_majorRoad;
+
+  /// No description provided for @roadLegend_road.
+  ///
+  /// In en, this message translates to:
+  /// **'Road'**
+  String get roadLegend_road;
+
+  /// No description provided for @roadLegend_track.
+  ///
+  /// In en, this message translates to:
+  /// **'Dirt road or track'**
+  String get roadLegend_track;
+
+  /// No description provided for @roadLegend_trail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail'**
+  String get roadLegend_trail;
+
+  /// No description provided for @roadLegend_interstate.
+  ///
+  /// In en, this message translates to:
+  /// **'Interstate'**
+  String get roadLegend_interstate;
+
+  /// No description provided for @roadLegend_usRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'US highway'**
+  String get roadLegend_usRoute;
+
+  /// No description provided for @roadLegend_stateRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'State route'**
+  String get roadLegend_stateRoute;
+
+  /// No description provided for @roadLegend_railway.
+  ///
+  /// In en, this message translates to:
+  /// **'Railway'**
+  String get roadLegend_railway;
+
+  /// No description provided for @roadLegend_stream.
+  ///
+  /// In en, this message translates to:
+  /// **'River or stream'**
+  String get roadLegend_stream;
+
+  /// No description provided for @roadLegend_contour.
+  ///
+  /// In en, this message translates to:
+  /// **'Contour line'**
+  String get roadLegend_contour;
+
+  /// No description provided for @roadLegend_park.
+  ///
+  /// In en, this message translates to:
+  /// **'Park boundary'**
+  String get roadLegend_park;
+
+  /// No description provided for @roadLegend_wilderness.
+  ///
+  /// In en, this message translates to:
+  /// **'Wilderness or national forest'**
+  String get roadLegend_wilderness;
+
+  /// No description provided for @roadLegend_boundary.
+  ///
+  /// In en, this message translates to:
+  /// **'State or county line'**
+  String get roadLegend_boundary;
+
   /// No description provided for @dialog_noticeExpires.
   ///
   /// In en, this message translates to:

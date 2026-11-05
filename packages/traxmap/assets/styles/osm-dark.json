@@ -962,17 +962,39 @@
           "path"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "subclass"
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway"
+            ],
+            true,
+            false
           ],
           [
-            "path",
-            "bridleway"
-          ],
-          true,
-          false
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "footway"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "surface"
+              ],
+              "unpaved"
+            ]
+          ]
         ]
       ],
       "paint": {
@@ -1010,17 +1032,39 @@
           "path"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "subclass"
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway"
+            ],
+            true,
+            false
           ],
           [
-            "path",
-            "bridleway"
-          ],
-          true,
-          false
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "footway"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "surface"
+              ],
+              "unpaved"
+            ]
+          ]
         ]
       ],
       "paint": {
@@ -1669,6 +1713,34 @@
       "source": "osm",
       "source-layer": "transportation_name",
       "minzoom": 12,
+      "filter": [
+        "!",
+        [
+          "all",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "path"
+          ],
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway",
+              "footway"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
       "layout": {
         "symbol-placement": "line",
         "text-field": [
@@ -1710,12 +1782,18 @@
           "path"
         ],
         [
-          "!=",
+          "match",
           [
             "get",
             "subclass"
           ],
-          "footway"
+          [
+            "path",
+            "bridleway",
+            "footway"
+          ],
+          true,
+          false
         ]
       ],
       "layout": {
@@ -1737,6 +1815,264 @@
         "text-color": "#d0705f",
         "text-halo-color": "#1c2026",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "road-shield",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 7,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "has",
+            "route_1_ref"
+          ],
+          [
+            "!=",
+            [
+              "match",
+              [
+                "get",
+                "route_1_network"
+              ],
+              "US:I",
+              "interstate",
+              "US:US",
+              "us",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "network"
+                  ],
+                  "us-state"
+                ],
+                "state",
+                ""
+              ]
+            ],
+            ""
+          ],
+          [
+            "<=",
+            [
+              "length",
+              [
+                "get",
+                "route_1_ref"
+              ]
+            ],
+            3
+          ]
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "match",
+              [
+                "get",
+                "route_1_network"
+              ],
+              "US:I",
+              "interstate",
+              "US:US",
+              "us",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "network"
+                  ],
+                  "us-state"
+                ],
+                "state",
+                ""
+              ]
+            ],
+            "interstate"
+          ],
+          [
+            ">=",
+            [
+              "zoom"
+            ],
+            9
+          ]
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 220,
+        "symbol-sort-key": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          0,
+          "us",
+          1,
+          2
+        ],
+        "icon-image": [
+          "concat",
+          "shield-",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          [
+            "case",
+            [
+              ">",
+              [
+                "length",
+                [
+                  "get",
+                  "route_1_ref"
+                ]
+              ],
+              2
+            ],
+            "-3",
+            "-2"
+          ]
+        ],
+        "icon-rotation-alignment": "viewport",
+        "text-field": [
+          "get",
+          "route_1_ref"
+        ],
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 9,
+        "text-rotation-alignment": "viewport",
+        "text-offset": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          [
+            "literal",
+            [
+              0,
+              0.25
+            ]
+          ],
+          [
+            "literal",
+            [
+              0,
+              0
+            ]
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          "#ffffff",
+          "#222222"
+        ]
       }
     },
     {

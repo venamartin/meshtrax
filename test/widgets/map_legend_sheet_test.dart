@@ -129,9 +129,32 @@ void main() {
     );
   });
 
+  testWidgets('the OSM map explains its roads, trails and lines', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final osm = File('${tmp.path}/osm.src')
+        ..writeAsBytesSync(fakePmTiles(metadata: {'kind': 'osm'}));
+      await maps.manager.install(osm, id: 'us-rhode-island-osm');
+      await maps.reloadInstalled();
+    });
+    await pump(tester, styles: (MapType.osm, false));
+    await tester.tap(find.text('Roads, trails and lines'));
+    await tester.pumpAndSettle();
+    for (final text in ['Trail', 'Dirt road or track', 'Interstate']) {
+      expect(find.text(text), findsOneWidget);
+    }
+    expect(
+      find.byType(LegendSymbol),
+      findsNWidgets(RoadLegendItem.values.length),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the base map alone has no park icons', (tester) async {
     await pump(tester, styles: (MapType.osm, false));
     expect(find.text('Park and trail symbols'), findsNothing);
+    expect(find.text('Roads, trails and lines'), findsNothing);
   });
 
   testWidgets('depth areas read in the user\'s units', (tester) async {

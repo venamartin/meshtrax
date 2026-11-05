@@ -5398,6 +5398,51 @@ class AppLocalizationsJa extends AppLocalizations {
   String get parkLegend_guidepost => '道標';
 
   @override
+  String get roadLegend_title => 'Roads, trails and lines';
+
+  @override
+  String get roadLegend_freeway => 'Freeway';
+
+  @override
+  String get roadLegend_majorRoad => 'Highway or major road';
+
+  @override
+  String get roadLegend_road => 'Road';
+
+  @override
+  String get roadLegend_track => 'Dirt road or track';
+
+  @override
+  String get roadLegend_trail => 'Trail';
+
+  @override
+  String get roadLegend_interstate => 'Interstate';
+
+  @override
+  String get roadLegend_usRoute => 'US highway';
+
+  @override
+  String get roadLegend_stateRoute => 'State route';
+
+  @override
+  String get roadLegend_railway => 'Railway';
+
+  @override
+  String get roadLegend_stream => 'River or stream';
+
+  @override
+  String get roadLegend_contour => 'Contour line';
+
+  @override
+  String get roadLegend_park => 'Park boundary';
+
+  @override
+  String get roadLegend_wilderness => 'Wilderness or national forest';
+
+  @override
+  String get roadLegend_boundary => 'State or county line';
+
+  @override
   String get dialog_noticeExpires => '有効期限';
 
   @override
