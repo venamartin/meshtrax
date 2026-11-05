@@ -160,8 +160,8 @@ class MapLayersSheet extends StatelessWidget {
       Image.asset('assets/map_layers/$name.webp', fit: BoxFit.cover);
 }
 
-/// The standard map's thumbnail with a downloaded area outlined on it, the
-/// way [AppMap] draws one.
+/// A wide view of the standard map with a downloaded area outlined on it,
+/// the way [AppMap] draws one.
 class _DownloadedAreasPicture extends StatelessWidget {
   const _DownloadedAreasPicture();
 
@@ -169,7 +169,7 @@ class _DownloadedAreasPicture extends StatelessWidget {
   Widget build(BuildContext context) => Stack(
     fit: StackFit.expand,
     children: [
-      MapLayersSheet._picture('standard'),
+      MapLayersSheet._picture('downloaded_areas'),
       const CustomPaint(painter: _AreaPainter()),
     ],
   );
