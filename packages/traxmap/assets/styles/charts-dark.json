@@ -284,8 +284,12 @@
         "fill-color": [
           "step",
           [
-            "get",
-            "drval1"
+            "coalesce",
+            [
+              "get",
+              "drval1"
+            ],
+            -1
           ],
           "#2f3a24",
           0,

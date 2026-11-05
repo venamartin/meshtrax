@@ -43,8 +43,9 @@ USGS_DARK = {
 CHARTS_DARK = {
     # Night chart: deep water darkest, shallows lighter, so danger stays the eye-catcher.
     "background": {"background-color": "#22201b"},
-    "depth-area": {"fill-color": ["step", ["get", "drval1"], "#2f3a24", 0, "#1f4a6b", 5, "#173a57",
-                                  18, "#112c44", 30, "#0c1e30"]},
+    # No drval1 reads as drying (-1), as S-52 has it; charts-light does the same.
+    "depth-area": {"fill-color": ["step", ["coalesce", ["get", "drval1"], -1], "#2f3a24", 0, "#1f4a6b",
+                                  5, "#173a57", 18, "#112c44", 30, "#0c1e30"]},
     "dredged-outline": {"line-color": "#4f7fa8"},
     "land": {"fill-color": "#22201b"},
     "road": {"line-color": "#4a4438"},
