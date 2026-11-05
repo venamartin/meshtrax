@@ -100,7 +100,12 @@ class BackgroundPackDownloader implements PackDownloader {
             entry,
             _stateOf(record.status),
             progress: progress >= 0 && progress <= 1 ? progress : null,
-            error: record.exception?.description,
+            // An HTTP failure's description is the server's whole error page.
+            error: switch (record.exception) {
+              TaskHttpException(:final httpResponseCode) =>
+                'HTTP $httpResponseCode',
+              final e => e?.description,
+            },
           ),
         );
       }
@@ -142,9 +147,11 @@ class BackgroundPackDownloader implements PackDownloader {
     final current = _latest[entry.id];
     if (current != null && !current.state.isFinal) return;
     await manager.root.create(recursive: true);
-    final target = p.join(
-      manager.root.path,
-      '${entry.id}${PackManager.extension}$_suffix',
+    // Normalised: on Windows the plugin only recognises the app's folders
+    // written with `\`. Given a mixed path it stores a relative one, which
+    // resolves against the working folder, where a Store install can't write.
+    final target = p.normalize(
+      p.join(manager.root.path, '${entry.id}${PackManager.extension}$_suffix'),
     );
     final (base, directory, filename) = await Task.split(filePath: target);
     final task = DownloadTask(
@@ -241,7 +248,11 @@ class BackgroundPackDownloader implements PackDownloader {
               entry,
               _stateOf(status),
               progress: _latest[entry.id]?.progress,
-              error: exception?.description,
+              error: switch (exception) {
+                TaskHttpException(:final httpResponseCode) =>
+                  'HTTP $httpResponseCode',
+                final e => e?.description,
+              },
             ),
           );
         }
