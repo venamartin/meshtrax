@@ -6503,6 +6503,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       case respCodeChannelMsgRecvV3:
         _handleIncomingChannelMessage(frame);
         break;
+      // The radio queues every channel datagram it can read, from any app
+      // (MyMesh.cpp onChannelDataRecv). Nothing reads them yet, but each is a
+      // queued message: left uncounted, it holds the drain for its timeout.
+      case respCodeChannelDataRecv:
+        _handleQueuedMessageReceived();
+        break;
       case respCodeSent:
         _handleMessageSent(frame);
         break;
