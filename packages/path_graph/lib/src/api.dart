@@ -1684,6 +1684,15 @@ class PathGraph {
           if (movingStatusOf(e.value, config, now)?.acts ?? false) e.key,
       };
 
+  /// Every link usable at [now], plus a query's [guessed] links
+  /// ([PathFinder.links]).
+  Map<String, List<Step>> _links(int now, Set<(String, String)> guessed) =>
+      PathFinder(estimator.config, estimator).links(
+          edges: _store.edges,
+          nowMillis: now,
+          moving: _movingNow(now),
+          guessed: guessed);
+
   /// [c] sits on a moving repeater and was last refreshed longer ago than
   /// [PathGraphConfig.mobileFreshMinutes]: by its last proof when
   /// [byProof] (my end stays proven-only), else by its last sighting. My
@@ -1738,10 +1747,13 @@ class PathGraph {
           {int count = 3}) =>
       _alternatives((_) => [_selfTarget(repeaterHash)], count);
 
+  /// [at] and [links]: the instant and link map of a [findRoutes] call.
   List<RouteResult> _alternatives(
       List<Candidate> Function(int now) ingressFor, int count,
-      {Set<(String, String)> Function(int now)? guessedFor}) {
-    final now = _arrivalMillis;
+      {Set<(String, String)> Function(int now)? guessedFor,
+      int? at,
+      Map<String, List<Step>> Function()? links}) {
+    final now = at ?? _arrivalMillis;
     final self = _selfPubkey;
     if (self == null) return const [];
     return _divergentRoutes(
@@ -1750,6 +1762,7 @@ class PathGraph {
       count: count,
       now: now,
       guessed: guessedFor?.call(now) ?? const {},
+      links: links,
     );
   }
 
@@ -1759,15 +1772,14 @@ class PathGraph {
     required int count,
     required int now,
     Set<(String, String)> guessed = const {},
+    Map<String, List<Step>> Function()? links,
   }) {
     if (egress.isEmpty || ingress.isEmpty) return const [];
     egress = List.of(egress);
     ingress = List.of(ingress);
 
     final finder = PathFinder(estimator.config, estimator);
-    final moving = _movingNow(now);
-    final links = finder.links(
-        edges: _store.edges, nowMillis: now, moving: moving, guessed: guessed);
+    final adjacency = links?.call() ?? _links(now, guessed);
     final penalties = <(String, String), double>{};
     final results = <RouteResult>[];
     final seen = <String>{};
@@ -1778,8 +1790,7 @@ class PathGraph {
         edges: _store.edges,
         nowMillis: now,
         penalties: penalties,
-        moving: moving,
-        adjacency: links,
+        adjacency: adjacency,
       );
       if (route == null) break;
       final key = route.hops.join('>');
@@ -2196,9 +2207,33 @@ class PathGraph {
   /// at one proven to reach the contact or heard carrying their
   /// packets — hearing a handheld is reaching it.
   PathResult findPath(String contactPubkey) {
-    contactPubkey = contactPubkey.toLowerCase();
+    final key = contactPubkey.toLowerCase();
     final now = _arrivalMillis;
+    return _findPath(key, now, () => _links(now, _hintGuesses(key, now)));
+  }
 
+  /// [findPath] and [findAlternatives] at one instant over one link map.
+  /// Building the map from every edge is most of what a search costs, and
+  /// the stored-route keeper asks for both, for every recent contact, once
+  /// a minute (phone profile 2026-11-05: 250–300 ms a pass, mostly maps).
+  ({PathResult best, List<RouteResult> alternatives}) findRoutes(
+      String contactPubkey,
+      {int count = 3}) {
+    final key = contactPubkey.toLowerCase();
+    final now = _arrivalMillis;
+    final guessed = _hintGuesses(key, now);
+    late final links = _links(now, guessed);
+    return (
+      best: _findPath(key, now, () => links),
+      alternatives: _alternatives(
+          (at) => _ingressCandidates(key, at) ?? const [], count,
+          guessedFor: (_) => guessed, at: now, links: () => links),
+    );
+  }
+
+  /// [links] builds the map the corridor search runs on, at [now].
+  PathResult _findPath(String contactPubkey, int now,
+      Map<String, List<Step>> Function() links) {
     // Tier 1: fresh direct-reception evidence → empty path wins. Their
     // packet arriving with no hops is the same symmetric evidence as a
     // delivered empty-path send.
@@ -2246,8 +2281,7 @@ class PathGraph {
       ingress: ingress,
       edges: _store.edges,
       nowMillis: now,
-      moving: _movingNow(now),
-      guessed: _hintGuesses(contactPubkey, now),
+      adjacency: links(),
     );
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);

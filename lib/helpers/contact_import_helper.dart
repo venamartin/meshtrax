@@ -39,10 +39,14 @@ class ContactImportHelper {
   }
 
   static void importFromScannedData(BuildContext context, String data) {
-    final link = MeshCoreQr.parseContactParams(data);
+    final link = MeshCoreQr.parseContactParams(data) ??
+        MeshCoreQr.parseAdvertCard(data);
     if (link != null) {
       unawaited(_importFromPublicKeyHex(context, link.pubKeyHex,
-          name: link.name, type: link.type));
+          name: link.name,
+          type: link.type,
+          latitude: link.latitude,
+          longitude: link.longitude));
       return;
     }
     // Bare 64-char hex public key
@@ -58,7 +62,8 @@ class ContactImportHelper {
   }
 
   /// A room, new or already saved, then opens through its password prompt.
-  static Future<void> _importFromPublicKeyHex(BuildContext context, String pubKeyHex, {String name = '', int type = advTypeChat}) async {
+  static Future<void> _importFromPublicKeyHex(BuildContext context, String pubKeyHex,
+      {String name = '', int type = advTypeChat, double? latitude, double? longitude}) async {
     final connector = context.read<MeshCoreConnector>();
     try {
       final pubKey = hex2Uint8List(pubKeyHex);
@@ -99,6 +104,8 @@ class ContactImportHelper {
             pathLength: -1,
             path: Uint8List(0),
             pathHashSize: connector.pathHashByteWidth,
+            latitude: latitude,
+            longitude: longitude,
             lastSeen: DateTime.now(),
           );
       // Advert time 0: the radio drops any advert no newer than the one it

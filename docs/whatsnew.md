@@ -2,6 +2,21 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.9.8
+
+- Map downloads work again on Windows: a region failed with "Download failed" and a page of text instead of installing.
+- If a region still shows as failed, cancel it and download it again.
+- A failed download now shows a short error code instead of a web page.
+
+## 1.9.5
+
+- Drawings in messages: sketch, or use shapes, routes and X marks, even over a map.
+- A built-in base map down to towns. Online tiles are gone: download a region for detail.
+- Health check in Settings fixes settings that could work better.
+- Missed messages stay unread with a divider; tap a reply's quote to open the original.
+- Sends no longer stick on the clock; a failed send no longer shuts out a route for good.
+- Paste or scan contact cards, Select text on phones, and dates that follow your system.
+
 ## 1.8.1
 
 - Fixes a problem where messages could disappear after updating to 1.8.0 if the app was closed during its first start. Your messages were never deleted: this update brings them back automatically.

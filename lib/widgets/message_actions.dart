@@ -73,6 +73,24 @@ Future<void> showMessageActions(
   );
 }
 
+/// A message's [text] as Copy takes it, selectable, so that part of it can
+/// be copied: a phone's bubbles are not.
+Future<void> showSelectTextDialog(BuildContext context, String text) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(context.l10n.chat_selectText),
+      content: SingleChildScrollView(child: SelectableText(text)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(context.l10n.common_close),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Reports a right-click anywhere inside [child], text included, where
 /// SelectableText would otherwise take it. Raw pointer events, so no
 /// gesture inside can win it away; it fires on release, like a desktop

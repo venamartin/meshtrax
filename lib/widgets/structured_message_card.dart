@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -18,8 +19,11 @@ import '../screens/channel_chat_screen.dart';
 import '../screens/chat_screen.dart';
 import '../services/app_settings_service.dart';
 import '../utils/calendar_export.dart';
+import 'drawing_canvas.dart';
+import 'drawing_map_view.dart';
 import 'message_text.dart';
 import 'mini_map.dart';
+import 'structured_message_dialogs.dart';
 
 /// Colours of one card kind. Each kind has one accent per brightness; every
 /// other colour is the accent's hue at a fixed saturation and lightness, so
@@ -84,6 +88,7 @@ class StructuredPalette {
         ShareMessage(kind: ShareKind.repeater) =>
           (const Color(0xFFFFB74D), const Color(0xFFEF6C00)),
         ShareMessage() => (const Color(0xFF81C784), const Color(0xFF2E7D32)),
+        SvgMessage() => (const Color(0xFF7BE08A), const Color(0xFF2E7D32)),
       };
 
   static StructuredPalette forAccents(
@@ -205,6 +210,7 @@ class StructuredMessageCard extends StatelessWidget {
             ShareKind.repeater => Icons.cell_tower,
             ShareKind.sensor => Icons.sensors,
           },
+        SvgMessage() => Icons.draw,
       };
 
   /// Cards need room for a map and a row of buttons, more than a text
@@ -263,7 +269,74 @@ class StructuredMessageCard extends StatelessWidget {
       EventMessage m => _event(context, p, m),
       NoticeMessage m => _notice(context, p, m),
       ShareMessage m => _share(context, p, m),
+      SvgMessage m => _drawing(context, p, m),
     };
+  }
+
+  Widget _drawing(BuildContext context, StructuredPalette p, SvgMessage m) {
+    final look = context.select<AppSettingsService, DrawingLook?>(
+      (s) => s.settings.showDrawings ? DrawingLook.of(s.settings) : null,
+    );
+    if (look == null) {
+      return Text(
+        m.toWire(),
+        style: drawingCodeStyle.copyWith(color: p.body, fontSize: 13 * textScale),
+      );
+    }
+    final caption = m.drawing.caption;
+    final onMap = m.drawing.map != null && DrawingMapView.available(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            if (onMap) {
+              return DrawingMapView(
+                drawing: m.drawing,
+                look: look,
+                width: width,
+                onTap: () => StructuredMessageDialogs.drawingViewer(context, m),
+                noteColor: p.tonal,
+                onNoteColor: p.onTonal,
+              );
+            }
+            return Stack(
+              children: [
+                DrawingCanvas(
+                  drawing: m.drawing,
+                  look: look,
+                  size: Size(width, math.min(width, 240)),
+                ),
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () =>
+                          StructuredMessageDialogs.drawingViewer(context, m),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        if (caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: MessageText(
+              text: caption,
+              style: TextStyle(
+                color: p.body,
+                fontSize: 14 * textScale,
+                height: 1.3,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _notice(BuildContext context, StructuredPalette p, NoticeMessage m) {
@@ -303,10 +376,10 @@ class StructuredMessageCard extends StatelessWidget {
 
   /// "Thu, Oct 30" for the end of a day, else "Thu, Oct 30, 6:00 PM".
   static String _expiryText(BuildContext context, NoticeMessage m) {
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     final day = DateFormat.MMMEd(locale).format(m.expiryDay);
     if (m.expiresAtDayEnd) return day;
-    return '$day, ${DateFormat.jm(locale).format(m.expires!)}';
+    return '$day, ${DateTimeHelper.time(context, m.expires!)}';
   }
 
   Widget _event(BuildContext context, StructuredPalette p, EventMessage m) {
@@ -600,7 +673,7 @@ class StructuredMessageCard extends StatelessWidget {
   /// Month over day; a multi-day event shows its range, "OCT / 20–22" or
   /// "OCT–NOV / 30–2".
   Widget _dateTile(BuildContext context, StructuredPalette p, EventWhen when) {
-    final locale = Localizations.localeOf(context).toString();
+    final locale = DateTimeHelper.localeOf(context);
     final month = DateFormat.MMM(locale);
     final day = DateFormat.d(locale);
     final start = when.start;
@@ -819,9 +892,7 @@ class StructuredMessageCard extends StatelessWidget {
   /// or "6:00 PM – Sat 12:00 PM" when it ends on another day.
   static String _timeChip(BuildContext context, EventWhen when) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
-    final weekday = DateFormat.E(locale);
-    final time = DateFormat.jm(locale);
+    String time(DateTime t) => DateTimeHelper.time(context, t);
     final start = when.start;
     final end = when.end;
     if (when.allDay) {
@@ -829,16 +900,15 @@ class StructuredMessageCard extends StatelessWidget {
           ? l10n.structured_days(when.dayCount)
           : l10n.structured_allDay;
     }
-    if (end == null) return time.format(start);
-    if (_sameDay(start, end)) return '${time.format(start)} – ${time.format(end)}';
-    return '${time.format(start)} – ${weekday.format(end)} ${time.format(end)}';
+    if (end == null) return time(start);
+    if (_sameDay(start, end)) return '${time(start)} – ${time(end)}';
+    return '${time(start)} – ${DateTimeHelper.weekday(context, end)} ${time(end)}';
   }
 
   static String _whenText(BuildContext context, EventWhen when) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
-    final day = DateFormat.yMMMEd(locale);
-    final time = DateFormat.jm(locale);
+    final day = DateFormat.yMMMEd(DateTimeHelper.localeOf(context));
+    String time(DateTime t) => DateTimeHelper.time(context, t);
     final start = when.start;
     final end = when.end;
     if (when.allDay) {
@@ -846,10 +916,10 @@ class StructuredMessageCard extends StatelessWidget {
       if (end == null || _sameDay(start, end)) return '$text · ${l10n.structured_allDay}';
       return '$text – ${day.format(end)}';
     }
-    final head = '${day.format(start)} ${time.format(start)}';
+    final head = '${day.format(start)} ${time(start)}';
     if (end == null) return head;
-    if (_sameDay(start, end)) return '$head – ${time.format(end)}';
-    return '$head – ${day.format(end)} ${time.format(end)}';
+    if (_sameDay(start, end)) return '$head – ${time(end)}';
+    return '$head – ${day.format(end)} ${time(end)}';
   }
 
   static bool _sameDay(DateTime a, DateTime b) =>

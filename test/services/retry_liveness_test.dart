@@ -130,7 +130,10 @@ void main() {
         r.svc.noteRepeaterHeard();
         async.flushMicrotasks();
         expect(r.sends, hasLength(1 + resend));
-        expect(r.sends.last.attempt, 0, reason: 'the same rung, same ACK');
+        expect(r.sends.last.attempt, 4 * resend,
+            reason: 'a new packet: a radio drops one it has heard');
+        expect(r.ackFor(r.sends.length - 1), r.ackFor(0),
+            reason: 'the same rung, same ACK');
         r.sentLast();
         async.elapse(Duration(milliseconds: _echoWait + 1));
         expect(r.last.waitingForRepeater, isTrue);
@@ -144,6 +147,56 @@ void main() {
           milliseconds: MessageRetryService.retryBackoffMs + 1));
       async.flushMicrotasks();
       expect(r.sends.last.attempt, 1);
+    });
+  });
+
+  void parkThenResend(_Rig r, FakeAsync async, String text) {
+    r.svc.sendMessageWithRetry(contact: _bob, text: text);
+    async.flushMicrotasks();
+    r.sentLast();
+    async.elapse(Duration(milliseconds: _echoWait + 1));
+    expect(r.last.waitingForRepeater, isTrue);
+    async.elapse(
+        const Duration(milliseconds: MessageRetryService.repeaterCooldownMs + 1));
+    r.svc.noteRepeaterHeard();
+    async.flushMicrotasks();
+  }
+
+  test('a resend never takes the number a later rung goes out with', () {
+    fakeAsync((async) {
+      final r = _Rig(budget: 5, graph: const []);
+      parkThenResend(r, async, 'hi');
+      expect(r.sends.map((s) => s.attempt), [0, 8],
+          reason: 'attempt 4 is the fifth rung\'s');
+    });
+  });
+
+  test('an ACK to a resend delivers the message on the rung it repeats', () {
+    fakeAsync((async) {
+      final r = _Rig(budget: 3, graph: const []);
+      parkThenResend(r, async, 'hi');
+      r.sentLast();
+      r.svc.handleAckReceived(r.ackFor(1), 4000);
+      async.flushMicrotasks();
+      expect(r.last.status, MessageStatus.delivered);
+      expect(r.last.retryCount, 0);
+    });
+  });
+
+  test('a resend whose longer packet could not echo visibly is not parked '
+      'again', () {
+    fakeAsync((async) {
+      final r = _Rig(budget: 2, graph: const []);
+      // 154 bytes: seen at attempt 0, but the attempt number's two extra
+      // bytes take the packet past what the raw log carries.
+      parkThenResend(r, async, 'a' * 154);
+      r.sentLast();
+      async.elapse(Duration(milliseconds: _echoWait + 1));
+      expect(r.last.waitingForRepeater, isFalse);
+      async.elapse(const Duration(
+          milliseconds: _timeoutMs + MessageRetryService.retryBackoffMs + 1));
+      async.flushMicrotasks();
+      expect(r.sends.last.attempt, 1, reason: 'the ladder moved on');
     });
   });
 

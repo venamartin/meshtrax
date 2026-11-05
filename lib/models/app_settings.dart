@@ -97,6 +97,26 @@ class AppSettings {
   /// Off shows the raw characters; links, mentions and hashtags still work.
   final bool showTextFormatting;
 
+  /// Draw `SVG:` messages. Off shows their path data.
+  final bool showDrawings;
+
+  /// How drawings look on this phone; a message only says what to draw. The
+  /// defaults are the owner's pick from the preview page (2026-10-31).
+  static const defaultDrawingPenColor = 0xFF33FF33;
+  static const defaultDrawingLineWidth = 2.0;
+  static const defaultDrawingGlow = 65;
+  static const defaultDrawingScanlines = 33;
+
+  /// ARGB.
+  final int drawingPenColor;
+  final double drawingLineWidth;
+
+  /// 0 to 100.
+  final int drawingGlow;
+
+  /// 0 to 100.
+  final int drawingScanlines;
+
   /// One-time "channel names can be imitated" warning on DM-from-channel;
   /// set when the user checks "don't show again".
   final bool dmIdentityWarningDismissed;
@@ -171,6 +191,11 @@ class AppSettings {
     this.incrementalContactSync = true,
     this.senderNameColors = true,
     this.showTextFormatting = true,
+    this.showDrawings = true,
+    this.drawingPenColor = defaultDrawingPenColor,
+    this.drawingLineWidth = defaultDrawingLineWidth,
+    this.drawingGlow = defaultDrawingGlow,
+    this.drawingScanlines = defaultDrawingScanlines,
     this.dmIdentityWarningDismissed = false,
     this.batterySleepWarningDismissed = false,
     this.chartsNoticeDismissed = false,
@@ -246,6 +271,11 @@ class AppSettings {
       'incremental_contact_sync': incrementalContactSync,
       'sender_name_colors': senderNameColors,
       'show_text_formatting': showTextFormatting,
+      'drawing_show': showDrawings,
+      'drawing_pen_color': drawingPenColor,
+      'drawing_line_width': drawingLineWidth,
+      'drawing_glow': drawingGlow,
+      'drawing_scanlines': drawingScanlines,
       'dm_identity_warning_dismissed': dmIdentityWarningDismissed,
       'battery_sleep_warning_dismissed': batterySleepWarningDismissed,
       'charts_notice_dismissed': chartsNoticeDismissed,
@@ -336,6 +366,13 @@ class AppSettings {
       incrementalContactSync: json['incremental_contact_sync'] as bool? ?? false,
       senderNameColors: json['sender_name_colors'] as bool? ?? true,
       showTextFormatting: json['show_text_formatting'] as bool? ?? true,
+      showDrawings: json['drawing_show'] as bool? ?? true,
+      drawingPenColor: json['drawing_pen_color'] as int? ?? defaultDrawingPenColor,
+      drawingLineWidth: (json['drawing_line_width'] as num?)?.toDouble() ??
+          defaultDrawingLineWidth,
+      drawingGlow: json['drawing_glow'] as int? ?? defaultDrawingGlow,
+      drawingScanlines:
+          json['drawing_scanlines'] as int? ?? defaultDrawingScanlines,
       dmIdentityWarningDismissed:
           json['dm_identity_warning_dismissed'] as bool? ?? false,
       batterySleepWarningDismissed:
@@ -410,6 +447,11 @@ class AppSettings {
     bool? incrementalContactSync,
     bool? senderNameColors,
     bool? showTextFormatting,
+    bool? showDrawings,
+    int? drawingPenColor,
+    double? drawingLineWidth,
+    int? drawingGlow,
+    int? drawingScanlines,
     bool? dmIdentityWarningDismissed,
     bool? batterySleepWarningDismissed,
     bool? chartsNoticeDismissed,
@@ -475,6 +517,11 @@ class AppSettings {
           incrementalContactSync ?? this.incrementalContactSync,
       senderNameColors: senderNameColors ?? this.senderNameColors,
       showTextFormatting: showTextFormatting ?? this.showTextFormatting,
+      showDrawings: showDrawings ?? this.showDrawings,
+      drawingPenColor: drawingPenColor ?? this.drawingPenColor,
+      drawingLineWidth: drawingLineWidth ?? this.drawingLineWidth,
+      drawingGlow: drawingGlow ?? this.drawingGlow,
+      drawingScanlines: drawingScanlines ?? this.drawingScanlines,
       dmIdentityWarningDismissed:
           dmIdentityWarningDismissed ?? this.dmIdentityWarningDismissed,
       batterySleepWarningDismissed:

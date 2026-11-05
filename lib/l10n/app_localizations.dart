@@ -2722,6 +2722,12 @@ abstract class AppLocalizations {
   /// **'Message copied'**
   String get chat_messageCopied;
 
+  /// No description provided for @chat_selectText.
+  ///
+  /// In en, this message translates to:
+  /// **'Select text'**
+  String get chat_selectText;
+
   /// No description provided for @chat_messageDeleted.
   ///
   /// In en, this message translates to:
@@ -5174,18 +5180,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No location data'**
   String get channelPath_noLocationData;
-
-  /// No description provided for @channelPath_timeWithDate.
-  ///
-  /// In en, this message translates to:
-  /// **'{day}/{month} {time}'**
-  String channelPath_timeWithDate(int day, int month, String time);
-
-  /// No description provided for @channelPath_timeOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'{time}'**
-  String channelPath_timeOnly(String time);
 
   /// No description provided for @channelPath_unknownPath.
   ///
@@ -11009,6 +11003,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Advertise'**
   String get chats_advertise;
+
+  /// No description provided for @tray_drawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing'**
+  String get tray_drawing;
+
+  /// No description provided for @drawing_tabDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get drawing_tabDraw;
+
+  /// No description provided for @drawing_tabPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get drawing_tabPaste;
+
+  /// No description provided for @drawing_toolPen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pen'**
+  String get drawing_toolPen;
+
+  /// No description provided for @drawing_toolLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get drawing_toolLine;
+
+  /// No description provided for @drawing_toolRect.
+  ///
+  /// In en, this message translates to:
+  /// **'Rectangle'**
+  String get drawing_toolRect;
+
+  /// No description provided for @drawing_toolCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Circle'**
+  String get drawing_toolCircle;
+
+  /// No description provided for @drawing_toolEllipse.
+  ///
+  /// In en, this message translates to:
+  /// **'Ellipse'**
+  String get drawing_toolEllipse;
+
+  /// No description provided for @drawing_toolArrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrow'**
+  String get drawing_toolArrow;
+
+  /// No description provided for @drawing_undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get drawing_undo;
+
+  /// No description provided for @drawing_caption.
+  ///
+  /// In en, this message translates to:
+  /// **'Caption'**
+  String get drawing_caption;
+
+  /// No description provided for @drawing_captionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, shown under the picture'**
+  String get drawing_captionHint;
+
+  /// No description provided for @drawing_bytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} / {max} bytes'**
+  String drawing_bytes(int used, int max);
+
+  /// No description provided for @drawing_points.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 point} other{{count} points}}'**
+  String drawing_points(int count);
+
+  /// No description provided for @drawing_keptAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Every point you drew is kept.'**
+  String get drawing_keptAll;
+
+  /// No description provided for @drawing_simplified.
+  ///
+  /// In en, this message translates to:
+  /// **'Simplified: lines stay within {percent}% of the drawing\'s size.'**
+  String drawing_simplified(String percent);
+
+  /// No description provided for @drawing_tooDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.'**
+  String get drawing_tooDetailed;
+
+  /// No description provided for @drawing_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw with your finger, or pick a shape.'**
+  String get drawing_empty;
+
+  /// No description provided for @drawing_pasteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste an SVG file, or path data such as M10 10h80v80H10z'**
+  String get drawing_pasteHint;
+
+  /// No description provided for @drawing_pasteUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this SVG'**
+  String get drawing_pasteUse;
+
+  /// No description provided for @drawing_pasteNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.'**
+  String get drawing_pasteNote;
+
+  /// No description provided for @drawing_pasteEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste some SVG or path data first.'**
+  String get drawing_pasteEmpty;
+
+  /// No description provided for @drawing_pasteTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'That is too big or too detailed to read. Paste a smaller SVG.'**
+  String get drawing_pasteTooBig;
+
+  /// No description provided for @drawing_pasteUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t SVG the app can read.'**
+  String get drawing_pasteUnreadable;
+
+  /// No description provided for @drawing_pasteNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing visible to draw in that SVG.'**
+  String get drawing_pasteNothing;
+
+  /// No description provided for @drawing_copySvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy SVG'**
+  String get drawing_copySvg;
+
+  /// No description provided for @appSettings_drawings.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawings'**
+  String get appSettings_drawings;
+
+  /// No description provided for @appSettings_drawingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pictures sent as SVG, and how they look here'**
+  String get appSettings_drawingsSubtitle;
+
+  /// No description provided for @drawingSettings_show.
+  ///
+  /// In en, this message translates to:
+  /// **'Show drawings'**
+  String get drawingSettings_show;
+
+  /// No description provided for @drawingSettings_showSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off shows the SVG code instead'**
+  String get drawingSettings_showSubtitle;
+
+  /// No description provided for @drawingSettings_penColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pen color'**
+  String get drawingSettings_penColor;
+
+  /// No description provided for @drawingSettings_colorCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Color code'**
+  String get drawingSettings_colorCode;
+
+  /// No description provided for @drawingSettings_lineWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Line width'**
+  String get drawingSettings_lineWidth;
+
+  /// No description provided for @drawingSettings_glow.
+  ///
+  /// In en, this message translates to:
+  /// **'Glow'**
+  String get drawingSettings_glow;
+
+  /// No description provided for @drawingSettings_scanlines.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanlines'**
+  String get drawingSettings_scanlines;
+
+  /// No description provided for @drawing_toolRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get drawing_toolRoute;
+
+  /// No description provided for @drawing_toolX.
+  ///
+  /// In en, this message translates to:
+  /// **'X mark'**
+  String get drawing_toolX;
+
+  /// No description provided for @drawing_routeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add points. Tap the last one again to finish.'**
+  String get drawing_routeHint;
+
+  /// No description provided for @drawing_mapNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No map'**
+  String get drawing_mapNone;
+
+  /// No description provided for @drawing_mapUsgs.
+  ///
+  /// In en, this message translates to:
+  /// **'USGS'**
+  String get drawing_mapUsgs;
+
+  /// No description provided for @drawing_drawHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw here'**
+  String get drawing_drawHere;
+
+  /// No description provided for @drawing_moveMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Move map'**
+  String get drawing_moveMap;
+
+  /// No description provided for @drawing_mapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pan and zoom to the place, then tap Draw here.'**
+  String get drawing_mapHint;
+
+  /// No description provided for @drawing_mapAcross.
+  ///
+  /// In en, this message translates to:
+  /// **'{map}, {distance} across'**
+  String drawing_mapAcross(String map, String distance);
+
+  /// No description provided for @drawing_mapNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'This area isn\'t downloaded'**
+  String get drawing_mapNotDownloaded;
 }
 
 class _AppLocalizationsDelegate

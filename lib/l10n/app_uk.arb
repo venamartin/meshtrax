@@ -461,6 +461,7 @@
     }
   },
   "chat_messageCopied": "Повідомлення скопійовано",
+  "chat_selectText": "Виділити текст",
   "chat_messageDeleted": "Повідомлення видалено",
   "chat_sendGif": "Надіслати GIF",
   "chat_reply": "Відповісти",
@@ -1135,28 +1136,6 @@
     }
   },
   "channelPath_noLocationData": "Немає даних про розташування",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Невідомий",
   "channelPath_floodPath": "На всю мережу",
   "channelPath_directPath": "Прямий",

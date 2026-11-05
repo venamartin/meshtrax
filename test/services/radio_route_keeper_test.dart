@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
@@ -54,10 +55,17 @@ class _Radio {
   final sending = <String>{};
   Set<String> recent = {};
   final writes = <String>[];
+  // Who Pathfinder was asked about, in order.
+  final searches = <String>[];
+  void Function()? onSearch;
 
   late final keeper = RadioRouteKeeper(
     contacts: () => contacts,
-    routesFor: (_) => routes,
+    routesFor: (contact) {
+      searches.add(contact.name);
+      onSearch?.call();
+      return routes;
+    },
     radioWidth: () => 2,
     budget: () => budget,
     isSendingTo: sending.contains,
@@ -259,6 +267,31 @@ void main() {
       radio.keeper.onConnected();
       async.elapse(RadioRouteKeeper.syncDelay);
       expect(radio.writes.skip(2), ['RECENT:PF2', 'FAV:PF2']);
+    });
+  });
+
+  // Phone profile 2026-11-05: a background check searched Pathfinder up to
+  // twice per contact, all in one 250–300 ms block on the UI thread.
+  test('a background check searches once per contact, a frame between each',
+      () {
+    fakeAsync((async) {
+      final radio = _Radio([
+        _contact(name: 'ANN', seed: 0x10, flags: contactFlagFavorite),
+        _contact(name: 'BOB', seed: 0x40, flags: contactFlagFavorite),
+      ]);
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.writes, ['ANN:PF1', 'BOB:PF1']);
+
+      // Pathfinder's best moved and PF1 is still listed: inside the cooldown
+      // a check is a search and no write. A timer stands in for a frame.
+      radio.routes = [_pf2, _pf1];
+      radio.searches.clear();
+      radio.onSearch = () => Timer.run(() => radio.searches.add('frame'));
+      radio.keeper.scheduleSync();
+      async.elapse(RadioRouteKeeper.syncDelay);
+      expect(radio.searches, ['ANN', 'frame', 'BOB', 'frame']);
+      expect(radio.writes, hasLength(2));
     });
   });
 

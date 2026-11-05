@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
+import '../../helpers/date_time_helper.dart';
 import '../../helpers/snack_bar_builder.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
@@ -213,7 +214,7 @@ class PackRow extends StatelessWidget {
         installedAt == null
             ? detail
             : l10n.offlineMaps_downloadedOn(
-                DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+                DateFormat.MMMd(DateTimeHelper.localeOf(context))
                     .format(installedAt),
               ),
       PackStatus.updateAvailable => l10n.offlineMaps_updateAvailable,
@@ -396,7 +397,7 @@ class StaleNotice extends StatelessWidget {
     final at = this.at;
     final date = at == null
         ? ''
-        : DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+        : DateFormat.MMMd(DateTimeHelper.localeOf(context))
               .format(at);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

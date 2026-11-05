@@ -616,6 +616,29 @@ class MessageStore {
     return [for (final row in rows) ?_decodeRow(row)];
   }
 
+  /// Incoming rows stored with a time within [window] of [at].
+  Future<List<Message>> loadIncomingNear(
+    String contactKeyHex,
+    DateTime at,
+    Duration window,
+  ) async {
+    if (publicKeyHex.isEmpty) return [];
+    await _importLegacyBlobs(contactKeyHex);
+    final rows =
+        await (_db.select(_db.contactMessageRows)..where(
+              (r) =>
+                  r.nodeScope.equals(publicKeyHex) &
+                  r.contactKey.equals(contactKeyHex) &
+                  r.isOutgoing.equals(false) &
+                  r.timestampMs.isBetweenValues(
+                    at.subtract(window).millisecondsSinceEpoch,
+                    at.add(window).millisecondsSinceEpoch,
+                  ),
+            ))
+            .get();
+    return [for (final row in rows) ?_decodeRow(row)];
+  }
+
   Future<List<Message>> loadMessages(String contactKeyHex) async {
     if (publicKeyHex.isEmpty) {
       appLogger.warn('Public key hex is not set. Cannot load messages.');

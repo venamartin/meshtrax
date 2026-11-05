@@ -585,6 +585,18 @@ class MapPacksService extends ChangeNotifier {
     };
   }
 
+  /// Whether a region of [type]'s map is downloaded at [point].
+  bool downloadedAt(MapType type, LatLng point) {
+    final areas = downloadedAreas(type);
+    final here = type == MapType.charts
+        ? [
+            for (final a in _chartAreas?.areasAt(point) ?? const <ChartArea>[])
+              a.packRegion,
+          ]
+        : [?_regions?.regionAt(point)?.path];
+    return here.any(areas.containsKey);
+  }
+
   /// The download in progress (or last finished) for [id], if any.
   PackDownload? downloadOf(String id) => _downloads[id];
 

@@ -22,6 +22,7 @@ import '../widgets/adaptive_app_bar_title.dart';
 import '../utils/format_bytes.dart';
 import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
+import 'drawing_settings_screen.dart';
 import 'offline_maps_screen.dart';
 import 'path_graph_screen.dart';
 
@@ -549,6 +550,17 @@ class AppSettingsScreen extends StatelessWidget {
             subtitle: Text(context.l10n.appSettings_showTextFormattingSubtitle),
             value: settingsService.settings.showTextFormatting,
             onChanged: settingsService.setShowTextFormatting,
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.draw_outlined),
+            title: Text(context.l10n.appSettings_drawings),
+            subtitle: Text(context.l10n.appSettings_drawingsSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DrawingSettingsScreen()),
+            ),
           ),
           const Divider(height: 1),
           SwitchListTile(

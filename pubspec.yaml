@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.9.0+153
+version: 1.9.8+162
 
 environment:
   # Dart 3.13 = Flutter 3.47, the minimum whose Gradle plugin can drive the
@@ -70,6 +70,10 @@ dependencies:
   material_symbols_icons: ^4.2906.0
   web: ^1.1.1
   flutter_svg: ^2.0.10+1
+  # Both already came in with flutter_svg. path_parsing reads drawings in
+  # messages; vector_graphics_compiler reads SVG files you paste yourself.
+  path_parsing: ^1.1.0
+  vector_graphics_compiler: ^1.1.0
   flutter_blue_plus_platform_interface: ^8.2.1
 
   file_selector: ^1.1.0

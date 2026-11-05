@@ -5,14 +5,15 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/channel_message.dart';
 
 // Room replies reuse the channel wire format but ride the contact send path,
-// capped by the room server's post store (MAX_POST_TEXT_LEN = 151 bytes).
+// capped by the room server's post store (MAX_POST_TEXT_LEN = 151 is a buffer
+// size there, so 150 bytes of text get stored).
 void main() {
   bool fitsRoom(String candidate) =>
       utf8.encode(candidate).length <= maxRoomMessageBytes();
 
   test('room budget is the firmware post cap, under the contact frame cap',
       () {
-    expect(maxRoomMessageBytes(), equals(151));
+    expect(maxRoomMessageBytes(), equals(150));
     expect(maxRoomMessageBytes(), lessThan(maxContactMessageBytes()));
   });
 

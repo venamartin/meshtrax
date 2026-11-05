@@ -69,6 +69,13 @@ void main() {
     });
   });
 
+  test('a drawing whose path looks like a code is not a GIF', () {
+    for (final text in ['svg:M5-5l3-3-3-3-3-3', 'SVG:M5-5l3-3-3-3-3-3']) {
+      expect(GifHelper.parseGif(text), isNull, reason: text);
+    }
+    expect(GifHelper.parseGif('@[GWQ] g:$id'), id);
+  });
+
   test('notification preview says Sent a GIF for both formats', () {
     expect(NotificationService.formatNotificationText('g:$id'), 'Sent a GIF');
     expect(

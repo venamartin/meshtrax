@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
@@ -12,6 +11,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../connector/meshcore_connector.dart';
 import '../utils/platform_info.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/report_helper.dart';
@@ -52,6 +52,7 @@ import '../widgets/reaction_details_sheet.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'chat_screen.dart';
+import 'drawing_compose_screen.dart';
 
 class ChannelChatScreen extends StatefulWidget {
   final Channel channel;
@@ -322,12 +323,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     });
   }
 
+  PageRoute<dynamic>? _route;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
       NotificationService.routeObserver.subscribe(this, route);
+      NotificationService.chatRoutes.add(_route = route);
     }
   }
 
@@ -925,6 +929,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _atBottom.dispose();
     _lifecycleListener.dispose();
     NotificationService.routeObserver.unsubscribe(this);
+    NotificationService.chatRoutes.remove(_route);
     _stopViewing();
     _textFieldFocusNode.removeListener(_onTextFieldFocusChange);
     _textController.removeListener(_mentionsListener);
@@ -1481,7 +1486,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
-                            DateFormat('E, d MMMM').format(message.timestamp), 
+                            DateTimeHelper.dayHeading(context, message.timestamp),
                             style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
                           ),
                         ),
@@ -1591,7 +1596,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                 onTap: PlatformInfo.isDesktop
                     ? null
                     : () => _showMessagePathInfo(message),
-                onLongPress: () => _showMessageActions(message),
+                onLongPress: () => _showMessageActions(message,
+                    plainText: gifId == null && structured == null),
                 child: Container(
                   padding: structured != null
                       ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
@@ -2194,7 +2200,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _insertComposerText(wire);
   }
 
-  Widget _buildAttachTray(MeshCoreConnector connector) {
+  /// [maxBytes]: what the message box has left, after any reply's quote.
+  Widget _buildAttachTray(MeshCoreConnector connector, int maxBytes) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return ComposerAttachTray(
@@ -2236,6 +2243,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           icon: Icons.campaign,
           label: l10n.tray_notice,
           onTap: () => _runTile(() => StructuredMessageDialogs.notice(context)),
+        ),
+        AttachTile(
+          icon: Icons.draw,
+          label: l10n.tray_drawing,
+          onTap: () => _runTile(
+            () => DrawingComposeScreen.open(context, maxBytes: maxBytes),
+          ),
         ),
       ],
     );
@@ -2691,7 +2705,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: _trayOpen
-              ? _buildAttachTray(connector)
+              ? _buildAttachTray(connector, maxBytes)
               : const SizedBox(width: double.infinity),
         ),
       ],
@@ -2770,14 +2784,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inDays > 0) {
-      return '${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    }
+    final clock = DateTimeHelper.time(context, time);
+    return DateTime.now().difference(time).inDays > 0
+        ? '${DateTimeHelper.dayMonth(context, time)} $clock'
+        : clock;
   }
 
   void _showMessagePathInfo(ChannelMessage message) {
@@ -2792,7 +2802,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
 
   /// The message's actions: a sheet after a long-press, a menu at [at]
   /// after a right-click on desktop.
-  void _showMessageActions(ChannelMessage message, {Offset? at}) {
+  /// [plainText]: the bubble shows text, not a card or a GIF.
+  void _showMessageActions(ChannelMessage message,
+      {Offset? at, bool plainText = false}) {
     final l10n = context.l10n;
     showMessageActions(context, position: at, [
       MessageAction(Icons.reply, l10n.chat_reply, () => _setReplyingTo(message)),
@@ -2814,6 +2826,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       // Keep brackets in clipboard for clarity (especially with emoji names)
       MessageAction(
           Icons.copy, l10n.common_copy, () => _copyMessageText(message.text)),
+      // A desktop bubble is selectable itself.
+      if (plainText && !PlatformInfo.isDesktop)
+        MessageAction(Icons.select_all, l10n.chat_selectText,
+            () => showSelectTextDialog(context, message.text)),
       MessageAction(Icons.delete_outline, l10n.common_delete,
           () => _deleteMessage(message)),
       if (!message.isOutgoing) ...[

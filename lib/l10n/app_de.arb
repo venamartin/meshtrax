@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Nachricht kopiert",
+  "chat_selectText": "Text auswählen",
   "chat_messageDeleted": "Nachricht gelöscht",
   "chat_sendGif": "GIF senden",
   "chat_reply": "Beantworten",
@@ -1134,28 +1135,6 @@
     }
   },
   "channelPath_noLocationData": "Keine Standortdaten",
-  "channelPath_timeWithDate": "{day}/{month} {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Unbekannt",
   "channelPath_floodPath": "Geflutet",
   "channelPath_directPath": "Direkt",

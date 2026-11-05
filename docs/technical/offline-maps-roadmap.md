@@ -61,7 +61,10 @@ Last updated 2026-11-02. **Resume here.**
    - **Map type tiles:** greyed with "Not downloaded" when no pack of the style's kinds is installed (`MapPacksService.hasMap`); tapping opens Offline maps.
    - **Toggle tiles:** Contours and Dark map; Repeaters, Chat Nodes, Other Nodes, Pins and Guessed.
    - **Rows:** "More filters" (the old dialog, now last seen, key prefix, discovery contacts and overlaps) and Offline maps with its badge.
-   - **Thumbnails:** rendered from our own styles on the Pi, label-free except charts, and bundled as 216 px WebP in `assets/map_layers/` (54 KB).
+   - **Thumbnails:** drawn by our own styles from real packs, label-free except charts, and bundled as 216 px WebP in `assets/map_layers/` (55 KB).
+     - Charts and Dark map were rendered on the Pi.
+     - Since 2026-11-05 the others are drawn at the tile's own size (72 dp at 3×), so lines are as thick as on the phone: Standard is downtown Reno, USGS topo is Yosemite Valley below El Capitan, Contours is Mount Shasta's south flank (no park outlines) and Hill shading is Tenaya Canyon (no contours).
+     - Downloaded areas keeps the earlier, wider standard picture under its outline.
 3. **M5b no-radio map: done (2026-10-20).** The scanner's ⋮ menu has **Map** (`NoRadioMapScreen`).
    - It shows the map, the Online | Offline switch and the layers sheet without Nodes, with no radio actions.
    - It opens where the map was last left, else framed on the latest street or topo map, never further out than its packs draw (`MapPacksService.latestMapFit`, `MapFit.minZoom`).

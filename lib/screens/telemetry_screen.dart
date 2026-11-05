@@ -12,6 +12,7 @@ import '../services/repeater_command_service.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/structured_message_card.dart';
 import '../helpers/cayenne_lpp.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../helpers/structured_message.dart';
 import '../utils/battery_utils.dart';
@@ -335,7 +336,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
               if (received != null) ...[
                 const SizedBox(height: 6),
                 Text(
-                  TimeOfDay.fromDateTime(received).format(context),
+                  DateTimeHelper.time(context, received),
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

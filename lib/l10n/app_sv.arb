@@ -460,6 +460,7 @@
     }
   },
   "chat_messageCopied": "Meddelandet kopierades",
+  "chat_selectText": "Markera text",
   "chat_messageDeleted": "Meddelandet raderat",
   "chat_sendGif": "Skicka GIF",
   "chat_reply": "Svara",
@@ -1134,28 +1135,6 @@
     }
   },
   "channelPath_noLocationData": "Ingen platsdata",
-  "channelPath_timeWithDate": "{day}/{month} kl. {time}",
-  "@channelPath_timeWithDate": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "channelPath_timeOnly": "{time}",
-  "@channelPath_timeOnly": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "channelPath_unknownPath": "Okänt",
   "channelPath_floodPath": "Översvämning",
   "channelPath_directPath": "Direkt",

@@ -384,9 +384,11 @@ int maxContactMessageBytes() {
   return _minPositive(byFrame, maxTextPayloadBytes);
 }
 
-// Matches room server firmware MAX_POST_TEXT_LEN: a longer post is accepted
-// but silently truncated before it is stored and pushed to other members.
-const int maxRoomPostTextBytes = 151;
+// One less than room server firmware MAX_POST_TEXT_LEN (151), which it passes
+// to StrHelper::strncpy as a buffer size, so 150 bytes get stored. A longer
+// post is accepted but silently truncated before it is stored and pushed to
+// other members.
+const int maxRoomPostTextBytes = 150;
 
 int maxRoomMessageBytes() =>
     _minPositive(maxContactMessageBytes(), maxRoomPostTextBytes);
@@ -442,11 +444,14 @@ bool isChannelEchoObservable(
 /// [maxFrameSize]). A 1-hop repeated scoped flood is header(1) + transport
 /// codes(4) + path_len(1) + [pathHashByteWidth] path bytes + payload, where
 /// payload = dest(1) + src(1) + MAC(2) + zero-padded AES blocks of
-/// timestamp(4) + flags(1) + text. At 2-byte hashes a 155-byte text is the
-/// longest whose echo can be seen; 156 and up never echo visibly, so a
-/// silence on them means nothing.
-bool isContactEchoObservable(String outboundText, int pathHashByteWidth) {
-  final plaintext = 5 + utf8.encode(outboundText).length;
+/// timestamp(4) + flags(1) + text, and from [attempt] 4 on the two bytes
+/// the firmware hides the attempt number in (BaseChatMesh::composeMsgPacket).
+/// At 2-byte hashes a 155-byte text is the longest whose echo can be seen;
+/// 156 and up never echo visibly, so a silence on them means nothing.
+bool isContactEchoObservable(String outboundText, int pathHashByteWidth,
+    {int attempt = 0}) {
+  final plaintext =
+      5 + utf8.encode(outboundText).length + (attempt > 3 ? 2 : 0);
   final ciphertext = ((plaintext + 15) ~/ 16) * 16;
   final payload = 1 + 1 + 2 + ciphertext;
   final repeatedRaw = 1 + 4 + 1 + pathHashByteWidth + payload;

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/traxmap.dart';
 
+import '../../helpers/date_time_helper.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
 import '../../services/poi_service.dart';
@@ -443,7 +444,7 @@ class _RegionRow extends StatelessWidget {
               if (hasUpdate)
                 l10n.offlineMaps_updateAvailable
               else if (dates.isNotEmpty)
-                DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+                DateFormat.MMMd(DateTimeHelper.localeOf(context))
                     .format(dates.last),
             ]
             // Lines break between items, not inside "Hill shading" or "Oct 24".

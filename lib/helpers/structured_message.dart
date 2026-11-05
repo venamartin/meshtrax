@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'calendar_share.dart';
 import 'maps_link.dart';
 import 'meshcore_qr.dart';
+import 'svg_drawing.dart';
 
 /// The MeshTrax structured message format, documented in
 /// docs/message-format.md.
@@ -58,7 +59,7 @@ sealed class StructuredMessage {
   static final _extension = RegExp(r'^([a-z][a-z0-9_]*)=(.*)$');
 
   static final _header = RegExp(
-    r'^(location|poi|sos|event|notice)\s*:\s*',
+    r'^(location|poi|sos|event|notice|svg)\s*:\s*',
     caseSensitive: false,
   );
 
@@ -148,6 +149,7 @@ sealed class StructuredMessage {
     if (header == null) return _parseLoose(body, resolveShortLink, now);
 
     final keyword = header.group(1)!.toLowerCase();
+    if (keyword == 'svg') return SvgMessage._fromHeader(body, header);
     final fields = _splitFields(body.substring(header.end));
     final sorted = _Fields.classify(fields, resolveShortLink);
 
@@ -652,6 +654,51 @@ class NoticeMessage extends StructuredMessage {
     );
     return out.join('\n');
   }
+}
+
+/// A drawing as SVG path data: `SVG:M10 10h80v80H10z`, then an optional
+/// caption line. Other apps show the path data, which any SVG path viewer
+/// draws.
+class SvgMessage extends StructuredMessage {
+  final SvgDrawing drawing;
+
+  const SvgMessage(this.drawing);
+
+  static SvgMessage? _fromHeader(String body, RegExpMatch header) {
+    // The path starts on the header's line: path data that a line break
+    // pushed down isn't one of ours.
+    if (header.group(0)!.contains('\n')) return null;
+    final drawing = SvgDrawing.tryParse(body.substring(header.end));
+    return drawing == null ? null : SvgMessage(drawing);
+  }
+
+  /// Whether [text] is a drawing. Reads no further than the keyword for
+  /// anything else, so a list row can ask.
+  static bool isDrawing(String text) {
+    final body = StructuredMessage.stripMarkup(text);
+    final header = StructuredMessage._header.firstMatch(body);
+    return header != null &&
+        header.group(1)!.toLowerCase() == 'svg' &&
+        _fromHeader(body, header) != null;
+  }
+
+  /// None, even over a map: drawings aren't pins on the Map tab (Martin,
+  /// 2026-11-02).
+  @override
+  LatLng? get position => null;
+
+  @override
+  String get keyword => 'SVG';
+
+  @override
+  String get summary => 'Drawing';
+
+  @override
+  String toWire() => [
+        'SVG:${drawing.pathData}',
+        ?drawing.map?.toLine(),
+        if (drawing.caption.isNotEmpty) drawing.caption,
+      ].join('\n');
 }
 
 /// What a meshcore:// share link adds to the radio.
