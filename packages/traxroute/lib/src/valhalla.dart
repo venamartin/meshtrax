@@ -1,34 +1,64 @@
 import 'route.dart';
 
 /// Valhalla's costing and options for each path type: the app defaults
-/// MeshTrax and traxmapmaker agreed (FINDINGS §9).
+/// MeshTrax and traxmapmaker agreed (FINDINGS §9), changed by the user's
+/// [options]. At their defaults the options add nothing.
 ///
 /// Dirt weighs distance 0.8 against time, so a dirt road that saves real
 /// distance beats a faster paved way round, but a crawl over sand tracks to
 /// save a little doesn't (Martin, 2026-11-04). It searches every road, up to
 /// [valhallaConfig]'s limit: Valhalla otherwise skips minor roads far from
 /// both ends, and Berdoo Canyon Road with them.
-(String, Map<String, Object>) valhallaCosting(PathType type) => switch (type) {
-  PathType.paved => ('auto', {'exclude_unpaved': true}),
-  PathType.dirt => (
-    'auto',
-    {'use_tracks': 1.0, 'use_distance': 0.8, 'disable_hierarchy_pruning': true},
-  ),
-  PathType.hiking => (
-    'pedestrian',
-    {
-      'use_hills': 1.0,
-      'use_tracks': 1.0,
-      'max_hiking_difficulty': 3,
-      'destination_only_penalty': 0,
-      'use_ferry': 0.0,
-    },
-  ),
-};
+(String, Map<String, Object>) valhallaCosting(
+  PathType type, [
+  RouteOptions options = const RouteOptions(),
+]) {
+  final avoids = {
+    if (options.avoidHighways) 'use_highways': 0.0,
+    if (options.avoidTolls) 'use_tolls': 0.0,
+    if (options.avoidFerries) 'use_ferry': 0.0,
+  };
+  return switch (type) {
+    PathType.paved => ('auto', {'exclude_unpaved': true, ...avoids}),
+    PathType.dirt => (
+      'auto',
+      {
+        'use_tracks': 1.0,
+        'use_distance': switch (options.dirt) {
+          DirtPreference.fastest => 0.0,
+          DirtPreference.balanced => 0.8,
+          DirtPreference.direct => 1.0,
+        },
+        'disable_hierarchy_pruning': true,
+        ...avoids,
+      },
+    ),
+    PathType.hiking => (
+      'pedestrian',
+      {
+        'use_hills': switch (options.climbs) {
+          ClimbPreference.avoid => 0.0,
+          ClimbPreference.some => 0.5,
+          ClimbPreference.any => 1.0,
+        },
+        'use_tracks': 1.0,
+        'max_hiking_difficulty': options.hardestTrail,
+        'destination_only_penalty': 0,
+        'use_ferry': 0.0,
+        // Valhalla's own pace, 5.1 km/h, is Normal.
+        ...switch (options.pace) {
+          HikingPace.slow => {'walking_speed': 4.0},
+          HikingPace.normal => const <String, Object>{},
+          HikingPace.fast => {'walking_speed': 6.0},
+        },
+      },
+    ),
+  };
+}
 
 /// The `/route` request for [request].
 Map<String, Object> valhallaRouteRequest(RouteRequest request) {
-  final (costing, options) = valhallaCosting(request.pathType);
+  final (costing, options) = valhallaCosting(request.pathType, request.options);
   return {
     'locations': [
       for (final p in request.points) {'lat': p.lat, 'lon': p.lon},

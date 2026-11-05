@@ -1,3 +1,5 @@
+import 'package:traxroute/traxroute.dart' show RouteOptions;
+
 import 'channel.dart';
 
 enum UnitSystem { metric, imperial }
@@ -48,6 +50,9 @@ class AppSettings {
   /// Map colours, `light` or `dark`, whatever the app's theme (Martin,
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
+
+  /// The route panel's options, kept for every route.
+  final RouteOptions routeOptions;
 
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
@@ -139,6 +144,7 @@ class AppSettings {
     this.mapParks = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
+    this.routeOptions = const RouteOptions(),
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -213,6 +219,7 @@ class AppSettings {
       'map_parks': mapParks,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
+      'route_options': routeOptions.toJson(),
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -279,6 +286,10 @@ class AppSettings {
       mapParks: json['map_parks'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
+      routeOptions: switch (json['route_options']) {
+        final Map<String, dynamic> options => RouteOptions.fromJson(options),
+        _ => const RouteOptions(),
+      },
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -372,6 +383,7 @@ class AppSettings {
     bool? mapParks,
     bool? mapDownloadedAreas,
     String? mapTheme,
+    RouteOptions? routeOptions,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -427,6 +439,7 @@ class AppSettings {
       mapParks: mapParks ?? this.mapParks,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
+      routeOptions: routeOptions ?? this.routeOptions,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:

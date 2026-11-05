@@ -706,6 +706,11 @@ class _MapScreenState extends State<MapScreen> {
                       setState(() => _pathType = type);
                       unawaited(_findRoute(selfPosition));
                     },
+                    options: settings.routeOptions,
+                    onOptions: (options) async {
+                      await settingsService.setRouteOptions(options);
+                      unawaited(_findRoute(selfPosition));
+                    },
                     result: _route,
                     loading: _routing,
                     error: _routeError,
@@ -1615,6 +1620,7 @@ class _MapScreenState extends State<MapScreen> {
         (lat: from.latitude, lon: from.longitude),
         (lat: to.point.latitude, lon: to.point.longitude),
         _pathType,
+        options: context.read<AppSettingsService>().settings.routeOptions,
       );
       if (!mounted || generation != _routeGeneration) return;
       setState(() {

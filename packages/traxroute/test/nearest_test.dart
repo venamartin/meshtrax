@@ -8,12 +8,14 @@ import 'package:traxroute/traxroute.dart';
 class FakeEngine implements RoutingEngine {
   final Map<PathType, double> reach;
   int calls = 0;
+  final options = <RouteOptions>{};
 
   FakeEngine(this.reach);
 
   @override
   Future<RouteResult> route(RouteRequest request) async {
     calls++;
+    options.add(request.options);
     final end = request.destination;
     if (end.lat > reach[request.pathType]!) {
       throw const RouteError('No path could be found for input');
@@ -78,6 +80,21 @@ void main() {
       const RouteRequest([start, summit], PathType.dirt),
     );
     expect(jeep.points.last.lat, closeTo(38.08, 0.002));
+  });
+
+  test("every try on the way keeps the user's options", () async {
+    final engine = FakeEngine({
+      PathType.paved: 38.04,
+      PathType.dirt: 38.08,
+      PathType.hiking: 39,
+    });
+    const options = RouteOptions(avoidTolls: true);
+    await routeOrNearest(
+      engine,
+      const RouteRequest([start, summit], PathType.paved, options: options),
+    );
+    expect(engine.calls, greaterThan(1));
+    expect(engine.options, {options});
   });
 
   test('no looser route either: the error stands', () async {

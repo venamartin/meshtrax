@@ -29,6 +29,48 @@ void main() {
     });
   });
 
+  test('changed options change the costing; defaults add nothing', () {
+    const avoidAll = RouteOptions(
+      avoidHighways: true,
+      avoidTolls: true,
+      avoidFerries: true,
+    );
+    expect(valhallaCosting(PathType.paved, avoidAll).$2, {
+      'exclude_unpaved': true,
+      'use_highways': 0.0,
+      'use_tolls': 0.0,
+      'use_ferry': 0.0,
+    });
+    for (final (dirt, weight) in [
+      (DirtPreference.fastest, 0.0),
+      (DirtPreference.balanced, 0.8),
+      (DirtPreference.direct, 1.0),
+    ]) {
+      expect(
+        valhallaCosting(PathType.dirt, RouteOptions(dirt: dirt)).$2,
+        containsPair('use_distance', weight),
+      );
+    }
+    final hike = valhallaCosting(
+      PathType.hiking,
+      const RouteOptions(
+        hardestTrail: 5,
+        climbs: ClimbPreference.avoid,
+        pace: HikingPace.slow,
+        avoidTolls: true,
+      ),
+    ).$2;
+    expect(hike['max_hiking_difficulty'], 5);
+    expect(hike['use_hills'], 0.0);
+    expect(hike['walking_speed'], 4.0);
+    expect(hike, isNot(contains('use_tolls')), reason: 'walkers pay no tolls');
+    expect(
+      valhallaCosting(PathType.hiking, const RouteOptions()).$2,
+      isNot(contains('walking_speed')),
+      reason: "Normal is Valhalla's own pace",
+    );
+  });
+
   test('the request carries points, costing and heights', () {
     final req = valhallaRouteRequest(
       const RouteRequest([ouray, campBird], PathType.dirt),
@@ -39,6 +81,17 @@ void main() {
     ]);
     expect(req['costing'], 'auto');
     expect(req['elevation_interval'], 30);
+    final direct = valhallaRouteRequest(
+      const RouteRequest(
+        [ouray, campBird],
+        PathType.dirt,
+        options: RouteOptions(dirt: DirtPreference.direct),
+      ),
+    );
+    expect(
+      (direct['costing_options'] as Map)['auto'],
+      containsPair('use_distance', 1.0),
+    );
   });
 
   test("reads Valhalla's answer: Ouray to Camp Bird Mine by dirt road", () {

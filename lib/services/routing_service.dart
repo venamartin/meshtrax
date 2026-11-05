@@ -153,12 +153,13 @@ class RoutingService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// A route from [from] to [to] with [type], or to the nearest point
-  /// [type] reaches. Throws [RouteError].
+  /// A route from [from] to [to] with [type] and [options], or to the
+  /// nearest point [type] reaches. Throws [RouteError].
   Future<RouteResult> route(
     LatLon from,
     LatLon to,
     PathType type, {
+    RouteOptions options = const RouteOptions(),
     String language = 'en-US',
   }) async {
     final e = engine;
@@ -167,7 +168,7 @@ class RoutingService extends ChangeNotifier {
     }
     return routeOrNearest(
       e,
-      RouteRequest([from, to], type, language: language),
+      RouteRequest([from, to], type, options: options, language: language),
     );
   }
 

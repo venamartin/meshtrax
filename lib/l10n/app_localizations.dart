@@ -10056,6 +10056,174 @@ abstract class AppLocalizations {
   /// **'Route here'**
   String get route_here;
 
+  /// No description provided for @route_options.
+  ///
+  /// In en, this message translates to:
+  /// **'Route options'**
+  String get route_options;
+
+  /// No description provided for @route_optionsReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get route_optionsReset;
+
+  /// No description provided for @route_prefer.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer'**
+  String get route_prefer;
+
+  /// No description provided for @route_dirtFastest.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest'**
+  String get route_dirtFastest;
+
+  /// No description provided for @route_dirtBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get route_dirtBalanced;
+
+  /// No description provided for @route_dirtDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Most direct'**
+  String get route_dirtDirect;
+
+  /// No description provided for @route_dirtFastestHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Dirt roads only where they\'re quicker.'**
+  String get route_dirtFastestHelp;
+
+  /// No description provided for @route_dirtBalancedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A dirt road when it saves real distance.'**
+  String get route_dirtBalancedHelp;
+
+  /// No description provided for @route_dirtDirectHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The shortest way, however slow its tracks.'**
+  String get route_dirtDirectHelp;
+
+  /// No description provided for @route_avoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid'**
+  String get route_avoid;
+
+  /// No description provided for @route_avoidHighways.
+  ///
+  /// In en, this message translates to:
+  /// **'Highways'**
+  String get route_avoidHighways;
+
+  /// No description provided for @route_avoidTolls.
+  ///
+  /// In en, this message translates to:
+  /// **'Tolls'**
+  String get route_avoidTolls;
+
+  /// No description provided for @route_avoidFerries.
+  ///
+  /// In en, this message translates to:
+  /// **'Ferries'**
+  String get route_avoidFerries;
+
+  /// No description provided for @route_hardestTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardest trail'**
+  String get route_hardestTrail;
+
+  /// No description provided for @route_trailT1.
+  ///
+  /// In en, this message translates to:
+  /// **'T1 Hiking'**
+  String get route_trailT1;
+
+  /// No description provided for @route_trailT2.
+  ///
+  /// In en, this message translates to:
+  /// **'T2 Mountain hiking'**
+  String get route_trailT2;
+
+  /// No description provided for @route_trailT3.
+  ///
+  /// In en, this message translates to:
+  /// **'T3 Demanding mountain hiking'**
+  String get route_trailT3;
+
+  /// No description provided for @route_trailT4.
+  ///
+  /// In en, this message translates to:
+  /// **'T4 Alpine hiking'**
+  String get route_trailT4;
+
+  /// No description provided for @route_trailT5.
+  ///
+  /// In en, this message translates to:
+  /// **'T5 Demanding alpine hiking'**
+  String get route_trailT5;
+
+  /// No description provided for @route_trailT6.
+  ///
+  /// In en, this message translates to:
+  /// **'T6 Difficult alpine hiking'**
+  String get route_trailT6;
+
+  /// No description provided for @route_climbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Climbs'**
+  String get route_climbs;
+
+  /// No description provided for @route_climbsAvoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid'**
+  String get route_climbsAvoid;
+
+  /// No description provided for @route_climbsSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Some'**
+  String get route_climbsSome;
+
+  /// No description provided for @route_climbsAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mind'**
+  String get route_climbsAny;
+
+  /// No description provided for @route_pace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get route_pace;
+
+  /// No description provided for @route_paceSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get route_paceSlow;
+
+  /// No description provided for @route_paceNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get route_paceNormal;
+
+  /// No description provided for @route_paceFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get route_paceFast;
+
   /// No description provided for @place_nrhp.
   ///
   /// In en, this message translates to:

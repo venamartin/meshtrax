@@ -6,6 +6,7 @@ import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import 'elevation_profile.dart';
+import 'route_options.dart';
 
 /// The colour a route is drawn in on the map and in its profile.
 Color routeColor(BuildContext context) =>
@@ -31,13 +32,15 @@ String routeDuration(BuildContext context, double seconds) {
   return context.l10n.route_hoursMinutes(minutes ~/ 60, minutes % 60);
 }
 
-/// The route to [destination] at the bottom of the map: the path type, the
-/// distance, time and climb, where it stops short when the destination
-/// can't be reached that way, and the height profile.
-class RoutePanel extends StatelessWidget {
+/// The route to [destination] at the bottom of the map: the path type and
+/// its options, the distance, time and climb, where it stops short when the
+/// destination can't be reached that way, and the height profile.
+class RoutePanel extends StatefulWidget {
   final String destination;
   final PathType pathType;
   final ValueChanged<PathType> onPathType;
+  final RouteOptions options;
+  final ValueChanged<RouteOptions> onOptions;
   final RouteResult? result;
   final bool loading;
   final String? error;
@@ -49,6 +52,8 @@ class RoutePanel extends StatelessWidget {
     required this.destination,
     required this.pathType,
     required this.onPathType,
+    required this.options,
+    required this.onOptions,
     required this.result,
     required this.loading,
     required this.error,
@@ -57,10 +62,27 @@ class RoutePanel extends StatelessWidget {
   });
 
   @override
+  State<RoutePanel> createState() => _RoutePanelState();
+}
+
+class _RoutePanelState extends State<RoutePanel> {
+  bool _optionsOpen = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final RoutePanel(
+      :destination,
+      :pathType,
+      :options,
+      :result,
+      :loading,
+      :error,
+      :units,
+    ) = widget;
     final r = result;
+    final changed = !options.isDefaultFor(pathType);
     // The map screen docks this as its bottom sheet, which gives it its
     // surface.
     return Material(
@@ -82,9 +104,19 @@ class RoutePanel extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  isSelected: _optionsOpen,
+                  icon: Badge(
+                    isLabelVisible: changed,
+                    smallSize: 8,
+                    child: const Icon(Icons.tune),
+                  ),
+                  tooltip: l10n.route_options,
+                  onPressed: () => setState(() => _optionsOpen = !_optionsOpen),
+                ),
+                IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: l10n.route_clear,
-                  onPressed: onClose,
+                  onPressed: widget.onClose,
                 ),
               ],
             ),
@@ -101,10 +133,27 @@ class RoutePanel extends StatelessWidget {
                     ),
                 ],
                 selected: {pathType},
-                onSelectionChanged: (s) => onPathType(s.single),
+                onSelectionChanged: (s) => widget.onPathType(s.single),
               ),
             ),
-            const SizedBox(height: 12),
+            if (_optionsOpen) ...[
+              RouteOptionsSection(
+                pathType: pathType,
+                options: options,
+                onChanged: widget.onOptions,
+              ),
+              if (changed)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () =>
+                        widget.onOptions(options.resetFor(pathType)),
+                    child: Text(l10n.route_optionsReset),
+                  ),
+                ),
+              const Divider(height: 24),
+            ] else
+              const SizedBox(height: 12),
             if (loading)
               Padding(
                 padding: const EdgeInsets.only(right: 12),

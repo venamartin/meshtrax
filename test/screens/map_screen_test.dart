@@ -155,6 +155,8 @@ class _Routing extends RoutingService {
         engine: null,
       );
 
+  final requests = <(PathType, RouteOptions)>[];
+
   @override
   bool get available => true;
   @override
@@ -164,17 +166,21 @@ class _Routing extends RoutingService {
     LatLon from,
     LatLon to,
     PathType type, {
+    RouteOptions options = const RouteOptions(),
     String language = 'en-US',
-  }) async => RouteResult(
+  }) async {
+    requests.add((type, options));
+    return RouteResult(
     pathType: type,
     points: [from, to],
     elevations: const [10, 12],
     elevationIntervalM: 30,
     km: 1.1,
     seconds: 900,
-    maneuvers: const [],
-    kmShortOfDestination: 0,
-  );
+      maneuvers: const [],
+      kmShortOfDestination: 0,
+    );
+  }
 }
 
 Contact _node(String name, int type, int seed, double lat, double lon) =>
@@ -333,11 +339,14 @@ void main() {
   // On a phone the layers button straddled the route panel's top edge and
   // covered its X, the only way to close the route.
   group('a route', () {
+    late _Routing routing;
+
     Future<void> showRoute(WidgetTester tester) async {
+      routing = _Routing(maps);
       await pumpMap(
         tester,
         _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
-        routing: _Routing(maps),
+        routing: routing,
       );
       tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
         const LatLng(41.8, -71.4),
@@ -360,6 +369,34 @@ void main() {
         tester.getRect(find.byType(MapControls)).bottom,
         lessThanOrEqualTo(tester.getRect(find.byType(RoutePanel)).top),
       );
+    });
+
+    testWidgets('options re-route, are remembered, and reset', (
+      tester,
+    ) async {
+      Future<void> tap(String text) async {
+        await tester.tap(find.text(text));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      await showRoute(tester);
+      await tap('Dirt');
+      await tester.tap(find.byTooltip('Route options'));
+      await tester.pump();
+      expect(find.text('Reset'), findsNothing);
+
+      await tap('Most direct');
+      expect(routing.requests.last.$1, PathType.dirt);
+      expect(routing.requests.last.$2.dirt, DirtPreference.direct);
+      expect(find.text('Reset'), findsOneWidget);
+      final later = AppSettingsService();
+      await later.loadSettings();
+      expect(later.settings.routeOptions.dirt, DirtPreference.direct);
+
+      await tap('Reset');
+      expect(routing.requests.last.$2.dirt, DirtPreference.balanced);
+      expect(find.text('Reset'), findsNothing);
     });
 
     testWidgets('closes on back, and back then leaves the map', (tester) async {

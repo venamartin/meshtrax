@@ -15,15 +15,145 @@ enum PathType {
   hiking,
 }
 
+/// How Dirt weighs distance against time.
+enum DirtPreference {
+  /// Dirt roads only where they're quicker.
+  fastest,
+
+  /// A dirt road when it saves real distance (the default).
+  balanced,
+
+  /// The shortest way, however slow its tracks.
+  direct,
+}
+
+/// How much a hike may climb.
+enum ClimbPreference { avoid, some, any }
+
+/// How fast a hiker walks, for the times.
+enum HikingPace { slow, normal, fast }
+
+/// The route options a user can change. The defaults are the path types'
+/// agreed costing (FINDINGS §9).
+class RouteOptions {
+  /// Paved and Dirt.
+  final bool avoidHighways;
+  final bool avoidTolls;
+  final bool avoidFerries;
+
+  final DirtPreference dirt;
+
+  /// The hardest trail a hike may take on the SAC scale, 1 (T1) to 6 (T6).
+  final int hardestTrail;
+  final ClimbPreference climbs;
+  final HikingPace pace;
+
+  const RouteOptions({
+    this.avoidHighways = false,
+    this.avoidTolls = false,
+    this.avoidFerries = false,
+    this.dirt = DirtPreference.balanced,
+    this.hardestTrail = 3,
+    this.climbs = ClimbPreference.any,
+    this.pace = HikingPace.normal,
+  });
+
+  /// From [toJson]'s map; anything missing or unknown is its default.
+  factory RouteOptions.fromJson(Map<String, dynamic> json) {
+    const d = RouteOptions();
+    T pick<T extends Enum>(List<T> values, Object? name, T fallback) =>
+        values.where((v) => v.name == name).firstOrNull ?? fallback;
+    final trail = json['hardest_trail'];
+    return RouteOptions(
+      avoidHighways: json['avoid_highways'] == true,
+      avoidTolls: json['avoid_tolls'] == true,
+      avoidFerries: json['avoid_ferries'] == true,
+      dirt: pick(DirtPreference.values, json['dirt'], d.dirt),
+      hardestTrail: trail is int && trail >= 1 && trail <= 6
+          ? trail
+          : d.hardestTrail,
+      climbs: pick(ClimbPreference.values, json['climbs'], d.climbs),
+      pace: pick(HikingPace.values, json['pace'], d.pace),
+    );
+  }
+
+  Map<String, Object> toJson() => {
+    'avoid_highways': avoidHighways,
+    'avoid_tolls': avoidTolls,
+    'avoid_ferries': avoidFerries,
+    'dirt': dirt.name,
+    'hardest_trail': hardestTrail,
+    'climbs': climbs.name,
+    'pace': pace.name,
+  };
+
+  RouteOptions copyWith({
+    bool? avoidHighways,
+    bool? avoidTolls,
+    bool? avoidFerries,
+    DirtPreference? dirt,
+    int? hardestTrail,
+    ClimbPreference? climbs,
+    HikingPace? pace,
+  }) => RouteOptions(
+    avoidHighways: avoidHighways ?? this.avoidHighways,
+    avoidTolls: avoidTolls ?? this.avoidTolls,
+    avoidFerries: avoidFerries ?? this.avoidFerries,
+    dirt: dirt ?? this.dirt,
+    hardestTrail: hardestTrail ?? this.hardestTrail,
+    climbs: climbs ?? this.climbs,
+    pace: pace ?? this.pace,
+  );
+
+  /// These options with the ones [type] uses back at their defaults.
+  RouteOptions resetFor(PathType type) {
+    const d = RouteOptions();
+    return switch (type) {
+      PathType.paved => copyWith(
+        avoidHighways: d.avoidHighways,
+        avoidTolls: d.avoidTolls,
+        avoidFerries: d.avoidFerries,
+      ),
+      PathType.dirt => resetFor(PathType.paved).copyWith(dirt: d.dirt),
+      PathType.hiking => copyWith(
+        hardestTrail: d.hardestTrail,
+        climbs: d.climbs,
+        pace: d.pace,
+      ),
+    };
+  }
+
+  /// Whether the options [type] uses are all at their defaults.
+  bool isDefaultFor(PathType type) {
+    const d = RouteOptions();
+    final avoids =
+        avoidHighways == d.avoidHighways &&
+        avoidTolls == d.avoidTolls &&
+        avoidFerries == d.avoidFerries;
+    return switch (type) {
+      PathType.paved => avoids,
+      PathType.dirt => avoids && dirt == d.dirt,
+      PathType.hiking =>
+        hardestTrail == d.hardestTrail && climbs == d.climbs && pace == d.pace,
+    };
+  }
+}
+
 class RouteRequest {
   final List<LatLon> points;
   final PathType pathType;
+  final RouteOptions options;
 
   /// The language of the turn instructions, e.g. `en-US`.
   final String language;
 
   /// [points] has the start, any stops, and the destination last.
-  const RouteRequest(this.points, this.pathType, {this.language = 'en-US'});
+  const RouteRequest(
+    this.points,
+    this.pathType, {
+    this.options = const RouteOptions(),
+    this.language = 'en-US',
+  });
 
   LatLon get destination => points.last;
 }

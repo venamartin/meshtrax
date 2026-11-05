@@ -19,8 +19,12 @@ Future<RouteResult> routeOrNearest(
     failure = e;
   }
   final via = request.points.sublist(0, request.points.length - 1);
-  RouteRequest to(LatLon end, PathType type) =>
-      RouteRequest([...via, end], type, language: request.language);
+  RouteRequest to(LatLon end, PathType type) => RouteRequest(
+    [...via, end],
+    type,
+    options: request.options,
+    language: request.language,
+  );
 
   for (final looser in _looser[request.pathType]!) {
     final RouteResult guide;

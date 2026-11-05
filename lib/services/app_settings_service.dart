@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:traxroute/traxroute.dart' show RouteOptions;
 
 import '../helpers/quick_reactions.dart';
 import '../helpers/terms_gate.dart';
@@ -130,6 +131,10 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setMapDownloadedAreas(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
+  }
+
+  Future<void> setRouteOptions(RouteOptions value) async {
+    await updateSettings(_settings.copyWith(routeOptions: value));
   }
 
   Future<void> setMapTheme(String value) async {

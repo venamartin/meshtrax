@@ -5880,6 +5880,92 @@ class AppLocalizationsDe extends AppLocalizations {
   String get route_here => 'Route here';
 
   @override
+  String get route_options => 'Route options';
+
+  @override
+  String get route_optionsReset => 'Reset';
+
+  @override
+  String get route_prefer => 'Prefer';
+
+  @override
+  String get route_dirtFastest => 'Fastest';
+
+  @override
+  String get route_dirtBalanced => 'Balanced';
+
+  @override
+  String get route_dirtDirect => 'Most direct';
+
+  @override
+  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'A dirt road when it saves real distance.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'The shortest way, however slow its tracks.';
+
+  @override
+  String get route_avoid => 'Avoid';
+
+  @override
+  String get route_avoidHighways => 'Highways';
+
+  @override
+  String get route_avoidTolls => 'Tolls';
+
+  @override
+  String get route_avoidFerries => 'Ferries';
+
+  @override
+  String get route_hardestTrail => 'Hardest trail';
+
+  @override
+  String get route_trailT1 => 'T1 Hiking';
+
+  @override
+  String get route_trailT2 => 'T2 Mountain hiking';
+
+  @override
+  String get route_trailT3 => 'T3 Demanding mountain hiking';
+
+  @override
+  String get route_trailT4 => 'T4 Alpine hiking';
+
+  @override
+  String get route_trailT5 => 'T5 Demanding alpine hiking';
+
+  @override
+  String get route_trailT6 => 'T6 Difficult alpine hiking';
+
+  @override
+  String get route_climbs => 'Climbs';
+
+  @override
+  String get route_climbsAvoid => 'Avoid';
+
+  @override
+  String get route_climbsSome => 'Some';
+
+  @override
+  String get route_climbsAny => 'Don\'t mind';
+
+  @override
+  String get route_pace => 'Pace';
+
+  @override
+  String get route_paceSlow => 'Slow';
+
+  @override
+  String get route_paceNormal => 'Normal';
+
+  @override
+  String get route_paceFast => 'Fast';
+
+  @override
   String get place_nrhp => 'National Register of Historic Places';
 
   @override
