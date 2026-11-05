@@ -21,6 +21,7 @@ SOURCES = {
     "contours": {"type": "vector", "url": "pmtiles://{pack:contours}", "attribution": "USGS 3DEP"},
 }
 ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service"]
+MAJOR_ROADS = ["motorway", "trunk", "primary", "secondary"]
 # Real trails only. OSM class=path also holds sidewalks (footway), cycleways,
 # steps and pedestrian areas; only these subclasses are trails. An unpaved
 # footway is a trail too: Santa Cruz Island's Pelican Bay Trail is one, and
@@ -80,16 +81,27 @@ APP_PLACES = ["campsite", "picnic_site", "shelter", "toilets", "drinking_water",
 
 def O(id, type, sl, **kw): return {"id": id, "type": type, "source": "osm", "source-layer": sl, **kw}
 
-def widened(width, by):
-    """[width], an interpolate over per-class matches, [by] px wider at every
-    stop. Exponential interpolation is linear in the stop values, so the
-    result is exactly [by] wider at every zoom."""
-    def add(v):
-        if isinstance(v, list) and v[0] == "match":
-            return [*v[:2], *[round(out + by, 3) if i % 2 else out for i, out in enumerate(v[2:-1])],
-                    round(v[-1] + by, 3)]
-        return round(v + by, 3)
-    return [*width[:3], *[add(v) if i % 2 else v for i, v in enumerate(width[3:])]]
+def cased(width, low, high):
+    """[width] (an interpolate from zoom 8 to 16 over per-class matches) and
+    its casing on both sides: [low] px in all up to zoom 10, where a full
+    casing would turn a city's grid grey, and [high] from zoom 11.
+    Exponential interpolation is exact between its own stops, so the road
+    part is [width] at every zoom."""
+    base, (z0, m0, z1, m1) = width[1][1], width[3:]
+
+    def value(m, cls):
+        for i in range(2, len(m) - 1, 2):
+            if cls == m[i] or (isinstance(m[i], list) and cls in m[i]):
+                return m[i + 1]
+        return m[-1]
+
+    def stop(z, extra):
+        def w(cls):
+            a, b = value(m0, cls), value(m1, cls)
+            return round(a + (b - a) * (base ** (z - z0) - 1) / (base ** (z1 - z0) - 1) + extra, 3)
+        return ["match", ["get", "class"], *[x for c in ROADS[:-1] for x in (c, w(c))], w(ROADS[-1])]
+
+    return [*width[:3], 8, stop(8, low), 10, stop(10, low), 11, stop(11, high), 16, stop(16, high)]
 
 def units_twins(layer, metric_field):
     imp = {**layer, "metadata": {"ovm:units": "imperial"}}
@@ -102,7 +114,8 @@ def style(name, P, note):
                   "secondary", P["secondary"], "tertiary", P["tertiary"], P["minor"]]
     w = P["road_scale"]
     road_width = ["interpolate", ["exponential", 1.6], ["zoom"],
-        8, ["match", ["get", "class"], ["motorway", "trunk"], 1.2 * w, "primary", 0.8 * w, 0.3 * w],
+        8, ["match", ["get", "class"], ["motorway", "trunk"], 1.2 * w, "primary", 0.8 * w, "secondary", 0.6 * w,
+            0.3 * w],
         16, ["match", ["get", "class"], ["motorway", "trunk"], 12 * w, ["primary", "secondary"], 9 * w,
              "tertiary", 7 * w, "minor", 5 * w, 3 * w]]
     halo = {"text-color": P["label"], "text-halo-color": P["halo"], "text-halo-width": 1.5}
@@ -138,7 +151,9 @@ def style(name, P, note):
          "paint": {"line-color": ["case", ["==", ["get", "idx"], 1], P["contour_idx"], P["contour"]],
                    "line-opacity": P["contour_op"],
                    "line-width": ["case", ["==", ["get", "idx"], 1], P["contour_w"][1], P["contour_w"][0]]}},
-        O("park-outline-minor", "line", "park", minzoom=9, filter=["all", AREA, OUTLINED], metadata=PARK_GROUP,
+        # From zoom 11: zoomed out, wilderness edges run beside the roads (the
+        # road corridors are left out) and read as roads (Death Valley).
+        O("park-outline-minor", "line", "park", minzoom=11, filter=["all", AREA, OUTLINED], metadata=PARK_GROUP,
           paint={"line-color": P["park_minor_line"], "line-width": 0.8, "line-opacity": 0.7,
                  "line-dasharray": [3, 2]}),
         O("park-outline", "line", "park", filter=["all", AREA, PARKS], metadata=PARK_GROUP,
@@ -152,10 +167,14 @@ def style(name, P, note):
         # renderer gives each gap-width feature its own offscreen layer (2,619
         # in one zoom 12 tile of downtown LA, profiled on a phone, PR #210),
         # and the road covers the gap anyway.
-        O("road-casing", "line", "transportation", minzoom=11,
-          filter=["match", ["get", "class"], ROADS, True, False],
+        # Major roads are cased from zoom 8, so they still read over park tints
+        # and hill shading zoomed out (Martin, 2026-11-05: Death Valley's roads
+        # vanished at zooms 9-10); the rest from zoom 11.
+        O("road-casing", "line", "transportation", minzoom=8,
+          filter=["all", ["match", ["get", "class"], ROADS, True, False],
+                  ["any", ["match", ["get", "class"], MAJOR_ROADS, True, False], [">=", ["zoom"], 11]]],
           layout={"line-cap": "round", "line-join": "round"},
-          paint={"line-color": P["casing"], "line-width": widened(road_width, 2 * P["casing_w"])}),
+          paint={"line-color": P["casing"], "line-width": cased(road_width, P["casing_w"], 2 * P["casing_w"])}),
         O("road", "line", "transportation", filter=["match", ["get", "class"], ROADS, True, False],
           layout={"line-cap": "round", "line-join": "round"},
           paint={"line-color": road_color, "line-width": road_width}),

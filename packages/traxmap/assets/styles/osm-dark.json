@@ -549,7 +549,7 @@
       "type": "line",
       "source": "osm",
       "source-layer": "park",
-      "minzoom": 9,
+      "minzoom": 11,
       "filter": [
         "all",
         [
@@ -735,24 +735,52 @@
       "type": "line",
       "source": "osm",
       "source-layer": "transportation",
-      "minzoom": 11,
+      "minzoom": 8,
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "class"
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "motorway",
+            "trunk",
+            "primary",
+            "secondary",
+            "tertiary",
+            "minor",
+            "service"
+          ],
+          true,
+          false
         ],
         [
-          "motorway",
-          "trunk",
-          "primary",
-          "secondary",
-          "tertiary",
-          "minor",
-          "service"
-        ],
-        true,
-        false
+          "any",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk",
+              "primary",
+              "secondary"
+            ],
+            true,
+            false
+          ],
+          [
+            ">=",
+            [
+              "zoom"
+            ],
+            11
+          ]
+        ]
       ],
       "layout": {
         "line-cap": "round",
@@ -776,14 +804,61 @@
               "get",
               "class"
             ],
-            [
-              "motorway",
-              "trunk"
-            ],
-            2.8,
+            "motorway",
+            2.0,
+            "trunk",
+            2.0,
             "primary",
-            2.4,
-            1.9
+            1.6,
+            "secondary",
+            1.4,
+            "tertiary",
+            1.1,
+            "minor",
+            1.1,
+            1.1
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "motorway",
+            2.402,
+            "trunk",
+            2.402,
+            "primary",
+            1.905,
+            "secondary",
+            1.712,
+            "tertiary",
+            1.349,
+            "minor",
+            1.275,
+            1.2
+          ],
+          11,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "motorway",
+            3.597,
+            "trunk",
+            3.597,
+            "primary",
+            3.005,
+            "secondary",
+            2.82,
+            "tertiary",
+            2.394,
+            "minor",
+            2.247,
+            2.099
           ],
           16,
           [
@@ -792,15 +867,13 @@
               "get",
               "class"
             ],
-            [
-              "motorway",
-              "trunk"
-            ],
+            "motorway",
             13.6,
-            [
-              "primary",
-              "secondary"
-            ],
+            "trunk",
+            13.6,
+            "primary",
+            10.6,
+            "secondary",
             10.6,
             "tertiary",
             8.6,
@@ -881,6 +954,8 @@
             1.2,
             "primary",
             0.8,
+            "secondary",
+            0.6,
             0.3
           ],
           16,
