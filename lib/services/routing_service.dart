@@ -170,13 +170,19 @@ class RoutingService extends ChangeNotifier {
     );
   }
 
-  Future<void> remove(String region) async {
+  /// Removes [region]'s routing. It waits behind any install, since both
+  /// rewrite the tile file and a new build deletes the old build's folder.
+  Future<void> remove(String region) => _work = _work.then((_) async {
     if (!isInstalled(region)) return;
-    await store.remove(region);
+    try {
+      await store.remove(region);
+    } on Object catch (e) {
+      appLogger.warn('Routing remove failed: $e', tag: 'Routing');
+    }
     _readCredits();
     await _openEngine();
     notifyListeners();
-  }
+  });
 
   /// A route from [from] to [to] with [type] and [options], or to the
   /// nearest point [type] reaches. Throws [RouteError].

@@ -350,6 +350,26 @@ void main() {
     expect(service.installedRegions, {'test/a'});
   });
 
+  test('a region removed while a new build installs waits for the install', () async {
+    catalogue = routing('b1', ['test/a', 'test/b']);
+    final (maps, service, _) = await services();
+    await service.download({'test/a', 'test/b'});
+    await service.idle;
+
+    // b2 drops test/b. Its install and test/b's removal start together, as
+    // when a region is deleted while an update installs.
+    catalogue = routing('b2', ['test/a']);
+    await maps.refresh();
+    final update = service.download({'test/a'});
+    final removal = service.remove('test/b');
+    await Future.wait([update, removal]);
+    await service.idle;
+
+    expect(service.store.build, 'b2');
+    expect(service.installedRegions, {'test/a'});
+    expect(service.hasRoutingData, isTrue);
+  });
+
   test('a bundle that will not install is reported, and its file removed', () async {
     catalogue = routing('b1', ['test/a']);
     // Not a routing tile: the store refuses it.
