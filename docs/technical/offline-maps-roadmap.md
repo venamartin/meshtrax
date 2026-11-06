@@ -614,7 +614,7 @@ Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapma
 - **Data:** one routing build for every region (builds can't be mixed), a plain tar on the device; points of interest per region.
 - **Credits:** each region's `attribution` and `notice` from the catalogue are kept with its routing data and join the map credits while it's installed.
 - **Checked on the Pi:** the San Juans test region, routing and places, from the local catalogue.
-- **Catalogue:** routing, places and hints go to the live catalogue (Martin, 2026-11-05), so a plain build will do once traxmapmaker publishes them there. `test/` stays for experiments on the Pi. Until then a phone build needs `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
+- **Catalogue:** routing, places and hints go to the live catalogue (Martin, 2026-11-05). North America routing is live there since 2026-11-06, with California places following that day, so every build is a plain one: no `MAP_INDEX_URL`, no `test/` (Martin, 2026-11-06). `test/` stays for experiments on the Pi only.
 - **Gate to merge** (Martin, 2026-11-05; on 2026-11-06 he confirmed that the merge and the release wait for the publish):
   - **Before the publish:** done.
     - master merged in (2026-11-05)
