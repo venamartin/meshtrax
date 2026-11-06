@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gpx/gpx.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
@@ -168,7 +171,6 @@ class GpxExport {
       final xml = GpxWriter().asString(gpx, pretty: true);
 
       // 2. Save to file
-      final dir = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now()
           .toUtc()
           .toIso8601String()
@@ -177,6 +179,22 @@ class GpxExport {
           .split('T')
           .join('_');
 
+      // On Windows the share call fails ("unavailable") and leaves the app
+      // window disabled, so every later click is ignored. Save it instead.
+      if (PlatformInfo.isWindows) {
+        final saved = await FileSaver.instance.saveAs(
+          name: '$filename$timestamp',
+          bytes: Uint8List.fromList(utf8.encode(xml)),
+          fileExtension: 'gpx',
+          mimeType: MimeType.custom,
+          customMimeType: 'application/gpx+xml',
+        );
+        return saved == null || saved.isEmpty
+            ? gpxExportCancelled
+            : gpxExportSuccess;
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
       final path = '${dir.path}/$filename$timestamp.gpx';
 
       final file = File(path);
