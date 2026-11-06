@@ -38,7 +38,7 @@ All of the following is stored locally in the App's private storage on your devi
 
 **Files you export:** The App can write a backup file, a debug log, or a copy of the message database, but only when you ask for one. You choose where each file goes through the system share sheet or file picker. A full device backup holds your contacts, channels and their keys, the companion device's settings and position, and, where the firmware allows it, the companion device's **private** identity key, so you can restore the same identity onto a radio later. Keep backup files somewhere safe; anyone holding one can read your channels and act as your node.
 
-**Device backups:** The App itself does not back up or sync your data anywhere. Your phone's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest and addresses are kept out of these backups.
+**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest and addresses are kept out of these backups.
 
 ## Data shared with third parties
 
@@ -60,7 +60,7 @@ The App contacts the MeshTrax map server and two third-party services, and only 
 - **What is sent:** When you open the picker, a request for trending GIFs. When you search in the picker, the **search words you type**. When a GIF is displayed, only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. No message text, contacts, or location is sent.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
-The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share) the system browser (to open a web link contained in a received message, after you confirm, or a place's full Wikipedia article when you tap **Read on Wikipedia**), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
+The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share), the system browser (to open a web link contained in a received message, after you confirm, or a place's full Wikipedia article when you tap **Read on Wikipedia**), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
 
 ## Content reporting
 
