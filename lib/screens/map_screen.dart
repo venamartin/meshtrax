@@ -1487,7 +1487,10 @@ class _MapScreenState extends State<MapScreen> {
     String? title,
   }) {
     final routing = context.read<RoutingService?>();
-    final canRoute = routing != null && routing.available;
+    final canRoute =
+        routing != null &&
+        routing.available &&
+        routing.offeredAt((lat: position.latitude, lon: position.longitude));
     final format = coordFormatOf(context.read<AppSettingsService>().settings);
     final lines = positionLines(position.latitude, position.longitude, format);
     final name = title ?? lines.first;
@@ -1842,7 +1845,11 @@ class _MapScreenState extends State<MapScreen> {
     final name = detail.place.name.isEmpty
         ? poiKindLabel(context.l10n, detail.place.kind)
         : detail.place.name;
-    final canRoute = context.read<RoutingService?>()?.available ?? false;
+    final routing = context.read<RoutingService?>();
+    final canRoute =
+        routing != null &&
+        routing.available &&
+        routing.offeredAt((lat: detail.place.lat, lon: detail.place.lon));
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

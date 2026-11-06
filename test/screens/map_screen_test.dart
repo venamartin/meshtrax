@@ -148,20 +148,24 @@ class _NoDownloads implements PackDownloader {
 
 /// Routing data on hand, and a straight line for every route.
 class _Routing extends RoutingService {
-  _Routing(MapPacksService maps, {this.elevations = const [10, 12]})
-    : super(
-        maps: maps,
-        store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
-        engine: null,
-      );
+  _Routing(
+    MapPacksService maps, {
+    this.elevations = const [10, 12],
+    this.hasData = true,
+  }) : super(
+         maps: maps,
+         store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
+         engine: null,
+       );
 
   final requests = <(PathType, RouteOptions)>[];
   final List<double> elevations;
+  final bool hasData;
 
   @override
   bool get available => true;
   @override
-  bool get hasRoutingData => true;
+  bool get hasRoutingData => hasData;
   @override
   Future<RouteResult> route(
     LatLon from,
@@ -453,6 +457,23 @@ void main() {
       await longPress(const LatLng(41.9, -71.5));
       expect(find.textContaining('Start now: 41.7'), findsOneWidget);
       expect(find.textContaining('Destination now: 41.8'), findsOneWidget);
+    });
+
+    // "Route here" would only say to download routing that isn't offered.
+    testWidgets('is not offered with no routing data on the device or in '
+        'the catalogue', (tester) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: _Routing(maps, hasData: false),
+      );
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+        const LatLng(41.8, -71.4),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Route here'), findsNothing);
+      expect(find.text('Route from here'), findsNothing);
     });
 
     testWidgets('closes on back, and back then leaves the map', (tester) async {

@@ -142,6 +142,22 @@ void main() {
     expect(service.hasRoutingData, isTrue);
   });
 
+  test('routing is offered where the catalogue has it, and anywhere once '
+      'some is on the device', () async {
+    files['picker.geojson'] = File(
+      'packages/traxmap/test/support/picker.geojson',
+    ).readAsBytesSync();
+    catalogue = routing('b1', ['north-america/us/rhode-island']);
+    final (_, service) = await services();
+    const providence = (lat: 41.82, lon: -71.41);
+    const watsonville = (lat: 36.91, lon: -121.76);
+    expect(service.offeredAt(providence), isTrue);
+    expect(service.offeredAt(watsonville), isFalse);
+
+    await service.download({'north-america/us/rhode-island'});
+    expect(service.offeredAt(watsonville), isTrue);
+  });
+
   test("the installed regions' credits, offline too", () async {
     const osm = '© OpenStreetMap contributors; USGS 3DEP';
     const glo30 =

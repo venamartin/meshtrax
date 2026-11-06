@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:traxcoords/traxcoords.dart';
-import 'package:traxmap/traxmap.dart' show creditsIn, noticesIn;
+import 'package:traxmap/traxmap.dart' show LatLng, creditsIn, noticesIn;
 import 'package:traxroute/traxroute.dart';
 
 import '../utils/app_logger.dart';
@@ -86,6 +86,15 @@ class RoutingService extends ChangeNotifier {
   bool isInstalled(String region) => store.regions.containsKey(region);
 
   bool get hasRoutingData => store.tileFile != null;
+
+  /// Whether routing is on offer at [point]: data is on the device (a
+  /// route may still stop short of it), or the catalogue has it for the
+  /// region there, to download.
+  bool offeredAt(LatLon point) {
+    if (hasRoutingData) return true;
+    final region = maps.regions?.regionAt(LatLng(point.lat, point.lon));
+    return region != null && bundleFor(region.path) != null;
+  }
 
   /// Regions with routing data on the device.
   Set<String> get installedRegions => store.regions.keys.toSet();
