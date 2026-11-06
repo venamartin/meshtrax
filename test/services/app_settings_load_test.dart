@@ -23,6 +23,11 @@ void main() {
     expect(s.incrementalContactSync, isFalse);
     expect(s.maxMessageRetries, 3);
     expect(s.mapShowGuessedLocations, isTrue);
+    expect(s.mapShowRepeaters, isTrue);
+    expect(s.mapShowOtherNodes, isTrue);
+    expect(s.mapShowMarkers, isTrue);
+    expect(s.mapContours, isTrue);
+    expect(s.mapHillShading, isTrue);
     expect(s.mutedChannels, isEmpty);
     expect(s.enableMessageTracing, isTrue);
     expect(s.jumpToOldestUnread, isTrue);
@@ -33,6 +38,8 @@ void main() {
     await service.loadSettings();
     expect(service.settings.pathGraphEnabled, isTrue);
     expect(service.settings.mutedChannels, {Channel.publicChannelPsk});
+    expect(service.settings.mapShowRepeaters, isFalse);
+    expect(service.settings.mapContours, isFalse);
 
     // The next launch, after the terms were accepted, still reads the same.
     await PrefsManager.instance.setBool('terms_accepted_v1', true);
@@ -66,7 +73,12 @@ void main() {
         if (jsonEncode(older[key]) != jsonEncode(fresh[key])) key,
     };
     expect(differs, {
+      'map_show_repeaters',
+      'map_show_other_nodes',
+      'map_show_markers',
       'map_show_guessed_locations',
+      'map_contours',
+      'map_hill_shading',
       'max_message_retries',
       'path_graph_enabled',
       'muted_channels',

@@ -237,6 +237,9 @@ void main() {
           ChangeNotifierProvider(
             create: (_) =>
                 AppSettingsService()
+                  ..setMapShowRepeaters(true)
+                  ..setMapShowOtherNodes(true)
+                  ..setMapShowMarkers(true)
                   ..setMapShowGuessedLocations(guessedLocationsOn),
           ),
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
@@ -907,8 +910,9 @@ void main() {
     expect(find.text('Standard'), findsOneWidget);
     expect(
       find.text('Not downloaded'),
-      findsNWidgets(2),
-      reason: 'USGS and charts: no packs',
+      findsNWidgets(6),
+      reason: 'USGS, charts, contours, hill shading, parks and places: '
+          'nothing downloaded',
     );
     expect(find.text('Nodes'), findsOneWidget);
 
@@ -916,18 +920,31 @@ void main() {
     await tester.pump();
     expect(settings.settings.mapTheme, 'dark');
 
-    await tester.tap(find.text('Contours'));
-    await tester.pump();
-    expect(settings.settings.mapContours, isFalse);
-    await tester.tap(find.text('Hill shading'));
-    await tester.pump();
-    expect(settings.settings.mapHillShading, isFalse);
     await tester.tap(find.text('Downloaded areas'));
     await tester.pump();
     expect(settings.settings.mapDownloadedAreas, isFalse);
     await tester.tap(find.text('Repeaters'));
     await tester.pump();
     expect(settings.settings.mapShowRepeaters, isFalse);
+  });
+
+  testWidgets('a layer with nothing downloaded opens Offline maps', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    final settings = tester
+        .element(find.byType(MapScreen))
+        .read<AppSettingsService>();
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('Parks'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(OfflineMapsScreen), findsOneWidget);
+    expect(settings.settings.mapParks, isTrue, reason: 'kept for later');
   });
 
   testWidgets('the layers Charts tile, not downloaded, opens the Charts tab', (

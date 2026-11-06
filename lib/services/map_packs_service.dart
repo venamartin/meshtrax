@@ -518,6 +518,9 @@ class MapPacksService extends ChangeNotifier {
       type == MapType.osm ||
       _installed.any((p) => _requiredKinds[type]?.contains(p.kind) ?? false);
 
+  /// Whether a pack of [kind] is installed anywhere.
+  bool hasKind(PackKind kind) => _installed.any((p) => p.kind == kind);
+
   /// The installed packs a map draws from; the style uses those it needs.
   /// Contours come last so the map's own credit leads the credits, and the
   /// bundled base map after them.
