@@ -43,9 +43,13 @@ Learn more about MeshCore:
 - **Reliable delivery** — message delivery status and automatic retry over the mesh.
 - **Background notifications** — get notified of new messages even when the app is closed, with a foreground service that keeps your radio connected.
 - **Contacts** — add contacts by scanning or sharing QR codes, and organize them into groups.
-- **Map** — see nodes, repeaters, and neighbors on an interactive map; cache map areas for offline use; run line-of-sight terrain analysis; export tracks as GPX.
+- **Map** — see nodes, repeaters, and neighbors on an interactive map; run line-of-sight terrain analysis; export tracks as GPX.
+- **Offline maps** — download street maps, USGS topo maps, contours, hill shading, and NOAA charts by region, with parks drawn on the map and a built-in base map down to towns.
+- **Trail routing** (Android and iOS) — plan routes offline on paved roads, dirt roads, and trails, with time, climb, and a height profile.
+- **Points of interest** — search places, addresses, and coordinates offline, with Wikipedia text and photos.
+- **Coordinates** — read and write positions in seven formats, including UTM, MGRS, and Maidenhead.
 - **Telemetry** — view device and repeater sensor readings and battery levels.
-- **Routing tools** — message path tracing and automatic route rotation for better delivery.
+- **Mesh routing tools** — message path tracing and automatic route rotation for better delivery.
 - **Moderation** — block abusive senders and report objectionable content.
 - **Auto-connect** — reconnect to your last device automatically on launch.
 - **Themes & languages** — light/dark themes and many localizations.
@@ -136,7 +140,7 @@ flutter run -d linux
 - [Privacy Policy](docs/privacy.md)
 - [Terms of Use](docs/terms.md)
 
-MeshTrax has no accounts, no analytics, and no MeshTrax servers. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. See the Privacy Policy for the full details, including the optional map/terrain/GIF features that connect to third-party services.
+MeshTrax has no accounts and no analytics. Its only server is a download server for maps, routing data, and places, which receives none of your data. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. See the Privacy Policy for the full details, including the optional map/terrain/GIF features that connect to third-party services.
 
 ---
 
@@ -149,4 +153,4 @@ MeshTrax is released under the **MIT License**. It is a fork of [MeshCore Open](
 - The **[MeshCore](https://meshcore.io/)** project and its creators — the protocol, firmware, and official apps that make all of this possible.
 - **[MeshCore Open](https://github.com/zjs81/meshcore-open)** and its contributors — the upstream client MeshTrax is built from.
 - Built with [Flutter](https://flutter.dev/).
-- Offline maps from [OpenStreetMap](https://www.openstreetmap.org/) contributors; the base map that comes with the app from [Natural Earth](https://www.naturalearthdata.com/) and [GeoNames](https://www.geonames.org/); elevation data from [Open-Meteo](https://open-meteo.com/); GIFs from [Giphy](https://giphy.com/).
+- Offline maps from [OpenStreetMap](https://www.openstreetmap.org/) contributors, the [USGS National Map](https://www.usgs.gov/programs/national-geospatial-program/national-map), and [NOAA](https://nauticalcharts.noaa.gov/) charts; heights from [USGS 3DEP](https://www.usgs.gov/3d-elevation-program) and Copernicus GLO-30; the base map that comes with the app from [Natural Earth](https://www.naturalearthdata.com/) and [GeoNames](https://www.geonames.org/); places from OpenStreetMap and [Wikipedia](https://www.wikipedia.org/); routing by [Valhalla](https://github.com/valhalla/valhalla); line-of-sight elevation from [Open-Meteo](https://open-meteo.com/); GIFs from [Giphy](https://giphy.com/).
