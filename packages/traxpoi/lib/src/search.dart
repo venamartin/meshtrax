@@ -78,9 +78,10 @@ double rankScore({
 /// How well an address query's words (after the house number) match a
 /// street, 0–100: the leading words must match the street name, and words
 /// after them may name its town or ZIP. A town or ZIP that matches costs
-/// nothing; one that doesn't, or a street with no town recorded, costs a
-/// little, so the address is still found ("607 Main St Ouray" on a Main
-/// Street whose town wasn't mapped).
+/// nothing. On a street with no town recorded it costs a little, so the
+/// address is still found ("607 Main St Ouray" on a Main Street whose town
+/// wasn't mapped); on a street in another town it costs much more, so a
+/// look-alike street elsewhere ranks below the street that was asked for.
 double addressMatch(List<String> query, String street, List<String> place) {
   for (var n = query.length; n > 0; n--) {
     final streetMatch = wordMatch(query.take(n).join(' '), street);
@@ -90,9 +91,14 @@ double addressMatch(List<String> query, String street, List<String> place) {
       final inPlace = place.any(
         (p) => fuzz.ratio(w, p) >= 80 || (w.length >= 2 && p.startsWith(w)),
       );
-      if (!inPlace) cost += 5;
+      if (!inPlace) cost += place.isEmpty ? 5 : 25;
     }
     return math.max(1, streetMatch - cost);
   }
   return 0;
 }
+
+/// What offering the street of an address query costs in rank, for when
+/// its house number isn't in the addresses: an exact address still comes
+/// first, a same-numbered house on a look-alike street elsewhere after it.
+const streetInsteadCost = 30.0;
