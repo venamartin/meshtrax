@@ -6088,44 +6088,44 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chats_advertise => '광고';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '그림';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '그리기';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '붙여넣기';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => '펜';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '직선';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '사각형';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '원';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '타원';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '화살표';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '실행 취소';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => '캡션';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '선택 사항이며 그림 아래에 표시됩니다';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max바이트';
   }
 
   @override
@@ -6133,113 +6133,110 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '점 $count개',
+      one: '점 1개',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '그린 점이 모두 유지됩니다.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '단순화됨: 선의 오차는 그림 크기의 $percent% 이내입니다.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      '단순화해도 메시지 하나에 담기에는 너무 복잡합니다. 획 하나를 실행 취소하거나, 바이트가 훨씬 적게 드는 도형을 사용하세요.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '손가락으로 그리거나 도형을 선택하세요.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'SVG 파일이나 M10 10h80v80H10z 같은 패스 데이터를 붙여 넣으세요';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => '이 SVG 사용';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      '색상과 채우기는 전달되지 않습니다. 선으로만 보내지며 받는 사람의 펜 색상으로 표시됩니다.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '먼저 SVG나 패스 데이터를 붙여 넣으세요.';
 
   @override
-  String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+  String get drawing_pasteTooBig => '너무 크거나 복잡해서 읽을 수 없습니다. 더 작은 SVG를 붙여 넣으세요.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => '앱에서 읽을 수 있는 SVG가 아닙니다.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => '이 SVG에는 보이는 요소가 없어 그릴 것이 없습니다.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVG 복사';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '그림';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => 'SVG로 주고받는 그림과 이 기기에서 보이는 모습';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '그림 표시';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => '끄면 대신 SVG 코드를 표시합니다';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => '펜 색상';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => '색상 코드';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '선 두께';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => '글로우';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '스캔라인';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '길';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'X 표시';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => '탭해 점을 추가하세요. 끝내려면 마지막 점을 다시 탭하세요.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '지도 없음';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => '여기에 그리기';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '지도 이동';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      '지도를 움직이고 확대/축소해 원하는 곳을 찾은 다음 \'여기에 그리기\'를 탭하세요.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, 가로 $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => '이 지역은 다운로드되지 않았습니다';
 }

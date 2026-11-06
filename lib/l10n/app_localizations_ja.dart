@@ -6079,44 +6079,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chats_advertise => 'アドバート';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '手描き';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '描く';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '貼り付け';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'ペン';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '直線';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '四角形';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '円';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '楕円';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '矢印';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '元に戻す';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'キャプション';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '絵の下に表示されます（任意）';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $maxバイト';
   }
 
   @override
@@ -6124,113 +6124,108 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count点',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '描いた点はすべてそのまま残ります。';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '簡略化済み：線のずれは絵の大きさの$percent%以内です。';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      '簡略化しても細かすぎて、1通のメッセージに収まりません。線を1本取り消すか、データ量がずっと少ない図形を使ってください。';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '指で描くか、図形を選んでください。';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'SVGファイル、または M10 10h80v80H10z のようなパスデータを貼り付けてください';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'このSVGを使う';
 
   @override
-  String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+  String get drawing_pasteNote => '色や塗りつぶしは送られません。線だけが送られ、見る人のペンの色で表示されます。';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '先にSVGかパスデータを貼り付けてください。';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      '大きすぎるか細かすぎるため、読み込めません。もっと小さいSVGを貼り付けてください。';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => 'このアプリで読み込めるSVGではありません。';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => 'このSVGには目に見えるものがなく、描けません。';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVGをコピー';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '手描き';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => 'SVGで送られる絵と、この端末での見え方';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '手描きを表示';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => 'オフにすると代わりにSVGコードを表示します';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'ペンの色';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'カラーコード';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '線の太さ';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'グロー';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '走査線';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '道順';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => '×印';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => 'タップして点を追加します。最後の点をもう一度タップすると完了します。';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '地図なし';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'ここに描く';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '地図を動かす';
 
   @override
-  String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+  String get drawing_mapHint => '地図を移動・ズームして場所を合わせ、「ここに描く」をタップしてください。';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map、幅$distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'このエリアはダウンロードされていません';
 }

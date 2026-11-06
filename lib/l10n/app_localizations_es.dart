@@ -6370,44 +6370,44 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chats_advertise => 'Anunciar';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Dibujo';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Dibujar';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Pegar';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Lápiz';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Línea';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Rectángulo';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Círculo';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Elipse';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Flecha';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Deshacer';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Pie de imagen';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Opcional, se muestra debajo del dibujo';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used de $max bytes';
   }
 
   @override
@@ -6415,113 +6415,116 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count puntos',
+      one: '1 punto',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Se conservan todos los puntos que dibujaste.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Simplificado: las líneas se desvían como mucho un $percent% del tamaño del dibujo.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Demasiado detallado para un solo mensaje, incluso simplificado. Deshaz un trazo o usa formas, que ocupan mucho menos.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Dibuja con el dedo o elige una forma.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Pega un archivo SVG o datos de trazado como M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Usar este SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Los colores y rellenos no se envían: llega como líneas, en el color de lápiz de quien lo recibe.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty =>
+      'Primero pega código SVG o datos de trazado.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Es demasiado grande o detallado para leerlo. Pega un SVG más pequeño.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => 'No es un SVG que la app pueda leer.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'Ese SVG no tiene nada visible que dibujar.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Copiar SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Dibujos';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Imágenes enviadas como SVG y cómo se ven aquí';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Mostrar dibujos';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Desactivado, se muestra el código SVG en su lugar';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Color del lápiz';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Código de color';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Grosor de línea';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Resplandor';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Líneas de barrido';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Itinerario';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Marca en X';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Toca para añadir puntos. Toca otra vez el último para terminar.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Sin mapa';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Dibujar aquí';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Mover el mapa';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Mueve el mapa y usa el zoom hasta encontrar el lugar; luego toca Dibujar aquí.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance de ancho';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Esta zona no está descargada';
 }

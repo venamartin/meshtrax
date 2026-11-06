@@ -5967,44 +5967,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chats_advertise => '广播';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '绘图';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '绘制';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '粘贴';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => '画笔';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '直线';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '矩形';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '圆形';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '椭圆';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '箭头';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '撤销';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => '说明';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '可选，显示在图片下方';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max 字节';
   }
 
   @override
@@ -6012,113 +6012,106 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count 个点',
+      one: '1 个点',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '您画的每个点都已保留。';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '已简化：线条偏差不超过画面尺寸的 $percent%。';
   }
 
   @override
-  String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+  String get drawing_tooDetailed => '细节太多，即使简化也放不进一条消息。请撤销一笔，或改用形状，形状占用的字节少得多。';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '用手指绘制，或选择一个形状。';
 
   @override
-  String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+  String get drawing_pasteHint => '粘贴 SVG 文件或路径数据，例如 M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => '使用此 SVG';
 
   @override
-  String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+  String get drawing_pasteNote => '颜色和填充不会发送：图片以线条发出，按查看者设置的画笔颜色显示。';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '请先粘贴 SVG 或路径数据。';
 
   @override
-  String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+  String get drawing_pasteTooBig => '内容太大或细节太多，无法读取。请粘贴更小的 SVG。';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => '这不是本应用能读取的 SVG。';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => '该 SVG 中没有可绘制的可见内容。';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => '复制 SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '绘图';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => '以 SVG 发送的图片，及其在本机上的显示效果';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '显示绘图';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => '关闭后改为显示 SVG 代码';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => '画笔颜色';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => '颜色代码';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '线宽';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => '辉光';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '扫描线';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '路线';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => '叉号';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => '点按以添加点。再次点按最后一个点即可完成。';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '无地图';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => '在此绘制';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '移动地图';
 
   @override
-  String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+  String get drawing_mapHint => '平移并缩放地图到目标位置，然后点按“在此绘制”。';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map，宽 $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => '此区域尚未下载';
 }

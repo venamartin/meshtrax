@@ -6351,44 +6351,44 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chats_advertise => 'Oznámiť';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Kresba';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Kresliť';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Vložiť';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Pero';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Čiara';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Obdĺžnik';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Kruh';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Elipsa';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Šípka';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Vrátiť späť';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Popis';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Voliteľné, zobrazí sa pod obrázkom';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max bajtov';
   }
 
   @override
@@ -6396,113 +6396,118 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count bodov',
+      many: '$count bodu',
+      few: '$count body',
+      one: '$count bod',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Všetky nakreslené body sa zachovajú.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Zjednodušené: čiary sa odchyľujú najviac o $percent % veľkosti kresby.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Kresba je príliš podrobná na jednu správu, aj po zjednodušení. Vráťte späť ťah alebo použite tvary, ktoré zaberajú oveľa menej miesta.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Kreslite prstom alebo vyberte tvar.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Vložte súbor SVG alebo údaje cesty, napríklad M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Použiť toto SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Farby a výplne sa neprenášajú: obrázok sa odošle ako čiary vo farbe pera príjemcu.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Najprv vložte SVG alebo údaje cesty.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Je to príliš veľké alebo príliš podrobné na načítanie. Vložte menšie SVG.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Toto nie je SVG, ktoré aplikácia dokáže načítať.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'V tomto SVG nie je nič viditeľné, čo by sa dalo nakresliť.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Kopírovať SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Kresby';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Obrázky posielané ako SVG a ako tu vyzerajú';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Zobraziť kresby';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Vypnuté zobrazí namiesto nich kód SVG';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Farba pera';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Kód farby';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Hrúbka čiary';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Žiara';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Riadky obrazovky';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Trasa';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Krížik';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Klepnutím pridajte body. Trasu dokončíte opätovným klepnutím na posledný bod.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Bez mapy';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Kresliť tu';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Posunúť mapu';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Posúvaním a približovaním mapy nájdite miesto, potom klepnite na „Kresliť tu“.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, šírka $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Táto oblasť nie je stiahnutá';
 }

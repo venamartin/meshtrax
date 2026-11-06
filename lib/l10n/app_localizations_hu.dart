@@ -6378,44 +6378,44 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chats_advertise => 'Bejelentés';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Rajz';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Rajzolás';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Beillesztés';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Toll';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Vonal';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Téglalap';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Kör';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Ellipszis';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Nyíl';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Visszavonás';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Képaláírás';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Nem kötelező, a kép alatt jelenik meg';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max bájt';
   }
 
   @override
@@ -6423,113 +6423,118 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count pont',
+      one: '1 pont',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Minden megrajzolt pont megmarad.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Egyszerűsítve: a vonalak eltérése legfeljebb a rajz méretének $percent%-a.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Egyszerűsítve is túl részletes egy üzenethez. Vonjon vissza egy vonást, vagy használjon alakzatokat, amelyek sokkal kevesebb helyet foglalnak.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty =>
+      'Rajzoljon az ujjával, vagy válasszon egy alakzatot.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Illesszen be egy SVG-fájlt vagy útvonaladatot, például: M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'SVG használata';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Színek és kitöltések nélkül, vonalakként megy el, és az olvasó tollszínében jelenik meg.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty =>
+      'Előbb illesszen be SVG-t vagy útvonaladatot.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Ez túl nagy vagy túl részletes a beolvasáshoz. Illesszen be egy kisebb SVG-t.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Ez nem olyan SVG, amelyet az alkalmazás be tud olvasni.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'Ebben az SVG-ben nincs semmi látható, amit ki lehetne rajzolni.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVG másolása';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Rajzok';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'SVG-ként küldött képek, és hogyan jelennek meg itt';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Rajzok megjelenítése';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Kikapcsolva helyettük az SVG-kód jelenik meg';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Tollszín';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Színkód';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Vonalvastagság';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Ragyogás';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Csíkozás';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Útvonal';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'X-jel';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Koppintson a pontok hozzáadásához. A befejezéshez koppintson újra az utolsó pontra.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Nincs';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Rajzolás itt';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Térkép mozgatása';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Keresse meg a helyet a térkép mozgatásával és nagyításával, majd koppintson a „Rajzolás itt” gombra.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance széles terület';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Ez a terület nincs letöltve';
 }
