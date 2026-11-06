@@ -1,7 +1,7 @@
 # MeshTrax Privacy Policy
 
 **Last updated:** November 2, 2026
-**Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
+**Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
 
@@ -19,7 +19,7 @@ The App is developed by an independent, open-source developer. You can review th
 
 ## Data the App collects and stores on your device
 
-All of the following is stored locally in the App's private storage on your device: a local database and the operating system's preferences store (`SharedPreferences` on Android, `UserDefaults` on iOS), or the app's own local application-data folder on Windows. None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
+All of the following is stored locally in the App's private storage on your device: a local database and the operating system's preferences store (`SharedPreferences` on Android, `UserDefaults` on iOS and macOS), or the app's own local application-data folder on Windows. None of it is transmitted to the developer or to any server automatically; the only exception is content you explicitly choose to report (see "Content reporting" below).
 
 | Category | What it includes | Purpose |
 |---|---|---|
@@ -38,7 +38,7 @@ All of the following is stored locally in the App's private storage on your devi
 
 **Files you export:** The App can write a backup file, a debug log, or a copy of the message database, but only when you ask for one. You choose where each file goes through the system share sheet or file picker. A full device backup holds your contacts, channels and their keys, the companion device's settings and position, and, where the firmware allows it, the companion device's **private** identity key, so you can restore the same identity onto a radio later. Keep backup files somewhere safe; anyone holding one can read your channels and act as your node.
 
-**Device backups:** The App itself does not back up or sync your data anywhere. Your phone's own backup (Android backup to your Google account, or an iCloud or computer backup on iOS) can include the App's data, under your account and your backup settings. Downloaded offline maps are kept out of these backups.
+**Device backups:** The App itself does not back up or sync your data anywhere. Your phone's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps are kept out of these backups.
 
 ## Data shared with third parties
 
@@ -95,6 +95,19 @@ The App requests only the permissions needed for its stated functions.
 
 iOS does not require location permission for BLE scanning; the App never requests it.
 
+### macOS
+
+| Permission | Why it is needed |
+|---|---|
+| App Sandbox | Required for Mac App Store apps. The App's data stays in its own container, and the App can reach only what is listed below |
+| Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
+| Outgoing network connections | Download offline maps (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
+| USB, and read-write access to serial ports (`/dev/cu.*`, `/dev/tty.*`) | Connect to a companion device over a USB serial cable. The App opens only these serial device files and no other files outside its container |
+| Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
+| Notifications | Show notifications for incoming mesh messages |
+
+The macOS app does not use location and does not ask for access to your calendar, contacts, or photo library. An image to scan a QR code from is one you choose in a file dialog, and **Add to calendar** hands the event to the Calendar app as a file, where you choose to save it.
+
 ### Android
 
 | Permission | Why it is needed |
@@ -123,7 +136,7 @@ The App can also connect to a companion device over your **local network (TCP)**
 
 ## Camera and photos
 
-The camera is used **only** to scan QR codes (for importing contacts and configuration). You may alternatively pick an existing image from your gallery to scan a QR code from it. Any such image is analyzed **on your device** and is never uploaded.
+The camera is used **only** to scan QR codes (for importing contacts and configuration). You may alternatively pick an existing image from your gallery (on macOS, an image file) to scan a QR code from it. Any such image is analyzed **on your device** and is never uploaded.
 
 ## Mesh network communications
 
@@ -138,7 +151,7 @@ Locally stored data is protected by your device's operating-system storage sandb
 ## Data retention and deletion
 
 - All App data is retained on your device until you delete it.
-- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App (any platform), which removes all locally stored data.
+- You can delete data at any time by using the App's in-app controls (for example, clearing contacts, channels, or debug logs), by clearing the App's storage in Android Settings, or by uninstalling the App (any platform), which removes all locally stored data. On macOS, moving the App to the Trash leaves its data in `~/Library/Containers/com.vena.meshtrax`; delete that folder as well to remove it.
 - Because we hold none of your data on any server, there is nothing for you to request that we delete on our side.
 
 ## Children's privacy
