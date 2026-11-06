@@ -103,7 +103,8 @@ iOS does not require location permission for BLE scanning; the App never request
 | App Sandbox | Required for Mac App Store apps. The App's data stays in its own container, and the App can reach only what is listed below |
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
-| USB, and read-write access to serial ports (`/dev/cu.*`, `/dev/tty.*`) | Connect to a companion device over a USB serial cable. The App opens only these serial device files and no other files outside its container |
+| USB and serial ports | Connect to a companion device over a USB serial cable, through the serial port of the radio you plug in |
+| Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, or an image to scan a QR code from. The App reaches no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Notifications | Show notifications for incoming mesh messages |
 
