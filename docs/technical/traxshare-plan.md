@@ -1,6 +1,6 @@
 # Location sharing on private channels: plan
 
-> **What this is:** The build plan for sharing positions and short trails among the members of a private channel, over the radios, with no internet. Code name `traxshare`. It replaces an earlier draft spec written without access to the code. Every firmware and app fact below was checked against `./MeshCore` (tag companion-v1.18.0) and MeshTrax master `8b42148b` on 2026-11-05.
+> **What this is:** The build plan for sharing positions and short trails among the members of a private channel, over the radios, with no internet. Code name `traxshare`. It replaces an earlier draft spec written without access to the code. Every firmware and app fact below was checked against `./MeshCore` (tag companion-v1.18.0) and MeshTrax master `8b42148b` on 2026-11-05. The session building #210 then rechecked everything this plan takes from #210 against its head `9ba6f98`: the layers sheet, the pin sheet, Route here and the files both change.
 >
 > **Who it's for:** the developer or AI session building it.
 >
@@ -94,6 +94,7 @@ Both are bugs today, with or without this feature.
 
 - **Shape:** model it on `packages/path_graph`: pure Dart, with `drift` and `crypto` as dependencies, an injected database executor and clock, and no connector import. Public API in `lib/traxshare.dart`.
 - **CI:** add analyze and test steps to [.github/workflows/flutter_dart.yml](../../.github/workflows/flutter_dart.yml), the same way path_graph and traxmap have them (#210 does this for its own packages).
+  - #210 also changes this file, `pubspec.yaml`, `lib/main.dart` and the 17 `app_*.arb` files. If Step 2 or 3a reaches master first, the conflicts are additions side by side. They get resolved when #210 merges master in.
 - **Modules** under `lib/src/`:
   - `codec/`: bit writer and reader, zigzag, exp-Golomb, packet encode and decode ([wire format](#wire-format-version-1))
   - `movement/`: the movement gate, derived heading and speed, fix age ([rules](#position-and-movement))
@@ -143,10 +144,17 @@ Both are bugs today, with or without this feature.
   - It shows waiting requests, who answered (with **Show on map**), active sessions and **Stop**.
 - **Map:**
   - **Layers:** one `MapMarker` per person with a stable id, a `MapLine` trail, and a generated `MapPolygon` ring only when a position is approximate (accuracy class 1 or above). Faded and ended styles follow the [thresholds](#display-thresholds).
-  - **Switch:** a **People sharing** switch in the layers sheet, next to #210's Places and Parks.
-  - **Performance:** feed lines from a cut-down copy per person, at most 200 points, recomputed only when a point is added. The map rebuilds its overlays on every connector notify, and #210 adds a rebuild 300 ms after every pan. Map markers are already the main cost on a busy map (Windows profile, 2026-10-31).
+  - **Switch:** a **People sharing** switch in the layers sheet.
+    - Since #241 every entry has a picture.
+    - The marker switches (Repeaters, Chat nodes, Other nodes, Pins, Guessed) sit under **Nodes** (`_nodeLayers` in map_screen.dart), each pictured by its marker's badge.
+    - #210's Places and Parks sit under **Details**, with map thumbnails from `assets/map_layers/`.
+    - People sharing draws markers, so it fits under Nodes, with its own badge. Show Martin a render first.
+  - **Performance:** feed lines from a cut-down copy per person, at most 200 points, recomputed only when a point is added. The map rebuilds its overlays on every connector notify. #210 adds a rebuild 300 ms after every pan at zoom 12 and above, when it loads the places in view. Map markers are already the main cost on a busy map (Windows profile, 2026-10-31).
   - **Updates:** the map subscribes to `TraxShareService` itself and repaints when a position or style changes. Keep Trax data out of the message pin scan.
   - **Pin sheet:** name, coordinates in the user's coordinate format (#210's setting, traxcoords), age through `DateTimeHelper`, and **Route here**. That opens #210's route panel with the person's name and position as the destination.
+    - Reuse what #210's long-press sheet on the map does (`_showShareMarkerAtPositionSheet` in map_screen.dart):
+      - `coordFormatOf(settings)` and `positionLines(lat, lon, format)` for the coordinates, with `CopyPositionButton`
+      - `_routeHere(name, point, selfPosition)` for Route here, shown when `RoutingService.available`; with no routing data installed, it says so
 - **Telemetry:** unchanged on the wire. A reply that carries a GPS position also updates that person's pin.
 - **Who can see my location** ([location_sharing_button.dart](../../lib/widgets/location_sharing_button.dart)):
   - Check Trax before the `hasSelfPosition` early return in `positionVisible`.
