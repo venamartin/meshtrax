@@ -57,6 +57,23 @@ class _Radio extends MeshCoreConnector {
   @override
   int getUnreadCountForContactKey(String contactKeyHex) => unread;
 
+  /// The oldest unread, counted back from the end of the last list posted,
+  /// as the read mark would over the rows.
+  List<ChannelMessage> latest = const [];
+
+  @override
+  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) async {
+    final rows = latest.isNotEmpty ? latest : await posts.stream.first;
+    var n = 0;
+    ChannelMessage? oldest;
+    for (final m in rows.reversed) {
+      if (m.isOutgoing) continue;
+      oldest = m;
+      if (++n >= unread) break;
+    }
+    return unread > 0 ? oldest : null;
+  }
+
   @override
   void setActiveChannel(int? channelIndex) {
     channelsActive.add(channelIndex);
@@ -149,6 +166,7 @@ void main() {
 
   Future<_Radio> pump(WidgetTester tester, Widget screen) async {
     final radio = _Radio();
+    radio.posts.stream.listen((m) => radio.latest = m);
     addTearDown(radio.posts.close);
     addTearDown(radio.dms.close);
     addTearDown(radio.dispose);

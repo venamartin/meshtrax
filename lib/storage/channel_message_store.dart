@@ -106,11 +106,14 @@ class ChannelMessageStore {
         (r) =>
             r.nodeScope.equals(publicKeyHex) & r.channelIdKey.equals(idKey),
       )
-      // Arrival order, not the sender's clock. A radio hands its offline
-      // queue over in receive order, so this is something we know; the
-      // sender's timestamp is a claim, and ingest rewrites it outright when
-      // it looks implausible.
+      // The order the chat shows: the time on each bubble (the sender's
+      // clock as the ingest clamp passed it), arrival breaking ties. The
+      // phone can write a message down long after the radio heard it (a
+      // late queue drain, a slot buffer flushed a day on), and ordering by
+      // that write put yesterday's messages under today's. Unread and the
+      // read mark still go by arrival.
       ..orderBy([
+        (r) => OrderingTerm.desc(r.timestampMs),
         (r) => OrderingTerm.desc(r.receivedAtUs),
         (r) => OrderingTerm.desc(r.id),
       ])
@@ -147,8 +150,8 @@ class ChannelMessageStore {
     }
   }
 
-  /// Full-history search, SQL-side: ranks every row of the channel by
-  /// arrival (newest first), keeps rows whose JSON payload contains the
+  /// Full-history search, SQL-side: ranks every row of the channel in the
+  /// order the chat shows (newest first), keeps rows whose JSON payload contains the
   /// query's core, and returns each match with its distance from the
   /// newest row — the full history is never loaded into Dart. The payload
   /// prefilter sees sender names too and folds ASCII case; the precise
@@ -191,7 +194,8 @@ class ChannelMessageStore {
         .customSelect(
           'SELECT payload, from_newest FROM ('
           ' SELECT payload, ROW_NUMBER() OVER ('
-          '   ORDER BY received_at_us DESC, id DESC) - 1 AS from_newest'
+          '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) - 1 '
+          '   AS from_newest'
           ' FROM channel_message_rows'
           ' WHERE node_scope = ? AND channel_id_key = ?'
           ') WHERE instr(lower(payload), ?) > 0 '
@@ -267,7 +271,8 @@ class ChannelMessageStore {
           .customSelect(
             'SELECT payload, from_newest FROM ('
             ' SELECT payload, message_id, ROW_NUMBER() OVER ('
-            '   ORDER BY received_at_us DESC, id DESC) - 1 AS from_newest'
+            '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) - 1 '
+            '   AS from_newest'
             ' FROM channel_message_rows'
             ' WHERE node_scope = ? AND channel_id_key = ?'
             ') WHERE message_id = ?',
@@ -460,39 +465,34 @@ class ChannelMessageStore {
   }
 
   /// Watched newest message per channel identity — one query feeds the
-  /// chats screen's subtitles and ordering (SQL decides "latest").
-  /// Newest message per channel plus WHEN IT ARRIVED. The arrival stamp must
-  /// travel with the message: the chats screen sorts conversations by it,
-  /// and sorting tiles by the message's claimed timestamp instead would undo
-  /// arrival ordering at the last step — a chat that just received a message
-  /// could sort below one whose older message merely claims a newer time.
-  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+  /// chats screen's subtitles and ordering (SQL decides "latest"). Newest
+  /// in the order the chat shows, with [sortUs], that message's shown time
+  /// in microseconds: the chats screen sorts conversations by it, so the
+  /// tiles and the chats agree.
+  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
       watchLatestPerChannel() {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT m.channel_id_key AS k, m.payload AS p, '
-          'latest.mx AS arrival '
-          'FROM channel_message_rows m '
-          'INNER JOIN (SELECT channel_id_key, MAX(received_at_us) AS mx '
-          'FROM channel_message_rows WHERE node_scope = ?1 '
-          'GROUP BY channel_id_key) latest '
-          'ON m.channel_id_key = latest.channel_id_key '
-          'AND m.received_at_us = latest.mx '
-          'WHERE m.node_scope = ?1 GROUP BY m.channel_id_key',
+          'SELECT k, p, t FROM ('
+          ' SELECT channel_id_key AS k, payload AS p, timestamp_ms AS t, '
+          '  ROW_NUMBER() OVER (PARTITION BY channel_id_key '
+          '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) AS rn '
+          ' FROM channel_message_rows WHERE node_scope = ?1'
+          ') WHERE rn = 1',
           variables: [Variable.withString(publicKeyHex)],
           readsFrom: {_db.channelMessageRows},
         )
         .watch()
         .map((rows) {
-          final latest = <String, ({ChannelMessage message, int arrivalUs})>{};
+          final latest = <String, ({ChannelMessage message, int sortUs})>{};
           for (final row in rows) {
             try {
               latest[row.read<String>('k')] = (
                 message: _messageFromJson(
                   jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
                 ),
-                arrivalUs: row.read<int>('arrival'),
+                sortUs: row.read<int>('t') * 1000,
               );
             } catch (_) {}
           }
@@ -607,6 +607,37 @@ class ChannelMessageStore {
         )
         .watchSingle()
         .map((row) => row.read<int>('c'));
+  }
+
+  /// The unread message that stands highest in the chat: the one the
+  /// New-messages line sits above. Unread goes by the read mark (arrival);
+  /// its place by the order the chat shows.
+  Future<ChannelMessage?> oldestUnread(String idKey) async {
+    if (publicKeyHex.isEmpty) return null;
+    final row = await _db
+        .customSelect(
+          'SELECT m.payload AS p FROM channel_message_rows m '
+          'WHERE m.node_scope = ?1 AND m.channel_id_key = ?2 '
+          'AND m.unread_eligible = 1 '
+          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
+          'FROM channel_read_marks WHERE node_scope = ?1 AND id_key = ?2), 0) '
+          'ORDER BY m.timestamp_ms ASC, m.received_at_us ASC, m.id ASC '
+          'LIMIT 1',
+          variables: [
+            Variable.withString(publicKeyHex),
+            Variable.withString(idKey),
+          ],
+          readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
+        )
+        .getSingleOrNull();
+    if (row == null) return null;
+    try {
+      return _messageFromJson(
+        jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Watched unread counts for every channel identity under this node —
@@ -768,6 +799,7 @@ class ChannelMessageStore {
                     r.channelIdKey.equals(idKey),
               )
               ..orderBy([
+                (r) => OrderingTerm.asc(r.timestampMs),
                 (r) => OrderingTerm.asc(r.receivedAtUs),
                 (r) => OrderingTerm.asc(r.id),
               ]))
@@ -775,8 +807,8 @@ class ChannelMessageStore {
     return _decodeRows(rows);
   }
 
-  /// [loadChannelMessages] cut to the rows that arrived at or after
-  /// [since]: the tail of it, in the same order (idx_channel_arrival).
+  /// The rows that arrived at or after [since], in arrival order
+  /// (idx_channel_arrival): a window by arrival, for the reaction replay.
   Future<List<ChannelMessage>> loadChannelMessagesArrivedSince(
     String idKey,
     DateTime since,
@@ -848,6 +880,7 @@ class ChannelMessageStore {
                     const CustomExpression<bool>(possiblePinRowSql),
               )
               ..orderBy([
+                (r) => OrderingTerm.asc(r.timestampMs),
                 (r) => OrderingTerm.asc(r.receivedAtUs),
                 (r) => OrderingTerm.asc(r.id),
               ]))

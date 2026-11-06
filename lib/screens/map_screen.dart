@@ -2060,7 +2060,7 @@ class _MapScreenState extends State<MapScreen> {
       if (channel.isEmpty) continue;
       final sortKey = connector.latestChannelMessage(channel) == null
           ? 0
-          : connector.latestChannelArrivalUs(channel);
+          : connector.latestChannelSortUs(channel);
       chats.add((sortKey, _ShareTarget.channel(channel)));
     }
     chats.sort((a, b) => b.$1.compareTo(a.$1));

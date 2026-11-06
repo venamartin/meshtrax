@@ -236,56 +236,67 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   String? _flashedMessageId;
   Timer? _flashTimer;
 
+  int _subscribeGeneration = 0;
+
   void _subscribeMessages(MeshCoreConnector connector) {
     _messagesSub?.cancel();
-    _messagesSub = connector
-        .watchChannelMessages(widget.channel, limit: _watchLimit)
-        .listen((messages) {
-      if (!mounted) return;
-      // A jump whose target was outside the watched window waits here for
-      // the grown window to deliver the row.
-      final pendingJump = _pendingJumpId;
-      if (pendingJump != null &&
-          messages.any((m) => m.messageId == pendingJump)) {
-        _pendingJumpId = null;
-        _jumpArriving = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _scrollToMessage(pendingJump);
-        });
-      }
-      setState(() {
-        _messages = messages;
-        if (!_didInitialAnchor) {
-          _didInitialAnchor = true;
-          _previousMessageCount = messages.length;
-          final settings = context.read<AppSettingsService>().settings;
-          final unread = _unreadAtOpen;
-          final mentionTarget = widget.scrollToMessageId;
-          final mentionIdx = mentionTarget == null
-              ? -1
-              : messages.reversed
+    final generation = ++_subscribeGeneration;
+    // The NEW MESSAGES divider marks the unread message standing highest in
+    // the chat: the read mark says what is unread, the shown order where it
+    // stands. Looked up before the rows arrive, so the list can open on it.
+    final anchor = !_didInitialAnchor && _unreadAtOpen > 0
+        ? connector.oldestUnreadChannelMessage(widget.channel)
+        : Future<ChannelMessage?>.value();
+    anchor.then((firstUnread) {
+      if (!mounted || generation != _subscribeGeneration) return;
+      _messagesSub = connector
+          .watchChannelMessages(widget.channel, limit: _watchLimit)
+          .listen((messages) {
+        if (!mounted) return;
+        // A jump whose target was outside the watched window waits here for
+        // the grown window to deliver the row.
+        final pendingJump = _pendingJumpId;
+        if (pendingJump != null &&
+            messages.any((m) => m.messageId == pendingJump)) {
+          _pendingJumpId = null;
+          _jumpArriving = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _scrollToMessage(pendingJump);
+          });
+        }
+        setState(() {
+          _messages = messages;
+          if (!_didInitialAnchor) {
+            _didInitialAnchor = true;
+            _previousMessageCount = messages.length;
+            final settings = context.read<AppSettingsService>().settings;
+            final mentionTarget = widget.scrollToMessageId;
+            final mentionIdx = mentionTarget == null
+                ? -1
+                : messages.reversed
+                      .toList()
+                      .indexWhere((m) => m.messageId == mentionTarget);
+            if (mentionIdx != -1) {
+              _initialScrollIndex = mentionIdx;
+              _anchoredAboveNewest = true;
+              _atBottom.value = false;
+            } else if (firstUnread != null) {
+              // The divider always marks the oldest unread; the setting only
+              // decides whether the list opens scrolled to it.
+              _firstUnreadMessage = firstUnread;
+              if (settings.jumpToOldestUnread) {
+                final msgIdx = messages.reversed
                     .toList()
-                    .indexWhere((m) => m.messageId == mentionTarget);
-          if (mentionIdx != -1) {
-            _initialScrollIndex = mentionIdx;
-            _anchoredAboveNewest = true;
-            _atBottom.value = false;
-          } else if (unread > 0) {
-            // The NEW MESSAGES divider always marks the oldest unread; the
-            // setting only decides whether the list opens scrolled to it.
-            _firstUnreadMessage =
-                _findOldestUnreadChannelAnchor(messages, unread);
-            if (settings.jumpToOldestUnread && _firstUnreadMessage != null) {
-              final msgIdx =
-                  messages.reversed.toList().indexOf(_firstUnreadMessage!);
-              if (msgIdx != -1) {
-                _initialScrollIndex = msgIdx;
-                _anchoredAboveNewest = true;
-                _atBottom.value = false;
+                    .indexWhere((m) => m.messageId == firstUnread.messageId);
+                if (msgIdx != -1) {
+                  _initialScrollIndex = msgIdx;
+                  _anchoredAboveNewest = true;
+                  _atBottom.value = false;
+                }
               }
             }
           }
-        }
+        });
       });
     });
   }
@@ -367,36 +378,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   void _catchUp() {
     final connector = context.read<MeshCoreConnector>();
     final settingsService = context.read<AppSettingsService>();
-    final anchor = _findOldestUnreadChannelAnchor(
-      _visibleMessages(settingsService),
-      connector.getUnreadCountForChannelIndex(widget.channel.index),
-    );
-    if (anchor != null) {
-      setState(() => _firstUnreadMessage = anchor);
-      if (settingsService.settings.jumpToOldestUnread) {
-        _atBottom.value = false;
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _scrollToMessage(anchor.messageId);
-        });
+    unawaited(() async {
+      final anchor = await connector.oldestUnreadChannelMessage(widget.channel);
+      if (!mounted) return;
+      if (anchor != null) {
+        setState(() => _firstUnreadMessage = anchor);
+        if (settingsService.settings.jumpToOldestUnread) {
+          _atBottom.value = false;
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _scrollToMessage(anchor.messageId);
+          });
+        }
       }
-    }
-    connector.setActiveChannel(widget.channel.index);
-  }
-
-  ChannelMessage? _findOldestUnreadChannelAnchor(
-    List<ChannelMessage> messages,
-    int unreadCount,
-  ) {
-    if (unreadCount <= 0 || messages.isEmpty) return null;
-    var n = 0;
-    ChannelMessage? oldest;
-    for (final m in messages.reversed) {
-      if (m.isOutgoing) continue;
-      n++;
-      oldest = m;
-      if (n >= unreadCount) break;
-    }
-    return oldest;
+      connector.setActiveChannel(widget.channel.index);
+    }());
   }
 
   void _scrollListener() {
