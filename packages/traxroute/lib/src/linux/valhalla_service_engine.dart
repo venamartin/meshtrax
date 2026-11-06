@@ -67,7 +67,9 @@ kill -9 $service 2>/dev/null
     unawaited(_watchdog!.stdout.drain<void>());
     unawaited(_watchdog!.stderr.drain<void>());
     _port = port;
-    for (var i = 0; i < 100; i++) {
+    // Up to 30 s: with a map build reading the same disk, the service took
+    // over 10 s to answer on the Pi.
+    for (var i = 0; i < 300; i++) {
       try {
         await _get('/status');
         return;
