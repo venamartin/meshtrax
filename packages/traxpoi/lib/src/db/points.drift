@@ -1,0 +1,27 @@
+import 'points_schema.drift';
+
+metaValue: SELECT value FROM meta WHERE name = :name;
+
+nameCandidates: SELECT n.id, n.place_id, n.feature_id, n.name, n.norm
+  FROM name_search s INNER JOIN name n ON n.id = s.rowid
+  WHERE name_search MATCH :query
+  ORDER BY s.rank
+  LIMIT :limit;
+
+namePrefix: SELECT id, place_id, feature_id, name, norm FROM name
+  WHERE norm LIKE :prefix
+  LIMIT :limit;
+
+placesIn: SELECT p.** FROM place_area a INNER JOIN place p ON p.id = a.id
+  WHERE a.min_lat <= :north AND a.max_lat >= :south
+    AND a.min_lon <= :east AND a.max_lon >= :west
+  ORDER BY p."rank" DESC
+  LIMIT :limit;
+
+placeById: SELECT * FROM place WHERE id = :id;
+
+featureById: SELECT * FROM feature WHERE id = :id;
+
+wikiFor: SELECT * FROM wiki WHERE place_id = :id;
+
+photoFor: SELECT * FROM photo WHERE place_id = :id;

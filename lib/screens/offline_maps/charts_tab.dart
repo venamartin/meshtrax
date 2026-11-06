@@ -83,7 +83,10 @@ class ChartsTab extends StatelessWidget {
                     Card.outlined(
                       margin: EdgeInsets.zero,
                       child: PackRow(
-                        entry: entry,
+                        id: entry.id,
+                        bytes: entry.bytes,
+                        status: maps.statusOf(entry),
+                        installedAt: maps.installedAtOf(entry.id),
                         ticked: selected.contains(area.packRegion),
                         onTicked: (on) => toggle(area.packRegion, on),
                         title: Text(area.name),
@@ -256,7 +259,10 @@ class _Coast extends StatelessWidget {
         for (final area in listed)
           if (entries[area.packRegion] case final entry?)
             PackRow(
-              entry: entry,
+              id: entry.id,
+              bytes: entry.bytes,
+              status: maps.statusOf(entry),
+              installedAt: maps.installedAtOf(entry.id),
               ticked: selected.contains(area.packRegion),
               onTicked: (on) => onToggle(area.packRegion, on),
               title: Text(area.name),

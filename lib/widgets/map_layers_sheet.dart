@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
+import '../services/poi_service.dart';
 import 'app_map.dart';
 
 /// Opens the map layers sheet, laid out like Google Maps': which map, its
@@ -14,22 +15,34 @@ import 'app_map.dart';
 /// Offline maps.
 ///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
+/// [places]: the map draws Points of interest, so it offers their switch.
 Future<void> showMapLayersSheet(
   BuildContext context, {
   WidgetBuilder? extra,
   VoidCallback? onMoreFilters,
+  bool places = false,
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  builder: (_) => MapLayersSheet(extra: extra, onMoreFilters: onMoreFilters),
+  builder: (_) => MapLayersSheet(
+    extra: extra,
+    onMoreFilters: onMoreFilters,
+    places: places,
+  ),
 );
 
 class MapLayersSheet extends StatelessWidget {
   final WidgetBuilder? extra;
   final VoidCallback? onMoreFilters;
+  final bool places;
 
-  const MapLayersSheet({super.key, this.extra, this.onMoreFilters});
+  const MapLayersSheet({
+    super.key,
+    this.extra,
+    this.onMoreFilters,
+    this.places = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +52,9 @@ class MapLayersSheet extends StatelessWidget {
     final settings = settingsService.settings;
     final current = MapType.parse(settings.mapType) ?? MapType.osm;
     final dark = settings.mapTheme == 'dark';
-    final contours = settings.mapContours;
-    final hillShading = settings.mapHillShading;
     final downloadedAreas = settings.mapDownloadedAreas;
+    final hasPlaces =
+        context.watch<PoiService?>()?.installedRegions.isNotEmpty ?? false;
 
     void openOfflineMaps({OfflineMapsTab? tab}) => Navigator.of(context)
       ..pop()
@@ -67,6 +80,23 @@ class MapLayersSheet extends StatelessWidget {
       );
     }
 
+    // A detail with nothing downloaded anywhere is dimmed, like a map type,
+    // and opens Offline maps; its setting is kept for when it is downloaded.
+    Widget detailTile(
+      String picture,
+      String label, {
+      required bool on,
+      required bool available,
+      required ValueChanged<bool> set,
+    }) => MapLayerTile(
+      picture: _picture(picture),
+      label: label,
+      note: available ? null : l10n.mapLayers_notDownloaded,
+      selected: available && on,
+      enabled: available,
+      onTap: available ? () => set(!on) : () => openOfflineMaps(),
+    );
+
     final badge = maps.badgeCount;
     return SafeArea(
       child: SingleChildScrollView(
@@ -91,18 +121,35 @@ class MapLayersSheet extends StatelessWidget {
             MapLayerSection(
               title: l10n.mapLayers_details,
               children: [
-                MapLayerTile(
-                  picture: _picture('contours'),
-                  label: l10n.mapLayers_contours,
-                  selected: contours,
-                  onTap: () => settingsService.setMapContours(!contours),
+                detailTile(
+                  'contours',
+                  l10n.mapLayers_contours,
+                  on: settings.mapContours,
+                  available: maps.hasKind(PackKind.contours),
+                  set: settingsService.setMapContours,
                 ),
-                MapLayerTile(
-                  picture: _picture('hill_shading'),
-                  label: l10n.mapLayers_hillShading,
-                  selected: hillShading,
-                  onTap: () => settingsService.setMapHillShading(!hillShading),
+                detailTile(
+                  'hill_shading',
+                  l10n.mapLayers_hillShading,
+                  on: settings.mapHillShading,
+                  available: maps.hasKind(PackKind.terrain),
+                  set: settingsService.setMapHillShading,
                 ),
+                detailTile(
+                  'parks',
+                  l10n.mapLayers_parks,
+                  on: settings.mapParks,
+                  available: maps.hasKind(PackKind.osm),
+                  set: settingsService.setMapParks,
+                ),
+                if (places)
+                  detailTile(
+                    'places',
+                    l10n.mapLayers_places,
+                    on: settings.mapPlaces,
+                    available: hasPlaces,
+                    set: settingsService.setMapPlaces,
+                  ),
                 MapLayerTile(
                   picture: _picture('dark'),
                   label: l10n.mapLayers_dark,

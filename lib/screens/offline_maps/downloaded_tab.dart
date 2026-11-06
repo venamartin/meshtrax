@@ -6,6 +6,8 @@ import 'package:traxmap/traxmap.dart';
 import '../../helpers/date_time_helper.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/poi_service.dart';
+import '../../services/routing_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 
@@ -26,6 +28,8 @@ class DownloadedTab extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
+    final routing = context.watch<RoutingService?>();
+    final poi = context.watch<PoiService?>();
     final active = maps.activeDownloads;
     final updates = maps.updates;
 
@@ -43,9 +47,21 @@ class DownloadedTab extends StatelessWidget {
         other.add(pack);
       }
     }
+    // Routing and points of interest count with their region's maps.
+    for (final path in {
+      ...?routing?.installedRegions,
+      ...?poi?.installedRegions,
+    }) {
+      byRegion[path] ??= [];
+    }
+    final storage =
+        maps.installedBytes +
+        (routing?.totalBytes ?? 0) +
+        (poi?.totalBytes ?? 0);
     // Chart areas get their own section. Only paths holding nothing but
     // charts: a card's Delete removes everything on its path.
     bool chartsOnly(String path) =>
+        byRegion[path]!.isNotEmpty &&
         byRegion[path]!.every((p) => p.kind == PackKind.charts);
     int byName(String a, String b) => _regionName(
       maps,
@@ -69,11 +85,11 @@ class DownloadedTab extends StatelessWidget {
         );
 
     final children = <Widget>[
-      if (maps.installed.isEmpty && active.isEmpty)
+      if (byRegion.isEmpty && other.isEmpty && active.isEmpty)
         _Empty(onFindMaps: onFindMaps)
       else ...[
         Text(
-          l10n.offlineMaps_storageUsed(formatBytes(maps.installedBytes)),
+          l10n.offlineMaps_storageUsed(formatBytes(storage)),
           style: theme.textTheme.titleMedium,
         ),
         if (updates.isNotEmpty) ...[
@@ -247,7 +263,7 @@ class _Empty extends StatelessWidget {
   }
 }
 
-/// A pack being downloaded: region and pack, progress, and controls.
+/// A download in progress: region and what it is, progress, and controls.
 class _DownloadRow extends StatelessWidget {
   final PackDownload download;
   const _DownloadRow({required this.download});
@@ -257,26 +273,32 @@ class _DownloadRow extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.read<MapPacksService>();
-    final entry = download.entry;
-    final region = entry.region;
+    final item = download.item;
+    final region = item.region;
     // "Massachusetts · NOAA charts", or the pack's own name ("… (NOAA
     // charts)") alone when its chart area isn't known.
     final title =
-        entry.kind == PackKind.charts &&
+        item is PackIndexEntry &&
+            item.kind == PackKind.charts &&
             (region == null || maps.chartAreas?.byPackRegion(region) == null)
-        ? entry.name
-        : '${region == null ? entry.name : _regionName(maps, region)}'
-              ' · ${entryLabel(l10n, entry)}';
+        ? item.name
+        : '${region == null ? item.name : _regionName(maps, region)}'
+              ' · ${itemLabel(l10n, item)}';
     final state = download.state;
     final failed = state == PackDownloadState.failed;
+    // Checking the file, or (routing and places) installing it.
+    final installing =
+        state == PackDownloadState.verifying ||
+        state == PackDownloadState.downloaded;
     final status = switch (state) {
       PackDownloadState.queued => l10n.offlineMaps_waiting,
       PackDownloadState.waitingToRetry => l10n.offlineMaps_retrying,
-      PackDownloadState.verifying => l10n.offlineMaps_checking,
+      PackDownloadState.verifying ||
+      PackDownloadState.downloaded => l10n.offlineMaps_checking,
       PackDownloadState.failed => l10n.offlineMaps_failed(download.error ?? ''),
       _ => l10n.offlineMaps_bytesProgress(
         formatBytes(download.bytesDone),
-        formatBytes(entry.bytes),
+        formatBytes(item.bytes),
       ),
     };
     return Padding(
@@ -313,19 +335,19 @@ class _DownloadRow extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.pause),
                   tooltip: l10n.offlineMaps_pause,
-                  onPressed: () => maps.pause(entry.id),
+                  onPressed: () => maps.pause(item.id),
                 ),
               if (state == PackDownloadState.paused || failed)
                 IconButton(
                   icon: Icon(failed ? Icons.refresh : Icons.play_arrow),
                   tooltip: failed ? l10n.common_retry : l10n.offlineMaps_resume,
-                  onPressed: () => maps.resume(entry.id),
+                  onPressed: () => maps.resume(item.id),
                 ),
-              if (state != PackDownloadState.verifying)
+              if (!installing)
                 IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: failed ? l10n.common_remove : l10n.common_cancel,
-                  onPressed: () => maps.cancel(entry.id),
+                  onPressed: () => maps.cancel(item.id),
                 ),
             ],
           ),
@@ -380,11 +402,34 @@ class _RegionRow extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
-    final bytes = packs.fold(0, (sum, p) => sum + maps.sizeOf(p));
+    final routing = context.watch<RoutingService?>();
+    final poi = context.watch<PoiService?>();
+    final hasRouting = routing?.isInstalled(path) ?? false;
+    final poiFiles = [
+      for (final w in PoiDownload.values)
+        if (poi?.isInstalled(path, w) ?? false) w,
+    ];
+    final bytes =
+        packs.fold(0, (sum, p) => sum + maps.sizeOf(p)) +
+        (hasRouting ? routing!.sizeOf(path) : 0) +
+        (poi?.sizeOf(path) ?? 0);
     final updates = [
       for (final e in maps.packsForRegion(path))
         if (maps.statusOf(e) == PackStatus.updateAvailable) e,
     ];
+    final routingUpdate = routing?.updateAvailable(path) ?? false;
+    final poiUpdates = {
+      for (final w in poiFiles)
+        if (poi!.updateAvailable(path, w)) w,
+    };
+    final hasUpdate =
+        updates.isNotEmpty || routingUpdate || poiUpdates.isNotEmpty;
+    void update() {
+      if (updates.isNotEmpty) maps.download(updates);
+      if (routingUpdate) routing!.download({path});
+      if (poiUpdates.isNotEmpty) poi!.download(path, poiUpdates);
+    }
+
     final dates = [for (final p in packs) ?maps.installedAt(p)]..sort();
     final details =
         [
@@ -396,7 +441,13 @@ class _RegionRow extends StatelessWidget {
                           .compareTo(_kindOrder.indexOf(b.kind)),
                     ))
                     .map((p) => installedLabel(l10n, p)),
-              if (updates.isNotEmpty)
+              if (hasRouting) l10n.offlineMaps_kindRouting,
+              for (final w in poiFiles)
+                switch (w) {
+                  PoiDownload.points => l10n.offlineMaps_kindPoi,
+                  PoiDownload.addresses => l10n.offlineMaps_kindAddresses,
+                },
+              if (hasUpdate)
                 l10n.offlineMaps_updateAvailable
               else if (dates.isNotEmpty)
                 DateFormat.MMMd(DateTimeHelper.localeOf(context))
@@ -414,11 +465,8 @@ class _RegionRow extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (updates.isNotEmpty)
-            TextButton(
-              onPressed: () => maps.download(updates),
-              child: Text(l10n.offlineMaps_update),
-            ),
+          if (hasUpdate)
+            TextButton(onPressed: update, child: Text(l10n.offlineMaps_update)),
           Text(formatBytes(bytes), style: sizeStyle),
           IconButton(
             icon: const Icon(Icons.delete_outline),

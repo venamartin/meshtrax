@@ -1,0 +1,148 @@
+import 'route.dart';
+
+/// Valhalla's costing and options for each path type: the app defaults
+/// MeshTrax and traxmapmaker agreed (FINDINGS §9), changed by the user's
+/// [options]. At their defaults the options add nothing.
+///
+/// Dirt weighs distance 0.8 against time, so a dirt road that saves real
+/// distance beats a faster paved way round, but a crawl over sand tracks to
+/// save a little doesn't (Martin, 2026-11-04). It searches every road, up to
+/// [valhallaConfig]'s limit: Valhalla otherwise skips minor roads far from
+/// both ends, and Berdoo Canyon Road with them.
+(String, Map<String, Object>) valhallaCosting(
+  PathType type, [
+  RouteOptions options = const RouteOptions(),
+]) {
+  final avoids = {
+    if (options.avoidHighways) 'use_highways': 0.0,
+    if (options.avoidTolls) 'use_tolls': 0.0,
+    if (options.avoidFerries) 'use_ferry': 0.0,
+  };
+  return switch (type) {
+    PathType.paved => ('auto', {'exclude_unpaved': true, ...avoids}),
+    PathType.dirt => (
+      'auto',
+      {
+        'use_tracks': 1.0,
+        'use_distance': switch (options.dirt) {
+          DirtPreference.fastest => 0.0,
+          DirtPreference.balanced => 0.8,
+          DirtPreference.direct => 1.0,
+        },
+        'disable_hierarchy_pruning': true,
+        ...avoids,
+      },
+    ),
+    PathType.hiking => (
+      'pedestrian',
+      {
+        'use_hills': switch (options.climbs) {
+          ClimbPreference.avoid => 0.0,
+          ClimbPreference.some => 0.5,
+          ClimbPreference.any => 1.0,
+        },
+        'use_tracks': 1.0,
+        'max_hiking_difficulty': options.hardestTrail,
+        'destination_only_penalty': 0,
+        'use_ferry': 0.0,
+        // Valhalla's own pace, 5.1 km/h, is Normal.
+        ...switch (options.pace) {
+          HikingPace.slow => {'walking_speed': 4.0},
+          HikingPace.normal => const <String, Object>{},
+          HikingPace.fast => {'walking_speed': 6.0},
+        },
+      },
+    ),
+  };
+}
+
+/// The `/route` request for [request].
+Map<String, Object> valhallaRouteRequest(RouteRequest request) {
+  final (costing, options) = valhallaCosting(request.pathType, request.options);
+  return {
+    'locations': [
+      for (final p in request.points) {'lat': p.lat, 'lon': p.lon},
+    ],
+    'costing': costing,
+    'costing_options': {costing: options},
+    'elevation_interval': 30,
+    'directions_options': {'units': 'kilometers', 'language': request.language},
+  };
+}
+
+/// The route from Valhalla's `/route` answer. Throws [RouteError] for an
+/// error answer.
+RouteResult parseValhallaRoute(
+  RouteRequest request,
+  Map<String, dynamic> json,
+) {
+  final trip = json['trip'] as Map<String, dynamic>?;
+  if (trip == null) {
+    throw RouteError(
+      json['error'] as String? ?? json['status'] as String? ?? 'No route',
+    );
+  }
+  final points = <LatLon>[];
+  final heights = <double>[];
+  final maneuvers = <Maneuver>[];
+  var interval = 30.0;
+  for (final leg in (trip['legs'] as List).cast<Map<String, dynamic>>()) {
+    final offset = points.isEmpty ? 0 : points.length - 1;
+    final shape = decodePolyline6(leg['shape'] as String);
+    points.addAll(points.isEmpty ? shape : shape.skip(1));
+    heights.addAll(
+      ((leg['elevation'] as List?) ?? const []).cast<num>().map(
+        (h) => h.toDouble(),
+      ),
+    );
+    interval = (leg['elevation_interval'] as num?)?.toDouble() ?? interval;
+    for (final m in (leg['maneuvers'] as List).cast<Map<String, dynamic>>()) {
+      maneuvers.add(
+        Maneuver(
+          m['instruction'] as String,
+          (m['length'] as num).toDouble(),
+          (m['time'] as num).toDouble(),
+          offset + (m['begin_shape_index'] as int),
+        ),
+      );
+    }
+  }
+  final summary = trip['summary'] as Map<String, dynamic>;
+  // Where its tiles have no heights (a region built without elevation),
+  // Valhalla answers about −500 m; the lowest land, the Dead Sea's shore,
+  // is −430 m. The heights are evenly spaced, so one such gap spoils them
+  // all: the route has none.
+  final elevations = heights.any((h) => h < -490) ? const <double>[] : heights;
+  return RouteResult(
+    pathType: request.pathType,
+    points: points,
+    elevations: elevations,
+    elevationIntervalM: interval,
+    km: (summary['length'] as num).toDouble(),
+    seconds: (summary['time'] as num).toDouble(),
+    maneuvers: maneuvers,
+    kmShortOfDestination: kmBetween(points.last, request.destination),
+  );
+}
+
+/// Valhalla's shapes: Google's encoded polyline with 6 decimals.
+List<LatLon> decodePolyline6(String encoded) {
+  final out = <LatLon>[];
+  var index = 0, lat = 0, lon = 0;
+  int next() {
+    var result = 0, shift = 0, b = 0;
+    do {
+      b = encoded.codeUnitAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
+  }
+
+  while (index < encoded.length) {
+    lat += next();
+    lon += next();
+    out.add((lat: lat / 1e6, lon: lon / 1e6));
+  }
+  return out;
+}

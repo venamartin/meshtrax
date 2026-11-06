@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxcoords/traxcoords.dart';
 import 'package:traxmap/traxmap.dart';
+import 'package:traxroute/traxroute.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -22,12 +24,15 @@ import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:meshtrax/services/routing_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/map_legend_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import 'package:meshtrax/widgets/room_login_dialog.dart';
+import 'package:meshtrax/widgets/route_panel.dart';
 
 import '../helpers/map_fakes.dart';
 
@@ -132,13 +137,57 @@ class _NoDownloads implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {}
+  Future<void> start(DownloadItem item) async {}
   @override
   Future<void> pause(String packId) async {}
   @override
   Future<void> resume(String packId) async {}
   @override
   Future<void> cancel(String packId) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async {}
+}
+
+/// Routing data on hand, and a straight line for every route.
+class _Routing extends RoutingService {
+  _Routing(
+    MapPacksService maps, {
+    this.elevations = const [10, 12],
+    this.hasData = true,
+  }) : super(
+         maps: maps,
+         store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
+         engine: null,
+       );
+
+  final requests = <(PathType, RouteOptions)>[];
+  final List<double> elevations;
+  final bool hasData;
+
+  @override
+  bool get available => true;
+  @override
+  bool get hasRoutingData => hasData;
+  @override
+  Future<RouteResult> route(
+    LatLon from,
+    LatLon to,
+    PathType type, {
+    RouteOptions options = const RouteOptions(),
+    String language = 'en-US',
+  }) async {
+    requests.add((type, options));
+    return RouteResult(
+      pathType: type,
+      points: [from, to],
+      elevations: elevations,
+      elevationIntervalM: 30,
+      km: 1.1,
+      seconds: 900,
+      maneuvers: const [],
+      kmShortOfDestination: 0,
+    );
+  }
 }
 
 Contact _node(String name, int type, int seed, double lat, double lon) =>
@@ -178,6 +227,7 @@ void main() {
     WidgetTester tester,
     MeshCoreConnector connector, {
     Widget screen = const MapScreen(),
+    RoutingService? routing,
   }) async {
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -189,11 +239,15 @@ void main() {
           ChangeNotifierProvider(
             create: (_) =>
                 AppSettingsService()
+                  ..setMapShowRepeaters(true)
+                  ..setMapShowOtherNodes(true)
+                  ..setMapShowMarkers(true)
                   ..setMapShowGuessedLocations(guessedLocationsOn),
           ),
           ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           ChangeNotifierProvider.value(value: PathGraphService()),
+          if (routing != null) ChangeNotifierProvider.value(value: routing),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -287,8 +341,160 @@ void main() {
 
       expect(radio.adds, [room.publicKeyHex]);
       expect(find.text(refused), findsNothing);
-      expect(find.text(joinRoom), findsNothing, reason: 'the node dialog closed');
+      expect(
+        find.text(joinRoom),
+        findsNothing,
+        reason: 'the node dialog closed',
+      );
       expect(find.byType(RoomLoginDialog), findsOneWidget);
+    });
+  });
+
+  // On a phone the layers button straddled the route panel's top edge and
+  // covered its X, the only way to close the route.
+  group('a route', () {
+    late _Routing routing;
+
+    Future<void> showRoute(
+      WidgetTester tester, {
+      List<double> heights = const [10, 12],
+    }) async {
+      routing = _Routing(maps, elevations: heights);
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: routing,
+      );
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+        const LatLng(41.8, -71.4),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Route here'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(RoutePanel), findsOneWidget);
+    }
+
+    testWidgets('without heights, says so instead of a climb', (tester) async {
+      await showRoute(tester, heights: const []);
+      expect(find.textContaining('↑'), findsNothing);
+      expect(
+        find.text('No heights for this area, so the time leaves out climbs.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Paved'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('No heights for this area.'), findsOneWidget);
+    });
+
+    testWidgets('keeps the map buttons clear of its X', (tester) async {
+      await showRoute(tester);
+
+      final close = tester.getRect(find.byTooltip('Clear route'));
+      final layers = tester.getRect(find.byTooltip('Map layers'));
+      expect(layers.overlaps(close), isFalse);
+      expect(
+        tester.getRect(find.byType(MapControls)).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(RoutePanel)).top),
+      );
+    });
+
+    testWidgets('options re-route, are remembered, and reset', (tester) async {
+      Future<void> tap(String text) async {
+        await tester.tap(find.text(text));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      await showRoute(tester);
+      await tap('Dirt');
+      await tester.tap(find.byTooltip('Route options'));
+      await tester.pump();
+      expect(find.text('Reset'), findsNothing);
+
+      await tap('Most direct');
+      expect(routing.requests.last.$1, PathType.dirt);
+      expect(routing.requests.last.$2.dirt, DirtPreference.direct);
+      expect(find.text('Reset'), findsOneWidget);
+      final later = AppSettingsService();
+      await later.loadSettings();
+      expect(later.settings.routeOptions.dirt, DirtPreference.direct);
+
+      await tap('Reset');
+      expect(routing.requests.last.$2.dirt, DirtPreference.balanced);
+      expect(find.text('Reset'), findsNothing);
+    });
+
+    testWidgets('the long-press sheet says what is set already', (
+      tester,
+    ) async {
+      Future<void> longPress(LatLng at) async {
+        tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(at);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      Future<void> choose(String text) async {
+        await tester.tap(find.text(text));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      routing = _Routing(maps);
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: routing,
+      );
+      await longPress(const LatLng(41.7, -71.3));
+      expect(find.textContaining('now:'), findsNothing);
+      await choose('Route from here');
+
+      await longPress(const LatLng(41.8, -71.4));
+      expect(find.textContaining('Start now: 41.7'), findsOneWidget);
+      expect(find.textContaining('Destination now:'), findsNothing);
+      await choose('Route here');
+      expect(routing.requests, hasLength(1));
+
+      await longPress(const LatLng(41.9, -71.5));
+      expect(find.textContaining('Start now: 41.7'), findsOneWidget);
+      expect(find.textContaining('Destination now: 41.8'), findsOneWidget);
+    });
+
+    // "Route here" would only say to download routing that isn't offered.
+    testWidgets('is not offered with no routing data on the device or in '
+        'the catalogue', (tester) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: _Routing(maps, hasData: false),
+      );
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+        const LatLng(41.8, -71.4),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Route here'), findsNothing);
+      expect(find.text('Route from here'), findsNothing);
+    });
+
+    testWidgets('closes on back, and back then leaves the map', (tester) async {
+      await showRoute(tester);
+
+      // The panel slides away.
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(RoutePanel), findsNothing);
+      expect(find.byType(MapScreen), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(MapScreen), findsNothing);
     });
   });
 
@@ -320,56 +526,57 @@ void main() {
     expect(find.byType(QuickSwitchBar), findsOneWidget);
   });
 
-  testWidgets('guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not', (
-    tester,
-  ) async {
-    Contact target(int seed, int routeHop) => Contact(
-      publicKey: Uint8List.fromList(List.filled(32, seed)),
-      name: 'T$seed',
-      type: advTypeChat,
-      pathLength: 1,
-      path: Uint8List.fromList([routeHop]),
-      pathHashSize: 1,
-      lastSeen: DateTime.now(),
-      inboundPath: Uint8List.fromList(const [0x01]),
-      inboundHopCount: 1,
-      inboundPathHashSize: 1,
-    );
-    final near = target(0x10, 0x02);
-    final across = target(0x11, 0x03);
-    final tooFar = target(0x12, 0x04);
-    await pumpMap(
-      tester,
-      _RadioConnector(
-        nodes: [
-          _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
-          _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
-          _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
-          _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
-          near,
-          across,
-          tooFar,
-        ],
-      ),
-    );
-    await tester
-        .element(find.byType(AppMap))
-        .read<AppSettingsService>()
-        .setMapShowGuessedLocations(true);
-    await tester.pump();
+  testWidgets(
+    'guesses use the radio\'s range: 912 km apart is a guess, 1,750 km is not',
+    (tester) async {
+      Contact target(int seed, int routeHop) => Contact(
+        publicKey: Uint8List.fromList(List.filled(32, seed)),
+        name: 'T$seed',
+        type: advTypeChat,
+        pathLength: 1,
+        path: Uint8List.fromList([routeHop]),
+        pathHashSize: 1,
+        lastSeen: DateTime.now(),
+        inboundPath: Uint8List.fromList(const [0x01]),
+        inboundHopCount: 1,
+        inboundPathHashSize: 1,
+      );
+      final near = target(0x10, 0x02);
+      final across = target(0x11, 0x03);
+      final tooFar = target(0x12, 0x04);
+      await pumpMap(
+        tester,
+        _RadioConnector(
+          nodes: [
+            _node('A', advTypeRepeater, 0x01, 37.3, -122.0),
+            _node('B', advTypeRepeater, 0x02, 37.5, -122.2),
+            _node('Portland', advTypeRepeater, 0x03, 45.5, -122.7),
+            _node('Rapid City', advTypeRepeater, 0x04, 44.1, -103.2),
+            near,
+            across,
+            tooFar,
+          ],
+        ),
+      );
+      await tester
+          .element(find.byType(AppMap))
+          .read<AppSettingsService>()
+          .setMapShowGuessedLocations(true);
+      await tester.pump();
 
-    final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
-    expect(guess.position.latitude, closeTo(37.4, 0.01));
-    expect(guess.position.longitude, closeTo(-122.1, 0.01));
-    expect(
-      overlays(tester).map((o) => o.id),
-      contains('guess:${across.publicKeyHex}'),
-    );
-    expect(
-      overlays(tester).map((o) => o.id),
-      isNot(contains('guess:${tooFar.publicKeyHex}')),
-    );
-  });
+      final guess = overlay<MapMarker>(tester, 'guess:${near.publicKeyHex}');
+      expect(guess.position.latitude, closeTo(37.4, 0.01));
+      expect(guess.position.longitude, closeTo(-122.1, 0.01));
+      expect(
+        overlays(tester).map((o) => o.id),
+        contains('guess:${across.publicKeyHex}'),
+      );
+      expect(
+        overlays(tester).map((o) => o.id),
+        isNot(contains('guess:${tooFar.publicKeyHex}')),
+      );
+    },
+  );
 
   group('guessed pins', () {
     setUp(() => guessedLocationsOn = true);
@@ -530,28 +737,29 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('a route the app wrote is no anchor, as soon as it is written', (
-      tester,
-    ) async {
-      final routed = Contact(
-        publicKey: Uint8List.fromList(List.filled(32, 0x13)),
-        name: 'Routed',
-        type: advTypeChat,
-        pathLength: 1,
-        path: Uint8List.fromList(const [0x01]),
-        pathHashSize: 1,
-        lastSeen: DateTime.now(),
-      );
-      final connector = _RadioConnector(nodes: [anchor, routed]);
-      await pumpMap(tester, connector);
-      expect(ids(tester), contains(guessId(routed)));
+    testWidgets(
+      'a route the app wrote is no anchor, as soon as it is written',
+      (tester) async {
+        final routed = Contact(
+          publicKey: Uint8List.fromList(List.filled(32, 0x13)),
+          name: 'Routed',
+          type: advTypeChat,
+          pathLength: 1,
+          path: Uint8List.fromList(const [0x01]),
+          pathHashSize: 1,
+          lastSeen: DateTime.now(),
+        );
+        final connector = _RadioConnector(nodes: [anchor, routed]);
+        await pumpMap(tester, connector);
+        expect(ids(tester), contains(guessId(routed)));
 
-      connector.written.add(routed.publicKeyHex);
-      connector.replaceNode(1, routed);
-      await tester.pump(const Duration(milliseconds: 200));
+        connector.written.add(routed.publicKeyHex);
+        connector.replaceNode(1, routed);
+        await tester.pump(const Duration(milliseconds: 200));
 
-      expect(ids(tester), isNot(contains(guessId(routed))));
-    });
+        expect(ids(tester), isNot(contains(guessId(routed))));
+      },
+    );
 
     testWidgets('a return trace carries the estimate too', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
@@ -704,8 +912,9 @@ void main() {
     expect(find.text('Standard'), findsOneWidget);
     expect(
       find.text('Not downloaded'),
-      findsNWidgets(2),
-      reason: 'USGS and charts: no packs',
+      findsNWidgets(6),
+      reason: 'USGS, charts, contours, hill shading, parks and places: '
+          'nothing downloaded',
     );
     expect(find.text('Nodes'), findsOneWidget);
 
@@ -713,18 +922,31 @@ void main() {
     await tester.pump();
     expect(settings.settings.mapTheme, 'dark');
 
-    await tester.tap(find.text('Contours'));
-    await tester.pump();
-    expect(settings.settings.mapContours, isFalse);
-    await tester.tap(find.text('Hill shading'));
-    await tester.pump();
-    expect(settings.settings.mapHillShading, isFalse);
     await tester.tap(find.text('Downloaded areas'));
     await tester.pump();
     expect(settings.settings.mapDownloadedAreas, isFalse);
     await tester.tap(find.text('Repeaters'));
     await tester.pump();
     expect(settings.settings.mapShowRepeaters, isFalse);
+  });
+
+  testWidgets('a layer with nothing downloaded opens Offline maps', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    final settings = tester
+        .element(find.byType(MapScreen))
+        .read<AppSettingsService>();
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('Parks'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(OfflineMapsScreen), findsOneWidget);
+    expect(settings.settings.mapParks, isTrue, reason: 'kept for later');
   });
 
   testWidgets('the layers Charts tile, not downloaded, opens the Charts tab', (

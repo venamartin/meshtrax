@@ -9,12 +9,14 @@ import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxmap/traxmap.dart';
+import 'package:traxroute/traxroute.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
+import 'package:meshtrax/services/routing_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/app_map.dart';
@@ -41,13 +43,15 @@ class _Downloads implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {}
+  Future<void> start(DownloadItem item) async {}
   @override
   Future<void> pause(String packId) async {}
   @override
   Future<void> resume(String packId) async {}
   @override
   Future<void> cancel(String packId) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 void main() {
@@ -85,6 +89,7 @@ void main() {
     LatLng center = const LatLng(41.8, -71.4),
     double zoom = 10,
     double controlsWidth = 0,
+    RoutingService? routing,
   }) async {
     tester.view.physicalSize = const Size(600, 600);
     tester.view.devicePixelRatio = 1;
@@ -97,6 +102,8 @@ void main() {
           ),
           ChangeNotifierProvider<AppSettingsService>.value(value: settings),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
+          if (routing != null)
+            ChangeNotifierProvider<RoutingService>.value(value: routing),
         ],
         child: MaterialApp(
           theme: ThemeData(brightness: brightness ?? Brightness.light),
@@ -388,6 +395,52 @@ void main() {
     expect(opensAt(), 13, reason: 'Providence, in the Rhode Island download');
   });
 
+  testWidgets("the routing data's credits join the map's, each source once", (
+    tester,
+  ) async {
+    late RoutingService routing;
+    await tester.runAsync(() async {
+      await maps.manager.root.create(recursive: true);
+      File('${maps.manager.root.path}/us-rhode-island-osm.pmtiles')
+          .writeAsBytesSync(
+            fakePmTiles(
+              metadata: {
+                'kind': 'osm',
+                'region': _ri,
+                'attribution': '© OpenMapTiles © OpenStreetMap contributors',
+              },
+            ),
+          );
+      await maps.reloadInstalled();
+      // Rhode Island's routing data: its credits need no tiles.
+      final bundle = File('${tmp.path}/ri.tar.gz')
+        ..writeAsBytesSync(gzip.encode(List.filled(1024, 0)));
+      await RoutingStore(Directory('${tmp.path}/routing')).install('b1', {
+        _ri: (
+          bundle,
+          RoutingBundle(
+            Uri(),
+            0,
+            0,
+            'x',
+            attribution: '© OpenStreetMap contributors; USGS 3DEP',
+            notice: 'Not liable.',
+          ),
+        ),
+      });
+      routing = await RoutingService.create(maps);
+    });
+    await pumpMap(tester, routing: routing);
+    expect(
+      tester.widget<AttributionChip>(find.byType(AttributionChip)).credits,
+      [
+        '© OpenMapTiles © OpenStreetMap contributors',
+        'USGS 3DEP',
+        'Not liable.',
+      ],
+    );
+  });
+
   testWidgets('the map is light, even in a dark app, unless set dark', (
     tester,
   ) async {
@@ -399,5 +452,26 @@ void main() {
     await settings.setMapTheme('dark');
     await tester.pump();
     expect(styleId(), 'osm-dark');
+  });
+
+  testWidgets('the park hints are credited while the street map draws parks', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      File('${tmp.path}/hints.json').writeAsStringSync(
+        '{"schema_version": 1, "parks": {"attribution": ["ESA WorldCover"]}}',
+      );
+      await maps.start();
+    });
+    await pumpMap(tester);
+    expect(find.textContaining('ESA WorldCover'), findsOneWidget);
+
+    await settings.setMapParks(false);
+    await tester.pump();
+    expect(find.textContaining('ESA WorldCover'), findsNothing);
+
+    await settings.setMapParks(true);
+    await tester.pump();
+    expect(find.textContaining('ESA WorldCover'), findsOneWidget);
   });
 }

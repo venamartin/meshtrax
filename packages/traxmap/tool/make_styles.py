@@ -21,13 +21,48 @@ SOURCES = {
     "contours": {"type": "vector", "url": "pmtiles://{pack:contours}", "attribution": "USGS 3DEP"},
 }
 ROADS = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service"]
+MAJOR_ROADS = ["motorway", "trunk", "primary", "secondary"]
 # Real trails only. OSM class=path also holds sidewalks (footway), cycleways,
-# steps and pedestrian areas; only these subclasses are trails.
+# steps and pedestrian areas; only these subclasses are trails. An unpaved
+# footway is a trail too: Santa Cruz Island's Pelican Bay Trail is one, and
+# sidewalks are paved or untagged (Martin, 2026-11-05).
 TRAIL = ["all", ["==", ["get", "class"], "path"],
-         ["match", ["get", "subclass"], ["path", "bridleway"], True, False]]
-# OSM parks at sea (sanctuaries, marine reserves) would outline the ocean.
-NOT_MARINE = ["!", ["match", ["get", "class"], ["national_marine_sanctuary", "state_marine_conservation_area",
-              "state_marine_reserve", "state_marine_park", "marine_protected_area"], True, False]]
+         ["any", ["match", ["get", "subclass"], ["path", "bridleway"], True, False],
+          ["all", ["==", ["get", "subclass"], "footway"], ["==", ["get", "surface"], "unpaved"]]]]
+# The trail names. transportation_name carries no surface, so every named
+# footway takes the trail label; road-label leaves these to it.
+TRAIL_NAME = ["all", ["==", ["get", "class"], "path"],
+              ["match", ["get", "subclass"], ["path", "bridleway", "footway"], True, False]]
+# Route shields, by the first route's network: Interstates, US routes and
+# state routes (Martin, 2026-11-05: the big highways were hard to pick out).
+# Express lanes and other networks get none.
+SHIELD_KIND = ["match", ["get", "route_1_network"], "US:I", "interstate", "US:US", "us",
+               ["case", ["==", ["get", "network"], "us-state"], "state", ""]]
+SHIELD = ["all", ["has", "route_1_ref"], ["!=", SHIELD_KIND, ""],
+          ["<=", ["length", ["get", "route_1_ref"]], 3]]
+# Parks (docs/technical/park-maps.md): national parks, monuments, preserves,
+# seashores and the other park kinds below get a tint, an outline and their
+# name; wilderness and national forests a thin outline; other protected land
+# (BLM, study areas, refuges, state forests) nothing. Desert parks are tan:
+# their names come from the map hints (MapHints, filled in as
+# {list:desert-parks}); the rest are green. The Parks switch drops the
+# "parks" group.
+PARK_CLASSES = [
+    "national_park", "national_monument", "national_preserve", "state_park",
+    # Martin, 2026-11-04: Point Reyes and Point Lobos had no outline.
+    "national_seashore", "national_lakeshore", "national_recreation_area",
+    "national_historical_park", "national_scenic_area",
+    "state_beach", "state_historic_park", "state_recreation_area", "state_natural_reserve",
+    "state_reserve", "state_vehicular_recreation_area",
+    "provincial_park", "parque_nacional",
+]
+PARKS = ["any", ["match", ["get", "class"], PARK_CLASSES, True, False],
+         # Parks the packs class as something else, from the map hints.
+         ["match", ["get", "name"], ["{list:extra-parks}"], True, False]]
+OUTLINED = ["match", ["get", "class"], ["wilderness_area", "national_forest"], True, False]
+DESERT = ["match", ["get", "name"], ["{list:desert-parks}"], True, False]
+AREA, CENTER = ["==", ["geometry-type"], "Polygon"], ["==", ["geometry-type"], "Point"]
+PARK_GROUP = {"ovm:group": "parks"}
 
 # Park and trail features drawn as icons (tool/make_sprites.py poi-*), by the
 # poi layer's class; trail route markers stay unmarked (dozens per park).
@@ -40,8 +75,33 @@ POI_ICON = ["match", ["get", "class"],
             ""]
 # Gates, phones and signs only from z16; the rest from z15.
 POI_MINOR = ["match", ["get", "class"], ["gate", "telephone", "information"], True, False]
+# Classes an app's own place icons cover: with StyleContext.appPlaces their
+# icon goes and the name stays (MeshTrax's Points of interest download).
+APP_PLACES = ["campsite", "picnic_site", "shelter", "toilets", "drinking_water", "attraction"]
 
 def O(id, type, sl, **kw): return {"id": id, "type": type, "source": "osm", "source-layer": sl, **kw}
+
+def cased(width, low, high):
+    """[width] (an interpolate from zoom 8 to 16 over per-class matches) and
+    its casing on both sides: [low] px in all up to zoom 10, where a full
+    casing would turn a city's grid grey, and [high] from zoom 11.
+    Exponential interpolation is exact between its own stops, so the road
+    part is [width] at every zoom."""
+    base, (z0, m0, z1, m1) = width[1][1], width[3:]
+
+    def value(m, cls):
+        for i in range(2, len(m) - 1, 2):
+            if cls == m[i] or (isinstance(m[i], list) and cls in m[i]):
+                return m[i + 1]
+        return m[-1]
+
+    def stop(z, extra):
+        def w(cls):
+            a, b = value(m0, cls), value(m1, cls)
+            return round(a + (b - a) * (base ** (z - z0) - 1) / (base ** (z1 - z0) - 1) + extra, 3)
+        return ["match", ["get", "class"], *[x for c in ROADS[:-1] for x in (c, w(c))], w(ROADS[-1])]
+
+    return [*width[:3], 8, stop(8, low), 10, stop(10, low), 11, stop(11, high), 16, stop(16, high)]
 
 def units_twins(layer, metric_field):
     imp = {**layer, "metadata": {"ovm:units": "imperial"}}
@@ -54,7 +114,8 @@ def style(name, P, note):
                   "secondary", P["secondary"], "tertiary", P["tertiary"], P["minor"]]
     w = P["road_scale"]
     road_width = ["interpolate", ["exponential", 1.6], ["zoom"],
-        8, ["match", ["get", "class"], ["motorway", "trunk"], 1.2 * w, "primary", 0.8 * w, 0.3 * w],
+        8, ["match", ["get", "class"], ["motorway", "trunk"], 1.2 * w, "primary", 0.8 * w, "secondary", 0.6 * w,
+            0.3 * w],
         16, ["match", ["get", "class"], ["motorway", "trunk"], 12 * w, ["primary", "secondary"], 9 * w,
              "tertiary", 7 * w, "minor", 5 * w, 3 * w]]
     halo = {"text-color": P["label"], "text-halo-color": P["halo"], "text-halo-width": 1.5}
@@ -75,8 +136,8 @@ def style(name, P, note):
             "residential", P["residential"], ["commercial", "retail", "industrial"], P["commercial"],
             "cemetery", P["grass"], ["school", "college", "university", "hospital"], P["civic"], P["residential"]],
             "fill-opacity": P["landuse_op"]}),
-        O("park", "fill", "park", filter=NOT_MARINE,
-          paint={"fill-color": P["park"], "fill-opacity": P["park_op"]}),
+        O("park", "fill", "park", filter=["all", AREA, PARKS], metadata=PARK_GROUP,
+          paint={"fill-color": ["case", DESERT, P["park_desert"], P["park"]], "fill-opacity": P["park_op"]}),
         {"id": "hillshade", "type": "fill", "source": "terrain", "source-layer": "hillshade",
          "paint": {"fill-color": ["case", ["<", ["get", "level"], 0], P["highlight"], shadow],
                    "fill-opacity": ["match", ["get", "level"], -1, P["hl_op"],
@@ -90,17 +151,30 @@ def style(name, P, note):
          "paint": {"line-color": ["case", ["==", ["get", "idx"], 1], P["contour_idx"], P["contour"]],
                    "line-opacity": P["contour_op"],
                    "line-width": ["case", ["==", ["get", "idx"], 1], P["contour_w"][1], P["contour_w"][0]]}},
-        O("park-outline", "line", "park", minzoom=9, filter=NOT_MARINE,
-          paint={"line-color": P["park_line"], "line-width": P["park_line_w"], "line-opacity": 0.8,
+        # From zoom 11: zoomed out, wilderness edges run beside the roads (the
+        # road corridors are left out) and read as roads (Death Valley).
+        O("park-outline-minor", "line", "park", minzoom=11, filter=["all", AREA, OUTLINED], metadata=PARK_GROUP,
+          paint={"line-color": P["park_minor_line"], "line-width": 0.8, "line-opacity": 0.7,
                  "line-dasharray": [3, 2]}),
+        O("park-outline", "line", "park", filter=["all", AREA, PARKS], metadata=PARK_GROUP,
+          paint={"line-color": ["case", DESERT, P["park_desert_line"], P["park_line"]],
+                 "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 12, 1.6, 16, 2.2], "line-opacity": 0.9}),
         O("aeroway", "line", "aeroway", filter=["match", ["get", "class"], ["runway", "taxiway"], True, False],
           paint={"line-color": P["aeroway"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 14]}),
         O("building", "fill", "building", minzoom=13, paint={"fill-color": P["building"],
             "fill-outline-color": P["building_line"], "fill-opacity": P["building_op"]}),
-        O("road-casing", "line", "transportation", minzoom=11,
-          filter=["match", ["get", "class"], ROADS, True, False],
+        # The casing is a wider line under the road, not line-gap-width: the
+        # renderer gives each gap-width feature its own offscreen layer (2,619
+        # in one zoom 12 tile of downtown LA, profiled on a phone, PR #210),
+        # and the road covers the gap anyway.
+        # Major roads are cased from zoom 8, so they still read over park tints
+        # and hill shading zoomed out (Martin, 2026-11-05: Death Valley's roads
+        # vanished at zooms 9-10); the rest from zoom 11.
+        O("road-casing", "line", "transportation", minzoom=8,
+          filter=["all", ["match", ["get", "class"], ROADS, True, False],
+                  ["any", ["match", ["get", "class"], MAJOR_ROADS, True, False], [">=", ["zoom"], 11]]],
           layout={"line-cap": "round", "line-join": "round"},
-          paint={"line-color": P["casing"], "line-gap-width": road_width, "line-width": P["casing_w"]}),
+          paint={"line-color": P["casing"], "line-width": cased(road_width, P["casing_w"], 2 * P["casing_w"])}),
         O("road", "line", "transportation", filter=["match", ["get", "class"], ROADS, True, False],
           layout={"line-cap": "round", "line-join": "round"},
           paint={"line-color": road_color, "line-width": road_width}),
@@ -127,19 +201,32 @@ def style(name, P, note):
         O("waterway-name", "symbol", "waterway", minzoom=13,
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ""], "text-font": ITA, "text-size": 10},
           paint={"text-color": P["water_label"], "text-halo-color": P["halo"], "text-halo-width": 1}),
-        O("road-label", "symbol", "transportation_name", minzoom=12,
+        O("road-label", "symbol", "transportation_name", minzoom=12, filter=["!", TRAIL_NAME],
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ["get", "ref"]],
                   "text-font": REG, "text-size": 11}, paint=halo),
-        O("trail-label", "symbol", "transportation_name", minzoom=13,
-          filter=["all", ["==", ["get", "class"], "path"], ["!=", ["get", "subclass"], "footway"]],
+        O("trail-label", "symbol", "transportation_name", minzoom=13, filter=TRAIL_NAME,
           layout={"symbol-placement": "line", "text-field": ["coalesce", ["get", "name"], ""], "text-font": ITA, "text-size": 11},
           paint={"text-color": P["trail"], "text-halo-color": P["halo"], "text-halo-width": 1.5}),
+        # Upright on the road, in its sign; Interstates first, then US and
+        # state routes. Shield names: tool/make_sprites.py.
+        O("road-shield", "symbol", "transportation_name", minzoom=7,
+          filter=["all", SHIELD, ["any", ["==", SHIELD_KIND, "interstate"], [">=", ["zoom"], 9]]],
+          layout={"symbol-placement": "line", "symbol-spacing": 220,
+                  "symbol-sort-key": ["match", SHIELD_KIND, "interstate", 0, "us", 1, 2],
+                  "icon-image": ["concat", "shield-", SHIELD_KIND,
+                                 ["case", [">", ["length", ["get", "route_1_ref"]], 2], "-3", "-2"]],
+                  "icon-rotation-alignment": "viewport",
+                  "text-field": ["get", "route_1_ref"], "text-font": ["Noto Sans Bold"], "text-size": 9,
+                  "text-rotation-alignment": "viewport",
+                  "text-offset": ["match", SHIELD_KIND, "interstate", ["literal", [0, 0.25]], ["literal", [0, 0]]]},
+          paint={"text-color": ["match", SHIELD_KIND, "interstate", "#ffffff", "#222222"]}),
         *[O(id_, "symbol", "poi", minzoom=z, filter=["all", ["!=", POI_ICON, ""], tier],
             layout={"icon-image": POI_ICON, "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 0.85, 17, 1],
                     "symbol-sort-key": ["get", "rank"],
                     "text-field": ["coalesce", ["get", "name"], ""], "text-font": REG, "text-size": 10,
                     "text-max-width": 8, "text-anchor": "top", "text-offset": [0, 0.9], "text-optional": True},
-            paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5})
+            paint={"text-color": P["poi_label"], "text-halo-color": P["halo"], "text-halo-width": 1.5},
+            **({"metadata": {"ovm:appPlaces": APP_PLACES}} if id_ == "poi-icon" else {}))
           for id_, z, tier in [("poi-icon", 15, ["!", POI_MINOR]), ("poi-icon-minor", 16, POI_MINOR)]],
         O("poi", "symbol", "poi", minzoom=P["poi_minzoom"],
           filter=["all", ["<=", ["get", "rank"], P["poi_rank"]], ["==", POI_ICON, ""]],
@@ -151,6 +238,12 @@ def style(name, P, note):
                                "icon-image": "peak"},
                        paint={"text-color": P["peak"], "text-halo-color": P["halo"], "text-halo-width": 1.5}),
                      peak("ele", " m")),
+        O("park-label", "symbol", "park", minzoom=6, maxzoom=13, filter=["all", CENTER, PARKS], metadata=PARK_GROUP,
+          layout={"text-field": ["get", "name"], "text-font": ["Noto Sans Bold"],
+                  "text-size": ["interpolate", ["linear"], ["zoom"], 6, 11, 10, 14],
+                  "text-max-width": 11, "text-letter-spacing": 0.02, "symbol-sort-key": ["get", "rank"]},
+          paint={"text-color": ["case", DESERT, P["park_desert_label"], P["park_label"]],
+                 "text-halo-color": P["halo"], "text-halo-width": 1.5}),
         O("place", "symbol", "place", filter=["match", ["get", "class"], ["city", "town", "village", "hamlet", "suburb"], True, False],
           layout={"text-field": ["get", "name"], "text-font": MED,
                   "text-size": ["match", ["get", "class"], "city", 17, "town", 15, "village", 12.5, 11],
@@ -162,13 +255,14 @@ def style(name, P, note):
             "glyphs": "{glyphs}", "sources": SOURCES, "layers": L}
 
 BASE = dict(cover_op=0.85, landuse_op=0.7, park_op=0.35, hl_op=0.2, road_scale=1.0, casing_w=0.8,
-            contour_w=[0.45, 1.0], contour_op=0.75, park_line_w=1, building_op=1, trail_halo_op=0,
+            contour_w=[0.45, 1.0], contour_op=0.75, building_op=1, trail_halo_op=0,
             trail_w=[0.9, 2.4], poi_minzoom=15, poi_rank=20, peak_minzoom=10, place_case="none", place_spacing=0)
 
 DARK = {**BASE,
     "bg": "#1c2026", "wood": "#1f2b24", "grass": "#222a24", "farm": "#23262a", "wetland": "#1e2a2c",
     "sand": "#2b2a26", "rock": "#26282c", "ice": "#2c3238", "residential": "#23272d", "commercial": "#2a272d",
-    "civic": "#29282a", "park": "#203024", "park_op": 0.6, "park_line": "#3f6b4a",
+    "civic": "#29282a", "park": "#2b4530", "park_desert": "#4a3d2a", "park_op": 0.47, "park_line": "#5f9a64",
+    "park_desert_line": "#a8865a", "park_label": "#9ccf94", "park_desert_label": "#d6b483", "park_minor_line": "#3f6b4a",
     "shade": "#000000", "shade_op": [0.12, 0.22, 0.32, 0.42], "highlight": "#ffffff", "hl_op": 0.05,
     "water": "#13283a", "waterway": "#2b5578", "contour": "#5b4e40", "contour_idx": "#7c6a55", "contour_op": 0.8,
     "aeroway": "#3a3f48", "building": "#2c3138", "building_line": "#363c44",
@@ -180,7 +274,9 @@ DARK = {**BASE,
 MODERN = {**BASE,
     "bg": "#f6f4f0", "wood": "#d9ead0", "grass": "#e4efdb", "farm": "#f2f0e6", "wetland": "#d8ebe6",
     "sand": "#f5ecd5", "rock": "#e9e6e1", "ice": "#f7fafc", "residential": "#efebe6", "commercial": "#f3e9e6",
-    "civic": "#f2ecdf", "park": "#cfe8c4", "park_op": 0.5, "park_line": "#a9d19a", "cover_op": 0.75,
+    "civic": "#f2ecdf", "park": "#b5d99c", "park_desert": "#e6cf9f", "park_op": 0.37, "park_line": "#6aa457",
+    "park_desert_line": "#b98c4e", "park_label": "#3f7d34", "park_desert_label": "#8b5e2b",
+    "park_minor_line": "#9cc28c", "cover_op": 0.75,
     "shade": "#2b3a4a", "shade_op": [0.06, 0.1, 0.13, 0.16], "highlight": "#ffffff", "hl_op": 0.25,
     "water": "#a9d4f5", "waterway": "#8cc3ee", "contour": "#d9c9b6", "contour_idx": "#c4ae96", "contour_op": 0.9,
     "contour_w": [0.4, 0.8], "aeroway": "#dcdbe6", "building": "#e8e3dc", "building_line": "#d8d1c8",
@@ -194,7 +290,9 @@ MODERN = {**BASE,
 OUTDOOR = {**BASE,
     "bg": "#f3efe4", "wood": "#bfd9a8", "grass": "#d9e8c2", "farm": "#efe9d2", "wetland": "#c9e2d6",
     "sand": "#f0e2bd", "rock": "#ddd6cb", "ice": "#f2f7fa", "residential": "#ebe5dc", "commercial": "#ece0dc",
-    "civic": "#ece3cf", "park": "#b8dca0", "park_op": 0.3, "park_line": "#3f8a3a", "park_line_w": 2,
+    "civic": "#ece3cf", "park": "#b8dca0", "park_desert": "#e6cf9f", "park_op": 0.3, "park_line": "#3f8a3a",
+    "park_desert_line": "#b98c4e", "park_label": "#3f7d34", "park_desert_label": "#8b5e2b",
+    "park_minor_line": "#7fb070",
     "cover_op": 0.9, "landuse_op": 0.5,
     "shade": "#2a2016", "shade_op": [0.08, 0.16, 0.25, 0.35], "highlight": "#fffbe8", "hl_op": 0.3,
     "water": "#93c4e8", "waterway": "#4f95cf", "contour": "#a87a50", "contour_idx": "#8a5a30", "contour_op": 0.85,

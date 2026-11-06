@@ -8,6 +8,8 @@ import '../../helpers/snack_bar_builder.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/poi_service.dart';
+import '../../services/routing_service.dart';
 import '../../utils/format_bytes.dart';
 
 /// What a pack is, in the user's words: "Map", "Contours 20 ft", "Hill
@@ -54,6 +56,17 @@ String installedLabel(AppLocalizations l10n, Pack pack) => packLabel(
 
 String entryLabel(AppLocalizations l10n, PackIndexEntry e) =>
     packLabel(l10n, e.kind, interval: e.interval, intervalUnit: e.intervalUnit);
+
+/// What a download is, pack or not: "Map", "Trail routing", "Addresses".
+String itemLabel(AppLocalizations l10n, DownloadItem item) => switch (item) {
+  final PackIndexEntry e => entryLabel(l10n, e),
+  DownloadFile(kind: RoutingService.downloadKind) =>
+    l10n.offlineMaps_kindRouting,
+  DownloadFile(kind: PoiService.pointsKind) => l10n.offlineMaps_kindPoi,
+  DownloadFile(kind: PoiService.addressesKind) =>
+    l10n.offlineMaps_kindAddresses,
+  _ => item.name,
+};
 
 /// The mockup's download-size bands: tints of the primary colour, and
 /// orange from 1 GB, where a region is worth splitting.
@@ -130,7 +143,12 @@ Future<void> confirmDeleteRegion(
     ),
   );
   if (ok != true) return;
+  if (!context.mounted) return;
+  final routing = context.read<RoutingService?>();
+  final poi = context.read<PoiService?>();
   await maps.deleteRegion(path);
+  await routing?.remove(path);
+  await poi?.remove(path);
   if (context.mounted) {
     showDismissibleSnackBar(
       context,
@@ -139,10 +157,16 @@ Future<void> confirmDeleteRegion(
   }
 }
 
-/// A pack: tick box (or its state), [title], one-line [detail] or progress,
-/// and size; plus pause / resume / cancel / retry while it downloads.
+/// A pack, or a region's routing or places file: tick box (or its state),
+/// [title], one-line [detail] or progress, and size; plus pause / resume /
+/// cancel / retry while it downloads. [id] is the download's.
 class PackRow extends StatelessWidget {
-  final PackIndexEntry entry;
+  final String id;
+  final int bytes;
+  final PackStatus status;
+
+  /// When it was downloaded, for an installed pack.
+  final DateTime? installedAt;
   final bool ticked;
   final ValueChanged<bool> onTicked;
   final Widget title;
@@ -153,7 +177,10 @@ class PackRow extends StatelessWidget {
 
   const PackRow({
     super.key,
-    required this.entry,
+    required this.id,
+    required this.bytes,
+    required this.status,
+    this.installedAt,
     required this.ticked,
     required this.onTicked,
     required this.title,
@@ -165,8 +192,7 @@ class PackRow extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
-    final status = maps.statusOf(entry);
-    final download = maps.downloadOf(entry.id);
+    final download = maps.downloadOf(id);
 
     final Widget leading = switch (status) {
       PackStatus.available => Checkbox(
@@ -191,8 +217,7 @@ class PackRow extends StatelessWidget {
       ),
     };
 
-    final installed = maps.installedPack(entry.id);
-    final installedAt = installed == null ? null : maps.installedAt(installed);
+    final installedAt = this.installedAt;
     final String? subtitle = switch (status) {
       PackStatus.available => detail,
       PackStatus.queued => l10n.offlineMaps_waiting,
@@ -200,7 +225,7 @@ class PackRow extends StatelessWidget {
       PackStatus.verifying => l10n.offlineMaps_checking,
       PackStatus.running || PackStatus.paused => l10n.offlineMaps_bytesProgress(
         formatBytes(download?.bytesDone ?? 0),
-        formatBytes(entry.bytes),
+        formatBytes(bytes),
       ),
       PackStatus.failed => l10n.offlineMaps_failed(download?.error ?? ''),
       PackStatus.installed =>
@@ -237,7 +262,7 @@ class PackRow extends StatelessWidget {
                         ? TextStyle(color: theme.colorScheme.error)
                         : null,
                   ),
-            trailing: Text(formatBytes(entry.bytes), style: sizeStyle),
+            trailing: Text(formatBytes(bytes), style: sizeStyle),
             onTap: status == PackStatus.available
                 ? () => onTicked(!ticked)
                 : null,
@@ -262,7 +287,7 @@ class PackRow extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.pause),
                       tooltip: l10n.offlineMaps_pause,
-                      onPressed: () => maps.pause(entry.id),
+                      onPressed: () => maps.pause(id),
                     ),
                   if (status == PackStatus.paused ||
                       status == PackStatus.failed)
@@ -275,7 +300,7 @@ class PackRow extends StatelessWidget {
                       tooltip: status == PackStatus.failed
                           ? l10n.common_retry
                           : l10n.offlineMaps_resume,
-                      onPressed: () => maps.resume(entry.id),
+                      onPressed: () => maps.resume(id),
                     ),
                   if ((active && status != PackStatus.verifying) ||
                       status == PackStatus.failed)
@@ -284,7 +309,7 @@ class PackRow extends StatelessWidget {
                       tooltip: status == PackStatus.failed
                           ? l10n.common_remove
                           : l10n.common_cancel,
-                      onPressed: () => maps.cancel(entry.id),
+                      onPressed: () => maps.cancel(id),
                     ),
                 ],
               ),

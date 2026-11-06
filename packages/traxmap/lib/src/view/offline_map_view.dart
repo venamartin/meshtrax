@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/widgets.dart';
 
 import '../packs/attribution.dart';
@@ -76,8 +77,8 @@ class OfflineMapView extends StatefulWidget {
 
   final ValueChanged<MapCamera>? onCameraChanged;
 
-  /// Taps and long-presses on the map itself (not on an overlay that
-  /// handles them).
+  /// Taps and long-presses (or right-clicks) on the map itself, not on an
+  /// overlay that handles them.
   final ValueChanged<LatLng>? onTap;
   final ValueChanged<LatLng>? onLongPress;
 
@@ -90,6 +91,16 @@ class OfflineMapView extends StatefulWidget {
 
   /// Units for labels (contour heights, soundings, peaks).
   final Units units;
+
+  /// The app draws its own points of interest here: the style drops its
+  /// icons for them (see [StyleContext.appPlaces]).
+  final bool appPlaces;
+
+  /// Style layer groups to leave out (see [StyleContext.hiddenGroups]).
+  final Set<String> hiddenGroups;
+
+  /// Named lists for the style's placeholders (see [StyleContext.lists]).
+  final Map<String, List<String>> lists;
 
   /// Device pixels per logical pixel for map tile bitmaps; null picks
   /// twice the screen density (capped at 4) so lines stay sharp between
@@ -115,6 +126,9 @@ class OfflineMapView extends StatefulWidget {
     this.onStyleLoaded,
     this.styleRegistry,
     this.units = Units.imperial,
+    this.appPlaces = false,
+    this.hiddenGroups = const {},
+    this.lists = const {},
     this.tileResolution,
   });
 
@@ -149,10 +163,21 @@ class _OfflineMapViewState extends State<OfflineMapView> {
     super.didUpdateWidget(old);
     if (old.styleId != widget.styleId ||
         !_samePacks(old.packs, widget.packs) ||
-        old.units != widget.units) {
+        old.units != widget.units ||
+        old.appPlaces != widget.appPlaces ||
+        !setEquals(old.hiddenGroups, widget.hiddenGroups) ||
+        !_sameLists(old.lists, widget.lists)) {
       _loadStyle();
     }
   }
+
+  /// Lists compare by identity, so apps may rebuild the map around them.
+  static bool _sameLists(
+    Map<String, List<String>> a,
+    Map<String, List<String>> b,
+  ) =>
+      a.length == b.length &&
+      a.entries.every((e) => identical(b[e.key], e.value));
 
   /// Packs compare by identity on disk, so apps may rebuild the list freely.
   static bool _samePacks(List<Pack> a, List<Pack> b) {
@@ -177,6 +202,9 @@ class _OfflineMapViewState extends State<OfflineMapView> {
         packs: packsByKind,
         units: widget.units,
         sprite: bundledSprites,
+        appPlaces: widget.appPlaces,
+        hiddenGroups: widget.hiddenGroups,
+        lists: widget.lists,
       );
       final style = await _registry.load(id, context);
       if (!mounted || id != widget.styleId) return;

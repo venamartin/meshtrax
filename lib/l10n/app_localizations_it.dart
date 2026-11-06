@@ -4879,6 +4879,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get mapLayers_hillShading => 'Ombreggiatura del rilievo';
 
   @override
+  String get mapLayers_places => 'Luoghi';
+
+  @override
+  String get mapLayers_parks => 'Parchi';
+
+  @override
   String get mapLayers_dark => 'Mappa scura';
 
   @override
@@ -5665,6 +5671,51 @@ class AppLocalizationsIt extends AppLocalizations {
   String get parkLegend_guidepost => 'Palo segnaletico';
 
   @override
+  String get roadLegend_title => 'Strade, sentieri e linee';
+
+  @override
+  String get roadLegend_freeway => 'Autostrada';
+
+  @override
+  String get roadLegend_majorRoad => 'Superstrada o strada principale';
+
+  @override
+  String get roadLegend_road => 'Strada';
+
+  @override
+  String get roadLegend_track => 'Strada sterrata o carrareccia';
+
+  @override
+  String get roadLegend_trail => 'Sentiero';
+
+  @override
+  String get roadLegend_interstate => 'Autostrada interstatale';
+
+  @override
+  String get roadLegend_usRoute => 'Strada federale USA';
+
+  @override
+  String get roadLegend_stateRoute => 'Strada statale';
+
+  @override
+  String get roadLegend_railway => 'Ferrovia';
+
+  @override
+  String get roadLegend_stream => 'Fiume o torrente';
+
+  @override
+  String get roadLegend_contour => 'Curva di livello';
+
+  @override
+  String get roadLegend_park => 'Confine del parco';
+
+  @override
+  String get roadLegend_wilderness => 'Area wilderness o foresta nazionale';
+
+  @override
+  String get roadLegend_boundary => 'Confine statale o di contea';
+
+  @override
   String get dialog_noticeExpires => 'Scade';
 
   @override
@@ -5814,6 +5865,437 @@ class AppLocalizationsIt extends AppLocalizations {
   String get pathfinder_graphCreate => 'Crea';
 
   @override
+  String get route_pathPaved => 'Asfalto';
+
+  @override
+  String get route_pathDirt => 'Sterrato';
+
+  @override
+  String get route_pathHiking => 'A piedi';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Verso $destination';
+  }
+
+  @override
+  String get route_clear => 'Cancella itinerario';
+
+  @override
+  String get route_finding => 'Calcolo dell\'itinerario…';
+
+  @override
+  String get route_none => 'Nessun itinerario trovato';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Termina $distance prima di $destination, dove finisce l\'asfalto.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Termina $distance prima di $destination, dove finisce la strada.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Termina $distance prima di $destination, dove finiscono i sentieri.';
+  }
+
+  @override
+  String get route_directions => 'Indicazioni';
+
+  @override
+  String get route_here => 'Itinerario fino a qui';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Destinazione attuale: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Partenza attuale: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Partenza attuale: la tua posizione';
+
+  @override
+  String get route_noHeights => 'Nessun dato altimetrico per quest\'area.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Nessun dato altimetrico per quest\'area: il tempo non tiene conto delle salite.';
+
+  @override
+  String get route_options => 'Opzioni itinerario';
+
+  @override
+  String get route_optionsReset => 'Ripristina';
+
+  @override
+  String get route_prefer => 'Preferisci';
+
+  @override
+  String get route_dirtFastest => 'Più veloce';
+
+  @override
+  String get route_dirtBalanced => 'Bilanciato';
+
+  @override
+  String get route_dirtDirect => 'Più diretto';
+
+  @override
+  String get route_dirtFastestHelp =>
+      'Strade sterrate solo dove sono più rapide.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'Una strada sterrata, se accorcia davvero il tragitto.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'La via più breve, per quanto lenti siano gli sterrati.';
+
+  @override
+  String get route_avoid => 'Evita';
+
+  @override
+  String get route_avoidHighways => 'Autostrade';
+
+  @override
+  String get route_avoidTolls => 'Pedaggi';
+
+  @override
+  String get route_avoidFerries => 'Traghetti';
+
+  @override
+  String get route_hardestTrail => 'Difficoltà massima';
+
+  @override
+  String get route_trailT1 => 'T1 Escursione';
+
+  @override
+  String get route_trailT2 => 'T2 Escursione di montagna';
+
+  @override
+  String get route_trailT3 => 'T3 Escursione di montagna impegnativa';
+
+  @override
+  String get route_trailT4 => 'T4 Itinerario alpino';
+
+  @override
+  String get route_trailT5 => 'T5 Itinerario alpino impegnativo';
+
+  @override
+  String get route_trailT6 => 'T6 Itinerario alpino difficile';
+
+  @override
+  String get route_climbs => 'Salite';
+
+  @override
+  String get route_climbsAvoid => 'Evita';
+
+  @override
+  String get route_climbsSome => 'Alcune';
+
+  @override
+  String get route_climbsAny => 'Non importa';
+
+  @override
+  String get route_pace => 'Andatura';
+
+  @override
+  String get route_paceSlow => 'Lenta';
+
+  @override
+  String get route_paceNormal => 'Normale';
+
+  @override
+  String get route_paceFast => 'Veloce';
+
+  @override
+  String get place_nrhp => 'Registro nazionale dei luoghi storici';
+
+  @override
+  String get place_textCredit => 'Testo: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Leggi su Wikipedia';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Foto: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Cerca luoghi, indirizzi o coordinate';
+
+  @override
+  String get search_noPlaces =>
+      'Scarica Punti di interesse per una regione e potrai cercarne i luoghi. Le coordinate funzionano anche senza.';
+
+  @override
+  String get search_noResults => 'Nessun risultato';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Gradi decimali';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Gradi e minuti';
+
+  @override
+  String get coordFormat_dms => 'Gradi, minuti, secondi';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Griglia Maidenhead';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Vetta';
+
+  @override
+  String get poiKind_volcano => 'Vulcano';
+
+  @override
+  String get poiKind_saddle => 'Sella';
+
+  @override
+  String get poiKind_pass => 'Valico';
+
+  @override
+  String get poiKind_spring => 'Sorgente';
+
+  @override
+  String get poiKind_hotSpring => 'Sorgente termale';
+
+  @override
+  String get poiKind_waterfall => 'Cascata';
+
+  @override
+  String get poiKind_cave => 'Grotta';
+
+  @override
+  String get poiKind_arch => 'Arco naturale';
+
+  @override
+  String get poiKind_glacier => 'Ghiacciaio';
+
+  @override
+  String get poiKind_rock => 'Roccia';
+
+  @override
+  String get poiKind_cliff => 'Parete rocciosa';
+
+  @override
+  String get poiKind_beach => 'Spiaggia';
+
+  @override
+  String get poiKind_trailhead => 'Inizio sentiero';
+
+  @override
+  String get poiKind_campground => 'Campeggio';
+
+  @override
+  String get poiKind_picnicSite => 'Area picnic';
+
+  @override
+  String get poiKind_hut => 'Rifugio';
+
+  @override
+  String get poiKind_shelter => 'Riparo';
+
+  @override
+  String get poiKind_drinkingWater => 'Acqua potabile';
+
+  @override
+  String get poiKind_toilets => 'Bagni';
+
+  @override
+  String get poiKind_viewpoint => 'Punto panoramico';
+
+  @override
+  String get poiKind_attraction => 'Attrazione';
+
+  @override
+  String get poiKind_observatory => 'Osservatorio';
+
+  @override
+  String get poiKind_zoo => 'Zoo';
+
+  @override
+  String get poiKind_themePark => 'Parco divertimenti';
+
+  @override
+  String get poiKind_mine => 'Miniera';
+
+  @override
+  String get poiKind_mineShaft => 'Pozzo minerario';
+
+  @override
+  String get poiKind_adit => 'Imbocco di miniera';
+
+  @override
+  String get poiKind_ghostTown => 'Città fantasma';
+
+  @override
+  String get poiKind_ruins => 'Rovine';
+
+  @override
+  String get poiKind_monument => 'Monumento';
+
+  @override
+  String get poiKind_memorial => 'Memoriale';
+
+  @override
+  String get poiKind_fort => 'Forte';
+
+  @override
+  String get poiKind_historic => 'Luogo storico';
+
+  @override
+  String get poiKind_rangerStation => 'Stazione dei ranger';
+
+  @override
+  String get poiKind_visitorCenter => 'Centro visitatori';
+
+  @override
+  String get poiKind_hospital => 'Ospedale';
+
+  @override
+  String get poiKind_police => 'Polizia';
+
+  @override
+  String get poiKind_fireStation => 'Vigili del fuoco';
+
+  @override
+  String get poiKind_emergencyPhone => 'Telefono di emergenza';
+
+  @override
+  String get poiKind_fuel => 'Distributore di carburante';
+
+  @override
+  String get poiKind_restArea => 'Area di sosta';
+
+  @override
+  String get poiKind_travelCenter => 'Area di servizio';
+
+  @override
+  String get poiKind_museum => 'Museo';
+
+  @override
+  String get poiKind_city => 'Città';
+
+  @override
+  String get poiKind_town => 'Paese';
+
+  @override
+  String get poiKind_locality => 'Località';
+
+  @override
+  String get poiKind_lake => 'Lago';
+
+  @override
+  String get poiKind_river => 'Fiume';
+
+  @override
+  String get poiKind_valley => 'Valle';
+
+  @override
+  String get poiKind_range => 'Catena montuosa';
+
+  @override
+  String get poiKind_trail => 'Sentiero';
+
+  @override
+  String get poiKind_dirtRoad => 'Strada sterrata';
+
+  @override
+  String get poiKind_road => 'Strada';
+
+  @override
+  String get poiKind_address => 'Indirizzo';
+
+  @override
+  String get poiKind_place => 'Luogo';
+
+  @override
+  String get offlineMaps_kindRouting => 'Itinerari sui sentieri';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Su sentieri, strade sterrate e asfaltate';
+
+  @override
+  String get offlineMaps_kindPoi => 'Punti di interesse';
+
+  @override
+  String get offlineMaps_kindPoiDetail => 'Luoghi da cercare, con Wikipedia';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Indirizzi';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Indirizzi civici da cercare';
+
+  @override
+  String get map_search => 'Cerca';
+
+  @override
+  String get route_fromHere => 'Itinerario da qui';
+
+  @override
+  String get route_startSet => 'Partenza impostata. Ora scegli dove andare.';
+
+  @override
+  String get route_noStart =>
+      'Nessuna posizione di partenza. Premi a lungo la mappa e scegli Itinerario da qui.';
+
+  @override
+  String get route_noData =>
+      'Per trovare itinerari qui, scarica Itinerari sui sentieri per questa regione in Mappe offline.';
+
+  @override
+  String get route_pin => 'Segnaposto';
+
+  @override
+  String get appSettings_coordinateFormat => 'Formato coordinate';
+
+  @override
+  String get map_copyPosition => 'Copia posizione';
+
+  @override
+  String get poiKind_park => 'Parco';
+
+  @override
+  String get poiKind_protectedArea => 'Area protetta';
+
+  @override
+  String get common_more => 'Mostra altro';
+
+  @override
+  String get common_less => 'Mostra meno';
+
+  @override
   String get locationSharing_title => 'Chi può vedere la mia posizione';
 
   @override
@@ -5893,44 +6375,44 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chats_advertise => 'Annuncia';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Disegno';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Disegna';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Incolla';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Penna';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Linea';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Rettangolo';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Cerchio';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Ellisse';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Freccia';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Annulla';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Didascalia';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Facoltativa, appare sotto l\'immagine';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max byte';
   }
 
   @override
@@ -5938,113 +6420,118 @@ class AppLocalizationsIt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count punti',
+      one: '1 punto',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll =>
+      'Tutti i punti che hai disegnato vengono mantenuti.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Semplificato: scostamento massimo $percent% delle dimensioni del disegno.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Troppo dettagliato per un solo messaggio, anche semplificato. Annulla un tratto o usa le forme, che occupano molto meno spazio.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Disegna con il dito o scegli una forma.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Incolla un file SVG o dati di tracciato come M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Usa questo SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Colori e riempimenti non vengono trasmessi: l\'SVG viene inviato come linee, nel colore della penna di chi lo legge.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty =>
+      'Incolla prima un SVG o dei dati di tracciato.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'È troppo grande o troppo dettagliato per essere letto. Incolla un SVG più piccolo.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Non è un SVG che l\'app riesce a leggere.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'In questo SVG non c\'è nulla di visibile da disegnare.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Copia SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Disegni';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Immagini inviate come SVG e come appaiono qui';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Mostra i disegni';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Se disattivato, mostra invece il codice SVG';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Colore della penna';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Codice colore';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Spessore della linea';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Bagliore';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Linee di scansione';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Itinerario';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Segno a X';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Tocca per aggiungere punti. Tocca di nuovo l\'ultimo per terminare.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Nessuna';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Disegna qui';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Sposta la mappa';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Sposta la mappa e usa lo zoom per inquadrare il luogo, poi tocca Disegna qui.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance di larghezza';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Quest\'area non è scaricata';
 }

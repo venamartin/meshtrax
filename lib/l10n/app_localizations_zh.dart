@@ -4532,6 +4532,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mapLayers_hillShading => '山体阴影';
 
   @override
+  String get mapLayers_places => '地点';
+
+  @override
+  String get mapLayers_parks => '公园';
+
+  @override
   String get mapLayers_dark => '深色地图';
 
   @override
@@ -5277,6 +5283,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get parkLegend_guidepost => '路标';
 
   @override
+  String get roadLegend_title => '道路、步道与其他线条';
+
+  @override
+  String get roadLegend_freeway => '高速公路';
+
+  @override
+  String get roadLegend_majorRoad => '干线公路或主干道';
+
+  @override
+  String get roadLegend_road => '道路';
+
+  @override
+  String get roadLegend_track => '土路或机耕道';
+
+  @override
+  String get roadLegend_trail => '步道';
+
+  @override
+  String get roadLegend_interstate => '州际公路';
+
+  @override
+  String get roadLegend_usRoute => '美国国道';
+
+  @override
+  String get roadLegend_stateRoute => '州道';
+
+  @override
+  String get roadLegend_railway => '铁路';
+
+  @override
+  String get roadLegend_stream => '河流或溪流';
+
+  @override
+  String get roadLegend_contour => '等高线';
+
+  @override
+  String get roadLegend_park => '公园边界';
+
+  @override
+  String get roadLegend_wilderness => '荒野保护区或国家森林';
+
+  @override
+  String get roadLegend_boundary => '州界或县界';
+
+  @override
   String get dialog_noticeExpires => '到期日期';
 
   @override
@@ -5422,6 +5473,429 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinder_graphCreate => '创建';
 
   @override
+  String get route_pathPaved => '铺装路';
+
+  @override
+  String get route_pathDirt => '土路';
+
+  @override
+  String get route_pathHiking => '徒步';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes 分钟';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours 小时 $minutes 分钟';
+  }
+
+  @override
+  String route_to(String destination) {
+    return '前往 $destination';
+  }
+
+  @override
+  String get route_clear => '清除路线';
+
+  @override
+  String get route_finding => '正在规划路线…';
+
+  @override
+  String get route_none => '未找到路线';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return '路线在离 $destination 还有 $distance 处结束，那里是铺装路面的尽头。';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return '路线在离 $destination 还有 $distance 处结束，那里是道路的尽头。';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return '路线在离 $destination 还有 $distance 处结束，那里是步道的尽头。';
+  }
+
+  @override
+  String get route_directions => '路线指引';
+
+  @override
+  String get route_here => '去这里';
+
+  @override
+  String route_destinationNow(String destination) {
+    return '当前目的地：$destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return '当前起点：$start';
+  }
+
+  @override
+  String get route_startNowYou => '当前起点：您的位置';
+
+  @override
+  String get route_noHeights => '此区域没有海拔数据。';
+
+  @override
+  String get route_noHeightsHiking => '此区域没有海拔数据，因此用时未计入爬升。';
+
+  @override
+  String get route_options => '路线选项';
+
+  @override
+  String get route_optionsReset => '重置';
+
+  @override
+  String get route_prefer => '偏好';
+
+  @override
+  String get route_dirtFastest => '最快';
+
+  @override
+  String get route_dirtBalanced => '均衡';
+
+  @override
+  String get route_dirtDirect => '最短';
+
+  @override
+  String get route_dirtFastestHelp => '仅在更快时才走土路。';
+
+  @override
+  String get route_dirtBalancedHelp => '能明显缩短路程时就走土路。';
+
+  @override
+  String get route_dirtDirectHelp => '走最短的路线，土路再慢也照走。';
+
+  @override
+  String get route_avoid => '避开';
+
+  @override
+  String get route_avoidHighways => '高速公路';
+
+  @override
+  String get route_avoidTolls => '收费路段';
+
+  @override
+  String get route_avoidFerries => '轮渡';
+
+  @override
+  String get route_hardestTrail => '步道难度上限';
+
+  @override
+  String get route_trailT1 => 'T1 普通徒步';
+
+  @override
+  String get route_trailT2 => 'T2 山地徒步';
+
+  @override
+  String get route_trailT3 => 'T3 较难山地徒步';
+
+  @override
+  String get route_trailT4 => 'T4 高山徒步';
+
+  @override
+  String get route_trailT5 => 'T5 较难高山徒步';
+
+  @override
+  String get route_trailT6 => 'T6 高难度高山徒步';
+
+  @override
+  String get route_climbs => '爬升';
+
+  @override
+  String get route_climbsAvoid => '尽量少';
+
+  @override
+  String get route_climbsSome => '适量';
+
+  @override
+  String get route_climbsAny => '不介意';
+
+  @override
+  String get route_pace => '步速';
+
+  @override
+  String get route_paceSlow => '较慢';
+
+  @override
+  String get route_paceNormal => '正常';
+
+  @override
+  String get route_paceFast => '较快';
+
+  @override
+  String get place_nrhp => '美国国家史迹名录';
+
+  @override
+  String get place_textCredit => '文字：Wikipedia，CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => '在 Wikipedia 上阅读';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return '照片：$author，$licence';
+  }
+
+  @override
+  String get search_hint => '搜索地点、地址或坐标';
+
+  @override
+  String get search_noPlaces => '下载某个地区的“兴趣点”后，即可搜索其中的地点。坐标无需下载即可搜索。';
+
+  @override
+  String get search_noResults => '无匹配结果';
+
+  @override
+  String get coordFormat_decimalDegrees => '十进制度';
+
+  @override
+  String get coordFormat_degreesMinutes => '度分';
+
+  @override
+  String get coordFormat_dms => '度分秒';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenhead 网格';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => '山峰';
+
+  @override
+  String get poiKind_volcano => '火山';
+
+  @override
+  String get poiKind_saddle => '鞍部';
+
+  @override
+  String get poiKind_pass => '山口';
+
+  @override
+  String get poiKind_spring => '泉水';
+
+  @override
+  String get poiKind_hotSpring => '温泉';
+
+  @override
+  String get poiKind_waterfall => '瀑布';
+
+  @override
+  String get poiKind_cave => '洞穴';
+
+  @override
+  String get poiKind_arch => '天然拱门';
+
+  @override
+  String get poiKind_glacier => '冰川';
+
+  @override
+  String get poiKind_rock => '岩石';
+
+  @override
+  String get poiKind_cliff => '悬崖';
+
+  @override
+  String get poiKind_beach => '海滩';
+
+  @override
+  String get poiKind_trailhead => '步道起点';
+
+  @override
+  String get poiKind_campground => '露营地';
+
+  @override
+  String get poiKind_picnicSite => '野餐区';
+
+  @override
+  String get poiKind_hut => '山屋';
+
+  @override
+  String get poiKind_shelter => '避难所';
+
+  @override
+  String get poiKind_drinkingWater => '饮用水';
+
+  @override
+  String get poiKind_toilets => '厕所';
+
+  @override
+  String get poiKind_viewpoint => '观景点';
+
+  @override
+  String get poiKind_attraction => '景点';
+
+  @override
+  String get poiKind_observatory => '天文台';
+
+  @override
+  String get poiKind_zoo => '动物园';
+
+  @override
+  String get poiKind_themePark => '主题公园';
+
+  @override
+  String get poiKind_mine => '矿山';
+
+  @override
+  String get poiKind_mineShaft => '矿井';
+
+  @override
+  String get poiKind_adit => '矿洞';
+
+  @override
+  String get poiKind_ghostTown => '鬼镇';
+
+  @override
+  String get poiKind_ruins => '遗址';
+
+  @override
+  String get poiKind_monument => '纪念碑';
+
+  @override
+  String get poiKind_memorial => '纪念物';
+
+  @override
+  String get poiKind_fort => '堡垒';
+
+  @override
+  String get poiKind_historic => '历史遗迹';
+
+  @override
+  String get poiKind_rangerStation => '护林站';
+
+  @override
+  String get poiKind_visitorCenter => '游客中心';
+
+  @override
+  String get poiKind_hospital => '医院';
+
+  @override
+  String get poiKind_police => '警察局';
+
+  @override
+  String get poiKind_fireStation => '消防站';
+
+  @override
+  String get poiKind_emergencyPhone => '紧急电话';
+
+  @override
+  String get poiKind_fuel => '加油站';
+
+  @override
+  String get poiKind_restArea => '休息区';
+
+  @override
+  String get poiKind_travelCenter => '服务区';
+
+  @override
+  String get poiKind_museum => '博物馆';
+
+  @override
+  String get poiKind_city => '城市';
+
+  @override
+  String get poiKind_town => '城镇';
+
+  @override
+  String get poiKind_locality => '区域';
+
+  @override
+  String get poiKind_lake => '湖泊';
+
+  @override
+  String get poiKind_river => '河流';
+
+  @override
+  String get poiKind_valley => '山谷';
+
+  @override
+  String get poiKind_range => '山脉';
+
+  @override
+  String get poiKind_trail => '步道';
+
+  @override
+  String get poiKind_dirtRoad => '土路';
+
+  @override
+  String get poiKind_road => '道路';
+
+  @override
+  String get poiKind_address => '地址';
+
+  @override
+  String get poiKind_place => '地点';
+
+  @override
+  String get offlineMaps_kindRouting => '步道路线规划';
+
+  @override
+  String get offlineMaps_kindRoutingDetail => '在步道、土路和铺装路上规划路线';
+
+  @override
+  String get offlineMaps_kindPoi => '兴趣点';
+
+  @override
+  String get offlineMaps_kindPoiDetail => '可搜索的地点，附 Wikipedia 介绍';
+
+  @override
+  String get offlineMaps_kindAddresses => '地址';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => '可搜索的门牌地址';
+
+  @override
+  String get map_search => '搜索';
+
+  @override
+  String get route_fromHere => '从这里出发';
+
+  @override
+  String get route_startSet => '已设好路线起点。现在请选择目的地。';
+
+  @override
+  String get route_noStart => '没有起点。请长按地图并选择“从这里出发”。';
+
+  @override
+  String get route_noData => '请在“离线地图”中下载此地区的“步道路线规划”，即可在这里规划路线。';
+
+  @override
+  String get route_pin => '已放置的标记';
+
+  @override
+  String get appSettings_coordinateFormat => '坐标格式';
+
+  @override
+  String get map_copyPosition => '复制坐标';
+
+  @override
+  String get poiKind_park => '公园';
+
+  @override
+  String get poiKind_protectedArea => '保护区';
+
+  @override
+  String get common_more => '更多';
+
+  @override
+  String get common_less => '收起';
+
+  @override
   String get locationSharing_title => '谁能看到我的位置';
 
   @override
@@ -5493,44 +5967,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chats_advertise => '广播';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '绘图';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '绘制';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '粘贴';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => '画笔';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '直线';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '矩形';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '圆形';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '椭圆';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '箭头';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '撤销';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => '说明';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '可选，显示在图片下方';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max 字节';
   }
 
   @override
@@ -5538,113 +6012,106 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count 个点',
+      one: '1 个点',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '您画的每个点都已保留。';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '已简化：线条偏差不超过画面尺寸的 $percent%。';
   }
 
   @override
-  String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+  String get drawing_tooDetailed => '细节太多，即使简化也放不进一条消息。请撤销一笔，或改用形状，形状占用的字节少得多。';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '用手指绘制，或选择一个形状。';
 
   @override
-  String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+  String get drawing_pasteHint => '粘贴 SVG 文件或路径数据，例如 M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => '使用此 SVG';
 
   @override
-  String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+  String get drawing_pasteNote => '颜色和填充不会发送：图片以线条发出，按查看者设置的画笔颜色显示。';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '请先粘贴 SVG 或路径数据。';
 
   @override
-  String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+  String get drawing_pasteTooBig => '内容太大或细节太多，无法读取。请粘贴更小的 SVG。';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => '这不是本应用能读取的 SVG。';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => '该 SVG 中没有可绘制的可见内容。';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => '复制 SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '绘图';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => '以 SVG 发送的图片，及其在本机上的显示效果';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '显示绘图';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => '关闭后改为显示 SVG 代码';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => '画笔颜色';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => '颜色代码';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '线宽';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => '辉光';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '扫描线';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '路线';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => '叉号';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => '点按以添加点。再次点按最后一个点即可完成。';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '无地图';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => '在此绘制';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '移动地图';
 
   @override
-  String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+  String get drawing_mapHint => '平移并缩放地图到目标位置，然后点按“在此绘制”。';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map，宽 $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => '此区域尚未下载';
 }

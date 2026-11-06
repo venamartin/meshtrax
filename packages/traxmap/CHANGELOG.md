@@ -1,5 +1,13 @@
 ## Unreleased
 
+- **The app's own files download beside the packs.** `PackDownloader.start`
+  takes a `DownloadItem`: a `PackIndexEntry` as before, or a `DownloadFile`
+  the app installs itself (routing data, places). The downloader fetches it
+  with the same queue, Wi‑Fi rule, pause, resume and restore, checks its
+  SHA-256, and reports it `downloaded` with its path; the app installs it
+  and calls `finish`. **Breaking:** `PackDownload.entry` is now null for
+  such a file; `item` is what every download has.
+  `PackManager.matchesSha256` is public.
 - **The bundled base map fills the gaps between downloaded regions.** A
   style source with world packs is served by `GapFillProvider`: a tile is
   left out wherever the style's required packs have one, judged at each

@@ -95,12 +95,16 @@ class LegendSymbol extends StatelessWidget {
   final LegendSample? ground;
   final Size size;
 
+  /// Hairlines (contours, outlines) drawn at least this wide, to be seen.
+  final double minLineWidth;
+
   const LegendSymbol({
     super.key,
     required this.style,
     required this.samples,
     this.ground,
     this.size = const Size(48, 32),
+    this.minLineWidth = 0,
   });
 
   @override
@@ -112,6 +116,7 @@ class LegendSymbol extends StatelessWidget {
         samples,
         ground,
         DefaultTextStyle.of(context).style,
+        minLineWidth,
       ),
     ),
   );
@@ -124,8 +129,15 @@ class _LegendPainter extends CustomPainter {
 
   /// The app's text style, for the font text samples print in.
   final TextStyle font;
+  final double minLineWidth;
 
-  _LegendPainter(this.style, this.samples, this.ground, this.font);
+  _LegendPainter(
+    this.style,
+    this.samples,
+    this.ground,
+    this.font,
+    this.minLineWidth,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -185,10 +197,10 @@ class _LegendPainter extends CustomPainter {
           );
         }
       case vt.SymbolThemeLayer():
+        // A route shield has both: its icon, with the number on it.
+        final onIcon = icons?.paint(canvas, sample) ?? false;
         if (sample.text case final text?) {
-          _text(canvas, box, layer, ctx, text);
-        } else {
-          icons?.paint(canvas, sample);
+          _text(canvas, box, layer, ctx, text, onIcon: onIcon);
         }
       default:
     }
@@ -200,7 +212,7 @@ class _LegendPainter extends CustomPainter {
     vt.LineThemeLayer layer,
     vt.EvalContext ctx,
   ) {
-    final width = layer.width.eval(ctx);
+    final width = math.max(layer.width.eval(ctx), minLineWidth);
     final opacity = layer.opacity.eval(ctx);
     final y = box.center.dy;
     final from = box.left + 4, to = box.right - 4;
@@ -247,8 +259,9 @@ class _LegendPainter extends CustomPainter {
     Rect box,
     vt.SymbolThemeLayer layer,
     vt.EvalContext ctx,
-    String text,
-  ) {
+    String text, {
+    required bool onIcon,
+  }) {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
@@ -262,8 +275,12 @@ class _LegendPainter extends CustomPainter {
       maxLines: 1,
     )..layout();
     final scale = math.min(1.0, (box.width - 4) / painter.width);
+    // On an icon the offset places the text in it (an Interstate's number
+    // sits below the red band); beside a chart symbol it doesn't apply.
+    final offset = onIcon ? layer.textOffset.eval(ctx) : const <num>[];
+    final dy = offset.length > 1 ? offset[1] * painter.height : 0.0;
     canvas.save();
-    canvas.translate(box.center.dx, box.center.dy);
+    canvas.translate(box.center.dx, box.center.dy + dy);
     canvas.scale(scale);
     painter.paint(canvas, Offset(-painter.width / 2, -painter.height / 2));
     canvas.restore();
@@ -278,7 +295,8 @@ class _LegendPainter extends CustomPainter {
       old.style != style ||
       old.samples != samples ||
       old.ground != ground ||
-      old.font != font;
+      old.font != font ||
+      old.minLineWidth != minLineWidth;
 }
 
 /// The icons of a box's samples, placed around one point as the map places
@@ -302,7 +320,7 @@ class _Icons {
     Rect? bounds;
     for (final sample in samples) {
       final layer = style.layer(sample.layer);
-      if (layer is! vt.SymbolThemeLayer || sample.text != null) continue;
+      if (layer is! vt.SymbolThemeLayer) continue;
       final ctx = sample.context(layer);
       final sprite = atlas.sprites[layer.iconImage?.eval(ctx)];
       if (sprite == null) continue;
@@ -364,9 +382,10 @@ class _Icons {
     );
   }
 
-  void paint(Canvas canvas, LegendSample sample) {
+  /// Paints [sample]'s icon, if it has one.
+  bool paint(Canvas canvas, LegendSample sample) {
     final placement = placed[sample];
-    if (placement == null) return;
+    if (placement == null) return false;
     final (sprite, rect, angle) = placement;
     canvas.save();
     canvas.translate(centre.dx, centre.dy);
@@ -380,5 +399,6 @@ class _Icons {
       Paint()..filterQuality = FilterQuality.medium,
     );
     canvas.restore();
+    return true;
   }
 }

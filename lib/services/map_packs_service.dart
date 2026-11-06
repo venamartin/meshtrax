@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -75,6 +76,7 @@ class MapPacksService extends ChangeNotifier {
   RegionIndex? _regions;
   DateTime? _fetchedAt;
   ChartAreaIndex? _chartAreas;
+  MapHints? _hints;
   String? _chartAreasError;
   DateTime? _chartAreasFetchedAt;
   CatalogueStatus _status = CatalogueStatus.unknown;
@@ -225,6 +227,10 @@ class MapPacksService extends ChangeNotifier {
   /// and while the server has none.
   ChartAreaIndex? get chartAreas => _chartAreas;
 
+  /// Small map facts the styles need (desert parks, …), fetched with the
+  /// catalogue and kept for offline use.
+  MapHints? get hints => _hints;
+
   /// Why the last fetch of the chart areas failed. Kept apart from [error]
   /// so a charts problem never puts the Maps tab in an error state.
   String? get chartAreasError => _chartAreasError;
@@ -245,6 +251,12 @@ class MapPacksService extends ChangeNotifier {
 
   /// When an installed pack was downloaded (its file's time).
   DateTime? installedAt(Pack pack) => _files[pack.file.path]?.modified;
+
+  /// When the pack with [id] was downloaded, if it is installed.
+  DateTime? installedAtOf(String id) {
+    final pack = installedPack(id);
+    return pack == null ? null : installedAt(pack);
+  }
 
   /// Where to open a map with nothing else to show: the most recently
   /// installed street or topo map, framed, but no further out than its packs
@@ -284,6 +296,7 @@ class MapPacksService extends ChangeNotifier {
         return;
       }
       _index = _parseIndex(indexBody);
+      await _refreshHints((jsonDecode(indexBody) as Map)['hints']);
       final pickerBody = await _fetch(
         indexUrl.resolve('picker.geojson'),
         'picker.geojson',
@@ -299,6 +312,34 @@ class MapPacksService extends ChangeNotifier {
       _status = CatalogueStatus.error;
     }
     notifyListeners();
+  }
+
+  /// Fetches the hints the catalogue lists (`hints`: url, sha256), unless the
+  /// cached copy already has that sha256. A failure keeps what was cached.
+  Future<void> _refreshHints(Object? entry) async {
+    if (entry is! Map) return;
+    try {
+      final file = File('${cacheDir.path}/hints.json');
+      final sha = entry['sha256'] as String;
+      if (!await file.exists() ||
+          sha256.convert(await file.readAsBytes()).toString() != sha) {
+        final url = indexUrl.resolve(entry['url'] as String);
+        final response = await _client
+            .get(url)
+            .timeout(const Duration(seconds: 30));
+        if (response.statusCode != 200) {
+          throw HttpException('HTTP ${response.statusCode}', uri: url);
+        }
+        if (sha256.convert(response.bodyBytes).toString() != sha) {
+          throw HttpException('sha256 mismatch', uri: url);
+        }
+        await cacheDir.create(recursive: true);
+        await file.writeAsBytes(response.bodyBytes);
+      }
+      _hints = MapHints.parse(await file.readAsString());
+    } on Object catch (e) {
+      appLogger.warn('Map hints refresh failed: $e', tag: 'Maps');
+    }
   }
 
   /// Fetches `chart_areas.geojson`. Its own failure is recorded in
@@ -372,6 +413,9 @@ class MapPacksService extends ChangeNotifier {
     await read('picker.geojson', (file) async {
       _regions = RegionIndex.parse(await file.readAsString());
     });
+    await read('hints.json', (file) async {
+      _hints = MapHints.parse(await file.readAsString());
+    });
     await read('chart_areas.geojson', (file) async {
       _chartAreas = _parseChartAreas(await file.readAsString());
       _chartAreasFetchedAt = await file.lastModified();
@@ -409,16 +453,20 @@ class MapPacksService extends ChangeNotifier {
   }
 
   Future<void> _onDownload(PackDownload download) async {
+    final pack = download.entry != null;
     // Until the installed list has the new build, the row would flash
     // "Download" or "Update" between "Checking" and "Downloaded".
-    if (download.state == PackDownloadState.installed) await reloadInstalled();
+    if (pack && download.state == PackDownloadState.installed) {
+      await reloadInstalled();
+    }
     final verifying =
         _downloads[download.id]?.state == PackDownloadState.verifying;
     _downloads[download.id] = download;
     notifyListeners();
     // Rejected once downloaded (its SHA-256): the pack may have been
     // republished during the download, so the entry it began with is old.
-    if (verifying && download.state == PackDownloadState.failed) {
+    // Routing and places look after their own.
+    if (pack && verifying && download.state == PackDownloadState.failed) {
       unawaited(_retryIfRepublished(download));
     }
   }
@@ -432,7 +480,7 @@ class MapPacksService extends ChangeNotifier {
     try {
       await refresh();
       final entry = _entryOf(failed.id);
-      if (entry != null && entry.sha256 != failed.entry.sha256) {
+      if (entry != null && entry.sha256 != failed.item.sha256) {
         await resume(failed.id);
       }
     } finally {
@@ -479,6 +527,9 @@ class MapPacksService extends ChangeNotifier {
   bool hasMap(MapType type) =>
       type == MapType.osm ||
       _installed.any((p) => _requiredKinds[type]?.contains(p.kind) ?? false);
+
+  /// Whether a pack of [kind] is installed anywhere.
+  bool hasKind(PackKind kind) => _installed.any((p) => p.kind == kind);
 
   /// The installed packs a map draws from; the style uses those it needs.
   /// Contours come last so the map's own credit leads the credits, and the
@@ -562,26 +613,22 @@ class MapPacksService extends ChangeNotifier {
   /// The download in progress (or last finished) for [id], if any.
   PackDownload? downloadOf(String id) => _downloads[id];
 
+  /// How the download with [id] is going (a pack's, or routing or places),
+  /// or null when none is, or it is over.
+  PackStatus? downloadStatus(String id) => switch (_downloads[id]?.state) {
+    PackDownloadState.queued => PackStatus.queued,
+    PackDownloadState.running => PackStatus.running,
+    PackDownloadState.paused => PackStatus.paused,
+    PackDownloadState.waitingToRetry => PackStatus.waitingToRetry,
+    PackDownloadState.verifying ||
+    PackDownloadState.downloaded => PackStatus.verifying,
+    PackDownloadState.failed => PackStatus.failed,
+    PackDownloadState.installed || PackDownloadState.canceled || null => null,
+  };
+
   PackStatus statusOf(PackIndexEntry entry) {
-    final download = _downloads[entry.id];
-    if (download != null) {
-      switch (download.state) {
-        case PackDownloadState.queued:
-          return PackStatus.queued;
-        case PackDownloadState.running:
-          return PackStatus.running;
-        case PackDownloadState.paused:
-          return PackStatus.paused;
-        case PackDownloadState.waitingToRetry:
-          return PackStatus.waitingToRetry;
-        case PackDownloadState.verifying:
-          return PackStatus.verifying;
-        case PackDownloadState.failed:
-          return PackStatus.failed;
-        case PackDownloadState.installed || PackDownloadState.canceled:
-          break;
-      }
-    }
+    final downloading = downloadStatus(entry.id);
+    if (downloading != null) return downloading;
     final pack = installedPack(entry.id);
     if (pack == null) return PackStatus.available;
     return pack.isBuild(entry.sha256) == false
@@ -610,14 +657,15 @@ class MapPacksService extends ChangeNotifier {
 
   // --- Actions -------------------------------------------------------------
 
-  /// Starts downloading [entries]; already-active ones are left alone.
-  Future<void> download(Iterable<PackIndexEntry> entries) async {
+  /// Starts downloading [items] (packs, or routing and places files);
+  /// already-active ones are left alone.
+  Future<void> download(Iterable<DownloadItem> items) async {
     final d = downloader;
     if (d is BackgroundPackDownloader) {
       await d.requestNotificationPermission();
     }
-    for (final entry in entries) {
-      await downloader.start(entry);
+    for (final item in items) {
+      await downloader.start(item);
     }
   }
 
@@ -652,7 +700,7 @@ class MapPacksService extends ChangeNotifier {
       return downloader.resume(id);
     }
     await downloader.cancel(id);
-    await downloader.start(_entryOf(id) ?? failed!.entry);
+    await downloader.start(_entryOf(id) ?? failed!.item);
   }
 
   Future<void> cancel(String id) => downloader.cancel(id);
@@ -661,12 +709,12 @@ class MapPacksService extends ChangeNotifier {
   Future<void> updateAll() => download(updates);
 
   /// Deletes the installed packs of the region at [path], cancelling any of
-  /// its downloads first. Returns the bytes freed.
+  /// its downloads first (packs, routing and places). Returns the bytes
+  /// freed.
   Future<int> deleteRegion(String path) async {
-    for (final entry in packsForRegion(path)) {
-      final download = _downloads[entry.id];
-      if (download != null && !download.state.isFinal) {
-        await downloader.cancel(entry.id);
+    for (final download in _downloads.values.toList()) {
+      if (download.item.region == path && !download.state.isFinal) {
+        await downloader.cancel(download.id);
       }
     }
     var freed = 0;

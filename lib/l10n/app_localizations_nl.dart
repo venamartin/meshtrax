@@ -4847,6 +4847,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get mapLayers_hillShading => 'Reliëfschaduw';
 
   @override
+  String get mapLayers_places => 'Plaatsen';
+
+  @override
+  String get mapLayers_parks => 'Parken';
+
+  @override
   String get mapLayers_dark => 'Donkere kaart';
 
   @override
@@ -5629,6 +5635,51 @@ class AppLocalizationsNl extends AppLocalizations {
   String get parkLegend_guidepost => 'Wegwijzer';
 
   @override
+  String get roadLegend_title => 'Wegen, paden en lijnen';
+
+  @override
+  String get roadLegend_freeway => 'Snelweg';
+
+  @override
+  String get roadLegend_majorRoad => 'Hoofdweg';
+
+  @override
+  String get roadLegend_road => 'Weg';
+
+  @override
+  String get roadLegend_track => 'Onverharde weg of veldweg';
+
+  @override
+  String get roadLegend_trail => 'Wandelpad';
+
+  @override
+  String get roadLegend_interstate => 'Interstate-snelweg';
+
+  @override
+  String get roadLegend_usRoute => 'US-highway';
+
+  @override
+  String get roadLegend_stateRoute => 'Staatsweg';
+
+  @override
+  String get roadLegend_railway => 'Spoorlijn';
+
+  @override
+  String get roadLegend_stream => 'Rivier of beek';
+
+  @override
+  String get roadLegend_contour => 'Hoogtelijn';
+
+  @override
+  String get roadLegend_park => 'Parkgrens';
+
+  @override
+  String get roadLegend_wilderness => 'Wildernisgebied of nationaal bos';
+
+  @override
+  String get roadLegend_boundary => 'Staats- of countygrens';
+
+  @override
   String get dialog_noticeExpires => 'Verloopt';
 
   @override
@@ -5777,6 +5828,439 @@ class AppLocalizationsNl extends AppLocalizations {
   String get pathfinder_graphCreate => 'Aanmaken';
 
   @override
+  String get route_pathPaved => 'Verhard';
+
+  @override
+  String get route_pathDirt => 'Grind';
+
+  @override
+  String get route_pathHiking => 'Te voet';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours u $minutes min';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Naar $destination';
+  }
+
+  @override
+  String get route_clear => 'Route wissen';
+
+  @override
+  String get route_finding => 'Route zoeken…';
+
+  @override
+  String get route_none => 'Geen route gevonden';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'De route eindigt $distance voor $destination, waar de verharde weg ophoudt.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'De route eindigt $distance voor $destination, waar de weg ophoudt.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'De route eindigt $distance voor $destination, waar de paden ophouden.';
+  }
+
+  @override
+  String get route_directions => 'Routebeschrijving';
+
+  @override
+  String get route_here => 'Route hierheen';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Huidige bestemming: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Huidig startpunt: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Huidig startpunt: jouw positie';
+
+  @override
+  String get route_noHeights => 'Geen hoogtegegevens voor dit gebied.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Geen hoogtegegevens voor dit gebied, dus de tijd telt geen hoogtemeters mee.';
+
+  @override
+  String get route_options => 'Routeopties';
+
+  @override
+  String get route_optionsReset => 'Herstellen';
+
+  @override
+  String get route_prefer => 'Voorkeur';
+
+  @override
+  String get route_dirtFastest => 'Snelste';
+
+  @override
+  String get route_dirtBalanced => 'Evenwichtig';
+
+  @override
+  String get route_dirtDirect => 'Kortste';
+
+  @override
+  String get route_dirtFastestHelp =>
+      'Onverharde wegen alleen waar die sneller zijn.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'Een onverharde weg als die echt afstand scheelt.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'De kortste weg, hoe traag de onverharde stukken ook zijn.';
+
+  @override
+  String get route_avoid => 'Vermijden';
+
+  @override
+  String get route_avoidHighways => 'Snelwegen';
+
+  @override
+  String get route_avoidTolls => 'Tolwegen';
+
+  @override
+  String get route_avoidFerries => 'Veerboten';
+
+  @override
+  String get route_hardestTrail => 'Moeilijkste pad';
+
+  @override
+  String get route_trailT1 => 'T1 Wandelen';
+
+  @override
+  String get route_trailT2 => 'T2 Bergwandelen';
+
+  @override
+  String get route_trailT3 => 'T3 Veeleisend bergwandelen';
+
+  @override
+  String get route_trailT4 => 'T4 Alpien wandelen';
+
+  @override
+  String get route_trailT5 => 'T5 Veeleisend alpien wandelen';
+
+  @override
+  String get route_trailT6 => 'T6 Moeilijk alpien wandelen';
+
+  @override
+  String get route_climbs => 'Hoogtemeters';
+
+  @override
+  String get route_climbsAvoid => 'Vermijden';
+
+  @override
+  String get route_climbsSome => 'Beperkt';
+
+  @override
+  String get route_climbsAny => 'Onbeperkt';
+
+  @override
+  String get route_pace => 'Tempo';
+
+  @override
+  String get route_paceSlow => 'Langzaam';
+
+  @override
+  String get route_paceNormal => 'Normaal';
+
+  @override
+  String get route_paceFast => 'Snel';
+
+  @override
+  String get place_nrhp => 'National Register of Historic Places';
+
+  @override
+  String get place_textCredit => 'Tekst: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Verder lezen op Wikipedia';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Foto: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Zoek plaatsen, adressen of coördinaten';
+
+  @override
+  String get search_noPlaces =>
+      'Download Interessante plaatsen voor een regio om daar plaatsen te zoeken. Coördinaten werken ook zonder.';
+
+  @override
+  String get search_noResults => 'Geen resultaten';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Decimale graden';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Graden en minuten';
+
+  @override
+  String get coordFormat_dms => 'Graden, minuten, seconden';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenhead-locator';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Bergtop';
+
+  @override
+  String get poiKind_volcano => 'Vulkaan';
+
+  @override
+  String get poiKind_saddle => 'Bergzadel';
+
+  @override
+  String get poiKind_pass => 'Bergpas';
+
+  @override
+  String get poiKind_spring => 'Bron';
+
+  @override
+  String get poiKind_hotSpring => 'Warmwaterbron';
+
+  @override
+  String get poiKind_waterfall => 'Waterval';
+
+  @override
+  String get poiKind_cave => 'Grot';
+
+  @override
+  String get poiKind_arch => 'Rotsboog';
+
+  @override
+  String get poiKind_glacier => 'Gletsjer';
+
+  @override
+  String get poiKind_rock => 'Rots';
+
+  @override
+  String get poiKind_cliff => 'Klif';
+
+  @override
+  String get poiKind_beach => 'Strand';
+
+  @override
+  String get poiKind_trailhead => 'Startpunt wandelpad';
+
+  @override
+  String get poiKind_campground => 'Camping';
+
+  @override
+  String get poiKind_picnicSite => 'Picknickplaats';
+
+  @override
+  String get poiKind_hut => 'Berghut';
+
+  @override
+  String get poiKind_shelter => 'Schuilhut';
+
+  @override
+  String get poiKind_drinkingWater => 'Drinkwater';
+
+  @override
+  String get poiKind_toilets => 'Toiletten';
+
+  @override
+  String get poiKind_viewpoint => 'Uitzichtpunt';
+
+  @override
+  String get poiKind_attraction => 'Bezienswaardigheid';
+
+  @override
+  String get poiKind_observatory => 'Observatorium';
+
+  @override
+  String get poiKind_zoo => 'Dierentuin';
+
+  @override
+  String get poiKind_themePark => 'Pretpark';
+
+  @override
+  String get poiKind_mine => 'Mijn';
+
+  @override
+  String get poiKind_mineShaft => 'Mijnschacht';
+
+  @override
+  String get poiKind_adit => 'Mijningang';
+
+  @override
+  String get poiKind_ghostTown => 'Spookstad';
+
+  @override
+  String get poiKind_ruins => 'Ruïne';
+
+  @override
+  String get poiKind_monument => 'Monument';
+
+  @override
+  String get poiKind_memorial => 'Gedenkteken';
+
+  @override
+  String get poiKind_fort => 'Fort';
+
+  @override
+  String get poiKind_historic => 'Historische plaats';
+
+  @override
+  String get poiKind_rangerStation => 'Rangerpost';
+
+  @override
+  String get poiKind_visitorCenter => 'Bezoekerscentrum';
+
+  @override
+  String get poiKind_hospital => 'Ziekenhuis';
+
+  @override
+  String get poiKind_police => 'Politie';
+
+  @override
+  String get poiKind_fireStation => 'Brandweerkazerne';
+
+  @override
+  String get poiKind_emergencyPhone => 'Noodtelefoon';
+
+  @override
+  String get poiKind_fuel => 'Tankstation';
+
+  @override
+  String get poiKind_restArea => 'Rustplaats';
+
+  @override
+  String get poiKind_travelCenter => 'Verzorgingsplaats';
+
+  @override
+  String get poiKind_museum => 'Museum';
+
+  @override
+  String get poiKind_city => 'Stad';
+
+  @override
+  String get poiKind_town => 'Plaats';
+
+  @override
+  String get poiKind_locality => 'Gebied';
+
+  @override
+  String get poiKind_lake => 'Meer';
+
+  @override
+  String get poiKind_river => 'Rivier';
+
+  @override
+  String get poiKind_valley => 'Dal';
+
+  @override
+  String get poiKind_range => 'Bergketen';
+
+  @override
+  String get poiKind_trail => 'Wandelpad';
+
+  @override
+  String get poiKind_dirtRoad => 'Onverharde weg';
+
+  @override
+  String get poiKind_road => 'Weg';
+
+  @override
+  String get poiKind_address => 'Adres';
+
+  @override
+  String get poiKind_place => 'Plek';
+
+  @override
+  String get offlineMaps_kindRouting => 'Routeplanner';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Routes over paden, onverharde en verharde wegen';
+
+  @override
+  String get offlineMaps_kindPoi => 'Interessante plaatsen';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Plaatsen om op te zoeken, met Wikipedia';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Adressen';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Huisadressen om op te zoeken';
+
+  @override
+  String get map_search => 'Zoeken';
+
+  @override
+  String get route_fromHere => 'Route vanaf hier';
+
+  @override
+  String get route_startSet =>
+      'Startpunt ingesteld. Kies nu waar je heen wilt.';
+
+  @override
+  String get route_noStart =>
+      'Geen startpunt. Druk lang op de kaart en kies Route vanaf hier.';
+
+  @override
+  String get route_noData =>
+      'Download Routeplanner voor deze regio via Offline kaarten om hier routes te vinden.';
+
+  @override
+  String get route_pin => 'Geplaatste speld';
+
+  @override
+  String get appSettings_coordinateFormat => 'Coördinatenformaat';
+
+  @override
+  String get map_copyPosition => 'Positie kopiëren';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Beschermd gebied';
+
+  @override
+  String get common_more => 'Meer';
+
+  @override
+  String get common_less => 'Minder';
+
+  @override
   String get locationSharing_title => 'Wie mijn locatie kan zien';
 
   @override
@@ -5858,44 +6342,44 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chats_advertise => 'Aankondigen';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Tekening';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Tekenen';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Plakken';
 
   @override
   String get drawing_toolPen => 'Pen';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Lijn';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Rechthoek';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Cirkel';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Ellips';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Pijl';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Ongedaan maken';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Bijschrift';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Optioneel, verschijnt onder de tekening';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used van $max bytes';
   }
 
   @override
@@ -5903,113 +6387,116 @@ class AppLocalizationsNl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count punten',
+      one: '1 punt',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll =>
+      'Elk punt dat je hebt getekend, blijft behouden.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Vereenvoudigd: lijnen wijken hooguit $percent% van de grootte van de tekening af.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Te gedetailleerd voor één bericht, zelfs na vereenvoudiging. Maak een pennenstreek ongedaan of gebruik vormen, die veel minder bytes kosten.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Teken met je vinger, of kies een vorm.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Plak een SVG-bestand, of padgegevens zoals M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Deze SVG gebruiken';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Kleuren en vullingen gaan niet mee: alles komt aan als lijnen in de penkleur van de ontvanger.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Plak eerst SVG-code of padgegevens.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Dat is te groot of te gedetailleerd om te lezen. Plak een kleinere SVG.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => 'Dat is geen SVG die de app kan lezen.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'Die SVG bevat niets zichtbaars om te tekenen.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVG kopiëren';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Tekeningen';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Als SVG verstuurde afbeeldingen, en hoe ze er hier uitzien';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Tekeningen tonen';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Uit toont in plaats daarvan de SVG-code';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Penkleur';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Kleurcode';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Lijndikte';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Gloed';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Scanlijnen';
 
   @override
   String get drawing_toolRoute => 'Route';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Kruisje';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Tik om punten toe te voegen. Tik nogmaals op het laatste punt om af te ronden.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Geen kaart';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Hier tekenen';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Kaart verplaatsen';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Schuif en zoom naar de plek en tik dan op Hier tekenen.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance breed';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Dit gebied is niet gedownload';
 }

@@ -11,6 +11,7 @@ import '../models/app_settings.dart';
 import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
+import '../services/routing_service.dart';
 import '../utils/format_bytes.dart';
 import 'charts_notice_dialog.dart';
 
@@ -43,6 +44,10 @@ class AppMap extends StatefulWidget {
 
   /// Overrides the contours setting.
   final bool? contours;
+
+  /// The screen draws its own place icons here (Points of interest): the
+  /// map drops its icons for the same kinds and keeps their names.
+  final bool appPlaces;
 
   /// A small map (e.g. in a dialog): no "Download a region" card, and where
   /// nothing is downloaded it opens no closer than the base map's detail.
@@ -78,6 +83,7 @@ class AppMap extends StatefulWidget {
     this.onCameraChanged,
     this.mapType,
     this.contours,
+    this.appPlaces = false,
     this.compact = false,
     this.exact = false,
     this.onCreditsChanged,
@@ -208,7 +214,23 @@ class _AppMapState extends State<AppMap> {
     };
 
     final style = _style;
-    final credits = [...?style?.credits, ...?style?.notices];
+    final routingCredits = context.select<RoutingService?, List<String>?>(
+      (r) => r?.credits,
+    );
+    final routingNotices = context.select<RoutingService?, List<String>?>(
+      (r) => r?.notices,
+    );
+    final credits = [
+      ...creditsIn([
+        ...?style?.credits,
+        // Routes draw on any map while routing data is installed.
+        ...?routingCredits,
+        // The hints' park lists color the street map's parks.
+        if (type == MapType.osm && settings.mapParks)
+          ...?maps.hints?.parkCredits,
+      ]),
+      ...noticesIn([...?style?.notices, ...?routingNotices]),
+    ];
     // Charts say at any zoom that none is drawn here; the street and topo
     // maps have the base map until it stops zooming in.
     final showCard =
@@ -243,6 +265,9 @@ class _AppMapState extends State<AppMap> {
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           onCameraChanged: _onCameraChanged,
+          appPlaces: widget.appPlaces,
+          hiddenGroups: {if (!settings.mapParks) 'parks'},
+          lists: maps.hints?.styleLists ?? const {},
           onCoverageChanged: (covered) => setState(() {
             _covered = covered;
             if (!covered) {

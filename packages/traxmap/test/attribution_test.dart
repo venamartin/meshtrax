@@ -67,6 +67,22 @@ void main() {
     expect(noticesOf([base, osm]), isEmpty);
   });
 
+  test("the routing data's credits beside the packs': each source once", () {
+    expect(
+      creditsIn([
+        osm.attribution,
+        '© OpenStreetMap contributors; USGS 3DEP',
+        null,
+        contours.attribution,
+      ]),
+      ['© OpenMapTiles © OpenStreetMap contributors', 'USGS 3DEP'],
+    );
+    expect(noticesIn(['Not liable.', null, 'Not liable.\nAnother']), [
+      'Not liable.',
+      'Another',
+    ]);
+  });
+
   test('packs combined into one source are all credited', () {
     const context = StyleContext();
     final otherContours = _pack('n-contours-20ft', 'contours', 'Copernicus');

@@ -1,0 +1,14 @@
+name: traxcoords
+description: >
+  Positions written seven ways for MeshTrax: decimal degrees, degrees and
+  minutes, degrees minutes seconds, UTM, MGRS/USNG, Maidenhead and geohash.
+  Pure Dart.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.8

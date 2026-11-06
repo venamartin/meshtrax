@@ -84,4 +84,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Offline routing (MeshTraxRouting.kt): Valhalla 3.9.1, the version the
+    // routing tiles are built with.
+    implementation("io.github.rallista:valhalla-mobile:0.6.4")
 }

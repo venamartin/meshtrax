@@ -284,14 +284,32 @@ void main() {
   });
 
   group('AppSettings — map choice', () {
-    test('defaults: OSM, contours, hill shading and areas on, a light '
-        'map', () {
-      for (final s in [AppSettings(), AppSettings.fromJson({})]) {
-        expect(s.mapType, 'osm');
+    test('a new install: OSM, contours and hill shading off, parks, places '
+        'and areas on, only chat nodes, a light map', () {
+      final s = AppSettings();
+      expect(s.mapType, 'osm');
+      expect(s.mapContours, isFalse);
+      expect(s.mapHillShading, isFalse);
+      expect(s.mapParks, isTrue);
+      expect(s.mapPlaces, isTrue);
+      expect(s.mapDownloadedAreas, isTrue);
+      expect(s.mapShowChatNodes, isTrue);
+      expect(s.mapShowRepeaters, isFalse);
+      expect(s.mapShowOtherNodes, isFalse);
+      expect(s.mapShowMarkers, isFalse);
+      expect(s.mapShowGuessedLocations, isFalse);
+      expect(s.mapTheme, 'light');
+    });
+
+    test('an older install keeps contours, hill shading and every node '
+        'type on', () {
+      for (final s in [AppSettings.olderInstall(), AppSettings.fromJson({})]) {
         expect(s.mapContours, isTrue);
         expect(s.mapHillShading, isTrue);
-        expect(s.mapDownloadedAreas, isTrue);
-        expect(s.mapTheme, 'light');
+        expect(s.mapShowRepeaters, isTrue);
+        expect(s.mapShowOtherNodes, isTrue);
+        expect(s.mapShowMarkers, isTrue);
+        expect(s.mapShowGuessedLocations, isTrue);
       }
     });
 

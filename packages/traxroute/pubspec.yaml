@@ -1,0 +1,13 @@
+name: traxroute
+description: >
+  Offline routing for MeshTrax: the routing engine (Valhalla), the path
+  types, and the routing data on the device. No screens.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.8

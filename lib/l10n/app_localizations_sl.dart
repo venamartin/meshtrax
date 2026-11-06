@@ -4853,6 +4853,12 @@ class AppLocalizationsSl extends AppLocalizations {
   String get mapLayers_hillShading => 'Senčenje reliefa';
 
   @override
+  String get mapLayers_places => 'Kraji';
+
+  @override
+  String get mapLayers_parks => 'Parki';
+
+  @override
   String get mapLayers_dark => 'Temni zemljevid';
 
   @override
@@ -5637,6 +5643,51 @@ class AppLocalizationsSl extends AppLocalizations {
   String get parkLegend_guidepost => 'Smerokaz';
 
   @override
+  String get roadLegend_title => 'Ceste, poti in črte';
+
+  @override
+  String get roadLegend_freeway => 'Avtocesta';
+
+  @override
+  String get roadLegend_majorRoad => 'Hitra ali glavna cesta';
+
+  @override
+  String get roadLegend_road => 'Cesta';
+
+  @override
+  String get roadLegend_track => 'Makadamska cesta ali kolovoz';
+
+  @override
+  String get roadLegend_trail => 'Pot';
+
+  @override
+  String get roadLegend_interstate => 'Avtocesta Interstate';
+
+  @override
+  String get roadLegend_usRoute => 'Magistralna cesta ZDA';
+
+  @override
+  String get roadLegend_stateRoute => 'Cesta zvezne države';
+
+  @override
+  String get roadLegend_railway => 'Železnica';
+
+  @override
+  String get roadLegend_stream => 'Reka ali potok';
+
+  @override
+  String get roadLegend_contour => 'Plastnica';
+
+  @override
+  String get roadLegend_park => 'Meja parka';
+
+  @override
+  String get roadLegend_wilderness => 'Divjina ali narodni gozd';
+
+  @override
+  String get roadLegend_boundary => 'Meja zvezne države ali okrožja';
+
+  @override
   String get dialog_noticeExpires => 'Poteče';
 
   @override
@@ -5787,6 +5838,439 @@ class AppLocalizationsSl extends AppLocalizations {
   String get pathfinder_graphCreate => 'Ustvari';
 
   @override
+  String get route_pathPaved => 'Asfalt';
+
+  @override
+  String get route_pathDirt => 'Gramoz';
+
+  @override
+  String get route_pathHiking => 'Peš';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Cilj: $destination';
+  }
+
+  @override
+  String get route_clear => 'Odstrani pot';
+
+  @override
+  String get route_finding => 'Iskanje poti…';
+
+  @override
+  String get route_none => 'Poti ni bilo mogoče najti';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Konča se $distance pred ciljem $destination, kjer zmanjka asfalta.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Konča se $distance pred ciljem $destination, kjer zmanjka ceste.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Konča se $distance pred ciljem $destination, kjer zmanjka poti.';
+  }
+
+  @override
+  String get route_directions => 'Navodila za pot';
+
+  @override
+  String get route_here => 'Pot do tukaj';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Trenutni cilj: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Trenutni začetek: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Trenutni začetek: vaš položaj';
+
+  @override
+  String get route_noHeights => 'Za to območje ni podatkov o višinah.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Za to območje ni podatkov o višinah, zato čas ne upošteva vzponov.';
+
+  @override
+  String get route_options => 'Možnosti poti';
+
+  @override
+  String get route_optionsReset => 'Ponastavi';
+
+  @override
+  String get route_prefer => 'Prednost';
+
+  @override
+  String get route_dirtFastest => 'Najhitrejša';
+
+  @override
+  String get route_dirtBalanced => 'Srednje';
+
+  @override
+  String get route_dirtDirect => 'Najkrajša';
+
+  @override
+  String get route_dirtFastestHelp =>
+      'Makadamske ceste samo tam, kjer so hitrejše.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'Makadamska cesta, kadar občutno skrajša pot.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'Najkrajša pot, četudi po počasnih kolovozih.';
+
+  @override
+  String get route_avoid => 'Izogibaj se';
+
+  @override
+  String get route_avoidHighways => 'Avtoceste';
+
+  @override
+  String get route_avoidTolls => 'Cestnine';
+
+  @override
+  String get route_avoidFerries => 'Trajekti';
+
+  @override
+  String get route_hardestTrail => 'Najtežja pot';
+
+  @override
+  String get route_trailT1 => 'T1 Pohodništvo';
+
+  @override
+  String get route_trailT2 => 'T2 Gorsko pohodništvo';
+
+  @override
+  String get route_trailT3 => 'T3 Zahtevno gorsko pohodništvo';
+
+  @override
+  String get route_trailT4 => 'T4 Alpsko pohodništvo';
+
+  @override
+  String get route_trailT5 => 'T5 Zahtevno alpsko pohodništvo';
+
+  @override
+  String get route_trailT6 => 'T6 Težko alpsko pohodništvo';
+
+  @override
+  String get route_climbs => 'Vzponi';
+
+  @override
+  String get route_climbsAvoid => 'Čim manj';
+
+  @override
+  String get route_climbsSome => 'Zmerno';
+
+  @override
+  String get route_climbsAny => 'Vseeno';
+
+  @override
+  String get route_pace => 'Tempo';
+
+  @override
+  String get route_paceSlow => 'Počasen';
+
+  @override
+  String get route_paceNormal => 'Običajen';
+
+  @override
+  String get route_paceFast => 'Hiter';
+
+  @override
+  String get place_nrhp => 'Nacionalni register zgodovinskih krajev';
+
+  @override
+  String get place_textCredit => 'Besedilo: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Preberi na Wikipedii';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Foto: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Iskanje krajev, naslovov ali koordinat';
+
+  @override
+  String get search_noPlaces =>
+      'Prenesite »Zanimive točke« za regijo, da boste lahko iskali njene kraje. Koordinate delujejo tudi brez tega.';
+
+  @override
+  String get search_noResults => 'Ni zadetkov';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Decimalne stopinje';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Stopinje in minute';
+
+  @override
+  String get coordFormat_dms => 'Stopinje, minute, sekunde';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Lokator Maidenhead';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Vrh';
+
+  @override
+  String get poiKind_volcano => 'Ognjenik';
+
+  @override
+  String get poiKind_saddle => 'Sedlo';
+
+  @override
+  String get poiKind_pass => 'Prelaz';
+
+  @override
+  String get poiKind_spring => 'Izvir';
+
+  @override
+  String get poiKind_hotSpring => 'Termalni izvir';
+
+  @override
+  String get poiKind_waterfall => 'Slap';
+
+  @override
+  String get poiKind_cave => 'Jama';
+
+  @override
+  String get poiKind_arch => 'Naravni most';
+
+  @override
+  String get poiKind_glacier => 'Ledenik';
+
+  @override
+  String get poiKind_rock => 'Skala';
+
+  @override
+  String get poiKind_cliff => 'Pečina';
+
+  @override
+  String get poiKind_beach => 'Plaža';
+
+  @override
+  String get poiKind_trailhead => 'Izhodišče poti';
+
+  @override
+  String get poiKind_campground => 'Kamp';
+
+  @override
+  String get poiKind_picnicSite => 'Prostor za piknik';
+
+  @override
+  String get poiKind_hut => 'Koča';
+
+  @override
+  String get poiKind_shelter => 'Zavetje';
+
+  @override
+  String get poiKind_drinkingWater => 'Pitna voda';
+
+  @override
+  String get poiKind_toilets => 'Stranišča';
+
+  @override
+  String get poiKind_viewpoint => 'Razgledišče';
+
+  @override
+  String get poiKind_attraction => 'Znamenitost';
+
+  @override
+  String get poiKind_observatory => 'Observatorij';
+
+  @override
+  String get poiKind_zoo => 'Živalski vrt';
+
+  @override
+  String get poiKind_themePark => 'Zabaviščni park';
+
+  @override
+  String get poiKind_mine => 'Rudnik';
+
+  @override
+  String get poiKind_mineShaft => 'Rudniški jašek';
+
+  @override
+  String get poiKind_adit => 'Rudniški rov';
+
+  @override
+  String get poiKind_ghostTown => 'Mesto duhov';
+
+  @override
+  String get poiKind_ruins => 'Ruševine';
+
+  @override
+  String get poiKind_monument => 'Spomenik';
+
+  @override
+  String get poiKind_memorial => 'Spominsko obeležje';
+
+  @override
+  String get poiKind_fort => 'Utrdba';
+
+  @override
+  String get poiKind_historic => 'Zgodovinski kraj';
+
+  @override
+  String get poiKind_rangerStation => 'Postaja nadzornikov';
+
+  @override
+  String get poiKind_visitorCenter => 'Center za obiskovalce';
+
+  @override
+  String get poiKind_hospital => 'Bolnišnica';
+
+  @override
+  String get poiKind_police => 'Policija';
+
+  @override
+  String get poiKind_fireStation => 'Gasilska postaja';
+
+  @override
+  String get poiKind_emergencyPhone => 'Telefon za klic v sili';
+
+  @override
+  String get poiKind_fuel => 'Bencinski servis';
+
+  @override
+  String get poiKind_restArea => 'Počivališče';
+
+  @override
+  String get poiKind_travelCenter => 'Počivališče s storitvami';
+
+  @override
+  String get poiKind_museum => 'Muzej';
+
+  @override
+  String get poiKind_city => 'Mesto';
+
+  @override
+  String get poiKind_town => 'Naselje';
+
+  @override
+  String get poiKind_locality => 'Območje';
+
+  @override
+  String get poiKind_lake => 'Jezero';
+
+  @override
+  String get poiKind_river => 'Vodotok';
+
+  @override
+  String get poiKind_valley => 'Dolina';
+
+  @override
+  String get poiKind_range => 'Gorovje';
+
+  @override
+  String get poiKind_trail => 'Pot';
+
+  @override
+  String get poiKind_dirtRoad => 'Makadamska cesta';
+
+  @override
+  String get poiKind_road => 'Cesta';
+
+  @override
+  String get poiKind_address => 'Naslov';
+
+  @override
+  String get poiKind_place => 'Kraj';
+
+  @override
+  String get offlineMaps_kindRouting => 'Načrtovanje poti';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Po pohodniških poteh, makadamskih in asfaltiranih cestah';
+
+  @override
+  String get offlineMaps_kindPoi => 'Zanimive točke';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Kraji za iskanje, z opisi iz Wikipedie';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Naslovi';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Hišni naslovi za iskanje';
+
+  @override
+  String get map_search => 'Iskanje';
+
+  @override
+  String get route_fromHere => 'Pot od tukaj';
+
+  @override
+  String get route_startSet =>
+      'Začetek poti je nastavljen. Zdaj izberite cilj.';
+
+  @override
+  String get route_noStart =>
+      'Ni začetnega položaja. Dolgo pritisnite na zemljevid in izberite »Pot od tukaj«.';
+
+  @override
+  String get route_noData =>
+      'Prenesite »Načrtovanje poti« za to regijo v razdelku »Zemljevidi brez povezave«, da boste lahko tu iskali poti.';
+
+  @override
+  String get route_pin => 'Označena točka';
+
+  @override
+  String get appSettings_coordinateFormat => 'Oblika koordinat';
+
+  @override
+  String get map_copyPosition => 'Kopiraj položaj';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Zavarovano območje';
+
+  @override
+  String get common_more => 'Več';
+
+  @override
+  String get common_less => 'Manj';
+
+  @override
   String get locationSharing_title => 'Kdo vidi mojo lokacijo';
 
   @override
@@ -5868,44 +6352,44 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chats_advertise => 'Objavi';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Risba';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Riši';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Prilepi';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Pero';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Črta';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Pravokotnik';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Krog';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Elipsa';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Puščica';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Razveljavi';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Napis';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Neobvezno, prikaže se pod sliko';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max bajtov';
   }
 
   @override
@@ -5913,113 +6397,118 @@ class AppLocalizationsSl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count točk',
+      few: '$count točke',
+      two: '$count točki',
+      one: '$count točka',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Vse narisane točke so ohranjene.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Poenostavljeno: črte odstopajo za največ $percent % velikosti risbe.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Preveč podrobno za eno sporočilo, tudi po poenostavitvi. Razveljavite potezo ali uporabite oblike, ki zasedejo veliko manj prostora.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Rišite s prstom ali izberite obliko.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Prilepite datoteko SVG ali podatke poti, na primer M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Uporabi ta SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Barve in polnila se ne prenesejo: SVG se pošlje kot črte v prejemnikovi barvi peresa.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Najprej prilepite SVG ali podatke poti.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'To je preveliko ali preveč podrobno za branje. Prilepite manjši SVG.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'To ni SVG, ki bi ga aplikacija znala prebrati.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'Ta SVG ne vsebuje ničesar vidnega za izris.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Kopiraj SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Risbe';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Slike, poslane kot SVG, in kako so videti tukaj';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Prikaži risbe';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Ko je izklopljeno, se namesto risb prikaže koda SVG';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Barva peresa';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Barvna koda';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Debelina črte';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Žarenje';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Vrstice zaslona';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Pot';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Križec';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Tapnite, da dodate točke. Za konec še enkrat tapnite zadnjo.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Brez';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Riši tukaj';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Premakni zemljevid';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'S premikanjem in povečavo poiščite želeno območje, nato tapnite »Riši tukaj«.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, širina $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'To območje ni preneseno';
 }

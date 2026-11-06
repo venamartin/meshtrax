@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:traxroute/traxroute.dart' show RouteOptions;
 
 import '../helpers/quick_reactions.dart';
 import '../helpers/terms_gate.dart';
@@ -120,8 +121,20 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(mapHillShading: value));
   }
 
+  Future<void> setMapPlaces(bool value) async {
+    await updateSettings(_settings.copyWith(mapPlaces: value));
+  }
+
+  Future<void> setMapParks(bool value) async {
+    await updateSettings(_settings.copyWith(mapParks: value));
+  }
+
   Future<void> setMapDownloadedAreas(bool value) async {
     await updateSettings(_settings.copyWith(mapDownloadedAreas: value));
+  }
+
+  Future<void> setRouteOptions(RouteOptions value) async {
+    await updateSettings(_settings.copyWith(routeOptions: value));
   }
 
   Future<void> setMapTheme(String value) async {
@@ -206,6 +219,10 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setUnitSystem(UnitSystem value) async {
     await updateSettings(_settings.copyWith(unitSystem: value));
+  }
+
+  Future<void> setCoordinateFormat(String value) async {
+    await updateSettings(_settings.copyWith(coordinateFormat: value));
   }
 
   bool isChannelMuted(String channelName) {

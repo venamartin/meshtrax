@@ -4820,6 +4820,12 @@ class AppLocalizationsSv extends AppLocalizations {
   String get mapLayers_hillShading => 'Terrängskuggning';
 
   @override
+  String get mapLayers_places => 'Platser';
+
+  @override
+  String get mapLayers_parks => 'Parker';
+
+  @override
   String get mapLayers_dark => 'Mörk karta';
 
   @override
@@ -5600,6 +5606,51 @@ class AppLocalizationsSv extends AppLocalizations {
   String get parkLegend_guidepost => 'Vägvisare';
 
   @override
+  String get roadLegend_title => 'Vägar, leder och linjer';
+
+  @override
+  String get roadLegend_freeway => 'Motorväg';
+
+  @override
+  String get roadLegend_majorRoad => 'Huvudväg';
+
+  @override
+  String get roadLegend_road => 'Väg';
+
+  @override
+  String get roadLegend_track => 'Grusväg eller traktorväg';
+
+  @override
+  String get roadLegend_trail => 'Led';
+
+  @override
+  String get roadLegend_interstate => 'Interstate';
+
+  @override
+  String get roadLegend_usRoute => 'US Highway';
+
+  @override
+  String get roadLegend_stateRoute => 'Delstatsväg';
+
+  @override
+  String get roadLegend_railway => 'Järnväg';
+
+  @override
+  String get roadLegend_stream => 'Flod eller bäck';
+
+  @override
+  String get roadLegend_contour => 'Höjdkurva';
+
+  @override
+  String get roadLegend_park => 'Parkgräns';
+
+  @override
+  String get roadLegend_wilderness => 'Vildmarksområde eller nationalskog';
+
+  @override
+  String get roadLegend_boundary => 'Delstats- eller länsgräns';
+
+  @override
   String get dialog_noticeExpires => 'Gäller till';
 
   @override
@@ -5748,6 +5799,437 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathfinder_graphCreate => 'Skapa';
 
   @override
+  String get route_pathPaved => 'Asfalt';
+
+  @override
+  String get route_pathDirt => 'Grus';
+
+  @override
+  String get route_pathHiking => 'Till fots';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours tim $minutes min';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Till $destination';
+  }
+
+  @override
+  String get route_clear => 'Rensa färdväg';
+
+  @override
+  String get route_finding => 'Söker färdväg…';
+
+  @override
+  String get route_none => 'Ingen färdväg hittades';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Färdvägen slutar $distance före $destination, där asfalten tar slut.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Färdvägen slutar $distance före $destination, där vägen tar slut.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Färdvägen slutar $distance före $destination, där lederna tar slut.';
+  }
+
+  @override
+  String get route_directions => 'Vägbeskrivning';
+
+  @override
+  String get route_here => 'Färdväg hit';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Nuvarande mål: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Nuvarande startpunkt: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Nuvarande startpunkt: din position';
+
+  @override
+  String get route_noHeights => 'Inga höjddata för det här området.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Inga höjddata för det här området, så tiden tar inte hänsyn till stigningar.';
+
+  @override
+  String get route_options => 'Färdvägsalternativ';
+
+  @override
+  String get route_optionsReset => 'Återställ';
+
+  @override
+  String get route_prefer => 'Prioritera';
+
+  @override
+  String get route_dirtFastest => 'Snabbast';
+
+  @override
+  String get route_dirtBalanced => 'Balanserat';
+
+  @override
+  String get route_dirtDirect => 'Mest direkt';
+
+  @override
+  String get route_dirtFastestHelp => 'Grusvägar bara där de är snabbare.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'En grusväg när den kortar sträckan rejält.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'Den kortaste vägen, hur långsamma grusvägarna än är.';
+
+  @override
+  String get route_avoid => 'Undvik';
+
+  @override
+  String get route_avoidHighways => 'Motorvägar';
+
+  @override
+  String get route_avoidTolls => 'Vägtullar';
+
+  @override
+  String get route_avoidFerries => 'Färjor';
+
+  @override
+  String get route_hardestTrail => 'Svåraste led';
+
+  @override
+  String get route_trailT1 => 'T1 Vandring';
+
+  @override
+  String get route_trailT2 => 'T2 Bergsvandring';
+
+  @override
+  String get route_trailT3 => 'T3 Krävande bergsvandring';
+
+  @override
+  String get route_trailT4 => 'T4 Alpin vandring';
+
+  @override
+  String get route_trailT5 => 'T5 Krävande alpin vandring';
+
+  @override
+  String get route_trailT6 => 'T6 Svår alpin vandring';
+
+  @override
+  String get route_climbs => 'Stigningar';
+
+  @override
+  String get route_climbsAvoid => 'Undvik';
+
+  @override
+  String get route_climbsSome => 'Måttligt';
+
+  @override
+  String get route_climbsAny => 'Obegränsat';
+
+  @override
+  String get route_pace => 'Tempo';
+
+  @override
+  String get route_paceSlow => 'Långsamt';
+
+  @override
+  String get route_paceNormal => 'Normalt';
+
+  @override
+  String get route_paceFast => 'Snabbt';
+
+  @override
+  String get place_nrhp => 'National Register of Historic Places';
+
+  @override
+  String get place_textCredit => 'Text från Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Läs på Wikipedia';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Foto: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Sök platser, adresser eller koordinater';
+
+  @override
+  String get search_noPlaces =>
+      'Ladda ner Intressanta platser för en region för att söka bland dess platser. Koordinater fungerar ändå.';
+
+  @override
+  String get search_noResults => 'Inga träffar';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Decimalgrader';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Grader och minuter';
+
+  @override
+  String get coordFormat_dms => 'Grader, minuter, sekunder';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenhead-lokator';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Topp';
+
+  @override
+  String get poiKind_volcano => 'Vulkan';
+
+  @override
+  String get poiKind_saddle => 'Bergsadel';
+
+  @override
+  String get poiKind_pass => 'Bergspass';
+
+  @override
+  String get poiKind_spring => 'Källa';
+
+  @override
+  String get poiKind_hotSpring => 'Varm källa';
+
+  @override
+  String get poiKind_waterfall => 'Vattenfall';
+
+  @override
+  String get poiKind_cave => 'Grotta';
+
+  @override
+  String get poiKind_arch => 'Klippbåge';
+
+  @override
+  String get poiKind_glacier => 'Glaciär';
+
+  @override
+  String get poiKind_rock => 'Klippa';
+
+  @override
+  String get poiKind_cliff => 'Stup';
+
+  @override
+  String get poiKind_beach => 'Strand';
+
+  @override
+  String get poiKind_trailhead => 'Ledstart';
+
+  @override
+  String get poiKind_campground => 'Campingplats';
+
+  @override
+  String get poiKind_picnicSite => 'Picknickplats';
+
+  @override
+  String get poiKind_hut => 'Stuga';
+
+  @override
+  String get poiKind_shelter => 'Vindskydd';
+
+  @override
+  String get poiKind_drinkingWater => 'Dricksvatten';
+
+  @override
+  String get poiKind_toilets => 'Toaletter';
+
+  @override
+  String get poiKind_viewpoint => 'Utsiktsplats';
+
+  @override
+  String get poiKind_attraction => 'Sevärdhet';
+
+  @override
+  String get poiKind_observatory => 'Observatorium';
+
+  @override
+  String get poiKind_zoo => 'Djurpark';
+
+  @override
+  String get poiKind_themePark => 'Nöjespark';
+
+  @override
+  String get poiKind_mine => 'Gruva';
+
+  @override
+  String get poiKind_mineShaft => 'Gruvschakt';
+
+  @override
+  String get poiKind_adit => 'Gruvgång';
+
+  @override
+  String get poiKind_ghostTown => 'Spökstad';
+
+  @override
+  String get poiKind_ruins => 'Ruin';
+
+  @override
+  String get poiKind_monument => 'Monument';
+
+  @override
+  String get poiKind_memorial => 'Minnesmärke';
+
+  @override
+  String get poiKind_fort => 'Fästning';
+
+  @override
+  String get poiKind_historic => 'Historisk plats';
+
+  @override
+  String get poiKind_rangerStation => 'Rangerstation';
+
+  @override
+  String get poiKind_visitorCenter => 'Besökscenter';
+
+  @override
+  String get poiKind_hospital => 'Sjukhus';
+
+  @override
+  String get poiKind_police => 'Polis';
+
+  @override
+  String get poiKind_fireStation => 'Brandstation';
+
+  @override
+  String get poiKind_emergencyPhone => 'Nödtelefon';
+
+  @override
+  String get poiKind_fuel => 'Bensinstation';
+
+  @override
+  String get poiKind_restArea => 'Rastplats';
+
+  @override
+  String get poiKind_travelCenter => 'Serviceområde';
+
+  @override
+  String get poiKind_museum => 'Museum';
+
+  @override
+  String get poiKind_city => 'Stad';
+
+  @override
+  String get poiKind_town => 'Ort';
+
+  @override
+  String get poiKind_locality => 'Område';
+
+  @override
+  String get poiKind_lake => 'Sjö';
+
+  @override
+  String get poiKind_river => 'Vattendrag';
+
+  @override
+  String get poiKind_valley => 'Dal';
+
+  @override
+  String get poiKind_range => 'Bergskedja';
+
+  @override
+  String get poiKind_trail => 'Led';
+
+  @override
+  String get poiKind_dirtRoad => 'Grusväg';
+
+  @override
+  String get poiKind_road => 'Väg';
+
+  @override
+  String get poiKind_address => 'Adress';
+
+  @override
+  String get poiKind_place => 'Plats';
+
+  @override
+  String get offlineMaps_kindRouting => 'Färdvägsplanering';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Färdvägar på leder, grusvägar och asfalterade vägar';
+
+  @override
+  String get offlineMaps_kindPoi => 'Intressanta platser';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Sökbara platser, med text från Wikipedia';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Adresser';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Sökbara gatuadresser';
+
+  @override
+  String get map_search => 'Sök';
+
+  @override
+  String get route_fromHere => 'Färdväg härifrån';
+
+  @override
+  String get route_startSet => 'Startpunkten är vald. Välj nu vart du ska.';
+
+  @override
+  String get route_noStart =>
+      'Ingen startpunkt. Tryck länge på kartan och välj Färdväg härifrån.';
+
+  @override
+  String get route_noData =>
+      'Ladda ner Färdvägsplanering för den här regionen i Offlinekartor för att hitta färdvägar här.';
+
+  @override
+  String get route_pin => 'Utplacerad nål';
+
+  @override
+  String get appSettings_coordinateFormat => 'Koordinatformat';
+
+  @override
+  String get map_copyPosition => 'Kopiera position';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Skyddat område';
+
+  @override
+  String get common_more => 'Visa mer';
+
+  @override
+  String get common_less => 'Visa mindre';
+
+  @override
   String get locationSharing_title => 'Vem kan se min plats';
 
   @override
@@ -5828,44 +6310,44 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chats_advertise => 'Annonsera';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Teckning';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Rita';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Klistra in';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Penna';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Linje';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Rektangel';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Cirkel';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Ellips';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Pil';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Ångra';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Bildtext';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Valfritt, visas under bilden';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max byte';
   }
 
   @override
@@ -5873,113 +6355,113 @@ class AppLocalizationsSv extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count punkter',
+      one: '1 punkt',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Alla punkter du ritat behålls.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Förenklad: linjerna avviker högst $percent% av teckningens storlek.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'För detaljerad för ett meddelande, även efter förenkling. Ångra ett streck eller använd former, som tar mycket mindre plats.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Rita med fingret eller välj en form.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Klistra in en SVG-fil eller path-data, t.ex. M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Använd SVG:n';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Färger och fyllningar följer inte med: bilden skickas som linjer i mottagarens pennfärg.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Klistra in SVG eller path-data först.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Det är för stort eller för detaljerat för att läsas in. Klistra in en mindre SVG.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => 'Det är ingen SVG som appen kan läsa.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => 'SVG:n innehåller inget synligt att rita.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Kopiera SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Teckningar';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Bilder skickade som SVG och hur de ser ut här';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Visa teckningar';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => 'Av visar SVG-koden i stället';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Pennfärg';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Färgkod';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Linjebredd';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Glöd';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Avsökningslinjer';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Färdväg';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Kryss';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Tryck för att lägga till punkter. Tryck på den sista igen för att avsluta.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Ingen';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Rita här';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Flytta kartan';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Panorera och zooma till platsen och tryck sedan på Rita här.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance i bredd';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Det här området är inte nedladdat';
 }

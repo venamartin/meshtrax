@@ -354,7 +354,8 @@ which differs from the iOS `com.vena.meshtrax`.
   a build number can never be reused, even after deleting the build
 - **MinimumOSVersion too low**: a warning, not an error — the upload still
   succeeds. From Spring 2027 Apple requires 15.0 or later. The project is
-  already at 15.5, so this should not appear; if it does, check
+  at 16.4 (offline routing's valhalla-mobile needs it), so this should not
+  appear; if it does, check
   `IPHONEOS_DEPLOYMENT_TARGET` in `ios/Runner.xcodeproj/project.pbxproj` and
   keep it in sync with `platform :ios` in `ios/Podfile`, or the app advertises
   support for iOS versions its Pods were never built for.

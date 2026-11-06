@@ -29,7 +29,7 @@ const _ri = 'north-america/us/rhode-island';
 class _FakeDownloader implements PackDownloader {
   final _updates = StreamController<PackDownload>.broadcast();
   final started = <String>[];
-  final startedWith = <PackIndexEntry>[];
+  final startedWith = <DownloadItem>[];
   final cancelled = <String>[];
 
   void emit(PackDownload d) => _updates.add(d);
@@ -39,17 +39,19 @@ class _FakeDownloader implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {
-    started.add(entry.id);
-    startedWith.add(entry);
+  Future<void> start(DownloadItem item) async {
+    started.add(item.id);
+    startedWith.add(item);
   }
 
   @override
-  Future<void> pause(String packId) async {}
+  Future<void> pause(String id) async {}
   @override
-  Future<void> resume(String packId) async {}
+  Future<void> resume(String id) async {}
   @override
-  Future<void> cancel(String packId) async => cancelled.add(packId);
+  Future<void> cancel(String id) async => cancelled.add(id);
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 void main() {
@@ -330,6 +332,58 @@ void main() {
       expect(maps.downloadedAreas(MapType.usgs).keys, [_ri]);
     },
   );
+
+  group('map hints', () {
+    const hints =
+        '{"schema_version": 1, "parks": {"desert": ["Joshua Tree National Park"]}}';
+    const hintsPath = '/dev/hints/v1/2026102701/hints.json';
+    String indexWithHints(String sha) => jsonEncode({
+      ...jsonDecode(_index) as Map<String, dynamic>,
+      'hints': {
+        'schema_version': 1,
+        'build': '2026102701',
+        'url': 'hints/v1/2026102701/hints.json',
+        'bytes': hints.length,
+        'sha256': sha,
+      },
+    });
+
+    setUp(() {
+      routes[hintsPath] = (_) => http.Response(hints, 200);
+    });
+
+    test('come with the catalogue, checked, and stay for offline', () async {
+      final sha = sha256.convert(utf8.encode(hints)).toString();
+      routes['/dev/index.json'] = (_) =>
+          http.Response.bytes(utf8.encode(indexWithHints(sha)), 200);
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.hints!.desertParks, ['Joshua Tree National Park']);
+
+      requests.clear();
+      await maps.refresh();
+      expect(
+        requests.map((r) => r.url.path),
+        isNot(contains(hintsPath)),
+        reason: 'same sha256: the cached copy is used',
+      );
+
+      final offline = service();
+      await offline.start();
+      expect(offline.hints!.desertParks, ['Joshua Tree National Park']);
+    });
+
+    test('a wrong sha256 is refused, and the catalogue still loads', () async {
+      routes['/dev/index.json'] = (_) =>
+          http.Response.bytes(utf8.encode(indexWithHints('0' * 64)), 200);
+      final maps = service();
+      await maps.start();
+      await maps.refresh();
+      expect(maps.hints, isNull);
+      expect(maps.status, CatalogueStatus.ready);
+    });
+  });
 
   test('the maps folder stays out of iOS and macOS backups', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -629,5 +683,46 @@ void main() {
     expect(freed, greaterThan(0));
     expect(downloader.cancelled, ['us-rhode-island-contours-20ft']);
     expect(maps.installed.map((p) => p.id), ['watsonville-test-osm']);
+  });
+
+  test('routing and places files download beside the packs, and go with '
+      'their region', () async {
+    final maps = service();
+    await maps.start();
+    await maps.refresh();
+    final routing = DownloadFile(
+      id: 'routing-ri',
+      name: 'Rhode Island',
+      region: _ri,
+      url: Uri.parse('https://maps.example/routing/ri.tar.gz'),
+      bytes: 100,
+      sha256: 'ab',
+      kind: 'routing',
+    );
+    await maps.download([routing]);
+    expect(downloader.started, ['routing-ri']);
+
+    downloader.emit(
+      PackDownload(routing, PackDownloadState.running, progress: 0.5),
+    );
+    await pumpEventQueue();
+    expect(maps.downloadStatus('routing-ri'), PackStatus.running);
+    expect(maps.activeDownloads.map((d) => d.id), ['routing-ri']);
+    expect(maps.badgeCount, 1);
+    // A file's download never reads as a pack's.
+    final osm = maps.index!.packs.firstWhere(
+      (e) => e.id == 'us-rhode-island-osm',
+    );
+    expect(maps.statusOf(osm), PackStatus.available);
+
+    // Checked and waiting for the app to install it: still going.
+    downloader.emit(
+      PackDownload(routing, PackDownloadState.downloaded, path: 'ri.tar.gz'),
+    );
+    await pumpEventQueue();
+    expect(maps.downloadStatus('routing-ri'), PackStatus.verifying);
+
+    await maps.deleteRegion(_ri);
+    expect(downloader.cancelled, ['routing-ri']);
   });
 }

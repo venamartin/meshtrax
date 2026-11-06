@@ -29,8 +29,9 @@ bool mapShowsParkIcons(AppSettings settings, MapPacksService maps) =>
     maps.installed.any((p) => p.kind == PackKind.osm);
 
 /// Opens the map legend: the Mesh symbols and [counts] (none without a
-/// radio), then the symbols of the map shown: park and trail icons on the
-/// offline OSM map, or the chart symbols by section on charts.
+/// radio), then the symbols of the map shown: roads, trails and other lines
+/// and the park and trail icons on the offline OSM map, or the chart
+/// symbols by section on charts.
 /// It opens at half height and drags up to full.
 Future<void> showMapLegend(BuildContext context, {MeshLegendCounts? counts}) =>
     showModalBottomSheet<void>(
@@ -119,7 +120,22 @@ class MapLegendSheet extends StatelessWidget {
         ],
         if (osmStyle != null) ...[
           if (counts != null) const Divider(height: 24),
-          _ParkSymbols(styleId: osmStyle),
+          _OsmSymbols(
+            styleId: osmStyle,
+            title: l10n.roadLegend_title,
+            rows: [
+              for (final item in RoadLegendItem.values)
+                (item.samples, _roadText(l10n, item)),
+            ],
+          ),
+          _OsmSymbols(
+            styleId: osmStyle,
+            title: l10n.parkLegend_title,
+            rows: [
+              for (final item in ParkLegendItem.values)
+                ([item.sample], _parkText(l10n, item)),
+            ],
+          ),
         ],
         if (chartsStyle != null) ...[
           if (counts != null) const Divider(height: 24),
@@ -236,35 +252,42 @@ class _MeshLegend extends StatelessWidget {
   }
 }
 
-/// The OSM map's park and trail icons, in one collapsible section.
-class _ParkSymbols extends StatelessWidget {
+/// One collapsible section of the OSM map's symbols: each row's samples,
+/// drawn on the map's background, and its words.
+class _OsmSymbols extends StatelessWidget {
   final String styleId;
+  final String title;
+  final List<(List<LegendSample>, String)> rows;
 
-  const _ParkSymbols({required this.styleId});
+  const _OsmSymbols({
+    required this.styleId,
+    required this.title,
+    required this.rows,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final maps = context.watch<MapPacksService>();
     return FutureBuilder(
       future: LegendStyle.load(maps.styles, styleId),
       builder: (context, snapshot) {
         final style = snapshot.data;
         return ExpansionTile(
-          title: Text(l10n.parkLegend_title),
+          title: Text(title),
           shape: const Border(),
           childrenPadding: const EdgeInsets.only(bottom: 8),
           children: [
             if (style != null)
-              for (final item in ParkLegendItem.values)
+              for (final (samples, text) in rows)
                 ListTile(
                   dense: true,
                   leading: LegendSymbol(
                     style: style,
-                    samples: [item.sample],
+                    samples: samples,
                     ground: parkLegendGround,
+                    minLineWidth: 1.5,
                   ),
-                  title: Text(_parkText(l10n, item)),
+                  title: Text(text),
                 ),
           ],
         );
@@ -272,6 +295,23 @@ class _ParkSymbols extends StatelessWidget {
     );
   }
 }
+
+String _roadText(AppLocalizations l10n, RoadLegendItem item) => switch (item) {
+  RoadLegendItem.freeway => l10n.roadLegend_freeway,
+  RoadLegendItem.majorRoad => l10n.roadLegend_majorRoad,
+  RoadLegendItem.road => l10n.roadLegend_road,
+  RoadLegendItem.track => l10n.roadLegend_track,
+  RoadLegendItem.trail => l10n.roadLegend_trail,
+  RoadLegendItem.interstate => l10n.roadLegend_interstate,
+  RoadLegendItem.usRoute => l10n.roadLegend_usRoute,
+  RoadLegendItem.stateRoute => l10n.roadLegend_stateRoute,
+  RoadLegendItem.railway => l10n.roadLegend_railway,
+  RoadLegendItem.stream => l10n.roadLegend_stream,
+  RoadLegendItem.contour => l10n.roadLegend_contour,
+  RoadLegendItem.park => l10n.roadLegend_park,
+  RoadLegendItem.wilderness => l10n.roadLegend_wilderness,
+  RoadLegendItem.boundary => l10n.roadLegend_boundary,
+};
 
 String _parkText(AppLocalizations l10n, ParkLegendItem item) => switch (item) {
   ParkLegendItem.campsite => l10n.parkLegend_campsite,

@@ -53,6 +53,8 @@ class FlutterMapRenderer extends StatefulWidget {
   final OfflineMapController? controller;
   final ValueChanged<MapCamera>? onCameraChanged;
   final ValueChanged<LatLng>? onTap;
+
+  /// A long-press, or a right-click with a mouse.
   final ValueChanged<LatLng>? onLongPress;
 
   /// Device pixels per logical pixel for tile bitmaps; null = auto.
@@ -322,32 +324,37 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
     _scheduleCoverage();
   }
 
-  /// Wraps an interactive line/polygon layer: a tap or long-press on an
-  /// overlay goes to its handler; if it has none for that gesture, the map's
-  /// handler gets it instead, so overlays never swallow map gestures.
-  Widget _interactive(fm.LayerHitNotifier<MapOverlay> hits, Widget layer) =>
-      GestureDetector(
-        behavior: HitTestBehavior.deferToChild,
-        onTap: () {
-          final hit = hits.value;
-          final o = hit?.hitValues.firstOrNull;
-          if (o?.onTap != null) {
-            o!.onTap!();
-          } else if (hit != null) {
-            widget.onTap?.call(_ovm(hit.coordinate));
-          }
-        },
-        onLongPress: () {
-          final hit = hits.value;
-          final o = hit?.hitValues.firstOrNull;
-          if (o?.onLongPress != null) {
-            o!.onLongPress!();
-          } else if (hit != null) {
-            widget.onLongPress?.call(_ovm(hit.coordinate));
-          }
-        },
-        child: layer,
-      );
+  /// Wraps an interactive line/polygon layer: a tap or long-press (or
+  /// right-click) on an overlay goes to its handler; if it has none for that
+  /// gesture, the map's handler gets it instead, so overlays never swallow
+  /// map gestures.
+  Widget _interactive(fm.LayerHitNotifier<MapOverlay> hits, Widget layer) {
+    void longPress() {
+      final hit = hits.value;
+      final o = hit?.hitValues.firstOrNull;
+      if (o?.onLongPress != null) {
+        o!.onLongPress!();
+      } else if (hit != null) {
+        widget.onLongPress?.call(_ovm(hit.coordinate));
+      }
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.deferToChild,
+      onTap: () {
+        final hit = hits.value;
+        final o = hit?.hitValues.firstOrNull;
+        if (o?.onTap != null) {
+          o!.onTap!();
+        } else if (hit != null) {
+          widget.onTap?.call(_ovm(hit.coordinate));
+        }
+      },
+      onLongPress: longPress,
+      onSecondaryTap: longPress,
+      child: layer,
+    );
+  }
 
   // --- Build ----------------------------------------------------------------
 
@@ -385,6 +392,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
         onMapReady: _onMapReady,
         onTap: _handleTap,
         onLongPress: _handleLongPress,
+        onSecondaryTap: _handleLongPress,
         onPositionChanged: _handlePosition,
       ),
       children: [
@@ -540,6 +548,7 @@ class _Overlays {
               behavior: HitTestBehavior.opaque,
               onTap: o.onTap,
               onLongPress: o.onLongPress,
+              onSecondaryTap: o.onLongPress,
               child: body,
             )
           : IgnorePointer(child: body),

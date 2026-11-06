@@ -36,17 +36,19 @@ class _FakeDownloader implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {
-    started.add(entry.id);
-    _updates.add(PackDownload(entry, PackDownloadState.queued, progress: 0));
+  Future<void> start(DownloadItem item) async {
+    started.add(item.id);
+    _updates.add(PackDownload(item, PackDownloadState.queued, progress: 0));
   }
 
   @override
-  Future<void> pause(String packId) async {}
+  Future<void> pause(String id) async {}
   @override
-  Future<void> resume(String packId) async {}
+  Future<void> resume(String id) async {}
   @override
-  Future<void> cancel(String packId) async => cancelled.add(packId);
+  Future<void> cancel(String id) async => cancelled.add(id);
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 void main() {

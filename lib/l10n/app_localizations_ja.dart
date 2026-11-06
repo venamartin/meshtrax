@@ -4640,6 +4640,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapLayers_hillShading => '陰影起伏';
 
   @override
+  String get mapLayers_places => 'スポット';
+
+  @override
+  String get mapLayers_parks => '公園';
+
+  @override
   String get mapLayers_dark => 'ダーク地図';
 
   @override
@@ -5385,6 +5391,51 @@ class AppLocalizationsJa extends AppLocalizations {
   String get parkLegend_guidepost => '道標';
 
   @override
+  String get roadLegend_title => '道路・トレイル・線';
+
+  @override
+  String get roadLegend_freeway => '高速道路';
+
+  @override
+  String get roadLegend_majorRoad => '幹線道路';
+
+  @override
+  String get roadLegend_road => '道路';
+
+  @override
+  String get roadLegend_track => '未舗装路・林道';
+
+  @override
+  String get roadLegend_trail => 'トレイル';
+
+  @override
+  String get roadLegend_interstate => '州間高速道路';
+
+  @override
+  String get roadLegend_usRoute => 'アメリカ国道';
+
+  @override
+  String get roadLegend_stateRoute => '州道';
+
+  @override
+  String get roadLegend_railway => '鉄道';
+
+  @override
+  String get roadLegend_stream => '川・小川';
+
+  @override
+  String get roadLegend_contour => '等高線';
+
+  @override
+  String get roadLegend_park => '公園の境界';
+
+  @override
+  String get roadLegend_wilderness => '原生地域・国有林';
+
+  @override
+  String get roadLegend_boundary => '州境・郡境';
+
+  @override
   String get dialog_noticeExpires => '有効期限';
 
   @override
@@ -5532,6 +5583,430 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pathfinder_graphCreate => '作成';
 
   @override
+  String get route_pathPaved => '舗装路';
+
+  @override
+  String get route_pathDirt => '未舗装';
+
+  @override
+  String get route_pathHiking => '徒歩';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes分';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours時間$minutes分';
+  }
+
+  @override
+  String route_to(String destination) {
+    return '$destinationまで';
+  }
+
+  @override
+  String get route_clear => '道順を消去';
+
+  @override
+  String get route_finding => '道順を検索中…';
+
+  @override
+  String get route_none => '道順が見つかりません';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return '$destinationの$distance手前、舗装路が途切れる地点までの道順です。';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return '$destinationの$distance手前、道路が途切れる地点までの道順です。';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return '$destinationの$distance手前、トレイルが途切れる地点までの道順です。';
+  }
+
+  @override
+  String get route_directions => '道順の詳細';
+
+  @override
+  String get route_here => 'ここへの道順';
+
+  @override
+  String route_destinationNow(String destination) {
+    return '設定中の目的地：$destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return '設定中の出発地：$start';
+  }
+
+  @override
+  String get route_startNowYou => '設定中の出発地：現在地';
+
+  @override
+  String get route_noHeights => 'この地域の標高データはありません。';
+
+  @override
+  String get route_noHeightsHiking => 'この地域の標高データがないため、所要時間に登りは含まれていません。';
+
+  @override
+  String get route_options => '道順のオプション';
+
+  @override
+  String get route_optionsReset => 'リセット';
+
+  @override
+  String get route_prefer => '優先';
+
+  @override
+  String get route_dirtFastest => '最速';
+
+  @override
+  String get route_dirtBalanced => 'バランス';
+
+  @override
+  String get route_dirtDirect => '最短';
+
+  @override
+  String get route_dirtFastestHelp => '未舗装路は、そのほうが速いときだけ使います。';
+
+  @override
+  String get route_dirtBalancedHelp => '距離が大きく縮まるときは未舗装路も使います。';
+
+  @override
+  String get route_dirtDirectHelp => '未舗装路で時間がかかっても、最短の道を選びます。';
+
+  @override
+  String get route_avoid => '避ける';
+
+  @override
+  String get route_avoidHighways => '高速道路';
+
+  @override
+  String get route_avoidTolls => '有料道路';
+
+  @override
+  String get route_avoidFerries => 'フェリー';
+
+  @override
+  String get route_hardestTrail => '難易度の上限';
+
+  @override
+  String get route_trailT1 => 'T1 ハイキング';
+
+  @override
+  String get route_trailT2 => 'T2 山岳ハイキング';
+
+  @override
+  String get route_trailT3 => 'T3 難しい山岳ハイキング';
+
+  @override
+  String get route_trailT4 => 'T4 アルパインハイキング';
+
+  @override
+  String get route_trailT5 => 'T5 難しいアルパインハイキング';
+
+  @override
+  String get route_trailT6 => 'T6 非常に難しいアルパインハイキング';
+
+  @override
+  String get route_climbs => '登り';
+
+  @override
+  String get route_climbsAvoid => '避ける';
+
+  @override
+  String get route_climbsSome => 'ほどほど';
+
+  @override
+  String get route_climbsAny => '気にしない';
+
+  @override
+  String get route_pace => 'ペース';
+
+  @override
+  String get route_paceSlow => 'ゆっくり';
+
+  @override
+  String get route_paceNormal => '普通';
+
+  @override
+  String get route_paceFast => '速め';
+
+  @override
+  String get place_nrhp => '国家歴史登録財';
+
+  @override
+  String get place_textCredit => '文章：Wikipedia、CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Wikipediaで読む';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return '写真：$author、$licence';
+  }
+
+  @override
+  String get search_hint => '場所・住所・座標を検索';
+
+  @override
+  String get search_noPlaces =>
+      '地域の「スポット情報」をダウンロードすると、その地域の場所を検索できます。座標の検索にはダウンロードは不要です。';
+
+  @override
+  String get search_noResults => '一致なし';
+
+  @override
+  String get coordFormat_decimalDegrees => '度（10進数）';
+
+  @override
+  String get coordFormat_degreesMinutes => '度・分';
+
+  @override
+  String get coordFormat_dms => '度・分・秒';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenheadグリッド';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => '山頂';
+
+  @override
+  String get poiKind_volcano => '火山';
+
+  @override
+  String get poiKind_saddle => '鞍部';
+
+  @override
+  String get poiKind_pass => '峠';
+
+  @override
+  String get poiKind_spring => '湧水';
+
+  @override
+  String get poiKind_hotSpring => '温泉';
+
+  @override
+  String get poiKind_waterfall => '滝';
+
+  @override
+  String get poiKind_cave => '洞窟';
+
+  @override
+  String get poiKind_arch => '天然アーチ';
+
+  @override
+  String get poiKind_glacier => '氷河';
+
+  @override
+  String get poiKind_rock => '岩';
+
+  @override
+  String get poiKind_cliff => '崖';
+
+  @override
+  String get poiKind_beach => 'ビーチ';
+
+  @override
+  String get poiKind_trailhead => '登山口';
+
+  @override
+  String get poiKind_campground => 'キャンプ場';
+
+  @override
+  String get poiKind_picnicSite => 'ピクニック場';
+
+  @override
+  String get poiKind_hut => '山小屋';
+
+  @override
+  String get poiKind_shelter => '避難小屋';
+
+  @override
+  String get poiKind_drinkingWater => '飲料水';
+
+  @override
+  String get poiKind_toilets => 'トイレ';
+
+  @override
+  String get poiKind_viewpoint => '展望所';
+
+  @override
+  String get poiKind_attraction => '観光スポット';
+
+  @override
+  String get poiKind_observatory => '天文台';
+
+  @override
+  String get poiKind_zoo => '動物園';
+
+  @override
+  String get poiKind_themePark => 'テーマパーク';
+
+  @override
+  String get poiKind_mine => '鉱山';
+
+  @override
+  String get poiKind_mineShaft => '立坑';
+
+  @override
+  String get poiKind_adit => '横坑';
+
+  @override
+  String get poiKind_ghostTown => 'ゴーストタウン';
+
+  @override
+  String get poiKind_ruins => '廃墟';
+
+  @override
+  String get poiKind_monument => 'モニュメント';
+
+  @override
+  String get poiKind_memorial => '記念碑';
+
+  @override
+  String get poiKind_fort => '砦';
+
+  @override
+  String get poiKind_historic => '史跡';
+
+  @override
+  String get poiKind_rangerStation => 'レンジャーステーション';
+
+  @override
+  String get poiKind_visitorCenter => 'ビジターセンター';
+
+  @override
+  String get poiKind_hospital => '病院';
+
+  @override
+  String get poiKind_police => '警察';
+
+  @override
+  String get poiKind_fireStation => '消防署';
+
+  @override
+  String get poiKind_emergencyPhone => '非常電話';
+
+  @override
+  String get poiKind_fuel => 'ガソリンスタンド';
+
+  @override
+  String get poiKind_restArea => '休憩所';
+
+  @override
+  String get poiKind_travelCenter => 'サービスエリア';
+
+  @override
+  String get poiKind_museum => '博物館';
+
+  @override
+  String get poiKind_city => '都市';
+
+  @override
+  String get poiKind_town => '町';
+
+  @override
+  String get poiKind_locality => '地区';
+
+  @override
+  String get poiKind_lake => '湖';
+
+  @override
+  String get poiKind_river => '川';
+
+  @override
+  String get poiKind_valley => '谷';
+
+  @override
+  String get poiKind_range => '山脈';
+
+  @override
+  String get poiKind_trail => 'トレイル';
+
+  @override
+  String get poiKind_dirtRoad => '未舗装路';
+
+  @override
+  String get poiKind_road => '道路';
+
+  @override
+  String get poiKind_address => '住所';
+
+  @override
+  String get poiKind_place => '場所';
+
+  @override
+  String get offlineMaps_kindRouting => '道順検索';
+
+  @override
+  String get offlineMaps_kindRoutingDetail => 'トレイル・未舗装路・舗装路の道順';
+
+  @override
+  String get offlineMaps_kindPoi => 'スポット情報';
+
+  @override
+  String get offlineMaps_kindPoiDetail => '検索できる場所とWikipediaの解説';
+
+  @override
+  String get offlineMaps_kindAddresses => '住所';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => '番地まで検索できる住所';
+
+  @override
+  String get map_search => '検索';
+
+  @override
+  String get route_fromHere => 'ここからの道順';
+
+  @override
+  String get route_startSet => '出発地を設定しました。次に目的地を選んでください。';
+
+  @override
+  String get route_noStart => '出発地がわかりません。地図を長押しして「ここからの道順」を選んでください。';
+
+  @override
+  String get route_noData => 'ここで道順を調べるには、「オフライン地図」でこの地域の「道順検索」をダウンロードしてください。';
+
+  @override
+  String get route_pin => 'ドロップしたピン';
+
+  @override
+  String get appSettings_coordinateFormat => '座標の表示形式';
+
+  @override
+  String get map_copyPosition => '位置をコピー';
+
+  @override
+  String get poiKind_park => '公園';
+
+  @override
+  String get poiKind_protectedArea => '保護区';
+
+  @override
+  String get common_more => 'もっと見る';
+
+  @override
+  String get common_less => '折りたたむ';
+
+  @override
   String get locationSharing_title => '位置情報を見られる人';
 
   @override
@@ -5604,44 +6079,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chats_advertise => 'アドバート';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '手描き';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '描く';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '貼り付け';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'ペン';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '直線';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '四角形';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '円';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '楕円';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '矢印';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '元に戻す';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'キャプション';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '絵の下に表示されます（任意）';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $maxバイト';
   }
 
   @override
@@ -5649,113 +6124,108 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count点',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '描いた点はすべてそのまま残ります。';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '簡略化済み：線のずれは絵の大きさの$percent%以内です。';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      '簡略化しても細かすぎて、1通のメッセージに収まりません。線を1本取り消すか、データ量がずっと少ない図形を使ってください。';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '指で描くか、図形を選んでください。';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'SVGファイル、または M10 10h80v80H10z のようなパスデータを貼り付けてください';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'このSVGを使う';
 
   @override
-  String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+  String get drawing_pasteNote => '色や塗りつぶしは送られません。線だけが送られ、見る人のペンの色で表示されます。';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '先にSVGかパスデータを貼り付けてください。';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      '大きすぎるか細かすぎるため、読み込めません。もっと小さいSVGを貼り付けてください。';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => 'このアプリで読み込めるSVGではありません。';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => 'このSVGには目に見えるものがなく、描けません。';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVGをコピー';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '手描き';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => 'SVGで送られる絵と、この端末での見え方';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '手描きを表示';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => 'オフにすると代わりにSVGコードを表示します';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'ペンの色';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'カラーコード';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '線の太さ';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'グロー';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '走査線';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '道順';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => '×印';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => 'タップして点を追加します。最後の点をもう一度タップすると完了します。';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '地図なし';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'ここに描く';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '地図を動かす';
 
   @override
-  String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+  String get drawing_mapHint => '地図を移動・ズームして場所を合わせ、「ここに描く」をタップしてください。';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map、幅$distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'このエリアはダウンロードされていません';
 }

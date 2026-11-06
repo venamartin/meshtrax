@@ -85,6 +85,7 @@ class StructuredMessageDialogs {
   static Future<LocationMessage?> location(
     BuildContext context, {
     LatLng? position,
+    String? title,
     String? action,
   }) {
     return showDialog<LocationMessage>(
@@ -92,6 +93,7 @@ class StructuredMessageDialogs {
       builder: (_) => _LocationDialog(
         mine: false,
         initialPosition: position,
+        initialTitle: title,
         action: action,
       ),
     );
@@ -306,11 +308,13 @@ const _rowDensity = VisualDensity(vertical: -3);
 class _LocationDialog extends StatefulWidget {
   final bool mine;
   final LatLng? initialPosition;
+  final String? initialTitle;
   final String? action;
 
   const _LocationDialog({
     required this.mine,
     this.initialPosition,
+    this.initialTitle,
     this.action,
   });
 
@@ -319,7 +323,7 @@ class _LocationDialog extends StatefulWidget {
 }
 
 class _LocationDialogState extends State<_LocationDialog> {
-  final _label = TextEditingController();
+  late final _label = TextEditingController(text: widget.initialTitle);
   final _note = TextEditingController();
   late LatLng? _position = widget.initialPosition;
 

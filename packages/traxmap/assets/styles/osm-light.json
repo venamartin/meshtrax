@@ -343,27 +343,80 @@
       "source": "osm",
       "source-layer": "park",
       "filter": [
-        "!",
+        "all",
         [
-          "match",
+          "==",
           [
-            "get",
-            "class"
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "any",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park",
+              "national_seashore",
+              "national_lakeshore",
+              "national_recreation_area",
+              "national_historical_park",
+              "national_scenic_area",
+              "state_beach",
+              "state_historic_park",
+              "state_recreation_area",
+              "state_natural_reserve",
+              "state_reserve",
+              "state_vehicular_recreation_area",
+              "provincial_park",
+              "parque_nacional"
+            ],
+            true,
+            false
           ],
           [
-            "national_marine_sanctuary",
-            "state_marine_conservation_area",
-            "state_marine_reserve",
-            "state_marine_park",
-            "marine_protected_area"
-          ],
-          true,
-          false
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
         ]
       ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
       "paint": {
-        "fill-color": "#cfe8c4",
-        "fill-opacity": 0.5
+        "fill-color": [
+          "case",
+          [
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
+          ],
+          "#e6cf9f",
+          "#b5d99c"
+        ],
+        "fill-opacity": 0.37
       }
     },
     {
@@ -491,13 +544,20 @@
       }
     },
     {
-      "id": "park-outline",
+      "id": "park-outline-minor",
       "type": "line",
       "source": "osm",
       "source-layer": "park",
-      "minzoom": 9,
+      "minzoom": 11,
       "filter": [
-        "!",
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
         [
           "match",
           [
@@ -505,24 +565,121 @@
             "class"
           ],
           [
-            "national_marine_sanctuary",
-            "state_marine_conservation_area",
-            "state_marine_reserve",
-            "state_marine_park",
-            "marine_protected_area"
+            "wilderness_area",
+            "national_forest"
           ],
           true,
           false
         ]
       ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
       "paint": {
-        "line-color": "#a9d19a",
-        "line-width": 1,
-        "line-opacity": 0.8,
+        "line-color": "#9cc28c",
+        "line-width": 0.8,
+        "line-opacity": 0.7,
         "line-dasharray": [
           3,
           2
         ]
+      }
+    },
+    {
+      "id": "park-outline",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "park",
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ],
+        [
+          "any",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park",
+              "national_seashore",
+              "national_lakeshore",
+              "national_recreation_area",
+              "national_historical_park",
+              "national_scenic_area",
+              "state_beach",
+              "state_historic_park",
+              "state_recreation_area",
+              "state_natural_reserve",
+              "state_reserve",
+              "state_vehicular_recreation_area",
+              "provincial_park",
+              "parque_nacional"
+            ],
+            true,
+            false
+          ],
+          [
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
+      "paint": {
+        "line-color": [
+          "case",
+          [
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
+          ],
+          "#b98c4e",
+          "#6aa457"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          0.8,
+          12,
+          1.6,
+          16,
+          2.2
+        ],
+        "line-opacity": 0.9
       }
     },
     {
@@ -577,24 +734,52 @@
       "type": "line",
       "source": "osm",
       "source-layer": "transportation",
-      "minzoom": 11,
+      "minzoom": 8,
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "class"
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "motorway",
+            "trunk",
+            "primary",
+            "secondary",
+            "tertiary",
+            "minor",
+            "service"
+          ],
+          true,
+          false
         ],
         [
-          "motorway",
-          "trunk",
-          "primary",
-          "secondary",
-          "tertiary",
-          "minor",
-          "service"
-        ],
-        true,
-        false
+          "any",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk",
+              "primary",
+              "secondary"
+            ],
+            true,
+            false
+          ],
+          [
+            ">=",
+            [
+              "zoom"
+            ],
+            11
+          ]
+        ]
       ],
       "layout": {
         "line-cap": "round",
@@ -602,7 +787,7 @@
       },
       "paint": {
         "line-color": "#dcd6cd",
-        "line-gap-width": [
+        "line-width": [
           "interpolate",
           [
             "exponential",
@@ -618,14 +803,61 @@
               "get",
               "class"
             ],
-            [
-              "motorway",
-              "trunk"
-            ],
-            1.38,
+            "motorway",
+            2.38,
+            "trunk",
+            2.38,
             "primary",
-            0.9199999999999999,
-            0.345
+            1.92,
+            "secondary",
+            1.69,
+            "tertiary",
+            1.345,
+            "minor",
+            1.345,
+            1.345
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "motorway",
+            2.842,
+            "trunk",
+            2.842,
+            "primary",
+            2.271,
+            "secondary",
+            2.049,
+            "tertiary",
+            1.632,
+            "minor",
+            1.546,
+            1.46
+          ],
+          11,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            "motorway",
+            4.297,
+            "trunk",
+            4.297,
+            "primary",
+            3.616,
+            "secondary",
+            3.403,
+            "tertiary",
+            2.914,
+            "minor",
+            2.744,
+            2.574
           ],
           16,
           [
@@ -634,24 +866,21 @@
               "get",
               "class"
             ],
-            [
-              "motorway",
-              "trunk"
-            ],
-            13.799999999999999,
-            [
-              "primary",
-              "secondary"
-            ],
-            10.35,
+            "motorway",
+            15.8,
+            "trunk",
+            15.8,
+            "primary",
+            12.35,
+            "secondary",
+            12.35,
             "tertiary",
-            8.049999999999999,
+            10.05,
             "minor",
-            5.75,
-            3.4499999999999997
+            7.75,
+            5.45
           ]
-        ],
-        "line-width": 1
+        ]
       }
     },
     {
@@ -724,6 +953,8 @@
             1.38,
             "primary",
             0.9199999999999999,
+            "secondary",
+            0.69,
             0.345
           ],
           16,
@@ -804,17 +1035,39 @@
           "path"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "subclass"
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway"
+            ],
+            true,
+            false
           ],
           [
-            "path",
-            "bridleway"
-          ],
-          true,
-          false
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "footway"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "surface"
+              ],
+              "unpaved"
+            ]
+          ]
         ]
       ],
       "paint": {
@@ -852,17 +1105,39 @@
           "path"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "subclass"
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway"
+            ],
+            true,
+            false
           ],
           [
-            "path",
-            "bridleway"
-          ],
-          true,
-          false
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "footway"
+            ],
+            [
+              "==",
+              [
+                "get",
+                "surface"
+              ],
+              "unpaved"
+            ]
+          ]
         ]
       ],
       "paint": {
@@ -1511,6 +1786,34 @@
       "source": "osm",
       "source-layer": "transportation_name",
       "minzoom": 12,
+      "filter": [
+        "!",
+        [
+          "all",
+          [
+            "==",
+            [
+              "get",
+              "class"
+            ],
+            "path"
+          ],
+          [
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "path",
+              "bridleway",
+              "footway"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
       "layout": {
         "symbol-placement": "line",
         "text-field": [
@@ -1552,12 +1855,18 @@
           "path"
         ],
         [
-          "!=",
+          "match",
           [
             "get",
             "subclass"
           ],
-          "footway"
+          [
+            "path",
+            "bridleway",
+            "footway"
+          ],
+          true,
+          false
         ]
       ],
       "layout": {
@@ -1579,6 +1888,264 @@
         "text-color": "#e07a5f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "road-shield",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 7,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "has",
+            "route_1_ref"
+          ],
+          [
+            "!=",
+            [
+              "match",
+              [
+                "get",
+                "route_1_network"
+              ],
+              "US:I",
+              "interstate",
+              "US:US",
+              "us",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "network"
+                  ],
+                  "us-state"
+                ],
+                "state",
+                ""
+              ]
+            ],
+            ""
+          ],
+          [
+            "<=",
+            [
+              "length",
+              [
+                "get",
+                "route_1_ref"
+              ]
+            ],
+            3
+          ]
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "match",
+              [
+                "get",
+                "route_1_network"
+              ],
+              "US:I",
+              "interstate",
+              "US:US",
+              "us",
+              [
+                "case",
+                [
+                  "==",
+                  [
+                    "get",
+                    "network"
+                  ],
+                  "us-state"
+                ],
+                "state",
+                ""
+              ]
+            ],
+            "interstate"
+          ],
+          [
+            ">=",
+            [
+              "zoom"
+            ],
+            9
+          ]
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 220,
+        "symbol-sort-key": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          0,
+          "us",
+          1,
+          2
+        ],
+        "icon-image": [
+          "concat",
+          "shield-",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          [
+            "case",
+            [
+              ">",
+              [
+                "length",
+                [
+                  "get",
+                  "route_1_ref"
+                ]
+              ],
+              2
+            ],
+            "-3",
+            "-2"
+          ]
+        ],
+        "icon-rotation-alignment": "viewport",
+        "text-field": [
+          "get",
+          "route_1_ref"
+        ],
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 9,
+        "text-rotation-alignment": "viewport",
+        "text-offset": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          [
+            "literal",
+            [
+              0,
+              0.25
+            ]
+          ],
+          [
+            "literal",
+            [
+              0,
+              0
+            ]
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "route_1_network"
+            ],
+            "US:I",
+            "interstate",
+            "US:US",
+            "us",
+            [
+              "case",
+              [
+                "==",
+                [
+                  "get",
+                  "network"
+                ],
+                "us-state"
+              ],
+              "state",
+              ""
+            ]
+          ],
+          "interstate",
+          "#ffffff",
+          "#222222"
+        ]
       }
     },
     {
@@ -1753,6 +2320,16 @@
         "text-color": "#7a7f85",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5
+      },
+      "metadata": {
+        "ovm:appPlaces": [
+          "campsite",
+          "picnic_site",
+          "shelter",
+          "toilets",
+          "drinking_water",
+          "attraction"
+        ]
       }
     },
     {
@@ -2130,6 +2707,119 @@
       },
       "metadata": {
         "ovm:units": "metric"
+      }
+    },
+    {
+      "id": "park-label",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "park",
+      "minzoom": 6,
+      "maxzoom": 13,
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Point"
+        ],
+        [
+          "any",
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "national_park",
+              "national_monument",
+              "national_preserve",
+              "state_park",
+              "national_seashore",
+              "national_lakeshore",
+              "national_recreation_area",
+              "national_historical_park",
+              "national_scenic_area",
+              "state_beach",
+              "state_historic_park",
+              "state_recreation_area",
+              "state_natural_reserve",
+              "state_reserve",
+              "state_vehicular_recreation_area",
+              "provincial_park",
+              "parque_nacional"
+            ],
+            true,
+            false
+          ],
+          [
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:extra-parks}"
+            ],
+            true,
+            false
+          ]
+        ]
+      ],
+      "metadata": {
+        "ovm:group": "parks"
+      },
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          11,
+          10,
+          14
+        ],
+        "text-max-width": 11,
+        "text-letter-spacing": 0.02,
+        "symbol-sort-key": [
+          "get",
+          "rank"
+        ]
+      },
+      "paint": {
+        "text-color": [
+          "case",
+          [
+            "match",
+            [
+              "get",
+              "name"
+            ],
+            [
+              "{list:desert-parks}"
+            ],
+            true,
+            false
+          ],
+          "#8b5e2b",
+          "#3f7d34"
+        ],
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
       }
     },
     {

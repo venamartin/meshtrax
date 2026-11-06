@@ -4881,6 +4881,12 @@ class AppLocalizationsHu extends AppLocalizations {
   String get mapLayers_hillShading => 'Domborzatárnyékolás';
 
   @override
+  String get mapLayers_places => 'Helyek';
+
+  @override
+  String get mapLayers_parks => 'Parkok';
+
+  @override
   String get mapLayers_dark => 'Sötét térkép';
 
   @override
@@ -5665,6 +5671,51 @@ class AppLocalizationsHu extends AppLocalizations {
   String get parkLegend_guidepost => 'Útjelző tábla';
 
   @override
+  String get roadLegend_title => 'Utak, ösvények és vonalak';
+
+  @override
+  String get roadLegend_freeway => 'Autópálya';
+
+  @override
+  String get roadLegend_majorRoad => 'Autóút vagy főút';
+
+  @override
+  String get roadLegend_road => 'Út';
+
+  @override
+  String get roadLegend_track => 'Földút vagy dűlőút';
+
+  @override
+  String get roadLegend_trail => 'Ösvény';
+
+  @override
+  String get roadLegend_interstate => 'Interstate autópálya';
+
+  @override
+  String get roadLegend_usRoute => 'US-főút';
+
+  @override
+  String get roadLegend_stateRoute => 'Állami út';
+
+  @override
+  String get roadLegend_railway => 'Vasút';
+
+  @override
+  String get roadLegend_stream => 'Folyó vagy patak';
+
+  @override
+  String get roadLegend_contour => 'Szintvonal';
+
+  @override
+  String get roadLegend_park => 'Park határa';
+
+  @override
+  String get roadLegend_wilderness => 'Vadonterület vagy nemzeti erdő';
+
+  @override
+  String get roadLegend_boundary => 'Állam- vagy megyehatár';
+
+  @override
   String get dialog_noticeExpires => 'Lejárat';
 
   @override
@@ -5814,6 +5865,438 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathfinder_graphCreate => 'Létrehozás';
 
   @override
+  String get route_pathPaved => 'Aszfalt';
+
+  @override
+  String get route_pathDirt => 'Földút';
+
+  @override
+  String get route_pathHiking => 'Túrázás';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes perc';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours ó $minutes perc';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Cél: $destination';
+  }
+
+  @override
+  String get route_clear => 'Útvonal elvetése';
+
+  @override
+  String get route_finding => 'Útvonal keresése…';
+
+  @override
+  String get route_none => 'Nem található útvonal';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Az útvonal ott ér véget, ahol elfogy az aszfalt. $destination még $distance távolságra van.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Az útvonal ott ér véget, ahol elfogy az út. $destination még $distance távolságra van.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Az útvonal ott ér véget, ahol elfogynak az ösvények. $destination még $distance távolságra van.';
+  }
+
+  @override
+  String get route_directions => 'Útleírás';
+
+  @override
+  String get route_here => 'Útvonal ide';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Jelenlegi cél: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Jelenlegi kiindulópont: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Jelenlegi kiindulópont: az Ön helyzete';
+
+  @override
+  String get route_noHeights =>
+      'Ehhez a területhez nincsenek magassági adatok.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Ehhez a területhez nincsenek magassági adatok, ezért a menetidő nem veszi figyelembe az emelkedőket.';
+
+  @override
+  String get route_options => 'Útvonal-beállítások';
+
+  @override
+  String get route_optionsReset => 'Visszaállítás';
+
+  @override
+  String get route_prefer => 'Szempont';
+
+  @override
+  String get route_dirtFastest => 'Leggyorsabb';
+
+  @override
+  String get route_dirtBalanced => 'Középút';
+
+  @override
+  String get route_dirtDirect => 'Legrövidebb';
+
+  @override
+  String get route_dirtFastestHelp => 'Földút csak ott, ahol gyorsabb.';
+
+  @override
+  String get route_dirtBalancedHelp => 'Földút, ha érdemben rövidít.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'A legrövidebb út, akkor is, ha lassú földutakon vezet.';
+
+  @override
+  String get route_avoid => 'Kerülendő';
+
+  @override
+  String get route_avoidHighways => 'Autópályák';
+
+  @override
+  String get route_avoidTolls => 'Fizetős utak';
+
+  @override
+  String get route_avoidFerries => 'Kompok';
+
+  @override
+  String get route_hardestTrail => 'Legnehezebb ösvény';
+
+  @override
+  String get route_trailT1 => 'T1 Túrázás';
+
+  @override
+  String get route_trailT2 => 'T2 Hegyi túrázás';
+
+  @override
+  String get route_trailT3 => 'T3 Nehéz hegyi túrázás';
+
+  @override
+  String get route_trailT4 => 'T4 Alpesi túrázás';
+
+  @override
+  String get route_trailT5 => 'T5 Nehéz alpesi túrázás';
+
+  @override
+  String get route_trailT6 => 'T6 Nagyon nehéz alpesi túrázás';
+
+  @override
+  String get route_climbs => 'Emelkedők';
+
+  @override
+  String get route_climbsAvoid => 'Kerülendő';
+
+  @override
+  String get route_climbsSome => 'Néhány';
+
+  @override
+  String get route_climbsAny => 'Mindegy';
+
+  @override
+  String get route_pace => 'Tempó';
+
+  @override
+  String get route_paceSlow => 'Lassú';
+
+  @override
+  String get route_paceNormal => 'Normál';
+
+  @override
+  String get route_paceFast => 'Gyors';
+
+  @override
+  String get place_nrhp => 'Történelmi Helyek Nemzeti Nyilvántartása';
+
+  @override
+  String get place_textCredit => 'Szöveg: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Tovább a Wikipedián';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Fotó: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Helyek, címek vagy koordináták keresése';
+
+  @override
+  String get search_noPlaces =>
+      'A helyek kereséséhez töltse le egy régióhoz az Érdekes helyeket. Koordinátákra enélkül is kereshet.';
+
+  @override
+  String get search_noResults => 'Nincs találat';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Tizedes fok';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Fok és perc';
+
+  @override
+  String get coordFormat_dms => 'Fok, perc, másodperc';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenhead-lokátor';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Csúcs';
+
+  @override
+  String get poiKind_volcano => 'Vulkán';
+
+  @override
+  String get poiKind_saddle => 'Hegynyereg';
+
+  @override
+  String get poiKind_pass => 'Hágó';
+
+  @override
+  String get poiKind_spring => 'Forrás';
+
+  @override
+  String get poiKind_hotSpring => 'Hőforrás';
+
+  @override
+  String get poiKind_waterfall => 'Vízesés';
+
+  @override
+  String get poiKind_cave => 'Barlang';
+
+  @override
+  String get poiKind_arch => 'Sziklaív';
+
+  @override
+  String get poiKind_glacier => 'Gleccser';
+
+  @override
+  String get poiKind_rock => 'Szikla';
+
+  @override
+  String get poiKind_cliff => 'Sziklafal';
+
+  @override
+  String get poiKind_beach => 'Strand';
+
+  @override
+  String get poiKind_trailhead => 'Túraútvonal kezdőpontja';
+
+  @override
+  String get poiKind_campground => 'Kemping';
+
+  @override
+  String get poiKind_picnicSite => 'Piknikező hely';
+
+  @override
+  String get poiKind_hut => 'Menedékház';
+
+  @override
+  String get poiKind_shelter => 'Menedékhely';
+
+  @override
+  String get poiKind_drinkingWater => 'Ivóvíz';
+
+  @override
+  String get poiKind_toilets => 'Mosdó';
+
+  @override
+  String get poiKind_viewpoint => 'Kilátópont';
+
+  @override
+  String get poiKind_attraction => 'Látnivaló';
+
+  @override
+  String get poiKind_observatory => 'Csillagvizsgáló';
+
+  @override
+  String get poiKind_zoo => 'Állatkert';
+
+  @override
+  String get poiKind_themePark => 'Vidámpark';
+
+  @override
+  String get poiKind_mine => 'Bánya';
+
+  @override
+  String get poiKind_mineShaft => 'Bányaakna';
+
+  @override
+  String get poiKind_adit => 'Táró';
+
+  @override
+  String get poiKind_ghostTown => 'Szellemváros';
+
+  @override
+  String get poiKind_ruins => 'Romok';
+
+  @override
+  String get poiKind_monument => 'Emlékmű';
+
+  @override
+  String get poiKind_memorial => 'Emlékhely';
+
+  @override
+  String get poiKind_fort => 'Erőd';
+
+  @override
+  String get poiKind_historic => 'Történelmi hely';
+
+  @override
+  String get poiKind_rangerStation => 'Parkőrállomás';
+
+  @override
+  String get poiKind_visitorCenter => 'Látogatóközpont';
+
+  @override
+  String get poiKind_hospital => 'Kórház';
+
+  @override
+  String get poiKind_police => 'Rendőrség';
+
+  @override
+  String get poiKind_fireStation => 'Tűzoltóság';
+
+  @override
+  String get poiKind_emergencyPhone => 'Segélyhívó telefon';
+
+  @override
+  String get poiKind_fuel => 'Benzinkút';
+
+  @override
+  String get poiKind_restArea => 'Pihenőhely';
+
+  @override
+  String get poiKind_travelCenter => 'Szolgáltató pihenőhely';
+
+  @override
+  String get poiKind_museum => 'Múzeum';
+
+  @override
+  String get poiKind_city => 'Város';
+
+  @override
+  String get poiKind_town => 'Település';
+
+  @override
+  String get poiKind_locality => 'Terület';
+
+  @override
+  String get poiKind_lake => 'Tó';
+
+  @override
+  String get poiKind_river => 'Folyó';
+
+  @override
+  String get poiKind_valley => 'Völgy';
+
+  @override
+  String get poiKind_range => 'Hegyvonulat';
+
+  @override
+  String get poiKind_trail => 'Ösvény';
+
+  @override
+  String get poiKind_dirtRoad => 'Földút';
+
+  @override
+  String get poiKind_road => 'Út';
+
+  @override
+  String get poiKind_address => 'Cím';
+
+  @override
+  String get poiKind_place => 'Hely';
+
+  @override
+  String get offlineMaps_kindRouting => 'Terepi útvonaltervezés';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Útvonalak ösvényeken, földutakon és aszfaltutakon';
+
+  @override
+  String get offlineMaps_kindPoi => 'Érdekes helyek';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Kereshető helyek Wikipedia-leírásokkal';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Címek';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Kereshető címek házszámmal';
+
+  @override
+  String get map_search => 'Keresés';
+
+  @override
+  String get route_fromHere => 'Útvonal innen';
+
+  @override
+  String get route_startSet =>
+      'Kiindulópont beállítva. Most válassza ki, hová szeretne menni.';
+
+  @override
+  String get route_noStart =>
+      'Nincs kiindulópont. Nyomjon hosszan a térképre, és válassza az „Útvonal innen” lehetőséget.';
+
+  @override
+  String get route_noData =>
+      'Töltse le ehhez a régióhoz a Terepi útvonaltervezést az Offline térképek alatt, hogy itt útvonalat tervezhessen.';
+
+  @override
+  String get route_pin => 'Kijelölt pont';
+
+  @override
+  String get appSettings_coordinateFormat => 'Koordinátaformátum';
+
+  @override
+  String get map_copyPosition => 'Pozíció másolása';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Védett terület';
+
+  @override
+  String get common_more => 'Több';
+
+  @override
+  String get common_less => 'Kevesebb';
+
+  @override
   String get locationSharing_title => 'Ki láthatja a helyzetemet';
 
   @override
@@ -5895,44 +6378,44 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chats_advertise => 'Bejelentés';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Rajz';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Rajzolás';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Beillesztés';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Toll';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Vonal';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Téglalap';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Kör';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Ellipszis';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Nyíl';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Visszavonás';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Képaláírás';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Nem kötelező, a kép alatt jelenik meg';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max bájt';
   }
 
   @override
@@ -5940,113 +6423,118 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count pont',
+      one: '1 pont',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Minden megrajzolt pont megmarad.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Egyszerűsítve: a vonalak eltérése legfeljebb a rajz méretének $percent%-a.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Egyszerűsítve is túl részletes egy üzenethez. Vonjon vissza egy vonást, vagy használjon alakzatokat, amelyek sokkal kevesebb helyet foglalnak.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty =>
+      'Rajzoljon az ujjával, vagy válasszon egy alakzatot.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Illesszen be egy SVG-fájlt vagy útvonaladatot, például: M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'SVG használata';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Színek és kitöltések nélkül, vonalakként megy el, és az olvasó tollszínében jelenik meg.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty =>
+      'Előbb illesszen be SVG-t vagy útvonaladatot.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Ez túl nagy vagy túl részletes a beolvasáshoz. Illesszen be egy kisebb SVG-t.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Ez nem olyan SVG, amelyet az alkalmazás be tud olvasni.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'Ebben az SVG-ben nincs semmi látható, amit ki lehetne rajzolni.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVG másolása';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Rajzok';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'SVG-ként küldött képek, és hogyan jelennek meg itt';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Rajzok megjelenítése';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Kikapcsolva helyettük az SVG-kód jelenik meg';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Tollszín';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Színkód';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Vonalvastagság';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Ragyogás';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Csíkozás';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Útvonal';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'X-jel';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Koppintson a pontok hozzáadásához. A befejezéshez koppintson újra az utolsó pontra.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Nincs';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Rajzolás itt';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Térkép mozgatása';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Keresse meg a helyet a térkép mozgatásával és nagyításával, majd koppintson a „Rajzolás itt” gombra.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance széles terület';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Ez a terület nincs letöltve';
 }

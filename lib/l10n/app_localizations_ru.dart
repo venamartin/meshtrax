@@ -4875,6 +4875,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapLayers_hillShading => 'Отмывка рельефа';
 
   @override
+  String get mapLayers_places => 'Места';
+
+  @override
+  String get mapLayers_parks => 'Парки';
+
+  @override
   String get mapLayers_dark => 'Тёмная карта';
 
   @override
@@ -5661,6 +5667,51 @@ class AppLocalizationsRu extends AppLocalizations {
   String get parkLegend_guidepost => 'Указатель';
 
   @override
+  String get roadLegend_title => 'Дороги, тропы и линии';
+
+  @override
+  String get roadLegend_freeway => 'Автомагистраль';
+
+  @override
+  String get roadLegend_majorRoad => 'Шоссе или главная дорога';
+
+  @override
+  String get roadLegend_road => 'Дорога';
+
+  @override
+  String get roadLegend_track => 'Грунтовая или полевая дорога';
+
+  @override
+  String get roadLegend_trail => 'Тропа';
+
+  @override
+  String get roadLegend_interstate => 'Межштатная автомагистраль';
+
+  @override
+  String get roadLegend_usRoute => 'Шоссе США';
+
+  @override
+  String get roadLegend_stateRoute => 'Шоссе штата';
+
+  @override
+  String get roadLegend_railway => 'Железная дорога';
+
+  @override
+  String get roadLegend_stream => 'Река или ручей';
+
+  @override
+  String get roadLegend_contour => 'Горизонталь';
+
+  @override
+  String get roadLegend_park => 'Граница парка';
+
+  @override
+  String get roadLegend_wilderness => 'Зона дикой природы или национальный лес';
+
+  @override
+  String get roadLegend_boundary => 'Граница штата или округа';
+
+  @override
   String get dialog_noticeExpires => 'Срок действия';
 
   @override
@@ -5812,6 +5863,440 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pathfinder_graphCreate => 'Создать';
 
   @override
+  String get route_pathPaved => 'Шоссе';
+
+  @override
+  String get route_pathDirt => 'Грунт';
+
+  @override
+  String get route_pathHiking => 'Пешком';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes мин';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours ч $minutes мин';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Куда: $destination';
+  }
+
+  @override
+  String get route_clear => 'Убрать маршрут';
+
+  @override
+  String get route_finding => 'Построение маршрута…';
+
+  @override
+  String get route_none => 'Маршрут не найден';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Маршрут обрывается за $distance до цели ($destination): дальше асфальта нет.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Маршрут обрывается за $distance до цели ($destination): дальше дороги нет.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Маршрут обрывается за $distance до цели ($destination): дальше троп нет.';
+  }
+
+  @override
+  String get route_directions => 'Пошаговые инструкции';
+
+  @override
+  String get route_here => 'Маршрут сюда';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Текущий пункт назначения: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Текущий пункт отправления: $start';
+  }
+
+  @override
+  String get route_startNowYou =>
+      'Текущий пункт отправления: ваше местоположение';
+
+  @override
+  String get route_noHeights => 'Для этого района нет данных о высотах.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Для этого района нет данных о высотах, поэтому расчёт времени не учитывает подъёмы.';
+
+  @override
+  String get route_options => 'Параметры маршрута';
+
+  @override
+  String get route_optionsReset => 'Сбросить';
+
+  @override
+  String get route_prefer => 'Предпочтение';
+
+  @override
+  String get route_dirtFastest => 'Быстрее';
+
+  @override
+  String get route_dirtBalanced => 'Баланс';
+
+  @override
+  String get route_dirtDirect => 'Напрямик';
+
+  @override
+  String get route_dirtFastestHelp =>
+      'Грунтовые дороги — только там, где так быстрее.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'Грунтовые дороги — там, где они заметно сокращают путь.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'Кратчайший путь, какими бы медленными ни были дороги.';
+
+  @override
+  String get route_avoid => 'Избегать';
+
+  @override
+  String get route_avoidHighways => 'Автомагистрали';
+
+  @override
+  String get route_avoidTolls => 'Платные дороги';
+
+  @override
+  String get route_avoidFerries => 'Паромы';
+
+  @override
+  String get route_hardestTrail => 'Максимальная сложность троп';
+
+  @override
+  String get route_trailT1 => 'T1 Пеший туризм';
+
+  @override
+  String get route_trailT2 => 'T2 Горный туризм';
+
+  @override
+  String get route_trailT3 => 'T3 Трудный горный туризм';
+
+  @override
+  String get route_trailT4 => 'T4 Альпийский туризм';
+
+  @override
+  String get route_trailT5 => 'T5 Трудный альпийский туризм';
+
+  @override
+  String get route_trailT6 => 'T6 Сложный альпийский туризм';
+
+  @override
+  String get route_climbs => 'Подъёмы';
+
+  @override
+  String get route_climbsAvoid => 'Избегать';
+
+  @override
+  String get route_climbsSome => 'Немного';
+
+  @override
+  String get route_climbsAny => 'Неважно';
+
+  @override
+  String get route_pace => 'Темп';
+
+  @override
+  String get route_paceSlow => 'Медленный';
+
+  @override
+  String get route_paceNormal => 'Обычный';
+
+  @override
+  String get route_paceFast => 'Быстрый';
+
+  @override
+  String get place_nrhp => 'Национальный реестр исторических мест';
+
+  @override
+  String get place_textCredit => 'Текст: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Читать в Wikipedia';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Фото: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Поиск мест, адресов или координат';
+
+  @override
+  String get search_noPlaces =>
+      'Скачайте «Точки интереса» для региона, чтобы искать в нём места. Поиск по координатам работает и без них.';
+
+  @override
+  String get search_noResults => 'Ничего не найдено';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Десятичные градусы';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Градусы и минуты';
+
+  @override
+  String get coordFormat_dms => 'Градусы, минуты, секунды';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Локатор Maidenhead';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Вершина';
+
+  @override
+  String get poiKind_volcano => 'Вулкан';
+
+  @override
+  String get poiKind_saddle => 'Седловина';
+
+  @override
+  String get poiKind_pass => 'Перевал';
+
+  @override
+  String get poiKind_spring => 'Родник';
+
+  @override
+  String get poiKind_hotSpring => 'Горячий источник';
+
+  @override
+  String get poiKind_waterfall => 'Водопад';
+
+  @override
+  String get poiKind_cave => 'Пещера';
+
+  @override
+  String get poiKind_arch => 'Природная арка';
+
+  @override
+  String get poiKind_glacier => 'Ледник';
+
+  @override
+  String get poiKind_rock => 'Скала';
+
+  @override
+  String get poiKind_cliff => 'Утёс';
+
+  @override
+  String get poiKind_beach => 'Пляж';
+
+  @override
+  String get poiKind_trailhead => 'Начало тропы';
+
+  @override
+  String get poiKind_campground => 'Кемпинг';
+
+  @override
+  String get poiKind_picnicSite => 'Место для пикника';
+
+  @override
+  String get poiKind_hut => 'Хижина';
+
+  @override
+  String get poiKind_shelter => 'Укрытие';
+
+  @override
+  String get poiKind_drinkingWater => 'Питьевая вода';
+
+  @override
+  String get poiKind_toilets => 'Туалет';
+
+  @override
+  String get poiKind_viewpoint => 'Смотровая площадка';
+
+  @override
+  String get poiKind_attraction => 'Достопримечательность';
+
+  @override
+  String get poiKind_observatory => 'Обсерватория';
+
+  @override
+  String get poiKind_zoo => 'Зоопарк';
+
+  @override
+  String get poiKind_themePark => 'Парк развлечений';
+
+  @override
+  String get poiKind_mine => 'Рудник';
+
+  @override
+  String get poiKind_mineShaft => 'Ствол шахты';
+
+  @override
+  String get poiKind_adit => 'Штольня';
+
+  @override
+  String get poiKind_ghostTown => 'Город-призрак';
+
+  @override
+  String get poiKind_ruins => 'Руины';
+
+  @override
+  String get poiKind_monument => 'Памятник';
+
+  @override
+  String get poiKind_memorial => 'Мемориал';
+
+  @override
+  String get poiKind_fort => 'Форт';
+
+  @override
+  String get poiKind_historic => 'Историческое место';
+
+  @override
+  String get poiKind_rangerStation => 'Пост рейнджеров';
+
+  @override
+  String get poiKind_visitorCenter => 'Визит-центр';
+
+  @override
+  String get poiKind_hospital => 'Больница';
+
+  @override
+  String get poiKind_police => 'Полиция';
+
+  @override
+  String get poiKind_fireStation => 'Пожарная часть';
+
+  @override
+  String get poiKind_emergencyPhone => 'Экстренный телефон';
+
+  @override
+  String get poiKind_fuel => 'АЗС';
+
+  @override
+  String get poiKind_restArea => 'Площадка отдыха';
+
+  @override
+  String get poiKind_travelCenter => 'Придорожный комплекс';
+
+  @override
+  String get poiKind_museum => 'Музей';
+
+  @override
+  String get poiKind_city => 'Город';
+
+  @override
+  String get poiKind_town => 'Населённый пункт';
+
+  @override
+  String get poiKind_locality => 'Местность';
+
+  @override
+  String get poiKind_lake => 'Озеро';
+
+  @override
+  String get poiKind_river => 'Река';
+
+  @override
+  String get poiKind_valley => 'Долина';
+
+  @override
+  String get poiKind_range => 'Горный хребет';
+
+  @override
+  String get poiKind_trail => 'Тропа';
+
+  @override
+  String get poiKind_dirtRoad => 'Грунтовая дорога';
+
+  @override
+  String get poiKind_road => 'Дорога';
+
+  @override
+  String get poiKind_address => 'Адрес';
+
+  @override
+  String get poiKind_place => 'Место';
+
+  @override
+  String get offlineMaps_kindRouting => 'Построение маршрутов';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Маршруты по тропам, грунтовкам и асфальту';
+
+  @override
+  String get offlineMaps_kindPoi => 'Точки интереса';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Места для поиска, со статьями Wikipedia';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Адреса';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Адреса домов для поиска';
+
+  @override
+  String get map_search => 'Поиск';
+
+  @override
+  String get route_fromHere => 'Маршрут отсюда';
+
+  @override
+  String get route_startSet =>
+      'Пункт отправления задан. Теперь выберите пункт назначения.';
+
+  @override
+  String get route_noStart =>
+      'Нет пункта отправления. Нажмите и удерживайте карту, затем выберите «Маршрут отсюда».';
+
+  @override
+  String get route_noData =>
+      'Скачайте «Построение маршрутов» для этого региона в разделе «Офлайн-карты», чтобы строить здесь маршруты.';
+
+  @override
+  String get route_pin => 'Точка на карте';
+
+  @override
+  String get appSettings_coordinateFormat => 'Формат координат';
+
+  @override
+  String get map_copyPosition => 'Копировать координаты';
+
+  @override
+  String get poiKind_park => 'Парк';
+
+  @override
+  String get poiKind_protectedArea => 'Охраняемая территория';
+
+  @override
+  String get common_more => 'Ещё';
+
+  @override
+  String get common_less => 'Свернуть';
+
+  @override
   String get locationSharing_title => 'Кто видит моё местоположение';
 
   @override
@@ -5893,44 +6378,44 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chats_advertise => 'Анонсировать';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Рисунок';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Рисование';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Вставка';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Перо';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Линия';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Прямоугольник';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Круг';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Эллипс';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Стрелка';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Отменить';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Подпись';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Необязательно, показывается под рисунком';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max байт';
   }
 
   @override
@@ -5938,113 +6423,118 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count точек',
+      many: '$count точек',
+      few: '$count точки',
+      one: '$count точка',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Все нарисованные точки сохранены.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Упрощено: линии отклоняются от исходных не более чем на $percent% размера рисунка.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Слишком много деталей для одного сообщения, даже после упрощения. Отмените штрих или используйте фигуры — они занимают гораздо меньше места.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Рисуйте пальцем или выберите фигуру.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Вставьте SVG-файл или данные контура, например M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Применить SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Цвета и заливки не передаются: рисунок отправляется линиями и отображается цветом пера получателя.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Сначала вставьте SVG или данные контура.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Слишком большой или детальный SVG: прочитать его не удаётся. Вставьте SVG поменьше.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Приложение не может прочитать это как SVG.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'В этом SVG нет ничего видимого — рисовать нечего.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Копировать SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Рисунки';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Картинки, отправляемые в виде SVG, и как они выглядят у вас';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Показывать рисунки';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Если выключено, вместо рисунков показывается код SVG';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Цвет пера';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Код цвета';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Толщина линии';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Свечение';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Линии развёртки';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Маршрут';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Крестик';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Нажимайте, чтобы добавлять точки. Чтобы закончить, нажмите на последнюю ещё раз.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Без карты';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Рисовать здесь';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Переместить карту';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Найдите нужное место, перемещая и масштабируя карту, затем нажмите «Рисовать здесь».';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, $distance в ширину';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Эта область не скачана';
 }

@@ -1,0 +1,12 @@
+import 'addresses_schema.drift';
+
+metaValue: SELECT value FROM meta WHERE name = :name;
+
+streetCandidates: SELECT st.id, st.name, st.norm, st.city, st.zip
+  FROM street_search s INNER JOIN street st ON st.id = s.rowid
+  WHERE street_search MATCH :query
+  ORDER BY s.rank
+  LIMIT :limit;
+
+addressesOn: SELECT * FROM address
+  WHERE street_id = :streetId AND number = :number COLLATE NOCASE;

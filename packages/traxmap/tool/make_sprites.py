@@ -98,6 +98,8 @@ def palette(name):
         "pos_stroke": "#222222" if name == "light" else P["ink"],
         "peak": PEAK[name], **HAZARD[name],
         "poi": POI_COLOURS[name], "poi_ring": "#ffffff" if name == "light" else "#1c2026",
+        "shield_white": "#ffffff" if name == "light" else "#dfe3e8",
+        "shield_edge": "#222222" if name == "light" else "#1c2026",
     }
 
 
@@ -413,6 +415,80 @@ def poi(kind, P):
             f'stroke="#ffffff">{glyph}</g>')
 
 
+# --- road shields: the style prints the route number on them -----------------
+# Drawn in their sign colours on both palettes. The renderer can't stretch an
+# icon to its text, so each comes in two widths: up to two digits, and three.
+
+SHIELDS = {"interstate": (18, 23, 18), "us": (18, 23, 18), "state": (18, 23, 14)}  # w2, w3, h
+
+# The US route marker's white shield (MUTCD M1-4, public domain), as drawn in
+# Wikimedia Commons' US_66.svg (two digits, 580 square) and US_101.svg (three
+# digits, 730 by 580), both from (10, 10).
+# The Interstate shield (MUTCD M1-1) as drawn in Wikimedia Commons' I-5.svg
+# (two digits, 600 square) and I-405.svg (three digits, 750 by 600): its
+# white outline, blue body and red band, without the word INTERSTATE, which
+# can't be read this small.
+INTERSTATE_SHIELD = {
+    2: (600,
+        ("M80.75 0c34.68 10.58 71.48 16.28 109.62 16.28 38.14 0 74.95-5.69 109.62-16.28C334.68 10.58 "
+         "371.48 16.28 409.62 16.28c38.14 0 74.95-5.69 109.62-16.28C569.81 63.91 600 144.68 600 232.5c0 "
+         "181.42-128.83 332.75-300 367.5C128.83 565.25 0 413.92 0 232.5 0 144.68 30.19 63.91 80.75 0z"),
+        ("M12.98 231.22c0-32.31 4.2-63.63 12.08-93.45h549.88c7.88 29.82 12.08 61.14 12.08 93.45 0 "
+         "174.89-123.04 320.94-287.02 355.8-163.98-34.86-287.02-180.91-287.02-355.8z"),
+        ("M27.95 125.29c12.41-40.29 31.43-77.61 55.77-110.66 33.52 9.38 68.82 14.39 105.28 14.39 38.54 0 "
+         "75.79-5.6 111-16.04 35.21 10.44 72.46 16.04 111 16.04 36.46 0 71.76-5.01 105.28-14.39 24.34 "
+         "33.05 43.36 70.38 55.77 110.66H27.95z"),
+    ),
+    3: (750,
+        ("M 38.92,0 C 92.24,15.53 148.62,23.85 206.96,23.85 C 265.29,23.85 321.68,15.53 375,0 C "
+         "428.32,15.53 484.71,23.85 543.04,23.85 C 601.38,23.85 657.76,15.53 711.08,0 C 736.06,54.12 "
+         "750,114.39 750,177.91 C 750,395.72 586.16,575.25 375,600 C 163.84,575.25 0,395.72 0,177.91 C "
+         "0,114.39 13.94,54.12 38.92,0 z"),
+        ("M 15,177.91 C 15,165.13 15.58,152.48 16.73,140 L 733.27,140 C 734.42,152.48 735,165.13 "
+         "735,177.91 C 735,387.42 577.86,560.23 375,584.89 C 172.14,560.23 15,387.42 15,177.91 z"),
+        ("M 47.38,17.94 C 98.27,31.58 151.77,38.85 206.96,38.85 C 265.22,38.85 321.59,30.75 375,15.61 C "
+         "428.41,30.75 484.78,38.85 543.04,38.85 C 598.23,38.85 651.73,31.58 702.62,17.94 C 716.88,51.57 "
+         "726.79,87.49 731.62,125 L 18.38,125 C 23.21,87.49 33.12,51.57 47.38,17.94 z"),
+    ),
+}
+US_SHIELD = {
+    2: (580, "m 300,10 c 23.56,20.08 54.12,32.19 87.5,32.19 33.38,0 63.94,-12.12 87.5,-32.19 l 115,115 "
+             "c -21.16,30.08 -33.59,66.75 -33.59,106.33 0,28.46 6.43,55.42 17.91,79.51 "
+             "C 584.24,331.66 590,355.39 590,380 590,468.37 518.37,540 430,540 H 404.89 "
+             "C 362.54,540 324.75,559.5 300,590 275.25,559.5 237.46,540 195.11,540 H 170 "
+             "C 81.63,540 10,468.37 10,380 c 0,-24.61 5.76,-48.34 15.68,-69.16 "
+             "11.48,-24.09 17.91,-51.05 17.91,-79.51 C 43.59,191.75 31.16,155.08 10,125 L 125,10 "
+             "c 23.56,20.08 54.12,32.19 87.5,32.19 33.38,0 63.94,-12.12 87.5,-32.19 z"),
+    3: (730, "M 375,10 C 338.67,32.47 295.85,45.43 250,45.43 204.15,45.43 161.33,32.46 125,10 L 10,125 "
+             "c 21.16,30.08 33.59,66.75 33.59,106.33 0,28.56 -6.47,55.61 -18.03,79.76 "
+             "C 15.58,331.96 10,355.33 10,380 10,468.37 81.63,540 170,540 H 270.12 "
+             "C 312.46,540 350.25,559.49 375,590 399.75,559.49 437.54,540 479.88,540 H 580 "
+             "c 88.37,0 160,-71.63 160,-160 0,-24.67 -5.58,-48.04 -15.56,-68.91 "
+             "-11.56,-24.15 -18.03,-51.2 -18.03,-79.76 0,-39.58 12.42,-76.25 33.59,-106.33 L 625,10 "
+             "c -36.33,22.46 -79.15,35.43 -125,35.43 -45.85,0 -88.67,-12.96 -125,-35.43 z"),
+}
+
+
+def shield(kind, w, h, P):
+    white, edge = P["shield_white"], P["shield_edge"]
+    if kind == "interstate":
+        width, outline, blue, red = INTERSTATE_SHIELD[2 if w == SHIELDS["interstate"][0] else 3]
+        scale = (h - 0.6) / 600
+        x = (w - width * scale) / 2
+        return (f'<g transform="translate({x:.3f},0.3) scale({scale:.5f})">'
+                f'<path d="{outline}" fill="{white}" stroke="{edge}" stroke-width="{0.6 / scale:.2f}"/>'
+                f'<path d="{blue}" fill="#003f87"/><path d="{red}" fill="#af1e2d"/></g>')
+    if kind == "us":
+        width, body = US_SHIELD[2 if w == SHIELDS["us"][0] else 3]
+        scale = (h - 1) / 580
+        x = (w - width * scale) / 2
+        return (f'<g transform="translate({x:.3f},0.5) scale({scale:.5f}) translate(-10,-10)">'
+                f'<path d="{body}" fill="{white}" stroke="{edge}" stroke-width="{1 / scale:.2f}"/></g>')
+    r = (h - 1.2) / 2
+    return (f'<rect x="0.6" y="0.6" width="{w - 1.2}" height="{h - 1.2}" rx="{r}" '
+            f'fill="{white}" stroke="{edge}" stroke-width="1"/>')
+
+
 # --- line patterns: stamped along a line, one sprite per repeat --------------
 # MapLibre line-pattern scales the sprite's height to the line width, so the
 # style sets line-width to the pattern's height.
@@ -468,6 +544,9 @@ def symbols(P):
     add("peak", "peak", peak(P))
     for kind in POIS:
         add(f"poi-{kind}", "poi", poi(kind, P))
+    for kind, (w2, w3, h) in SHIELDS.items():
+        add(f"shield-{kind}-2", None, shield(kind, w2, h, P), (w2, h))
+        add(f"shield-{kind}-3", None, shield(kind, w3, h, P), (w3, h))
     for kind, size in PATTERNS.items():
         add(f"pattern-{kind}", None, pattern(kind, P), size)
     return out

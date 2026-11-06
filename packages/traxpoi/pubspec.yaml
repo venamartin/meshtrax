@@ -1,0 +1,20 @@
+name: traxpoi
+description: >
+  Offline points of interest and addresses for MeshTrax: opens the
+  downloaded SQLite files and searches them, typos included. No screens.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  drift: ^2.34.2
+  fuzzywuzzy: ^1.2.0
+  sqlite3: ^3.5.1
+
+dev_dependencies:
+  build_runner: ^2.4.13
+  drift_dev: ^2.34.0
+  lints: ^5.0.0
+  test: ^1.25.8

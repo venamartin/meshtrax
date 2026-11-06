@@ -1,3 +1,5 @@
+import 'package:traxroute/traxroute.dart' show RouteOptions;
+
 import 'channel.dart';
 
 enum UnitSystem { metric, imperial }
@@ -39,6 +41,8 @@ class AppSettings {
 
   /// Draw hill shading when a terrain pack is installed.
   final bool mapHillShading;
+  final bool mapPlaces;
+  final bool mapParks;
 
   /// Outline the downloaded areas of the map that's showing.
   final bool mapDownloadedAreas;
@@ -46,6 +50,9 @@ class AppSettings {
   /// Map colours, `light` or `dark`, whatever the app's theme (Martin,
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
+
+  /// The route panel's options, kept for every route.
+  final RouteOptions routeOptions;
 
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
@@ -63,6 +70,10 @@ class AppSettings {
   final Map<String, String> batteryChemistryByDeviceId;
   final Map<String, String> batteryChemistryByRepeaterId;
   final UnitSystem unitSystem;
+
+  /// How positions are written: a CoordFormat name (traxcoords), e.g.
+  /// `decimalDegrees`, `utm`, `mgrs`.
+  final String coordinateFormat;
   final Set<String> mutedChannels;
 
   /// Muted conversations keyed by contact pubkey hex (room servers today).
@@ -135,22 +146,25 @@ class AppSettings {
   final List<String> recentReactions;
 
   AppSettings({
-    this.mapShowRepeaters = true,
+    this.mapShowRepeaters = false,
     this.mapShowChatNodes = true,
-    this.mapShowOtherNodes = true,
+    this.mapShowOtherNodes = false,
     this.mapShowOverlaps = false,
     this.mapTimeFilterHours = 0, // all time
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
-    this.mapShowMarkers = true,
+    this.mapShowMarkers = false,
     this.mapShowGuessedLocations = false,
     this.enableMessageTracing = true,
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
-    this.mapContours = true,
-    this.mapHillShading = true,
+    this.mapContours = false,
+    this.mapHillShading = false,
+    this.mapPlaces = true,
+    this.mapParks = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
+    this.routeOptions = const RouteOptions(),
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -165,6 +179,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     this.unitSystem = UnitSystem.metric,
+    this.coordinateFormat = 'decimalDegrees',
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     this.mapShowDiscoveryContacts = true,
@@ -202,7 +217,12 @@ class AppSettings {
   /// file saved long ago without a key really ran on that key's fallback, and
   /// for two settings the fallback differs from the old constructor.
   factory AppSettings.olderInstall() => AppSettings(
+    mapShowRepeaters: true,
+    mapShowOtherNodes: true,
+    mapShowMarkers: true,
     mapShowGuessedLocations: true,
+    mapContours: true,
+    mapHillShading: true,
     maxMessageRetries: 3,
     pathGraphEnabled: false,
     incrementalContactSync: false,
@@ -225,8 +245,11 @@ class AppSettings {
       'map_type': mapType,
       'map_contours': mapContours,
       'map_hill_shading': mapHillShading,
+      'map_places': mapPlaces,
+      'map_parks': mapParks,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
+      'route_options': routeOptions.toJson(),
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -241,6 +264,7 @@ class AppSettings {
       'battery_chemistry_by_device_id': batteryChemistryByDeviceId,
       'battery_chemistry_by_repeater_id': batteryChemistryByRepeaterId,
       'unit_system': unitSystem.value,
+      'coordinate_format': coordinateFormat,
       'muted_channels': mutedChannels.toList(),
       'muted_contacts': mutedContacts.toList(),
       'map_show_discovery_contacts': mapShowDiscoveryContacts,
@@ -293,8 +317,14 @@ class AppSettings {
       mapType: json['map_type'] as String? ?? 'osm',
       mapContours: json['map_contours'] as bool? ?? true,
       mapHillShading: json['map_hill_shading'] as bool? ?? true,
+      mapPlaces: json['map_places'] as bool? ?? true,
+      mapParks: json['map_parks'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
+      routeOptions: switch (json['route_options']) {
+        final Map<String, dynamic> options => RouteOptions.fromJson(options),
+        _ => const RouteOptions(),
+      },
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -319,6 +349,8 @@ class AppSettings {
           ) ??
           {},
       unitSystem: parseUnitSystem(json['unit_system']),
+      coordinateFormat:
+          json['coordinate_format'] as String? ?? 'decimalDegrees',
       mutedChannels:
           ((json['muted_channels'] as List?)
               ?.map((e) => e.toString())
@@ -389,8 +421,11 @@ class AppSettings {
     String? mapType,
     bool? mapContours,
     bool? mapHillShading,
+    bool? mapPlaces,
+    bool? mapParks,
     bool? mapDownloadedAreas,
     String? mapTheme,
+    RouteOptions? routeOptions,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -405,6 +440,7 @@ class AppSettings {
     Map<String, String>? batteryChemistryByDeviceId,
     Map<String, String>? batteryChemistryByRepeaterId,
     UnitSystem? unitSystem,
+    String? coordinateFormat,
     Set<String>? mutedChannels,
     Set<String>? mutedContacts,
     bool? mapShowDiscoveryContacts,
@@ -446,8 +482,11 @@ class AppSettings {
       mapType: mapType ?? this.mapType,
       mapContours: mapContours ?? this.mapContours,
       mapHillShading: mapHillShading ?? this.mapHillShading,
+      mapPlaces: mapPlaces ?? this.mapPlaces,
+      mapParks: mapParks ?? this.mapParks,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
+      routeOptions: routeOptions ?? this.routeOptions,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:
@@ -468,6 +507,7 @@ class AppSettings {
       batteryChemistryByRepeaterId:
           batteryChemistryByRepeaterId ?? this.batteryChemistryByRepeaterId,
       unitSystem: unitSystem ?? this.unitSystem,
+      coordinateFormat: coordinateFormat ?? this.coordinateFormat,
       mutedChannels: mutedChannels ?? this.mutedChannels,
       mutedContacts: mutedContacts ?? this.mutedContacts,
       mapShowDiscoveryContacts:

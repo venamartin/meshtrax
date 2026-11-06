@@ -4854,6 +4854,12 @@ class AppLocalizationsSk extends AppLocalizations {
   String get mapLayers_hillShading => 'Tieňovanie terénu';
 
   @override
+  String get mapLayers_places => 'Miesta';
+
+  @override
+  String get mapLayers_parks => 'Parky';
+
+  @override
   String get mapLayers_dark => 'Tmavá mapa';
 
   @override
@@ -5636,6 +5642,51 @@ class AppLocalizationsSk extends AppLocalizations {
   String get parkLegend_guidepost => 'Smerovník';
 
   @override
+  String get roadLegend_title => 'Cesty, chodníky a čiary';
+
+  @override
+  String get roadLegend_freeway => 'Diaľnica';
+
+  @override
+  String get roadLegend_majorRoad => 'Hlavná cesta';
+
+  @override
+  String get roadLegend_road => 'Cesta';
+
+  @override
+  String get roadLegend_track => 'Nespevnená alebo poľná cesta';
+
+  @override
+  String get roadLegend_trail => 'Chodník';
+
+  @override
+  String get roadLegend_interstate => 'Diaľnica Interstate';
+
+  @override
+  String get roadLegend_usRoute => 'Federálna cesta USA';
+
+  @override
+  String get roadLegend_stateRoute => 'Štátna cesta';
+
+  @override
+  String get roadLegend_railway => 'Železnica';
+
+  @override
+  String get roadLegend_stream => 'Rieka alebo potok';
+
+  @override
+  String get roadLegend_contour => 'Vrstevnica';
+
+  @override
+  String get roadLegend_park => 'Hranica parku';
+
+  @override
+  String get roadLegend_wilderness => 'Divočina alebo národný les';
+
+  @override
+  String get roadLegend_boundary => 'Hranica štátu alebo okresu';
+
+  @override
   String get dialog_noticeExpires => 'Vyprší';
 
   @override
@@ -5787,6 +5838,439 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathfinder_graphCreate => 'Vytvoriť';
 
   @override
+  String get route_pathPaved => 'Asfalt';
+
+  @override
+  String get route_pathDirt => 'Šotolina';
+
+  @override
+  String get route_pathHiking => 'Pešo';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String route_to(String destination) {
+    return 'Cieľ: $destination';
+  }
+
+  @override
+  String get route_clear => 'Zrušiť trasu';
+
+  @override
+  String get route_finding => 'Hľadá sa trasa…';
+
+  @override
+  String get route_none => 'Nenašla sa žiadna trasa';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končí asfalt.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končí cesta.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končia chodníky.';
+  }
+
+  @override
+  String get route_directions => 'Popis trasy';
+
+  @override
+  String get route_here => 'Trasa sem';
+
+  @override
+  String route_destinationNow(String destination) {
+    return 'Aktuálny cieľ: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return 'Aktuálny začiatok: $start';
+  }
+
+  @override
+  String get route_startNowYou => 'Aktuálny začiatok: vaša poloha';
+
+  @override
+  String get route_noHeights => 'Pre túto oblasť chýbajú výškové údaje.';
+
+  @override
+  String get route_noHeightsHiking =>
+      'Pre túto oblasť chýbajú výškové údaje, preto čas nezahŕňa stúpania.';
+
+  @override
+  String get route_options => 'Možnosti trasy';
+
+  @override
+  String get route_optionsReset => 'Obnoviť';
+
+  @override
+  String get route_prefer => 'Uprednostniť';
+
+  @override
+  String get route_dirtFastest => 'Najrýchlejšia';
+
+  @override
+  String get route_dirtBalanced => 'Vyvážená';
+
+  @override
+  String get route_dirtDirect => 'Najkratšia';
+
+  @override
+  String get route_dirtFastestHelp =>
+      'Nespevnené cesty len tam, kde sú rýchlejšie.';
+
+  @override
+  String get route_dirtBalancedHelp =>
+      'Nespevnená cesta, keď výrazne skráti trasu.';
+
+  @override
+  String get route_dirtDirectHelp =>
+      'Najkratšia trasa, nech sú jej poľné cesty akokoľvek pomalé.';
+
+  @override
+  String get route_avoid => 'Vyhnúť sa';
+
+  @override
+  String get route_avoidHighways => 'Diaľnice';
+
+  @override
+  String get route_avoidTolls => 'Mýto';
+
+  @override
+  String get route_avoidFerries => 'Trajekty';
+
+  @override
+  String get route_hardestTrail => 'Najvyššia obtiažnosť';
+
+  @override
+  String get route_trailT1 => 'T1 Turistika';
+
+  @override
+  String get route_trailT2 => 'T2 Horská turistika';
+
+  @override
+  String get route_trailT3 => 'T3 Náročná horská turistika';
+
+  @override
+  String get route_trailT4 => 'T4 Vysokohorská turistika';
+
+  @override
+  String get route_trailT5 => 'T5 Náročná vysokohorská turistika';
+
+  @override
+  String get route_trailT6 => 'T6 Ťažká vysokohorská turistika';
+
+  @override
+  String get route_climbs => 'Stúpania';
+
+  @override
+  String get route_climbsAvoid => 'Vyhnúť sa';
+
+  @override
+  String get route_climbsSome => 'Mierne';
+
+  @override
+  String get route_climbsAny => 'Nevadia';
+
+  @override
+  String get route_pace => 'Tempo';
+
+  @override
+  String get route_paceSlow => 'Pomalé';
+
+  @override
+  String get route_paceNormal => 'Normálne';
+
+  @override
+  String get route_paceFast => 'Rýchle';
+
+  @override
+  String get place_nrhp => 'Národný register historických miest';
+
+  @override
+  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Čítať na Wikipedii';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return 'Foto: $author, $licence';
+  }
+
+  @override
+  String get search_hint => 'Hľadať miesta, adresy alebo súradnice';
+
+  @override
+  String get search_noPlaces =>
+      'Ak chcete hľadať miesta v regióne, stiahnite si preň „Zaujímavé miesta“. Súradnice fungujú aj bez nich.';
+
+  @override
+  String get search_noResults => 'Žiadne výsledky';
+
+  @override
+  String get coordFormat_decimalDegrees => 'Desatinné stupne';
+
+  @override
+  String get coordFormat_degreesMinutes => 'Stupne a minúty';
+
+  @override
+  String get coordFormat_dms => 'Stupne, minúty, sekundy';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Lokátor Maidenhead';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => 'Vrchol';
+
+  @override
+  String get poiKind_volcano => 'Sopka';
+
+  @override
+  String get poiKind_saddle => 'Sedlo';
+
+  @override
+  String get poiKind_pass => 'Priesmyk';
+
+  @override
+  String get poiKind_spring => 'Prameň';
+
+  @override
+  String get poiKind_hotSpring => 'Termálny prameň';
+
+  @override
+  String get poiKind_waterfall => 'Vodopád';
+
+  @override
+  String get poiKind_cave => 'Jaskyňa';
+
+  @override
+  String get poiKind_arch => 'Skalný oblúk';
+
+  @override
+  String get poiKind_glacier => 'Ľadovec';
+
+  @override
+  String get poiKind_rock => 'Skala';
+
+  @override
+  String get poiKind_cliff => 'Skalná stena';
+
+  @override
+  String get poiKind_beach => 'Pláž';
+
+  @override
+  String get poiKind_trailhead => 'Začiatok chodníka';
+
+  @override
+  String get poiKind_campground => 'Kemp';
+
+  @override
+  String get poiKind_picnicSite => 'Miesto na piknik';
+
+  @override
+  String get poiKind_hut => 'Horská chata';
+
+  @override
+  String get poiKind_shelter => 'Prístrešok';
+
+  @override
+  String get poiKind_drinkingWater => 'Pitná voda';
+
+  @override
+  String get poiKind_toilets => 'Toalety';
+
+  @override
+  String get poiKind_viewpoint => 'Vyhliadka';
+
+  @override
+  String get poiKind_attraction => 'Atrakcia';
+
+  @override
+  String get poiKind_observatory => 'Observatórium';
+
+  @override
+  String get poiKind_zoo => 'Zoologická záhrada';
+
+  @override
+  String get poiKind_themePark => 'Zábavný park';
+
+  @override
+  String get poiKind_mine => 'Baňa';
+
+  @override
+  String get poiKind_mineShaft => 'Banská šachta';
+
+  @override
+  String get poiKind_adit => 'Štôlňa';
+
+  @override
+  String get poiKind_ghostTown => 'Mesto duchov';
+
+  @override
+  String get poiKind_ruins => 'Ruiny';
+
+  @override
+  String get poiKind_monument => 'Pomník';
+
+  @override
+  String get poiKind_memorial => 'Pamätník';
+
+  @override
+  String get poiKind_fort => 'Pevnosť';
+
+  @override
+  String get poiKind_historic => 'Historické miesto';
+
+  @override
+  String get poiKind_rangerStation => 'Stanica strážcov parku';
+
+  @override
+  String get poiKind_visitorCenter => 'Návštevnícke centrum';
+
+  @override
+  String get poiKind_hospital => 'Nemocnica';
+
+  @override
+  String get poiKind_police => 'Polícia';
+
+  @override
+  String get poiKind_fireStation => 'Hasičská stanica';
+
+  @override
+  String get poiKind_emergencyPhone => 'Núdzový telefón';
+
+  @override
+  String get poiKind_fuel => 'Čerpacia stanica';
+
+  @override
+  String get poiKind_restArea => 'Odpočívadlo';
+
+  @override
+  String get poiKind_travelCenter => 'Odpočívadlo so službami';
+
+  @override
+  String get poiKind_museum => 'Múzeum';
+
+  @override
+  String get poiKind_city => 'Mesto';
+
+  @override
+  String get poiKind_town => 'Obec';
+
+  @override
+  String get poiKind_locality => 'Lokalita';
+
+  @override
+  String get poiKind_lake => 'Jazero';
+
+  @override
+  String get poiKind_river => 'Rieka';
+
+  @override
+  String get poiKind_valley => 'Údolie';
+
+  @override
+  String get poiKind_range => 'Pohorie';
+
+  @override
+  String get poiKind_trail => 'Chodník';
+
+  @override
+  String get poiKind_dirtRoad => 'Nespevnená cesta';
+
+  @override
+  String get poiKind_road => 'Cesta';
+
+  @override
+  String get poiKind_address => 'Adresa';
+
+  @override
+  String get poiKind_place => 'Miesto';
+
+  @override
+  String get offlineMaps_kindRouting => 'Plánovanie trás';
+
+  @override
+  String get offlineMaps_kindRoutingDetail =>
+      'Trasy po chodníkoch, nespevnených aj spevnených cestách';
+
+  @override
+  String get offlineMaps_kindPoi => 'Zaujímavé miesta';
+
+  @override
+  String get offlineMaps_kindPoiDetail =>
+      'Miesta na vyhľadávanie, s Wikipediou';
+
+  @override
+  String get offlineMaps_kindAddresses => 'Adresy';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => 'Adresy domov na vyhľadávanie';
+
+  @override
+  String get map_search => 'Hľadať';
+
+  @override
+  String get route_fromHere => 'Trasa odtiaľto';
+
+  @override
+  String get route_startSet =>
+      'Začiatok trasy je nastavený. Teraz vyberte, kam chcete ísť.';
+
+  @override
+  String get route_noStart =>
+      'Chýba začiatok trasy. Dlho stlačte mapu a vyberte „Trasa odtiaľto“.';
+
+  @override
+  String get route_noData =>
+      'Ak tu chcete hľadať trasy, stiahnite si pre tento región „Plánovanie trás“ v Offline mapách.';
+
+  @override
+  String get route_pin => 'Umiestnený špendlík';
+
+  @override
+  String get appSettings_coordinateFormat => 'Formát súradníc';
+
+  @override
+  String get map_copyPosition => 'Kopírovať polohu';
+
+  @override
+  String get poiKind_park => 'Park';
+
+  @override
+  String get poiKind_protectedArea => 'Chránené územie';
+
+  @override
+  String get common_more => 'Viac';
+
+  @override
+  String get common_less => 'Menej';
+
+  @override
   String get locationSharing_title => 'Kto vidí moju polohu';
 
   @override
@@ -5867,44 +6351,44 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chats_advertise => 'Oznámiť';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => 'Kresba';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => 'Kresliť';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => 'Vložiť';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => 'Pero';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => 'Čiara';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => 'Obdĺžnik';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => 'Kruh';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => 'Elipsa';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => 'Šípka';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => 'Vrátiť späť';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => 'Popis';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => 'Voliteľné, zobrazí sa pod obrázkom';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max bajtov';
   }
 
   @override
@@ -5912,113 +6396,118 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '$count bodov',
+      many: '$count bodu',
+      few: '$count body',
+      one: '$count bod',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => 'Všetky nakreslené body sa zachovajú.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return 'Zjednodušené: čiary sa odchyľujú najviac o $percent % veľkosti kresby.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      'Kresba je príliš podrobná na jednu správu, aj po zjednodušení. Vráťte späť ťah alebo použite tvary, ktoré zaberajú oveľa menej miesta.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => 'Kreslite prstom alebo vyberte tvar.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'Vložte súbor SVG alebo údaje cesty, napríklad M10 10h80v80H10z';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => 'Použiť toto SVG';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      'Farby a výplne sa neprenášajú: obrázok sa odošle ako čiary vo farbe pera príjemcu.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => 'Najprv vložte SVG alebo údaje cesty.';
 
   @override
   String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+      'Je to príliš veľké alebo príliš podrobné na načítanie. Vložte menšie SVG.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable =>
+      'Toto nie je SVG, ktoré aplikácia dokáže načítať.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing =>
+      'V tomto SVG nie je nič viditeľné, čo by sa dalo nakresliť.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'Kopírovať SVG';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => 'Kresby';
 
   @override
   String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+      'Obrázky posielané ako SVG a ako tu vyzerajú';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => 'Zobraziť kresby';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle =>
+      'Vypnuté zobrazí namiesto nich kód SVG';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => 'Farba pera';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => 'Kód farby';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => 'Hrúbka čiary';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => 'Žiara';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => 'Riadky obrazovky';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => 'Trasa';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'Krížik';
 
   @override
   String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+      'Klepnutím pridajte body. Trasu dokončíte opätovným klepnutím na posledný bod.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => 'Bez mapy';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => 'Kresliť tu';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => 'Posunúť mapu';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      'Posúvaním a približovaním mapy nájdite miesto, potom klepnite na „Kresliť tu“.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, šírka $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => 'Táto oblasť nie je stiahnutá';
 }

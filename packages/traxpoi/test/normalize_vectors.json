@@ -1,0 +1,34 @@
+{
+  "places": [
+    ["Mount Diablo", "mount diablo"],
+    ["Mt. Diablo", "mount diablo"],
+    ["MT DIABLO", "mount diablo"],
+    ["Dante's View", "dantes view"],
+    ["Dante’s View", "dantes view"],
+    ["Cañon City", "canyon city"],
+    ["Box Canon Falls Park", "box canyon falls park"],
+    ["Ægir Peak", "aegir peak"],
+    ["Łódź", "lodz"],
+    ["Søren's Spgs", "sorens springs"],
+    ["St. Elmo", "saint elmo"],
+    ["Ouray & Silverton", "ouray and silverton"],
+    ["Camp Bird Mine", "camp bird mine"],
+    ["Bear Ck TH", "bear creek trailhead"],
+    ["Amphitheater CG", "amphitheater campground"],
+    ["Mount Sneffels (Ouray County)", "mount sneffels ouray county"],
+    ["Ft. Peabody", "fort peabody"],
+    ["  Imogene   Pass ", "imogene pass"],
+    ["Pk 13,132", "peak 13 132"],
+    ["東京", ""]
+  ],
+  "addresses": [
+    ["Main St", "main street"],
+    ["N. Main St.", "north main street"],
+    ["Farmington Ave", "farmington avenue"],
+    ["County Rd 361", "county road 361"],
+    ["CR 361", "county road 361"],
+    ["Mt View Dr", "mount view drive"],
+    ["O'Brien Ct", "obrien court"],
+    ["Avenida Señora", "avenida senora"]
+  ]
+}

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
@@ -76,6 +77,37 @@ void main() {
 
     await tester.longPressAt(mapCenter(tester));
     await tester.pump(const Duration(milliseconds: 400));
+    expect(longPresses, hasLength(1));
+  });
+
+  testWidgets('a right-click is a long-press, on the map and on markers', (
+    tester,
+  ) async {
+    var markerLongPresses = 0;
+    final aside = LatLng(_center.latitude, _center.longitude + 0.1);
+    await pumpMap(
+      tester,
+      overlays: [
+        MapMarker(
+          id: 'm',
+          position: aside,
+          onTap: () {},
+          onLongPress: () => markerLongPresses++,
+        ),
+      ],
+    );
+    await tester.tapAt(mapCenter(tester), buttons: kSecondaryButton);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(longPresses, hasLength(1));
+    expect(longPresses.single.latitude, closeTo(_center.latitude, 0.01));
+    expect(taps, isEmpty);
+
+    await tester.tap(
+      find.byType(GestureDetector).last,
+      buttons: kSecondaryButton,
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(markerLongPresses, 1);
     expect(longPresses, hasLength(1));
   });
 

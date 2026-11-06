@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** November 2, 2026
+**Last updated:** November 6, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -12,7 +12,7 @@ The App is developed by an independent, open-source developer. You can review th
 ## Summary
 
 - The App has **no user accounts** and requires **no sign-up**.
-- There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
+- There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files, trail routing data, points of interest (place names, Wikipedia text and photos) and addresses, and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
 - The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind.
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
 - The only data ever sent over the internet is to the MeshTrax map server and two third-party services that power optional terrain and GIF features: **Open-Meteo** and **Giphy**. What each receives is described below. The base map that comes with the App needs no connection.
@@ -30,7 +30,7 @@ All of the following is stored locally in the App's private storage on your devi
 | App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, blocked-users list, etc. | Remember your preferences |
 | Message routing data | Path history and routing weights, kept in one graph per mesh, with the names you give the graphs and the public keys of the repeaters each graph has heard | Improve mesh message delivery, and tell one mesh from another |
 | Where repeaters heard you (GPS radio only) | With a radio that has its GPS on, which repeaters heard it in each area of about 500 m over the last 30 days, with no finer position than that; carried in a Pathfinder backup only when you choose "Include" | Pick routes that work where you are |
-| Offline maps | Map packs you choose to download, and the list of available maps | Show maps without a connection |
+| Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download, and the list of what's available | Show maps, plan routes and search for places without a connection |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 
@@ -38,15 +38,15 @@ All of the following is stored locally in the App's private storage on your devi
 
 **Files you export:** The App can write a backup file, a debug log, or a copy of the message database, but only when you ask for one. You choose where each file goes through the system share sheet or file picker. A full device backup holds your contacts, channels and their keys, the companion device's settings and position, and, where the firmware allows it, the companion device's **private** identity key, so you can restore the same identity onto a radio later. Keep backup files somewhere safe; anyone holding one can read your channels and act as your node.
 
-**Device backups:** The App itself does not back up or sync your data anywhere. Your phone's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps are kept out of these backups.
+**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest and addresses are kept out of these backups.
 
 ## Data shared with third parties
 
 The App contacts the MeshTrax map server and two third-party services, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
 
 ### 1. MeshTrax map server (offline maps)
-- **When:** You open the Offline maps screen, download or update a map, and, while offline maps are installed, about once a day to check for updates.
-- **What is sent:** Requests for the list of available maps and for the map files you choose, with standard HTTP headers. No personal data and no location; the region you pick shows only as which map files are requested.
+- **When:** You open the Offline maps screen, download or update a map, trail routing data, points of interest or addresses, and, while offline maps are installed, about once a day to check for updates.
+- **What is sent:** Requests for the list of what's available and for the files you choose, with standard HTTP headers. No personal data and no location; the region you pick shows only as which files are requested.
 - **Hosting:** The files are served by Cloudflare R2 at `maps.meshtrax.io`. Cloudflare sees your IP address and may keep standard request logs; the developer does not use them to identify you.
 - **Their policy:** https://www.cloudflare.com/privacypolicy/
 
@@ -60,7 +60,7 @@ The App contacts the MeshTrax map server and two third-party services, and only 
 - **What is sent:** When you open the picker, a request for trending GIFs. When you search in the picker, the **search words you type**. When a GIF is displayed, only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. No message text, contacts, or location is sent.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
-The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share) the system browser (to open a web link contained in a received message, after you confirm), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
+The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share), the system browser (to open a web link contained in a received message, after you confirm, or a place's full Wikipedia article when you tap **Read on Wikipedia**), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
 
 ## Content reporting
 
@@ -75,6 +75,7 @@ You can also **block** a sender from any message; blocked senders and their mess
 - No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App). Your operating system's own device backup is separate; see "Device backups" above.
 - The App does not read your calendar or your contacts list.
 - The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it.
+- Trail routing and place search run entirely on your device. The points you plan a route between and the words you search for are never sent anywhere.
 - No data is sold or shared for advertising.
 
 ## Permissions
@@ -101,7 +102,7 @@ iOS does not require location permission for BLE scanning; the App never request
 |---|---|
 | App Sandbox | Required for Mac App Store apps. The App's data stays in its own container, and the App can reach only what is listed below |
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Outgoing network connections | Download offline maps (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
+| Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
 | USB, and read-write access to serial ports (`/dev/cu.*`, `/dev/tty.*`) | Connect to a companion device over a USB serial cable. The App opens only these serial device files and no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Notifications | Show notifications for incoming mesh messages |
@@ -115,7 +116,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | `BLUETOOTH`, `BLUETOOTH_ADMIN` (Android 11 and below) | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | `BLUETOOTH_SCAN` (with `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE` (Android 12+) | Scan for and communicate with your companion device. The scan is flagged so it is **not** used to derive location |
 | `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Required by the Android operating system to permit BLE scanning on Android 11 and below. The App does not read, store, or transmit your device location through these permissions |
-| `INTERNET` | Download offline maps (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
 | `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
@@ -127,7 +128,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | Capability | Why it is needed |
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Internet | Download offline maps (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| Internet | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
 | Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
 
 The Windows app does not use the camera, location, or notifications.

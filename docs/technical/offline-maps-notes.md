@@ -33,7 +33,7 @@ traxmap moved into this repository.
 - **Integration roadmap:** [`offline-maps-roadmap.md`](offline-maps-roadmap.md)
   covers the screens, phases, how to test on the Pi, and coordination with
   traxmapmaker.
-- **Park overlays:** [`park-maps.md`](park-maps.md).
+- **Parks on the map:** [`park-maps.md`](park-maps.md).
 - **Status (2026-10-19):** Phase 1 (the download screen) is in progress on
   the local branch `feat/offline-maps`.
 
@@ -50,7 +50,7 @@ traxmap moved into this repository.
 | 2026-10-16 | **OSM covers the whole world.** USGS and NOAA packs are US-only extras. First release: USA by state, Canada by province, Mexico, UK. |
 | 2026-10-16 | **The region picker is a native MeshTrax "Offline maps" screen** (replacing `map_cache_screen.dart`), as close to the web mockup as possible in MeshTrax's own style. It draws on a small bundled world pack (z0–6), and fetches simplified outlines (`picker.geojson`) from R2. Design in the traxmap README. |
 | 2026-10-16 | **Pack downloads use background_downloader**, not Android's DownloadManager: scoped tasks, Android 14+ UIDT, range-request resume, restore at launch, SHA-256 check, then `PackManager.install(move: true)`. |
-| 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** See "Routing" below. |
+| 2026-10-16 | **Offline routing (trails, dirt roads or a mix) with the BRouter library embedded in MeshTrax, Android only.** Superseded on 2026-10-25 by Valhalla, which runs on iOS too: see "Routing" below. |
 | 2026-10-17 | **Routing is an opt-in download, off by default** (Android only). |
 | 2026-10-17 | **Online OSM raster tiles where no pack is installed.** They load on demand only, from a disk cache of tiles already viewed. The bulk "Offline Map Cache" prefetch goes (it breaks OSM's tile policy), the User-Agent becomes `com.vena.meshtrax`, and "© OpenStreetMap contributors" shows whenever raster tiles do. The bundled world pack is deferred. Martin: about 95% of users are online. |
 | 2026-10-17 | **Phone GPS** (geolocator, when-in-use, asked on the first tap of centre-on-me) arrives with the main map. (Parked 2026-10-22: the radio only.) The radio's position is the fallback, and the only source on Linux. privacy.md and the store forms change in the same step. |
@@ -98,8 +98,21 @@ traxmap moved into this repository.
 | 2026-10-20 | **Charts carry the real NOAA content,** not a simplified view (Martin). traxmapmaker rebuilds the charts with traffic separation schemes, anchorages, restricted areas, bridges and overhead clearances, and caution areas. The current 9 layers stay. |
 | 2026-10-20 | **My location: the phone's GPS where allowed, else the radio's position.** (Parked 2026-10-22: the radio only.) It asks while-in-use on the first tap. The phone is **its own marker** (Martin), a blue dot apart from the radio's "You". Nothing is read until the user has used My location once (remembered), and then only while a map is open with the app in front. Linux has no GPS and uses the radio. Desktop gets +/− buttons; phones pinch. |
 | 2026-10-19 | **Copernicus GLO-30 is approved** for contours outside the US (Canada, Mexico, UK). A contours pack's `attribution` is then "USGS 3DEP", the Copernicus credit, or both, joined with "; ". The licence also requires redistributors to show: "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30." The app shows that alongside the credits wherever such a pack is in use, as it does the charts' "Not for navigation". **Agreed with traxmapmaker (SCHEMA.md "Pack metadata", FINDINGS §1.1):**<br>• Packs carry an optional plain-text `notice` metadata key, present only when a licence requires one.<br>• Several notices in one pack are joined by newlines.<br>• The key is in pack metadata only, not in `index.json`.<br>• The app shows every distinct notice of the packs in use (T5, `MapStyleState.notices`), and never matches on "Copernicus".<br>• First data: the Puerto Rico and US Virgin Islands contours. Two of their blocks have no 3DEP tile and use GLO-30. |
+| 2026-10-26 | **Map hints: a small module for map facts no pack carries** (Martin). One versioned `hints.json` for the whole catalogue, listed in `index.json` (url, sha256), fetched with the catalogue, checked and cached for offline use (`MapPacksService.hints`, traxmap `MapHints`). Styles read its lists through `{list:<name>}` placeholders. First content: the desert parks (tan). Later: label emphasis, storm and seasonal closures, other corrections, all without rebuilding a pack. traxmapmaker FINDINGS §1.9. |
+| 2026-10-27 | **Place icons keep a gap, so they never touch** (option C, Martin, chosen from downtown LA renders on the SoCal places). The most notable places go down first; another is drawn only if it is at least 64 px from every icon already drawn below zoom 14, where cities would crowd, and 40 px from zoom 14 in. Downtown LA on a phone: 24 icons at zoom 12 instead of 52, 39 at zoom 14 instead of 60; the backcountry barely changes. It replaces one icon per 40 px grid square, which let neighbours across a square's edge sit side by side. |
 | 2026-11-02 | **Online tiles removed; the bundled base map goes down to towns** (Martin). Users got 404s from OSM's tile servers (the gap-tile wrapper dropped our User-Agent), and online maps fail where a mesh radio matters most. Gone: the Online \| Offline switch, `map_source`, the tile cache and its Clear button, `cached_network_image` and `flutter_cache_manager`; the old cache (up to 200,000 tiles) is deleted from the device. The world map grows into a base map, chosen from previews: Natural Earth plus GeoNames towns of 1,000+ people (CC BY 4.0), data to z7, 16.9 MB (z8 looked the same for +10 MB; z9 was over the 25 MB budget). Towns appear by size: 100k+ at z6, 25k at z7, 5k at z8, 1k at z9; names only, so collision hides a town and its name together. traxmap's `GapFillProvider` leaves out each base map tile a region pack has, at every zoom (past z7 the base map's tiles are reframed per tile, keeping only what reaches each), so the two never draw over each other; under charts it isn't masked (chart coverage is opaque, and its towns name the coast). Where nothing is downloaded the map stops zooming in at 10 (about 25 km across a phone) or where it already was, and "Download a region for detail" shows only there. Small maps open at 10 there instead of 13. |
 | 2026-11-02 | **A region's download starts with the map alone** (Martin). Contours and hill shading are no longer ticked by default (replaces 2026-10-22's "ticked by default"); the sizes in the region list and on "Download a region for detail" are the map's. Ticking Contours still picks the variant in the user's units (`MapPacksService.preferredContours`). |
+| 2026-11-03 | **Line of sight uses the contours packs, offline only** (Martin). The online Open-Meteo lookup goes. Heights come from where the line crosses the contours (3DEP 1″, finer than Open-Meteo's 90 m grid, and no ridge missed between samples), and the same data allows a 360° sweep from a point. Planned: roadmap, Later. |
+| 2026-11-04 | **Dirt prefers the dirt road when it saves real distance** (Martin, after Dillon Road to Cap Rock went 92 km round by CA 62 instead of 63 km up Berdoo Canyon). Dirt is auto with `use_tracks` 1, `use_distance` 0.8 and `disable_hierarchy_pruning`, which the engine config allows for points up to 100 km apart (`max_distance_disable_hierarchy_culling`). Pure `shortest` was rejected: it crawls 25 h over sand tracks in Anza-Borrego to save 17 km; above 0.85 long trips got longer and slower; motorcycle `use_trails` still went round. Paved trips and towns are unchanged (Pasadena to Santa Monica stays on I-10). |
+| 2026-11-04 | **13 more park kinds get a tint, outline and name** (Martin, after Point Reyes and Point Lobos had no outline). Added to the four: `national_seashore`, `national_lakeshore`, `national_recreation_area`, `national_historical_park`, `national_scenic_area`, `state_beach`, `state_historic_park`, `state_recreation_area`, `state_natural_reserve`, `state_reserve`, `state_vehicular_recreation_area`, `provincial_park` and `parque_nacional`. Left out: state forests, national wildlife refuges, national historic sites and marine reserves. Parks the packs class otherwise (Point Reyes is `protected_area`) come from the hints' `parks.include`, which widens to the new kinds' names. No pack rebuild. traxmapmaker FINDINGS §1.9, §10; [`park-maps.md`](park-maps.md). |
+| 2026-11-05 | **Unpaved footways are trails** (Martin, after Santa Cruz Island's Pelican Bay Trail showed a name and no line). OSM tags some backcountry trails `highway=footway`, which the style left out to keep sidewalks off the map. A footway with `surface` unpaved now draws as a trail; sidewalks are paved or untagged (7–12 unpaved footways in nine city tiles). Every named footway takes the trail label, since `transportation_name` carries no surface. |
+| 2026-11-05 | **Route shields** (Martin: the big highways were hard to pick out). Interstates from zoom 7, US and state routes from zoom 9, by `route_1_network` (`US:I`, `US:US`, or `network` us-state) with `route_1_ref`; express lanes and other networks get none. The Interstate and US shields follow the real signs (Wikimedia Commons' public-domain I-5, I-405, US 66 and US 101 drawings), in two widths since the renderer can't stretch an icon to its text; state routes are a white oval. Spacing 220 px: at 320, US 101 lost every seat through Hollywood to town names and peaks. Freeway lines keep their colour (Martin chose shields only over a stronger orange). |
+| 2026-11-05 | **The legend explains the lines** (Martin). A "Roads, trails and lines" section: freeway, major road, road, dirt road or track, trail, the three shields, railway, stream, contour, park boundary, wilderness or national forest, and state or county line, each drawn from the style's own layers (traxmap `RoadLegendItem`). |
+| 2026-11-05 | **Road casings are a wider line under the road** (Martin, after the PR #210 phone profile: frames waited on a busy raster thread while panning). With `line-gap-width` the renderer opens an offscreen layer for every road feature, 2,619 in one zoom 12 tile of downtown LA, and our road line covers the gap anyway. The casing is now the road's width plus a casing on each side; before and after renders differ only in antialiasing. |
+| 2026-11-05 | **The renderer stays on flutter_map_vector_tiles 2.10.x** (`>=2.10.1 <2.11.0`) until 2.11 is taken on by itself. The app's `pubspec.lock` is gitignored, so every machine and CI resolve the newest allowed version: the phone was profiled on 2.10.1 while the Pi ran 2.9.1, and 2.11.0 (stricter expression types, new text metrics, label placement off the UI thread, `icon-text-fit`) appeared the same day. **Superseded the same day:** master moved to 2.11.x with #239, checked with `test/renderer_check_test.dart`, and PR #210 took it from master. On #210's styles, with the California street packs added to the check, every layer matched, route shields, road casings and trails included; renders of nine road scenes and the roads legend, light and dark, differed only in label placement (text about half a pixel lower, some shields and names placed elsewhere along their lines). |
+| 2026-11-05 | **Routing, places and hints go to the live catalogue** (Martin). Once traxmapmaker publishes them to `https://maps.meshtrax.io/index.json`, test builds need no `MAP_INDEX_URL`, and `test/` is only for experiments on the Pi. The released app (1.9.8) reads only `packs`, `generated` and `schema_version` and has no routing, places or hints code, so the new sections change nothing for its users while `schema_version` stays 1. From the first publish the live rules hold: a build id is never reused, and the previous build stays for at least 30 days. |
+| 2026-11-05 | **Major roads stay visible zoomed out** (Martin, after Death Valley's roads vanished with half the park on a phone). From zoom 8, trunk, primary and secondary roads get a casing half as wide as from zoom 11, so desert roads keep an edge on park tints and hill shading while a city's grid stays light. Secondary roads get their own zoom 8 width (CA 190 about 1 px at zoom 10, was 0.7), and wilderness and national forest edges start at zoom 11, not 9: zoomed out they run beside the roads and read as roads. Tertiary roads such as Badwater Road only enter the packs at zoom 11; including them earlier would be a pack rebuild, not taken now. |
+| 2026-11-05 | **Routing credits join the map credits** (FINDINGS 1.5, agreed with traxmapmaker). Each routing region's `attribution` (its sources' credits with "; " between them, worded as in the packs) and `notice` (only where GLO-30 heights are used) go into the routing manifest at install, so they show offline too. While routing data is installed, every map's credits chip lists them with the packs' credits, since a route can draw on any map. A credit another one already holds is left out, so the routing data's "© OpenStreetMap contributors" doesn't repeat the street map's "© OpenMapTiles © OpenStreetMap contributors". |
 
 ## Pitfalls already found
 
@@ -123,7 +136,7 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
   - It draws labels with Flutter's own text, so **no glyph `.pbf` files are needed**; `text-font` only matters in the browser.
   - Hillshade raster layers are skipped, which doesn't matter because terrain is vector.
   - Legacy filters (`["==","$type","Point"]`), `step`, `match`, `interpolate` and `circle-stroke` all work.
-- **Check a renderer update with `test/renderer_check_test.dart` (2026-11-05).** Run it on the current version, change the version, then run it again. The second run fails on every style layer that matches different features or gets different property values on the same real tiles. It needs packs in `packages/traxmap/test/packs`: base, osm, contours, terrain and charts. The 2.11 check used DC, the San Juans, Anza-Borrego, Nevada and three chart areas. It checks what the expressions give, not how things are drawn: label placement, text metrics and line joins still need a look on screen.
+- **Check a renderer update with `test/renderer_check_test.dart` (2026-11-05).** Run it on the current version, change the version, then run it again. The second run fails on every style layer that matches different features or gets different property values on the same real tiles. It needs packs in `packages/traxmap/test/packs`: base, osm, contours, terrain and charts. The 2.11 check used DC, the San Juans, Anza-Borrego, Nevada and three chart areas. It checks what the expressions give, not how things are drawn: label placement, text metrics and line joins still need a look on screen. Run both versions on the same packs (`TRAXMAP_PACKS`): a result from other packs fails with "other tiles".
 - **Zoom offset:** flutter_map zoom = MapLibre zoom + 1 for the same view. The renderer converts; nothing outside it should see flutter_map zooms.
 - **Pack lists compare by content.** `OfflineMapView` compares `packs` by id and file path (fixed 2026-10-16), so apps may rebuild the list in `build()`. Before the fix, a new list object reloaded the style every frame.
 - **flutter_map hit-testing swallows map gestures.** A `PolylineLayer`/`PolygonLayer` with a hit notifier counts every line as a hit, so a `GestureDetector` around it eats taps and long-presses meant for the map. The renderer puts overlays without handlers in passive layers with no hit testing, and forwards a gesture an overlay doesn't handle to the map's `onTap`/`onLongPress`. Without this, MeshTrax's line-of-sight long-press would break.
@@ -177,50 +190,47 @@ Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; An
 - `_collectSharedMarkers` starts an unawaited message-store reload on every build of the main map (which rebuilds on every connector notify).
 - The "radar" path-trace button force-unwraps `selfLatitude!`.
 
-## Routing (Android only; planned, nothing built)
+## Routing (Valhalla, on PR #210)
 
-**Engine:** the BRouter library (MIT), run in Android-native code.
-- **Where:** recommended as a small separate Flutter plugin (`packages/traxroute`,
-  method channel), keeping traxmap map-only. Still to confirm.
-- **Other platforms:** routing is hidden on iOS and desktop.
-- **Result:** a polyline with elevation per point, distance and ascent,
-  drawn as a `MapLine`. GPX export and an elevation profile come free.
+BRouter was the first plan, Android only. Martin dropped it on 2026-10-25
+for Valhalla, which runs on iOS too. The roadmap's Phase 7 has the status,
+and traxmapmaker's FINDINGS 1.5 the data contract.
 
-**Data:** BRouter `.rd5` files, 5°×5° tiles named by their south-west corner.
-- **Built by traxmapmaker** from the same OSM extracts as the maps, with 3DEP
-  or Copernicus elevation.
-- **brouter.de's files are for testing only.** Their CGIAR elevation can't
-  be re-hosted without permission.
+**Engine:** Valhalla 3.9.1 on every platform, the same version as the tiles,
+behind `packages/traxroute` (requests and results, the store, the catalogue).
+- **Linux:** Valhalla's own `valhalla_service`, named with
+  `--dart-define=VALHALLA_SERVICE=<path>`. Without it, routing isn't offered.
+- **Android:** valhalla-mobile 0.6.4 in `MeshTraxRouting.kt`, on the
+  `meshtrax/routing` channel.
+- **iOS:** valhalla-mobile 0.6.4 in the plugin `packages/traxroute_ios`, on
+  the same channel (iOS 16.4 at least).
 
-**On R2:**
-- **Tile storage:** one shared copy per tile at `routing/l11/<tile>.rd5`
-  (`l11` = BRouter's `lookupversion`). That's 2.4 GB for the first release.
-- **Index:** a separate top-level `routing` section in `index.json`, never in
-  `packs`. Today's app parses unknown kinds as `PackKind.unknown` and would
-  list them. Shape:
-  `{"routing": {"lookup_version": 11, "tiles": {"W125_N35": {bytes, sha256, build_date, url}}, "regions": {"<region path>": ["W125_N35", …]}}}`.
+**Data:** the catalogue's top-level `routing` key, never in `packs`, entry
+`valhalla-3.9`: one build for every region, since tiles from two builds
+break routing, and a `.tar.gz` bundle per picker region with its size,
+sha256 and credits.
+- **On the device:** one plain tar, `routing/<build>/tiles.tar`, holding each
+  tile once, and `manifest.json` with each region's tiles and credits. A new
+  build replaces every installed region in one step; removing a region keeps
+  the tiles another one uses.
+- **A bundle gone from the server** (the build moved on): the app reads the
+  catalogue again and installs the current build. A catalogue that lists no
+  regions never removes what's installed.
+- **Without heights:** a region built with `"elevation": false` gives heights
+  of −500, so the route has no climb or profile, and the panel says so.
 
-**In the app:**
-- **Opt-in, off by default:** a "Routing (trails & dirt roads)" checkbox
-  after Map and Contours, shown only on Android.
-- **Sizes:** the median region adds 139 MB (NorCal 146, SoCal 192). The app
-  shows only tiles not yet installed, since neighbours share tiles.
-- **Download, install, delete, update:**
-  - downloads go through `PackDownloader` (resume, SHA-256) into a `routing/`
-    folder that BRouter reads;
-  - deleting a region removes only tiles no other installed region uses;
-  - a changed sha256 in the index offers an update.
-- **Profiles:** bundled with the matching `lookups.dat`: hiking, trekking
-  and MTB, plus a MeshTrax profile with per-request "prefer dirt / avoid
-  paved / max `sac_scale`" variables.
+**Path types** (Martin, 2026-10-25): one per route, no drive-then-walk. Where
+the destination can't be reached that way, the route stops at the nearest
+point it reaches and says how far short.
+- **Paved:** `auto` with `exclude_unpaved`.
+- **Dirt:** `auto` with `use_tracks` 1, `use_distance` 0.8 (Balanced; 0 is
+  Fastest, 1 Direct) and hierarchy pruning off.
+- **Hiking:** `pedestrian` with `use_tracks` 1, `max_hiking_difficulty` (the
+  hardest trail), `use_hills` from the climbs option, and the pace as the
+  walking speed.
 
-**Measured on the Pi (2026-10-16):** routes take 0.4–0.8 s, and the route
-server runs in 128 MB. On Mt Diablo, hiking used 90% trails, MTB 88% dirt
-roads, and gravel mostly dirt and minor roads. Elevation changes the chosen
-route, not just the stats.
-
-**Next:** try the embedded library on a real Android phone, measuring route
-time, memory and APK size.
+**Next:** route time, memory and app size on a phone, once routing is in the
+live catalogue.
 
 ## Open questions for the app
 

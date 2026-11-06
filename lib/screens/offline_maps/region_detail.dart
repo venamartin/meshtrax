@@ -5,6 +5,8 @@ import 'package:traxmap/traxmap.dart';
 import '../../l10n/l10n.dart';
 import '../../services/app_settings_service.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/poi_service.dart';
+import '../../services/routing_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 
@@ -82,9 +84,92 @@ class _RegionDetailState extends State<RegionDetail> {
       for (final e in packs)
         if (maps.statusOf(e) == PackStatus.updateAvailable) e,
     ];
-    final downloadBytes = toDownload.fold(0, (sum, e) => sum + e.bytes);
-    final updateBytes = updates.fold(0, (sum, e) => sum + e.bytes);
-    final hasInstalled = maps.installedRegions.contains(region.path);
+    final routing = context.watch<RoutingService?>();
+    final poi = context.watch<PoiService?>();
+    // Routing and places download beside the packs, so their rows read the
+    // same download states.
+    PackStatus extraStatus(
+      String id, {
+      required bool installed,
+      required bool update,
+    }) =>
+        maps.downloadStatus(id) ??
+        (update
+            ? PackStatus.updateAvailable
+            : installed
+            ? PackStatus.installed
+            : PackStatus.available);
+    final routingId = RoutingService.downloadId(region.path);
+    final extras = [
+      if (routing != null &&
+          routing.available &&
+          routing.bundleFor(region.path) != null)
+        _Extra(
+          id: routingId,
+          title: l10n.offlineMaps_kindRouting,
+          detail: l10n.offlineMaps_kindRoutingDetail,
+          bytes: routing.isInstalled(region.path)
+              ? routing.bundleFor(region.path)!.bytes
+              : routing.bytesFor({region.path}),
+          status: extraStatus(
+            routingId,
+            installed: routing.isInstalled(region.path),
+            update: routing.updateAvailable(region.path),
+          ),
+          download: () => routing.download({region.path}),
+        ),
+      for (final (which, title, detail) in [
+        (
+          PoiDownload.points,
+          l10n.offlineMaps_kindPoi,
+          l10n.offlineMaps_kindPoiDetail,
+        ),
+        (
+          PoiDownload.addresses,
+          l10n.offlineMaps_kindAddresses,
+          l10n.offlineMaps_kindAddressesDetail,
+        ),
+      ])
+        if (poi?.fileFor(region.path, which) case final file?)
+          _Extra(
+            id: PoiService.downloadId(region.path, which),
+            title: title,
+            detail: detail,
+            bytes: file.bytes,
+            status: extraStatus(
+              PoiService.downloadId(region.path, which),
+              installed: poi!.isInstalled(region.path, which),
+              update: poi.updateAvailable(region.path, which),
+            ),
+            download: () => poi.download(region.path, {which}),
+          ),
+    ];
+    final extrasToDownload = [
+      for (final x in extras)
+        if (_ticked.contains(x.id) && x.status == PackStatus.available) x,
+    ];
+    final extraUpdates = [
+      for (final x in extras)
+        if (x.status == PackStatus.updateAvailable) x,
+    ];
+
+    final downloadBytes =
+        toDownload.fold<int>(0, (sum, e) => sum + e.bytes) +
+        extrasToDownload.fold<int>(0, (sum, x) => sum + x.bytes);
+    final updateBytes =
+        updates.fold<int>(0, (sum, e) => sum + e.bytes) +
+        extraUpdates.fold<int>(0, (sum, x) => sum + x.bytes);
+    void fetch(List<PackIndexEntry> packs, List<_Extra> more) {
+      if (packs.isNotEmpty) maps.download(packs);
+      for (final x in more) {
+        x.download();
+      }
+    }
+
+    final hasInstalled =
+        maps.installedRegions.contains(region.path) ||
+        (routing?.isInstalled(region.path) ?? false) ||
+        (poi?.regionFor(region.path) != null);
     final chartWaters =
         maps.chartAreas?.areasOverlapping(region.polygons).isNotEmpty ?? false;
     final ancestors = regions?.ancestorsOf(region) ?? const <Region>[];
@@ -116,7 +201,10 @@ class _RegionDetailState extends State<RegionDetail> {
               for (final (i, entry) in shown.indexed) ...[
                 if (i > 0) const Divider(height: 1),
                 PackRow(
-                  entry: entry,
+                  id: entry.id,
+                  bytes: entry.bytes,
+                  status: maps.statusOf(entry),
+                  installedAt: maps.installedAtOf(entry.id),
                   ticked: _ticked.contains(entry.id),
                   onTicked: (v) => setState(
                     () => v ? _ticked.add(entry.id) : _ticked.remove(entry.id),
@@ -128,6 +216,21 @@ class _RegionDetailState extends State<RegionDetail> {
                         : const [],
                   ),
                   detail: packDetail(l10n, entry.kind),
+                ),
+              ],
+              for (final x in extras) ...[
+                if (shown.isNotEmpty || x != extras.first)
+                  const Divider(height: 1),
+                PackRow(
+                  id: x.id,
+                  bytes: x.bytes,
+                  status: x.status,
+                  ticked: _ticked.contains(x.id),
+                  onTicked: (v) => setState(
+                    () => v ? _ticked.add(x.id) : _ticked.remove(x.id),
+                  ),
+                  title: Text(x.title),
+                  detail: x.detail,
                 ),
               ],
               if (!hasUsgs && !inUs) ...[
@@ -170,19 +273,19 @@ class _RegionDetailState extends State<RegionDetail> {
         ],
         const SizedBox(height: 12),
         FilledButton(
-          onPressed: toDownload.isEmpty
+          onPressed: toDownload.isEmpty && extrasToDownload.isEmpty
               ? null
-              : () => maps.download(toDownload),
+              : () => fetch(toDownload, extrasToDownload),
           child: Text(
-            toDownload.isEmpty
+            toDownload.isEmpty && extrasToDownload.isEmpty
                 ? l10n.offlineMaps_downloadTotal
                 : l10n.offlineMaps_download(formatBytes(downloadBytes)),
           ),
         ),
-        if (updates.isNotEmpty) ...[
+        if (updates.isNotEmpty || extraUpdates.isNotEmpty) ...[
           const SizedBox(height: 8),
           FilledButton.tonal(
-            onPressed: () => maps.download(updates),
+            onPressed: () => fetch(updates, extraUpdates),
             child: Text(
               '${l10n.offlineMaps_update} ${formatBytes(updateBytes)}',
             ),
@@ -244,4 +347,26 @@ class _RegionDetailState extends State<RegionDetail> {
       ],
     );
   }
+}
+
+/// A region's routing or points of interest download, shown like a pack.
+class _Extra {
+  /// The download's id, which also ticks it.
+  final String id;
+  final String title;
+  final String detail;
+  final int bytes;
+  final PackStatus status;
+
+  /// Starts, or updates, its download.
+  final VoidCallback download;
+
+  const _Extra({
+    required this.id,
+    required this.title,
+    required this.detail,
+    required this.bytes,
+    required this.status,
+    required this.download,
+  });
 }

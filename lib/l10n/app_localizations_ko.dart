@@ -4647,6 +4647,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mapLayers_hillShading => '음영 기복';
 
   @override
+  String get mapLayers_places => '장소';
+
+  @override
+  String get mapLayers_parks => '공원';
+
+  @override
   String get mapLayers_dark => '어두운 지도';
 
   @override
@@ -5394,6 +5400,51 @@ class AppLocalizationsKo extends AppLocalizations {
   String get parkLegend_guidepost => '이정표';
 
   @override
+  String get roadLegend_title => '도로, 탐방로 및 기타 선';
+
+  @override
+  String get roadLegend_freeway => '고속도로';
+
+  @override
+  String get roadLegend_majorRoad => '주요 간선도로';
+
+  @override
+  String get roadLegend_road => '도로';
+
+  @override
+  String get roadLegend_track => '비포장도로·임도';
+
+  @override
+  String get roadLegend_trail => '탐방로';
+
+  @override
+  String get roadLegend_interstate => '주간 고속도로';
+
+  @override
+  String get roadLegend_usRoute => '미국 국도';
+
+  @override
+  String get roadLegend_stateRoute => '주 도로';
+
+  @override
+  String get roadLegend_railway => '철도';
+
+  @override
+  String get roadLegend_stream => '강·하천';
+
+  @override
+  String get roadLegend_contour => '등고선';
+
+  @override
+  String get roadLegend_park => '공원 경계';
+
+  @override
+  String get roadLegend_wilderness => '원생지역·국유림';
+
+  @override
+  String get roadLegend_boundary => '주·카운티 경계';
+
+  @override
   String get dialog_noticeExpires => '만료일';
 
   @override
@@ -5540,6 +5591,431 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pathfinder_graphCreate => '만들기';
 
   @override
+  String get route_pathPaved => '포장';
+
+  @override
+  String get route_pathDirt => '비포장';
+
+  @override
+  String get route_pathHiking => '하이킹';
+
+  @override
+  String route_minutes(int minutes) {
+    return '$minutes분';
+  }
+
+  @override
+  String route_hoursMinutes(int hours, int minutes) {
+    return '$hours시간 $minutes분';
+  }
+
+  @override
+  String route_to(String destination) {
+    return '$destination까지';
+  }
+
+  @override
+  String get route_clear => '길찾기 종료';
+
+  @override
+  String get route_finding => '길을 찾는 중…';
+
+  @override
+  String get route_none => '길을 찾지 못했습니다';
+
+  @override
+  String route_endsShortPaved(String distance, String destination) {
+    return '포장도로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
+  }
+
+  @override
+  String route_endsShortDirt(String distance, String destination) {
+    return '도로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
+  }
+
+  @override
+  String route_endsShortHiking(String distance, String destination) {
+    return '탐방로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
+  }
+
+  @override
+  String get route_directions => '길 안내';
+
+  @override
+  String get route_here => '여기까지 길찾기';
+
+  @override
+  String route_destinationNow(String destination) {
+    return '현재 목적지: $destination';
+  }
+
+  @override
+  String route_startNow(String start) {
+    return '현재 출발지: $start';
+  }
+
+  @override
+  String get route_startNowYou => '현재 출발지: 내 위치';
+
+  @override
+  String get route_noHeights => '이 지역의 고도 정보가 없습니다.';
+
+  @override
+  String get route_noHeightsHiking => '이 지역의 고도 정보가 없어 소요 시간에 오르막이 반영되지 않습니다.';
+
+  @override
+  String get route_options => '길찾기 옵션';
+
+  @override
+  String get route_optionsReset => '재설정';
+
+  @override
+  String get route_prefer => '선호';
+
+  @override
+  String get route_dirtFastest => '최단 시간';
+
+  @override
+  String get route_dirtBalanced => '균형';
+
+  @override
+  String get route_dirtDirect => '최단 거리';
+
+  @override
+  String get route_dirtFastestHelp => '비포장도로는 더 빠를 때만 이용합니다.';
+
+  @override
+  String get route_dirtBalancedHelp => '거리를 크게 줄일 수 있으면 비포장도로를 이용합니다.';
+
+  @override
+  String get route_dirtDirectHelp => '느린 비포장길을 지나더라도 가장 짧은 길로 갑니다.';
+
+  @override
+  String get route_avoid => '피하기';
+
+  @override
+  String get route_avoidHighways => '고속도로';
+
+  @override
+  String get route_avoidTolls => '유료도로';
+
+  @override
+  String get route_avoidFerries => '페리';
+
+  @override
+  String get route_hardestTrail => '최대 난이도';
+
+  @override
+  String get route_trailT1 => 'T1 하이킹';
+
+  @override
+  String get route_trailT2 => 'T2 산악 하이킹';
+
+  @override
+  String get route_trailT3 => 'T3 어려운 산악 하이킹';
+
+  @override
+  String get route_trailT4 => 'T4 알파인 하이킹';
+
+  @override
+  String get route_trailT5 => 'T5 어려운 알파인 하이킹';
+
+  @override
+  String get route_trailT6 => 'T6 매우 어려운 알파인 하이킹';
+
+  @override
+  String get route_climbs => '오르막';
+
+  @override
+  String get route_climbsAvoid => '피하기';
+
+  @override
+  String get route_climbsSome => '약간';
+
+  @override
+  String get route_climbsAny => '상관없음';
+
+  @override
+  String get route_pace => '속도';
+
+  @override
+  String get route_paceSlow => '느림';
+
+  @override
+  String get route_paceNormal => '보통';
+
+  @override
+  String get route_paceFast => '빠름';
+
+  @override
+  String get place_nrhp => '미국 국가사적지';
+
+  @override
+  String get place_textCredit => '글: Wikipedia, CC BY-SA 4.0';
+
+  @override
+  String get place_readOnWikipedia => 'Wikipedia에서 읽기';
+
+  @override
+  String place_photoCredit(String author, String licence) {
+    return '사진: $author, $licence';
+  }
+
+  @override
+  String get search_hint => '장소, 주소 또는 좌표 검색';
+
+  @override
+  String get search_noPlaces =>
+      '장소를 검색하려면 해당 지역의 \'관심 지점\'을 다운로드하세요. 좌표는 다운로드 없이도 검색할 수 있습니다.';
+
+  @override
+  String get search_noResults => '검색 결과 없음';
+
+  @override
+  String get coordFormat_decimalDegrees => '십진 도';
+
+  @override
+  String get coordFormat_degreesMinutes => '도·분';
+
+  @override
+  String get coordFormat_dms => '도·분·초';
+
+  @override
+  String get coordFormat_utm => 'UTM';
+
+  @override
+  String get coordFormat_mgrs => 'MGRS / USNG';
+
+  @override
+  String get coordFormat_maidenhead => 'Maidenhead 그리드';
+
+  @override
+  String get coordFormat_geohash => 'Geohash';
+
+  @override
+  String get poiKind_peak => '봉우리';
+
+  @override
+  String get poiKind_volcano => '화산';
+
+  @override
+  String get poiKind_saddle => '안부';
+
+  @override
+  String get poiKind_pass => '고개';
+
+  @override
+  String get poiKind_spring => '샘';
+
+  @override
+  String get poiKind_hotSpring => '온천';
+
+  @override
+  String get poiKind_waterfall => '폭포';
+
+  @override
+  String get poiKind_cave => '동굴';
+
+  @override
+  String get poiKind_arch => '자연 아치';
+
+  @override
+  String get poiKind_glacier => '빙하';
+
+  @override
+  String get poiKind_rock => '바위';
+
+  @override
+  String get poiKind_cliff => '절벽';
+
+  @override
+  String get poiKind_beach => '해변';
+
+  @override
+  String get poiKind_trailhead => '탐방로 입구';
+
+  @override
+  String get poiKind_campground => '야영장';
+
+  @override
+  String get poiKind_picnicSite => '피크닉 장소';
+
+  @override
+  String get poiKind_hut => '산장';
+
+  @override
+  String get poiKind_shelter => '대피소';
+
+  @override
+  String get poiKind_drinkingWater => '식수';
+
+  @override
+  String get poiKind_toilets => '화장실';
+
+  @override
+  String get poiKind_viewpoint => '전망대';
+
+  @override
+  String get poiKind_attraction => '명소';
+
+  @override
+  String get poiKind_observatory => '천문대';
+
+  @override
+  String get poiKind_zoo => '동물원';
+
+  @override
+  String get poiKind_themePark => '테마파크';
+
+  @override
+  String get poiKind_mine => '광산';
+
+  @override
+  String get poiKind_mineShaft => '수직갱';
+
+  @override
+  String get poiKind_adit => '수평갱';
+
+  @override
+  String get poiKind_ghostTown => '유령 마을';
+
+  @override
+  String get poiKind_ruins => '폐허';
+
+  @override
+  String get poiKind_monument => '기념물';
+
+  @override
+  String get poiKind_memorial => '기념비';
+
+  @override
+  String get poiKind_fort => '요새';
+
+  @override
+  String get poiKind_historic => '사적지';
+
+  @override
+  String get poiKind_rangerStation => '레인저 스테이션';
+
+  @override
+  String get poiKind_visitorCenter => '방문자 센터';
+
+  @override
+  String get poiKind_hospital => '병원';
+
+  @override
+  String get poiKind_police => '경찰서';
+
+  @override
+  String get poiKind_fireStation => '소방서';
+
+  @override
+  String get poiKind_emergencyPhone => '비상 전화';
+
+  @override
+  String get poiKind_fuel => '주유소';
+
+  @override
+  String get poiKind_restArea => '휴게소';
+
+  @override
+  String get poiKind_travelCenter => '대형 휴게소';
+
+  @override
+  String get poiKind_museum => '박물관';
+
+  @override
+  String get poiKind_city => '도시';
+
+  @override
+  String get poiKind_town => '마을';
+
+  @override
+  String get poiKind_locality => '지역';
+
+  @override
+  String get poiKind_lake => '호수';
+
+  @override
+  String get poiKind_river => '하천';
+
+  @override
+  String get poiKind_valley => '계곡';
+
+  @override
+  String get poiKind_range => '산맥';
+
+  @override
+  String get poiKind_trail => '탐방로';
+
+  @override
+  String get poiKind_dirtRoad => '비포장도로';
+
+  @override
+  String get poiKind_road => '도로';
+
+  @override
+  String get poiKind_address => '주소';
+
+  @override
+  String get poiKind_place => '장소';
+
+  @override
+  String get offlineMaps_kindRouting => '탐방로 길찾기';
+
+  @override
+  String get offlineMaps_kindRoutingDetail => '탐방로, 비포장도로, 포장도로 길찾기';
+
+  @override
+  String get offlineMaps_kindPoi => '관심 지점';
+
+  @override
+  String get offlineMaps_kindPoiDetail => '검색할 수 있는 장소와 Wikipedia 설명';
+
+  @override
+  String get offlineMaps_kindAddresses => '주소';
+
+  @override
+  String get offlineMaps_kindAddressesDetail => '검색할 수 있는 건물 주소';
+
+  @override
+  String get map_search => '검색';
+
+  @override
+  String get route_fromHere => '여기서 출발';
+
+  @override
+  String get route_startSet => '출발지를 설정했습니다. 이제 목적지를 선택하세요.';
+
+  @override
+  String get route_noStart => '출발 위치가 없습니다. 지도를 길게 누르고 \'여기서 출발\'을 선택하세요.';
+
+  @override
+  String get route_noData =>
+      '여기서 길을 찾으려면 \'오프라인 지도\'에서 이 지역의 \'탐방로 길찾기\'를 다운로드하세요.';
+
+  @override
+  String get route_pin => '지정한 위치';
+
+  @override
+  String get appSettings_coordinateFormat => '좌표 형식';
+
+  @override
+  String get map_copyPosition => '위치 복사';
+
+  @override
+  String get poiKind_park => '공원';
+
+  @override
+  String get poiKind_protectedArea => '보호구역';
+
+  @override
+  String get common_more => '더보기';
+
+  @override
+  String get common_less => '접기';
+
+  @override
   String get locationSharing_title => '내 위치를 볼 수 있는 사람';
 
   @override
@@ -5612,44 +6088,44 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chats_advertise => '광고';
 
   @override
-  String get tray_drawing => 'Drawing';
+  String get tray_drawing => '그림';
 
   @override
-  String get drawing_tabDraw => 'Draw';
+  String get drawing_tabDraw => '그리기';
 
   @override
-  String get drawing_tabPaste => 'Paste';
+  String get drawing_tabPaste => '붙여넣기';
 
   @override
-  String get drawing_toolPen => 'Pen';
+  String get drawing_toolPen => '펜';
 
   @override
-  String get drawing_toolLine => 'Line';
+  String get drawing_toolLine => '직선';
 
   @override
-  String get drawing_toolRect => 'Rectangle';
+  String get drawing_toolRect => '사각형';
 
   @override
-  String get drawing_toolCircle => 'Circle';
+  String get drawing_toolCircle => '원';
 
   @override
-  String get drawing_toolEllipse => 'Ellipse';
+  String get drawing_toolEllipse => '타원';
 
   @override
-  String get drawing_toolArrow => 'Arrow';
+  String get drawing_toolArrow => '화살표';
 
   @override
-  String get drawing_undo => 'Undo';
+  String get drawing_undo => '실행 취소';
 
   @override
-  String get drawing_caption => 'Caption';
+  String get drawing_caption => '캡션';
 
   @override
-  String get drawing_captionHint => 'Optional, shown under the picture';
+  String get drawing_captionHint => '선택 사항이며 그림 아래에 표시됩니다';
 
   @override
   String drawing_bytes(int used, int max) {
-    return '$used / $max bytes';
+    return '$used / $max바이트';
   }
 
   @override
@@ -5657,113 +6133,110 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count points',
-      one: '1 point',
+      other: '점 $count개',
+      one: '점 1개',
     );
     return '$_temp0';
   }
 
   @override
-  String get drawing_keptAll => 'Every point you drew is kept.';
+  String get drawing_keptAll => '그린 점이 모두 유지됩니다.';
 
   @override
   String drawing_simplified(String percent) {
-    return 'Simplified: lines stay within $percent% of the drawing\'s size.';
+    return '단순화됨: 선의 오차는 그림 크기의 $percent% 이내입니다.';
   }
 
   @override
   String get drawing_tooDetailed =>
-      'Too detailed for one message, even simplified. Undo a stroke, or use shapes, which cost far less.';
+      '단순화해도 메시지 하나에 담기에는 너무 복잡합니다. 획 하나를 실행 취소하거나, 바이트가 훨씬 적게 드는 도형을 사용하세요.';
 
   @override
-  String get drawing_empty => 'Draw with your finger, or pick a shape.';
+  String get drawing_empty => '손가락으로 그리거나 도형을 선택하세요.';
 
   @override
   String get drawing_pasteHint =>
-      'Paste an SVG file, or path data such as M10 10h80v80H10z';
+      'SVG 파일이나 M10 10h80v80H10z 같은 패스 데이터를 붙여 넣으세요';
 
   @override
-  String get drawing_pasteUse => 'Use this SVG';
+  String get drawing_pasteUse => '이 SVG 사용';
 
   @override
   String get drawing_pasteNote =>
-      'Colors and fills don\'t travel: it\'s sent as lines in the reader\'s pen color.';
+      '색상과 채우기는 전달되지 않습니다. 선으로만 보내지며 받는 사람의 펜 색상으로 표시됩니다.';
 
   @override
-  String get drawing_pasteEmpty => 'Paste some SVG or path data first.';
+  String get drawing_pasteEmpty => '먼저 SVG나 패스 데이터를 붙여 넣으세요.';
 
   @override
-  String get drawing_pasteTooBig =>
-      'That is too big or too detailed to read. Paste a smaller SVG.';
+  String get drawing_pasteTooBig => '너무 크거나 복잡해서 읽을 수 없습니다. 더 작은 SVG를 붙여 넣으세요.';
 
   @override
-  String get drawing_pasteUnreadable => 'That isn\'t SVG the app can read.';
+  String get drawing_pasteUnreadable => '앱에서 읽을 수 있는 SVG가 아닙니다.';
 
   @override
-  String get drawing_pasteNothing => 'Nothing visible to draw in that SVG.';
+  String get drawing_pasteNothing => '이 SVG에는 보이는 요소가 없어 그릴 것이 없습니다.';
 
   @override
-  String get drawing_copySvg => 'Copy SVG';
+  String get drawing_copySvg => 'SVG 복사';
 
   @override
-  String get appSettings_drawings => 'Drawings';
+  String get appSettings_drawings => '그림';
 
   @override
-  String get appSettings_drawingsSubtitle =>
-      'Pictures sent as SVG, and how they look here';
+  String get appSettings_drawingsSubtitle => 'SVG로 주고받는 그림과 이 기기에서 보이는 모습';
 
   @override
-  String get drawingSettings_show => 'Show drawings';
+  String get drawingSettings_show => '그림 표시';
 
   @override
-  String get drawingSettings_showSubtitle => 'Off shows the SVG code instead';
+  String get drawingSettings_showSubtitle => '끄면 대신 SVG 코드를 표시합니다';
 
   @override
-  String get drawingSettings_penColor => 'Pen color';
+  String get drawingSettings_penColor => '펜 색상';
 
   @override
-  String get drawingSettings_colorCode => 'Color code';
+  String get drawingSettings_colorCode => '색상 코드';
 
   @override
-  String get drawingSettings_lineWidth => 'Line width';
+  String get drawingSettings_lineWidth => '선 두께';
 
   @override
-  String get drawingSettings_glow => 'Glow';
+  String get drawingSettings_glow => '글로우';
 
   @override
-  String get drawingSettings_scanlines => 'Scanlines';
+  String get drawingSettings_scanlines => '스캔라인';
 
   @override
-  String get drawing_toolRoute => 'Route';
+  String get drawing_toolRoute => '길';
 
   @override
-  String get drawing_toolX => 'X mark';
+  String get drawing_toolX => 'X 표시';
 
   @override
-  String get drawing_routeHint =>
-      'Tap to add points. Tap the last one again to finish.';
+  String get drawing_routeHint => '탭해 점을 추가하세요. 끝내려면 마지막 점을 다시 탭하세요.';
 
   @override
-  String get drawing_mapNone => 'No map';
+  String get drawing_mapNone => '지도 없음';
 
   @override
   String get drawing_mapUsgs => 'USGS';
 
   @override
-  String get drawing_drawHere => 'Draw here';
+  String get drawing_drawHere => '여기에 그리기';
 
   @override
-  String get drawing_moveMap => 'Move map';
+  String get drawing_moveMap => '지도 이동';
 
   @override
   String get drawing_mapHint =>
-      'Pan and zoom to the place, then tap Draw here.';
+      '지도를 움직이고 확대/축소해 원하는 곳을 찾은 다음 \'여기에 그리기\'를 탭하세요.';
 
   @override
   String drawing_mapAcross(String map, String distance) {
-    return '$map, $distance across';
+    return '$map, 가로 $distance';
   }
 
   @override
-  String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+  String get drawing_mapNotDownloaded => '이 지역은 다운로드되지 않았습니다';
 }
