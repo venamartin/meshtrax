@@ -799,7 +799,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                     : channel.name,
                 subtitle: subtitle,
                 timestamp: lastMessage.timestamp,
-                sortKeyUs: connector.latestChannelArrivalUs(channel),
+                sortKeyUs: connector.latestChannelSortUs(channel),
                 unreadCount: connector.getUnreadCountForChannel(channel),
                 channel: channel,
                 draft: drafts[channel.idKey] ?? '',

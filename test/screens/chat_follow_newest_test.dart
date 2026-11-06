@@ -32,6 +32,16 @@ class _Radio extends MeshCoreConnector {
   final posts = StreamController<List<ChannelMessage>>.broadcast();
   final dms = StreamController<List<Message>>.broadcast();
 
+  /// The rows "in the database": the last list posted. A new watcher gets
+  /// them at once, as the database watch does, and the oldest unread is
+  /// counted back from their end, as the read mark would.
+  List<ChannelMessage> latest = const [];
+  int unread = 0;
+
+  _Radio() {
+    posts.stream.listen((m) => latest = m);
+  }
+
   @override
   bool get isConnected => true;
 
@@ -39,8 +49,23 @@ class _Radio extends MeshCoreConnector {
   Stream<List<ChannelMessage>> watchChannelMessages(
     Channel channel, {
     int limit = 200,
-  }) =>
-      posts.stream;
+  }) async* {
+    if (latest.isNotEmpty) yield latest;
+    yield* posts.stream;
+  }
+
+  @override
+  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) async {
+    final rows = latest.isNotEmpty ? latest : await posts.stream.first;
+    var n = 0;
+    ChannelMessage? oldest;
+    for (final m in rows.reversed) {
+      if (m.isOutgoing) continue;
+      oldest = m;
+      if (++n >= unread) break;
+    }
+    return unread > 0 ? oldest : null;
+  }
 
   @override
   Stream<List<Message>> watchConversation(Contact contact, {int limit = 200}) =>
@@ -171,7 +196,7 @@ void main() {
   const tall = 'one\ntwo\nthree\nfour\nfive';
 
   Future<_Radio> openChannel(WidgetTester tester, {int? unread}) async {
-    final radio = _Radio();
+    final radio = _Radio()..unread = unread ?? 0;
     addTearDown(radio.posts.close);
     addTearDown(radio.dms.close);
     await _pumpScreen(

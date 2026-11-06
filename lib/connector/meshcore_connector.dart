@@ -372,9 +372,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// [_resubscribeChannelUnreadWatch].
   Map<String, int> _channelUnreadByIdKey = const {};
   StreamSubscription<Map<String, int>>? _channelUnreadSub;
-  Map<String, ({ChannelMessage message, int arrivalUs})>
+  Map<String, ({ChannelMessage message, int sortUs})>
       _channelLatestByIdKey = const {};
-  StreamSubscription<Map<String, ({ChannelMessage message, int arrivalUs})>>?
+  StreamSubscription<Map<String, ({ChannelMessage message, int sortUs})>>?
       _channelLatestSub;
   Map<String, int> _contactUnreadByKey = const {};
   StreamSubscription<Map<String, int>>? _contactUnreadSub;
@@ -1422,6 +1422,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Future<List<ChannelMessage>> loadChannelMessagesFor(Channel channel) =>
       _channelMessageStore.loadChannelMessages(channel.idKey);
 
+  /// The unread message standing highest in the chat, for the New-messages
+  /// line; null when nothing is unread.
+  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) =>
+      _channelMessageStore.oldestUnread(channel.idKey);
+
   /// The map's pin candidates, by channel identity key: messages that could
   /// carry a Location or SOS pin, in [loadChannelMessagesFor] order.
   Future<Map<String, List<ChannelMessage>>> loadPossiblePinChannelMessages(
@@ -1449,7 +1454,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Watched newest message per channel identity, with its arrival stamp
   /// (subtitles + tile ordering).
-  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
       watchChannelLatest() => _channelMessageStore.watchLatestPerChannel();
 
   // Messages received for a radio slot whose identity the app doesn't know
@@ -8719,11 +8724,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   ChannelMessage? latestChannelMessage(Channel channel) =>
       _channelLatestByIdKey[channel.idKey]?.message;
 
-  /// When that newest channel message ARRIVED — what conversation tiles must
-  /// sort by. Sorting on the message's claimed timestamp would undo arrival
-  /// ordering at the last step.
-  int latestChannelArrivalUs(Channel channel) =>
-      _channelLatestByIdKey[channel.idKey]?.arrivalUs ?? 0;
+  /// That newest channel message's shown time, in microseconds — what
+  /// conversation tiles sort by, the same order the chat shows.
+  int latestChannelSortUs(Channel channel) =>
+      _channelLatestByIdKey[channel.idKey]?.sortUs ?? 0;
 
   /// Newest message for a contact, from the watched query.
   Message? latestContactMessage(Contact contact) =>
