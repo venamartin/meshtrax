@@ -16,7 +16,8 @@ final _index = jsonDecode(
 ) as Map<String, dynamic>;
 
 /// Stands in for the background downloader: serves [files] by URL path at
-/// once, as checked downloads, and remembers what it was asked.
+/// once, as checked downloads, and remembers what it was asked. Ids in
+/// [held] stay running until [release]d.
 class _FakeDownloader implements PackDownloader {
   final Map<String, Uint8List> files;
   final Directory dir;
@@ -38,8 +39,25 @@ class _FakeDownloader implements PackDownloader {
   @override
   List<PackDownload> get downloads => _latest.values.toList();
 
+  final held = <String>{};
+
+  /// Lets a held download finish.
+  Future<void> release(String id) async {
+    held.remove(id);
+    await start(_latest[id]!.item);
+  }
+
+  /// A held download that failed for good.
+  void fail(String id) => _emit(
+    PackDownload(_latest[id]!.item, PackDownloadState.failed, error: 'HTTP 500'),
+  );
+
   @override
   Future<void> start(DownloadItem item) async {
+    if (held.contains(item.id)) {
+      _emit(PackDownload(item, PackDownloadState.running, progress: 0.5));
+      return;
+    }
     started.add(item);
     final bytes = files[item.url.path.substring(1)];
     if (bytes == null) {
@@ -62,7 +80,8 @@ class _FakeDownloader implements PackDownloader {
   @override
   Future<void> resume(String id) async {}
   @override
-  Future<void> cancel(String id) async {}
+  Future<void> cancel(String id) async =>
+      _emit(PackDownload(_latest[id]!.item, PackDownloadState.canceled));
   @override
   Future<void> finish(String id, {String? error}) async => _emit(
     PackDownload(
@@ -282,6 +301,53 @@ void main() {
     await service.remove('test/b');
     expect(service.credits, ['© OpenStreetMap contributors', 'USGS 3DEP']);
     expect(service.notices, isEmpty);
+  });
+
+  test('a new build replaces the old one once every bundle of it is in', () async {
+    catalogue = routing('b1', ['test/a', 'test/b']);
+    final (maps, service, downloader) = await services();
+    await service.download({'test/a', 'test/b'});
+    await service.idle;
+
+    // The server moves on to b2. test/a's bundle arrives first; test/b's
+    // is still on its way, as over a slow link or waiting for Wi-Fi.
+    catalogue = routing('b2', ['test/a', 'test/b']);
+    await maps.refresh();
+    final b = RoutingService.downloadId('test/b');
+    downloader.held.add(b);
+    await service.download({'test/a'});
+    await service.idle;
+    expect(service.store.build, 'b1');
+    expect(service.installedRegions, {'test/a', 'test/b'});
+
+    await downloader.release(b);
+    await service.idle;
+    expect(service.store.build, 'b2');
+    expect(service.installedRegions, {'test/a', 'test/b'});
+    expect(leftovers(), isEmpty);
+  });
+
+  test('a failed bundle keeps the old build until it is canceled', () async {
+    catalogue = routing('b1', ['test/a', 'test/b']);
+    final (maps, service, downloader) = await services();
+    await service.download({'test/a', 'test/b'});
+    await service.idle;
+
+    catalogue = routing('b2', ['test/a', 'test/b']);
+    await maps.refresh();
+    final b = RoutingService.downloadId('test/b');
+    downloader.held.add(b);
+    await service.download({'test/a'});
+    downloader.fail(b);
+    await service.idle;
+    expect(service.store.build, 'b1');
+    expect(service.installedRegions, {'test/a', 'test/b'});
+
+    // Canceling it is choosing the new build without test/b.
+    await downloader.cancel(b);
+    await service.idle;
+    expect(service.store.build, 'b2');
+    expect(service.installedRegions, {'test/a'});
   });
 
   test('a bundle that will not install is reported, and its file removed', () async {

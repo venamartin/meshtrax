@@ -49,6 +49,10 @@ class RoutingService extends ChangeNotifier {
   var _work = Future<void>.value();
   final _recovering = <String>{};
 
+  /// Per build, the regions [download] asked for, so a new build waits for
+  /// those the downloader hasn't started yet.
+  final _expected = <String, Set<String>>{};
+
   RoutingService({
     required this.maps,
     required this.store,
@@ -143,9 +147,9 @@ class RoutingService extends ChangeNotifier {
   Future<void> download(Set<String> regions) async {
     final c = _catalog;
     if (c == null) return;
-    await maps.download([
-      for (final region in downloadsFor(regions)) _item(region, c),
-    ]);
+    final todo = downloadsFor(regions);
+    (_expected[c.build] ??= {}).addAll(todo);
+    await maps.download([for (final region in todo) _item(region, c)]);
   }
 
   DownloadFile _item(String region, RoutingCatalog c) {
@@ -217,6 +221,10 @@ class RoutingService extends ChangeNotifier {
     switch (d.state) {
       case PackDownloadState.downloaded:
         _work = _work.then((_) => _installDownloaded());
+      // A canceled bundle may be the last one a new build was waiting for.
+      case PackDownloadState.canceled:
+        _expected[d.file!.payload['build']]?.remove(d.file!.region);
+        _work = _work.then((_) => _installDownloaded());
       // A bundle gone from the server: it has moved on to a newer build,
       // keeping the old one only for a while (FINDINGS §1.5).
       case PackDownloadState.failed when d.error == 'HTTP 404':
@@ -250,9 +258,17 @@ class RoutingService extends ChangeNotifier {
     }
     if (byBuild.isEmpty) return;
     for (final MapEntry(key: build, value: bundles) in byBuild.entries) {
+      // A new build replaces the installed one in one step, keeping only
+      // the regions it's given, so it waits for every bundle of it still
+      // on its way: installing early would drop their regions meanwhile,
+      // and for good if one failed.
+      if (store.build != null && build != store.build && _waiting(build)) {
+        continue;
+      }
       String? error;
       try {
         await store.install(build, bundles);
+        _expected[build]?.removeAll(bundles.keys);
       } on Object catch (e) {
         appLogger.warn('Routing install failed: $e', tag: 'Routing');
         error = '$e';
@@ -264,6 +280,24 @@ class RoutingService extends ChangeNotifier {
     }
     _readCredits();
     await _openEngine();
+  }
+
+  /// Whether a bundle of [build] is still to come: asked for but not
+  /// started yet, downloading, or failed.
+  bool _waiting(String build) {
+    final states = {
+      for (final d in maps.downloader.downloads)
+        if (d.file?.kind == downloadKind && d.file!.payload['build'] == build)
+          d.file!.region: d.state,
+    };
+    return {...states.keys, ...?_expected[build]}.any(
+      (region) => switch (states[region]) {
+        PackDownloadState.downloaded ||
+        PackDownloadState.installed ||
+        PackDownloadState.canceled => false,
+        _ => true,
+      },
+    );
   }
 
   /// Reads the catalogue again and takes the current build of [d]'s region:
