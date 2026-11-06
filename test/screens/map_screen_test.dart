@@ -78,7 +78,7 @@ class _FakeConnector extends MeshCoreConnector {
     Iterable<Channel> channels,
   ) async => const {};
   @override
-  Stream<Map<String, ({ChannelMessage message, int arrivalUs})>>
+  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
   watchChannelLatest() => const Stream.empty();
 }
 

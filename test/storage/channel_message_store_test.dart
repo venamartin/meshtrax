@@ -84,17 +84,54 @@ void main() {
     expect(loaded.single.text, 'edited');
   });
 
-  // Ordering follows ARRIVAL, not the sender's claimed send time (v6). A mesh
-  // node's clock can be hours out and cannot always be corrected, and ingest
-  // rewrites implausible timestamps outright — so the sender's value is not
-  // something a conversation can be ordered by. Here the message claiming to
-  // be OLDER arrives second, and therefore displays second.
-  test('messages load in arrival order, not sender-timestamp order', () async {
+  // Ordering follows the time a message SHOWS (the sender's clock as the
+  // ingest clamp passed it), arrival breaking ties. The phone can write a
+  // message down long after the radio heard it — a late queue drain, a slot
+  // buffer flushed a day on — and a conversation has to read in the order of
+  // its own dates. Here the message claiming to be OLDER arrives second, and
+  // still displays first; unread and the read mark keep going by arrival.
+  test('messages load in the order of their shown time, not arrival', () async {
     await store.upsertMessage(idKeyA, msg('arrived first', id: 'x2', ts: 2000));
     await store.upsertMessage(idKeyA, msg('arrived second', id: 'x1', ts: 1000));
 
     final loaded = await store.loadChannelMessages(idKeyA);
+    expect(loaded.map((m) => m.text), ['arrived second', 'arrived first']);
+  });
+
+  test('the same shown time keeps arrival order', () async {
+    await store.upsertMessage(idKeyA, msg('arrived first', id: 'y1', ts: 1000));
+    await store.upsertMessage(idKeyA, msg('arrived second', id: 'y2', ts: 1000));
+
+    final loaded = await store.loadChannelMessages(idKeyA);
     expect(loaded.map((m) => m.text), ['arrived first', 'arrived second']);
+  });
+
+  test('the latest per channel is the newest shown, with its time to sort by',
+      () async {
+    await store.upsertMessage(idKeyA, msg('today', id: 'l1', ts: 2000));
+    await store.upsertMessage(
+        idKeyA, msg('yesterday, written late', id: 'l2', ts: 1000));
+    await store.upsertMessage(idKeyB, msg('b', id: 'l3', ts: 1500));
+
+    final latest = await store.watchLatestPerChannel().first;
+    expect(latest[idKeyA]!.message.text, 'today');
+    expect(latest[idKeyA]!.sortUs, 2000 * 1000);
+    expect(latest[idKeyB]!.sortUs, 1500 * 1000);
+  });
+
+  test('the oldest unread goes by the read mark, placed by shown time',
+      () async {
+    await store.insertIfNew(idKeyA, msg('read', id: 'r1', ts: 3000));
+    await store.markRead(idKeyA);
+    await store.insertIfNew(idKeyA, msg('new, today', id: 'r2', ts: 4000));
+    await store.insertIfNew(
+        idKeyA, msg('new, from yesterday', id: 'r3', ts: 1000));
+
+    expect((await store.oldestUnread(idKeyA))?.text, 'new, from yesterday');
+    expect(await store.watchUnreadCount(idKeyA).first, 2);
+
+    await store.markRead(idKeyA);
+    expect(await store.oldestUnread(idKeyA), isNull);
   });
 
   group('searchChannelMessages — SQL-side full-history search', () {
