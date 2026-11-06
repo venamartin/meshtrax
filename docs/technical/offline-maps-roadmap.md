@@ -610,7 +610,28 @@ Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapma
 - **Data:** one routing build for every region (builds can't be mixed), a plain tar on the device; points of interest per region.
 - **Credits:** each region's `attribution` and `notice` from the catalogue are kept with its routing data and join the map credits while it's installed.
 - **Checked on the Pi:** the San Juans test region, routing and places, from the local catalogue.
-- **Gate, next:** route time, memory and app size on a phone. Routing, places and hints move to the live catalogue (Martin, 2026-11-05), so a plain `flutter build apk` will do once traxmapmaker publishes them there; `test/` stays for experiments on the Pi. Until then a phone build needs `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
+- **Catalogue:** routing, places and hints go to the live catalogue (Martin, 2026-11-05), so a plain build will do once traxmapmaker publishes them there. `test/` stays for experiments on the Pi. Until then a phone build needs `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
+- **Gate to merge** (Martin, 2026-11-05):
+  - **Before the publish:**
+    - master merged in
+    - the new strings in all 17 languages
+    - the PR description brought up to date
+    - a privacy-policy draft for Martin to edit
+  - **iOS:** Martin builds and runs it once on the Mac and iPhone. If it doesn't work, the one iOS commit comes out, and iOS routing follows in its own PR.
+  - **When traxmapmaker publishes** North America routing and California places to the live root, check from the Pi with no `MAP_INDEX_URL`:
+    - the routing and poi sections match FINDINGS §1.5 and §1.8, with credits for every region
+    - master's code, which 1.9.8 runs, still reads the index
+    - data from the test build updates cleanly
+    - routes match traxmapmaker's reference trips
+    - a route across the Mexican border keeps its heights
+  - **Phones:** a plain `./buildapk.sh`, installed over the test build.
+    - Download size and time.
+    - Route time and memory for a town drive, a dirt road, a hike and a long drive.
+    - App size compared with 1.9.8.
+    - Places: search, the place sheet and Route here.
+    - Airplane mode, map smoothness, and radio messaging.
+    - Then iOS, and Windows, where routing must not show.
+  - **Merge:** a merge commit, not a squash. The release that carries it also carries #243, which location sharing's Step 3 needs.
 
 ### Phase 8: Parks
 
