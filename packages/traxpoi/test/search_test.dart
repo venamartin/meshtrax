@@ -41,6 +41,8 @@ File buildPoints(Directory dir, String name) {
     (1, 'place=town', 'Ouray', 38.0228, -107.6714),
     (2, 'waterway=river', 'Uncompahgre River', 38.0300, -107.6750),
     (3, 'natural=valley', 'Yankee Boy Basin', 37.9930, -107.7700),
+    (4, 'highway=road', 'Cedar Lane', 38.0260, -107.6690),
+    (5, 'highway=road', 'Main Street', 38.0227, -107.6712),
   ];
   for (final (id, kind, name, lat, lon) in features) {
     db.execute(
@@ -91,6 +93,7 @@ File buildAddresses(Directory dir) {
     (2, 'Second Street', 'Ouray', '81427'),
     (3, 'Fifth Street', null, null),
     (4, 'Main Street', 'Telluride', '81435'),
+    (5, 'Cider Lane', 'Telluride', '81435'),
   ]) {
     db.execute('INSERT INTO street VALUES (?, ?, ?, ?, ?)', [
       id,
@@ -111,6 +114,9 @@ File buildAddresses(Directory dir) {
   ]);
   db.execute('INSERT INTO address VALUES (4, 4, ?, NULL, 37.9375, -107.8123)', [
     '612',
+  ]);
+  db.execute('INSERT INTO address VALUES (5, 5, ?, NULL, 37.9380, -107.8100)', [
+    '14',
   ]);
   db.execute("INSERT INTO street_search (street_search) VALUES ('rebuild')");
   db.execute('PRAGMA user_version = 1');
@@ -213,6 +219,26 @@ void main() {
     );
     expect(await region.searchAddresses('999 Main St'), isEmpty);
     expect(await region.searchAddresses('Main St'), isEmpty);
+  });
+
+  test(
+    'addresses: with the house not mapped, the street comes first',
+    () async {
+      final r = await searchRegions(
+        [region],
+        '14 Cedar Lane Ouray',
+        near: ouray,
+      );
+      expect((r.first.name, r.first.kind), ('Cedar Lane', 'highway=road'));
+      // The same number on a look-alike street in another town comes after.
+      expect(r.map((x) => x.name), contains('14 Cider Lane, Telluride, 81435'));
+    },
+  );
+
+  test('addresses: an exact address still beats its street', () async {
+    final r = await searchRegions([region], '612 Main St Ouray', near: ouray);
+    expect(r.first.name, '612 Main Street, Ouray, 81427');
+    expect(r.map((x) => x.name), contains('Main Street'));
   });
 
   test('places in a box, for the map icons', () async {

@@ -44,6 +44,18 @@ class SearchResult {
     required this.score,
     required this.key,
   });
+
+  SearchResult withScore(double score) => SearchResult(
+    type: type,
+    id: id,
+    name: name,
+    kind: kind,
+    point: point,
+    match: match,
+    km: km,
+    score: score,
+    key: key,
+  );
 }
 
 /// A place with its article and photo, for the place sheet.
@@ -223,6 +235,35 @@ class PoiRegion {
     return results.take(limit).toList();
   }
 
+  /// The street of an address query ("14 Cedar Ln Ouray"), for when
+  /// its house isn't in the addresses: the street's search-only name, with
+  /// trailing words dropped one by one, as they may name its town. Ranked
+  /// [streetInsteadCost] below an exact address.
+  Future<List<SearchResult>> searchStreets(
+    String query, {
+    GeoPoint? near,
+    int limit = 20,
+  }) async {
+    final words = normalizeName(query, NameRules.addresses).split(' ');
+    if (words.length < 2 || !RegExp(r'^\d+[a-z]?$').hasMatch(words.first)) {
+      return const [];
+    }
+    final rest = words.skip(1).toList();
+    for (var n = rest.length; n > 0; n--) {
+      final streets = [
+        for (final r in await searchNames(
+          rest.take(n).join(' '),
+          near: near,
+          limit: limit,
+        ))
+          if (r.kind == 'highway=road' || r.kind == 'highway=track')
+            r.withScore(r.score - streetInsteadCost),
+      ];
+      if (streets.isNotEmpty) return streets;
+    }
+    return const [];
+  }
+
   /// Places inside a box, most notable first, for the icons on the map.
   Future<List<PlaceData>> placesIn({
     required double north,
@@ -264,8 +305,9 @@ class PoiRegion {
 }
 
 /// Searches every region and merges the results, best first. A place in
-/// two regions' files (near a border) appears once. Addresses are searched
-/// when [query] starts with a house number.
+/// two regions' files (near a border) appears once. Addresses, and the
+/// street in case the house isn't mapped, are searched when [query] starts
+/// with a house number.
 Future<List<SearchResult>> searchRegions(
   Iterable<PoiRegion> regions,
   String query, {
@@ -277,6 +319,7 @@ Future<List<SearchResult>> searchRegions(
     for (final r in [
       ...await region.searchNames(query, near: near, limit: limit),
       ...await region.searchAddresses(query, near: near, limit: limit),
+      ...await region.searchStreets(query, near: near, limit: limit),
     ]) {
       final seen = all[r.key];
       if (seen == null || r.score > seen.score) all[r.key] = r;
