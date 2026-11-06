@@ -276,6 +276,7 @@ const int respCodeCustomVars = 21;
 const int respCodeTuningParams = 23;
 const int respCodeStats = 24;
 const int respCodeAutoAddConfig = 25;
+const int respCodeAllowedRepeatFreq = 26;
 const int respCodeChannelDataRecv = 27;
 const int respCodeDefaultFloodScope = 28;
 const int respCodeCliReply = 29;
@@ -1233,6 +1234,28 @@ Uint8List buildSetDefaultFloodScopeFrame(String? name, Uint8List? key) {
     writer.writeBytesPadded(key, 16);
   }
   return writer.toBytes();
+}
+
+// Build CMD_GET_ALLOWED_REPEAT_FREQ frame (v9+)
+// Format: [cmd]
+// Reply: [RESP_ALLOWED_REPEAT_FREQ] then (lower u32 LE, upper u32 LE) pairs,
+// in kHz; stock firmware lists exact frequencies (lower == upper).
+Uint8List buildGetAllowedRepeatFreqFrame() {
+  return Uint8List.fromList([cmdGetAllowedRepeatFreq]);
+}
+
+/// Parses RESP_ALLOWED_REPEAT_FREQ into the frequency ranges, in kHz, that the
+/// radio accepts with client repeat on.
+List<({int lowerKhz, int upperKhz})> parseAllowedRepeatFreqFrame(
+  Uint8List frame,
+) {
+  final reader = BufferReader(frame)..skipBytes(1);
+  final ranges = <({int lowerKhz, int upperKhz})>[];
+  while (reader.remaining >= 8) {
+    final lower = reader.readUInt32LE();
+    ranges.add((lowerKhz: lower, upperKhz: reader.readUInt32LE()));
+  }
+  return ranges;
 }
 
 /// Parses RESP_CODE_DEFAULT_FLOOD_SCOPE. Null when the radio has no default

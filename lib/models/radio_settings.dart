@@ -231,7 +231,7 @@ class RadioSettings {
         txPowerDbm: 20,
       ),
     ),
-    // Off-grid repeat presets (valid client_repeat frequencies)
+    // Off-grid repeat presets (stock firmware's client repeat frequencies)
     (
       'Off-Grid 433',
       RadioSettings(
@@ -245,7 +245,7 @@ class RadioSettings {
     (
       'Off-Grid 869',
       RadioSettings(
-        frequencyMHz: 869.0,
+        frequencyMHz: 869.495,
         bandwidth: LoRaBandwidth.bw250,
         spreadingFactor: LoRaSpreadingFactor.sf11,
         codingRate: LoRaCodingRate.cr4_5,
@@ -263,6 +263,38 @@ class RadioSettings {
       ),
     ),
   ];
+
+  /// Where off-grid repeat moves a radio on [baseMHz]: the allowed frequency
+  /// nearest it, from the radio's own list when it gave one. Without a list,
+  /// stock firmware's: 869.495 MHz from ver code 13 (1.16), 869.000 before
+  /// (MyMesh.cpp repeat_freq_ranges). A range gives its lowest frequency.
+  static double offGridFrequencyMHz(
+    double baseMHz, {
+    List<({int lowerKhz, int upperKhz})>? allowed,
+    int? firmwareVerCode,
+  }) {
+    final eu = firmwareVerCode == null || firmwareVerCode >= 13
+        ? 869495
+        : 869000;
+    final ranges = allowed == null || allowed.isEmpty
+        ? [
+            (lowerKhz: 433000, upperKhz: 433000),
+            (lowerKhz: eu, upperKhz: eu),
+            (lowerKhz: 918000, upperKhz: 918000),
+          ]
+        : allowed;
+    final baseKhz = (baseMHz * 1000).round();
+    int distance(({int lowerKhz, int upperKhz}) r) => baseKhz < r.lowerKhz
+        ? r.lowerKhz - baseKhz
+        : baseKhz > r.upperKhz
+        ? baseKhz - r.upperKhz
+        : 0;
+    var best = ranges.first;
+    for (final r in ranges.skip(1)) {
+      if (distance(r) < distance(best)) best = r;
+    }
+    return best.lowerKhz / 1000;
+  }
 
   int get frequencyHz => (frequencyMHz * 1000).round();
   int get bandwidthHz => bandwidth.hz;
