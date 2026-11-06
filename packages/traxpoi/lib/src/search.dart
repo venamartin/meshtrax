@@ -102,3 +102,8 @@ double addressMatch(List<String> query, String street, List<String> place) {
 /// its house number isn't in the addresses: an exact address still comes
 /// first, a same-numbered house on a look-alike street elsewhere after it.
 const streetInsteadCost = 30.0;
+
+/// How closely a road's name must match the typed street to be offered for
+/// an address: typos pass ("fothill drive"), a different street that only
+/// shares letters with the street and its town doesn't.
+const streetMatchFloor = 90.0;

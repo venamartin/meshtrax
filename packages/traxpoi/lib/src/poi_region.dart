@@ -237,7 +237,9 @@ class PoiRegion {
 
   /// The street of an address query ("14 Cedar Ln Ouray"), for when
   /// its house isn't in the addresses: the street's search-only name, with
-  /// trailing words dropped one by one, as they may name its town. Ranked
+  /// trailing words dropped one by one, as they may name its town. Only a
+  /// close match ([streetMatchFloor]) ends the search, so a loose one with
+  /// the town still in doesn't hide the street itself. Ranked
   /// [streetInsteadCost] below an exact address.
   Future<List<SearchResult>> searchStreets(
     String query, {
@@ -256,7 +258,8 @@ class PoiRegion {
           near: near,
           limit: limit,
         ))
-          if (r.kind == 'highway=road' || r.kind == 'highway=track')
+          if ((r.kind == 'highway=road' || r.kind == 'highway=track') &&
+              r.match >= streetMatchFloor)
             r.withScore(r.score - streetInsteadCost),
       ];
       if (streets.isNotEmpty) return streets;

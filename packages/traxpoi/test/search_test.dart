@@ -43,6 +43,8 @@ File buildPoints(Directory dir, String name) {
     (3, 'natural=valley', 'Yankee Boy Basin', 37.9930, -107.7700),
     (4, 'highway=road', 'Cedar Lane', 38.0260, -107.6690),
     (5, 'highway=road', 'Main Street', 38.0227, -107.6712),
+    // Matches "cedar lane ouray" loosely, word by word; far from Ouray.
+    (6, 'highway=road', 'Murray Cider Lane', 38.8339, -104.8214),
   ];
   for (final (id, kind, name, lat, lon) in features) {
     db.execute(
@@ -232,6 +234,19 @@ void main() {
       expect((r.first.name, r.first.kind), ('Cedar Lane', 'highway=road'));
       // The same number on a look-alike street in another town comes after.
       expect(r.map((x) => x.name), contains('14 Cider Lane, Telluride, 81435'));
+    },
+  );
+
+  test(
+    'addresses: a loose match with the town in does not hide the street',
+    () async {
+      final r = await searchRegions(
+        [region],
+        '14 Cedar Lane Ouray',
+        near: ouray,
+      );
+      expect((r.first.name, r.first.kind), ('Cedar Lane', 'highway=road'));
+      expect(r.map((x) => x.name), isNot(contains('Murray Cider Lane')));
     },
   );
 
