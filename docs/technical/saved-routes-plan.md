@@ -1,6 +1,6 @@
 # Saved routes: plan
 
-> **What this is:** The build plan for keeping routes: saving the route the map finds, organising, editing, importing and exporting them as GPX, and sharing them over the mesh. It builds on the offline routing in #210 and on location sharing (plan in #240). Owner decisions are from Martin's route notes and his answers on 2026-11-05. App facts were checked against master `ff0df0f5` and #210's head that day.
+> **What this is:** The build plan for keeping routes: saving the route the map finds, organising, editing, importing and exporting them as GPX, and sharing them over the mesh. It builds on the offline routing in #210 and on location sharing (plan in #240). Owner decisions are from Martin's route notes and his answers on 2026-11-05. App facts were checked against master `ff0df0f5` and #210's head that day. The session building #210 then rechecked everything this plan takes from #210 against its head `9ba6f98`: heights, place links, place photos, credits and the routing calls.
 >
 > **Who it's for:** the developer or AI session building it.
 >
@@ -113,28 +113,43 @@ routes(
   km REAL, seconds REAL NULL, climb_up_m REAL NULL, climb_down_m REAL NULL,
   min_lat, min_lon, max_lat, max_lon,   -- for drawing only what is in view
   line BLOB,                    -- see "Line storage"
+  heights BLOB NULL,            -- see "Heights"
+  height_step_m REAL NULL,
+  credits TEXT NULL,            -- see R2's export
   created_at, updated_at)
 route_waypoints(route_id, seq, lat, lon, straight_after BOOL)
 route_stops(route_id, seq, name, lat, lon, note TEXT NULL,
-            place_region TEXT NULL, place_id INTEGER NULL)
+            place_region TEXT NULL, place_key TEXT NULL)
 route_tags(route_id, tag)       -- compared case-insensitively
-route_photos(route_id PK, jpeg BLOB, width, height)
+route_photos(route_id PK, image BLOB, width, height,
+             author TEXT NULL, licence TEXT NULL, licence_url TEXT NULL)
 ```
 
 **Fields:**
 - `route_waypoints` are the points the editor moves.
   - A planned route has a few, with `straight_after` false except on off-trail stretches.
   - A track's simplified points all have `straight_after` true.
-- `route_stops` keep a copy of the name and position, so a stop survives a points-of-interest pack update. `place_id` is only a link back to the place's text and photo.
+- `route_stops` keep a copy of the name and position, so a stop survives a points-of-interest pack update. `place_key` is only a link back to the place's text and photo.
+  - It is the key search already builds to match one place across regions' files (`SearchResult.key` in traxpoi): the place's `osm` id, else its `wikidata` id, else its name and position.
+  - Not `place.id`: that is a row number in a file rebuilt every month, so after an update it can point at another place.
+  - traxpoi has no lookup by that key yet, only `placeById`. Add one to `points.drift`. The file has no index on `osm`, but a scan is fine for one stop.
 
-**Line storage:** one blob per route. Each point is `lat` and `lon` as int32 in millionths of a degree, plus height as int16 metres, or 0x7FFF when unknown, little-endian. It is quick to load in one read, and needs no codec.
+**Line storage:** one blob per route. Each point is `lat` and `lon` as int32 in millionths of a degree, little-endian. It is quick to load in one read, and needs no codec. Heights are kept apart, below.
+
+**Heights:** a second blob, the height profile. It holds int16 metres every `height_step_m` along the line, little-endian, with 0x7FFF where a height is unknown. That's about 7 KB per 100 km.
+- This is the shape #210 already has. `RouteResult.elevations` holds a sample every `elevationIntervalM` (30 m) along the route, not one per point. `ElevationProfile` draws them evenly spaced, and `RouteResult.climb` counts them the same way.
+- A height per point of the simplified line would lose the hills: a straight road over a ridge keeps only its two ends.
+- A track, or a GPX `trk` with `ele`, is sampled every 30 m by distance along all its points, before simplifying.
+- GPX export gives each point the height at its distance along the line.
+- With no heights at all, `heights` is NULL. That happens in a region built without them, where #210's route has none either.
 
 **Simplify on save:**
 - 2D Douglas–Peucker at 5 m, so the shape holds at street zoom; keep the tolerance in a constants block.
 - Never drop a waypoint's or a stop's position.
-- Keep the height of every kept point, from Valhalla's profile, GPX `ele` or the track's altitude.
+- Heights aren't simplified: they are already in the profile.
 
 **Active route:**
+- In #210 the route lives in the map screen's state: `_routeTo` (name and point), `_routeFrom` (null means your position), `_pathType` and `_route`, set by `_findRoute`. The options come from `settings.routeOptions`.
 - When the route panel finds a route, it is written as a row with `saved` false, replacing any earlier unsaved row. It survives a restart, until it is cleared or replaced.
 - The route panel (`lib/widgets/route_panel.dart`, added by #210) gets **Save**, which asks for a name, prefilled with the destination's name, and sets `saved`.
 - The active route id is kept in a preference. A saved route can be made active from its card.
@@ -144,7 +159,7 @@ route_photos(route_id PK, jpeg BLOB, width, height)
 - **Colours:** saved routes are drawn thin and neutral. The active route uses #210's `routeColor` at width 5, its current look. With the switch off, only the active route shows.
 - **Performance:**
   - Draw only routes whose box meets the view, and thin each line to the zoom.
-  - The map rebuilds its overlays on every connector notify, and #210 adds a rebuild 300 ms after every pan. Map drawing is the app's main known cost (Windows profile, 2026-10-31). Keep the built overlays and reuse them until a route changes.
+  - The map rebuilds its overlays on every connector notify. #210 adds a rebuild 300 ms after every pan at zoom 12 and above, when it loads the places in view. Map drawing is the app's main known cost (Windows profile, 2026-10-31). Keep the built overlays and reuse them until a route changes.
 
 **Routes list:**
 - Opened from the Map screen's menu.
@@ -164,20 +179,27 @@ route_photos(route_id PK, jpeg BLOB, width, height)
 - Scale it to 1280 px on the long side and save it as JPEG.
 - It is never sent over the mesh.
 - A route to a place starts with that place's photo from the points-of-interest download, if it has one.
+  - Those photos are WebP, at most 320 px, from Wikipedia or Wikimedia Commons, each with an author and a licence.
+  - The place sheet credits them (`place_photoCredit`), and the route card and details must credit a copied photo the same way.
+  - Keep the photo as it comes, with its `author`, `licence` and `licence_url`. Only your own photos are scaled and saved as JPEG, and their credit columns stay NULL.
 
 ## R2: GPX import and export
 
 The app already depends on the `gpx` package (contact export in [gpx_export.dart](../../lib/utils/gpx_export.dart)) and on `file_selector` and `share_plus`.
 
 **Export:**
-- the line as a `trk` with `ele`
+- the line as a `trk` with `ele` from the height profile
 - a planned route's waypoints as an `rte`
 - stops as `wpt`
 - the name and notes as `name` and `desc`; tags as `keywords` in `metadata`
+- a found route's `credits`, also in `metadata`
+  - Its line comes from OpenStreetMap data and its heights from USGS or Copernicus, and their licences ask for credit.
+  - Save the credits with the route from `RoutingService.credits` and `notices` (#210), one per line, since the routing data may be removed later.
+  - Your own tracks need none.
 
 **Import:**
 - An `rte` becomes a planned route: its points are waypoints, and the importer asks for a path type.
-- A `trk` becomes a track: simplified at 5 m, with its points as straight stretches.
+- A `trk` becomes a track. Its `ele` values are sampled into the height profile, then it is simplified at 5 m, with its points as straight stretches.
 - `wpt` points become stops.
 - Large files (tens of thousands of points) are simplified before saving.
 
@@ -188,7 +210,10 @@ Its own screen: the map with the route, its points and an action bar.
 - **Route settings:** path type and options, one per route.
 - **Other actions:** reverse, undo, stops, and save, either as a new route or over the old one.
 - **Routing:**
-  - Routed stretches are found one stretch at a time: `RouteRequest(points: [a, b])`, then the shapes are joined. The engine takes several points at once (`packages/traxroute/lib/src/valhalla.dart`), but stretch by stretch lets straight stretches sit between routed ones, and only changed stretches are routed again.
+  - Routed stretches are found one stretch at a time, then the shapes are joined. Each call is `RoutingService.route(a, b, type, options: …)`, which sends `RouteRequest([a, b], type, options: …)`; its arguments are positional. The engine takes several points at once (`packages/traxroute/lib/src/valhalla.dart`), but stretch by stretch lets straight stretches sit between routed ones, and only changed stretches are routed again.
+  - Heights join the same way, since each routed stretch brings its own samples.
+    - Straight stretches have none. #210's engine only routes, and there is no other offline height source yet.
+    - Their part of the profile stays unknown (0x7FFF). `ElevationProfile` expects every height today, so it needs to skip such gaps.
   - Without routing data for the area, only straight stretches can be added, and the editor says so.
 - **New routes:** made the same way, starting from an empty route.
 
@@ -280,8 +305,10 @@ Martin edits these; the PR carries drafts.
 
 **Unit tests:**
 - **Database:** the schema 8→9 migration on a fresh install and after an interrupted first launch.
-- **Simplify** keeps every waypoint and stop. The line blob round-trips.
-- **GPX:** `rte`, `trk` and `wpt` round-trip with heights. A 10,000-point track imports simplified.
+- **Simplify** keeps every waypoint and stop. The line and height blobs round-trip. A straight road over a hill keeps its climb and its profile.
+- **Stops** still find their place after the points-of-interest file is rebuilt with new row ids.
+- **GPX:** `rte`, `trk` and `wpt` round-trip with heights. A 10,000-point track imports simplified. A found route's export carries its credits.
+- **Photos:** a place's photo copied to a route keeps its credit.
 - **`Route:` messages:**
   - builds and parses
   - an older parser shows plain text
