@@ -4,7 +4,7 @@
 >
 > **Who it's for:** developers working on MeshTrax.
 >
-> **Status:** partly built. The style, the desert parks and the Parks switch are done; the tap waits on parks as places.
+> **Status:** partly built, on PR #210. The style, the desert parks, the Parks switch and the hints' credits are done. The tap (parks as places) and parks split across regions come after the 1.10.0 release (Martin, 2026-11-06).
 >
 > New to the terms? See the [glossary](../glossary.md).
 
@@ -50,4 +50,4 @@ What the NPS print look would have added (palette, shields, font) isn't planned.
 - **A park split across regions:** its center point is in only one region's pack. Death Valley's outline is in the Southern California pack, but its center isn't. traxmapmaker to propose a fix (for example, a center point per region part).
 - **Zooms** for the tint, outline and names, and the name style: settled with a preview, light and dark.
 - **Wording:** "Parks", never "NPS style", so nothing implies NPS endorsement.
-- **Credits for the desert list:** ESA WorldCover 2021 (CC BY 4.0) and CEC Ecological Regions of North America (2010) must be credited wherever the hints are used. The app doesn't show them yet.
+- **Credits for the desert list:** ESA WorldCover 2021 (CC BY 4.0) and CEC Ecological Regions of North America (2010) must be credited wherever the hints are used. The app shows them with the map's credits while the hints color parks.

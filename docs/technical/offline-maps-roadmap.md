@@ -16,7 +16,18 @@ This file says how traxmap's offline vector maps replace MeshTrax's online raste
 
 ## Status
 
-Last updated 2026-11-02. **Resume here.**
+Last updated 2026-11-06. **Resume here.**
+
+- **Where things are:** Phases 1–6 are on master. Phase 7 (trail routing and places) and the built part of Phase 8 (parks) are on PR #210 (`feat/routing-poi-linux`), held by the gate in Phase 7.
+- **Next release: 1.10.0, on every platform, from master once #210 merges** (Martin, 2026-11-06). Test builds stay 1.9.x until it looks good, so the release isn't 1.10.1 or 1.10.2.
+- **The merge and the release wait for traxmapmaker's live publish** (North America routing, then California places) and the checks from the Pi (Martin, 2026-11-06).
+- **Phase 8's two open items come after the release** (Martin, 2026-11-06): parks as places, for the tap, and parks split across regions.
+- **Release gate:** the checklist in Phase 5.
+- **After the release:** saved routes (#242) first, with location sharing's package (#240) built alongside. Its screens come after that release.
+
+The rest of this section is the record from 2026-10-17 to 2026-11-02.
+
+### The record to 2026-11-02
 
 **Online tiles are gone (Martin, 2026-11-02, `feat/offline-base-map`, ahead of PR #210).** Every map draws downloaded packs and, elsewhere, the bundled base map: Natural Earth plus GeoNames towns, data to z7, drawn to z10. The Online | Offline switch, `map_source`, `TileCoverage`-gap raster tiles and the tile cache below are history; see [`offline-maps-notes.md`](offline-maps-notes.md), 2026-11-02.
 
@@ -268,7 +279,7 @@ Test: auto-connect firing while either of these is open.
 **No-radio mode** (opened from the scanner, or after the radio disconnects):
 - Hidden: nodes, the legend, the filter, path trace, the ⋮ menu and the QuickSwitchBar.
 - **Back:** pops if there's a screen to return to, otherwise replaces the map with the scanner.
-- **Long-press:** only "Route here" (Phase 7, Android).
+- **Long-press:** planned: "Route here" (Phase 7). **Not built:** the no-radio map has no long-press, routing or places yet; they work on the Node Map, which needs a radio.
 
 **Starting camera,** first available of:
 1. the highlight position;
@@ -438,21 +449,14 @@ Credits, the source switch and the online fallback come through `AppMap`.
 | `lib/screens/path_trace_map.dart` | Same pattern; `centerTitle: true` |
 | `lib/screens/line_of_sight_map_screen.dart` | `MapLine` segments; long-press passes through lines; elevation stays online |
 
-### S6. Trail route planner (Phase 7, Android only)
+### S6. Route planner (Phase 7)
 
-```
-│ ←                  Trail route               │
-│ ● Start  My location                   [⌖]   │  phone fix → radio → long-press
-│ ◆ End    Southern Peak trailhead       [⌖]   │  "Route here" from long-press, node dialog, S7
-│ Profile [Hiking ▾]                      ⚙    │  Hiking, Trekking, MTB, MeshTrax
-│ ┌ AppMap + route MapLine + pins ───────────┐ │
-│ ├────────────── ─── ───────────────────────┤ │
-│ │ 12.4 km    ↑ 820 m    ↓ 790 m    ~4 h 10  │ │
-│ │ ╱‾‾╲__╱‾‾‾╲___  elevation profile        │ │
-│ │ [Export GPX]                   [Clear]   │ │
-```
-- **⚙ options:** Prefer dirt, Avoid paved, Max trail difficulty (SAC T1–T6).
-- **Naming:** "Trail routing" in the UI, and `trailRoute_` l10n keys, because `routing_*` already means mesh routing.
+As built on #210 (Linux, Android and iOS). The early design (a separate screen, Android only, Hiking/Trekking/MTB profiles, `trailRoute_` keys, Export GPX) was replaced by a route panel on the Node Map.
+- **Start and destination:** a long-press, or a right-click on desktop, offers **Route here** and **Route from here**; the place sheet offers Route here. The start is the radio's position unless one is set, and the sheet says what's set already. Both are offered where routing data is on the device, or where the catalogue has routing for the region there (`RoutingService.offeredAt`).
+- **Route panel,** over the bottom of the map: Paved, Dirt or Hiking; distance, time, climb and the height profile; a note when the route stops more than 100 m short; ✕ clears it.
+- **⚙ options:** for Dirt, fastest, balanced or most direct; avoid highways, tolls and ferries; the hardest trail (SAC T1–T6); climbs and hiking pace.
+- **Naming:** "Trail routing" for the download, and `route_` l10n keys, because `routing_*` already means mesh routing.
+- **Later:** GPX export comes with saved routes (#242).
 
 ### S7. Overlay feature sheet (Phase 8)
 
@@ -570,12 +574,12 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
   - the iOS and macOS location texts, the macOS location entitlement, `BYPASS_PERMISSION_LOCATION_ALWAYS` (Podfiles, TESTFLIGHT_GUIDE.md) and the MSIX `location` capability.
 
   My location follows the radio's GPS. The app reads the radio's position with self telemetry every 10 s while the Node Map or the GPS dialog is open, and every 60 s otherwise. The Location dialog's GPS interval setting is gone: it only made the radio's reported position stale (old versions set 15 minutes) and saved no power.
-- [ ] **Privacy policy:** review `docs/privacy.md`. The store listings link to it on master, so the draft is already live.
+- [ ] **Privacy policy:** review `docs/privacy.md`. The store listings link to it on master, so a change there is live at once.
   - The map server section stays.
   - Done in #184: the device-location row is gone, and it says again that the App doesn't read the phone's GPS (My location shows the radio's position).
-  - Contact: drop "open an issue", since GitHub issues are off.
-  - Set "Last updated"; it still says September 29, 2026.
-- [ ] **Store forms:** none change once phone GPS is out. Play Data safety, the App Store privacy label and the Microsoft Store listing stay as they are today.
+  - Contact: GitHub issues are on again (2026-11-06), so the link stays.
+  - **Routing, places and addresses:** drafted on #210 (`6d832d0`, 2026-11-06) for Martin to review before the merge, with "Last updated" set to November 6, 2026.
+- [x] **Store forms:** none change (checked 2026-11-06). Phone GPS is out, routes and searches run on the phone, and routing and places download from the same server as the maps. Play Data safety, the App Store privacy label and the Microsoft Store listing stay as they are today.
 - [ ] **G2 on Android, iOS, Windows and macOS:**
   - download, pause and resume a region;
   - Offline mode;
@@ -585,9 +589,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
     - GPS off: My location offers to turn it on;
     - a radio without a GPS module: no My location and no GPS icon; the "You" pin is at the typed-in position;
   - on Windows, updating a pack while the map is open.
-- [ ] **Translations:**
-  - Done: the 569 English-only strings in #205 (2026-10-24), and routing's 152 on #210 (2026-11-05).
-  - Left: 45 drawing strings from master (`drawing_`, `drawingSettings_`, `tray_drawing` and two `appSettings_` keys), English only in every language.
+- [x] **Translations:** the 569 English-only strings in #205 (2026-10-24), routing's 152 on #210 (2026-11-05), and master's 45 drawing strings on #210 (2026-11-06). Nothing is English-only now.
 
 ### Phase 6: Charts
 
@@ -613,12 +615,12 @@ Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapma
 - **Credits:** each region's `attribution` and `notice` from the catalogue are kept with its routing data and join the map credits while it's installed.
 - **Checked on the Pi:** the San Juans test region, routing and places, from the local catalogue.
 - **Catalogue:** routing, places and hints go to the live catalogue (Martin, 2026-11-05), so a plain build will do once traxmapmaker publishes them there. `test/` stays for experiments on the Pi. Until then a phone build needs `--dart-define=MAP_INDEX_URL=https://maps.meshtrax.io/test/index.json`.
-- **Gate to merge** (Martin, 2026-11-05):
-  - **Before the publish:**
-    - master merged in
-    - the new strings in all 17 languages
+- **Gate to merge** (Martin, 2026-11-05; on 2026-11-06 he confirmed that the merge and the release wait for the publish):
+  - **Before the publish:** done.
+    - master merged in (2026-11-05)
+    - the new strings in all 17 languages (2026-11-05), and master's drawing strings (2026-11-06)
     - the PR description brought up to date
-    - a privacy-policy draft for Martin to edit
+    - the privacy policy: drafted in `docs/privacy.md` on #210 (2026-11-06) for Martin to review
   - **iOS:** Martin builds and runs it once on the Mac and iPhone. If it doesn't work, the one iOS commit comes out, and iOS routing follows in its own PR.
   - **When traxmapmaker publishes** North America routing and California places to the live root, check from the Pi with no `MAP_INDEX_URL`:
     - the routing and poi sections match FINDINGS §1.5 and §1.8, with credits for every region
@@ -637,7 +639,7 @@ Valhalla (Martin, 2026-10-25: it runs on iOS too, unlike BRouter) with traxmapma
 
 ### Phase 8: Parks
 
-From the map packs and Points of interest, with no overlay download (Martin, 2026-10-26). **Done:** outline, tint and names from the packs' park layer, desert tan and missed state parks from the map hints (FINDINGS 1.9), the Parks switch, and the hints' credits. **Left:** parks as places (1.8) for the tap, and parks split across regions. See [`park-maps.md`](park-maps.md).
+From the map packs and Points of interest, with no overlay download (Martin, 2026-10-26). **Done:** outline, tint and names from the packs' park layer, desert tan and missed state parks from the map hints (FINDINGS 1.9), the Parks switch, and the hints' credits. **After the release** (Martin, 2026-11-06): parks as places (1.8) for the tap, and parks split across regions; both need new data from traxmapmaker. See [`park-maps.md`](park-maps.md).
 
 ### Later
 
@@ -654,6 +656,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 - Label priority overrides
 - Brochure extraction
 - Showing the last radio's nodes in no-radio mode
+- Routing and places on the no-radio map (S1): it has no long-press yet
 - Phone GPS: see below
 
 #### Phone GPS (parked)
@@ -687,6 +690,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 
 - **Peak labels had a box before the name on the Pi** ("▯ Bare Rock"). The styles put "▲" before the name, and the renderer draws labels in the platform's default font, which lacks it on Linux. Fixed 2026-10-20 by dropping the "▲" (`tool/make_styles.py`). The peak icon came with the sprite sheets (T9, 2026-10-22); a font for labels needs the font hook (T12).
 - **Offline mode was empty when zoomed far out.** Fixed 2026-10-22 by the bundled world base map (traxmapmaker FINDINGS 1.7): Natural Earth z0–5 in `packages/traxmap/assets/world/` (4.2 MB), drawn by every style up to zoom 6 (`tool/make_world_layers.py`). Where no region is downloaded, Offline maps stop zooming in at 6 and show "Download a region for detail"; maps zoom out to 2 (Martin).
+- **The drawing screen's map chooser cuts off long map names** at 360 dp in 15 of the 17 languages, such as "Cartes m…" for "Cartes marines": four equal segments leave about 58 dp each. Kept as it is (Martin, 2026-11-06), after renders of chips that wrap (`build/drawing-chooser-preview/` on the Pi).
 - **The offline map ends at tile edges, not at the region outline.** Border tiles are complete, so the vector map runs a little past the outline in rectangular blocks. Further out the blocks get large: at zoom 5, the Rhode Island and Connecticut packs draw most of New England.
 - **Metric-charted depths can read up to 0.5 ft deep in feet** (found 2026-10-22 on the live Rhode Island pack). **Decided (Martin, 2026-10-22): traxmapmaker fixes `depth_ft` in the next charts rebuild,** not a rebuild just for this; the app needs no change. Soundings and depth contours print traxmapmaker's `depth_ft`, which is `round(metres × 3.28084)`.
   - **Feet-charted values are exact.** NOAA stores them in metres truncated to 0.1 m: 18 ft becomes 5.4 m, which is 17.72 ft. Rounding gives back the chart's figure on every one of them (18,830 soundings, 4,656 contour pieces).
