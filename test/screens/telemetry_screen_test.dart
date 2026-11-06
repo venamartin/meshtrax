@@ -58,13 +58,15 @@ class _NoDownloads implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {}
+  Future<void> start(DownloadItem item) async {}
   @override
   Future<void> pause(String packId) async {}
   @override
   Future<void> resume(String packId) async {}
   @override
   Future<void> cancel(String packId) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 final _key = Uint8List.fromList(List.generate(32, (i) => 0x47 + i));

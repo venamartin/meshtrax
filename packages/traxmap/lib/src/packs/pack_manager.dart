@@ -178,7 +178,7 @@ class PackManager {
         await source.copy(temp.path);
       }
       await PmTilesHeader.read(temp);
-      if (sha256 != null && !await _matches(temp, sha256)) {
+      if (sha256 != null && !await matchesSha256(temp, sha256)) {
         throw PackException('Checksum mismatch for "$id"');
       }
       await temp.rename(target.path);
@@ -206,7 +206,7 @@ class PackManager {
 
   /// True if the pack's SHA-256 matches [expectedSha256] (hex, any case).
   Future<bool> verify(Pack pack, String expectedSha256) =>
-      _matches(pack.file, expectedSha256);
+      matchesSha256(pack.file, expectedSha256);
 
   /// Deletes [pack]. If a map still has it open (Windows), it's marked
   /// deleted instead and removed once the map lets go (see the class docs).
@@ -248,8 +248,9 @@ class PackManager {
   static DateTime _buildDate(Pack pack) =>
       pack.buildDate ?? pack.file.statSync().modified;
 
-  /// Hashes on a background isolate: a multi-GB pack takes many seconds.
-  static Future<bool> _matches(File file, String expected) async {
+  /// True if [file]'s SHA-256 is [expected] (hex, any case). Hashes on a
+  /// background isolate: a multi-GB pack takes many seconds.
+  static Future<bool> matchesSha256(File file, String expected) async {
     final path = file.path;
     final digest = await Isolate.run(
       () async => (await sha256.bind(File(path).openRead()).first).toString(),

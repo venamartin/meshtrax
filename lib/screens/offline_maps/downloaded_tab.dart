@@ -263,7 +263,7 @@ class _Empty extends StatelessWidget {
   }
 }
 
-/// A pack being downloaded: region and pack, progress, and controls.
+/// A download in progress: region and what it is, progress, and controls.
 class _DownloadRow extends StatelessWidget {
   final PackDownload download;
   const _DownloadRow({required this.download});
@@ -273,26 +273,32 @@ class _DownloadRow extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.read<MapPacksService>();
-    final entry = download.entry;
-    final region = entry.region;
+    final item = download.item;
+    final region = item.region;
     // "Massachusetts · NOAA charts", or the pack's own name ("… (NOAA
     // charts)") alone when its chart area isn't known.
     final title =
-        entry.kind == PackKind.charts &&
+        item is PackIndexEntry &&
+            item.kind == PackKind.charts &&
             (region == null || maps.chartAreas?.byPackRegion(region) == null)
-        ? entry.name
-        : '${region == null ? entry.name : _regionName(maps, region)}'
-              ' · ${entryLabel(l10n, entry)}';
+        ? item.name
+        : '${region == null ? item.name : _regionName(maps, region)}'
+              ' · ${itemLabel(l10n, item)}';
     final state = download.state;
     final failed = state == PackDownloadState.failed;
+    // Checking the file, or (routing and places) installing it.
+    final installing =
+        state == PackDownloadState.verifying ||
+        state == PackDownloadState.downloaded;
     final status = switch (state) {
       PackDownloadState.queued => l10n.offlineMaps_waiting,
       PackDownloadState.waitingToRetry => l10n.offlineMaps_retrying,
-      PackDownloadState.verifying => l10n.offlineMaps_checking,
+      PackDownloadState.verifying ||
+      PackDownloadState.downloaded => l10n.offlineMaps_checking,
       PackDownloadState.failed => l10n.offlineMaps_failed(download.error ?? ''),
       _ => l10n.offlineMaps_bytesProgress(
         formatBytes(download.bytesDone),
-        formatBytes(entry.bytes),
+        formatBytes(item.bytes),
       ),
     };
     return Padding(
@@ -329,19 +335,19 @@ class _DownloadRow extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.pause),
                   tooltip: l10n.offlineMaps_pause,
-                  onPressed: () => maps.pause(entry.id),
+                  onPressed: () => maps.pause(item.id),
                 ),
               if (state == PackDownloadState.paused || failed)
                 IconButton(
                   icon: Icon(failed ? Icons.refresh : Icons.play_arrow),
                   tooltip: failed ? l10n.common_retry : l10n.offlineMaps_resume,
-                  onPressed: () => maps.resume(entry.id),
+                  onPressed: () => maps.resume(item.id),
                 ),
-              if (state != PackDownloadState.verifying)
+              if (!installing)
                 IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: failed ? l10n.common_remove : l10n.common_cancel,
-                  onPressed: () => maps.cancel(entry.id),
+                  onPressed: () => maps.cancel(item.id),
                 ),
             ],
           ),

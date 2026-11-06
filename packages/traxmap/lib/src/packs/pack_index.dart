@@ -1,23 +1,30 @@
 import 'dart:convert';
 
+import 'download_item.dart';
 import 'geo.dart';
 import 'pack.dart';
 
 /// One downloadable pack as listed in the server's pack index.
-class PackIndexEntry {
+class PackIndexEntry implements DownloadItem {
+  @override
   final String id;
+  @override
   final String name;
   final PackKind kind;
   final LatLngBounds bbox;
+  @override
   final int bytes;
+  @override
   final String sha256;
   final DateTime buildDate;
   final int schemaVersion;
+  @override
   final Uri url;
 
   /// Path of the region the pack was cut for, e.g.
   /// `north-america/us/rhode-island`: the `path` of a region in
   /// `picker.geojson`. Charts use their chart-area path (`charts/us/…`).
+  @override
   final String? region;
 
   /// Variant within a kind, e.g. `20ft` or `10m` for contours.
@@ -64,6 +71,7 @@ class PackIndexEntry {
     intervalUnit: j['interval_unit'] as String?,
   );
 
+  @override
   Map<String, Object?> toJson() => {
     'id': id,
     'name': name,

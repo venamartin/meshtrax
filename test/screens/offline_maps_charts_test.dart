@@ -46,10 +46,10 @@ class _FakeDownloader implements PackDownloader {
   @override
   List<PackDownload> get downloads => const [];
   @override
-  Future<void> start(PackIndexEntry entry) async {
+  Future<void> start(DownloadItem item) async {
     await gate?.future;
-    started.add(entry.id);
-    _updates.add(PackDownload(entry, PackDownloadState.queued, progress: 0));
+    started.add(item.id);
+    _updates.add(PackDownload(item, PackDownloadState.queued, progress: 0));
   }
 
   @override
@@ -58,6 +58,8 @@ class _FakeDownloader implements PackDownloader {
   Future<void> resume(String packId) async {}
   @override
   Future<void> cancel(String packId) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 /// A radio at [lat], [lon].

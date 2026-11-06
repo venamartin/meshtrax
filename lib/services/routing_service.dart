@@ -1,16 +1,22 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:traxcoords/traxcoords.dart';
-import 'package:traxmap/traxmap.dart' show LatLng, creditsIn, noticesIn;
+import 'package:traxmap/traxmap.dart'
+    show
+        DownloadFile,
+        LatLng,
+        PackDownload,
+        PackDownloadState,
+        creditsIn,
+        noticesIn;
 import 'package:traxroute/traxroute.dart';
 
 import '../utils/app_logger.dart';
 import 'map_packs_service.dart';
-import 'verified_download.dart';
 
 /// Offline routing: the routing data per region (from the catalogue's
 /// `routing` entry) and routes on it. One build on the device at a time.
@@ -20,33 +26,36 @@ import 'verified_download.dart';
 /// `traxroute_ios` plugin on iOS. On Linux it's Valhalla's own service
 /// program, found through `--dart-define=VALHALLA_SERVICE=<path>`. Without
 /// an engine, routing is not offered.
+///
+/// Bundles download through the map downloader, as packs do: in the
+/// background, on Wi‑Fi when the setting says so, with pause and resume.
+/// The downloader checks each one and hands it over; whatever has arrived
+/// is merged into the one tile file.
 class RoutingService extends ChangeNotifier {
+  /// The [DownloadFile.kind] of a routing bundle.
+  static const downloadKind = 'routing';
+
   final MapPacksService maps;
   final RoutingStore store;
   final RoutingEngine? engine;
-  final http.Client _client;
 
   RoutingCatalog? _catalog;
   bool _needsNewerApp = false;
   DateTime? _catalogRead;
   bool _catalogChecked = false;
-  final Map<String, double> _progress = {};
-  String? _error;
-  bool _busy = false;
   List<String> _credits = const [];
   List<String> _notices = const [];
+  StreamSubscription<PackDownload>? _downloads;
+  var _work = Future<void>.value();
+  final _recovering = <String>{};
 
   RoutingService({
     required this.maps,
     required this.store,
     required this.engine,
-    http.Client? client,
-  }) : _client = client ?? http.Client();
+  });
 
-  static Future<RoutingService> create(
-    MapPacksService maps, {
-    http.Client? client,
-  }) async {
+  static Future<RoutingService> create(MapPacksService maps) async {
     final root = Directory('${maps.cacheDir.path}/routing');
     final workDir = Directory('${maps.cacheDir.path}/routing-engine');
     const executable = String.fromEnvironment('VALHALLA_SERVICE');
@@ -61,12 +70,12 @@ class RoutingService extends ChangeNotifier {
           : executable.isEmpty
           ? null
           : ValhallaServiceEngine(executable: executable, workDir: workDir),
-      client: client,
     );
     maps.addListener(service._readCatalog);
     service._readCatalog();
     service._readCredits();
     await service._openEngine();
+    service._followDownloads();
     return service;
   }
 
@@ -77,9 +86,6 @@ class RoutingService extends ChangeNotifier {
 
   /// The catalogue has routing, but only for engines a newer app reads.
   bool get needsNewerApp => _needsNewerApp;
-
-  /// The last download or install error, for the region page.
-  String? get error => _error;
 
   RoutingBundle? bundleFor(String region) => _catalog?.regions[region];
 
@@ -114,10 +120,9 @@ class RoutingService extends ChangeNotifier {
   /// What all routing data takes: the one tile file.
   int get totalBytes => store.tileFile?.lengthSync() ?? 0;
 
-  /// 0–1 while [region]'s data is downloading, else null.
-  double? progressOf(String region) => _progress[region];
-
-  bool get busy => _busy;
+  /// The id of [region]'s bundle in the map downloader.
+  static String downloadId(String region) =>
+      'routing-${region.replaceAll('/', '_')}';
 
   /// What downloading [regions] takes: those regions, plus every installed
   /// one when the catalogue has a newer build.
@@ -133,66 +138,32 @@ class RoutingService extends ChangeNotifier {
   bool updateAvailable(String region) =>
       isInstalled(region) && downloadsFor(const {}).contains(region);
 
+  /// Downloads what [regions] take from the current catalogue, through the
+  /// map downloader. Each bundle installs as it arrives.
   Future<void> download(Set<String> regions) async {
-    if (_catalog == null || _busy || downloadsFor(regions).isEmpty) return;
-    _busy = true;
-    _error = null;
-    notifyListeners();
-    try {
-      try {
-        await _install(regions);
-      } on MissingDownload {
-        // A bundle the catalogue lists is gone: the server has moved on to
-        // a newer build, keeping the old one only for a while (FINDINGS
-        // §1.5). Read the catalogue again and take the current build.
-        await maps.refresh();
-        await _install(regions);
-      }
-      _readCredits();
-      await _openEngine();
-    } on Object catch (e) {
-      appLogger.warn('Routing download failed: $e', tag: 'Routing');
-      _error = '$e';
-    } finally {
-      _progress.clear();
-      _busy = false;
-      notifyListeners();
-    }
+    final c = _catalog;
+    if (c == null) return;
+    await maps.download([
+      for (final region in downloadsFor(regions)) _item(region, c),
+    ]);
   }
 
-  /// Downloads what [regions] take from the current catalogue and
-  /// installs it.
-  Future<void> _install(Set<String> regions) async {
-    // Nothing listed (a catalogue mid-publish, or routing only a newer app
-    // reads): installing nothing of a new build would remove the old one.
-    final c = _catalog;
-    final todo = downloadsFor(regions);
-    if (c == null || todo.isEmpty) return;
-    final temp = Directory('${store.root.path}-downloads')
-      ..createSync(recursive: true);
-    try {
-      final bundles = <String, (File, RoutingBundle)>{};
-      for (final region in todo) {
-        final b = c.regions[region]!;
-        final file = File('${temp.path}/${region.replaceAll('/', '_')}.tar.gz');
-        _progress[region] = 0;
-        notifyListeners();
-        await downloadVerified(
-          _client,
-          b.url,
-          file,
-          b.sha256,
-          onProgress: (got, total) {
-            _progress[region] = got / (total ?? b.bytes);
-            notifyListeners();
-          },
-        );
-        bundles[region] = (file, b);
-      }
-      await store.install(c.build, bundles);
-    } finally {
-      if (temp.existsSync()) temp.deleteSync(recursive: true);
-    }
+  DownloadFile _item(String region, RoutingCatalog c) {
+    final b = c.regions[region]!;
+    return DownloadFile(
+      id: downloadId(region),
+      name: maps.regions?[region]?.name ?? region.split('/').last,
+      region: region,
+      url: b.url,
+      bytes: b.bytes,
+      sha256: b.sha256,
+      kind: downloadKind,
+      payload: {
+        'build': c.build,
+        'attribution': ?b.attribution,
+        'notice': ?b.notice,
+      },
+    );
   }
 
   Future<void> remove(String region) async {
@@ -222,6 +193,95 @@ class RoutingService extends ChangeNotifier {
     );
   }
 
+  /// Completes once every install and retry queued so far has run.
+  @visibleForTesting
+  Future<void> get idle async {
+    Future<void>? seen;
+    while (seen != _work) {
+      seen = _work;
+      await seen;
+    }
+  }
+
+  /// Installs bundles as the downloader hands them over, including any
+  /// handed over before this service existed (restored from the last run).
+  void _followDownloads() {
+    _downloads = maps.downloader.updates.listen(_onDownload);
+    for (final d in maps.downloader.downloads) {
+      _onDownload(d);
+    }
+  }
+
+  void _onDownload(PackDownload d) {
+    if (d.file?.kind != downloadKind) return;
+    switch (d.state) {
+      case PackDownloadState.downloaded:
+        _work = _work.then((_) => _installDownloaded());
+      // A bundle gone from the server: it has moved on to a newer build,
+      // keeping the old one only for a while (FINDINGS §1.5).
+      case PackDownloadState.failed when d.error == 'HTTP 404':
+        _work = _work.then((_) => _retryFromCatalog(d));
+      default:
+    }
+  }
+
+  /// Installs everything the downloader has handed over, in one rewrite of
+  /// the tile file per build.
+  Future<void> _installDownloaded() async {
+    final byBuild = <String, Map<String, (File, RoutingBundle)>>{};
+    for (final d in maps.downloader.downloads) {
+      final file = d.file;
+      if (file == null ||
+          file.kind != downloadKind ||
+          d.state != PackDownloadState.downloaded) {
+        continue;
+      }
+      (byBuild[file.payload['build'] as String] ??= {})[file.region!] = (
+        File(d.path!),
+        RoutingBundle(
+          file.url,
+          file.bytes,
+          0,
+          file.sha256,
+          attribution: file.payload['attribution'] as String?,
+          notice: file.payload['notice'] as String?,
+        ),
+      );
+    }
+    if (byBuild.isEmpty) return;
+    for (final MapEntry(key: build, value: bundles) in byBuild.entries) {
+      String? error;
+      try {
+        await store.install(build, bundles);
+      } on Object catch (e) {
+        appLogger.warn('Routing install failed: $e', tag: 'Routing');
+        error = '$e';
+      }
+      for (final MapEntry(key: region, value: (file, _)) in bundles.entries) {
+        if (file.existsSync()) file.deleteSync();
+        await maps.downloader.finish(downloadId(region), error: error);
+      }
+    }
+    _readCredits();
+    await _openEngine();
+  }
+
+  /// Reads the catalogue again and takes the current build of [d]'s region:
+  /// a new build has a new URL, so the same URL would only 404 again.
+  Future<void> _retryFromCatalog(PackDownload d) async {
+    final region = d.item.region!;
+    if (!_recovering.add(region)) return;
+    try {
+      await maps.refresh();
+      final current = bundleFor(region);
+      if (current != null && current.url != d.item.url) {
+        await download({region});
+      }
+    } finally {
+      _recovering.remove(region);
+    }
+  }
+
   Future<void> _openEngine() async {
     final e = engine;
     final tiles = store.tileFile;
@@ -234,7 +294,6 @@ class RoutingService extends ChangeNotifier {
       }
     } on Object catch (err) {
       appLogger.warn('Routing engine failed to start: $err', tag: 'Routing');
-      _error = '$err';
     }
     notifyListeners();
   }
@@ -266,8 +325,8 @@ class RoutingService extends ChangeNotifier {
   @override
   void dispose() {
     maps.removeListener(_readCatalog);
+    unawaited(_downloads?.cancel());
     engine?.close();
-    _client.close();
     super.dispose();
   }
 }

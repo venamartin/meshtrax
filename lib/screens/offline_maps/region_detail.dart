@@ -86,30 +86,45 @@ class _RegionDetailState extends State<RegionDetail> {
     ];
     final routing = context.watch<RoutingService?>();
     final poi = context.watch<PoiService?>();
+    // Routing and places download beside the packs, so their rows read the
+    // same download states.
+    PackStatus extraStatus(
+      String id, {
+      required bool installed,
+      required bool update,
+    }) =>
+        maps.downloadStatus(id) ??
+        (update
+            ? PackStatus.updateAvailable
+            : installed
+            ? PackStatus.installed
+            : PackStatus.available);
+    final routingId = RoutingService.downloadId(region.path);
     final extras = [
       if (routing != null &&
           routing.available &&
           routing.bundleFor(region.path) != null)
         _Extra(
-          id: _routingId,
+          id: routingId,
           title: l10n.offlineMaps_kindRouting,
           detail: l10n.offlineMaps_kindRoutingDetail,
           bytes: routing.isInstalled(region.path)
               ? routing.bundleFor(region.path)!.bytes
               : routing.bytesFor({region.path}),
-          installed: routing.isInstalled(region.path),
-          update: routing.updateAvailable(region.path),
-          progress: routing.progressOf(region.path),
+          status: extraStatus(
+            routingId,
+            installed: routing.isInstalled(region.path),
+            update: routing.updateAvailable(region.path),
+          ),
+          download: () => routing.download({region.path}),
         ),
-      for (final (id, which, title, detail) in [
+      for (final (which, title, detail) in [
         (
-          _pointsId,
           PoiDownload.points,
           l10n.offlineMaps_kindPoi,
           l10n.offlineMaps_kindPoiDetail,
         ),
         (
-          _addressesId,
           PoiDownload.addresses,
           l10n.offlineMaps_kindAddresses,
           l10n.offlineMaps_kindAddressesDetail,
@@ -117,22 +132,25 @@ class _RegionDetailState extends State<RegionDetail> {
       ])
         if (poi?.fileFor(region.path, which) case final file?)
           _Extra(
-            id: id,
+            id: PoiService.downloadId(region.path, which),
             title: title,
             detail: detail,
             bytes: file.bytes,
-            installed: poi!.isInstalled(region.path, which),
-            update: poi.updateAvailable(region.path, which),
-            progress: poi.progressOf(region.path, which),
+            status: extraStatus(
+              PoiService.downloadId(region.path, which),
+              installed: poi!.isInstalled(region.path, which),
+              update: poi.updateAvailable(region.path, which),
+            ),
+            download: () => poi.download(region.path, {which}),
           ),
     ];
     final extrasToDownload = [
       for (final x in extras)
-        if (_ticked.contains(x.id) && !x.installed && x.progress == null) x,
+        if (_ticked.contains(x.id) && x.status == PackStatus.available) x,
     ];
     final extraUpdates = [
       for (final x in extras)
-        if (x.update && x.progress == null) x,
+        if (x.status == PackStatus.updateAvailable) x,
     ];
 
     final downloadBytes =
@@ -143,13 +161,9 @@ class _RegionDetailState extends State<RegionDetail> {
         extraUpdates.fold<int>(0, (sum, x) => sum + x.bytes);
     void fetch(List<PackIndexEntry> packs, List<_Extra> more) {
       if (packs.isNotEmpty) maps.download(packs);
-      final ids = {for (final x in more) x.id};
-      if (ids.contains(_routingId)) routing!.download({region.path});
-      final files = {
-        if (ids.contains(_pointsId)) PoiDownload.points,
-        if (ids.contains(_addressesId)) PoiDownload.addresses,
-      };
-      if (files.isNotEmpty) poi!.download(region.path, files);
+      for (final x in more) {
+        x.download();
+      }
     }
 
     final hasInstalled =
@@ -187,7 +201,10 @@ class _RegionDetailState extends State<RegionDetail> {
               for (final (i, entry) in shown.indexed) ...[
                 if (i > 0) const Divider(height: 1),
                 PackRow(
-                  entry: entry,
+                  id: entry.id,
+                  bytes: entry.bytes,
+                  status: maps.statusOf(entry),
+                  installedAt: maps.installedAtOf(entry.id),
                   ticked: _ticked.contains(entry.id),
                   onTicked: (v) => setState(
                     () => v ? _ticked.add(entry.id) : _ticked.remove(entry.id),
@@ -204,12 +221,16 @@ class _RegionDetailState extends State<RegionDetail> {
               for (final x in extras) ...[
                 if (shown.isNotEmpty || x != extras.first)
                   const Divider(height: 1),
-                _ExtraRow(
-                  extra: x,
+                PackRow(
+                  id: x.id,
+                  bytes: x.bytes,
+                  status: x.status,
                   ticked: _ticked.contains(x.id),
                   onTicked: (v) => setState(
                     () => v ? _ticked.add(x.id) : _ticked.remove(x.id),
                   ),
+                  title: Text(x.title),
+                  detail: x.detail,
                 ),
               ],
               if (!hasUsgs && !inUs) ...[
@@ -328,87 +349,24 @@ class _RegionDetailState extends State<RegionDetail> {
   }
 }
 
-const _routingId = 'routing';
-const _pointsId = 'poi:points';
-const _addressesId = 'poi:addresses';
-
 /// A region's routing or points of interest download, shown like a pack.
 class _Extra {
+  /// The download's id, which also ticks it.
   final String id;
   final String title;
   final String detail;
   final int bytes;
-  final bool installed;
-  final bool update;
+  final PackStatus status;
 
-  /// 0–1 while downloading.
-  final double? progress;
+  /// Starts, or updates, its download.
+  final VoidCallback download;
 
   const _Extra({
     required this.id,
     required this.title,
     required this.detail,
     required this.bytes,
-    required this.installed,
-    required this.update,
-    required this.progress,
+    required this.status,
+    required this.download,
   });
-}
-
-class _ExtraRow extends StatelessWidget {
-  final _Extra extra;
-  final bool ticked;
-  final ValueChanged<bool> onTicked;
-
-  const _ExtraRow({
-    required this.extra,
-    required this.ticked,
-    required this.onTicked,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final x = extra;
-    final downloading = x.progress != null;
-    final Widget leading = downloading
-        ? const SizedBox.square(
-            dimension: 24,
-            child: Center(child: Icon(Icons.downloading)),
-          )
-        : x.update
-        ? Icon(Icons.update, color: theme.colorScheme.tertiary)
-        : x.installed
-        ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-        : Checkbox(value: ticked, onChanged: (v) => onTicked(v ?? false));
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        children: [
-          ListTile(
-            leading: leading,
-            title: Text(x.title),
-            subtitle: Text(
-              downloading
-                  ? l10n.offlineMaps_bytesProgress(
-                      formatBytes((x.bytes * x.progress!).round()),
-                      formatBytes(x.bytes),
-                    )
-                  : x.update
-                  ? l10n.offlineMaps_updateAvailable
-                  : x.detail,
-            ),
-            trailing: Text(formatBytes(x.bytes), style: sizeStyle),
-            onTap: x.installed || downloading ? null : () => onTicked(!ticked),
-          ),
-          if (downloading)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-              child: LinearProgressIndicator(value: x.progress),
-            ),
-        ],
-      ),
-    );
-  }
 }

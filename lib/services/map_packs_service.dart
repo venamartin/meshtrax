@@ -252,6 +252,12 @@ class MapPacksService extends ChangeNotifier {
   /// When an installed pack was downloaded (its file's time).
   DateTime? installedAt(Pack pack) => _files[pack.file.path]?.modified;
 
+  /// When the pack with [id] was downloaded, if it is installed.
+  DateTime? installedAtOf(String id) {
+    final pack = installedPack(id);
+    return pack == null ? null : installedAt(pack);
+  }
+
   /// Where to open a map with nothing else to show: the most recently
   /// installed street or topo map, framed, but no further out than its packs
   /// draw (a big region shows its middle).
@@ -447,16 +453,20 @@ class MapPacksService extends ChangeNotifier {
   }
 
   Future<void> _onDownload(PackDownload download) async {
+    final pack = download.entry != null;
     // Until the installed list has the new build, the row would flash
     // "Download" or "Update" between "Checking" and "Downloaded".
-    if (download.state == PackDownloadState.installed) await reloadInstalled();
+    if (pack && download.state == PackDownloadState.installed) {
+      await reloadInstalled();
+    }
     final verifying =
         _downloads[download.id]?.state == PackDownloadState.verifying;
     _downloads[download.id] = download;
     notifyListeners();
     // Rejected once downloaded (its SHA-256): the pack may have been
     // republished during the download, so the entry it began with is old.
-    if (verifying && download.state == PackDownloadState.failed) {
+    // Routing and places look after their own.
+    if (pack && verifying && download.state == PackDownloadState.failed) {
       unawaited(_retryIfRepublished(download));
     }
   }
@@ -470,7 +480,7 @@ class MapPacksService extends ChangeNotifier {
     try {
       await refresh();
       final entry = _entryOf(failed.id);
-      if (entry != null && entry.sha256 != failed.entry.sha256) {
+      if (entry != null && entry.sha256 != failed.item.sha256) {
         await resume(failed.id);
       }
     } finally {
@@ -603,26 +613,22 @@ class MapPacksService extends ChangeNotifier {
   /// The download in progress (or last finished) for [id], if any.
   PackDownload? downloadOf(String id) => _downloads[id];
 
+  /// How the download with [id] is going (a pack's, or routing or places),
+  /// or null when none is, or it is over.
+  PackStatus? downloadStatus(String id) => switch (_downloads[id]?.state) {
+    PackDownloadState.queued => PackStatus.queued,
+    PackDownloadState.running => PackStatus.running,
+    PackDownloadState.paused => PackStatus.paused,
+    PackDownloadState.waitingToRetry => PackStatus.waitingToRetry,
+    PackDownloadState.verifying ||
+    PackDownloadState.downloaded => PackStatus.verifying,
+    PackDownloadState.failed => PackStatus.failed,
+    PackDownloadState.installed || PackDownloadState.canceled || null => null,
+  };
+
   PackStatus statusOf(PackIndexEntry entry) {
-    final download = _downloads[entry.id];
-    if (download != null) {
-      switch (download.state) {
-        case PackDownloadState.queued:
-          return PackStatus.queued;
-        case PackDownloadState.running:
-          return PackStatus.running;
-        case PackDownloadState.paused:
-          return PackStatus.paused;
-        case PackDownloadState.waitingToRetry:
-          return PackStatus.waitingToRetry;
-        case PackDownloadState.verifying:
-          return PackStatus.verifying;
-        case PackDownloadState.failed:
-          return PackStatus.failed;
-        case PackDownloadState.installed || PackDownloadState.canceled:
-          break;
-      }
-    }
+    final downloading = downloadStatus(entry.id);
+    if (downloading != null) return downloading;
     final pack = installedPack(entry.id);
     if (pack == null) return PackStatus.available;
     return pack.isBuild(entry.sha256) == false
@@ -651,14 +657,15 @@ class MapPacksService extends ChangeNotifier {
 
   // --- Actions -------------------------------------------------------------
 
-  /// Starts downloading [entries]; already-active ones are left alone.
-  Future<void> download(Iterable<PackIndexEntry> entries) async {
+  /// Starts downloading [items] (packs, or routing and places files);
+  /// already-active ones are left alone.
+  Future<void> download(Iterable<DownloadItem> items) async {
     final d = downloader;
     if (d is BackgroundPackDownloader) {
       await d.requestNotificationPermission();
     }
-    for (final entry in entries) {
-      await downloader.start(entry);
+    for (final item in items) {
+      await downloader.start(item);
     }
   }
 
@@ -693,7 +700,7 @@ class MapPacksService extends ChangeNotifier {
       return downloader.resume(id);
     }
     await downloader.cancel(id);
-    await downloader.start(_entryOf(id) ?? failed!.entry);
+    await downloader.start(_entryOf(id) ?? failed!.item);
   }
 
   Future<void> cancel(String id) => downloader.cancel(id);
@@ -702,12 +709,12 @@ class MapPacksService extends ChangeNotifier {
   Future<void> updateAll() => download(updates);
 
   /// Deletes the installed packs of the region at [path], cancelling any of
-  /// its downloads first. Returns the bytes freed.
+  /// its downloads first (packs, routing and places). Returns the bytes
+  /// freed.
   Future<int> deleteRegion(String path) async {
-    for (final entry in packsForRegion(path)) {
-      final download = _downloads[entry.id];
-      if (download != null && !download.state.isFinal) {
-        await downloader.cancel(entry.id);
+    for (final download in _downloads.values.toList()) {
+      if (download.item.region == path && !download.state.isFinal) {
+        await downloader.cancel(download.id);
       }
     }
     var freed = 0;

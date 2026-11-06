@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -14,19 +15,63 @@ final _index = jsonDecode(
   File('packages/traxmap/test/support/sample_index.json').readAsStringSync(),
 ) as Map<String, dynamic>;
 
-class _NoDownloads implements PackDownloader {
+/// Stands in for the background downloader: serves [files] by URL path at
+/// once, as checked downloads, and remembers what it was asked.
+class _FakeDownloader implements PackDownloader {
+  final Map<String, Uint8List> files;
+  final Directory dir;
+  final started = <DownloadItem>[];
+  final _updates = StreamController<PackDownload>.broadcast(sync: true);
+  final _latest = <String, PackDownload>{};
+
+  _FakeDownloader(this.files, this.dir);
+
+  PackDownload? latest(String id) => _latest[id];
+
+  void _emit(PackDownload d) {
+    _latest[d.id] = d;
+    _updates.add(d);
+  }
+
   @override
-  Stream<PackDownload> get updates => const Stream.empty();
+  Stream<PackDownload> get updates => _updates.stream;
   @override
-  List<PackDownload> get downloads => const [];
+  List<PackDownload> get downloads => _latest.values.toList();
+
   @override
-  Future<void> start(PackIndexEntry entry) async {}
+  Future<void> start(DownloadItem item) async {
+    started.add(item);
+    final bytes = files[item.url.path.substring(1)];
+    if (bytes == null) {
+      _emit(PackDownload(item, PackDownloadState.failed, error: 'HTTP 404'));
+      return;
+    }
+    final file = File('${dir.path}/${item.id}')..writeAsBytesSync(bytes);
+    _emit(
+      PackDownload(
+        item,
+        PackDownloadState.downloaded,
+        progress: 1,
+        path: file.path,
+      ),
+    );
+  }
+
   @override
-  Future<void> pause(String packId) async {}
+  Future<void> pause(String id) async {}
   @override
-  Future<void> resume(String packId) async {}
+  Future<void> resume(String id) async {}
   @override
-  Future<void> cancel(String packId) async {}
+  Future<void> cancel(String id) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async => _emit(
+    PackDownload(
+      _latest[id]!.item,
+      error == null ? PackDownloadState.installed : PackDownloadState.failed,
+      progress: 1,
+      error: error,
+    ),
+  );
 }
 
 /// A gzipped routing bundle holding one tile, as traxmapmaker writes them.
@@ -85,7 +130,7 @@ void main() {
     };
   }
 
-  Future<(MapPacksService, RoutingService)> services() async {
+  Future<(MapPacksService, _FakeDownloader)> mapsService() async {
     final client = MockClient((request) async {
       final path = request.url.path.substring(1);
       if (path == 'index.json') {
@@ -99,43 +144,81 @@ void main() {
           ? http.Response('', 404)
           : http.Response.bytes(file, 200);
     });
+    final downloader = _FakeDownloader(
+      files,
+      Directory('${tmp.path}/downloads')..createSync(),
+    );
     final maps = MapPacksService(
       manager: PackManager(Directory('${tmp.path}/maps/packs')),
-      downloader: _NoDownloads(),
+      downloader: downloader,
       cacheDir: Directory('${tmp.path}/maps'),
       indexUrl: Uri.parse('https://maps.example/index.json'),
       client: client,
     );
     await maps.refresh();
-    return (maps, await RoutingService.create(maps, client: client));
+    return (maps, downloader);
   }
+
+  Future<(MapPacksService, RoutingService, _FakeDownloader)> services() async {
+    final (maps, downloader) = await mapsService();
+    return (maps, await RoutingService.create(maps), downloader);
+  }
+
+  /// Files the downloader handed over that nobody cleaned up.
+  List<FileSystemEntity> leftovers() =>
+      Directory('${tmp.path}/downloads').listSync();
+
+  test('bundles download through the map downloader and install as they '
+      'arrive', () async {
+    catalogue = routing('b1', ['test/a']);
+    final (_, service, downloader) = await services();
+
+    await service.download({'test/a'});
+    final item = downloader.started.single as DownloadFile;
+    expect(item.id, RoutingService.downloadId('test/a'));
+    expect(item.region, 'test/a');
+    expect(item.kind, RoutingService.downloadKind);
+    expect(item.payload['build'], 'b1');
+    await service.idle;
+
+    expect(service.installedRegions, {'test/a'});
+    expect(service.hasRoutingData, isTrue);
+    expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
+    expect(leftovers(), isEmpty);
+  });
 
   test('a bundle gone from the server: the catalogue is read again and '
       'the current build installed', () async {
     catalogue = routing('b1', ['test/a']);
-    final (_, service) = await services();
+    final (_, service, downloader) = await services();
     expect(service.catalog!.build, 'b1');
 
     // The server moves on to b2 and b1's files go, before the download.
     files.clear();
     catalogue = routing('b2', ['test/a']);
     await service.download({'test/a'});
+    await service.idle;
 
-    expect(service.error, isNull);
     expect(service.store.build, 'b2');
     expect(service.installedRegions, {'test/a'});
+    expect(
+      downloader.latest(RoutingService.downloadId('test/a'))!.state,
+      PackDownloadState.installed,
+    );
   });
 
   test('a catalogue that lists nothing keeps what is installed', () async {
     catalogue = routing('b1', ['test/a', 'test/b']);
-    final (_, service) = await services();
+    final (_, service, _) = await services();
     await service.download({'test/a'});
+    await service.idle;
     expect(service.installedRegions, {'test/a'});
 
     // Mid-publish: b1's files are gone and b2 lists no regions yet.
     files.clear();
     catalogue = routing('b2', []);
     await service.download({'test/b'});
+    await service.idle;
 
     expect(service.store.build, 'b1');
     expect(service.installedRegions, {'test/a'});
@@ -148,13 +231,14 @@ void main() {
       'packages/traxmap/test/support/picker.geojson',
     ).readAsBytesSync();
     catalogue = routing('b1', ['north-america/us/rhode-island']);
-    final (_, service) = await services();
+    final (_, service, _) = await services();
     const providence = (lat: 41.82, lon: -71.41);
     const watsonville = (lat: 36.91, lon: -121.76);
     expect(service.offeredAt(providence), isTrue);
     expect(service.offeredAt(watsonville), isFalse);
 
     await service.download({'north-america/us/rhode-island'});
+    await service.idle;
     expect(service.offeredAt(watsonville), isTrue);
   });
 
@@ -176,10 +260,11 @@ void main() {
         'test/b': {'attribution': '$osm; $glo30', 'notice': notice},
       },
     );
-    final (maps, service) = await services();
+    final (maps, service, _) = await services();
     expect(service.credits, isEmpty);
 
     await service.download({'test/a', 'test/b'});
+    await service.idle;
     expect(service.credits, [
       '© OpenStreetMap contributors',
       'USGS 3DEP',
@@ -199,11 +284,53 @@ void main() {
     expect(service.notices, isEmpty);
   });
 
+  test('a bundle that will not install is reported, and its file removed', () async {
+    catalogue = routing('b1', ['test/a']);
+    // Not a routing tile: the store refuses it.
+    files['routing/valhalla-3.9/b1/test/a.tar.gz'] = _bundle('../../evil.gph');
+    final (_, service, downloader) = await services();
+
+    await service.download({'test/a'});
+    await service.idle;
+
+    final failed = downloader.latest(RoutingService.downloadId('test/a'))!;
+    expect(failed.state, PackDownloadState.failed);
+    expect(failed.error, contains('Not a routing tile'));
+    expect(service.installedRegions, isEmpty);
+    expect(leftovers(), isEmpty);
+  });
+
+  test('a bundle handed over before the service started installs at start', () async {
+    catalogue = routing('b1', ['test/a']);
+    final (maps, downloader) = await mapsService();
+    // Downloaded while the app was closed: the downloader restores it
+    // before the routing service exists.
+    final item = DownloadFile(
+      id: RoutingService.downloadId('test/a'),
+      name: 'A',
+      region: 'test/a',
+      url: Uri.parse(
+        'https://maps.example/routing/valhalla-3.9/b1/test/a.tar.gz',
+      ),
+      bytes: 1,
+      sha256: 'x',
+      kind: RoutingService.downloadKind,
+      payload: {'build': 'b1'},
+    );
+    await downloader.start(item);
+    expect(downloader.latest(item.id)!.state, PackDownloadState.downloaded);
+
+    final service = await RoutingService.create(maps);
+    await service.idle;
+    expect(service.installedRegions, {'test/a'});
+    expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
+  });
+
   test('routing only for a newer engine needs a newer app', () async {
     catalogue = {
       'valhalla-4.0': {'build': 'x', 'regions': {}},
     };
-    final (_, service) = await services();
+    final (_, service, _) = await services();
     expect(service.catalog, isNull);
     expect(service.needsNewerApp, isTrue);
   });
