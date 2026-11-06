@@ -146,20 +146,20 @@ class AppSettings {
   final List<String> recentReactions;
 
   AppSettings({
-    this.mapShowRepeaters = true,
+    this.mapShowRepeaters = false,
     this.mapShowChatNodes = true,
-    this.mapShowOtherNodes = true,
+    this.mapShowOtherNodes = false,
     this.mapShowOverlaps = false,
     this.mapTimeFilterHours = 0, // all time
     this.mapKeyPrefixEnabled = false,
     this.mapKeyPrefix = '',
-    this.mapShowMarkers = true,
+    this.mapShowMarkers = false,
     this.mapShowGuessedLocations = false,
     this.enableMessageTracing = true,
     this.mapDownloadsWifiOnly = true,
     this.mapType = 'osm',
-    this.mapContours = true,
-    this.mapHillShading = true,
+    this.mapContours = false,
+    this.mapHillShading = false,
     this.mapPlaces = true,
     this.mapParks = true,
     this.mapDownloadedAreas = true,
@@ -217,7 +217,12 @@ class AppSettings {
   /// file saved long ago without a key really ran on that key's fallback, and
   /// for two settings the fallback differs from the old constructor.
   factory AppSettings.olderInstall() => AppSettings(
+    mapShowRepeaters: true,
+    mapShowOtherNodes: true,
+    mapShowMarkers: true,
     mapShowGuessedLocations: true,
+    mapContours: true,
+    mapHillShading: true,
     maxMessageRetries: 3,
     pathGraphEnabled: false,
     incrementalContactSync: false,
