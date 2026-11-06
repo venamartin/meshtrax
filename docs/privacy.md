@@ -115,7 +115,7 @@ iOS does not require location permission for BLE scanning; the App never request
 | Capability | Why it is needed |
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Internet | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| Internet | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
 | Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
 
 The Windows app does not use the camera, location, or notifications.
