@@ -657,6 +657,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 - Brochure extraction
 - Showing the last radio's nodes in no-radio mode
 - Routing and places on the no-radio map (S1): it has no long-press yet
+- **Dashed intermittent streams on the USGS map** (Martin, 2026-11-06: on the todo list). traxmapmaker adds NHD's flow (perennial, intermittent or ephemeral, from FCode) to the USGS base packs' `waterway` layer and rebuilds the 59 packs. The style then dashes intermittent and ephemeral streams, as USGS paper maps do, so desert washes stop reading as roads. Since 2026-11-06 unnamed streams are already drawn thinner and lighter than named creeks and rivers.
 - Phone GPS: see below
 
 #### Phone GPS (parked)

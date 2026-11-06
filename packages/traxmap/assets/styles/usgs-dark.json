@@ -394,15 +394,100 @@
       "source": "base",
       "source-layer": "waterway",
       "filter": [
-        "!=",
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          [
+            "coastline",
+            "pipeline"
+          ],
+          false,
+          true
+        ],
+        [
+          "!",
+          [
+            "has",
+            "name"
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#284d6e",
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.5
+          ],
+          [
+            "zoom"
+          ],
+          10,
+          0.3,
+          12,
+          0.55,
+          14,
+          0.9,
+          16,
+          1.3
+        ]
+      }
+    },
+    {
+      "id": "waterway-pipeline",
+      "type": "line",
+      "source": "base",
+      "source-layer": "waterway",
+      "minzoom": 13,
+      "filter": [
+        "==",
         [
           "get",
           "kind"
         ],
-        "coastline"
+        "pipeline"
       ],
       "paint": {
-        "line-color": "#2b5578",
+        "line-color": "#284d6e",
+        "line-width": 0.7,
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "waterway-named",
+      "type": "line",
+      "source": "base",
+      "source-layer": "waterway",
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "kind"
+          ],
+          [
+            "coastline",
+            "pipeline"
+          ],
+          false,
+          true
+        ],
+        [
+          "has",
+          "name"
+        ]
+      ],
+      "paint": {
+        "line-color": "#30628d",
         "line-width": [
           "interpolate",
           [
@@ -412,9 +497,13 @@
             "zoom"
           ],
           10,
-          0.5,
+          0.6,
+          12,
+          1.0,
           14,
-          1.5
+          1.5,
+          16,
+          2.2
         ]
       }
     },
