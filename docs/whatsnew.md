@@ -2,6 +2,14 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.10.0
+
+- Trail routing on Android and iOS: plan routes offline on paved roads, dirt roads and trails, with time, climb and a height profile. North America to start.
+- Points of interest: search places, addresses and coordinates offline, with Wikipedia text and photos. California to start.
+- Parks on the map, route shields and a roads legend.
+- Positions in seven formats, including UTM, MGRS and Maidenhead.
+- Every screen in all 17 languages.
+
 ## 1.9.8
 
 - Map downloads work again on Windows: a region failed with "Download failed" and a page of text instead of installing.
