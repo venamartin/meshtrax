@@ -4647,10 +4647,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mapLayers_hillShading => '음영 기복';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => '장소';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => '공원';
 
   @override
   String get mapLayers_dark => '어두운 지도';
@@ -5400,49 +5400,49 @@ class AppLocalizationsKo extends AppLocalizations {
   String get parkLegend_guidepost => '이정표';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => '도로, 탐방로 및 기타 선';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => '고속도로';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => '주요 간선도로';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => '도로';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => '비포장도로·임도';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => '탐방로';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => '주간 고속도로';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => '미국 국도';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => '주 도로';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => '철도';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => '강·하천';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => '등고선';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => '공원 경계';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => '원생지역·국유림';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => '주·카운티 경계';
 
   @override
   String get dialog_noticeExpires => '만료일';
@@ -5591,197 +5591,194 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pathfinder_graphCreate => '만들기';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => '포장';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => '비포장';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => '하이킹';
 
   @override
   String route_minutes(int minutes) {
-    return '$minutes min';
+    return '$minutes분';
   }
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours시간 $minutes분';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return '$destination까지';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => '길찾기 종료';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => '길을 찾는 중…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => '길을 찾지 못했습니다';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return '포장도로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return '도로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return '탐방로가 끝나는 곳까지만 갈 수 있습니다. $destination까지 $distance 남습니다.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => '길 안내';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => '여기까지 길찾기';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return '현재 목적지: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return '현재 출발지: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => '현재 출발지: 내 위치';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => '이 지역의 고도 정보가 없습니다.';
 
   @override
-  String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+  String get route_noHeightsHiking => '이 지역의 고도 정보가 없어 소요 시간에 오르막이 반영되지 않습니다.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => '길찾기 옵션';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => '재설정';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => '선호';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => '최단 시간';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => '균형';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => '최단 거리';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => '비포장도로는 더 빠를 때만 이용합니다.';
 
   @override
-  String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+  String get route_dirtBalancedHelp => '거리를 크게 줄일 수 있으면 비포장도로를 이용합니다.';
 
   @override
-  String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+  String get route_dirtDirectHelp => '느린 비포장길을 지나더라도 가장 짧은 길로 갑니다.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => '피하기';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => '고속도로';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => '유료도로';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => '페리';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => '최대 난이도';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 하이킹';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 산악 하이킹';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 어려운 산악 하이킹';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 알파인 하이킹';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 어려운 알파인 하이킹';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 매우 어려운 알파인 하이킹';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => '오르막';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => '피하기';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => '약간';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => '상관없음';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => '속도';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => '느림';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => '보통';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => '빠름';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => '미국 국가사적지';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => '글: Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Wikipedia에서 읽기';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return '사진: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => '장소, 주소 또는 좌표 검색';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      '장소를 검색하려면 해당 지역의 \'관심 지점\'을 다운로드하세요. 좌표는 다운로드 없이도 검색할 수 있습니다.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => '검색 결과 없음';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => '십진 도';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => '도·분';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => '도·분·초';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -5790,236 +5787,233 @@ class AppLocalizationsKo extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Maidenhead 그리드';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => '봉우리';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => '화산';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => '안부';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => '고개';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => '샘';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => '온천';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => '폭포';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => '동굴';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => '자연 아치';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => '빙하';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => '바위';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => '절벽';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => '해변';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => '탐방로 입구';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => '야영장';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => '피크닉 장소';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => '산장';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => '대피소';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => '식수';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => '화장실';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => '전망대';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => '명소';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => '천문대';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => '동물원';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => '테마파크';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => '광산';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => '수직갱';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => '수평갱';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => '유령 마을';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => '폐허';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => '기념물';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => '기념비';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => '요새';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => '사적지';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => '레인저 스테이션';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => '방문자 센터';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => '병원';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => '경찰서';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => '소방서';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => '비상 전화';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => '주유소';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => '휴게소';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => '대형 휴게소';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => '박물관';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => '도시';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => '마을';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => '지역';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => '호수';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => '하천';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => '계곡';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => '산맥';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => '탐방로';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => '비포장도로';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => '도로';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => '주소';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => '장소';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => '탐방로 길찾기';
 
   @override
-  String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+  String get offlineMaps_kindRoutingDetail => '탐방로, 비포장도로, 포장도로 길찾기';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => '관심 지점';
 
   @override
-  String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+  String get offlineMaps_kindPoiDetail => '검색할 수 있는 장소와 Wikipedia 설명';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => '주소';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => '검색할 수 있는 건물 주소';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => '검색';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => '여기서 출발';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet => '출발지를 설정했습니다. 이제 목적지를 선택하세요.';
 
   @override
-  String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+  String get route_noStart => '출발 위치가 없습니다. 지도를 길게 누르고 \'여기서 출발\'을 선택하세요.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      '여기서 길을 찾으려면 \'오프라인 지도\'에서 이 지역의 \'탐방로 길찾기\'를 다운로드하세요.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => '지정한 위치';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => '좌표 형식';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => '위치 복사';
 
   @override
-  String get poiKind_park => 'Park';
+  String get poiKind_park => '공원';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => '보호구역';
 
   @override
-  String get common_more => 'More';
+  String get common_more => '더보기';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => '접기';
 
   @override
   String get locationSharing_title => '내 위치를 볼 수 있는 사람';

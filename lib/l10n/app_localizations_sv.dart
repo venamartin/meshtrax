@@ -4820,10 +4820,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get mapLayers_hillShading => 'Terrängskuggning';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'Platser';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => 'Parker';
 
   @override
   String get mapLayers_dark => 'Mörk karta';
@@ -5606,49 +5606,49 @@ class AppLocalizationsSv extends AppLocalizations {
   String get parkLegend_guidepost => 'Vägvisare';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => 'Vägar, leder och linjer';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => 'Motorväg';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => 'Huvudväg';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => 'Väg';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => 'Grusväg eller traktorväg';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'Led';
 
   @override
   String get roadLegend_interstate => 'Interstate';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'US Highway';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => 'Delstatsväg';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => 'Järnväg';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => 'Flod eller bäck';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => 'Höjdkurva';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => 'Parkgräns';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => 'Vildmarksområde eller nationalskog';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => 'Delstats- eller länsgräns';
 
   @override
   String get dialog_noticeExpires => 'Gäller till';
@@ -5799,13 +5799,13 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathfinder_graphCreate => 'Skapa';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => 'Asfalt';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => 'Grus';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => 'Till fots';
 
   @override
   String route_minutes(int minutes) {
@@ -5814,182 +5814,182 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours tim $minutes min';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return 'Till $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => 'Rensa färdväg';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => 'Söker färdväg…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => 'Ingen färdväg hittades';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return 'Färdvägen slutar $distance före $destination, där asfalten tar slut.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return 'Färdvägen slutar $distance före $destination, där vägen tar slut.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return 'Färdvägen slutar $distance före $destination, där lederna tar slut.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => 'Vägbeskrivning';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'Färdväg hit';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return 'Nuvarande mål: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return 'Nuvarande startpunkt: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Nuvarande startpunkt: din position';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => 'Inga höjddata för det här området.';
 
   @override
   String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+      'Inga höjddata för det här området, så tiden tar inte hänsyn till stigningar.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => 'Färdvägsalternativ';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'Återställ';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => 'Prioritera';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => 'Snabbast';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'Balanserat';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => 'Mest direkt';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => 'Grusvägar bara där de är snabbare.';
 
   @override
   String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+      'En grusväg när den kortar sträckan rejält.';
 
   @override
   String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+      'Den kortaste vägen, hur långsamma grusvägarna än är.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => 'Undvik';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => 'Motorvägar';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => 'Vägtullar';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'Färjor';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => 'Svåraste led';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 Vandring';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 Bergsvandring';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 Krävande bergsvandring';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 Alpin vandring';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 Krävande alpin vandring';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 Svår alpin vandring';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => 'Stigningar';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => 'Undvik';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'Måttligt';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => 'Obegränsat';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'Tempo';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'Långsamt';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => 'Normalt';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => 'Snabbt';
 
   @override
   String get place_nrhp => 'National Register of Historic Places';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => 'Text från Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Läs på Wikipedia';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return 'Foto: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => 'Sök platser, adresser eller koordinater';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'Ladda ner Intressanta platser för en region för att söka bland dess platser. Koordinater fungerar ändå.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => 'Inga träffar';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => 'Decimalgrader';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => 'Grader och minuter';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => 'Grader, minuter, sekunder';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -5998,236 +5998,236 @@ class AppLocalizationsSv extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Maidenhead-lokator';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => 'Topp';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => 'Vulkan';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => 'Bergsadel';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => 'Bergspass';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => 'Källa';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => 'Varm källa';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => 'Vattenfall';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => 'Grotta';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => 'Klippbåge';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => 'Glaciär';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => 'Klippa';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => 'Stup';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'Strand';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => 'Ledstart';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'Campingplats';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'Picknickplats';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => 'Stuga';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => 'Vindskydd';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => 'Dricksvatten';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'Toaletter';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => 'Utsiktsplats';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => 'Sevärdhet';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => 'Observatorium';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => 'Djurpark';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'Nöjespark';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => 'Gruva';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => 'Gruvschakt';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => 'Gruvgång';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'Spökstad';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => 'Ruin';
 
   @override
   String get poiKind_monument => 'Monument';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => 'Minnesmärke';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => 'Fästning';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => 'Historisk plats';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'Rangerstation';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'Besökscenter';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => 'Sjukhus';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => 'Polis';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => 'Brandstation';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => 'Nödtelefon';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'Bensinstation';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => 'Rastplats';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'Serviceområde';
 
   @override
   String get poiKind_museum => 'Museum';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => 'Stad';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => 'Ort';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => 'Område';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => 'Sjö';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => 'Vattendrag';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => 'Dal';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => 'Bergskedja';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'Led';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => 'Grusväg';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => 'Väg';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => 'Adress';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => 'Plats';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => 'Färdvägsplanering';
 
   @override
   String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+      'Färdvägar på leder, grusvägar och asfalterade vägar';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'Intressanta platser';
 
   @override
   String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+      'Sökbara platser, med text från Wikipedia';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => 'Adresser';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => 'Sökbara gatuadresser';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => 'Sök';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'Färdväg härifrån';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet => 'Startpunkten är vald. Välj nu vart du ska.';
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'Ingen startpunkt. Tryck länge på kartan och välj Färdväg härifrån.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Ladda ner Färdvägsplanering för den här regionen i Offlinekartor för att hitta färdvägar här.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'Utplacerad nål';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => 'Koordinatformat';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Kopiera position';
 
   @override
   String get poiKind_park => 'Park';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => 'Skyddat område';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'Visa mer';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => 'Visa mindre';
 
   @override
   String get locationSharing_title => 'Vem kan se min plats';

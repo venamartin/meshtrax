@@ -4859,10 +4859,10 @@ class AppLocalizationsBg extends AppLocalizations {
   String get mapLayers_hillShading => 'Засенчване на релефа';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'Места';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => 'Паркове';
 
   @override
   String get mapLayers_dark => 'Тъмна карта';
@@ -5651,49 +5651,49 @@ class AppLocalizationsBg extends AppLocalizations {
   String get parkLegend_guidepost => 'Указателна табела';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => 'Пътища, пътеки и линии';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => 'Автомагистрала';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => 'Шосе или главен път';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => 'Път';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => 'Черен или горски път';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'Пътека';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => 'Междущатска магистрала';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'Федерален път на САЩ';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => 'Щатски път';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => 'Железопътна линия';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => 'Река или поток';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => 'Хоризонтала';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => 'Граница на парк';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => 'Дива природа или национална гора';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => 'Граница на щат или окръг';
 
   @override
   String get dialog_noticeExpires => 'Изтича';
@@ -5845,197 +5845,198 @@ class AppLocalizationsBg extends AppLocalizations {
   String get pathfinder_graphCreate => 'Създай';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => 'Асфалт';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => 'Чакъл';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => 'Пеша';
 
   @override
   String route_minutes(int minutes) {
-    return '$minutes min';
+    return '$minutes мин';
   }
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours ч $minutes мин';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return 'До $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => 'Изчисти маршрута';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => 'Търсене на маршрут…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => 'Не е намерен маршрут';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return 'Маршрутът завършва на $distance преди $destination, където свършва асфалтът.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return 'Маршрутът завършва на $distance преди $destination, където свършва пътят.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return 'Маршрутът завършва на $distance преди $destination, където свършват пътеките.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => 'Упътвания';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'Маршрут дотук';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return 'Текуща цел: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return 'Текуща начална точка: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Текуща начална точка: вашето местоположение';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights =>
+      'Няма данни за надморската височина в този район.';
 
   @override
   String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+      'Няма данни за надморската височина в този район, затова времето не отчита изкачванията.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => 'Опции за маршрута';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'Нулиране';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => 'Предпочитание';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => 'Най-бърз';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'Балансиран';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => 'Най-пряк';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => 'Черни пътища само където са по-бързи.';
 
   @override
   String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+      'Черен път, когато значително скъсява разстоянието.';
 
   @override
   String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+      'Най-краткият маршрут, дори по бавни черни пътища.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => 'Избягвай';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => 'Магистрали';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => 'Платени пътища';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'Фериботи';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => 'Най-трудна пътека';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 Пешеходен туризъм';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 Планински туризъм';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 Взискателен планински туризъм';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 Алпийски туризъм';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 Взискателен алпийски туризъм';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 Труден алпийски туризъм';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => 'Изкачвания';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => 'Избягвай';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'Умерени';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => 'Всякакви';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'Темпо';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'Бавно';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => 'Нормално';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => 'Бързо';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => 'Национален регистър на историческите места';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => 'Текст: Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Прочети в Wikipedia';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return 'Снимка: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => 'Търсене на места, адреси или координати';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'Изтеглете „Интересни места“ за даден регион, за да търсите местата в него. Търсенето по координати работи и без това.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => 'Няма резултати';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => 'Десетични градуси';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => 'Градуси и минути';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => 'Градуси, минути, секунди';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -6044,236 +6045,237 @@ class AppLocalizationsBg extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Локатор Maidenhead';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => 'Връх';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => 'Вулкан';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => 'Седловина';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => 'Проход';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => 'Извор';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => 'Горещ извор';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => 'Водопад';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => 'Пещера';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => 'Скална арка';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => 'Ледник';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => 'Скала';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => 'Отвесна скала';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'Плаж';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => 'Начало на пътека';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'Къмпинг';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'Място за пикник';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => 'Хижа';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => 'Заслон';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => 'Питейна вода';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'Тоалетна';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => 'Панорамна площадка';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => 'Забележителност';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => 'Обсерватория';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => 'Зоопарк';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'Увеселителен парк';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => 'Рудник';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => 'Минна шахта';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => 'Минна галерия';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'Град призрак';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => 'Руини';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => 'Паметник';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => 'Мемориал';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => 'Крепост';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => 'Историческо място';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'Рейнджърски пост';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'Посетителски център';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => 'Болница';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => 'Полиция';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => 'Пожарна';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => 'Авариен телефон';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'Бензиностанция';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => 'Място за почивка';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'Крайпътен комплекс';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => 'Музей';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => 'Град';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => 'Населено място';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => 'Местност';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => 'Езеро';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => 'Река';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => 'Долина';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => 'Планинска верига';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'Пътека';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => 'Черен път';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => 'Път';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => 'Адрес';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => 'Място';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => 'Планиране на маршрути';
 
   @override
   String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+      'Маршрути по пътеки, черни и асфалтирани пътища';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'Интересни места';
 
   @override
   String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+      'Места за търсене, с текст от Wikipedia';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => 'Адреси';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => 'Адреси на сгради за търсене';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => 'Търсене';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'Маршрут оттук';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet =>
+      'Началната точка на маршрута е зададена. Сега изберете къде да отидете.';
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'Няма начална точка. Докоснете и задръжте картата, после изберете „Маршрут оттук“.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Изтеглете „Планиране на маршрути“ за този регион от „Офлайн карти“, за да намирате маршрути тук.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'Поставен маркер';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => 'Формат на координатите';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Копирай координатите';
 
   @override
-  String get poiKind_park => 'Park';
+  String get poiKind_park => 'Парк';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => 'Защитена територия';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'Повече';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => 'По-малко';
 
   @override
   String get locationSharing_title => 'Кой вижда местоположението ми';

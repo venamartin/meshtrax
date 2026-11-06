@@ -4854,10 +4854,10 @@ class AppLocalizationsSk extends AppLocalizations {
   String get mapLayers_hillShading => 'Tieňovanie terénu';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'Miesta';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => 'Parky';
 
   @override
   String get mapLayers_dark => 'Tmavá mapa';
@@ -5642,49 +5642,49 @@ class AppLocalizationsSk extends AppLocalizations {
   String get parkLegend_guidepost => 'Smerovník';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => 'Cesty, chodníky a čiary';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => 'Diaľnica';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => 'Hlavná cesta';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => 'Cesta';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => 'Nespevnená alebo poľná cesta';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'Chodník';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => 'Diaľnica Interstate';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'Federálna cesta USA';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => 'Štátna cesta';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => 'Železnica';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => 'Rieka alebo potok';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => 'Vrstevnica';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => 'Hranica parku';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => 'Divočina alebo národný les';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => 'Hranica štátu alebo okresu';
 
   @override
   String get dialog_noticeExpires => 'Vyprší';
@@ -5838,13 +5838,13 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathfinder_graphCreate => 'Vytvoriť';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => 'Asfalt';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => 'Šotolina';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => 'Pešo';
 
   @override
   String route_minutes(int minutes) {
@@ -5858,177 +5858,178 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return 'Cieľ: $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => 'Zrušiť trasu';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => 'Hľadá sa trasa…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => 'Nenašla sa žiadna trasa';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končí asfalt.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končí cesta.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return 'Trasa končí $distance pred cieľom $destination, kde sa končia chodníky.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => 'Popis trasy';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'Trasa sem';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return 'Aktuálny cieľ: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return 'Aktuálny začiatok: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Aktuálny začiatok: vaša poloha';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => 'Pre túto oblasť chýbajú výškové údaje.';
 
   @override
   String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+      'Pre túto oblasť chýbajú výškové údaje, preto čas nezahŕňa stúpania.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => 'Možnosti trasy';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'Obnoviť';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => 'Uprednostniť';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => 'Najrýchlejšia';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'Vyvážená';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => 'Najkratšia';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp =>
+      'Nespevnené cesty len tam, kde sú rýchlejšie.';
 
   @override
   String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+      'Nespevnená cesta, keď výrazne skráti trasu.';
 
   @override
   String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+      'Najkratšia trasa, nech sú jej poľné cesty akokoľvek pomalé.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => 'Vyhnúť sa';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => 'Diaľnice';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => 'Mýto';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'Trajekty';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => 'Najvyššia obtiažnosť';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 Turistika';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 Horská turistika';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 Náročná horská turistika';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 Vysokohorská turistika';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 Náročná vysokohorská turistika';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 Ťažká vysokohorská turistika';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => 'Stúpania';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => 'Vyhnúť sa';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'Mierne';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => 'Nevadia';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'Tempo';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'Pomalé';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => 'Normálne';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => 'Rýchle';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => 'Národný register historických miest';
 
   @override
   String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Čítať na Wikipedii';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return 'Foto: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => 'Hľadať miesta, adresy alebo súradnice';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'Ak chcete hľadať miesta v regióne, stiahnite si preň „Zaujímavé miesta“. Súradnice fungujú aj bez nich.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => 'Žiadne výsledky';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => 'Desatinné stupne';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => 'Stupne a minúty';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => 'Stupne, minúty, sekundy';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -6037,236 +6038,237 @@ class AppLocalizationsSk extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Lokátor Maidenhead';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => 'Vrchol';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => 'Sopka';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => 'Sedlo';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => 'Priesmyk';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => 'Prameň';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => 'Termálny prameň';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => 'Vodopád';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => 'Jaskyňa';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => 'Skalný oblúk';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => 'Ľadovec';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => 'Skala';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => 'Skalná stena';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'Pláž';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => 'Začiatok chodníka';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'Kemp';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'Miesto na piknik';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => 'Horská chata';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => 'Prístrešok';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => 'Pitná voda';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'Toalety';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => 'Vyhliadka';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => 'Atrakcia';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => 'Observatórium';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => 'Zoologická záhrada';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'Zábavný park';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => 'Baňa';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => 'Banská šachta';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => 'Štôlňa';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'Mesto duchov';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => 'Ruiny';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => 'Pomník';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => 'Pamätník';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => 'Pevnosť';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => 'Historické miesto';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'Stanica strážcov parku';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'Návštevnícke centrum';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => 'Nemocnica';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => 'Polícia';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => 'Hasičská stanica';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => 'Núdzový telefón';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'Čerpacia stanica';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => 'Odpočívadlo';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'Odpočívadlo so službami';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => 'Múzeum';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => 'Mesto';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => 'Obec';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => 'Lokalita';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => 'Jazero';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => 'Rieka';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => 'Údolie';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => 'Pohorie';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'Chodník';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => 'Nespevnená cesta';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => 'Cesta';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => 'Adresa';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => 'Miesto';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => 'Plánovanie trás';
 
   @override
   String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+      'Trasy po chodníkoch, nespevnených aj spevnených cestách';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'Zaujímavé miesta';
 
   @override
   String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+      'Miesta na vyhľadávanie, s Wikipediou';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => 'Adresy';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => 'Adresy domov na vyhľadávanie';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => 'Hľadať';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'Trasa odtiaľto';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet =>
+      'Začiatok trasy je nastavený. Teraz vyberte, kam chcete ísť.';
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'Chýba začiatok trasy. Dlho stlačte mapu a vyberte „Trasa odtiaľto“.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Ak tu chcete hľadať trasy, stiahnite si pre tento región „Plánovanie trás“ v Offline mapách.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'Umiestnený špendlík';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => 'Formát súradníc';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Kopírovať polohu';
 
   @override
   String get poiKind_park => 'Park';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => 'Chránené územie';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'Viac';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => 'Menej';
 
   @override
   String get locationSharing_title => 'Kto vidí moju polohu';

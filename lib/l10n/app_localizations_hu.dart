@@ -4881,10 +4881,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get mapLayers_hillShading => 'Domborzatárnyékolás';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'Helyek';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => 'Parkok';
 
   @override
   String get mapLayers_dark => 'Sötét térkép';
@@ -5671,49 +5671,49 @@ class AppLocalizationsHu extends AppLocalizations {
   String get parkLegend_guidepost => 'Útjelző tábla';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => 'Utak, ösvények és vonalak';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => 'Autópálya';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => 'Autóút vagy főút';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => 'Út';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => 'Földút vagy dűlőút';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'Ösvény';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => 'Interstate autópálya';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'US-főút';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => 'Állami út';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => 'Vasút';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => 'Folyó vagy patak';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => 'Szintvonal';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => 'Park határa';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => 'Vadonterület vagy nemzeti erdő';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => 'Állam- vagy megyehatár';
 
   @override
   String get dialog_noticeExpires => 'Lejárat';
@@ -5865,197 +5865,197 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathfinder_graphCreate => 'Létrehozás';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => 'Aszfalt';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => 'Földút';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => 'Túrázás';
 
   @override
   String route_minutes(int minutes) {
-    return '$minutes min';
+    return '$minutes perc';
   }
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours ó $minutes perc';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return 'Cél: $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => 'Útvonal elvetése';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => 'Útvonal keresése…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => 'Nem található útvonal';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return 'Az útvonal ott ér véget, ahol elfogy az aszfalt. $destination még $distance távolságra van.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return 'Az útvonal ott ér véget, ahol elfogy az út. $destination még $distance távolságra van.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return 'Az útvonal ott ér véget, ahol elfogynak az ösvények. $destination még $distance távolságra van.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => 'Útleírás';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'Útvonal ide';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return 'Jelenlegi cél: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return 'Jelenlegi kiindulópont: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Jelenlegi kiindulópont: az Ön helyzete';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights =>
+      'Ehhez a területhez nincsenek magassági adatok.';
 
   @override
   String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+      'Ehhez a területhez nincsenek magassági adatok, ezért a menetidő nem veszi figyelembe az emelkedőket.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => 'Útvonal-beállítások';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'Visszaállítás';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => 'Szempont';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => 'Leggyorsabb';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'Középút';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => 'Legrövidebb';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => 'Földút csak ott, ahol gyorsabb.';
 
   @override
-  String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+  String get route_dirtBalancedHelp => 'Földút, ha érdemben rövidít.';
 
   @override
   String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+      'A legrövidebb út, akkor is, ha lassú földutakon vezet.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => 'Kerülendő';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => 'Autópályák';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => 'Fizetős utak';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'Kompok';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => 'Legnehezebb ösvény';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 Túrázás';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 Hegyi túrázás';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 Nehéz hegyi túrázás';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 Alpesi túrázás';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 Nehéz alpesi túrázás';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 Nagyon nehéz alpesi túrázás';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => 'Emelkedők';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => 'Kerülendő';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'Néhány';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => 'Mindegy';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'Tempó';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'Lassú';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => 'Normál';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => 'Gyors';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => 'Történelmi Helyek Nemzeti Nyilvántartása';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => 'Szöveg: Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Tovább a Wikipedián';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return 'Fotó: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => 'Helyek, címek vagy koordináták keresése';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'A helyek kereséséhez töltse le egy régióhoz az Érdekes helyeket. Koordinátákra enélkül is kereshet.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => 'Nincs találat';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => 'Tizedes fok';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => 'Fok és perc';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => 'Fok, perc, másodperc';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -6064,236 +6064,237 @@ class AppLocalizationsHu extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Maidenhead-lokátor';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => 'Csúcs';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => 'Vulkán';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => 'Hegynyereg';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => 'Hágó';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => 'Forrás';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => 'Hőforrás';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => 'Vízesés';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => 'Barlang';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => 'Sziklaív';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => 'Gleccser';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => 'Szikla';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => 'Sziklafal';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'Strand';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => 'Túraútvonal kezdőpontja';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'Kemping';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'Piknikező hely';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => 'Menedékház';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => 'Menedékhely';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => 'Ivóvíz';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'Mosdó';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => 'Kilátópont';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => 'Látnivaló';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => 'Csillagvizsgáló';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => 'Állatkert';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'Vidámpark';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => 'Bánya';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => 'Bányaakna';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => 'Táró';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'Szellemváros';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => 'Romok';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => 'Emlékmű';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => 'Emlékhely';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => 'Erőd';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => 'Történelmi hely';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'Parkőrállomás';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'Látogatóközpont';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => 'Kórház';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => 'Rendőrség';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => 'Tűzoltóság';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => 'Segélyhívó telefon';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'Benzinkút';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => 'Pihenőhely';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'Szolgáltató pihenőhely';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => 'Múzeum';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => 'Város';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => 'Település';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => 'Terület';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => 'Tó';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => 'Folyó';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => 'Völgy';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => 'Hegyvonulat';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'Ösvény';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => 'Földút';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => 'Út';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => 'Cím';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => 'Hely';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => 'Terepi útvonaltervezés';
 
   @override
   String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+      'Útvonalak ösvényeken, földutakon és aszfaltutakon';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'Érdekes helyek';
 
   @override
   String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+      'Kereshető helyek Wikipedia-leírásokkal';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => 'Címek';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => 'Kereshető címek házszámmal';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => 'Keresés';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'Útvonal innen';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet =>
+      'Kiindulópont beállítva. Most válassza ki, hová szeretne menni.';
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'Nincs kiindulópont. Nyomjon hosszan a térképre, és válassza az „Útvonal innen” lehetőséget.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Töltse le ehhez a régióhoz a Terepi útvonaltervezést az Offline térképek alatt, hogy itt útvonalat tervezhessen.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'Kijelölt pont';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => 'Koordinátaformátum';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Pozíció másolása';
 
   @override
   String get poiKind_park => 'Park';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => 'Védett terület';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'Több';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => 'Kevesebb';
 
   @override
   String get locationSharing_title => 'Ki láthatja a helyzetemet';

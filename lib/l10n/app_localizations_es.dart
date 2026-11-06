@@ -4873,10 +4873,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mapLayers_hillShading => 'Sombreado del relieve';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'Lugares';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => 'Parques';
 
   @override
   String get mapLayers_dark => 'Mapa oscuro';
@@ -5664,49 +5664,49 @@ class AppLocalizationsEs extends AppLocalizations {
   String get parkLegend_guidepost => 'Poste indicador';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => 'Carreteras, senderos y líneas';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => 'Autopista';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => 'Carretera principal';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => 'Carretera';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => 'Camino de tierra o pista';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'Sendero';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => 'Autopista interestatal';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'Carretera federal de EE. UU.';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => 'Carretera estatal';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => 'Ferrocarril';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => 'Río o arroyo';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => 'Curva de nivel';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => 'Límite de parque';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => 'Área silvestre o bosque nacional';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => 'Límite estatal o de condado';
 
   @override
   String get dialog_noticeExpires => 'Caduca';
@@ -5857,13 +5857,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pathfinder_graphCreate => 'Crear';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => 'Asfalto';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => 'Tierra';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => 'A pie';
 
   @override
   String route_minutes(int minutes) {
@@ -5877,177 +5877,178 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return 'Hacia $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => 'Borrar itinerario';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => 'Buscando un itinerario…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => 'No se ha encontrado ningún itinerario';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return 'Termina a $distance de $destination, donde se acaba el asfalto.';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return 'Termina a $distance de $destination, donde se acaba el camino.';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return 'Termina a $distance de $destination, donde se acaban los senderos.';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => 'Indicaciones';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'Itinerario hasta aquí';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return 'Destino actual: $destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return 'Origen actual: $start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Origen actual: tu posición';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => 'No hay datos de altitud para esta zona.';
 
   @override
   String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+      'No hay datos de altitud para esta zona, así que el tiempo no tiene en cuenta las subidas.';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => 'Opciones de itinerario';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'Restablecer';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => 'Preferir';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => 'Más rápido';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'Equilibrado';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => 'Más directo';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp =>
+      'Caminos de tierra solo donde sean más rápidos.';
 
   @override
   String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+      'Un camino de tierra cuando ahorra bastante distancia.';
 
   @override
   String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+      'El trayecto más corto, por lentas que sean sus pistas.';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => 'Evitar';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => 'Autopistas';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => 'Peajes';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'Ferris';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => 'Dificultad máxima';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 Senderismo';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 Senderismo de montaña';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 Senderismo de montaña exigente';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 Senderismo alpino';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 Senderismo alpino exigente';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 Senderismo alpino difícil';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => 'Subidas';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => 'Evitar';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'Algunas';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => 'Me da igual';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'Ritmo';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'Lento';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => 'Medio';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => 'Rápido';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => 'Registro Nacional de Lugares Históricos';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => 'Texto: Wikipedia, CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Leer en Wikipedia';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return 'Foto: $author, $licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => 'Buscar lugares, direcciones o coordenadas';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'Descarga Puntos de interés de una región para buscar sus lugares. Las coordenadas funcionan sin esa descarga.';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => 'Sin resultados';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => 'Grados decimales';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => 'Grados y minutos';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => 'Grados, minutos y segundos';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -6056,236 +6057,237 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Cuadrícula Maidenhead';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => 'Pico';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => 'Volcán';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => 'Collado';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => 'Puerto de montaña';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => 'Manantial';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => 'Fuente termal';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => 'Cascada';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => 'Cueva';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => 'Arco natural';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => 'Glaciar';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => 'Roca';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => 'Acantilado';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'Playa';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => 'Inicio de sendero';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'Zona de acampada';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'Zona de pícnic';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => 'Refugio de montaña';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => 'Refugio';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => 'Agua potable';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'Aseos';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => 'Mirador';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => 'Atracción turística';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => 'Observatorio';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => 'Zoológico';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'Parque temático';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => 'Mina';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => 'Pozo minero';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => 'Bocamina';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'Pueblo fantasma';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => 'Ruinas';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => 'Monumento';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => 'Monumento conmemorativo';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => 'Fortaleza';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => 'Lugar histórico';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'Puesto de guardabosques';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'Centro de visitantes';
 
   @override
   String get poiKind_hospital => 'Hospital';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => 'Policía';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => 'Parque de bomberos';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => 'Teléfono de emergencia';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'Gasolinera';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => 'Área de descanso';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'Área de servicio';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => 'Museo';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => 'Ciudad';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => 'Pueblo';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => 'Zona';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => 'Lago';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => 'Río';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => 'Valle';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => 'Sierra';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'Sendero';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => 'Camino de tierra';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => 'Carretera';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => 'Dirección';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => 'Lugar';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => 'Itinerarios por senderos';
 
   @override
   String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+      'Itinerarios por senderos, caminos de tierra y carreteras asfaltadas';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'Puntos de interés';
 
   @override
-  String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+  String get offlineMaps_kindPoiDetail => 'Lugares para buscar, con Wikipedia';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => 'Direcciones';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail =>
+      'Direcciones postales para buscar';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => 'Buscar';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'Itinerario desde aquí';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet =>
+      'Origen del itinerario fijado. Ahora elige adónde ir.';
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'No hay posición de origen. Mantén pulsado el mapa y elige Itinerario desde aquí.';
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Descarga Itinerarios por senderos de esta región en Mapas sin conexión para buscar itinerarios aquí.';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'Marcador colocado';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => 'Formato de coordenadas';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Copiar posición';
 
   @override
-  String get poiKind_park => 'Park';
+  String get poiKind_park => 'Parque';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => 'Área protegida';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'Más';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => 'Menos';
 
   @override
   String get locationSharing_title => 'Quién puede ver mi ubicación';

@@ -4640,10 +4640,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapLayers_hillShading => '陰影起伏';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => 'スポット';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => '公園';
 
   @override
   String get mapLayers_dark => 'ダーク地図';
@@ -5391,49 +5391,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get parkLegend_guidepost => '道標';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => '道路・トレイル・線';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => '高速道路';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => '幹線道路';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => '道路';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => '未舗装路・林道';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => 'トレイル';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => '州間高速道路';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => 'アメリカ国道';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => '州道';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => '鉄道';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => '川・小川';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => '等高線';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => '公園の境界';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => '原生地域・国有林';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => '州境・郡境';
 
   @override
   String get dialog_noticeExpires => '有効期限';
@@ -5583,197 +5583,194 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pathfinder_graphCreate => '作成';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => '舗装路';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => '未舗装';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => '徒歩';
 
   @override
   String route_minutes(int minutes) {
-    return '$minutes min';
+    return '$minutes分';
   }
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours時間$minutes分';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return '$destinationまで';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => '道順を消去';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => '道順を検索中…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => '道順が見つかりません';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return '$destinationの$distance手前、舗装路が途切れる地点までの道順です。';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return '$destinationの$distance手前、道路が途切れる地点までの道順です。';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return '$destinationの$distance手前、トレイルが途切れる地点までの道順です。';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => '道順の詳細';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => 'ここへの道順';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return '設定中の目的地：$destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return '設定中の出発地：$start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => '設定中の出発地：現在地';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => 'この地域の標高データはありません。';
 
   @override
-  String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+  String get route_noHeightsHiking => 'この地域の標高データがないため、所要時間に登りは含まれていません。';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => '道順のオプション';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => 'リセット';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => '優先';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => '最速';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => 'バランス';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => '最短';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => '未舗装路は、そのほうが速いときだけ使います。';
 
   @override
-  String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+  String get route_dirtBalancedHelp => '距離が大きく縮まるときは未舗装路も使います。';
 
   @override
-  String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+  String get route_dirtDirectHelp => '未舗装路で時間がかかっても、最短の道を選びます。';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => '避ける';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => '高速道路';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => '有料道路';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => 'フェリー';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => '難易度の上限';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 ハイキング';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 山岳ハイキング';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 難しい山岳ハイキング';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 アルパインハイキング';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 難しいアルパインハイキング';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 非常に難しいアルパインハイキング';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => '登り';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => '避ける';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => 'ほどほど';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => '気にしない';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => 'ペース';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => 'ゆっくり';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => '普通';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => '速め';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => '国家歴史登録財';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => '文章：Wikipedia、CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => 'Wikipediaで読む';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return '写真：$author、$licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => '場所・住所・座標を検索';
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      '地域の「スポット情報」をダウンロードすると、その地域の場所を検索できます。座標の検索にはダウンロードは不要です。';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => '一致なし';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => '度（10進数）';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => '度・分';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => '度・分・秒';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -5782,236 +5779,232 @@ class AppLocalizationsJa extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Maidenheadグリッド';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => '山頂';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => '火山';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => '鞍部';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => '峠';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => '湧水';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => '温泉';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => '滝';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => '洞窟';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => '天然アーチ';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => '氷河';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => '岩';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => '崖';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => 'ビーチ';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => '登山口';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => 'キャンプ場';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => 'ピクニック場';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => '山小屋';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => '避難小屋';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => '飲料水';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => 'トイレ';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => '展望所';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => '観光スポット';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => '天文台';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => '動物園';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => 'テーマパーク';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => '鉱山';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => '立坑';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => '横坑';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => 'ゴーストタウン';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => '廃墟';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => 'モニュメント';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => '記念碑';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => '砦';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => '史跡';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => 'レンジャーステーション';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => 'ビジターセンター';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => '病院';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => '警察';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => '消防署';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => '非常電話';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => 'ガソリンスタンド';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => '休憩所';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => 'サービスエリア';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => '博物館';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => '都市';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => '町';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => '地区';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => '湖';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => '川';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => '谷';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => '山脈';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => 'トレイル';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => '未舗装路';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => '道路';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => '住所';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => '場所';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => '道順検索';
 
   @override
-  String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+  String get offlineMaps_kindRoutingDetail => 'トレイル・未舗装路・舗装路の道順';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => 'スポット情報';
 
   @override
-  String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+  String get offlineMaps_kindPoiDetail => '検索できる場所とWikipediaの解説';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => '住所';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => '番地まで検索できる住所';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => '検索';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => 'ここからの道順';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet => '出発地を設定しました。次に目的地を選んでください。';
 
   @override
-  String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+  String get route_noStart => '出発地がわかりません。地図を長押しして「ここからの道順」を選んでください。';
 
   @override
-  String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+  String get route_noData => 'ここで道順を調べるには、「オフライン地図」でこの地域の「道順検索」をダウンロードしてください。';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => 'ドロップしたピン';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => '座標の表示形式';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => '位置をコピー';
 
   @override
-  String get poiKind_park => 'Park';
+  String get poiKind_park => '公園';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => '保護区';
 
   @override
-  String get common_more => 'More';
+  String get common_more => 'もっと見る';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => '折りたたむ';
 
   @override
   String get locationSharing_title => '位置情報を見られる人';

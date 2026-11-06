@@ -4532,10 +4532,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mapLayers_hillShading => '山体阴影';
 
   @override
-  String get mapLayers_places => 'Places';
+  String get mapLayers_places => '地点';
 
   @override
-  String get mapLayers_parks => 'Parks';
+  String get mapLayers_parks => '公园';
 
   @override
   String get mapLayers_dark => '深色地图';
@@ -5283,49 +5283,49 @@ class AppLocalizationsZh extends AppLocalizations {
   String get parkLegend_guidepost => '路标';
 
   @override
-  String get roadLegend_title => 'Roads, trails and lines';
+  String get roadLegend_title => '道路、步道与其他线条';
 
   @override
-  String get roadLegend_freeway => 'Freeway';
+  String get roadLegend_freeway => '高速公路';
 
   @override
-  String get roadLegend_majorRoad => 'Highway or major road';
+  String get roadLegend_majorRoad => '干线公路或主干道';
 
   @override
-  String get roadLegend_road => 'Road';
+  String get roadLegend_road => '道路';
 
   @override
-  String get roadLegend_track => 'Dirt road or track';
+  String get roadLegend_track => '土路或机耕道';
 
   @override
-  String get roadLegend_trail => 'Trail';
+  String get roadLegend_trail => '步道';
 
   @override
-  String get roadLegend_interstate => 'Interstate';
+  String get roadLegend_interstate => '州际公路';
 
   @override
-  String get roadLegend_usRoute => 'US highway';
+  String get roadLegend_usRoute => '美国国道';
 
   @override
-  String get roadLegend_stateRoute => 'State route';
+  String get roadLegend_stateRoute => '州道';
 
   @override
-  String get roadLegend_railway => 'Railway';
+  String get roadLegend_railway => '铁路';
 
   @override
-  String get roadLegend_stream => 'River or stream';
+  String get roadLegend_stream => '河流或溪流';
 
   @override
-  String get roadLegend_contour => 'Contour line';
+  String get roadLegend_contour => '等高线';
 
   @override
-  String get roadLegend_park => 'Park boundary';
+  String get roadLegend_park => '公园边界';
 
   @override
-  String get roadLegend_wilderness => 'Wilderness or national forest';
+  String get roadLegend_wilderness => '荒野保护区或国家森林';
 
   @override
-  String get roadLegend_boundary => 'State or county line';
+  String get roadLegend_boundary => '州界或县界';
 
   @override
   String get dialog_noticeExpires => '到期日期';
@@ -5473,197 +5473,193 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathfinder_graphCreate => '创建';
 
   @override
-  String get route_pathPaved => 'Paved';
+  String get route_pathPaved => '铺装路';
 
   @override
-  String get route_pathDirt => 'Dirt';
+  String get route_pathDirt => '土路';
 
   @override
-  String get route_pathHiking => 'Hiking';
+  String get route_pathHiking => '徒步';
 
   @override
   String route_minutes(int minutes) {
-    return '$minutes min';
+    return '$minutes 分钟';
   }
 
   @override
   String route_hoursMinutes(int hours, int minutes) {
-    return '$hours h $minutes min';
+    return '$hours 小时 $minutes 分钟';
   }
 
   @override
   String route_to(String destination) {
-    return 'To $destination';
+    return '前往 $destination';
   }
 
   @override
-  String get route_clear => 'Clear route';
+  String get route_clear => '清除路线';
 
   @override
-  String get route_finding => 'Finding a route…';
+  String get route_finding => '正在规划路线…';
 
   @override
-  String get route_none => 'No route found';
+  String get route_none => '未找到路线';
 
   @override
   String route_endsShortPaved(String distance, String destination) {
-    return 'Ends $distance before $destination, where the pavement ends.';
+    return '路线在离 $destination 还有 $distance 处结束，那里是铺装路面的尽头。';
   }
 
   @override
   String route_endsShortDirt(String distance, String destination) {
-    return 'Ends $distance before $destination, where the road ends.';
+    return '路线在离 $destination 还有 $distance 处结束，那里是道路的尽头。';
   }
 
   @override
   String route_endsShortHiking(String distance, String destination) {
-    return 'Ends $distance before $destination, where the trails end.';
+    return '路线在离 $destination 还有 $distance 处结束，那里是步道的尽头。';
   }
 
   @override
-  String get route_directions => 'Directions';
+  String get route_directions => '路线指引';
 
   @override
-  String get route_here => 'Route here';
+  String get route_here => '去这里';
 
   @override
   String route_destinationNow(String destination) {
-    return 'Destination now: $destination';
+    return '当前目的地：$destination';
   }
 
   @override
   String route_startNow(String start) {
-    return 'Start now: $start';
+    return '当前起点：$start';
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => '当前起点：您的位置';
 
   @override
-  String get route_noHeights => 'No heights for this area.';
+  String get route_noHeights => '此区域没有海拔数据。';
 
   @override
-  String get route_noHeightsHiking =>
-      'No heights for this area, so the time leaves out climbs.';
+  String get route_noHeightsHiking => '此区域没有海拔数据，因此用时未计入爬升。';
 
   @override
-  String get route_options => 'Route options';
+  String get route_options => '路线选项';
 
   @override
-  String get route_optionsReset => 'Reset';
+  String get route_optionsReset => '重置';
 
   @override
-  String get route_prefer => 'Prefer';
+  String get route_prefer => '偏好';
 
   @override
-  String get route_dirtFastest => 'Fastest';
+  String get route_dirtFastest => '最快';
 
   @override
-  String get route_dirtBalanced => 'Balanced';
+  String get route_dirtBalanced => '均衡';
 
   @override
-  String get route_dirtDirect => 'Most direct';
+  String get route_dirtDirect => '最短';
 
   @override
-  String get route_dirtFastestHelp => 'Dirt roads only where they\'re quicker.';
+  String get route_dirtFastestHelp => '仅在更快时才走土路。';
 
   @override
-  String get route_dirtBalancedHelp =>
-      'A dirt road when it saves real distance.';
+  String get route_dirtBalancedHelp => '能明显缩短路程时就走土路。';
 
   @override
-  String get route_dirtDirectHelp =>
-      'The shortest way, however slow its tracks.';
+  String get route_dirtDirectHelp => '走最短的路线，土路再慢也照走。';
 
   @override
-  String get route_avoid => 'Avoid';
+  String get route_avoid => '避开';
 
   @override
-  String get route_avoidHighways => 'Highways';
+  String get route_avoidHighways => '高速公路';
 
   @override
-  String get route_avoidTolls => 'Tolls';
+  String get route_avoidTolls => '收费路段';
 
   @override
-  String get route_avoidFerries => 'Ferries';
+  String get route_avoidFerries => '轮渡';
 
   @override
-  String get route_hardestTrail => 'Hardest trail';
+  String get route_hardestTrail => '步道难度上限';
 
   @override
-  String get route_trailT1 => 'T1 Hiking';
+  String get route_trailT1 => 'T1 普通徒步';
 
   @override
-  String get route_trailT2 => 'T2 Mountain hiking';
+  String get route_trailT2 => 'T2 山地徒步';
 
   @override
-  String get route_trailT3 => 'T3 Demanding mountain hiking';
+  String get route_trailT3 => 'T3 较难山地徒步';
 
   @override
-  String get route_trailT4 => 'T4 Alpine hiking';
+  String get route_trailT4 => 'T4 高山徒步';
 
   @override
-  String get route_trailT5 => 'T5 Demanding alpine hiking';
+  String get route_trailT5 => 'T5 较难高山徒步';
 
   @override
-  String get route_trailT6 => 'T6 Difficult alpine hiking';
+  String get route_trailT6 => 'T6 高难度高山徒步';
 
   @override
-  String get route_climbs => 'Climbs';
+  String get route_climbs => '爬升';
 
   @override
-  String get route_climbsAvoid => 'Avoid';
+  String get route_climbsAvoid => '尽量少';
 
   @override
-  String get route_climbsSome => 'Some';
+  String get route_climbsSome => '适量';
 
   @override
-  String get route_climbsAny => 'Don\'t mind';
+  String get route_climbsAny => '不介意';
 
   @override
-  String get route_pace => 'Pace';
+  String get route_pace => '步速';
 
   @override
-  String get route_paceSlow => 'Slow';
+  String get route_paceSlow => '较慢';
 
   @override
-  String get route_paceNormal => 'Normal';
+  String get route_paceNormal => '正常';
 
   @override
-  String get route_paceFast => 'Fast';
+  String get route_paceFast => '较快';
 
   @override
-  String get place_nrhp => 'National Register of Historic Places';
+  String get place_nrhp => '美国国家史迹名录';
 
   @override
-  String get place_textCredit => 'Text: Wikipedia, CC BY-SA 4.0';
+  String get place_textCredit => '文字：Wikipedia，CC BY-SA 4.0';
 
   @override
-  String get place_readOnWikipedia => 'Read on Wikipedia';
+  String get place_readOnWikipedia => '在 Wikipedia 上阅读';
 
   @override
   String place_photoCredit(String author, String licence) {
-    return 'Photo: $author, $licence';
+    return '照片：$author，$licence';
   }
 
   @override
-  String get search_hint => 'Search places, addresses or coordinates';
+  String get search_hint => '搜索地点、地址或坐标';
 
   @override
-  String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+  String get search_noPlaces => '下载某个地区的“兴趣点”后，即可搜索其中的地点。坐标无需下载即可搜索。';
 
   @override
-  String get search_noResults => 'No matches';
+  String get search_noResults => '无匹配结果';
 
   @override
-  String get coordFormat_decimalDegrees => 'Decimal degrees';
+  String get coordFormat_decimalDegrees => '十进制度';
 
   @override
-  String get coordFormat_degreesMinutes => 'Degrees and minutes';
+  String get coordFormat_degreesMinutes => '度分';
 
   @override
-  String get coordFormat_dms => 'Degrees, minutes, seconds';
+  String get coordFormat_dms => '度分秒';
 
   @override
   String get coordFormat_utm => 'UTM';
@@ -5672,236 +5668,232 @@ class AppLocalizationsZh extends AppLocalizations {
   String get coordFormat_mgrs => 'MGRS / USNG';
 
   @override
-  String get coordFormat_maidenhead => 'Maidenhead grid';
+  String get coordFormat_maidenhead => 'Maidenhead 网格';
 
   @override
   String get coordFormat_geohash => 'Geohash';
 
   @override
-  String get poiKind_peak => 'Peak';
+  String get poiKind_peak => '山峰';
 
   @override
-  String get poiKind_volcano => 'Volcano';
+  String get poiKind_volcano => '火山';
 
   @override
-  String get poiKind_saddle => 'Saddle';
+  String get poiKind_saddle => '鞍部';
 
   @override
-  String get poiKind_pass => 'Mountain pass';
+  String get poiKind_pass => '山口';
 
   @override
-  String get poiKind_spring => 'Spring';
+  String get poiKind_spring => '泉水';
 
   @override
-  String get poiKind_hotSpring => 'Hot spring';
+  String get poiKind_hotSpring => '温泉';
 
   @override
-  String get poiKind_waterfall => 'Waterfall';
+  String get poiKind_waterfall => '瀑布';
 
   @override
-  String get poiKind_cave => 'Cave';
+  String get poiKind_cave => '洞穴';
 
   @override
-  String get poiKind_arch => 'Arch';
+  String get poiKind_arch => '天然拱门';
 
   @override
-  String get poiKind_glacier => 'Glacier';
+  String get poiKind_glacier => '冰川';
 
   @override
-  String get poiKind_rock => 'Rock';
+  String get poiKind_rock => '岩石';
 
   @override
-  String get poiKind_cliff => 'Cliff';
+  String get poiKind_cliff => '悬崖';
 
   @override
-  String get poiKind_beach => 'Beach';
+  String get poiKind_beach => '海滩';
 
   @override
-  String get poiKind_trailhead => 'Trailhead';
+  String get poiKind_trailhead => '步道起点';
 
   @override
-  String get poiKind_campground => 'Campground';
+  String get poiKind_campground => '露营地';
 
   @override
-  String get poiKind_picnicSite => 'Picnic site';
+  String get poiKind_picnicSite => '野餐区';
 
   @override
-  String get poiKind_hut => 'Hut';
+  String get poiKind_hut => '山屋';
 
   @override
-  String get poiKind_shelter => 'Shelter';
+  String get poiKind_shelter => '避难所';
 
   @override
-  String get poiKind_drinkingWater => 'Drinking water';
+  String get poiKind_drinkingWater => '饮用水';
 
   @override
-  String get poiKind_toilets => 'Toilets';
+  String get poiKind_toilets => '厕所';
 
   @override
-  String get poiKind_viewpoint => 'Viewpoint';
+  String get poiKind_viewpoint => '观景点';
 
   @override
-  String get poiKind_attraction => 'Attraction';
+  String get poiKind_attraction => '景点';
 
   @override
-  String get poiKind_observatory => 'Observatory';
+  String get poiKind_observatory => '天文台';
 
   @override
-  String get poiKind_zoo => 'Zoo';
+  String get poiKind_zoo => '动物园';
 
   @override
-  String get poiKind_themePark => 'Theme park';
+  String get poiKind_themePark => '主题公园';
 
   @override
-  String get poiKind_mine => 'Mine';
+  String get poiKind_mine => '矿山';
 
   @override
-  String get poiKind_mineShaft => 'Mine shaft';
+  String get poiKind_mineShaft => '矿井';
 
   @override
-  String get poiKind_adit => 'Adit';
+  String get poiKind_adit => '矿洞';
 
   @override
-  String get poiKind_ghostTown => 'Ghost town';
+  String get poiKind_ghostTown => '鬼镇';
 
   @override
-  String get poiKind_ruins => 'Ruins';
+  String get poiKind_ruins => '遗址';
 
   @override
-  String get poiKind_monument => 'Monument';
+  String get poiKind_monument => '纪念碑';
 
   @override
-  String get poiKind_memorial => 'Memorial';
+  String get poiKind_memorial => '纪念物';
 
   @override
-  String get poiKind_fort => 'Fort';
+  String get poiKind_fort => '堡垒';
 
   @override
-  String get poiKind_historic => 'Historic place';
+  String get poiKind_historic => '历史遗迹';
 
   @override
-  String get poiKind_rangerStation => 'Ranger station';
+  String get poiKind_rangerStation => '护林站';
 
   @override
-  String get poiKind_visitorCenter => 'Visitor center';
+  String get poiKind_visitorCenter => '游客中心';
 
   @override
-  String get poiKind_hospital => 'Hospital';
+  String get poiKind_hospital => '医院';
 
   @override
-  String get poiKind_police => 'Police';
+  String get poiKind_police => '警察局';
 
   @override
-  String get poiKind_fireStation => 'Fire station';
+  String get poiKind_fireStation => '消防站';
 
   @override
-  String get poiKind_emergencyPhone => 'Emergency phone';
+  String get poiKind_emergencyPhone => '紧急电话';
 
   @override
-  String get poiKind_fuel => 'Fuel';
+  String get poiKind_fuel => '加油站';
 
   @override
-  String get poiKind_restArea => 'Rest area';
+  String get poiKind_restArea => '休息区';
 
   @override
-  String get poiKind_travelCenter => 'Travel center';
+  String get poiKind_travelCenter => '服务区';
 
   @override
-  String get poiKind_museum => 'Museum';
+  String get poiKind_museum => '博物馆';
 
   @override
-  String get poiKind_city => 'City';
+  String get poiKind_city => '城市';
 
   @override
-  String get poiKind_town => 'Town';
+  String get poiKind_town => '城镇';
 
   @override
-  String get poiKind_locality => 'Area';
+  String get poiKind_locality => '区域';
 
   @override
-  String get poiKind_lake => 'Lake';
+  String get poiKind_lake => '湖泊';
 
   @override
-  String get poiKind_river => 'River';
+  String get poiKind_river => '河流';
 
   @override
-  String get poiKind_valley => 'Valley';
+  String get poiKind_valley => '山谷';
 
   @override
-  String get poiKind_range => 'Mountain range';
+  String get poiKind_range => '山脉';
 
   @override
-  String get poiKind_trail => 'Trail';
+  String get poiKind_trail => '步道';
 
   @override
-  String get poiKind_dirtRoad => 'Dirt road';
+  String get poiKind_dirtRoad => '土路';
 
   @override
-  String get poiKind_road => 'Road';
+  String get poiKind_road => '道路';
 
   @override
-  String get poiKind_address => 'Address';
+  String get poiKind_address => '地址';
 
   @override
-  String get poiKind_place => 'Place';
+  String get poiKind_place => '地点';
 
   @override
-  String get offlineMaps_kindRouting => 'Trail routing';
+  String get offlineMaps_kindRouting => '步道路线规划';
 
   @override
-  String get offlineMaps_kindRoutingDetail =>
-      'Routes on trails, dirt roads and paved roads';
+  String get offlineMaps_kindRoutingDetail => '在步道、土路和铺装路上规划路线';
 
   @override
-  String get offlineMaps_kindPoi => 'Points of interest';
+  String get offlineMaps_kindPoi => '兴趣点';
 
   @override
-  String get offlineMaps_kindPoiDetail =>
-      'Places to search for, with Wikipedia';
+  String get offlineMaps_kindPoiDetail => '可搜索的地点，附 Wikipedia 介绍';
 
   @override
-  String get offlineMaps_kindAddresses => 'Addresses';
+  String get offlineMaps_kindAddresses => '地址';
 
   @override
-  String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
+  String get offlineMaps_kindAddressesDetail => '可搜索的门牌地址';
 
   @override
-  String get map_search => 'Search';
+  String get map_search => '搜索';
 
   @override
-  String get route_fromHere => 'Route from here';
+  String get route_fromHere => '从这里出发';
 
   @override
-  String get route_startSet => 'Route start set. Now choose where to go.';
+  String get route_startSet => '已设好路线起点。现在请选择目的地。';
 
   @override
-  String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+  String get route_noStart => '没有起点。请长按地图并选择“从这里出发”。';
 
   @override
-  String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+  String get route_noData => '请在“离线地图”中下载此地区的“步道路线规划”，即可在这里规划路线。';
 
   @override
-  String get route_pin => 'Dropped pin';
+  String get route_pin => '已放置的标记';
 
   @override
-  String get appSettings_coordinateFormat => 'Coordinate format';
+  String get appSettings_coordinateFormat => '坐标格式';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => '复制坐标';
 
   @override
-  String get poiKind_park => 'Park';
+  String get poiKind_park => '公园';
 
   @override
-  String get poiKind_protectedArea => 'Protected area';
+  String get poiKind_protectedArea => '保护区';
 
   @override
-  String get common_more => 'More';
+  String get common_more => '更多';
 
   @override
-  String get common_less => 'Less';
+  String get common_less => '收起';
 
   @override
   String get locationSharing_title => '谁能看到我的位置';

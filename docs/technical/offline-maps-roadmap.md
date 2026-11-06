@@ -585,7 +585,9 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
     - GPS off: My location offers to turn it on;
     - a radio without a GPS module: no My location and no GPS icon; the "You" pin is at the typed-in position;
   - on Windows, updating a pack while the map is open.
-- [ ] **Translations:** about 400 strings are English only (offline maps, structured messages, markdown, Pathfinder, GPS). Translate them, or ship with the English fallback.
+- [ ] **Translations:**
+  - Done: the 569 English-only strings in #205 (2026-10-24), and routing's 152 on #210 (2026-11-05).
+  - Left: 45 drawing strings from master (`drawing_`, `drawingSettings_`, `tray_drawing` and two `appSettings_` keys), English only in every language.
 
 ### Phase 6: Charts
 
