@@ -119,19 +119,35 @@ void main() {
     expect(latest[idKeyB]!.sortUs, 1500 * 1000);
   });
 
-  test('the oldest unread goes by the read mark, placed by shown time',
+  test('the oldest unread is among the newest arrivals, placed by shown time',
       () async {
     await store.insertIfNew(idKeyA, msg('read', id: 'r1', ts: 3000));
-    await store.markRead(idKeyA);
     await store.insertIfNew(idKeyA, msg('new, today', id: 'r2', ts: 4000));
     await store.insertIfNew(
-        idKeyA, msg('new, from yesterday', id: 'r3', ts: 1000));
+        idKeyA, msg('new, earlier today', id: 'r3', ts: 3500));
+    await store.insertIfNew(
+        idKeyA, msg('mine', id: 'r4', ts: 1000, outgoing: true));
 
-    expect((await store.oldestUnread(idKeyA))?.text, 'new, from yesterday');
+    expect((await store.oldestUnread(idKeyA, 1))?.text, 'new, earlier today');
+    expect((await store.oldestUnread(idKeyA, 2))?.text, 'new, earlier today');
+    expect((await store.oldestUnread(idKeyA, 3))?.text, 'read');
+    expect(await store.oldestUnread(idKeyA, 0), isNull);
+  });
+
+  // The Chats row marks a chat read before it opens it (owner, 2026-11-07:
+  // Public opened at the bottom with no NEW MESSAGES line), so the count the
+  // chat opened with finds the line, not the read mark.
+  test('the oldest unread is still found once the chat is marked read',
+      () async {
+    await store.insertIfNew(idKeyA, msg('read', id: 'm1', ts: 1000));
+    await store.markRead(idKeyA);
+    await store.insertIfNew(idKeyA, msg('new 1', id: 'm2', ts: 2000));
+    await store.insertIfNew(idKeyA, msg('new 2', id: 'm3', ts: 3000));
     expect(await store.watchUnreadCount(idKeyA).first, 2);
 
     await store.markRead(idKeyA);
-    expect(await store.oldestUnread(idKeyA), isNull);
+    expect(await store.watchUnreadCount(idKeyA).first, 0);
+    expect((await store.oldestUnread(idKeyA, 2))?.text, 'new 1');
   });
 
   group('searchChannelMessages — SQL-side full-history search', () {

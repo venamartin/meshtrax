@@ -1423,9 +1423,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _channelMessageStore.loadChannelMessages(channel.idKey);
 
   /// The unread message standing highest in the chat, for the New-messages
-  /// line; null when nothing is unread.
-  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) =>
-      _channelMessageStore.oldestUnread(channel.idKey);
+  /// line, among the [count] newest arrivals; null when [count] is 0.
+  Future<ChannelMessage?> oldestUnreadChannelMessage(
+    Channel channel,
+    int count,
+  ) =>
+      _channelMessageStore.oldestUnread(channel.idKey, count);
 
   /// The map's pin candidates, by channel identity key: messages that could
   /// carry a Location or SOS pin, in [loadChannelMessagesFor] order.

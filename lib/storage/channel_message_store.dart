@@ -610,24 +610,27 @@ class ChannelMessageStore {
   }
 
   /// The unread message that stands highest in the chat: the one the
-  /// New-messages line sits above. Unread goes by the read mark (arrival);
-  /// its place by the order the chat shows.
-  Future<ChannelMessage?> oldestUnread(String idKey) async {
-    if (publicKeyHex.isEmpty) return null;
+  /// New-messages line sits above. The [count] unread messages are the
+  /// newest to arrive; its place is the order the chat shows. The count is
+  /// the one the chat opened with, not the read mark: the Chats row marks
+  /// the chat read before it opens.
+  Future<ChannelMessage?> oldestUnread(String idKey, int count) async {
+    if (publicKeyHex.isEmpty || count <= 0) return null;
     final row = await _db
         .customSelect(
-          'SELECT m.payload AS p FROM channel_message_rows m '
-          'WHERE m.node_scope = ?1 AND m.channel_id_key = ?2 '
-          'AND m.unread_eligible = 1 '
-          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
-          'FROM channel_read_marks WHERE node_scope = ?1 AND id_key = ?2), 0) '
-          'ORDER BY m.timestamp_ms ASC, m.received_at_us ASC, m.id ASC '
-          'LIMIT 1',
+          'SELECT p FROM ('
+          ' SELECT payload AS p, timestamp_ms AS t, received_at_us AS r, id '
+          ' FROM channel_message_rows '
+          ' WHERE node_scope = ?1 AND channel_id_key = ?2 '
+          ' AND unread_eligible = 1 '
+          ' ORDER BY received_at_us DESC, id DESC LIMIT ?3'
+          ') ORDER BY t ASC, r ASC, id ASC LIMIT 1',
           variables: [
             Variable.withString(publicKeyHex),
             Variable.withString(idKey),
+            Variable.withInt(count),
           ],
-          readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
+          readsFrom: {_db.channelMessageRows},
         )
         .getSingleOrNull();
     if (row == null) return null;

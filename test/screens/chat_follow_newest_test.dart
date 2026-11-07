@@ -21,6 +21,7 @@ import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
+import 'package:meshtrax/storage/channel_message_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,13 +34,22 @@ class _Radio extends MeshCoreConnector {
   final dms = StreamController<List<Message>>.broadcast();
 
   /// The rows "in the database": the last list posted. A new watcher gets
-  /// them at once, as the database watch does, and the oldest unread is
-  /// counted back from their end, as the read mark would.
+  /// them at once, as the database watch does.
   List<ChannelMessage> latest = const [];
-  int unread = 0;
+
+  /// The same rows written down, for the store's own oldest-unread lookup.
+  final store = ChannelMessageStore()..setPublicKeyHex = 'deadbeef00cafe';
 
   _Radio() {
     posts.stream.listen((m) => latest = m);
+  }
+
+  /// The chat's rows before it opens: written down in order, as ingest does.
+  Future<void> seed(Channel channel, List<ChannelMessage> rows) async {
+    for (final m in rows) {
+      await store.insertIfNew(channel.idKey, m);
+    }
+    latest = rows;
   }
 
   @override
@@ -55,17 +65,11 @@ class _Radio extends MeshCoreConnector {
   }
 
   @override
-  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) async {
-    final rows = latest.isNotEmpty ? latest : await posts.stream.first;
-    var n = 0;
-    ChannelMessage? oldest;
-    for (final m in rows.reversed) {
-      if (m.isOutgoing) continue;
-      oldest = m;
-      if (++n >= unread) break;
-    }
-    return unread > 0 ? oldest : null;
-  }
+  Future<ChannelMessage?> oldestUnreadChannelMessage(
+    Channel channel,
+    int count,
+  ) =>
+      store.oldestUnread(channel.idKey, count);
 
   @override
   Stream<List<Message>> watchConversation(Contact contact, {int limit = 200}) =>
@@ -196,15 +200,15 @@ void main() {
   const tall = 'one\ntwo\nthree\nfour\nfive';
 
   Future<_Radio> openChannel(WidgetTester tester, {int? unread}) async {
-    final radio = _Radio()..unread = unread ?? 0;
+    final radio = _Radio();
     addTearDown(radio.posts.close);
     addTearDown(radio.dms.close);
+    await radio.seed(channel, window(299));
     await _pumpScreen(
       tester,
       radio,
       ChannelChatScreen(channel: channel, unreadCount: unread),
     );
-    radio.posts.add(window(299));
     await _settle(tester);
     return radio;
   }
