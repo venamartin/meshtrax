@@ -2,6 +2,11 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.10.1
+
+- Channels opened from Chats show the NEW MESSAGES line again and start at your first unread message. The Chats list previews the newest unread message, and repeats of your own messages no longer count as unread.
+- Places search finds parks such as Yosemite, Redwood and Mojave by name.
+
 ## 1.10.0
 
 - Trail routing on Android and iOS: plan routes offline on paved roads, dirt roads and trails, with time, climb and a height profile. North America to start.
