@@ -115,8 +115,14 @@ class PoiRegion {
       final id = (placeId, featureId);
       if (match > (best[id]?.$1 ?? 0)) best[id] = (match, candidate);
     }
+    // Among equal matches the name typed exactly goes first, so a common
+    // word ("Yosemite") keeps its exact names in the cut below.
     final top = best.entries.toList()
-      ..sort((a, b) => b.value.$1.compareTo(a.value.$1));
+      ..sort((a, b) {
+        final byMatch = b.value.$1.compareTo(a.value.$1);
+        if (byMatch != 0) return byMatch;
+        return (b.value.$2 == norm ? 1 : 0) - (a.value.$2 == norm ? 1 : 0);
+      });
 
     final results = <SearchResult>[];
     final queryWords = norm.split(' ').length;
