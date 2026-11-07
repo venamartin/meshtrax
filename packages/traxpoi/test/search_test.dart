@@ -204,6 +204,26 @@ void main() {
     },
   );
 
+  test('a name typed exactly is found among many that contain it', () async {
+    final file = buildPoints(dir, 'many.sqlite');
+    final db = sqlite3.open(file.path);
+    for (var i = 1; i <= 300; i++) {
+      db.execute(
+        "INSERT INTO feature VALUES (?, 'highway=road', ?, 38.5, -107.5, NULL)",
+        [100 + i, 'Ouray Road $i'],
+      );
+      db.execute(
+        "INSERT INTO name (feature_id, name, norm, role) VALUES (?, ?, ?, 'main')",
+        [100 + i, 'Ouray Road $i', 'ouray road $i'],
+      );
+    }
+    db.execute("INSERT INTO name_search (name_search) VALUES ('rebuild')");
+    db.close();
+    final many = PoiRegion.open(points: file);
+    addTearDown(many.close);
+    expect((await many.searchNames('ouray', near: ouray)).first.name, 'Ouray');
+  });
+
   test('addresses: a town typed after the street helps, never hides', () async {
     final noTown = await region.searchAddresses('607 fifth st ouray');
     expect(noTown.single.name, '607 Fifth Street');
