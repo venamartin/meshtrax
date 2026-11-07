@@ -372,9 +372,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// [_resubscribeChannelUnreadWatch].
   Map<String, int> _channelUnreadByIdKey = const {};
   StreamSubscription<Map<String, int>>? _channelUnreadSub;
-  Map<String, ({ChannelMessage message, int sortUs})>
+  Map<String, ({ChannelMessage message, int sortUs, ChannelMessage? unread})>
       _channelLatestByIdKey = const {};
-  StreamSubscription<Map<String, ({ChannelMessage message, int sortUs})>>?
+  StreamSubscription<Map<String, ({ChannelMessage message, int sortUs, ChannelMessage? unread})>>?
       _channelLatestSub;
   Map<String, int> _contactUnreadByKey = const {};
   StreamSubscription<Map<String, int>>? _contactUnreadSub;
@@ -1457,7 +1457,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Watched newest message per channel identity, with its arrival stamp
   /// (subtitles + tile ordering).
-  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
+  Stream<Map<String, ({ChannelMessage message, int sortUs, ChannelMessage? unread})>>
       watchChannelLatest() => _channelMessageStore.watchLatestPerChannel();
 
   // Messages received for a radio slot whose identity the app doesn't know
@@ -8765,6 +8765,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// conversation tiles sort by, the same order the chat shows.
   int latestChannelSortUs(Channel channel) =>
       _channelLatestByIdKey[channel.idKey]?.sortUs ?? 0;
+
+  /// The newest unread message of a channel, the one its badge counts; null
+  /// when nothing in it is unread.
+  ChannelMessage? newestUnreadChannelMessage(Channel channel) =>
+      _channelLatestByIdKey[channel.idKey]?.unread;
 
   /// Newest message for a contact, from the watched query.
   Message? latestContactMessage(Contact contact) =>

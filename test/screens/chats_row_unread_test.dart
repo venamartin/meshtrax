@@ -32,7 +32,18 @@ class _Radio extends MeshCoreConnector {
   final Channel channel;
   final store = ChannelMessageStore()..setPublicKeyHex = 'deadbeef00cafe';
   ChannelMessage? newest;
+  ChannelMessage? newestUnread;
   int unread = 0;
+
+  /// The newest shown and newest unread as the connector holds them: the
+  /// store's watched latest per channel, taken once.
+  Future<void> loadLatest(WidgetTester tester) async {
+    final latest = await tester.runAsync(
+      () => store.watchLatestPerChannel().first,
+    );
+    newest = latest![channel.idKey]?.message;
+    newestUnread = latest[channel.idKey]?.unread;
+  }
 
   @override
   bool get isConnected => true;
@@ -42,6 +53,9 @@ class _Radio extends MeshCoreConnector {
 
   @override
   ChannelMessage? latestChannelMessage(Channel channel) => newest;
+
+  @override
+  ChannelMessage? newestUnreadChannelMessage(Channel channel) => newestUnread;
 
   @override
   int getUnreadCountForChannel(Channel channel) => unread;
@@ -93,6 +107,28 @@ Future<void> _settle(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpChats(WidgetTester tester, _Radio radio) async {
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
+        ChangeNotifierProvider.value(value: AppSettingsService()),
+        ChangeNotifierProvider.value(value: UiViewStateService()),
+        ChangeNotifierProvider.value(value: ChatTextScaleService()),
+        ChangeNotifierProvider.value(value: PathGraphService()),
+        ChangeNotifierProvider.value(value: MessageRetryService()),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: const ChatsScreen(),
+      ),
+    ),
+  );
+  await _settle(tester);
+}
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({PathfinderHelpDialog.prefKey: true});
@@ -117,30 +153,11 @@ void main() {
     Future<int?> storedUnread() => tester.runAsync(
           () => radio.store.watchUnreadCount(channel.idKey).first,
         );
-    radio
-      ..newest = rows.last
-      ..unread = (await storedUnread())!;
+    await radio.loadLatest(tester);
+    radio.unread = (await storedUnread())!;
     expect(radio.unread, 10);
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
-          ChangeNotifierProvider.value(value: AppSettingsService()),
-          ChangeNotifierProvider.value(value: UiViewStateService()),
-          ChangeNotifierProvider.value(value: ChatTextScaleService()),
-          ChangeNotifierProvider.value(value: PathGraphService()),
-          ChangeNotifierProvider.value(value: MessageRetryService()),
-        ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('en'),
-          home: const ChatsScreen(),
-        ),
-      ),
-    );
-    await _settle(tester);
+    await _pumpChats(tester, radio);
 
     await tester.tap(find.text('#test'));
     await tester.pump(const Duration(milliseconds: 100));
@@ -155,5 +172,51 @@ void main() {
       lessThanOrEqualTo(tester.getRect(find.text('post 20')).top),
       reason: 'the line sits above the first message missed',
     );
+  });
+
+  // Martin, 2026-11-07: a post written just before his send reached the
+  // radio after it, so it stands above his message and the newest shown is
+  // his own. The row previews the post its badge counts, not his.
+  testWidgets('a Chats row previews the unread post, not my send above it',
+      (tester) async {
+    final radio = _Radio(channel);
+    addTearDown(radio.dispose);
+    final sendAt = _start.add(const Duration(minutes: 5));
+    await radio.store.insertIfNew(channel.idKey, _post(0));
+    await radio.store.markRead(channel.idKey);
+    await radio.store.insertIfNew(
+      channel.idKey,
+      ChannelMessage(
+        senderKey: null,
+        senderName: 'GWQ',
+        text: 'my send',
+        timestamp: sendAt,
+        isOutgoing: true,
+        status: ChannelMessageStatus.sent,
+        channelIndex: 1,
+        messageId: 'mine',
+      ),
+    );
+    await radio.store.insertIfNew(
+      channel.idKey,
+      ChannelMessage(
+        senderKey: null,
+        senderName: 'Ann',
+        text: 'written first',
+        timestamp: sendAt.subtract(const Duration(seconds: 3)),
+        isOutgoing: false,
+        status: ChannelMessageStatus.sent,
+        channelIndex: 1,
+        messageId: 'theirs',
+      ),
+    );
+    await radio.loadLatest(tester);
+    radio.unread = 1;
+
+    await _pumpChats(tester, radio);
+
+    expect(find.textContaining('written first', findRichText: true),
+        findsOneWidget);
+    expect(find.textContaining('my send', findRichText: true), findsNothing);
   });
 }

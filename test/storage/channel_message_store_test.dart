@@ -119,6 +119,28 @@ void main() {
     expect(latest[idKeyB]!.sortUs, 1500 * 1000);
   });
 
+  // A post written just before my send arrives after it, so it stands above
+  // mine: the newest shown is my own message while the badge counts theirs
+  // (Martin, 2026-11-07). The newest unread rides along for the Chats row.
+  test('the latest per channel carries the newest unread beside my send',
+      () async {
+    await store.insertIfNew(idKeyA, msg('read', id: 'u1', ts: 1000));
+    await store.markRead(idKeyA);
+    await store.insertIfNew(
+        idKeyA, msg('mine', id: 'u2', ts: 3000, outgoing: true));
+    await store.insertIfNew(
+        idKeyA, msg('theirs, written first', id: 'u3', ts: 2000));
+
+    var latest = (await store.watchLatestPerChannel().first)[idKeyA]!;
+    expect(latest.message.text, 'mine');
+    expect(latest.sortUs, 3000 * 1000, reason: 'the row still sorts by it');
+    expect(latest.unread?.text, 'theirs, written first');
+
+    await store.markRead(idKeyA);
+    latest = (await store.watchLatestPerChannel().first)[idKeyA]!;
+    expect(latest.unread, isNull);
+  });
+
   test('the oldest unread is among the newest arrivals, placed by shown time',
       () async {
     await store.insertIfNew(idKeyA, msg('read', id: 'r1', ts: 3000));

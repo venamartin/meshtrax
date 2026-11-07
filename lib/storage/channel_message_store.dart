@@ -468,31 +468,49 @@ class ChannelMessageStore {
   /// chats screen's subtitles and ordering (SQL decides "latest"). Newest
   /// in the order the chat shows, with [sortUs], that message's shown time
   /// in microseconds: the chats screen sorts conversations by it, so the
-  /// tiles and the chats agree.
-  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
-      watchLatestPerChannel() {
+  /// tiles and the chats agree. [unread] is the newest unread message, the
+  /// one the badge counts, or null when nothing is unread.
+  Stream<
+    Map<String, ({ChannelMessage message, int sortUs, ChannelMessage? unread})>
+  >
+  watchLatestPerChannel() {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT k, p, t FROM ('
+          'SELECT l.k AS k, l.p AS p, l.t AS t, u.p AS up FROM ('
           ' SELECT channel_id_key AS k, payload AS p, timestamp_ms AS t, '
           '  ROW_NUMBER() OVER (PARTITION BY channel_id_key '
           '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) AS rn '
           ' FROM channel_message_rows WHERE node_scope = ?1'
-          ') WHERE rn = 1',
+          ') l LEFT JOIN ('
+          ' SELECT m.channel_id_key AS k, m.payload AS p, '
+          '  ROW_NUMBER() OVER (PARTITION BY m.channel_id_key '
+          '   ORDER BY m.timestamp_ms DESC, m.received_at_us DESC, m.id DESC) '
+          '   AS rn '
+          ' FROM channel_message_rows m '
+          ' WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
+          ' AND m.received_at_us > COALESCE((SELECT last_read_seq '
+          '  FROM channel_read_marks WHERE node_scope = ?1 '
+          '  AND id_key = m.channel_id_key), 0)'
+          ') u ON u.k = l.k AND u.rn = 1 '
+          'WHERE l.rn = 1',
           variables: [Variable.withString(publicKeyHex)],
-          readsFrom: {_db.channelMessageRows},
+          readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
         )
         .watch()
         .map((rows) {
-          final latest = <String, ({ChannelMessage message, int sortUs})>{};
+          final latest = <String,
+              ({ChannelMessage message, int sortUs, ChannelMessage? unread})>{};
+          ChannelMessage decode(String payload) => _messageFromJson(
+                jsonDecode(payload) as Map<String, dynamic>,
+              );
           for (final row in rows) {
             try {
+              final unread = row.readNullable<String>('up');
               latest[row.read<String>('k')] = (
-                message: _messageFromJson(
-                  jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
-                ),
+                message: decode(row.read<String>('p')),
                 sortUs: row.read<int>('t') * 1000,
+                unread: unread == null ? null : decode(unread),
               );
             } catch (_) {}
           }

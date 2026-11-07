@@ -153,6 +153,27 @@ void main() {
     expect(await unread(), 0);
   });
 
+  // What Martin saw on the Chats row: a post written just before his send
+  // reached the radio after it, so in the order the chat shows it stands
+  // above his message, and the row previewed his own message beside its
+  // badge.
+  test('an earlier-stamped post after my send is the unread one', () async {
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    final sent = (await c.loadChannelMessagesFor(channel)).single;
+    c.handleFrameForTest(
+      _heardCopy(sent.sentWireSecs.last - 3, 'Ann', 'Morning all'),
+    );
+    await pumpEventQueue(times: 200);
+
+    final shown = await c.loadChannelMessagesFor(channel);
+    expect(shown.map((m) => m.text), ['Morning all', 'Good morning.'],
+        reason: 'written first, so it stands above mine');
+    expect(await unread(), 1);
+    expect(c.latestChannelMessage(channel)?.text, 'Good morning.');
+    expect(c.newestUnreadChannelMessage(channel)?.text, 'Morning all');
+  });
+
   test('a namesake on another radio is not me', () async {
     await c.sendChannelMessage(channel, 'Good morning.');
     await pumpEventQueue(times: 200);
