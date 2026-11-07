@@ -1954,12 +1954,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _appWrittenPath[contact.publicKeyHex] ==
       _writtenKey(contact.pathHashSize, contact.path);
 
-  /// Channel sends this app put on air (channel, wire stamp, exact text):
-  /// only an echo of one of these is my own echo. Newest last, bounded.
-  final List<({int channel, int secs, String text})> _ownChannelSends = [];
+  /// Channel sends this app put on air (channel, wire stamp, exact text, and
+  /// the row sent from, none for a reaction): only an echo of one of these
+  /// is my own echo. Newest last, bounded.
+  final List<({int channel, int secs, String text, String? messageId})>
+      _ownChannelSends = [];
 
-  void _rememberOwnChannelSend(int channel, int secs, String text) {
-    _ownChannelSends.add((channel: channel, secs: secs, text: text));
+  void _rememberOwnChannelSend(
+    int channel,
+    int secs,
+    String text, {
+    String? messageId,
+  }) {
+    _ownChannelSends.add(
+      (channel: channel, secs: secs, text: text, messageId: messageId),
+    );
     if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
   }
 
@@ -1969,6 +1978,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     for (final s in _ownChannelSends.reversed) {
       if (s.channel == channel && s.secs == secs && s.text == text) {
         return '$channel:$secs';
+      }
+    }
+    return null;
+  }
+
+  /// The row a heard copy of my own message was sent from, matched as
+  /// [_ownChannelSendKey] matches, on the copy's decoded text; null when it
+  /// is not a copy of a message I sent.
+  String? _ownChannelSendRow(int channel, int secs, String decodedText) {
+    for (final s in _ownChannelSends.reversed) {
+      if (s.messageId != null &&
+          s.channel == channel &&
+          s.secs == secs &&
+          (Smaz.tryDecodePrefixed(s.text) ?? s.text) == decodedText) {
+        return s.messageId;
       }
     }
     return null;
@@ -5088,7 +5112,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // construction clock, and MeshCore One reaction hashes are computed
     // over the wire value. Transmitted bytes are unchanged.
     final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    _rememberOwnChannelSend(channel.index, wireSecs, outboundText);
+    _rememberOwnChannelSend(
+      channel.index,
+      wireSecs,
+      outboundText,
+      messageId: message.messageId,
+    );
     await sendFrame(
       buildSendChannelTextMsgFrame(
         channel.index,
@@ -5191,7 +5220,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // mesh dedup); record this stamp too so reactions to the retry copy
     // still hash-match our row.
     final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    _rememberOwnChannelSend(channelIndex, wireSecs, outboundText);
+    _rememberOwnChannelSend(
+      channelIndex,
+      wireSecs,
+      outboundText,
+      messageId: messageId,
+    );
     await sendFrame(
       buildSendChannelTextMsgFrame(
         channelIndex,
@@ -10253,6 +10287,27 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           reactionInfo,
           rows,
         ));
+      }
+    }
+
+    // A repeater's copy of a message this app sent arrives as anyone else's
+    // would: not outgoing, no sender key. Matched by the send itself, it
+    // merges into the row it was sent from. Left to the guess by text and
+    // name below, a copy whose text differs from the row's (a reply sent as
+    // a bare mention) was stored as a second message and counted unread
+    // (Martin, 2026-11-07).
+    if (!sanitizedMessage.isOutgoing) {
+      final ownId = _ownChannelSendRow(
+        channelIndex,
+        wireTimestampMs(sanitizedMessage) ~/ 1000,
+        sanitizedMessage.text,
+      );
+      if (ownId != null) {
+        final own = await _channelMessageStore.findByMessageId(idKey, ownId);
+        if (own != null) {
+          await _mergeChannelRepeat(idKey, own, sanitizedMessage);
+        }
+        return false;
       }
     }
 
