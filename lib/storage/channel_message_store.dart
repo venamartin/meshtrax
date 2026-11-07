@@ -468,31 +468,49 @@ class ChannelMessageStore {
   /// chats screen's subtitles and ordering (SQL decides "latest"). Newest
   /// in the order the chat shows, with [sortUs], that message's shown time
   /// in microseconds: the chats screen sorts conversations by it, so the
-  /// tiles and the chats agree.
-  Stream<Map<String, ({ChannelMessage message, int sortUs})>>
-      watchLatestPerChannel() {
+  /// tiles and the chats agree. [unread] is the newest unread message, the
+  /// one the badge counts, or null when nothing is unread.
+  Stream<
+    Map<String, ({ChannelMessage message, int sortUs, ChannelMessage? unread})>
+  >
+  watchLatestPerChannel() {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT k, p, t FROM ('
+          'SELECT l.k AS k, l.p AS p, l.t AS t, u.p AS up FROM ('
           ' SELECT channel_id_key AS k, payload AS p, timestamp_ms AS t, '
           '  ROW_NUMBER() OVER (PARTITION BY channel_id_key '
           '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) AS rn '
           ' FROM channel_message_rows WHERE node_scope = ?1'
-          ') WHERE rn = 1',
+          ') l LEFT JOIN ('
+          ' SELECT m.channel_id_key AS k, m.payload AS p, '
+          '  ROW_NUMBER() OVER (PARTITION BY m.channel_id_key '
+          '   ORDER BY m.timestamp_ms DESC, m.received_at_us DESC, m.id DESC) '
+          '   AS rn '
+          ' FROM channel_message_rows m '
+          ' WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
+          ' AND m.received_at_us > COALESCE((SELECT last_read_seq '
+          '  FROM channel_read_marks WHERE node_scope = ?1 '
+          '  AND id_key = m.channel_id_key), 0)'
+          ') u ON u.k = l.k AND u.rn = 1 '
+          'WHERE l.rn = 1',
           variables: [Variable.withString(publicKeyHex)],
-          readsFrom: {_db.channelMessageRows},
+          readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
         )
         .watch()
         .map((rows) {
-          final latest = <String, ({ChannelMessage message, int sortUs})>{};
+          final latest = <String,
+              ({ChannelMessage message, int sortUs, ChannelMessage? unread})>{};
+          ChannelMessage decode(String payload) => _messageFromJson(
+                jsonDecode(payload) as Map<String, dynamic>,
+              );
           for (final row in rows) {
             try {
+              final unread = row.readNullable<String>('up');
               latest[row.read<String>('k')] = (
-                message: _messageFromJson(
-                  jsonDecode(row.read<String>('p')) as Map<String, dynamic>,
-                ),
+                message: decode(row.read<String>('p')),
                 sortUs: row.read<int>('t') * 1000,
+                unread: unread == null ? null : decode(unread),
               );
             } catch (_) {}
           }
@@ -610,24 +628,27 @@ class ChannelMessageStore {
   }
 
   /// The unread message that stands highest in the chat: the one the
-  /// New-messages line sits above. Unread goes by the read mark (arrival);
-  /// its place by the order the chat shows.
-  Future<ChannelMessage?> oldestUnread(String idKey) async {
-    if (publicKeyHex.isEmpty) return null;
+  /// New-messages line sits above. The [count] unread messages are the
+  /// newest to arrive; its place is the order the chat shows. The count is
+  /// the one the chat opened with, not the read mark: the Chats row marks
+  /// the chat read before it opens.
+  Future<ChannelMessage?> oldestUnread(String idKey, int count) async {
+    if (publicKeyHex.isEmpty || count <= 0) return null;
     final row = await _db
         .customSelect(
-          'SELECT m.payload AS p FROM channel_message_rows m '
-          'WHERE m.node_scope = ?1 AND m.channel_id_key = ?2 '
-          'AND m.unread_eligible = 1 '
-          'AND m.received_at_us > COALESCE((SELECT last_read_seq '
-          'FROM channel_read_marks WHERE node_scope = ?1 AND id_key = ?2), 0) '
-          'ORDER BY m.timestamp_ms ASC, m.received_at_us ASC, m.id ASC '
-          'LIMIT 1',
+          'SELECT p FROM ('
+          ' SELECT payload AS p, timestamp_ms AS t, received_at_us AS r, id '
+          ' FROM channel_message_rows '
+          ' WHERE node_scope = ?1 AND channel_id_key = ?2 '
+          ' AND unread_eligible = 1 '
+          ' ORDER BY received_at_us DESC, id DESC LIMIT ?3'
+          ') ORDER BY t ASC, r ASC, id ASC LIMIT 1',
           variables: [
             Variable.withString(publicKeyHex),
             Variable.withString(idKey),
+            Variable.withInt(count),
           ],
-          readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
+          readsFrom: {_db.channelMessageRows},
         )
         .getSingleOrNull();
     if (row == null) return null;

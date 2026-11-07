@@ -21,6 +21,7 @@ import 'package:meshtrax/services/notification_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
+import 'package:meshtrax/storage/channel_message_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,22 +58,24 @@ class _Radio extends MeshCoreConnector {
   @override
   int getUnreadCountForContactKey(String contactKeyHex) => unread;
 
-  /// The oldest unread, counted back from the end of the last list posted,
-  /// as the read mark would over the rows.
-  List<ChannelMessage> latest = const [];
+  /// The posted rows written down, for the store's own oldest-unread lookup.
+  final store = ChannelMessageStore()..setPublicKeyHex = 'deadbeef00cafe';
+
+  /// Posts the chat's rows, writing the new ones down in order as ingest
+  /// does.
+  Future<void> post(Channel channel, List<ChannelMessage> rows) async {
+    for (final m in rows) {
+      await store.insertIfNew(channel.idKey, m);
+    }
+    posts.add(rows);
+  }
 
   @override
-  Future<ChannelMessage?> oldestUnreadChannelMessage(Channel channel) async {
-    final rows = latest.isNotEmpty ? latest : await posts.stream.first;
-    var n = 0;
-    ChannelMessage? oldest;
-    for (final m in rows.reversed) {
-      if (m.isOutgoing) continue;
-      oldest = m;
-      if (++n >= unread) break;
-    }
-    return unread > 0 ? oldest : null;
-  }
+  Future<ChannelMessage?> oldestUnreadChannelMessage(
+    Channel channel,
+    int count,
+  ) =>
+      store.oldestUnread(channel.idKey, count);
 
   @override
   void setActiveChannel(int? channelIndex) {
@@ -166,7 +169,6 @@ void main() {
 
   Future<_Radio> pump(WidgetTester tester, Widget screen) async {
     final radio = _Radio();
-    radio.posts.stream.listen((m) => radio.latest = m);
     addTearDown(radio.posts.close);
     addTearDown(radio.dms.close);
     addTearDown(radio.dispose);
@@ -196,13 +198,13 @@ void main() {
 
   Future<_Radio> openChannel(WidgetTester tester, {int count = 10}) async {
     final radio = await pump(tester, ChannelChatScreen(channel: channel));
-    radio.posts.add([for (var i = 0; i < count; i++) _post(i)]);
+    await radio.post(channel, [for (var i = 0; i < count; i++) _post(i)]);
     await _settle(tester);
     return radio;
   }
 
   Future<void> receivePosts(WidgetTester tester, _Radio radio, int total) async {
-    radio.posts.add([for (var i = 0; i < total; i++) _post(i)]);
+    await radio.post(channel, [for (var i = 0; i < total; i++) _post(i)]);
     await tester.pump();
   }
 

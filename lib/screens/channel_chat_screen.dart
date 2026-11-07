@@ -242,10 +242,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _messagesSub?.cancel();
     final generation = ++_subscribeGeneration;
     // The NEW MESSAGES divider marks the unread message standing highest in
-    // the chat: the read mark says what is unread, the shown order where it
-    // stands. Looked up before the rows arrive, so the list can open on it.
+    // the chat: the count at open says how many are unread (the read mark
+    // may already have moved), the shown order where it stands. Looked up
+    // before the rows arrive, so the list can open on it.
     final anchor = !_didInitialAnchor && _unreadAtOpen > 0
-        ? connector.oldestUnreadChannelMessage(widget.channel)
+        ? connector.oldestUnreadChannelMessage(widget.channel, _unreadAtOpen)
         : Future<ChannelMessage?>.value();
     anchor.then((firstUnread) {
       if (!mounted || generation != _subscribeGeneration) return;
@@ -378,8 +379,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   void _catchUp() {
     final connector = context.read<MeshCoreConnector>();
     final settingsService = context.read<AppSettingsService>();
+    final unread = connector.getUnreadCountForChannelIndex(widget.channel.index);
     unawaited(() async {
-      final anchor = await connector.oldestUnreadChannelMessage(widget.channel);
+      final anchor =
+          await connector.oldestUnreadChannelMessage(widget.channel, unread);
       if (!mounted) return;
       if (anchor != null) {
         setState(() => _firstUnreadMessage = anchor);

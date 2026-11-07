@@ -782,7 +782,12 @@ class _ChatsScreenState extends State<ChatsScreen>
         // Add Active Channels — "latest" comes from the watched SQL query,
         // so ordering can never disagree with the database.
         for (final channel in connector.channels) {
-          final lastMessage = connector.latestChannelMessage(channel);
+          // While unread, the row shows the newest unread message, the one
+          // its badge counts. A post written just before my send arrives
+          // after it and stands above it in the chat, so the newest shown is
+          // my own, beside a badge that is not mine (Martin, 2026-11-07).
+          final lastMessage = connector.newestUnreadChannelMessage(channel) ??
+              connector.latestChannelMessage(channel);
           if (lastMessage != null) {
             final preview = NotificationService.formatNotificationText(
               lastMessage.text,
