@@ -73,6 +73,7 @@ class MapPacksService extends ChangeNotifier {
   final http.Client _client;
 
   PackIndex? _index;
+  Map<String, dynamic>? _catalogue;
   RegionIndex? _regions;
   DateTime? _fetchedAt;
   ChartAreaIndex? _chartAreas;
@@ -217,6 +218,11 @@ class MapPacksService extends ChangeNotifier {
   /// The cached or fetched pack index; null before the first fetch.
   PackIndex? get index => _index;
 
+  /// The whole `index.json` behind [index], decoded, for the modules that
+  /// download beside the packs (routing, places) to read their entries
+  /// from. Null before the first fetch.
+  Map<String, dynamic>? get catalogue => _catalogue;
+
   /// The picker's region tree; null before the first fetch.
   RegionIndex? get regions => _regions;
 
@@ -295,8 +301,8 @@ class MapPacksService extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      _index = _parseIndex(indexBody);
-      await _refreshHints((jsonDecode(indexBody) as Map)['hints']);
+      _useIndex(indexBody);
+      await _refreshHints(_catalogue!['hints']);
       final pickerBody = await _fetch(
         indexUrl.resolve('picker.geojson'),
         'picker.geojson',
@@ -406,7 +412,7 @@ class MapPacksService extends ChangeNotifier {
     }
 
     await read('index.json', (file) async {
-      _index = _parseIndex(await file.readAsString());
+      _useIndex(await file.readAsString());
       _fetchedAt = await file.lastModified();
       _status = CatalogueStatus.ready;
     });
@@ -430,12 +436,19 @@ class MapPacksService extends ChangeNotifier {
     return areas;
   }
 
-  PackIndex _parseIndex(String body) {
-    final index = PackIndex.parse(body);
+  /// Takes [body], an `index.json`, as the catalogue: its packs, and the
+  /// whole index for the modules beside them.
+  void _useIndex(String body) {
+    final json = jsonDecode(body);
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('pack index is not a JSON object');
+    }
+    final index = PackIndex.fromJson(json);
     for (final skipped in index.skipped) {
       appLogger.warn('Pack index entry skipped: $skipped', tag: 'Maps');
     }
-    return index;
+    _index = index;
+    _catalogue = json;
   }
 
   /// Re-reads the installed packs from disk.
