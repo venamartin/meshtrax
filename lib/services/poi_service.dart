@@ -30,8 +30,7 @@ class PoiService extends ChangeNotifier {
   final Directory root;
 
   PoiCatalog? _catalog;
-  DateTime? _catalogRead;
-  bool _catalogChecked = false;
+  int? _catalogVersion;
   final Map<String, PoiRegion> _open = {};
   Map<String, Map<String, String>> _manifest = {};
   StreamSubscription<PackDownload>? _downloads;
@@ -80,10 +79,17 @@ class PoiService extends ChangeNotifier {
 
   int get totalBytes => installedRegions.fold(0, (sum, r) => sum + sizeOf(r));
 
+  /// Whether the catalogue has another [which] file for [region] than the
+  /// one installed. From a drive in use, only a later build counts, so an
+  /// old drive never takes the device back; a file installed before builds
+  /// were recorded may always be replaced.
   bool updateAvailable(String region, PoiDownload which) {
     final have = _manifest[region]?[which.name];
     final offered = fileFor(region, which)?.sha256;
-    return have != null && offered != null && have != offered;
+    if (have == null || offered == null || have == offered) return false;
+    if (maps.drive == null) return true;
+    final built = _manifest[region]?[_buildKey(which)];
+    return built == null || _catalog!.build.compareTo(built) > 0;
   }
 
   /// The id of [region]'s [which] file in the map downloader.
@@ -237,17 +243,17 @@ class PoiService extends ChangeNotifier {
   }
 
   void _readCatalog() {
-    if (_catalogChecked && maps.fetchedAt == _catalogRead) return;
-    _catalogChecked = true;
-    _catalogRead = maps.fetchedAt;
+    if (maps.catalogueVersion == _catalogVersion) return;
+    _catalogVersion = maps.catalogueVersion;
     final index = maps.catalogue;
-    if (index == null) return;
     try {
-      _catalog = PoiCatalog.fromIndex(index, maps.indexUrl);
-      notifyListeners();
+      _catalog = index == null
+          ? null
+          : PoiCatalog.fromIndex(index, maps.indexUrl);
     } on Object catch (e) {
       appLogger.warn('Points of interest catalogue unreadable: $e', tag: 'Poi');
     }
+    notifyListeners();
   }
 
   @override

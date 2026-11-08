@@ -6252,6 +6252,67 @@ class AppLocalizationsBg extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Адреси на сгради за търсене';
 
   @override
+  String get offlineMaps_useDrive => 'Използвай диск';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Карти от диска $name, от $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Обратно към интернет';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Инсталиране от диска. Не затваряйте MeshTrax.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Дискът беше премахнат. Показват се картите от интернет.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Четене на диска…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Там няма карти на MeshTrax. Изберете папката MeshTrax-maps на диска.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Дискът не може да бъде прочетен: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Да се спре ли инсталирането от диска?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Вече инсталираното остава на това устройство.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Спри';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Продължи';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Инсталирай $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Инсталирай';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Това устройство има по-нови данни за маршрути от диска.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Данните за маршрути на диска не покриват всички региони на това устройство.';
+
+  @override
   String get map_search => 'Търсене';
 
   @override

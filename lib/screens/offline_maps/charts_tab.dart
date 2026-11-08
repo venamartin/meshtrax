@@ -308,6 +308,9 @@ class _DownloadBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final onDrive = context.select<MapPacksService, bool>(
+      (m) => m.drive != null,
+    );
     return SafeArea(
       top: false,
       child: Column(
@@ -332,14 +335,18 @@ class _DownloadBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (bytes >= 1e9) ...[
+                if (bytes >= 1e9 && !onDrive) ...[
                   const SizedBox(height: 12),
                   Callout(l10n.offlineMaps_largeDownload(formatBytes(bytes))),
                 ],
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: onDownload,
-                  child: Text(l10n.offlineMaps_download(formatBytes(bytes))),
+                  child: Text(
+                    onDrive
+                        ? l10n.offlineMaps_install(formatBytes(bytes))
+                        : l10n.offlineMaps_download(formatBytes(bytes)),
+                  ),
                 ),
               ],
             ),

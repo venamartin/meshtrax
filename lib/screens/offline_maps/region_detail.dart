@@ -65,6 +65,7 @@ class _RegionDetailState extends State<RegionDetail> {
     final region = widget.region;
     final regions = maps.regions;
     final packs = maps.packsForRegion(region.path);
+    final onDrive = maps.drive != null;
     final contours = packs.where((e) => e.kind == PackKind.contours).toList();
     final shown = [
       ...packs.where((e) => e.kind == PackKind.osm),
@@ -100,10 +101,15 @@ class _RegionDetailState extends State<RegionDetail> {
             ? PackStatus.installed
             : PackStatus.available);
     final routingId = RoutingService.downloadId(region.path);
+    // A drive's routing that can't be installed here: said why, not offered.
+    final routingBlock = routing != null && !routing.isInstalled(region.path)
+        ? routing.driveBlock
+        : null;
     final extras = [
       if (routing != null &&
           routing.available &&
-          routing.bundleFor(region.path) != null)
+          routing.bundleFor(region.path) != null &&
+          routingBlock == null)
         _Extra(
           id: routingId,
           title: l10n.offlineMaps_kindRouting,
@@ -233,6 +239,23 @@ class _RegionDetailState extends State<RegionDetail> {
                   detail: x.detail,
                 ),
               ],
+              if (routingBlock != null &&
+                  routing!.available &&
+                  routing.bundleFor(region.path) != null) ...[
+                const Divider(height: 1),
+                ListTile(
+                  enabled: false,
+                  leading: const Checkbox(value: false, onChanged: null),
+                  title: Text(l10n.offlineMaps_kindRouting),
+                  subtitle: Text(switch (routingBlock) {
+                    RoutingDriveBlock.older =>
+                      l10n.offlineMaps_routingDriveOlder,
+                    RoutingDriveBlock.incomplete =>
+                      l10n.offlineMaps_routingDriveIncomplete,
+                  }),
+                  trailing: const Text('—', style: sizeStyle),
+                ),
+              ],
               if (!hasUsgs && !inUs) ...[
                 if (shown.isNotEmpty) const Divider(height: 1),
                 ListTile(
@@ -257,7 +280,9 @@ class _RegionDetailState extends State<RegionDetail> {
         Row(
           children: [
             Text(
-              l10n.offlineMaps_downloadTotal,
+              onDrive
+                  ? l10n.offlineMaps_installTotal
+                  : l10n.offlineMaps_downloadTotal,
               style: theme.textTheme.titleMedium,
             ),
             const Spacer(),
@@ -267,7 +292,7 @@ class _RegionDetailState extends State<RegionDetail> {
             ),
           ],
         ),
-        if (downloadBytes >= 1e9) ...[
+        if (downloadBytes >= 1e9 && !onDrive) ...[
           const SizedBox(height: 12),
           Callout(l10n.offlineMaps_largeDownload(formatBytes(downloadBytes))),
         ],
@@ -276,11 +301,19 @@ class _RegionDetailState extends State<RegionDetail> {
           onPressed: toDownload.isEmpty && extrasToDownload.isEmpty
               ? null
               : () => fetch(toDownload, extrasToDownload),
-          child: Text(
-            toDownload.isEmpty && extrasToDownload.isEmpty
-                ? l10n.offlineMaps_downloadTotal
-                : l10n.offlineMaps_download(formatBytes(downloadBytes)),
-          ),
+          child: Text(switch ((
+            onDrive,
+            toDownload.isEmpty && extrasToDownload.isEmpty,
+          )) {
+            (true, true) => l10n.offlineMaps_installTotal,
+            (true, false) => l10n.offlineMaps_install(
+              formatBytes(downloadBytes),
+            ),
+            (false, true) => l10n.offlineMaps_downloadTotal,
+            (false, false) => l10n.offlineMaps_download(
+              formatBytes(downloadBytes),
+            ),
+          }),
         ),
         if (updates.isNotEmpty || extraUpdates.isNotEmpty) ...[
           const SizedBox(height: 8),

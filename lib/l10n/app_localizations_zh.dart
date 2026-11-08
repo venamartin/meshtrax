@@ -5873,6 +5873,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => '可搜索的门牌地址';
 
   @override
+  String get offlineMaps_useDrive => '使用存储设备';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return '来自存储设备 $name 的地图，$date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => '返回互联网';
+
+  @override
+  String get offlineMaps_keepOpen => '正在从存储设备安装。请保持 MeshTrax 打开。';
+
+  @override
+  String get offlineMaps_driveRemoved => '存储设备已移除。已重新显示互联网地图。';
+
+  @override
+  String get offlineMaps_readingDrive => '正在读取存储设备…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      '这里没有 MeshTrax 地图。请选择存储设备上的 MeshTrax-maps 文件夹。';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return '无法读取存储设备：$error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => '停止从存储设备安装？';
+
+  @override
+  String get offlineMaps_stopDriveBody => '已安装的内容会保留在此设备上。';
+
+  @override
+  String get offlineMaps_stopDrive => '停止';
+
+  @override
+  String get offlineMaps_keepInstalling => '继续安装';
+
+  @override
+  String offlineMaps_install(String size) {
+    return '安装 $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => '安装';
+
+  @override
+  String get offlineMaps_routingDriveOlder => '此设备上的路线数据比存储设备上的更新。';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete => '存储设备上的路线数据未覆盖此设备上的所有区域。';
+
+  @override
   String get map_search => '搜索';
 
   @override

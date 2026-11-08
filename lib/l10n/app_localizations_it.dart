@@ -6271,6 +6271,67 @@ class AppLocalizationsIt extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Indirizzi civici da cercare';
 
   @override
+  String get offlineMaps_useDrive => 'Usa un\'unità';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Mappe dall\'unità $name, del $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Torna a internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installazione dall\'unità. Tieni aperto MeshTrax.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'L\'unità è stata rimossa. Vengono mostrate di nuovo le mappe da internet.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Lettura dell\'unità…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Lì non ci sono mappe MeshTrax. Scegli la cartella MeshTrax-maps sull\'unità.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Impossibile leggere l\'unità: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Interrompere l\'installazione dall\'unità?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Ciò che è già installato resta su questo dispositivo.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Interrompi';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Continua';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Installa $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Installa';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Questo dispositivo ha dati degli itinerari più recenti dell\'unità.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'I dati degli itinerari dell\'unità non coprono tutte le regioni di questo dispositivo.';
+
+  @override
   String get map_search => 'Cerca';
 
   @override

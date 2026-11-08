@@ -6205,6 +6205,67 @@ class AppLocalizationsSv extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Sökbara gatuadresser';
 
   @override
+  String get offlineMaps_useDrive => 'Använd en lagringsenhet';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Kartor från lagringsenheten $name, från $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Tillbaka till internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installerar från lagringsenheten. Håll MeshTrax öppet.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Lagringsenheten togs bort. Kartor från internet visas igen.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Läser lagringsenheten…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Där finns inga MeshTrax-kartor. Välj mappen MeshTrax-maps på lagringsenheten.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Det gick inte att läsa lagringsenheten: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Sluta installera från lagringsenheten?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Det som redan är installerat stannar på den här enheten.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Stoppa';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Fortsätt installera';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Installera $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Installera';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Den här enheten har nyare färdvägsdata än lagringsenheten.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Färdvägsdata på lagringsenheten täcker inte alla regioner på den här enheten.';
+
+  @override
   String get map_search => 'Sök';
 
   @override

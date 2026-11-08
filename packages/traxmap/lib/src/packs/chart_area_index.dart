@@ -155,6 +155,16 @@ class ChartAreaIndex {
     });
   }
 
+  /// The areas that pass [test], with the same coasts, order and credits.
+  ChartAreaIndex where(bool Function(ChartArea area) test) => ChartAreaIndex(
+    areas.where(test).toList(),
+    coasts: coasts,
+    coastOrder: coastOrder,
+    version: version,
+    source: source,
+    attribution: attribution,
+  );
+
   /// The areas containing [p], the one with the smallest containing part
   /// first (areas overlap in border waters).
   List<ChartArea> areasAt(LatLng p) {
