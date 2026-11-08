@@ -6,8 +6,11 @@ library;
 
 export 'src/packs/attribution.dart';
 export 'src/packs/chart_area_index.dart';
+export 'src/packs/combined_pack_downloader.dart';
 export 'src/packs/download_item.dart';
+export 'src/packs/drive_pack_downloader.dart';
 export 'src/packs/geo.dart';
+export 'src/packs/map_drive.dart';
 export 'src/packs/map_hints.dart';
 export 'src/packs/pack.dart';
 export 'src/packs/pack_download.dart';

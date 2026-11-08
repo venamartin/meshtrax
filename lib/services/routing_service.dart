@@ -17,6 +17,15 @@ import 'package:traxroute/traxroute.dart';
 import '../utils/app_logger.dart';
 import 'map_packs_service.dart';
 
+/// Why routing can't come from a drive ([RoutingService.driveBlock]).
+enum RoutingDriveBlock {
+  /// The drive's build is older than the device's.
+  older,
+
+  /// The drive's build is newer but lacks a region the device has.
+  incomplete,
+}
+
 /// Offline routing: the routing data per region (from the catalogue's
 /// `routing` entry) and routes on it. One build on the device at a time.
 ///
@@ -29,7 +38,8 @@ import 'map_packs_service.dart';
 /// Bundles download through the map downloader, as packs do: in the
 /// background, on Wi‑Fi when the setting says so, with pause and resume.
 /// The downloader checks each one and hands it over; whatever has arrived
-/// is merged into the one tile file.
+/// is merged into the one tile file. From a drive in use ("Use a drive")
+/// they copy instead, through the same handover.
 class RoutingService extends ChangeNotifier {
   /// The [DownloadFile.kind] of a routing bundle.
   static const downloadKind = 'routing';
@@ -40,8 +50,7 @@ class RoutingService extends ChangeNotifier {
 
   RoutingCatalog? _catalog;
   bool _needsNewerApp = false;
-  DateTime? _catalogRead;
-  bool _catalogChecked = false;
+  int? _catalogVersion;
   List<String> _credits = const [];
   List<String> _notices = const [];
   StreamSubscription<PackDownload>? _downloads;
@@ -128,10 +137,29 @@ class RoutingService extends ChangeNotifier {
       'routing-${region.replaceAll('/', '_')}';
 
   /// What downloading [regions] takes: those regions, plus every installed
-  /// one when the catalogue has a newer build.
+  /// one when the catalogue has a newer build. Nothing when a drive in use
+  /// can't give routing ([driveBlock]).
   Set<String> downloadsFor(Set<String> regions) {
     final c = _catalog;
-    return c == null ? {} : store.downloadsFor(c, regions);
+    return c == null || driveBlock != null
+        ? {}
+        : store.downloadsFor(c, regions);
+  }
+
+  /// Why routing can't come from the drive in use, or null when it can (or
+  /// no drive is in use). The device holds one build: a drive with an older
+  /// build would take it back, and one with a newer build replaces every
+  /// region, so it must have them all.
+  RoutingDriveBlock? get driveBlock {
+    final c = _catalog;
+    final installed = store.build;
+    if (maps.drive == null || c == null || installed == null) return null;
+    final order = c.build.compareTo(installed);
+    if (order < 0) return RoutingDriveBlock.older;
+    if (order > 0 && installedRegions.any((r) => !c.regions.containsKey(r))) {
+      return RoutingDriveBlock.incomplete;
+    }
+    return null;
   }
 
   int bytesFor(Set<String> regions) =>
@@ -346,18 +374,18 @@ class RoutingService extends ChangeNotifier {
   }
 
   void _readCatalog() {
-    if (_catalogChecked && maps.fetchedAt == _catalogRead) return;
-    _catalogChecked = true;
-    _catalogRead = maps.fetchedAt;
+    if (maps.catalogueVersion == _catalogVersion) return;
+    _catalogVersion = maps.catalogueVersion;
     final index = maps.catalogue;
-    if (index == null) return;
     try {
-      _catalog = RoutingCatalog.fromIndex(index, maps.indexUrl);
-      _needsNewerApp = RoutingCatalog.needsNewerApp(index);
-      notifyListeners();
+      _catalog = index == null
+          ? null
+          : RoutingCatalog.fromIndex(index, maps.indexUrl);
+      _needsNewerApp = index != null && RoutingCatalog.needsNewerApp(index);
     } on Object catch (e) {
       appLogger.warn('Routing catalogue unreadable: $e', tag: 'Routing');
     }
+    notifyListeners();
   }
 
   @override

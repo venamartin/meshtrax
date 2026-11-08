@@ -28,6 +28,18 @@ The **Downloaded** tab lists what's on your device, how much space it uses, and 
 
 When you open the app with offline maps installed and a day has passed since the last check, MeshTrax looks for newer versions. **Check for new maps** in Offline maps does it any time. Regions with an update show **Update available**, and **Update all** fetches them together. A downloaded map stays exactly as it is until you update it.
 
+## From a drive
+
+With no internet, maps can come from a drive instead: a USB stick or SD card prepared with MeshTrax maps (they sit in a folder called `MeshTrax-maps`), or that folder copied onto your phone or computer.
+
+1. Plug in the drive. A phone may need an adapter for the stick's plug.
+2. In **Offline maps**, tap the menu (⋮) and choose **Use a drive**, then pick the drive or its `MeshTrax-maps` folder. **Use a drive** also shows when the map server can't be reached.
+3. A line under the tabs names the drive. The **Maps** and **Charts** tabs list only what's on it, and **Install** takes the place of **Download**. Pick regions and kinds as usual.
+4. Keep MeshTrax open while it installs; the screen stays on until it's done. Every file is checked before it's installed, as downloads are.
+5. Tap **Back to internet** when you're done. Taking the drive out, or closing the app, does the same. What's installed stays.
+
+A drive never replaces a map with an older one. Trail routing comes from a drive only when the drive covers every region whose routing is already on your device, because all of it must come from the same build.
+
 ## Where nothing is downloaded
 
 The map shows the base map that comes with the app: borders, water, major roads and cities, and towns of 1,000 people or more as you zoom in. It needs no signal. You can zoom in until the map is about 25 km across a phone screen; there it stops, and a card offers to download the region for detail.
@@ -40,7 +52,7 @@ NOAA charts in MeshTrax help you see the water around your radios and plan. They
 
 ## Privacy
 
-Maps come from the MeshTrax map server, `maps.meshtrax.io`. Requests carry no personal data and no location; the server only sees which map files you asked for. Offline maps are left out of your phone's own backups. Details are in the [privacy policy](privacy.md).
+Maps come from the MeshTrax map server, `maps.meshtrax.io`. Requests carry no personal data and no location; the server only sees which map files you asked for. Installing from a drive sends nothing anywhere: the app reads only the folder you pick. Offline maps are left out of your phone's own backups. Details are in the [privacy policy](privacy.md).
 
 ## For developers
 

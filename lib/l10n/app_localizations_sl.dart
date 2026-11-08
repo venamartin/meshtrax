@@ -6245,6 +6245,67 @@ class AppLocalizationsSl extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Hišni naslovi za iskanje';
 
   @override
+  String get offlineMaps_useDrive => 'Uporabi pogon';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Zemljevidi s pogona $name, z dne $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Nazaj na internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Nameščanje s pogona. Pustite MeshTrax odprt.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Pogon je bil odstranjen. Spet so prikazani zemljevidi z interneta.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Branje pogona…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Tam ni zemljevidov MeshTrax. Izberite mapo MeshTrax-maps na pogonu.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Pogona ni mogoče prebrati: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Želite ustaviti nameščanje s pogona?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Kar je že nameščeno, ostane v tej napravi.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Ustavi';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Nadaljuj';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Namesti $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Namesti';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Ta naprava ima novejše podatke o poteh kot pogon.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Podatki o poteh na pogonu ne pokrivajo vseh regij te naprave.';
+
+  @override
   String get map_search => 'Iskanje';
 
   @override

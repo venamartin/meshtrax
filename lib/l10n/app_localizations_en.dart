@@ -6165,6 +6165,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'House addresses to search for';
 
   @override
+  String get offlineMaps_useDrive => 'Use a drive';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Maps on the drive $name, from $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Back to internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installing from the drive. Keep MeshTrax open.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'The drive was removed. Showing internet maps.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Reading the drive…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'No MeshTrax maps there. Choose the MeshTrax-maps folder on the drive.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Couldn\'t read the drive: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Stop installing from the drive?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'What\'s already installed stays on this device.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Stop';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Keep installing';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Install $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Install';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'This device has newer routing than the drive.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'The drive\'s routing doesn\'t cover every region on this device.';
+
+  @override
   String get map_search => 'Search';
 
   @override

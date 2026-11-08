@@ -5984,6 +5984,62 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => '番地まで検索できる住所';
 
   @override
+  String get offlineMaps_useDrive => 'ドライブを使う';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'ドライブ $name の地図（$date）';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'インターネットに戻る';
+
+  @override
+  String get offlineMaps_keepOpen => 'ドライブからインストール中です。MeshTraxを開いたままにしてください。';
+
+  @override
+  String get offlineMaps_driveRemoved => 'ドライブが取り外されました。インターネットの地図を表示しています。';
+
+  @override
+  String get offlineMaps_readingDrive => 'ドライブを読み込み中…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'MeshTraxの地図がありません。ドライブの MeshTrax-maps フォルダを選んでください。';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'ドライブを読み込めません：$error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'ドライブからのインストールを中止しますか？';
+
+  @override
+  String get offlineMaps_stopDriveBody => 'インストール済みのものはこの端末に残ります。';
+
+  @override
+  String get offlineMaps_stopDrive => '中止';
+
+  @override
+  String get offlineMaps_keepInstalling => '続ける';
+
+  @override
+  String offlineMaps_install(String size) {
+    return '$size をインストール';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'インストール';
+
+  @override
+  String get offlineMaps_routingDriveOlder => 'この端末にはドライブより新しいルートデータがあります。';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'ドライブのルートデータは、この端末のすべての地域をカバーしていません。';
+
+  @override
   String get map_search => '検索';
 
   @override

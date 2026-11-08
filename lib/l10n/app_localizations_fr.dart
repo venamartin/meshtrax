@@ -6294,6 +6294,67 @@ class AppLocalizationsFr extends AppLocalizations {
       'Adresses postales à rechercher';
 
   @override
+  String get offlineMaps_useDrive => 'Utiliser un lecteur';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Cartes du lecteur $name, du $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Revenir à internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installation depuis le lecteur. Gardez MeshTrax ouvert.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Le lecteur a été retiré. Les cartes d’internet sont de nouveau affichées.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Lecture des cartes du lecteur…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Aucune carte MeshTrax ici. Choisissez le dossier MeshTrax-maps du lecteur.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Impossible de lire le lecteur : $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Arrêter l’installation depuis le lecteur ?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Ce qui est déjà installé reste sur cet appareil.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Arrêter';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Continuer l’installation';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Installer $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Installer';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Cet appareil a des données de trajet plus récentes que le lecteur.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Les données de trajet du lecteur ne couvrent pas toutes les régions de cet appareil.';
+
+  @override
   String get map_search => 'Rechercher';
 
   @override

@@ -6260,6 +6260,66 @@ class AppLocalizationsPt extends AppLocalizations {
       'Endereços com número para pesquisar';
 
   @override
+  String get offlineMaps_useDrive => 'Usar uma unidade';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Mapas da unidade $name, de $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Voltar para a internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Instalando da unidade. Mantenha o MeshTrax aberto.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'A unidade foi removida. Os mapas da internet voltaram a ser exibidos.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Lendo a unidade…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Não há mapas do MeshTrax aí. Escolha a pasta MeshTrax-maps na unidade.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Não foi possível ler a unidade: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Parar de instalar da unidade?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'O que já foi instalado continua neste dispositivo.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Parar';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Continuar instalando';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Instalar $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Instalar';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Este dispositivo tem dados de trajetos mais novos que a unidade.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Os dados de trajetos da unidade não cobrem todas as regiões deste dispositivo.';
+
+  @override
   String get map_search => 'Pesquisar';
 
   @override

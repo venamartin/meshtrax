@@ -6271,6 +6271,66 @@ class AppLocalizationsRu extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Адреса домов для поиска';
 
   @override
+  String get offlineMaps_useDrive => 'Использовать накопитель';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Карты с накопителя $name, от $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Вернуться к интернету';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Установка с накопителя. Не закрывайте MeshTrax.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Накопитель извлечён. Снова показаны карты из интернета.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Чтение накопителя…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Там нет карт MeshTrax. Выберите папку MeshTrax-maps на накопителе.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Не удалось прочитать накопитель: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Остановить установку с накопителя?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Уже установленное останется на этом устройстве.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Остановить';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Продолжить';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Установить $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Установить';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'На этом устройстве данные маршрутов новее, чем на накопителе.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Данные маршрутов на накопителе охватывают не все регионы этого устройства.';
+
+  @override
   String get map_search => 'Поиск';
 
   @override

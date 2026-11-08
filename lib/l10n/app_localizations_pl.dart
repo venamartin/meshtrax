@@ -6280,6 +6280,66 @@ class AppLocalizationsPl extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Adresy domów do wyszukiwania';
 
   @override
+  String get offlineMaps_useDrive => 'Użyj nośnika';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Mapy z nośnika $name, z $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Wróć do internetu';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Instalowanie z nośnika. Nie zamykaj MeshTrax.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Nośnik został odłączony. Znowu widać mapy z internetu.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Odczytywanie nośnika…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Brak tam map MeshTrax. Wybierz folder MeshTrax-maps na nośniku.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Nie można odczytać nośnika: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Przerwać instalowanie z nośnika?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'To, co już zainstalowano, zostanie na tym urządzeniu.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Przerwij';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Kontynuuj';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Zainstaluj $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Zainstaluj';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'To urządzenie ma nowsze dane tras niż nośnik.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Dane tras na nośniku nie obejmują wszystkich regionów tego urządzenia.';
+
+  @override
   String get map_search => 'Szukaj';
 
   @override
