@@ -18,7 +18,7 @@ import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 import 'package:traxpoi/traxpoi.dart'
     show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
-import 'package:traxroute/traxroute.dart' as trax show PathType, RouteResult;
+import 'package:traxroute/traxroute.dart' as trax show RouteResult;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -46,7 +46,7 @@ import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
 import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
-import '../widgets/route_panel.dart';
+import '../widgets/route_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../icons/los_icon.dart';
 import 'chat_screen.dart';
@@ -115,15 +115,15 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
 
-  // Offline routing: where to and from (null: your position), the path
-  // type, and the route found.
+  // Offline routing: where to and from (null: your position), and the route
+  // found.
   ({String name, LatLng point})? _routeTo;
   LatLng? _routeFrom;
-  trax.PathType _pathType = trax.PathType.hiking;
   trax.RouteResult? _route;
   bool _routing = false;
   String? _routeError;
   int _routeGeneration = 0;
+  final _sheetKey = GlobalKey<RouteSheetState>();
 
   // Points of interest in view, and whether the region in view has them
   // (the map then drops its own icons for the same kinds).
@@ -133,11 +133,23 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _placesTimer;
   int _placesGeneration = 0;
   late final MeshCoreConnector _connector;
+  late final UiViewStateService _viewState;
+
+  /// The map of the quick-switch bar, not one pushed to show or pick a point.
+  bool get _isMainMap =>
+      widget.highlightPosition == null && !widget.pickPosition;
 
   @override
   void initState() {
     super.initState();
     _loadRemovedMarkers();
+    _viewState = context.read<UiViewStateService>();
+    final kept = _isMainMap ? _viewState.mapRoute : null;
+    if (kept != null) {
+      _routeTo = (name: kept.name, point: kept.to.toLatLong2());
+      _routeFrom = kept.from?.toLatLong2();
+      _route = kept.result;
+    }
     final connector = _connector = context.read<MeshCoreConnector>();
     // A new channel message may carry a pin.
     _channelLatest = connector.watchChannelLatest().listen((_) {
@@ -440,19 +452,6 @@ class _MapScreenState extends State<MapScreen> {
             ? MapCamera(center: center.toOvm(), zoom: zoom)
             : lastCamera;
 
-        // Re center map after removed markers have loaded
-        if (!_hasInitializedMap && _removedMarkersLoaded) {
-          _hasInitializedMap = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            if (hasMapContent) {
-              _mapController.move(center.toOvm(), zoom: zoom);
-            } else if (lastCamera == null) {
-              _showLatestDownloadedMap();
-            }
-          });
-        }
-
         // A radio with no position reports 0, 0.
         final selfPosition =
             connector.hasValidLocation(
@@ -461,19 +460,46 @@ class _MapScreenState extends State<MapScreen> {
             )
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
+
+        // Re center map after removed markers have loaded
+        if (!_hasInitializedMap && _removedMarkersLoaded) {
+          _hasInitializedMap = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (_routeTo != null) {
+              // A route kept from the last visit.
+              if (_route == null) {
+                unawaited(_findRoute(selfPosition));
+              } else {
+                _fitRoute();
+              }
+            } else if (hasMapContent) {
+              _mapController.move(center.toOvm(), zoom: zoom);
+            } else if (lastCamera == null) {
+              _showLatestDownloadedMap();
+            }
+          });
+        }
+
         // A pushed map (a shared point, or picking one) goes back where it
         // came from; picking without a point to start from is no exception.
-        final isPoiLink = highlightPosition != null || widget.pickPosition;
+        final isPoiLink = !_isMainMap;
         final allowBack = !connector.isConnected || isPoiLink;
         final mapDark = settings.mapTheme == 'dark';
         final showPlaces =
             settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
 
+        // A wide screen has the route at the side of the map, not over it.
+        final screen = MediaQuery.sizeOf(context);
+        final routeAtSide = screen.width >= 600 && screen.width > screen.height;
+
         return PopScope(
-          // Back closes a route before anything else.
+          // Back lowers a raised route sheet, then closes the route, before
+          // anything else.
           canPop: allowBack && _routeTo == null,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && _routeTo != null) _clearRoute();
+            if (didPop || _routeTo == null) return;
+            if (!(_sheetKey.currentState?.lower() ?? false)) _clearRoute();
           },
           child: Scaffold(
             appBar: AppBar(
@@ -597,126 +623,132 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
-            body: Stack(
+            // Always a row, so that the map keeps its state when a route
+            // moves between the side and the bottom.
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AppMap(
-                  controller: _mapController,
-                  initialCamera: startCamera,
-                  controlsWidth: MapControls.width,
-                  onTap: widget.pickPosition
-                      ? (position) =>
-                            Navigator.pop(context, position.toLatLong2())
-                      : null,
-                  onLongPress: (position) {
-                    if (widget.pickPosition) {
-                      Navigator.pop(context, position.toLatLong2());
-                      return;
-                    }
-                    _showShareMarkerAtPositionSheet(
-                      context: context,
-                      connector: connector,
-                      position: position.toLatLong2(),
-                      selfPosition: selfPosition,
-                    );
-                  },
-                  onCameraChanged: _onCameraChanged,
-                  appPlaces: showPlaces && _placesHere,
-                  overlays: [
-                    if (showPlaces)
-                      for (final p in _places)
-                        placeMarker(
-                          p,
-                          named: _namedPlaces.contains(p),
-                          dark: mapDark,
-                          onTap: () => _openPlace(
-                            p,
-                            connector,
-                            selfPosition,
-                            settings.unitSystem,
-                          ),
-                        ),
-                    ..._routeOverlays(),
-                    if (_isBuildingPathTrace && _points.length > 1)
-                      MapLine(
-                        id: 'path-trace',
-                        points: _points.toOvm(),
-                        color: Colors.blueAccent,
-                        width: 4,
-                      ),
-                    if (highlightPosition != null)
-                      MapMarker(
-                        id: 'highlight',
-                        position: highlightPosition.toOvm(),
-                        size: const Size(40, 40),
-                        anchor: Alignment.bottomCenter,
-                        interactive: false,
-                        label: widget.highlightLabel,
-                        child: Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.red[600],
-                          size: 34,
-                        ),
-                      ),
-                    ..._buildGuessedMarkers(guessedLocations),
-                    ..._buildMarkers(
-                      contactsWithLocation,
-                      settings,
-                      connector.pathHashByteWidth,
+                if (routeAtSide && _routeTo != null) ...[
+                  SizedBox(
+                    width: RouteSheet.sideWidth,
+                    child: _buildRouteSheet(
+                      settingsService,
+                      selfPosition,
+                      side: true,
                     ),
-                    ...sharedMarkers.map(_buildSharedMarker),
-                    // The GPS's live position is a blue dot; a position typed
-                    // into the radio is the "You" pin.
-                    if (selfPosition != null && connector.gpsOn)
-                      MapMarker(
-                        id: 'self',
-                        position: selfPosition.toOvm(),
-                        size: const Size(24, 24),
-                        interactive: false,
-                        child: const _GpsDot(),
-                      )
-                    else if (selfPosition != null)
-                      MapMarker(
-                        id: 'self',
-                        position: selfPosition.toOvm(),
-                        size: const Size(40, 40),
-                        interactive: false,
-                        label: context.l10n.pathTrace_you,
-                        labelMinZoom: _labelMinZoom,
-                        child: _nodeDot(Colors.teal, Icons.person_pin_circle),
-                      ),
-                  ],
-                ),
-                if (!_isBuildingPathTrace)
-                  _buildLegend(
-                    contacts,
-                    settings,
-                    connector.pathHashByteWidth,
-                    sharedMarkers.length,
-                    guessedLocations.length,
                   ),
-                if (_isBuildingPathTrace) _buildPathTraceOverlay(),
+                  const VerticalDivider(width: 1),
+                ],
+                Expanded(
+                  child: Stack(
+                    children: [
+                      AppMap(
+                        controller: _mapController,
+                        initialCamera: startCamera,
+                        controlsWidth: MapControls.width,
+                        onTap: widget.pickPosition
+                            ? (position) =>
+                                  Navigator.pop(context, position.toLatLong2())
+                            : null,
+                        onLongPress: (position) {
+                          if (widget.pickPosition) {
+                            Navigator.pop(context, position.toLatLong2());
+                            return;
+                          }
+                          _showShareMarkerAtPositionSheet(
+                            context: context,
+                            connector: connector,
+                            position: position.toLatLong2(),
+                            selfPosition: selfPosition,
+                          );
+                        },
+                        onCameraChanged: _onCameraChanged,
+                        appPlaces: showPlaces && _placesHere,
+                        overlays: [
+                          if (showPlaces)
+                            for (final p in _places)
+                              placeMarker(
+                                p,
+                                named: _namedPlaces.contains(p),
+                                dark: mapDark,
+                                onTap: () => _openPlace(
+                                  p,
+                                  connector,
+                                  selfPosition,
+                                  settings.unitSystem,
+                                ),
+                              ),
+                          ..._routeOverlays(),
+                          if (_isBuildingPathTrace && _points.length > 1)
+                            MapLine(
+                              id: 'path-trace',
+                              points: _points.toOvm(),
+                              color: Colors.blueAccent,
+                              width: 4,
+                            ),
+                          if (highlightPosition != null)
+                            MapMarker(
+                              id: 'highlight',
+                              position: highlightPosition.toOvm(),
+                              size: const Size(40, 40),
+                              anchor: Alignment.bottomCenter,
+                              interactive: false,
+                              label: widget.highlightLabel,
+                              child: Icon(
+                                Icons.location_on_outlined,
+                                color: Colors.red[600],
+                                size: 34,
+                              ),
+                            ),
+                          ..._buildGuessedMarkers(guessedLocations),
+                          ..._buildMarkers(
+                            contactsWithLocation,
+                            settings,
+                            connector.pathHashByteWidth,
+                          ),
+                          ...sharedMarkers.map(_buildSharedMarker),
+                          // The GPS's live position is a blue dot; a position
+                          // typed into the radio is the "You" pin.
+                          if (selfPosition != null && connector.gpsOn)
+                            MapMarker(
+                              id: 'self',
+                              position: selfPosition.toOvm(),
+                              size: const Size(24, 24),
+                              interactive: false,
+                              child: const _GpsDot(),
+                            )
+                          else if (selfPosition != null)
+                            MapMarker(
+                              id: 'self',
+                              position: selfPosition.toOvm(),
+                              size: const Size(40, 40),
+                              interactive: false,
+                              label: context.l10n.pathTrace_you,
+                              labelMinZoom: _labelMinZoom,
+                              child: _nodeDot(
+                                Colors.teal,
+                                Icons.person_pin_circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (!_isBuildingPathTrace)
+                        _buildLegend(
+                          contacts,
+                          settings,
+                          connector.pathHashByteWidth,
+                          sharedMarkers.length,
+                          guessedLocations.length,
+                        ),
+                      if (_isBuildingPathTrace) _buildPathTraceOverlay(),
+                    ],
+                  ),
+                ),
               ],
             ),
-            bottomSheet: _routeTo == null
+            bottomSheet: _routeTo == null || routeAtSide
                 ? null
-                : RoutePanel(
-                    destination: _routeTo!.name,
-                    pathType: _pathType,
-                    onPathType: (type) {
-                      setState(() => _pathType = type);
-                      unawaited(_findRoute(selfPosition));
-                    },
-                    options: settings.routeOptions,
-                    onOptions: (options) async {
-                      await settingsService.setRouteOptions(options);
-                      unawaited(_findRoute(selfPosition));
-                    },
-                    result: _route,
-                    loading: _routing,
-                    error: _routeError,
-                    units: settings.unitSystem,
-                    onClose: _clearRoute,
-                  ),
+                : _buildRouteSheet(settingsService, selfPosition, side: false),
             bottomNavigationBar: isPoiLink
                 ? null
                 : QuickSwitchBar(
@@ -1507,80 +1539,85 @@ class _MapScreenState extends State<MapScreen> {
         : null;
     showModalBottomSheet(
       context: context,
+      // As tall as its rows, which scroll on a screen too small for them.
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                title ?? lines.first,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-              subtitle: title == null && lines.length == 1
-                  ? null
-                  : Text((title == null ? lines.skip(1) : lines).join('\n')),
-              trailing: CopyPositionButton(text: lines.first),
-            ),
-            if (canRoute) ...[
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ListTile(
-                leading: const Icon(Icons.directions),
-                title: Text(context.l10n.route_here),
-                subtitle: to == null
+                title: Text(
+                  title ?? lines.first,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+                subtitle: title == null && lines.length == 1
                     ? null
-                    : Text(l10n.route_destinationNow(to.name)),
+                    : Text((title == null ? lines.skip(1) : lines).join('\n')),
+                trailing: CopyPositionButton(text: lines.first),
+              ),
+              if (canRoute) ...[
+                ListTile(
+                  leading: const Icon(Icons.directions),
+                  title: Text(context.l10n.route_here),
+                  subtitle: to == null
+                      ? null
+                      : Text(l10n.route_destinationNow(to.name)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _routeHere(name, position, selfPosition);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.trip_origin),
+                  title: Text(context.l10n.route_fromHere),
+                  subtitle: startNow == null ? null : Text(startNow),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _routeFromHere(position, selfPosition);
+                  },
+                ),
+              ],
+              ListTile(
+                leading: const Icon(Icons.place),
+                title: Text(context.l10n.map_shareMarkerHere),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _routeHere(name, position, selfPosition);
+                  _shareMarker(
+                    context: context,
+                    connector: connector,
+                    position: position,
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.trip_origin),
-                title: Text(context.l10n.route_fromHere),
-                subtitle: startNow == null ? null : Text(startNow),
-                onTap: () {
+                leading: const Icon(Icons.my_location),
+                title: Text(context.l10n.map_setAsMyLocation),
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final successMsg = context.l10n.settings_locationUpdated;
                   Navigator.pop(sheetContext);
-                  _routeFromHere(position, selfPosition);
+                  if (!connector.isConnected) return;
+                  await connector.setNodeLocation(
+                    lat: position.latitude,
+                    lon: position.longitude,
+                  );
+                  unawaited(connector.refreshRadioSettings());
+                  if (!mounted) return;
+                  showDismissibleSnackBar(
+                    messenger.context,
+                    content: Text(successMsg),
+                  );
                 },
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(context.l10n.common_cancel),
+                onTap: () => Navigator.pop(sheetContext),
               ),
             ],
-            ListTile(
-              leading: const Icon(Icons.place),
-              title: Text(context.l10n.map_shareMarkerHere),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _shareMarker(
-                  context: context,
-                  connector: connector,
-                  position: position,
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.my_location),
-              title: Text(context.l10n.map_setAsMyLocation),
-              onTap: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final successMsg = context.l10n.settings_locationUpdated;
-                Navigator.pop(sheetContext);
-                if (!connector.isConnected) return;
-                await connector.setNodeLocation(
-                  lat: position.latitude,
-                  lon: position.longitude,
-                );
-                unawaited(connector.refreshRadioSettings());
-                if (!mounted) return;
-                showDismissibleSnackBar(
-                  messenger.context,
-                  content: Text(successMsg),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(context.l10n.common_cancel),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1623,33 +1660,33 @@ class _MapScreenState extends State<MapScreen> {
         _routing = false;
         _routeError = context.l10n.route_noStart;
       });
+      _keepRoute();
       return;
     }
     setState(() {
       _routing = true;
       _routeError = null;
     });
+    _keepRoute();
     final noRoute = context.l10n.route_none;
+    final settings = context.read<AppSettingsService>().settings;
     try {
       final r = await routing.route(
         (lat: from.latitude, lon: from.longitude),
         (lat: to.point.latitude, lon: to.point.longitude),
-        _pathType,
-        options: context.read<AppSettingsService>().settings.routeOptions,
+        settings.routePathType,
+        options: settings.routeOptions,
       );
       if (!mounted || generation != _routeGeneration) return;
       setState(() {
         _route = r;
         _routing = false;
       });
-      _mapController.fitPoints(
-        [
-          for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
-          to.point.toOvm(),
-        ],
-        // Clear of the route panel, which covers the bottom of the map.
-        padding: const EdgeInsets.fromLTRB(48, 48, 48 + MapControls.width, 320),
-      );
+      _keepRoute();
+      // Once the sheet is laid out for this route, to fit clear of it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && generation == _routeGeneration) _fitRoute();
+      });
     } on Object catch (e) {
       appLogger.warn('Route failed: $e', tag: 'Routing');
       if (!mounted || generation != _routeGeneration) return;
@@ -1674,14 +1711,100 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _clearRoute() => setState(() {
-    _routeGeneration++;
-    _routeTo = null;
-    _routeFrom = null;
-    _route = null;
-    _routing = false;
-    _routeError = null;
-  });
+  /// Shows the whole route, clear of the map's buttons and the route sheet.
+  void _fitRoute() {
+    final r = _route, to = _routeTo;
+    if (r == null || to == null) return;
+    final sheet = _sheetKey.currentState;
+    _mapController.fitPoints(
+      [
+        for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
+        to.point.toOvm(),
+      ],
+      padding: EdgeInsets.fromLTRB(
+        48,
+        48,
+        48 + MapControls.width,
+        // A sheet over most of the map still leaves the route some of it.
+        sheet == null
+            ? 48
+            : max(48, min(sheet.restHeight() + 48, sheet.room - 120)),
+      ),
+    );
+  }
+
+  void _clearRoute() {
+    setState(() {
+      _routeGeneration++;
+      _routeTo = null;
+      _routeFrom = null;
+      _route = null;
+      _routing = false;
+      _routeError = null;
+    });
+    _keepRoute();
+  }
+
+  /// Keeps the main map's route for when the map is back: the quick switch
+  /// puts another screen in its place. One still being found is found again
+  /// then.
+  void _keepRoute() {
+    if (!_isMainMap) return;
+    final to = _routeTo;
+    _viewState.mapRoute = to == null
+        ? null
+        : (
+            name: to.name,
+            to: to.point.toOvm(),
+            from: _routeFrom?.toOvm(),
+            result: _routing ? null : _route,
+          );
+  }
+
+  Widget _buildRouteSheet(
+    AppSettingsService settingsService,
+    LatLng? selfPosition, {
+    required bool side,
+  }) {
+    final settings = settingsService.settings;
+    final from = _routeFrom;
+    return RouteSheet(
+      key: side ? null : _sheetKey,
+      destination: _routeTo!.name,
+      start: from == null
+          ? null
+          : positionLines(
+              from.latitude,
+              from.longitude,
+              coordFormatOf(settings),
+            ).first,
+      onUseMyPosition: () {
+        setState(() => _routeFrom = null);
+        unawaited(_findRoute(selfPosition));
+      },
+      pathType: settings.routePathType,
+      onPathType: (type) async {
+        await settingsService.setRoutePathType(type);
+        unawaited(_findRoute(selfPosition));
+      },
+      options: settings.routeOptions,
+      onOptions: (options) async {
+        await settingsService.setRouteOptions(options);
+        unawaited(_findRoute(selfPosition));
+      },
+      result: _route,
+      loading: _routing,
+      error: _routeError,
+      units: settings.unitSystem,
+      onClose: _clearRoute,
+      side: side,
+      // With no quick-switch bar under the map, the sheet reaches the
+      // screen's edge.
+      bottomInset: side || _isMainMap
+          ? 0
+          : MediaQuery.paddingOf(context).bottom,
+    );
+  }
 
   List<MapOverlay> _routeOverlays() {
     final to = _routeTo;
@@ -1710,7 +1833,7 @@ class _MapScreenState extends State<MapScreen> {
         MapMarker(
           id: 'route-start',
           position: LatLng(r.points.first.lat, r.points.first.lon).toOvm(),
-          color: const Color(0xFF2E7D32),
+          color: routeStartColor,
           radius: 7,
           interactive: false,
         ),

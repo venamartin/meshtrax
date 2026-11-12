@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/map_legend_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import 'package:meshtrax/widgets/room_login_dialog.dart';
-import 'package:meshtrax/widgets/route_panel.dart';
+import 'package:meshtrax/widgets/route_sheet.dart';
 
 import '../helpers/map_fakes.dart';
 
@@ -154,6 +155,7 @@ class _Routing extends RoutingService {
     MapPacksService maps, {
     this.elevations = const [10, 12],
     this.hasData = true,
+    this.steps = const [],
   }) : super(
          maps: maps,
          store: RoutingStore(Directory('${maps.cacheDir.path}/routing')),
@@ -163,6 +165,10 @@ class _Routing extends RoutingService {
   final requests = <(PathType, RouteOptions)>[];
   final List<double> elevations;
   final bool hasData;
+  final List<Maneuver> steps;
+
+  /// Holds routes back until it completes.
+  Completer<void>? gate;
 
   @override
   bool get available => true;
@@ -177,6 +183,7 @@ class _Routing extends RoutingService {
     String language = 'en-US',
   }) async {
     requests.add((type, options));
+    await gate?.future;
     return RouteResult(
       pathType: type,
       points: [from, to],
@@ -184,7 +191,7 @@ class _Routing extends RoutingService {
       elevationIntervalM: 30,
       km: 1.1,
       seconds: 900,
-      maneuvers: const [],
+      maneuvers: steps,
       kmShortOfDestination: 0,
     );
   }
@@ -228,8 +235,9 @@ void main() {
     MeshCoreConnector connector, {
     Widget screen = const MapScreen(),
     RoutingService? routing,
+    Size view = const Size(800, 900),
   }) async {
-    tester.view.physicalSize = const Size(800, 900);
+    tester.view.physicalSize = view;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -350,30 +358,85 @@ void main() {
     });
   });
 
-  // On a phone the layers button straddled the route panel's top edge and
+  // On a phone the layers button straddled the route sheet's top edge and
   // covered its X, the only way to close the route.
   group('a route', () {
     late _Routing routing;
+    const steps = [
+      Maneuver('Walk north on Mill Lane', 0.4, 300, 0),
+      Maneuver('Turn left onto Main Street', 0.7, 600, 1),
+      Maneuver('You have arrived', 0, 0, 1),
+    ];
+    final header = find.textContaining('To 41.8');
+
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    Future<void> tap(WidgetTester tester, Finder finder) async {
+      await tester.tap(finder);
+      await settle(tester);
+    }
+
+    Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+      await tester.ensureVisible(finder);
+      await tester.pump();
+    }
+
+    Future<void> longPress(WidgetTester tester, LatLng at) async {
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(at);
+      await settle(tester);
+    }
+
+    Future<void> showMap(
+      WidgetTester tester, {
+      Widget screen = const MapScreen(),
+      Size view = const Size(800, 900),
+    }) => pumpMap(
+      tester,
+      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+      screen: screen,
+      routing: routing,
+      view: view,
+    );
 
     Future<void> showRoute(
       WidgetTester tester, {
       List<double> heights = const [10, 12],
+      List<Maneuver> steps = const [],
+      Completer<void>? gate,
+      Widget screen = const MapScreen(),
+      Size view = const Size(800, 900),
     }) async {
-      routing = _Routing(maps, elevations: heights);
-      await pumpMap(
-        tester,
-        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
-        routing: routing,
+      routing = _Routing(maps, elevations: heights, steps: steps)..gate = gate;
+      await showMap(tester, screen: screen, view: view);
+      await longPress(tester, const LatLng(41.8, -71.4));
+      await tap(tester, find.text('Route here'));
+      expect(find.byType(RouteSheet), findsOneWidget);
+    }
+
+    double height(WidgetTester tester) =>
+        tester.getSize(find.byType(RouteSheet)).height;
+
+    Finder shown(String text) => find.text(text).hitTestable();
+
+    // Where on the screen the middle of the route is.
+    Offset routeMiddle(WidgetTester tester) {
+      final map = tester.getRect(find.byType(AppMap));
+      final b = tester
+          .widget<AppMap>(find.byType(AppMap))
+          .controller!
+          .visibleBounds!;
+      double y(double lat) => math.log(math.tan((90 + lat) * math.pi / 360));
+      return Offset(
+        map.left + map.width * (-71.41 - b.west) / (b.east - b.west),
+        map.top +
+            map.height *
+                (y(b.north) - (y(41.81) + y(41.8)) / 2) /
+                (y(b.north) - y(b.south)),
       );
-      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
-        const LatLng(41.8, -71.4),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(find.text('Route here'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(find.byType(RoutePanel), findsOneWidget);
     }
 
     testWidgets('without heights, says so instead of a climb', (tester) async {
@@ -384,38 +447,165 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('Paved'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tap(tester, find.text('Paved'));
       expect(find.text('No heights for this area.'), findsOneWidget);
     });
 
-    testWidgets('keeps the map buttons clear of its X', (tester) async {
+    testWidgets('slides between a bar, open and the whole map', (tester) async {
+      await showRoute(tester, steps: steps);
+      final map = tester.getRect(find.byType(AppMap));
+      final open = height(tester);
+      expect(open, lessThan(map.height * 0.6));
+      expect(shown('Paved'), findsOneWidget);
+      expect(shown('Directions'), findsOneWidget);
+      expect(shown('Turn left onto Main Street'), findsNothing);
+
+      // The bar: where to, how far, how long and how much climb.
+      await tap(tester, header);
+      final bar = height(tester);
+      expect(bar, lessThan(100));
+      expect(find.textContaining('↑').hitTestable(), findsOneWidget);
+      expect(shown('Paved'), findsNothing);
+      expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
+
+      await tap(tester, header);
+      expect(height(tester), open);
+
+      // The whole map: the directions, under the same header.
+      await tap(tester, find.text('Directions'));
+      expect(height(tester), map.height);
+      expect(header.hitTestable(), findsOneWidget);
+      expect(shown('From your position'), findsOneWidget);
+      expect(shown('Turn left onto Main Street'), findsOneWidget);
+
+      // Scaffold puts a sheet that was raised back at its first height.
+      await tap(tester, find.text('Directions'));
+      expect(height(tester), open);
+      await tap(tester, header);
+      expect(height(tester), bar);
+    });
+
+    testWidgets('dragged down, leaves the bar and the route', (tester) async {
+      await showRoute(tester, steps: steps);
+      final open = height(tester);
+
+      await tester.drag(header, const Offset(0, 400));
+      await settle(tester);
+      expect(height(tester), lessThan(100));
+      expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
+
+      await tester.drag(header, const Offset(0, -120));
+      await settle(tester);
+      expect(height(tester), open);
+    });
+
+    testWidgets('keeps its height while a route is found', (tester) async {
+      final gate = Completer<void>();
+      await showRoute(tester, steps: steps, gate: gate);
+      final open = height(tester);
+      expect(shown('Finding a route…'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+      gate.complete();
+      await settle(tester);
+      expect(find.text('Finding a route…'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(height(tester), open);
+
+      // The last route stays in place while the next one is found.
+      routing.gate = Completer();
+      await tap(tester, find.text('Paved'));
+      expect(shown('Finding a route…'), findsOneWidget);
+      expect(shown('Directions'), findsOneWidget);
+      expect(height(tester), open);
+
+      routing.gate!.complete();
+      await settle(tester);
+      expect(find.text('Finding a route…'), findsNothing);
+      expect(height(tester), open);
+    });
+
+    testWidgets('shows the whole route in the map left clear', (tester) async {
       await showRoute(tester);
+      final map = tester.getRect(find.byType(AppMap));
+      final sheet = tester.getRect(find.byType(RouteSheet));
+      final middle = routeMiddle(tester);
+      expect(
+        middle.dx,
+        closeTo((map.left + map.right - MapControls.width) / 2, 1),
+      );
+      expect(middle.dy, closeTo((map.top + sheet.top) / 2, 1));
+    });
+
+    testWidgets('starts as the bar on a screen too short for more', (
+      tester,
+    ) async {
+      await showRoute(tester, steps: steps, view: const Size(500, 480));
+      final map = tester.getRect(find.byType(AppMap));
+      final sheet = tester.getRect(find.byType(RouteSheet));
+      expect(sheet.height, lessThan(100));
+      expect(shown('Paved'), findsNothing);
+      expect(routeMiddle(tester).dy, closeTo((map.top + sheet.top) / 2, 1));
+
+      await tap(tester, header);
+      expect(shown('Paved'), findsOneWidget);
+    });
+
+    testWidgets('is a panel at the side of a wide screen', (tester) async {
+      await showRoute(tester, steps: steps, view: const Size(1200, 800));
+      final map = tester.getRect(find.byType(AppMap));
+      final panel = tester.getRect(find.byType(RouteSheet));
+      expect(panel.left, 0);
+      expect(panel.width, RouteSheet.sideWidth);
+      expect(panel.height, map.height);
+      expect(map.left, greaterThan(panel.right));
+      expect(map.right, 1200);
+      final middle = routeMiddle(tester);
+      expect(
+        middle.dx,
+        closeTo((map.left + map.right - MapControls.width) / 2, 1),
+      );
+      expect(middle.dy, closeTo(map.center.dy, 1));
+      // Nothing to slide: the directions are listed.
+      expect(shown('Turn left onto Main Street'), findsOneWidget);
+      expect(find.byTooltip('Map layers').hitTestable(), findsOneWidget);
+
+      // Turned upright, the same map has the sheet over its bottom.
+      final state = tester.state(find.byType(AppMap));
+      tester.view.physicalSize = const Size(800, 1200);
+      await settle(tester);
+      expect(tester.state(find.byType(AppMap)), same(state));
+      expect(
+        tester.getRect(find.byType(RouteSheet)).bottom,
+        tester.getRect(find.byType(AppMap)).bottom,
+      );
+      expect(shown('Turn left onto Main Street'), findsNothing);
+    });
+
+    testWidgets('keeps the map buttons clear of its X', (tester) async {
+      await showRoute(tester, steps: steps);
 
       final close = tester.getRect(find.byTooltip('Clear route'));
       final layers = tester.getRect(find.byTooltip('Map layers'));
       expect(layers.overlaps(close), isFalse);
       expect(
         tester.getRect(find.byType(MapControls)).bottom,
-        lessThanOrEqualTo(tester.getRect(find.byType(RoutePanel)).top),
+        lessThanOrEqualTo(tester.getRect(find.byType(RouteSheet)).top),
       );
+
+      // Over the whole map it leaves them no room: they go.
+      await tap(tester, find.text('Directions'));
+      expect(find.byTooltip('Map layers').hitTestable(), findsNothing);
+      expect(find.byTooltip('Clear route').hitTestable(), findsOneWidget);
     });
 
     testWidgets('options re-route, are remembered, and reset', (tester) async {
-      Future<void> tap(String text) async {
-        await tester.tap(find.text(text));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-      }
-
       await showRoute(tester);
-      await tap('Dirt');
-      await tester.tap(find.byTooltip('Route options'));
-      await tester.pump();
+      await tap(tester, find.text('Dirt'));
+      await tap(tester, find.byTooltip('Route options'));
       expect(find.text('Reset'), findsNothing);
 
-      await tap('Most direct');
+      await tap(tester, find.text('Most direct'));
       expect(routing.requests.last.$1, PathType.dirt);
       expect(routing.requests.last.$2.dirt, DirtPreference.direct);
       expect(find.text('Reset'), findsOneWidget);
@@ -423,78 +613,265 @@ void main() {
       await later.loadSettings();
       expect(later.settings.routeOptions.dirt, DirtPreference.direct);
 
-      await tap('Reset');
+      await tap(tester, find.text('Reset'));
       expect(routing.requests.last.$2.dirt, DirtPreference.balanced);
       expect(find.text('Reset'), findsNothing);
+    });
+
+    // On a small screen the last options were cut off.
+    testWidgets('its options scroll on a small screen', (tester) async {
+      await showRoute(tester, view: const Size(360, 480));
+      await tap(tester, find.byTooltip('Route options'));
+      expect(shown('Fast'), findsNothing);
+
+      await scrollTo(tester, find.text('Fast'));
+      await tap(tester, find.text('Fast'));
+      expect(routing.requests.last.$2.pace, HikingPace.fast);
+    });
+
+    // Every session started with Hiking.
+    testWidgets('the path type is kept for the next route', (tester) async {
+      await showRoute(tester);
+      expect(routing.requests.last.$1, PathType.hiking);
+      await tap(tester, find.text('Paved'));
+      expect(routing.requests.last.$1, PathType.paved);
+      final later = AppSettingsService();
+      await later.loadSettings();
+      expect(later.settings.routePathType, PathType.paved);
+
+      await tap(tester, find.byTooltip('Clear route'));
+      expect(find.byType(RouteSheet), findsNothing);
+      await longPress(tester, const LatLng(41.9, -71.5));
+      await tap(tester, find.text('Route here'));
+      expect(routing.requests, hasLength(3));
+      expect(routing.requests.last.$1, PathType.paved);
+    });
+
+    testWidgets('the directions start where the route does', (tester) async {
+      await showRoute(tester, steps: steps);
+      await longPress(tester, const LatLng(41.7, -71.3));
+      await tap(tester, find.text('Route from here'));
+      expect(routing.requests, hasLength(2));
+      await tap(tester, find.text('Directions'));
+      expect(find.textContaining('From 41.7').hitTestable(), findsOneWidget);
+      expect(
+        overlay<MapMarker>(tester, 'route-start').position,
+        const LatLng(41.7, -71.3),
+      );
+
+      await tap(tester, find.text('Use my position'));
+      expect(shown('From your position'), findsOneWidget);
+      expect(find.text('Use my position'), findsNothing);
+      expect(
+        overlay<MapMarker>(tester, 'route-start').position,
+        const LatLng(41.81, -71.42),
+      );
     });
 
     testWidgets('the long-press sheet says what is set already', (
       tester,
     ) async {
-      Future<void> longPress(LatLng at) async {
-        tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(at);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-      }
-
-      Future<void> choose(String text) async {
-        await tester.tap(find.text(text));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-      }
-
       routing = _Routing(maps);
-      await pumpMap(
-        tester,
-        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
-        routing: routing,
-      );
-      await longPress(const LatLng(41.7, -71.3));
+      await showMap(tester);
+      await longPress(tester, const LatLng(41.7, -71.3));
       expect(find.textContaining('now:'), findsNothing);
-      await choose('Route from here');
+      await tap(tester, find.text('Route from here'));
 
-      await longPress(const LatLng(41.8, -71.4));
+      await longPress(tester, const LatLng(41.8, -71.4));
       expect(find.textContaining('Start now: 41.7'), findsOneWidget);
       expect(find.textContaining('Destination now:'), findsNothing);
-      await choose('Route here');
+      await tap(tester, find.text('Route here'));
       expect(routing.requests, hasLength(1));
 
-      await longPress(const LatLng(41.9, -71.5));
+      await longPress(tester, const LatLng(41.9, -71.5));
       expect(find.textContaining('Start now: 41.7'), findsOneWidget);
       expect(find.textContaining('Destination now: 41.8'), findsOneWidget);
+    });
+
+    // With a route set, its last rows were cut off.
+    testWidgets('the long-press sheet shows all its rows on a small phone', (
+      tester,
+    ) async {
+      routing = _Routing(maps);
+      await showMap(tester, view: const Size(360, 640));
+      await longPress(tester, const LatLng(41.7, -71.3));
+      await tap(tester, find.text('Route from here'));
+      await longPress(tester, const LatLng(41.8, -71.4));
+      await tap(tester, find.text('Route here'));
+
+      await longPress(tester, const LatLng(41.9, -71.5));
+      await tap(tester, shown('Cancel'));
+      expect(find.text('Route here'), findsNothing);
+
+      // On its side, they scroll.
+      tester.view.physicalSize = const Size(480, 320);
+      await settle(tester);
+      await longPress(tester, const LatLng(41.9, -71.5));
+      expect(shown('Cancel'), findsNothing);
+      await scrollTo(tester, find.text('Cancel'));
+      await tap(tester, find.text('Cancel'));
+      expect(find.text('Route here'), findsNothing);
     });
 
     // "Route here" would only say to download routing that isn't offered.
     testWidgets('is not offered with no routing data on the device or in '
         'the catalogue', (tester) async {
-      await pumpMap(
-        tester,
-        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
-        routing: _Routing(maps, hasData: false),
-      );
-      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
-        const LatLng(41.8, -71.4),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      routing = _Routing(maps, hasData: false);
+      await showMap(tester);
+      await longPress(tester, const LatLng(41.8, -71.4));
       expect(find.text('Route here'), findsNothing);
       expect(find.text('Route from here'), findsNothing);
     });
 
-    testWidgets('closes on back, and back then leaves the map', (tester) async {
-      await showRoute(tester);
+    testWidgets('back lowers it, then closes it, then leaves the map', (
+      tester,
+    ) async {
+      await showRoute(tester, steps: steps);
+      final open = height(tester);
+      await tap(tester, find.text('Directions'));
+      expect(height(tester), greaterThan(open));
 
-      // The panel slides away.
       await tester.binding.handlePopRoute();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      expect(find.byType(RoutePanel), findsNothing);
+      await settle(tester);
+      expect(height(tester), open);
+
+      // The sheet slides away.
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(RouteSheet), findsNothing);
       expect(find.byType(MapScreen), findsOneWidget);
 
       await tester.binding.handlePopRoute();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await settle(tester);
       expect(find.byType(MapScreen), findsNothing);
+    });
+
+    // The app bar changes colour over what scrolls, and keeps it once the
+    // sheet is gone: the directions scroll under the sheet's own header.
+    testWidgets('scrolled directions leave the app bar as it was', (
+      tester,
+    ) async {
+      await showRoute(
+        tester,
+        steps: [for (var i = 0; i < 30; i++) Maneuver('Step $i', 0.1, 60, i)],
+      );
+      double barElevation() => tester
+          .widget<Material>(
+            find
+                .descendant(
+                  of: find.byType(AppBar),
+                  matching: find.byType(Material),
+                )
+                .first,
+          )
+          .elevation;
+      await tap(tester, find.text('Directions'));
+      await tester.drag(find.text('Step 5'), const Offset(0, -300));
+      await settle(tester);
+      expect(shown('Step 0'), findsNothing);
+      expect(barElevation(), 0);
+
+      await tap(tester, find.byTooltip('Clear route'));
+      expect(find.byType(RouteSheet), findsNothing);
+      expect(barElevation(), 0);
+    });
+
+    // With no quick-switch bar under the map, the sheet reaches the bottom
+    // of the screen, where the system has a bar of its own.
+    testWidgets('stays above the system bar on a map opened from a chat', (
+      tester,
+    ) async {
+      tester.view.padding = const FakeViewPadding(bottom: 34);
+      tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+      await showRoute(
+        tester,
+        steps: steps,
+        screen: const MapScreen(highlightPosition: ll.LatLng(41.83, -71.4)),
+      );
+      final map = tester.getRect(find.byType(AppMap));
+      expect(map.bottom, 900);
+      var sheet = tester.getRect(find.byType(RouteSheet));
+      expect(sheet.bottom, 900);
+      expect(tester.getRect(find.text('Directions')).bottom, lessThan(866));
+      expect(routeMiddle(tester).dy, closeTo((map.top + sheet.top) / 2, 1));
+
+      await tap(tester, header);
+      sheet = tester.getRect(find.byType(RouteSheet));
+      expect(sheet.height, lessThan(100 + 34));
+      expect(
+        tester.getRect(find.textContaining('↑')).bottom,
+        lessThanOrEqualTo(866),
+      );
+
+      await tap(tester, header);
+      await tap(tester, find.text('Directions'));
+      expect(tester.getRect(find.byType(RouteSheet)).top, map.top);
+    });
+
+    // The quick switch puts another screen in the map's place, and a new map
+    // in that one's: the route was gone.
+    testWidgets('is still there after a visit to Chats', (tester) async {
+      Future<void> go(
+        Widget screen, {
+        bool replace = true,
+        bool wait = true,
+      }) async {
+        final navigator = Navigator.of(
+          tester.element(find.byType(Scaffold).first),
+        );
+        final route = MaterialPageRoute<void>(builder: (_) => screen);
+        unawaited(
+          replace ? navigator.pushReplacement(route) : navigator.push(route),
+        );
+        if (!wait) return tester.pump(const Duration(milliseconds: 50));
+        await settle(tester);
+        await settle(tester);
+      }
+
+      await showRoute(tester, steps: steps);
+      // Back at once: the map left is still on its way out.
+      await go(const Scaffold(), wait: false);
+      await go(const MapScreen());
+      expect(shown('Directions'), findsOneWidget);
+
+      await go(const Scaffold());
+      expect(find.byType(RouteSheet), findsNothing);
+
+      // A map opened from a chat is another map: no route, and none lost.
+      await go(
+        const MapScreen(highlightPosition: ll.LatLng(41.83, -71.4)),
+        replace: false,
+      );
+      expect(find.byType(RouteSheet), findsNothing);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+
+      await go(const MapScreen());
+      expect(shown('Directions'), findsOneWidget);
+      expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
+      expect(routing.requests, hasLength(1));
+      final map = tester.getRect(find.byType(AppMap));
+      final sheet = tester.getRect(find.byType(RouteSheet));
+      expect(routeMiddle(tester).dy, closeTo((map.top + sheet.top) / 2, 1));
+
+      // One left while it was being found is found again.
+      routing.gate = Completer();
+      await tap(tester, find.text('Paved'));
+      await go(const Scaffold());
+      await go(const MapScreen());
+      expect(shown('Finding a route…'), findsOneWidget);
+      routing.gate!.complete();
+      await settle(tester);
+      expect(routing.requests, hasLength(3));
+      expect(routing.requests.last.$1, PathType.paved);
+      expect(find.text('Finding a route…'), findsNothing);
+      expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
+
+      // Closed, it stays closed.
+      await tap(tester, find.byTooltip('Clear route'));
+      await go(const Scaffold());
+      await go(const MapScreen());
+      expect(find.byType(RouteSheet), findsNothing);
     });
   });
 

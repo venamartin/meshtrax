@@ -5650,6 +5650,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get route_startNowYou => '設定中の出発地：現在地';
 
   @override
+  String route_from(String start) {
+    return '$startから';
+  }
+
+  @override
+  String get route_fromYou => '現在地から';
+
+  @override
+  String get route_useMyPosition => '現在地を使う';
+
+  @override
   String get route_noHeights => 'この地域の標高データはありません。';
 
   @override

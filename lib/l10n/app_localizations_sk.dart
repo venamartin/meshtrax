@@ -5905,6 +5905,17 @@ class AppLocalizationsSk extends AppLocalizations {
   String get route_startNowYou => 'Aktuálny začiatok: vaša poloha';
 
   @override
+  String route_from(String start) {
+    return 'Začiatok: $start';
+  }
+
+  @override
+  String get route_fromYou => 'Začiatok: vaša poloha';
+
+  @override
+  String get route_useMyPosition => 'Použiť moju polohu';
+
+  @override
   String get route_noHeights => 'Pre túto oblasť chýbajú výškové údaje.';
 
   @override

@@ -5658,6 +5658,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get route_startNowYou => '현재 출발지: 내 위치';
 
   @override
+  String route_from(String start) {
+    return '$start에서';
+  }
+
+  @override
+  String get route_fromYou => '내 위치에서';
+
+  @override
+  String get route_useMyPosition => '내 위치 사용';
+
+  @override
   String get route_noHeights => '이 지역의 고도 정보가 없습니다.';
 
   @override

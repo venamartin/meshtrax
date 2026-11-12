@@ -5937,6 +5937,17 @@ class AppLocalizationsUk extends AppLocalizations {
   String get route_startNowYou => 'Зараз точка старту: ваше місцезнаходження';
 
   @override
+  String route_from(String start) {
+    return 'Від $start';
+  }
+
+  @override
+  String get route_fromYou => 'Від вашого місцезнаходження';
+
+  @override
+  String get route_useMyPosition => 'Використати моє місцезнаходження';
+
+  @override
   String get route_noHeights => 'Для цієї місцевості немає даних про висоти.';
 
   @override

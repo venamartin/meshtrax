@@ -5932,6 +5932,17 @@ class AppLocalizationsHu extends AppLocalizations {
   String get route_startNowYou => 'Jelenlegi kiindulópont: az Ön helyzete';
 
   @override
+  String route_from(String start) {
+    return 'Kiindulópont: $start';
+  }
+
+  @override
+  String get route_fromYou => 'Kiindulópont: az Ön helyzete';
+
+  @override
+  String get route_useMyPosition => 'Saját helyzet használata';
+
+  @override
   String get route_noHeights =>
       'Ehhez a területhez nincsenek magassági adatok.';
 

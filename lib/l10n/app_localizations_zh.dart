@@ -5540,6 +5540,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get route_startNowYou => '当前起点：您的位置';
 
   @override
+  String route_from(String start) {
+    return '从 $start 出发';
+  }
+
+  @override
+  String get route_fromYou => '从您的位置出发';
+
+  @override
+  String get route_useMyPosition => '使用我的位置';
+
+  @override
   String get route_noHeights => '此区域没有海拔数据。';
 
   @override
