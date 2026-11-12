@@ -280,6 +280,7 @@ PARTS_REQUEST (subtype 5) is the common header, with the share id in `session`, 
 - Simplify with traxshare's trail recipe (epsilon from 15 m, ×1.5) until the track fits in 8 parts or fewer. Keep that cap in the constants block; it is Martin's call.
 - Pace the parts, one every few seconds after the radio has gone quiet, the way channel text waits today. Each part is about 0.58 s on air and is repeated by every repeater.
 - Show "Sending part 3 of 6".
+- Measured part counts are in the [track compression review](#track-compression-review-2026-11-12).
 
 **Receiving:**
 - The sharing strip and the route card show "Route from <name>: 5 of 6 parts", with **Save** and **Ask for missing parts**.
@@ -335,6 +336,58 @@ Martin edits these; the PR carries drafts.
 - a photo from the camera
 - a `Route:` message between two phones in a DM, and opening it with and without routing data
 
+## Track compression review (2026-11-12)
+
+A quick look at how tracks and routes can be made small enough for MeshCore's packets. Martin asked for it, and drafted a text encoding for tracks: a Google Encoded Polyline at precision 4, one message per track. The codec, the comparison and the measurements are in the location-sharing plan (#240, "Track compression review"), because the trail codec lives there. This section holds what it means for routes. **Nothing here is decided:** it is input for the later review.
+
+### What makes a track small
+
+In order of effect:
+1. **Send the line only.** A GPX track point with a height and a time is about 100 bytes of XML. Even compressed ten to one that is 10 bytes a point, so GPX stays a file format for import and export.
+2. **Simplify.** Douglas–Peucker at 15 m kept 181 of 1,604 points on a 37.8 km mountain highway.
+3. **Round to a grid** sized to the tolerance, and send the differences between neighbouring points.
+4. **Code the differences in bits,** not in bytes or characters.
+5. **Or send no line:** waypoints, with the receiver's router rebuilding the line. That is the `Route:` message.
+
+| Form | Cost per point | Step |
+|---|---|---|
+| GPX file | about 100 bytes, with a height and a time | as recorded |
+| `Route:` text, waypoints only | about 20 bytes | 1 m |
+| `SVG:` drawing over a map ([drawings](../message-format.md#drawings)) | 4–5 bytes | 1/100 of the map frame |
+| Encoded polyline as text, precision 4 | 2.4–3.9 bytes | 11 m |
+| Byte varints in 10 m units | about 2 bytes | 10 m |
+| traxshare's code | 11–15 bits | 8 m and up |
+
+The last three rows were measured on two road lines; the others come from this plan and the message format.
+
+### R4: a recorded track in parts
+
+Measured on two road lines from OpenStreetMap with traxshare's code (#240 has the lines and the method). A part holds 132 bytes of points, and the name takes up to 32 bytes of part 0.
+
+| Line | At 15 m, the recipe's start | At 10 m |
+|---|---|---|
+| 37.8 km mountain highway with switchbacks | 180 points, 313 bytes: 3 parts | 238 points, 380 bytes: 4 parts |
+| 76 km mountain road | 300 points, 560 bytes: 5 parts | 368 points, 646 bytes: 6 parts |
+
+- **The 8-part cap** leaves about 1,024 bytes for points, about 600 points at 13–14 bits each.
+- **A recorded trail needs more.** The draft's test track, a GPS-recorded 39.5 km loop with switchbacks, kept 398 points at 10 m and 247 at 20 m. At 13–14 bits a point that is about 670 bytes (6 parts) and 420 bytes (4 parts). These are estimates: that track was not run through this code.
+- **As polyline text,** the two road lines at 10 m would take about 4 and 7 messages of 148 characters.
+- **The recipe:** #240's review proposes finding the finest tolerance that fits by bisection in place of the ×1.5 loop. The same applies to "fits in 8 parts".
+
+### R4: the `Route:` message
+
+- **It stays the smallest form of a planned route,** because the receiver's router fills in the line: about 20 bytes a point, 6 points in a DM.
+- **More points per message** are possible, at a price:
+  - 4 decimals in place of 5 (11 m in place of 1 m) saves 2 bytes a point. That is one more point at best.
+  - The waypoints as an encoded polyline at precision 5 would cost 4–6 bytes a point, so about 25 points would fit (worked out, not built). Nobody can read or type that, which the [message format](../message-format.md) is built on, and the ` ~` marker would need another home.
+  - The plan's answer is simpler: when the waypoints don't fit, offer track packets.
+- **A check on the rebuilt route.** The message carries the path type, but not the routing options or the version of the routing data. The receiver's route can differ from the sender's with no sign of it. Adding the length to line 2 (`dirt 12.4 km`, about 8 bytes) would let the receiver say when its route is more than a few percent off.
+
+### R2: GPX import
+
+- **5 m keeps noise.** The draft's recorded loop kept 611 of its 1,245 points at 5 m and 398 at 10 m. That is fine on the phone, where room isn't short. Sharing simplifies again from 15 m, so the import tolerance never reaches the air.
+- **Smoothing before simplifying** (the draft's 5-point moving average) would take GPS noise out of an imported track. Not measured. It also moves real corners, so it needs a test on recorded tracks first.
+
 ## Open questions for Martin
 
 1. The part cap and pacing for shared tracks (8 parts suggested).
@@ -342,3 +395,6 @@ Martin edits these; the PR carries drafts.
 3. The privacy-policy and purpose-string wording.
 4. Whether #240's package lands on master before R4.
 5. Do test version bumps stay in the PR?
+6. From the [track compression review](#track-compression-review-2026-11-12): the draft aims at one message per track. For a track someone chooses to share, are up to 8 parts still right? Two mountain roads of 38 and 76 km took 3 to 6.
+7. Should heights travel with a shared track (mask bit 9)? They take room from the points. Not measured.
+8. Should the `Route:` message carry the route's length, as a check on the rebuilt route?
