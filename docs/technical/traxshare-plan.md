@@ -363,6 +363,8 @@ Tag every frame 27 live or backlog, as described in Step 3a.
 
 At 10 miles, that is about 57 points.
 
+The [track compression review](#track-compression-review-2026-11-12) measured this recipe and proposes two changes: bisection in step 4, and a graded tolerance.
+
 ### Channel gate
 
 `isSharableChannel(name, psk)` lives in `packages/traxshare`, with the Public key constant (`8b3387e9c5cdea6ac9e5edbaa115cd72`). `Channel.isSharable` in [channel.dart](../../lib/models/channel.dart) calls it, so there is one implementation, and the session layer checks it on both send and receive.
@@ -443,6 +445,136 @@ It can't catch a renamed hashtag channel or a key that was shared widely, which 
 - the consent dialog
 - the message queue while a phone is away
 
+## Track compression review (2026-11-12)
+
+Martin drafted a text encoding for "a position plus the track that led there" in one message, and asked for a quick look at how tracks can be compressed for MeshCore's packet size. This is that look. **Nothing here is decided:** it is input for the later review of this plan and of the saved-routes plan (#242), which uses the same codec.
+
+### The draft
+
+- **Simplify** with Douglas–Peucker at a tolerance in metres, 10 m as the baseline. Optionally smooth first (a 5-point moving average), because GPS jitter at low speed is otherwise kept as points.
+- **Newest first:** the first point is the current position, and a message cut short keeps the newest part.
+- **Encode** as a Google Encoded Polyline at precision 4 (0.0001°, about 11 m), in one text message of about 150 characters, behind a prefix that names the precision: `T4:<polyline>`.
+- **Next step it names:** a graded tolerance, fine near the current position and coarser further back. Not tested there.
+
+Its test vectors hold. A Python encoder written for this review gives, for Google's example `(38.5, -120.2), (40.7, -120.95), (43.252, -126.453)`:
+
+```
+precision 5   _p~iF~ps|U_ulLnnqC_mqNvxq`@
+precision 4   o}nV~sjhA_~i@vsM_zp@jnjB
+```
+
+### Against this plan
+
+Both simplify with Douglas–Peucker, run newest first from the current position, and take differences between rounded values. They differ in the carrier and in the code.
+
+| | The draft | This plan |
+|---|---|---|
+| Carrier | a text message | a channel datagram (CMD 62, frame 27) |
+| Where it works | DMs and channels, on any firmware | private channels, firmware ver code 11 (companion 1.15) or newer |
+| On other apps and older MeshTrax builds | raw text in the chat, counted as unread | nothing |
+| Room | 158 bytes in a DM, about 125–140 in a channel ([byte budget](../message-format.md#byte-budget)) | 157 bytes, 128 of them for the trail |
+| Step | 0.0001° (11 m north–south). The next choice is 0.001°, 111 m. | any whole number of metres (`grid_unit_m`) |
+| Code | 5 bits per character, so 8 bits on air for a small difference | exp-Golomb, order 3: 4 bits for a small difference |
+| Longer tracks | none: one message | #242's ROUTE_PART, up to 16 parts |
+
+### Measured
+
+**The lines:** two road lines from OpenStreetMap, fetched from the public OSRM demo server: a 37.8 km mountain highway with switchbacks (US 550 between Ouray and Silverton, 1,604 points) and a 76 km mountain road (Going-to-the-Sun Road, 1,852 points). They are map lines, not GPS recordings, so they have no jitter. No recorded track was at hand.
+
+**The method:** both codes were given the same Douglas–Peucker output, newest first. "Worst error" is the largest distance from any source point to the decoded line, so it includes the rounding.
+
+The whole 37.8 km line at one tolerance:
+
+| Tolerance | Points | Polyline text, precision 4 | This plan's code, with its 7-byte anchor (grid) | Text ÷ binary |
+|---|---|---|---|---|
+| 10 m | 239 | 563 chars | 387 bytes (8 m) | 1.5 |
+| 15 m | 181 | 467 | 320 (8 m) | 1.5 |
+| 30 m | 114 | 340 | 196 (15 m) | 1.7 |
+| 50 m | 81 | 261 | 135 (25 m) | 1.9 |
+| 100 m | 47 | 166 | 76 (50 m) | 2.2 |
+| 200 m | 26 | 101 | 44 (100 m) | 2.3 |
+
+- **The other line** gives the same ratios: 1.5 at 10 m, 2.0 at 50 m, 2.3 at 200 m.
+- **Per point:** the text takes 2.4–2.6 characters at 10 m and 3.9 at 200 m. This plan's code takes 11–15 bits at every tolerance.
+- **Why the ratio grows:** this plan's grid grows with the tolerance, and the polyline stays at 11 m steps.
+- **Rounding:** at a 10 m tolerance the worst error was 14 m as text and 13 m on an 8 m grid. With the grid at half the tolerance, rounding added up to 18% to the worst error at the larger tolerances.
+- **A byte code** (zigzag and 7-bit varints in 10 m units, the way TWKB and Protocol Buffers write numbers) falls between the two: 479 bytes for the points at 10 m, against 380 for this plan's code and 563 characters of text.
+
+What fits in one message:
+
+| | Text: 150 characters, `T4:` included | This plan: 128 bytes of trail |
+|---|---|---|
+| The newest part at 10 m | 12.7–13.5 km, 51–53 points | 15.4–17.0 km, 69–72 points |
+| The newest part at 15 m | 13.7–14.2 km, 48–52 points | 17.9–20.3 km, 66 points |
+| The newest 10 miles | 19–24 m, 46–48 points, worst error 23–26 m | 15 m, 55–62 points in 107–117 bytes, worst error 16–17 m |
+| All 37.8 km | 125 m, 40 points | 49 m, 80 points |
+| All 76 km | 229 m, 36 points | 90 m, 77 points. With step 4 of the recipe as written: 114 m, 64 points. |
+
+- **"About 57 points at 10 miles"** holds for these road lines.
+- **In a channel** the text has 125–140 bytes, not 150, so it holds less than the table shows.
+- **A recorded trail is harder.** The draft's test track is a GPS-recorded 39.5 km loop with switchbacks (1,245 points). Douglas–Peucker kept 398 points at 10 m, 247 at 20 m, 197 at 30 m, 134 at 50 m, 76 at 100 m and 39 at 200 m. That is about 10 points per km at 10 m, against 5–6 for the road lines.
+  - As text, the loop fit one message at 200 m, or its newest 7.1 km at 10 m.
+  - This plan's 128 bytes hold about 75 points at 13–14 bits each. On such a trail that would be about the newest 8 km at 10 m, and the recipe would stop at 34 m or 51 m for a 10-mile window. These are estimates from the draft's point counts: that track was not run through this code.
+
+**Step 4 of the recipe wastes room.** On the 76 km line the ×1.5 loop stopped at 114 m with 21 of the 128 bytes unused. Bisecting between the last tolerance that failed and the first that fit gave 90 m and 13 more points. On the other line the loop happened to stop 1 byte under the limit. MeshTrax already bisects this way for drawings: `SvgDrawing.fit` in [svg_drawing.dart](../../lib/helpers/svg_drawing.dart) finds the finest simplification whose message fits.
+
+**Graded tolerance,** the draft's next step, tried here as Douglas–Peucker in which a point is kept when its distance from the line exceeds the tolerance at its own distance back along the track: 15 m for the newest 2 km, then a straight ramp to the far end, on a 16 m grid, in 128 bytes.
+
+| Trail | One tolerance | Graded |
+|---|---|---|
+| 37.8 km line, its newest 25.5 km | 28 m. Worst error 30 m, and 24 m within the newest 2 km. | Ramp to 37 m. Worst error 38 m, and 9 m within the newest 2 km. |
+| 37.8 km line, all of it | 49 m. Worst error 49 m, and 24 m within the newest 2 km. | Ramp to 159 m. Worst error 115 m, and 9 m within the newest 2 km. |
+| 76 km line, its newest 25.5 km | 20 m. Worst error 23 m, and 13 m within the newest 2 km. | Ramp to 19 m. No gain: this end of the road is nearly straight. |
+| 76 km line, all of it | 90 m. Worst error 100 m, and 37 m within the newest 2 km. | Ramp to 524 m. Worst error 315 m, and 13 m within the newest 2 km. |
+
+- **It works as the draft expects:** the newest 2 km stay as exact as a short trail, and the far end pays. The price is small inside a trail window and large for a long history in one report.
+- **The grid matters.** There is one grid per report. On an 8 m grid the far points cost more bits, and the ramp in the first row had to reach 100 m (worst error 75 m). A graded trail wants a grid near 16 m.
+- **No format change:** `grid_unit_m` is already in the report, and the receiver needs nothing new.
+
+**The code's details.** On both lines, at 15 m and at 50 m:
+- order 4 was 3–5% smaller than order 3, and order 2 was 4–8% larger
+- coding the change in the difference (a constant-velocity prediction, as in the draft's binary alternative) ranged from 8% smaller to 2% larger
+
+That is too little to change the format on road lines. Recorded tracks have shorter steps and may point the other way.
+
+**Smoothing** was not measured. The draft smooths because jitter became points at 10 m. Here the radio's positions come in 11 m steps and the movement gate keeps a point only every 25 m, so the recipe's 15 m start is above the step. A tolerance under 11 m would keep the steps themselves as points, so 15 m should stay the floor.
+
+### What the review suggests
+
+For the later review, in order of value:
+
+1. **Keep the datagram and this code for channels.** The same points take 1.5 to 2.3 times as many bytes as text, and a datagram stays out of the chat on every app.
+2. **Recipe step 4:** find the finest tolerance that fits by bisection, the way drawings do, in place of the ×1.5 loop.
+3. **Graded tolerance** as an option of the recipe (15 m for the newest 2 km, a ramp beyond, a 16 m grid). Try it on recorded tracks before deciding.
+4. **If a text form is wanted** (DMs, older firmware, other apps), there are two ways, and the choice is a product one:
+   - the polyline as drafted. Many tools decode it, and it is a second codec to keep.
+   - this plan's bytes in Base64url behind a prefix. One codec for both carriers; a 150-character message holds 110 bytes, about 60 points against the polyline's 36–53.
+5. **Fixtures:** add a GPS-recorded twisty trail to the GPX fixtures in [Verification](#verification), and fixed vectors (points in, bytes out), as the draft has for the polyline, so a second implementation can be checked.
+6. **Leave** order 3 and plain differences as they are.
+
+### Looked at and set aside
+
+| Method | What it is | Why not |
+|---|---|---|
+| Google Encoded Polyline | Text, 5 bits per character. The precision is not in the string. | The draft's choice: see above |
+| HERE Flexible Polyline | The same idea with a header that stores the precision and an optional third value such as height. Its alphabet is `A–Z a–z 0–9 - _`. MIT licence, with a Dart implementation. | Same size as the polyline. The better pick if a polyline is used: no backslash or backtick to escape, and no need for a prefix to name the precision. |
+| TWKB | Binary: a precision in the header, differences, zigzag, byte varints, optional height | Byte-aligned, so about a quarter larger than this plan's code |
+| Base64, Base85 or Base91 around binary | Text armour at 6, 6.4 and about 6.5 bits per character | Only needed for a text carrier: see suggestion 4 |
+| Waypoints and the receiver's router | #242's `Route:` message | The smallest form of a planned route. It can't carry a recorded track. |
+| OpenLR | A standard for the same idea: a few reference points, each with a road class, a form of way and a bearing, matched against the receiver's own map | Needs those attributes and a matcher at both ends |
+| gzip or zstd on the GPX file | General compression of the XML | A track point is about 100 bytes of XML. Even at ten to one that is 10 bytes a point, against under 2. |
+| Other simplifiers: Visvalingam–Whyatt (by area), opening window (one pass), TD-TR and SQUISH (use time) | | Douglas–Peucker bounds the distance, which is what "within 15 m" means. The time-aware ones matter only with per-point times. Published comparisons disagree on which has the lowest error. Not measured here. |
+| Arithmetic coding of the differences | An adaptive code in place of exp-Golomb | Not measured. At about 100 bytes it has little to learn from. |
+
+### Sources
+
+- [Encoded Polyline Algorithm Format](https://developers.google.com/maps/documentation/utilities/polylinealgorithm) (Google)
+- [Flexible Polyline](https://github.com/heremaps/flexible-polyline) (HERE)
+- [TWKB specification](https://github.com/TWKB/Specification/blob/master/twkb.md)
+- [OpenLR](https://en.wikipedia.org/wiki/OpenLR)
+- [Extensive Comparison of Trajectory Simplification Algorithms](https://studenttheses.uu.nl/handle/20.500.12932/25654) (Utrecht University thesis; abstract only)
+- [Batch Simplification Algorithm for Trajectories over Road Networks](https://mdpi.com/2220-9964/12/10/399/xml) (abstract only)
+
 ## Open questions for Martin
 
 1. Do test version bumps stay in the PR, or are they reverted at merge as in #229?
@@ -450,6 +582,9 @@ It can't catch a renamed hashtag channel or a key that was shared widely, which 
 3. Should the consent dialog offer an approximate position? The format already carries it; v1 sends exact.
 4. When to request the data_type allocation upstream, and whether to ask the firmware to drop datagrams before channel text when the queue is full. Both are public requests in another project, so they're his call.
 5. iOS background sharing needs a test on his Mac and iPhone.
+6. From the [track compression review](#track-compression-review-2026-11-12): is the draft's text form (`T4:`) meant to replace the datagrams, or to add a way in for DMs, older firmware and other apps?
+7. Graded tolerance: is a coarser far end a fair price for a finer near end, and how far back counts as near? The draft says about 2 km.
+8. Are per-point times or heights wanted in a trail? The format reserves both (mask bits 8 and 9), and each takes room from the points.
 
 ## What the earlier draft got wrong (don't bring these back)
 
