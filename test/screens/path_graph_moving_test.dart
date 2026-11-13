@@ -129,6 +129,10 @@ void main() {
     await pump(tester, size: const Size(412, 915));
     await tester.tap(find.text('C882'));
     await tester.pumpAndSettle();
+    // The sheet opens at 60%, and its last line starts below that when a
+    // date above it takes two lines ("11/12 10:22:45 AM").
+    await tester.ensureVisible(find.text('Does it move?', skipOffstage: false));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Does it move?'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Moves'));
