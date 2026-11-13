@@ -54,6 +54,7 @@ import '../utils/app_logger.dart';
 import '../utils/battery_utils.dart';
 import '../utils/platform_info.dart';
 import '../utils/tracked_list.dart';
+import '../utils/usb_port_labels.dart';
 import 'meshcore_uuids.dart';
 import 'meshcore_protocol.dart';
 import 'second_app_detector.dart';
@@ -350,6 +351,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   static const String _lastTransportKey = 'last_transport';
   static const String _lastTcpHostKey = 'last_tcp_host';
   static const String _lastTcpPortKey = 'last_tcp_port';
+  static const String _lastUsbPortKey = 'last_usb_port';
+  static const String _lastUsbHardwareIdKey = 'last_usb_hardware_id';
   static const String _lastBleDeviceNameKey = 'last_ble_device_name';
   bool _manualDisconnect = false;
   final MeshCoreUsbManager _usbManager = MeshCoreUsbManager();
@@ -669,6 +672,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// connection, persisted so launch auto-connect targets what the user
   /// actually uses instead of unconditionally hunting the last BLE radio.
   String? _lastTransport;
+
+  /// Path and USB ids of the port of the last USB session, so launch
+  /// auto-connect and reconnects find the radio again under a new port name.
+  /// A session counts once the radio has answered (SELF_INFO): only then is
+  /// a drop worth reconnecting.
+  String? _lastUsbPort;
+  String? _lastUsbHardwareId;
+  bool _usbSessionEstablished = false;
   bool _notifyListenersDirty = false;
   static const Duration _notifyListenersDebounce = Duration(milliseconds: 50);
 
@@ -884,12 +895,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _state == MeshCoreConnectionState.connected &&
       _activeTransport == MeshCoreTransportType.usb;
   bool get isAutoReconnectScheduled =>
-      (_shouldAutoReconnect || _shouldAutoReconnectTcp) &&
+      (_shouldAutoReconnect ||
+          _shouldAutoReconnectTcp ||
+          _shouldAutoReconnectUsb) &&
       (_reconnectTimer?.isActive ?? false);
   /// True as soon as a non-manual disconnect occurs, even before the reconnect
   /// timer fires. Use this in build() checks to avoid the race where the timer
   /// hasn't been set yet when notifyListeners() triggers the first rebuild.
-  bool get willAutoReconnect => _shouldAutoReconnect || _shouldAutoReconnectTcp;
+  bool get willAutoReconnect =>
+      _shouldAutoReconnect ||
+      _shouldAutoReconnectTcp ||
+      _shouldAutoReconnectUsb;
   String? get activeTcpEndpoint => _tcpConnector.activeEndpoint;
   bool get isTcpTransportConnected =>
       _state == MeshCoreConnectionState.connected &&
@@ -2294,6 +2310,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // flows through _frameController with no listener and is discarded.
       // This prevents stale/partial frames from confusing the decoder.
       await Future<void>.delayed(const Duration(milliseconds: 2000));
+      if (_state != MeshCoreConnectionState.connecting) {
+        // Cancelled while the radio settled.
+        await _usbManager.disconnect();
+        return;
+      }
       _usbFrameSubscription = _usbManager.frameStream.listen(
         _handleFrame,
         onError: (error, stackTrace) {
@@ -2307,7 +2328,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       _setState(MeshCoreConnectionState.connected);
-      unawaited(_persistLastTransportUsb());
       _pendingInitialChannelSync = true;
       _appDebugLogService?.info(
         'connectUsb: requesting device info…',
@@ -2352,6 +2372,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       if (!gotSelfInfo) {
         throw StateError('Timed out waiting for SELF_INFO during connect');
       }
+      _usbSessionEstablished = true;
+      unawaited(_persistLastUsbPort(_usbManager.activePortKey ?? portName));
 
       _appDebugLogService?.info('connectUsb: syncing time…', tag: 'USB');
       await syncTime();
@@ -3403,6 +3425,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get _shouldAutoReconnectTcp =>
       !_manualDisconnect && _lastTcpHost != null && _lastTcpPort != null;
 
+  /// Desktop only: on Android every USB connection needs the user's consent,
+  /// and the port name changes with each plug-in.
+  bool get _shouldAutoReconnectUsb =>
+      !_manualDisconnect &&
+      _lastTransport == 'usb' &&
+      _lastUsbPort != null &&
+      PlatformInfo.isDesktop;
+
   /// True when a previously connected Bluetooth device is remembered and can be
   /// auto-connected on the next launch.
   bool get hasRememberedBleDevice => _lastDeviceId != null;
@@ -3415,6 +3445,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _lastTransport ??= prefs.getString(_lastTransportKey);
       _lastTcpHost ??= prefs.getString(_lastTcpHostKey);
       _lastTcpPort ??= prefs.getInt(_lastTcpPortKey);
+      _lastUsbPort ??= prefs.getString(_lastUsbPortKey);
+      _lastUsbHardwareId ??= prefs.getString(_lastUsbHardwareIdKey);
     } catch (_) {
       // Prefs unavailable (e.g. in tests) — nothing to restore.
     }
@@ -3432,12 +3464,31 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _persistLastTransportUsb() async {
+  Future<void> _persistLastUsbPort(String port) async {
     _lastTransport = 'usb';
+    _lastUsbPort = port;
+    String? hardwareId;
     try {
-      await PrefsManager.instance.setString(_lastTransportKey, 'usb');
+      final ports = await _usbManager.listPorts();
+      final label = ports
+          .where((listed) => normalizeUsbPortName(listed) == port)
+          .firstOrNull;
+      hardwareId = label == null ? null : usbHardwareId(label);
     } catch (_) {
-      // Best effort.
+      // Without ids the radio is found again by its path.
+    }
+    _lastUsbHardwareId = hardwareId;
+    try {
+      final prefs = PrefsManager.instance;
+      await prefs.setString(_lastTransportKey, 'usb');
+      await prefs.setString(_lastUsbPortKey, port);
+      if (hardwareId != null) {
+        await prefs.setString(_lastUsbHardwareIdKey, hardwareId);
+      } else {
+        await prefs.remove(_lastUsbHardwareIdKey);
+      }
+    } catch (_) {
+      // Best effort — a failed persist just means no auto-connect next launch.
     }
   }
 
@@ -3461,13 +3512,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Attempts a one-shot connection on app launch to whatever the user last
-  /// connected to — the last TCP endpoint, or the last Bluetooth device.
-  /// USB is never auto-connected: port names shift between boots and the
-  /// user plugs in and picks. No-op if the setting is disabled, on web, when
-  /// nothing is remembered, or once an attempt has already been made this
-  /// process. Callers must ensure the Bluetooth adapter is on before
-  /// invoking.
-  Future<void> autoConnectToLastDevice() async {
+  /// connected to — the last TCP endpoint, the last USB radio (on desktop;
+  /// on Android the user plugs in and picks), or the last Bluetooth device.
+  /// No-op if the setting is disabled, on web, when nothing is remembered,
+  /// or once an attempt has already been made this process. Pass
+  /// [includeBluetooth] false while the Bluetooth adapter may still be off:
+  /// a Bluetooth device is then left for a later call.
+  Future<void> autoConnectToLastDevice({bool includeBluetooth = true}) async {
     if (_launchAutoConnectAttempted) return;
     if (PlatformInfo.isWeb) return;
     if (_appSettingsService?.settings.autoConnectLastDevice != true) return;
@@ -3494,11 +3545,27 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (_lastTransport == 'usb') {
       _launchAutoConnectAttempted = true;
+      if (!PlatformInfo.isDesktop) return;
+      final port = await _findLastUsbPort();
+      if (port == null) return;
+      _appDebugLogService?.info(
+        'Auto-connecting to last USB port $port',
+        tag: 'USB',
+      );
+      try {
+        await connectUsb(portName: port);
+      } catch (e) {
+        _appDebugLogService?.info(
+          'Auto-connect to last USB port failed: $e',
+          tag: 'USB',
+        );
+      }
       return;
     }
 
     // 'ble', or no transport recorded (legacy install with a remembered
     // BLE device).
+    if (!includeBluetooth) return;
     final id = _lastDeviceId;
     if (id == null) return;
     _launchAutoConnectAttempted = true;
@@ -3563,11 +3630,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // dropped — reaching `connected` with no _connectionSubscription, so the
     // contact stream stalls part-way and nothing is left to notice the drop.
     _bleConnectAttempt++;
-    if (_activeTransport == MeshCoreTransportType.bluetooth &&
+    if ((_activeTransport == MeshCoreTransportType.bluetooth ||
+            _activeTransport == MeshCoreTransportType.usb) &&
         (_state == MeshCoreConnectionState.connecting ||
             _state == MeshCoreConnectionState.connected)) {
       _appDebugLogService?.info(
-        'Cancelling BLE connect at user request (state=$_state)',
+        'Cancelling connect at user request '
+        '(transport=$_activeTransport, state=$_state)',
         tag: 'Connection',
       );
       await disconnect(manual: true);
@@ -3672,6 +3741,55 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
+  /// Mirror of [_scheduleTcpReconnect] for USB on desktop: after a drop the
+  /// user did not cause (the radio rebooted, a cable was pulled), wait with
+  /// the shared backoff for the same radio to show up again, under any port
+  /// name, and reconnect.
+  void _scheduleUsbReconnect() {
+    if (!_shouldAutoReconnectUsb) return;
+    if (_reconnectTimer?.isActive == true) return;
+
+    final delayMs = _nextReconnectDelayMs();
+    _appDebugLogService?.info('Auto-reconnect in ${delayMs}ms', tag: 'USB');
+    _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
+      final port = await _findLastUsbPort();
+      if (!_shouldAutoReconnectUsb ||
+          _state != MeshCoreConnectionState.disconnected) {
+        return;
+      }
+      // connectUsb zeroes the backoff counter as a fresh attempt: keep it, so
+      // a radio that is not back yet keeps backing off.
+      final priorAttempts = _reconnectAttempts;
+      if (port != null) {
+        try {
+          await connectUsb(portName: port);
+        } catch (_) {
+          // Already logged by connectUsb.
+        }
+      }
+      if (_state != MeshCoreConnectionState.connected &&
+          _reconnectTimer?.isActive != true) {
+        _reconnectAttempts = priorAttempts;
+        _scheduleUsbReconnect();
+      }
+    });
+  }
+
+  Future<String?> _findLastUsbPort() async {
+    final path = _lastUsbPort;
+    if (path == null) return null;
+    try {
+      return findLastUsbPort(
+        await _usbManager.listPorts(),
+        path: path,
+        hardwareId: _lastUsbHardwareId,
+      );
+    } catch (e) {
+      _appDebugLogService?.warn('Listing USB ports failed: $e', tag: 'USB');
+      return null;
+    }
+  }
+
   /// Timers don't run while the OS has the app frozen or suspended, so a
   /// TCP drop in the background surfaces on return either as a reconnect
   /// still waiting out its backoff (up to 30s), or as a socket that looks
@@ -3760,6 +3878,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     final transportAtDisconnect = _activeTransport;
     final tcpSessionWasEstablished = _tcpSessionEstablished;
     _tcpSessionEstablished = false;
+    final usbSessionWasEstablished = _usbSessionEstablished;
+    _usbSessionEstablished = false;
     final transportLabel = switch (transportAtDisconnect) {
       MeshCoreTransportType.bluetooth => 'BLE',
       MeshCoreTransportType.usb => 'USB',
@@ -3917,6 +4037,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       sessionWasEstablished: tcpSessionWasEstablished,
     )) {
       _scheduleTcpReconnect();
+    } else if (shouldScheduleUsbReconnect(
+      manual: manual,
+      transportAtDisconnect: transportAtDisconnect,
+      sessionWasEstablished: usbSessionWasEstablished,
+    )) {
+      _scheduleUsbReconnect();
     }
     // The service only has a job while a reconnect is pending.
     if (_reconnectTimer?.isActive != true && (manual || !_tcpRetryInFlight)) {
@@ -3935,6 +4061,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) {
     return !manual &&
         transportAtDisconnect == MeshCoreTransportType.tcp &&
+        sessionWasEstablished;
+  }
+
+  /// A USB drop retries only when it killed a session in which the radio had
+  /// answered: a port that opened but held no radio must not start a loop.
+  @visibleForTesting
+  static bool shouldScheduleUsbReconnect({
+    required bool manual,
+    required MeshCoreTransportType transportAtDisconnect,
+    required bool sessionWasEstablished,
+  }) {
+    return !manual &&
+        transportAtDisconnect == MeshCoreTransportType.usb &&
         sessionWasEstablished;
   }
 
