@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 // showDismissibleSnackBar shows  a [SnackBar] with tap to dismiss
 // all other properties are default and optional

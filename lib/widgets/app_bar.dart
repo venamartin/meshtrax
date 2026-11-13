@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/widgets/battery_indicator.dart';
 import 'package:provider/provider.dart';

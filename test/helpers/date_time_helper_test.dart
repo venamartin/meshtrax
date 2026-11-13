@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/helpers/date_time_helper.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/l10n/l10n.dart';
 
 // A user with Imperial units saw day/month dates: the channel screen built
 // them by hand. Dates follow the system's region, times its 12/24-hour
@@ -25,7 +26,7 @@ void main() {
       data: MediaQueryData(alwaysUse24HourFormat: h24),
       child: MaterialApp(
         locale: Locale(language),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(builder: (c) {
           ctx = c;
