@@ -173,6 +173,20 @@ void main() {
     expect((await store.oldestUnread(idKeyA, 2))?.text, 'new 1');
   });
 
+  test('fromNewest counts the rows standing below a message in the chat',
+      () async {
+    await store.insertIfNew(idKeyA, msg('oldest', id: 'f1', ts: 1000));
+    await store.insertIfNew(idKeyA, msg('newest', id: 'f2', ts: 4000));
+    // Arrived last, but its sender's time puts it between the two.
+    await store.insertIfNew(idKeyA, msg('late', id: 'f3', ts: 2000));
+    await store.insertIfNew(idKeyB, msg('other channel', id: 'f4', ts: 9000));
+
+    expect(await store.fromNewest(idKeyA, 'f2'), 0);
+    expect(await store.fromNewest(idKeyA, 'f3'), 1);
+    expect(await store.fromNewest(idKeyA, 'f1'), 2);
+    expect(await store.fromNewest(idKeyA, 'missing'), isNull);
+  });
+
   group('searchChannelMessages — SQL-side full-history search', () {
     setUp(() async {
       await store.upsertMessage(

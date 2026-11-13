@@ -670,6 +670,31 @@ class ChannelMessageStore {
     }
   }
 
+  /// How many rows stand below [messageId] in the order the chat shows;
+  /// null when it is not stored. A count on idx_channel_shown_order: no
+  /// payload is read, however far up the row stands.
+  Future<int?> fromNewest(String idKey, String messageId) async {
+    if (publicKeyHex.isEmpty) return null;
+    final row = await _db
+        .customSelect(
+          'SELECT (SELECT COUNT(*) FROM channel_message_rows r'
+          ' WHERE r.node_scope = ?1 AND r.channel_id_key = ?2'
+          ' AND (r.timestamp_ms, r.received_at_us, r.id) >'
+          ' (m.timestamp_ms, m.received_at_us, m.id)) AS n'
+          ' FROM channel_message_rows m'
+          ' WHERE m.node_scope = ?1 AND m.channel_id_key = ?2'
+          ' AND m.message_id = ?3',
+          variables: [
+            Variable.withString(publicKeyHex),
+            Variable.withString(idKey),
+            Variable.withString(messageId),
+          ],
+          readsFrom: {_db.channelMessageRows},
+        )
+        .getSingleOrNull();
+    return row?.read<int>('n');
+  }
+
   /// Watched unread counts for every channel identity under this node —
   /// one query feeds the whole chats screen.
   Stream<Map<String, int>> watchUnreadCounts() {
