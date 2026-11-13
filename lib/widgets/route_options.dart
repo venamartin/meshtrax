@@ -3,7 +3,7 @@ import 'package:traxroute/traxroute.dart';
 
 import '../l10n/l10n.dart';
 
-/// The route panel's options for [pathType]: the few settings that change
+/// The route sheet's options for [pathType]: the few settings that change
 /// which way a route goes, or its times.
 class RouteOptionsSection extends StatelessWidget {
   final PathType pathType;
@@ -127,12 +127,9 @@ class RouteOptionsSection extends StatelessWidget {
       ],
     };
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
 }

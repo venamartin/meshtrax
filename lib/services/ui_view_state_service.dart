@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:traxmap/traxmap.dart' show LatLng, MapCamera;
+import 'package:traxroute/traxroute.dart' show RouteResult;
 
 import '../storage/prefs_manager.dart';
 import '../utils/contact_search.dart';
@@ -10,6 +11,15 @@ import '../utils/contact_search.dart';
 const String contactsAllGroupsValue = '__all__';
 
 enum ChannelSortOption { manual, name, latestMessages, unread }
+
+/// The main map's route: where to, a start picked on the map (null: your
+/// position) and the route found (null: still to find).
+typedef MapRoute = ({
+  String name,
+  LatLng to,
+  LatLng? from,
+  RouteResult? result,
+});
 
 class UiViewStateService extends ChangeNotifier {
   static const _keyContactsSelectedGroupName = 'ui_contacts_selected_group';
@@ -68,6 +78,11 @@ class UiViewStateService extends ChangeNotifier {
   /// Where the main map was last left (MapLibre zoom), for opening it with
   /// nothing else to show.
   MapCamera? get mapCamera => _mapCamera;
+
+  /// The main map's route, kept as it changes: the quick switch puts another
+  /// screen in the map's place, and the route is there when the map is back.
+  /// Not saved, so it goes with the app.
+  MapRoute? mapRoute;
 
   Future<void> initialize() async {
     final prefs = PrefsManager.instance;

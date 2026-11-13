@@ -1,4 +1,4 @@
-import 'package:traxroute/traxroute.dart' show RouteOptions;
+import 'package:traxroute/traxroute.dart' show PathType, RouteOptions;
 
 import 'channel.dart';
 
@@ -51,7 +51,8 @@ class AppSettings {
   /// 2026-10-20: light reads better outdoors).
   final String mapTheme;
 
-  /// The route panel's options, kept for every route.
+  /// The route sheet's path type and options, kept for every route.
+  final PathType routePathType;
   final RouteOptions routeOptions;
 
   final bool notificationsEnabled;
@@ -164,6 +165,7 @@ class AppSettings {
     this.mapParks = true,
     this.mapDownloadedAreas = true,
     this.mapTheme = 'light',
+    this.routePathType = PathType.hiking,
     this.routeOptions = const RouteOptions(),
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
@@ -249,6 +251,7 @@ class AppSettings {
       'map_parks': mapParks,
       'map_downloaded_areas': mapDownloadedAreas,
       'map_theme': mapTheme,
+      'route_path_type': routePathType.name,
       'route_options': routeOptions.toJson(),
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
@@ -321,6 +324,9 @@ class AppSettings {
       mapParks: json['map_parks'] as bool? ?? true,
       mapDownloadedAreas: json['map_downloaded_areas'] as bool? ?? true,
       mapTheme: json['map_theme'] as String? ?? 'light',
+      routePathType:
+          PathType.values.asNameMap()[json['route_path_type']] ??
+          PathType.hiking,
       routeOptions: switch (json['route_options']) {
         final Map<String, dynamic> options => RouteOptions.fromJson(options),
         _ => const RouteOptions(),
@@ -425,6 +431,7 @@ class AppSettings {
     bool? mapParks,
     bool? mapDownloadedAreas,
     String? mapTheme,
+    PathType? routePathType,
     RouteOptions? routeOptions,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
@@ -486,6 +493,7 @@ class AppSettings {
       mapParks: mapParks ?? this.mapParks,
       mapDownloadedAreas: mapDownloadedAreas ?? this.mapDownloadedAreas,
       mapTheme: mapTheme ?? this.mapTheme,
+      routePathType: routePathType ?? this.routePathType,
       routeOptions: routeOptions ?? this.routeOptions,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,

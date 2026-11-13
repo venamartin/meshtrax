@@ -5907,6 +5907,17 @@ class AppLocalizationsSl extends AppLocalizations {
   String get route_startNowYou => 'Trenutni začetek: vaš položaj';
 
   @override
+  String route_from(String start) {
+    return 'Začetek: $start';
+  }
+
+  @override
+  String get route_fromYou => 'Začetek: vaš položaj';
+
+  @override
+  String get route_useMyPosition => 'Uporabi moj položaj';
+
+  @override
   String get route_noHeights => 'Za to območje ni podatkov o višinah.';
 
   @override

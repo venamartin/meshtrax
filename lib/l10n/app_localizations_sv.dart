@@ -5868,6 +5868,17 @@ class AppLocalizationsSv extends AppLocalizations {
   String get route_startNowYou => 'Nuvarande startpunkt: din position';
 
   @override
+  String route_from(String start) {
+    return 'Från $start';
+  }
+
+  @override
+  String get route_fromYou => 'Från din position';
+
+  @override
+  String get route_useMyPosition => 'Använd min position';
+
+  @override
   String get route_noHeights => 'Inga höjddata för det här området.';
 
   @override

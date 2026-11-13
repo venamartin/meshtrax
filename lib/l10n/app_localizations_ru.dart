@@ -5933,6 +5933,17 @@ class AppLocalizationsRu extends AppLocalizations {
       'Текущий пункт отправления: ваше местоположение';
 
   @override
+  String route_from(String start) {
+    return 'Откуда: $start';
+  }
+
+  @override
+  String get route_fromYou => 'Откуда: ваше местоположение';
+
+  @override
+  String get route_useMyPosition => 'Использовать моё местоположение';
+
+  @override
   String get route_noHeights => 'Для этого района нет данных о высотах.';
 
   @override

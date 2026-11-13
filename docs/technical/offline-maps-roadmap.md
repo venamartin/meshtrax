@@ -451,9 +451,17 @@ Credits, the source switch and the online fallback come through `AppMap`.
 
 ### S6. Route planner (Phase 7)
 
-As built on #210 (Linux, Android and iOS). The early design (a separate screen, Android only, Hiking/Trekking/MTB profiles, `trailRoute_` keys, Export GPX) was replaced by a route panel on the Node Map.
+As built on #210 (Linux, Android and iOS). The early design (a separate screen, Android only, Hiking/Trekking/MTB profiles, `trailRoute_` keys, Export GPX) was replaced by a route sheet on the Node Map.
 - **Start and destination:** a long-press, or a right-click on desktop, offers **Route here** and **Route from here**; the place sheet offers Route here. The start is the radio's position unless one is set, and the sheet says what's set already. Both are offered where routing data is on the device, or where the catalogue has routing for the region there (`RoutingService.offeredAt`).
-- **Route panel,** over the bottom of the map: Paved, Dirt or Hiking; distance, time, climb and the height profile; a note when the route stops more than 100 m short; ✕ clears it.
+- **Route sheet** (`lib/widgets/route_sheet.dart`): slides over the bottom of the map between three heights.
+  - **Bar:** the destination, ⚙, ✕ and one line with the path type, distance, time and climb.
+  - **Open,** where a new route starts: adds the height profile; Paved, Dirt or Hiking; a note when the route stops more than 100 m short; and the Directions row.
+  - **Whole map:** adds where the route starts, with **Use my position** after a start was picked, and the steps, which scroll under the bar.
+  - **Moving it:** a tap on the bar switches between bar and open, and Directions raises the sheet and lowers it again. Slid all the way down it stays as the bar: only ✕ ends the route. Back lowers a raised sheet, then ends the route.
+  - **Size:** the sheet keeps its height while a route is found. Where the open sheet would cover more than 60% of the map's height, it starts as the bar.
+- **Wide screens** (600 px or wider, and wider than tall): the same content is a 360 px panel at the left of the map, with the steps listed in it.
+- **Map fit:** the whole route is shown in the part of the map the sheet leaves clear.
+- **Kept:** the path type and the options are saved with the app's settings. The route is kept while the app runs (`UiViewStateService.mapRoute`), so it's still there after a visit to Chats or Contacts.
 - **⚙ options:** for Dirt, fastest, balanced or most direct; avoid highways, tolls and ferries; the hardest trail (SAC T1–T6); climbs and hiking pace.
 - **Naming:** "Trail routing" for the download, and `route_` l10n keys, because `routing_*` already means mesh routing.
 - **Later:** GPX export comes with saved routes (#242).

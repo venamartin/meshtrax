@@ -5828,6 +5828,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get route_startNowYou => 'Start now: your position';
 
   @override
+  String route_from(String start) {
+    return 'From $start';
+  }
+
+  @override
+  String get route_fromYou => 'From your position';
+
+  @override
+  String get route_useMyPosition => 'Use my position';
+
+  @override
   String get route_noHeights => 'No heights for this area.';
 
   @override

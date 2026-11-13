@@ -5921,6 +5921,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get route_startNowYou => 'Partida atual: sua posição';
 
   @override
+  String route_from(String start) {
+    return 'A partir de $start';
+  }
+
+  @override
+  String get route_fromYou => 'A partir da sua posição';
+
+  @override
+  String get route_useMyPosition => 'Usar minha posição';
+
+  @override
   String get route_noHeights => 'Sem dados de altitude para esta área.';
 
   @override

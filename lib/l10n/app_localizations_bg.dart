@@ -5914,6 +5914,17 @@ class AppLocalizationsBg extends AppLocalizations {
   String get route_startNowYou => 'Текуща начална точка: вашето местоположение';
 
   @override
+  String route_from(String start) {
+    return 'От $start';
+  }
+
+  @override
+  String get route_fromYou => 'От вашето местоположение';
+
+  @override
+  String get route_useMyPosition => 'Използвайте моето местоположение';
+
+  @override
   String get route_noHeights =>
       'Няма данни за надморската височина в този район.';
 

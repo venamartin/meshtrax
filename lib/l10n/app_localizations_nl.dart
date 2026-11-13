@@ -5897,6 +5897,17 @@ class AppLocalizationsNl extends AppLocalizations {
   String get route_startNowYou => 'Huidig startpunt: jouw positie';
 
   @override
+  String route_from(String start) {
+    return 'Vanaf $start';
+  }
+
+  @override
+  String get route_fromYou => 'Vanaf jouw positie';
+
+  @override
+  String get route_useMyPosition => 'Gebruik mijn positie';
+
+  @override
   String get route_noHeights => 'Geen hoogtegegevens voor dit gebied.';
 
   @override

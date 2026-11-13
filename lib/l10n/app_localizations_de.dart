@@ -5933,6 +5933,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get route_startNowYou => 'Aktueller Startpunkt: Ihr Standort';
 
   @override
+  String route_from(String start) {
+    return 'Start: $start';
+  }
+
+  @override
+  String get route_fromYou => 'Start: Ihr Standort';
+
+  @override
+  String get route_useMyPosition => 'Meinen Standort verwenden';
+
+  @override
   String get route_noHeights => 'Keine Höhendaten für dieses Gebiet.';
 
   @override

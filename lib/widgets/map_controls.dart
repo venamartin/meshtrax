@@ -27,7 +27,7 @@ class MapControls extends StatelessWidget {
   static const locateZoom = 14.0;
 
   /// Where a screen with a bottom sheet docks the buttons: above the sheet,
-  /// not across its top edge, where they covered the route panel's X.
+  /// not across its top edge, where they covered the route sheet's X.
   static const FloatingActionButtonLocation aboveSheet = _AboveSheet();
 
   const MapControls({
@@ -104,8 +104,7 @@ class MapControls extends StatelessWidget {
   }
 }
 
-/// [FloatingActionButtonLocation.endFloat], lifted clear of a bottom sheet
-/// as far as the room above it allows.
+/// [FloatingActionButtonLocation.endFloat], lifted clear of a bottom sheet.
 class _AboveSheet extends FloatingActionButtonLocation {
   const _AboveSheet();
 
@@ -119,9 +118,10 @@ class _AboveSheet extends FloatingActionButtonLocation {
         sheet -
         geometry.floatingActionButtonSize.height -
         kFloatingActionButtonMargin;
-    return Offset(
-      offset.dx,
-      math.max(geometry.contentTop, math.min(offset.dy, above)),
-    );
+    // No room above the sheet: off the screen, not over the sheet's buttons.
+    if (above < geometry.contentTop) {
+      return Offset(offset.dx, geometry.scaffoldSize.height);
+    }
+    return Offset(offset.dx, math.min(offset.dy, above));
   }
 }
