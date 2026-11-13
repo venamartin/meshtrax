@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 Route<T> buildQuickSwitchRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
