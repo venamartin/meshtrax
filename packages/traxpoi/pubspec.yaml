@@ -10,7 +10,6 @@ environment:
 
 dependencies:
   drift: ^2.34.2
-  fuzzywuzzy: ^1.2.0
   sqlite3: ^3.5.1
 
 dev_dependencies:
