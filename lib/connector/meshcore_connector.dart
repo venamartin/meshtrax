@@ -1446,6 +1446,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   ) =>
       _channelMessageStore.oldestUnread(channel.idKey, count);
 
+  /// How many messages stand below [messageId] in the chat; null when it is
+  /// not stored.
+  Future<int?> channelMessageFromNewest(Channel channel, String messageId) =>
+      _channelMessageStore.fromNewest(channel.idKey, messageId);
+
   /// The map's pin candidates, by channel identity key: messages that could
   /// carry a Location or SOS pin, in [loadChannelMessagesFor] order.
   Future<Map<String, List<ChannelMessage>>> loadPossiblePinChannelMessages(
@@ -10376,8 +10381,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final idKey = channel.idKey;
 
-    // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
-    // old-but-plausible time is display truth, not a sorting hazard.
+    // Rewrite only BROKEN sender clocks. An old-but-plausible time is display
+    // truth, and since #247 it is also where the message stands in the chat.
     ChannelMessage sanitizedMessage = message;
     if (!message.isOutgoing) {
       final sane = sanitizeSenderTimestamp(

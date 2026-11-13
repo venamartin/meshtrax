@@ -35,6 +35,7 @@ import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
+import 'utils/route_transitions.dart';
 import 'utils/scroll_jank_reporter.dart';
 import 'widgets/legacy_material_bridge.dart';
 
@@ -371,6 +372,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),
+              pageTransitionsTheme: appPageTransitions,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -383,6 +385,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
               snackBarTheme: const SnackBarThemeData(
                 behavior: SnackBarBehavior.floating,
               ),
+              pageTransitionsTheme: appPageTransitions,
             ),
             themeMode: _themeModeFromSetting(
               settingsService.settings.themeMode,
