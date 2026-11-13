@@ -48,7 +48,11 @@ class FlutterBluePlusWinrtPlugin : public flutter::Plugin {
   winrt::event_token received_token_{};
   winrt::event_token stopped_token_{};
   
-  std::atomic<bool> is_alive_{ true };
+  // Shared "alive" flag. Held by a shared_ptr so that fire-and-forget
+  // coroutines / event handlers can capture a copy and safely check whether
+  // the plugin has been destroyed after resuming, instead of dereferencing a
+  // dangling `this`.
+  std::shared_ptr<std::atomic<bool>> is_alive_ = std::make_shared<std::atomic<bool>>(true);
 
   // UI Thread context
   winrt::apartment_context ui_thread_;
@@ -63,6 +67,16 @@ class FlutterBluePlusWinrtPlugin : public flutter::Plugin {
   // Map to store event tokens and characteristic objects for notifications
   std::map<std::string, SubscribedCharacteristic> subscribed_characteristics_{};
 
+  // Guards the GATT object caches below (characteristic_cache_,
+  // descriptor_cache_, service_cache_, subscribed_characteristics_,
+  // gatt_sessions_, mtu_tokens_, connection_params_requests_,
+  // connection_tokens_). These are accessed both
+  // from background thread-pool continuations (service discovery / read /
+  // write) and from the UI thread (ClearDeviceResources on disconnect), so
+  // every access must hold this mutex. NOTE: never hold this across a
+  // `co_await`.
+  std::mutex gatt_cache_mutex_;
+
   // Caches for GATT objects to avoid repeated discovery
   std::map<std::string, winrt::Windows::Foundation::IInspectable> characteristic_cache_{};
   std::map<std::string, winrt::Windows::Foundation::IInspectable> descriptor_cache_{};
@@ -71,6 +85,17 @@ class FlutterBluePlusWinrtPlugin : public flutter::Plugin {
   // MTU / Session Handling
   std::map<std::string, winrt::Windows::Foundation::IInspectable> gatt_sessions_{};
   std::map<std::string, winrt::event_token> mtu_tokens_{};
+  // Windows 11 BluetoothLEPreferredConnectionParametersRequest per device.
+  // The short connection interval holds only while the request is open.
+  std::map<std::string, winrt::Windows::Foundation::IInspectable> connection_params_requests_{};
+  // Revokes, closes and forgets the session, MTU token and connection
+  // parameters request of one device. Caller holds gatt_cache_mutex_.
+  void CloseSessionLocked(const std::string& remote_id);
+
+  // Per-device ConnectionStatusChanged event tokens, so the handlers can be
+  // revoked (in ClearDeviceResources and the destructor) and never fire into a
+  // destroyed plugin. Guarded by gatt_cache_mutex_.
+  std::map<std::string, winrt::event_token> connection_tokens_{};
 
   void OnAdvertisementReceived(
       const winrt::Windows::Devices::Bluetooth::Advertisement::BluetoothLEAdvertisementWatcher&,
@@ -84,6 +109,9 @@ class FlutterBluePlusWinrtPlugin : public flutter::Plugin {
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   winrt::fire_and_forget GetAdapterStateAsync(
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+
+  winrt::fire_and_forget StartScanAsync(
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   winrt::fire_and_forget GetBondedDevicesAsync(

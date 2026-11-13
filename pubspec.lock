@@ -442,57 +442,57 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_blue_plus
-      sha256: "4d9ff93a197cf64925652414f11a22cd160a6e500997020ffec044544b9ddd38"
+      sha256: "13e09b4a1bf017e73be75a085039edb9b245d113dba3b69f0e787fac8a346389"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.3"
+    version: "2.3.15"
   flutter_blue_plus_android:
     dependency: transitive
     description:
       name: flutter_blue_plus_android
-      sha256: d66bdcb0438e643d5de4af914851bdf7322448384795666efe92236626484740
+      sha256: "2ffce1f1f66ac0b1650cd3bf5227e864dd1b28f067fc0638e7318dc2b02cff6b"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.2"
+    version: "9.0.5"
   flutter_blue_plus_darwin:
     dependency: transitive
     description:
       name: flutter_blue_plus_darwin
-      sha256: bb433d8c614964be3023d63f0460f1e2fe1a436cdbabd9bcc88438b509f4f045
+      sha256: "318cf00d98570616f6ca1a5f0664ae6acd21112a18e5cc3546891ce85a5b1ecb"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.2"
+    version: "9.0.5"
   flutter_blue_plus_linux:
     dependency: transitive
     description:
       name: flutter_blue_plus_linux
-      sha256: c08563ccef620be5a06dd6b895ee51ecd986d1fcab1edd2dbc3fa125518abb21
+      sha256: "75ae13ef2ed7c06247a1b255320616da7f220bc136b2b7382ad50379752102c3"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.2"
+    version: "9.0.5"
   flutter_blue_plus_platform_interface:
     dependency: "direct main"
     description:
       name: flutter_blue_plus_platform_interface
-      sha256: "55abf2bdae442f2ed4cace044d491cbb9dd833729585541354e4ec42c227989c"
+      sha256: "444c30197a19e735b565d082a0b58662da3953dfb15f395853211650f3215f13"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.2"
+    version: "9.0.4"
   flutter_blue_plus_web:
     dependency: transitive
     description:
       name: flutter_blue_plus_web
-      sha256: f6ed6bedf7568a3c3f91f0d668ca974c2a6d95f397e58e0d8cd6ad8681355819
+      sha256: "6a6dea391c0a1fe51e7ccf3fb9390d9b03760e58ae6ff31b6105b982599bc3f4"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.3"
+    version: "9.0.4"
   flutter_blue_plus_winrt:
     dependency: "direct overridden"
     description:
       path: "tools/flutter_blue_plus_winrt_patched"
       relative: true
     source: path
-    version: "0.0.18+meshtrax.1"
+    version: "0.0.23+meshtrax.1"
   flutter_driver:
     dependency: transitive
     description: flutter
@@ -1186,14 +1186,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
-  rxdart:
-    dependency: transitive
-    description:
-      name: rxdart
-      sha256: "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.28.0"
   scrollable_positioned_list:
     dependency: "direct main"
     description:
