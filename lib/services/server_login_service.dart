@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../models/contact.dart';
 import '../models/path_selection.dart';
 import '../utils/app_logger.dart';
@@ -20,11 +21,12 @@ typedef LoginOutcome = ({bool? success, bool? isAdmin});
 ///
 /// A login is also how a server teaches the radio a route: a login sent by
 /// flood is answered with a PATH return, a login sent direct is not. On
-/// Automatic the first attempt goes by Pathfinder's best route when it can
-/// route (else the radio's own), and once that times out the ladder resets
-/// the route and floods the rest. A user's Custom or Flood choice is kept
-/// for every attempt. Each attempt's route is written and its login sent
-/// with no other route write in between.
+/// Automatic the attempts follow Pathfinder's plan, as repeater commands
+/// do: its routes best first, then floods. When Pathfinder cannot route,
+/// the radio's own route gets one try, and once that times out the ladder
+/// resets the route and floods the rest. A user's Custom or Flood choice is
+/// kept for every attempt. Each attempt's route is written and its login
+/// sent with no other route write in between.
 class ServerLoginService {
   final MeshCoreConnector _connector;
   final StorageService _storage;
@@ -46,31 +48,52 @@ class ServerLoginService {
     bool forceFlood = false,
   }) async {
     final flood = PathSelection.flood(_connector.pathHashByteWidth);
-    final selection =
-        forceFlood ? flood : _connector.planRequestAttempts(server, 1).first;
+    final plan =
+        forceFlood ? [flood] : _connector.planRequestAttempts(server, maxAttempts);
     final frame = buildSendLoginFrame(server.publicKey, password);
     final responseBytes =
         frame.length > maxFrameSize ? frame.length : maxFrameSize;
-    Duration timeoutFor(int pathLength) => Duration(
-          milliseconds: _connector.calculateTimeout(
-                pathLength: pathLength,
-                messageBytes: responseBytes,
-              ) +
-              2000,
+    // A route waits what a DM on that route waits. A flood waits one round
+    // trip over the server's distance (Pathfinder's, else its route or
+    // advert), the same for every flood attempt (owner, 2026-11-08): flooded
+    // logins were answered in 3 to 5 s while each attempt waited 62 s.
+    Duration timeoutFor(PathSelection s) => Duration(
+          milliseconds: s.useFlood
+              ? _connector.calculateRoundTripTimeout(
+                  pathLength: -1,
+                  messageBytes: responseBytes,
+                  contact: server,
+                )
+              : _connector.calculateTimeout(
+                  pathLength: s.hopCount,
+                  messageBytes: responseBytes,
+                ),
         );
-    var flooding = selection.useFlood;
-    var timeout = timeoutFor(flooding ? -1 : selection.hopCount);
-    appLogger.info(
-      'Login routing: ${flooding ? forceFlood ? 'flood (forced)' : 'flood' : '${selection.hopCount} hops'}',
-      tag: tag,
-    );
 
     final isRoom = server.type == advTypeRoom;
     final startedAt = DateTime.now();
     bool? result;
     bool? isAdmin;
+    var routeReset = false;
+    String? routing;
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       onAttempt?.call(attempt + 1);
+      final selection = routeReset
+          ? flood
+          : plan[attempt < plan.length ? attempt : plan.length - 1];
+      final timeout = timeoutFor(selection);
+      final described = !selection.useFlood
+          ? '${selection.hopCount} hops'
+              '${selection.source == RouteSource.graph ? ' (Pathfinder ${PathHelper.formatPathHex(selection.pathBytes, stride: selection.hashSize)})' : ''}'
+          : forceFlood
+              ? 'flood (forced)'
+              : routeReset
+                  ? 'flood (route reset)'
+                  : 'flood';
+      if (described != routing) {
+        routing = described;
+        appLogger.info('Login routing: $described', tag: tag);
+      }
 
       if (isRoom) {
         // A response (or a post proving the session) that landed between
@@ -89,11 +112,12 @@ class ServerLoginService {
       }
 
       appLogger.info(
-        'Sending login attempt ${attempt + 1}/$maxAttempts',
+        'Sending login attempt ${attempt + 1}/$maxAttempts, waiting up to '
+        '${(timeout.inMilliseconds / 1000).ceil()}s',
         tag: tag,
       );
-      await _connector.sendOnRoute(server, flooding ? flood : selection,
-          () => _connector.sendFrame(frame));
+      await _connector.sendOnRoute(
+          server, selection, () => _connector.sendFrame(frame));
       (result, isAdmin) = await _awaitResponse(server, timeout, isRoom: isRoom);
       if (result != null) {
         appLogger.info(
@@ -108,11 +132,7 @@ class ServerLoginService {
         tag: tag,
       );
 
-      if (!flooding && server.pathOverride == null && attempt + 1 < maxAttempts) {
-        flooding = true;
-        timeout = timeoutFor(-1);
-        appLogger.info('Login routing: flood (route reset)', tag: tag);
-      }
+      if (selection.source == RouteSource.firmware) routeReset = true;
     }
     if (result == null) {
       appLogger.warn('Login timed out for ${server.name}', tag: tag);
