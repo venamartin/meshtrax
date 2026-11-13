@@ -48,4 +48,24 @@ void main() {
       }
     });
   });
+
+  group('reconnectDelayMs', () {
+    test('doubles from 1s and stops at 30s', () {
+      final delays = [
+        for (var attempt = 0; attempt < 8; attempt++)
+          MeshCoreConnector.reconnectDelayMs(attempt),
+      ];
+
+      expect(delays, [1000, 2000, 4000, 8000, 16000, 30000, 30000, 30000]);
+    });
+
+    test('stops at a lower cap when one is given', () {
+      final delays = [
+        for (var attempt = 0; attempt < 6; attempt++)
+          MeshCoreConnector.reconnectDelayMs(attempt, maxMs: 5000),
+      ];
+
+      expect(delays, [1000, 2000, 4000, 5000, 5000, 5000]);
+    });
+  });
 }

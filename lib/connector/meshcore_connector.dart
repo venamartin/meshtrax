@@ -3644,11 +3644,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  int _nextReconnectDelayMs() {
-    final attempt = _reconnectAttempts < 6 ? _reconnectAttempts : 6;
+  int _nextReconnectDelayMs({int maxMs = 30000}) {
+    final delayMs = reconnectDelayMs(_reconnectAttempts, maxMs: maxMs);
     _reconnectAttempts += 1;
-    final delayMs = 1000 * (1 << attempt);
-    return delayMs > 30000 ? 30000 : delayMs;
+    return delayMs;
+  }
+
+  @visibleForTesting
+  static int reconnectDelayMs(int attempt, {int maxMs = 30000}) {
+    final delayMs = 1000 * (1 << (attempt < 6 ? attempt : 6));
+    return delayMs > maxMs ? maxMs : delayMs;
   }
 
   void _scheduleReconnect() {
@@ -3742,14 +3747,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Mirror of [_scheduleTcpReconnect] for USB on desktop: after a drop the
-  /// user did not cause (the radio rebooted, a cable was pulled), wait with
-  /// the shared backoff for the same radio to show up again, under any port
-  /// name, and reconnect.
+  /// user did not cause (the radio rebooted, a cable was pulled), wait for
+  /// the same radio to show up again, under any port name, and reconnect.
+  /// The waits stop growing at 5s, not 30s: looking for the radio only lists
+  /// the ports, and a radio that is plugged back in is then found quickly.
   void _scheduleUsbReconnect() {
     if (!_shouldAutoReconnectUsb) return;
     if (_reconnectTimer?.isActive == true) return;
 
-    final delayMs = _nextReconnectDelayMs();
+    final delayMs = _nextReconnectDelayMs(maxMs: 5000);
     _appDebugLogService?.info('Auto-reconnect in ${delayMs}ms', tag: 'USB');
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
       final port = await _findLastUsbPort();
