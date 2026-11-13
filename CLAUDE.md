@@ -91,7 +91,8 @@ enum MeshCoreConnectionState {
 | flutter_blue_plus | ^2.1.0 | BLE communication |
 | provider | ^6.1.5+1 | State management |
 | material_ui | >=1.11.0 <1.12.0 | Material widgets (one minor version at a time) |
-| cupertino_icons | ^1.0.8 | iOS-style icons |
+
+`pubspec.lock` is committed, so every machine and CI build with the same versions. Change versions in a PR of their own (`flutter pub upgrade`, or a new constraint).
 
 ## Platform Configuration
 
