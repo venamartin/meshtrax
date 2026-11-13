@@ -50,7 +50,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       if (_connector.state == MeshCoreConnectionState.disconnected) {
         _changedNavigation = false;
       } else if (_connector.state == MeshCoreConnectionState.connected &&
-          _connector.activeTransport == MeshCoreTransportType.bluetooth &&
           isCurrentRoute &&
           !_changedNavigation) {
         _changedNavigation = true;
@@ -83,6 +82,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
         appLogger.warn('Adapter state stream error: $e', tag: 'ScannerScreen');
       },
     );
+    // A USB radio or a TCP endpoint does not wait for the Bluetooth adapter.
+    unawaited(_connector.autoConnectToLastDevice(includeBluetooth: false));
 
     // First-launch content-policy acceptance (required for UGC compliance),
     // then ask for notification permission so the BLE-connected foreground

@@ -135,4 +135,75 @@ void main() {
       'Seeed Wio Tracker L1 (VID:2886 PID:1667)',
     );
   });
+
+  group('usbHardwareId', () {
+    test('takes the ids at the end of a label', () {
+      expect(
+        usbHardwareId(
+          '/dev/ttyACM0 - Seeed Wio Tracker L1 - VID:2886 PID:1667 SN:F00D',
+        ),
+        'VID:2886 PID:1667 SN:F00D',
+      );
+      expect(
+        usbHardwareId('COM6 - Seeed Wio Tracker L1 - VID:2886 PID:1667'),
+        'VID:2886 PID:1667',
+      );
+    });
+
+    test('null for labels without ids', () {
+      expect(usbHardwareId('/dev/ttyS0'), isNull);
+      expect(usbHardwareId('/dev/cu.usbmodem1101 - Radio - n/a'), isNull);
+    });
+  });
+
+  group('findLastUsbPort', () {
+    const radio = '/dev/ttyACM1 - Radio - VID:2886 PID:1667 SN:F00D';
+    const other = '/dev/ttyACM0 - Radio - VID:2886 PID:1667 SN:BEEF';
+
+    test('finds the radio by its ids after its port name changed', () {
+      expect(
+        findLastUsbPort(
+          [other, radio, '/dev/ttyS0'],
+          path: '/dev/ttyACM0',
+          hardwareId: 'VID:2886 PID:1667 SN:F00D',
+        ),
+        '/dev/ttyACM1',
+      );
+    });
+
+    test('null when the radio is not plugged in', () {
+      expect(
+        findLastUsbPort(
+          [other],
+          path: '/dev/ttyACM0',
+          hardwareId: 'VID:2886 PID:1667 SN:F00D',
+        ),
+        isNull,
+      );
+    });
+
+    test('ids shared by several ports: only the last path counts', () {
+      const ports = [
+        'COM3 - Seeed - VID:2886 PID:1667',
+        'COM4 - Seeed - VID:2886 PID:1667',
+      ];
+      expect(
+        findLastUsbPort(ports, path: 'COM4', hardwareId: 'VID:2886 PID:1667'),
+        'COM4',
+      );
+      expect(
+        findLastUsbPort(ports, path: 'COM5', hardwareId: 'VID:2886 PID:1667'),
+        isNull,
+      );
+    });
+
+    test('without ids the path decides', () {
+      const ports = ['/dev/cu.usbmodem1101 - Radio - n/a'];
+      expect(
+        findLastUsbPort(ports, path: '/dev/cu.usbmodem1101'),
+        '/dev/cu.usbmodem1101',
+      );
+      expect(findLastUsbPort(ports, path: '/dev/cu.usbmodem1201'), isNull);
+    });
+  });
 }
