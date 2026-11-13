@@ -1899,8 +1899,11 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   /// down: a dialog just closed, and asking for the keyboard while Android
   /// is still hiding it leaves a black gap where the keyboard should be.
   void _insertComposerText(String text) {
-    _textController.text = text;
-    _textController.selection = TextSelection.collapsed(offset: text.length);
+    final composed = afterMention(_textController.text, text);
+    _textController.text = composed;
+    _textController.selection = TextSelection.collapsed(
+      offset: composed.length,
+    );
     setState(() => _trayOpen = false);
   }
 
@@ -2137,9 +2140,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       isScrollControlled: true,
       builder: (context) => GifPicker(
         onGifSelected: (gifId) {
-          _textController.text = GifHelper.encodeGif(
-            gifId,
-            asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+          _textController.text = afterMention(
+            _textController.text,
+            GifHelper.encodeGif(
+              gifId,
+              asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+            ),
           );
         },
       ),
