@@ -2699,7 +2699,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
               .connect(
                 timeout: connectTimeout,
                 mtu: null,
-                license: License.free,
+                license: License.nonprofit,
               )
               .timeout(
                 connectTimeout + const Duration(seconds: 2),
@@ -2796,7 +2796,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             timeout: connectTimeout,
             autoConnect: false,
             mtu: null,
-            license: License.free,
+            license: License.nonprofit,
           );
         } catch (error) {
           bool shouldRetry = false;
@@ -2830,7 +2830,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
                 timeout: connectTimeout,
                 autoConnect: false,
                 mtu: null,
-                license: License.free,
+                license: License.nonprofit,
               );
               _appDebugLogService?.info(
                 'device.connect() retry succeeded',
@@ -2909,7 +2909,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           await device.connect(
             timeout: const Duration(seconds: 15),
             mtu: null,
-            license: License.free,
+            license: License.nonprofit,
           );
           services = await device.discoverServices();
         } else {

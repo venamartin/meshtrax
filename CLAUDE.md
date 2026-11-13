@@ -88,7 +88,7 @@ enum MeshCoreConnectionState {
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| flutter_blue_plus | ^2.1.0 | BLE communication |
+| flutter_blue_plus | ^2.3.15 | BLE communication |
 | provider | ^6.1.5+1 | State management |
 | material_ui | >=1.11.0 <1.12.0 | Material widgets (one minor version at a time) |
 
