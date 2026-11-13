@@ -152,6 +152,36 @@ void main() {
     });
   });
 
+  // Owner, 2026-11-08: the login dialog's five attempts follow Pathfinder,
+  // and a route waits what a DM on that route waits. Before, the second
+  // attempt already flooded.
+  test('a login follows Pathfinder\'s plan, each route timed by its hops', () {
+    fakeAsync((async) {
+      c.graphRouteCandidates = (_) => [_g1, _g2];
+      final room = _repeater(type: advTypeRoom);
+      final onRoute = Duration(
+        milliseconds:
+            c.calculateTimeout(pathLength: 2, messageBytes: maxFrameSize),
+      );
+      ServerLoginService(c).login(room, 'pw', maxAttempts: 5);
+      async.flushMicrotasks();
+      expect(c.log, ['route a27710aa', 'login']);
+
+      async.elapse(onRoute - const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+      expect(c.log, ['route a27710aa', 'login']);
+      async.elapse(const Duration(milliseconds: 2));
+      async.flushMicrotasks();
+      expect(c.log, ['route a27710aa', 'login', 'route ad7710aa', 'login']);
+
+      async.elapse(const Duration(seconds: 300));
+      async.flushMicrotasks();
+      expect(c.log.where((e) => e == 'login'), hasLength(5));
+      expect(c.log.skip(4).where((e) => e.startsWith('route')), isEmpty,
+          reason: 'the last three attempts flood');
+    });
+  });
+
   test('a repeater command steps from Pathfinder\'s route to a flood', () {
     fakeAsync((async) {
       c.graphRouteCandidates = (_) => [_g1];

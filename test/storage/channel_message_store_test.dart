@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -170,6 +171,20 @@ void main() {
     await store.markRead(idKeyA);
     expect(await store.watchUnreadCount(idKeyA).first, 0);
     expect((await store.oldestUnread(idKeyA, 2))?.text, 'new 1');
+  });
+
+  test('fromNewest counts the rows standing below a message in the chat',
+      () async {
+    await store.insertIfNew(idKeyA, msg('oldest', id: 'f1', ts: 1000));
+    await store.insertIfNew(idKeyA, msg('newest', id: 'f2', ts: 4000));
+    // Arrived last, but its sender's time puts it between the two.
+    await store.insertIfNew(idKeyA, msg('late', id: 'f3', ts: 2000));
+    await store.insertIfNew(idKeyB, msg('other channel', id: 'f4', ts: 9000));
+
+    expect(await store.fromNewest(idKeyA, 'f2'), 0);
+    expect(await store.fromNewest(idKeyA, 'f3'), 1);
+    expect(await store.fromNewest(idKeyA, 'f1'), 2);
+    expect(await store.fromNewest(idKeyA, 'missing'), isNull);
   });
 
   group('searchChannelMessages — SQL-side full-history search', () {
@@ -605,5 +620,31 @@ void main() {
       await arrivalOf(idKeyA, 'c2'),
       greaterThan((await arrivalOf(idKeyA, 'c1'))!),
     );
+  });
+
+  // Field 2026-11-13: #247 ordered chats by sender time with no index to
+  // match, so opening a chat, and every write, sorted the whole history.
+  test('the chat and the chats screen find the newest rows by index', () async {
+    Future<String> plan(String sql, List<Variable> variables) async => [
+          for (final row in await AppDatabase.instance
+              .customSelect('EXPLAIN QUERY PLAN $sql', variables: variables)
+              .get())
+            row.read<String>('detail'),
+        ].join('\n');
+    final scope = Variable.withString('0123456789ab');
+
+    // watchChannelMessages' order.
+    final chat = await plan(
+      'SELECT * FROM channel_message_rows '
+      'WHERE node_scope = ?1 AND channel_id_key = ?2 '
+      'ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC LIMIT 200',
+      [scope, Variable.withString(idKeyA)],
+    );
+    expect(chat, contains('idx_channel_shown_order'));
+    expect(chat, isNot(contains('TEMP B-TREE')));
+
+    final latest = await plan(ChannelMessageStore.latestPerChannelSql, [scope]);
+    expect(latest, contains('COVERING INDEX idx_channel_shown_order'));
+    expect(latest, contains('idx_channel_arrival'));
   });
 }

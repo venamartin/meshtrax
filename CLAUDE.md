@@ -53,6 +53,11 @@ lib/
 - System-based dark/light mode (`ThemeMode.system`)
 - Blue color scheme seed
 
+### Material from `material_ui`
+- Since Flutter 3.50 the Material widgets come from the `material_ui` package; the copy inside Flutter is deprecated and fails CI's analyze step
+- `LegacyMaterialBridge` (`lib/widgets/legacy_material_bridge.dart`, used in `main.dart`) gives packages still on Flutter's own copy (today: emoji_picker_flutter) the app's theme and translations; take it out when they have moved. A test of such a package's widget needs it in its `MaterialApp.builder` too
+- `appLocalizationsDelegates` (`lib/l10n/l10n.dart`) stands in for the generated `AppLocalizations.localizationsDelegates`, which still lists the old delegates (flutter/flutter#191072); a test with a non-English locale must use it
+
 ## BLE Protocol
 
 ### Nordic UART Service (NUS)
@@ -83,9 +88,11 @@ enum MeshCoreConnectionState {
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| flutter_blue_plus | ^2.1.0 | BLE communication |
+| flutter_blue_plus | ^2.3.15 | BLE communication |
 | provider | ^6.1.5+1 | State management |
-| cupertino_icons | ^1.0.8 | iOS-style icons |
+| material_ui | >=1.11.0 <1.12.0 | Material widgets (one minor version at a time) |
+
+`pubspec.lock` is committed, so every machine and CI build with the same versions. Change versions in a PR of their own (`flutter pub upgrade`, or a new constraint).
 
 ## Platform Configuration
 
@@ -111,6 +118,7 @@ enum MeshCoreConnectionState {
 - Prefix private methods/fields with `_`
 - Center app bar titles (`centerTitle: true`)
 - **Material widgets only** - no Cupertino or custom widgets
+- Import them from `package:material_ui/material_ui.dart`, never `package:flutter/material.dart`
 - Handle disconnection gracefully (auto-navigate back to scanner)
 
 ### Avoid

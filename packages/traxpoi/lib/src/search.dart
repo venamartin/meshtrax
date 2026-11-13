@@ -1,7 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:fuzzywuzzy/fuzzywuzzy.dart' as fuzz;
-
 /// A position in degrees.
 class GeoPoint {
   final double lat;
@@ -37,6 +35,23 @@ String? trigramQuery(String norm) {
   return trigrams.map((t) => '"$t"').join(' OR ');
 }
 
+/// How alike two words are, 0–100: twice the length of their longest
+/// common subsequence over their combined length, rounded.
+int similarity(String a, String b) {
+  if (a.isEmpty || b.isEmpty) return 0;
+  var above = List<int>.filled(b.length + 1, 0);
+  var row = List<int>.filled(b.length + 1, 0);
+  for (var i = 0; i < a.length; i++) {
+    for (var j = 0; j < b.length; j++) {
+      row[j + 1] = a.codeUnitAt(i) == b.codeUnitAt(j)
+          ? above[j] + 1
+          : math.max(above[j + 1], row[j]);
+    }
+    (above, row) = (row, above);
+  }
+  return (200 * above[b.length] / (a.length + b.length)).round();
+}
+
 /// How well the normalized [query] matches the normalized [name], 0–100:
 /// every query word must closely match a word of the name (a word still
 /// being typed may match the start of one), and the average decides.
@@ -48,7 +63,7 @@ double wordMatch(String query, String name) {
   for (final q in queryWords) {
     var best = 0;
     for (final w in nameWords) {
-      best = math.max(best, fuzz.ratio(q, w));
+      best = math.max(best, similarity(q, w));
       if (q.length >= 2 && w.startsWith(q)) best = math.max(best, 90);
     }
     if (best < 60) return 0;
@@ -89,7 +104,7 @@ double addressMatch(List<String> query, String street, List<String> place) {
     var cost = 0.0;
     for (final w in query.skip(n)) {
       final inPlace = place.any(
-        (p) => fuzz.ratio(w, p) >= 80 || (w.length >= 2 && p.startsWith(w)),
+        (p) => similarity(w, p) >= 80 || (w.length >= 2 && p.startsWith(w)),
       );
       if (!inPlace) cost += place.isEmpty ? 5 : 25;
     }

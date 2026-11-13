@@ -80,14 +80,21 @@ void main() {
     c = _Connector();
   });
 
-  // The ladder's own timeout for an attempt: the connector's estimate for a
-  // full frame plus the two-second margin.
-  Duration attemptTimeout(int pathLength) => Duration(
-        milliseconds: c.calculateTimeout(
-              pathLength: pathLength,
-              messageBytes: maxFrameSize,
-            ) +
-            2001,
+  // The ladder's own timeout for an attempt, plus a millisecond: a route
+  // waits what a DM on it waits, a flood one round trip over the server's
+  // distance.
+  Duration attemptTimeout(int pathLength, Contact server) => Duration(
+        milliseconds: (pathLength >= 0
+                ? c.calculateTimeout(
+                    pathLength: pathLength,
+                    messageBytes: maxFrameSize,
+                  )
+                : c.calculateRoundTripTimeout(
+                    pathLength: -1,
+                    messageBytes: maxFrameSize,
+                    contact: server,
+                  )) +
+            1,
       );
 
   test('Automatic: a route that times out is reset and the login floods', () {
@@ -103,7 +110,7 @@ void main() {
       expect(c.logins, equals(1));
       expect(c.resets, isEmpty);
 
-      async.elapse(attemptTimeout(2));
+      async.elapse(attemptTimeout(2, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
@@ -151,7 +158,7 @@ void main() {
       async.elapse(const Duration(milliseconds: 10));
 
       expect(c.logins, equals(1));
-      async.elapse(attemptTimeout(-1));
+      async.elapse(attemptTimeout(-1, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
@@ -177,11 +184,11 @@ void main() {
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
 
-      async.elapse(attemptTimeout(1));
+      async.elapse(attemptTimeout(1, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
-      async.elapse(attemptTimeout(1));
+      async.elapse(attemptTimeout(1, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
@@ -189,6 +196,47 @@ void main() {
       expect(c.logins, equals(2));
       expect(c.resets, isEmpty);
       expect(outcome?.success, isNull, reason: 'both attempts timed out');
+    });
+  });
+
+  // Field 2026-11-06, Monterey Bay at 2 hops: every flooded login waited
+  // 62 s, past the 60 s cap and sized for 8 hops whatever the distance,
+  // while the flooded logins that worked were answered in 3 to 5 s.
+  test('a flood waits one round trip over Pathfinder\'s distance, unpadded',
+      () {
+    fakeAsync((async) {
+      c.graphDistanceTo = (_) => 1;
+      final room = _server();
+      final wait = Duration(
+        milliseconds: c.calculateRoundTripTimeout(
+          pathLength: -1,
+          messageBytes: maxFrameSize,
+          contact: room,
+        ),
+      );
+      expect(
+          wait,
+          lessThan(Duration(
+            milliseconds: c.calculateRoundTripTimeout(
+              pathLength: -1,
+              messageBytes: maxFrameSize,
+            ),
+          )),
+          reason: 'sized for 1 hop, not the 8 assumed for an unknown distance');
+      ServerLoginService(c).login(room, 'pw', maxAttempts: 3);
+      async.flushMicrotasks();
+      expect(c.logins, equals(1));
+
+      async.elapse(wait - const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+      expect(c.logins, equals(1));
+      async.elapse(const Duration(milliseconds: 2));
+      async.flushMicrotasks();
+      expect(c.logins, equals(2), reason: 'no margin on top of the round trip');
+
+      async.elapse(wait);
+      async.flushMicrotasks();
+      expect(c.logins, equals(3), reason: 'every flood attempt waits the same');
     });
   });
 
@@ -221,7 +269,7 @@ void main() {
       ServerLoginService(c).login(repeater, 'pw', maxAttempts: 2);
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
-      async.elapse(attemptTimeout(1));
+      async.elapse(attemptTimeout(1, repeater));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
