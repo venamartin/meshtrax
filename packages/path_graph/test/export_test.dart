@@ -60,7 +60,8 @@ void main() {
 
   test('carries repeater topology and nothing else', () async {
     // Everything private the module knows: a named contact, their
-    // ingress list, my own doorstep, and a position tag.
+    // ingress list, my own doorstep, and the place I stood in.
+    graph.setPlace('c1_1', const {});
     graph.ingestContact(bobPk, 'Bob');
     graph.observePath(Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
@@ -69,12 +70,13 @@ void main() {
         failureEpisode: false);
     expect(graph.ingressCandidates(bobPk), isNotEmpty);
     expect(graph.egressCandidates(), isNotEmpty);
+    expect(graph.placesHere(), isNotEmpty);
 
     final json = jsonEncode(graph.exportGraph());
     expect(json.contains(bobPk), isFalse, reason: 'no contact pubkeys');
     expect(json.toLowerCase().contains('bob'), isFalse, reason: 'no names');
     expect(json.contains(selfPk), isFalse, reason: 'no self identity');
-    expect(json.contains('36.97'), isFalse, reason: 'no position tags');
+    expect(json.contains('c1_1'), isFalse, reason: 'no place');
     expect(json.contains('ingress'), isFalse);
 
     // What it DOES carry: the repeater-to-repeater hop.
