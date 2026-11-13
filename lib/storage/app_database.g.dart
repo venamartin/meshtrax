@@ -310,7 +310,8 @@ class ChannelMessageRow extends DataClass
   /// When the SENDER says it sent this. Display only, and not trustworthy:
   /// mesh clocks drift, reset on a flat battery, and the firmware refuses to
   /// wind one backwards. Ingest also rewrites this when it looks implausible.
-  /// Never order or deduplicate on it.
+  /// Chats show messages in this order (idx_channel_shown_order); unread,
+  /// the read mark and deduplication never use it.
   final int timestampMs;
 
   /// When THIS app first saw the message, in microseconds. The radio hands
@@ -2756,6 +2757,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_channel_arrival',
     'CREATE INDEX idx_channel_arrival ON channel_message_rows (node_scope, channel_id_key, received_at_us)',
   );
+  late final Index idxChannelShownOrder = Index(
+    'idx_channel_shown_order',
+    'CREATE INDEX idx_channel_shown_order ON channel_message_rows (node_scope, channel_id_key, timestamp_ms, received_at_us)',
+  );
   late final Index idxContactArrival = Index(
     'idx_contact_arrival',
     'CREATE INDEX idx_contact_arrival ON contact_message_rows (node_scope, contact_key, received_at_us)',
@@ -2774,6 +2779,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cachedChannelRows,
     idxChannelPacketHash,
     idxChannelArrival,
+    idxChannelShownOrder,
     idxContactArrival,
   ];
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -63,14 +63,19 @@ class _Radio extends MeshCoreConnector {
   @override
   int getUnreadCountForChannelIndex(int channelIndex) => unread;
 
-  /// The rows once, in the order the chat shows: a database watch closes on
-  /// a timer the test clock never runs.
+  /// The newest [limit] rows once, in the order the chat shows: a database
+  /// watch closes on a timer the test clock never runs.
   @override
   Stream<List<ChannelMessage>> watchChannelMessages(
     Channel channel, {
     int limit = 200,
   }) =>
-      Stream.fromFuture(store.loadChannelMessages(channel.idKey));
+      Stream.fromFuture(
+        store.loadChannelMessages(channel.idKey).then(
+              (all) =>
+                  all.length > limit ? all.sublist(all.length - limit) : all,
+            ),
+      );
 
   @override
   Future<ChannelMessage?> oldestUnreadChannelMessage(
@@ -78,6 +83,10 @@ class _Radio extends MeshCoreConnector {
     int count,
   ) =>
       store.oldestUnread(channel.idKey, count);
+
+  @override
+  Future<int?> channelMessageFromNewest(Channel channel, String messageId) =>
+      store.fromNewest(channel.idKey, messageId);
 
   /// As the connector does: the read mark moves to the newest arrival.
   @override
@@ -172,6 +181,37 @@ void main() {
       lessThanOrEqualTo(tester.getRect(find.text('post 20')).top),
       reason: 'the line sits above the first message missed',
     );
+  });
+
+  // A user, 2026-11-13: about 150 unread after ten hours away, and the chat
+  // opened at the bottom. It loads the newest 200 rows, and the first
+  // message missed stood past them.
+  testWidgets('a Chats row opens its chat on NEW MESSAGES past 200 rows',
+      (tester) async {
+    final radio = _Radio(channel);
+    addTearDown(radio.dispose);
+    final rows = [for (var i = 0; i < 300; i++) _post(i)];
+    for (final m in rows.take(50)) {
+      await radio.store.insertIfNew(channel.idKey, m);
+    }
+    await radio.store.markRead(channel.idKey);
+    for (final m in rows.skip(50)) {
+      await radio.store.insertIfNew(channel.idKey, m);
+    }
+    await radio.loadLatest(tester);
+    radio.unread = 250;
+
+    await _pumpChats(tester, radio);
+
+    await tester.tap(find.text('#test'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await _settle(tester);
+
+    expect(find.byType(ChannelChatScreen), findsOneWidget);
+    expect(find.text('NEW MESSAGES'), findsOneWidget);
+    expect(find.text('post 50'), findsOneWidget);
+    expect(find.text('post 299'), findsNothing,
+        reason: 'it opened on the first message missed, not the newest');
   });
 
   // Martin, 2026-11-07: a post written just before his send reached the

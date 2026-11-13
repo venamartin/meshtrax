@@ -30,7 +30,9 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+# The app's lockfile is committed; the packages' lockfiles are not.
 pubspec.lock
+!/pubspec.lock
 /build/
 packages/*/build/
 # Captures written by integration_test live runs

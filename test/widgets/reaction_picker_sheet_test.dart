@@ -1,13 +1,15 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' as epf;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshtrax/helpers/quick_reactions.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/l10n/l10n.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/widgets/legacy_material_bridge.dart';
 import 'package:meshtrax/widgets/reaction_picker_sheet.dart';
 
 void main() {
@@ -39,9 +41,11 @@ void main() {
       ChangeNotifierProvider.value(
         value: settings,
         child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: locale,
+          // As in the app: the package's picker needs it.
+          builder: (_, child) => LegacyMaterialBridge(child: child!),
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

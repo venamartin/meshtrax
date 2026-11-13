@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/storage/app_database.dart';
 
-// The v7 -> v8 upgrade must open both a database 1.7.x left behind and one
-// whose first 1.8.0 launch stopped after creating the indexes but before
-// the version was stamped (a Windows install that showed no messages).
+// Each upgrade must open both a database the previous version left behind
+// and one whose first launch stopped after creating the indexes but before
+// the version was stamped (a 1.8.0 Windows install that showed no messages).
 void main() {
   late Directory dir;
   late String path;
@@ -25,13 +25,12 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  Future<void> rewindToV7({required bool dropIndexes}) async {
+  Future<void> rewindTo(int version, {List<String> dropIndexes = const []}) async {
     final db = AppDatabase.instance;
-    if (dropIndexes) {
-      await db.customStatement('DROP INDEX idx_channel_arrival');
-      await db.customStatement('DROP INDEX idx_contact_arrival');
+    for (final index in dropIndexes) {
+      await db.customStatement('DROP INDEX $index');
     }
-    await db.customStatement('PRAGMA user_version = 7');
+    await db.customStatement('PRAGMA user_version = $version');
     await db.close();
   }
 
@@ -50,21 +49,30 @@ void main() {
     return {for (final r in rows) r.read<String>('name')};
   }
 
-  test('a 1.7.x database gets the arrival indexes', () async {
-    await rewindToV7(dropIndexes: true);
-    expect(await reopenVersion(), 8);
-    expect(
-      await indexNames(),
-      containsAll(['idx_channel_arrival', 'idx_contact_arrival']),
-    );
+  const v8Indexes = ['idx_channel_arrival', 'idx_contact_arrival'];
+  const v9Index = 'idx_channel_shown_order';
+
+  test('a 1.7.x database gets the arrival and shown-order indexes', () async {
+    await rewindTo(7, dropIndexes: [...v8Indexes, v9Index]);
+    expect(await reopenVersion(), 9);
+    expect(await indexNames(), containsAll([...v8Indexes, v9Index]));
   });
 
   test('a half-finished upgrade (indexes made, still v7) opens', () async {
-    await rewindToV7(dropIndexes: false);
-    expect(await reopenVersion(), 8);
-    expect(
-      await indexNames(),
-      containsAll(['idx_channel_arrival', 'idx_contact_arrival']),
-    );
+    await rewindTo(7);
+    expect(await reopenVersion(), 9);
+    expect(await indexNames(), containsAll([...v8Indexes, v9Index]));
+  });
+
+  test('a 1.10.1 database gets the shown-order index', () async {
+    await rewindTo(8, dropIndexes: [v9Index]);
+    expect(await reopenVersion(), 9);
+    expect(await indexNames(), contains(v9Index));
+  });
+
+  test('a half-finished v9 upgrade (index made, still v8) opens', () async {
+    await rewindTo(8);
+    expect(await reopenVersion(), 9);
+    expect(await indexNames(), contains(v9Index));
   });
 }

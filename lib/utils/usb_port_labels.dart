@@ -27,6 +27,34 @@ String friendlyUsbPortName(String portLabel) {
   return description;
 }
 
+/// The USB ids at the end of a port label, e.g. `VID:2886 PID:1667`,
+/// followed by ` SN:<serial number>` when the device reports one. Null when
+/// the label has none.
+String? usbHardwareId(String portLabel) {
+  final parts = portLabel.split(' - ');
+  if (parts.length < 3) return null;
+  final id = parts.last.trim();
+  return id.startsWith('VID:') ? id : null;
+}
+
+/// The path of the radio last connected over USB among [ports] (labels as
+/// listed): the port with its USB ids, or its last [path] when the ids are
+/// unknown or several ports share them. Null when it is not plugged in.
+String? findLastUsbPort(
+  List<String> ports, {
+  required String path,
+  String? hardwareId,
+}) {
+  bool atPath(String port) => normalizeUsbPortName(port) == path;
+  final matches = hardwareId == null
+      ? ports.where(atPath).toList()
+      : ports.where((port) => usbHardwareId(port) == hardwareId).toList();
+  final port = matches.length == 1
+      ? matches.single
+      : matches.where(atPath).firstOrNull;
+  return port == null ? null : normalizeUsbPortName(port);
+}
+
 /// Keyed by lowercase `vid:pid` hex.
 const Map<String, String> knownUsbProductNames = <String, String>{
   '2886:1667': 'Seeed Wio Tracker L1',

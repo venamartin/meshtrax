@@ -36,6 +36,10 @@ const possiblePinRowSql =
   name: 'idx_channel_arrival',
   columns: {#nodeScope, #channelIdKey, #receivedAtUs},
 )
+@TableIndex(
+  name: 'idx_channel_shown_order',
+  columns: {#nodeScope, #channelIdKey, #timestampMs, #receivedAtUs},
+)
 class ChannelMessageRows extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -50,7 +54,8 @@ class ChannelMessageRows extends Table {
   /// When the SENDER says it sent this. Display only, and not trustworthy:
   /// mesh clocks drift, reset on a flat battery, and the firmware refuses to
   /// wind one backwards. Ingest also rewrites this when it looks implausible.
-  /// Never order or deduplicate on it.
+  /// Chats show messages in this order (idx_channel_shown_order); unread,
+  /// the read mark and deduplication never use it.
   IntColumn get timestampMs => integer()();
 
   /// When THIS app first saw the message, in microseconds. The radio hands
@@ -231,7 +236,7 @@ class AppDatabase extends _$AppDatabase {
       customStatement('VACUUM INTO ?', [path]);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// v7: cached routes predate the persisted hash width, and a guessed width
   /// is how 2-byte routes read as four 1-byte hops. Clear every cached route
@@ -331,6 +336,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         await _createIndexIfMissing(idxChannelArrival);
         await _createIndexIfMissing(idxContactArrival);
+      }
+      // v9: a chat and the chats screen find the newest rows in shown order
+      // by index instead of sorting every row.
+      if (from < 9) {
+        await _createIndexIfMissing(idxChannelShownOrder);
       }
     },
     beforeOpen: (details) async {

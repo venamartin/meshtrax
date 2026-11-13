@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../connector/meshcore_connector.dart';
 import 'nearby_repeaters_dialog.dart';

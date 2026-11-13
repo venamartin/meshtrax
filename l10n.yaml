@@ -4,3 +4,7 @@ output-localization-file: app_localizations.dart
 output-class: AppLocalizations
 nullable-getter: false
 untranslated-messages-file: untranslated.json
+# The generated delegates list still names flutter_localizations' Material and
+# Cupertino delegates, which Flutter 3.50 deprecates. Take this out when
+# gen-l10n writes material_ui's (flutter/flutter#191072).
+header: "// ignore_for_file: deprecated_member_use"

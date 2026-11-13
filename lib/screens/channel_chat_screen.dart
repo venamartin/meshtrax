@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show setEquals;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -248,8 +248,22 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final anchor = !_didInitialAnchor && _unreadAtOpen > 0
         ? connector.oldestUnreadChannelMessage(widget.channel, _unreadAtOpen)
         : Future<ChannelMessage?>.value();
-    anchor.then((firstUnread) {
+    anchor.then((firstUnread) async {
       if (!mounted || generation != _subscribeGeneration) return;
+      // The list opens on it only if the window holds it; past the newest
+      // 200 rows the chat opened at the bottom (field 2026-11-13, about 150
+      // unread). The window grows past it, as _jumpToRow's does.
+      if (firstUnread != null) {
+        final fromNewest = await connector.channelMessageFromNewest(
+          widget.channel,
+          firstUnread.messageId,
+        );
+        if (!mounted || generation != _subscribeGeneration) return;
+        if (fromNewest != null) {
+          final needed = ((fromNewest + 51) ~/ 200 + 1) * 200;
+          if (needed > _watchLimit) _watchLimit = needed;
+        }
+      }
       _messagesSub = connector
           .watchChannelMessages(widget.channel, limit: _watchLimit)
           .listen((messages) {
@@ -388,8 +402,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         setState(() => _firstUnreadMessage = anchor);
         if (settingsService.settings.jumpToOldestUnread) {
           _atBottom.value = false;
+          final fromNewest = await connector.channelMessageFromNewest(
+            widget.channel,
+            anchor.messageId,
+          );
+          if (!mounted) return;
           SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _scrollToMessage(anchor.messageId);
+            if (!mounted) return;
+            fromNewest == null
+                ? _scrollToMessage(anchor.messageId)
+                : _jumpToRow(anchor.messageId, fromNewest);
           });
         }
       }

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'app_debug_log_service.dart';
+import '../utils/linux_serial_ports.dart';
 import '../utils/macos_usb_device_names.dart';
 import '../utils/platform_info.dart';
 import '../storage/prefs_manager.dart';
@@ -35,6 +36,8 @@ class UsbSerialService {
   String? _connectedPortKey;
   String? _connectedPortLabel;
   FlSerial? _serial;
+  Timer? _presenceTimer;
+  int _presenceMisses = 0;
   AppDebugLogService? _debugLogService;
 
   UsbSerialStatus get status => _status;
@@ -79,6 +82,8 @@ class UsbSerialService {
       ports = windowsPorts != null
           ? windowsPorts.map(_labelWindowsPort).toList()
           : await _listFlSerialPorts();
+    } else if (Platform.isLinux) {
+      ports = (await _listFlSerialPorts()).map(_labelLinuxPort).toList();
     } else {
       ports = await _listFlSerialPorts();
     }
@@ -91,6 +96,21 @@ class UsbSerialService {
     if (vid == null || pid == null) return port.port;
     final name = describeUsbVidPid(vid, pid) ?? 'USB Serial Device';
     return '${port.port} - $name - VID:$vid PID:$pid';
+  }
+
+  String _labelLinuxPort(String port) {
+    final usb = readLinuxUsbDevice(port);
+    if (usb == null) return port;
+    final name =
+        knownUsbProductNames['${usb.vid}:${usb.pid}'] ??
+        usb.product ??
+        describeUsbVidPid(usb.vid, usb.pid) ??
+        'USB Serial Device';
+    final ids = 'VID:${usb.vid.toUpperCase()} PID:${usb.pid.toUpperCase()}';
+    final serialNumber = usb.serialNumber;
+    return serialNumber == null
+        ? '$port - $name - $ids'
+        : '$port - $name - $ids SN:$serialNumber';
   }
 
   /// Swaps in the radio's own name for ports we have connected to before,
@@ -292,7 +312,34 @@ class UsbSerialService {
       );
     }
     _status = UsbSerialStatus.connected;
+    if (_useDesktopFlSerial) {
+      _presenceMisses = 0;
+      _schedulePresenceCheck(normalizedPortName);
+    }
   }
+
+  // flserial never reports a port that went away: its read loop takes a
+  // failed read for no data. So a desktop port is checked every 2s, and it
+  // counts as gone after two misses in a row (a radio can drop off the bus
+  // for a moment as the port opens).
+  void _schedulePresenceCheck(String port) {
+    _presenceTimer = Timer(const Duration(seconds: 2), () async {
+      final present = await _isPortPresent(port);
+      if (_status != UsbSerialStatus.connected || _connectedPortKey != port) {
+        return;
+      }
+      _presenceMisses = present ? 0 : _presenceMisses + 1;
+      if (_presenceMisses >= 2) {
+        _debugLogService?.warn('USB port $port is gone', tag: 'USB Serial');
+        _addFrameError(StateError('USB port $port is gone'));
+      }
+      _schedulePresenceCheck(port);
+    });
+  }
+
+  Future<bool> _isPortPresent(String port) async => Platform.isWindows
+      ? (await FlSerial.availablePorts()).any((info) => info.path == port)
+      : File(port).exists();
 
   Future<void> writeRaw(Uint8List data) async {
     if (!isConnected) {
@@ -336,6 +383,8 @@ class UsbSerialService {
       tag: 'USB Serial',
     );
     _status = UsbSerialStatus.disconnecting;
+    _presenceTimer?.cancel();
+    _presenceTimer = null;
     _connectedPortKey = null;
     _connectedPortLabel = null;
     _frameDecoder.reset();
