@@ -111,7 +111,9 @@ class ChannelMessageStore {
       // phone can write a message down long after the radio heard it (a
       // late queue drain, a slot buffer flushed a day on), and ordering by
       // that write put yesterday's messages under today's. Unread and the
-      // read mark still go by arrival.
+      // read mark still go by arrival. idx_channel_shown_order serves this
+      // order; without it every open and every write sorted the channel's
+      // whole history.
       ..orderBy([
         (r) => OrderingTerm.desc(r.timestampMs),
         (r) => OrderingTerm.desc(r.receivedAtUs),
@@ -464,6 +466,29 @@ class ChannelMessageStore {
     });
   }
 
+  /// [watchLatestPerChannel]'s query. It re-runs on every write, a chat's
+  /// read mark included, so it must not touch every row: the newest row is
+  /// one seek per channel down idx_channel_shown_order, and the newest
+  /// unread looks only at the rows that arrived after the read mark
+  /// (idx_channel_arrival).
+  @visibleForTesting
+  static const latestPerChannelSql =
+      'SELECT c.k AS k, l.payload AS p, l.timestamp_ms AS t, ('
+      ' SELECT u.payload FROM channel_message_rows u'
+      ' WHERE u.node_scope = ?1 AND u.channel_id_key = c.k'
+      ' AND u.received_at_us > COALESCE((SELECT last_read_seq'
+      '  FROM channel_read_marks WHERE node_scope = ?1 AND id_key = c.k), 0)'
+      ' AND u.unread_eligible = 1'
+      ' ORDER BY u.timestamp_ms DESC, u.received_at_us DESC, u.id DESC'
+      ' LIMIT 1'
+      ') AS up '
+      'FROM (SELECT DISTINCT channel_id_key AS k FROM channel_message_rows'
+      ' WHERE node_scope = ?1) c '
+      'JOIN channel_message_rows l ON l.id = ('
+      ' SELECT id FROM channel_message_rows'
+      ' WHERE node_scope = ?1 AND channel_id_key = c.k'
+      ' ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC LIMIT 1)';
+
   /// Watched newest message per channel identity — one query feeds the
   /// chats screen's subtitles and ordering (SQL decides "latest"). Newest
   /// in the order the chat shows, with [sortUs], that message's shown time
@@ -477,23 +502,7 @@ class ChannelMessageStore {
     if (publicKeyHex.isEmpty) return Stream.value(const {});
     return _db
         .customSelect(
-          'SELECT l.k AS k, l.p AS p, l.t AS t, u.p AS up FROM ('
-          ' SELECT channel_id_key AS k, payload AS p, timestamp_ms AS t, '
-          '  ROW_NUMBER() OVER (PARTITION BY channel_id_key '
-          '   ORDER BY timestamp_ms DESC, received_at_us DESC, id DESC) AS rn '
-          ' FROM channel_message_rows WHERE node_scope = ?1'
-          ') l LEFT JOIN ('
-          ' SELECT m.channel_id_key AS k, m.payload AS p, '
-          '  ROW_NUMBER() OVER (PARTITION BY m.channel_id_key '
-          '   ORDER BY m.timestamp_ms DESC, m.received_at_us DESC, m.id DESC) '
-          '   AS rn '
-          ' FROM channel_message_rows m '
-          ' WHERE m.node_scope = ?1 AND m.unread_eligible = 1 '
-          ' AND m.received_at_us > COALESCE((SELECT last_read_seq '
-          '  FROM channel_read_marks WHERE node_scope = ?1 '
-          '  AND id_key = m.channel_id_key), 0)'
-          ') u ON u.k = l.k AND u.rn = 1 '
-          'WHERE l.rn = 1',
+          latestPerChannelSql,
           variables: [Variable.withString(publicKeyHex)],
           readsFrom: {_db.channelMessageRows, _db.channelReadMarks},
         )
