@@ -19,6 +19,8 @@ dependencies:
   flutter_map_vector_tiles: ">=2.11.0 <2.12.0"
   # MeshTrax pins ^0.9.1; flutter_map 8.3 and flutter_map_vector_tiles accept both.
   latlong2: ">=0.9.1 <0.11.0"
+  # One minor version at a time: see MeshTrax's pubspec.
+  material_ui: ">=1.11.0 <1.12.0"
   meta: ^1.16.0
   background_downloader: ^9.6.4
 

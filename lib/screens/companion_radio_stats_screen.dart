@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/models/companion_radio_stats.dart';
 import 'package:meshtrax/l10n/l10n.dart';

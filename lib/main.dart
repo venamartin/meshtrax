@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -37,6 +36,7 @@ import 'services/ui_view_state_service.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 import 'utils/scroll_jank_reporter.dart';
+import 'widgets/legacy_material_bridge.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -358,12 +358,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
             navigatorObservers: [NotificationService.routeObserver],
             title: 'MeshTrax',
             debugShowCheckedModeBanner: false,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: _localeFromSetting(
               settingsService.settings.languageOverride,
@@ -403,9 +398,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
                 failed: l10n.offlineMaps_notificationFailed,
               );
               if (child == null) return const SizedBox.shrink();
+              final app = LegacyMaterialBridge(child: child);
               return AppLogger.perfEnabled
-                  ? ScrollJankReporter.instance.wrap(child)
-                  : child;
+                  ? ScrollJankReporter.instance.wrap(app)
+                  : app;
             },
             home: (PlatformInfo.isWeb && !PlatformInfo.isChrome)
                 ? const ChromeRequiredScreen()
