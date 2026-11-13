@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Warm, WhatsApp-style palette used by the chat screens in **light mode only**.
 ///

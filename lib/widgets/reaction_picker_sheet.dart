@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' as epf;
 import 'package:emoji_picker_flutter/locales/default_emoji_set_locale.dart'
     as epf_locale;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/quick_reactions.dart';

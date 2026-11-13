@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../models/contact.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
