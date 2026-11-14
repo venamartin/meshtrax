@@ -1303,7 +1303,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Usuń \"$name\"? Nie można tego cofnąć.';
+    return 'Usunąć \"$name\" i wszystkie jego wiadomości? Nie można tego cofnąć.';
   }
 
   @override

@@ -364,7 +364,7 @@
   "channels_muteChannel": "Désactiver les notifications du canal",
   "channels_unmuteChannel": "Réactiver les notifications du canal",
   "channels_deleteChannel": "Supprimer le canal",
-  "channels_deleteChannelConfirm": "Supprimer {name}? Cela ne peut pas être annulé.",
+  "channels_deleteChannelConfirm": "Supprimer {name} et tous ses messages ? Cela ne peut pas être annulé.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

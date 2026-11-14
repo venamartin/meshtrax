@@ -364,7 +364,7 @@
   "channels_muteChannel": "Заглуши канала",
   "channels_unmuteChannel": "Включи известията на канала",
   "channels_deleteChannel": "Изтрий канала",
-  "channels_deleteChannelConfirm": "Изтрий \"{name}\"? Това не може да бъде отменено.",
+  "channels_deleteChannelConfirm": "Изтрий \"{name}\" и всички негови съобщения? Това не може да бъде отменено.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

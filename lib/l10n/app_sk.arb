@@ -364,7 +364,7 @@
   "channels_muteChannel": "Stlmiť kanál",
   "channels_unmuteChannel": "Zrušiť stlmenie kanála",
   "channels_deleteChannel": "Odstrániť kanál",
-  "channels_deleteChannelConfirm": "Odstrániť \"{name}\"? To sa nedá zrušiť.",
+  "channels_deleteChannelConfirm": "Odstrániť \"{name}\" aj so všetkými správami? To sa nedá zrušiť.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

@@ -497,7 +497,7 @@
   "channels_muteChannel": "Csendes csatorna",
   "channels_unmuteChannel": "Engedje be a hangot",
   "channels_deleteChannel": "Mozdony törlése",
-  "channels_deleteChannelConfirm": "Törlés {name}? Ez nem visszafordítható.",
+  "channels_deleteChannelConfirm": "Biztosan törli a(z) \"{name}\" csatornát és az összes üzenetét? Ez nem visszafordítható.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

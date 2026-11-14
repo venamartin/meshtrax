@@ -1293,7 +1293,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Eliminare \"$name\"? Non può essere annullato.';
+    return 'Eliminare \"$name\" e tutti i suoi messaggi? Non può essere annullato.';
   }
 
   @override

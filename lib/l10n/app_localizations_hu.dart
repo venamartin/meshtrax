@@ -1297,7 +1297,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Törlés $name? Ez nem visszafordítható.';
+    return 'Biztosan törli a(z) \"$name\" csatornát és az összes üzenetét? Ez nem visszafordítható.';
   }
 
   @override

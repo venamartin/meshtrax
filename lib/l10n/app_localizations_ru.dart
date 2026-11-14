@@ -1291,7 +1291,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Удалить \"$name\"? Это действие нельзя отменить.';
+    return 'Удалить \"$name\" и все его сообщения? Это действие нельзя отменить.';
   }
 
   @override

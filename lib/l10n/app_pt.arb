@@ -364,7 +364,7 @@
   "channels_muteChannel": "Silenciar canal",
   "channels_unmuteChannel": "Ativar canal",
   "channels_deleteChannel": "Excluir canal",
-  "channels_deleteChannelConfirm": "Excluir \"{name}\"? Não pode ser desfeito.",
+  "channels_deleteChannelConfirm": "Excluir \"{name}\" e todas as suas mensagens? Não pode ser desfeito.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

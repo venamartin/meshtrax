@@ -1218,7 +1218,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return '删除频道 \"$name\"？此操作不可撤销。';
+    return '删除频道 \"$name\" 及其所有消息？此操作不可撤销。';
   }
 
   @override

@@ -1291,7 +1291,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Löschen von \"$name\"? Dies kann nicht rückgängig gemacht werden.';
+    return '\"$name\" mit allen Nachrichten löschen? Dies kann nicht rückgängig gemacht werden.';
   }
 
   @override

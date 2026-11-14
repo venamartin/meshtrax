@@ -365,7 +365,7 @@
   "channels_muteChannel": "Вимкнути сповіщення каналу",
   "channels_unmuteChannel": "Увімкнути сповіщення каналу",
   "channels_deleteChannel": "Видалити канал",
-  "channels_deleteChannelConfirm": "Видалити {name}? Це не можна скасувати.",
+  "channels_deleteChannelConfirm": "Видалити {name} і всі його повідомлення? Це не можна скасувати.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

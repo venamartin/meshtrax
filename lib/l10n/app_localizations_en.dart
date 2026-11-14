@@ -1270,7 +1270,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Delete \"$name\"? This cannot be undone.';
+    return 'Delete \"$name\" and all its messages? This cannot be undone.';
   }
 
   @override

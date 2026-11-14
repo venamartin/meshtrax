@@ -1287,7 +1287,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Видалити $name? Це не можна скасувати.';
+    return 'Видалити $name і всі його повідомлення? Це не можна скасувати.';
   }
 
   @override

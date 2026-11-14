@@ -1296,7 +1296,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Изтрий \"$name\"? Това не може да бъде отменено.';
+    return 'Изтрий \"$name\" и всички негови съобщения? Това не може да бъде отменено.';
   }
 
   @override

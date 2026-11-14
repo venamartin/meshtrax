@@ -1285,7 +1285,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Odstrániť \"$name\"? To sa nedá zrušiť.';
+    return 'Odstrániť \"$name\" aj so všetkými správami? To sa nedá zrušiť.';
   }
 
   @override

@@ -497,7 +497,7 @@
   "channels_muteChannel": "ミュート機能",
   "channels_unmuteChannel": "ミュートを解除する",
   "channels_deleteChannel": "チャンネルを削除する",
-  "channels_deleteChannelConfirm": "{name} を削除しますか？ これは取り消すことができません。",
+  "channels_deleteChannelConfirm": "{name} とそのすべてのメッセージを削除しますか？ これは取り消すことができません。",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {
