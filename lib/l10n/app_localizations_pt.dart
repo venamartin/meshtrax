@@ -1296,7 +1296,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Excluir \"$name\"? Não pode ser desfeito.';
+    return 'Excluir \"$name\" e todas as suas mensagens? Não pode ser desfeito.';
   }
 
   @override

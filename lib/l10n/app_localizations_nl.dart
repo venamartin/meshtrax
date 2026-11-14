@@ -1285,7 +1285,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Verwijderen \"$name\"? Dit kan niet worden teruggedraaid.';
+    return '\"$name\" en alle berichten verwijderen? Dit kan niet worden teruggedraaid.';
   }
 
   @override

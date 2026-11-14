@@ -1277,7 +1277,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Izbrišem \"$name\"? To se ne da povrniti.';
+    return 'Izbrišem \"$name\" in vsa njegova sporočila? To se ne da povrniti.';
   }
 
   @override

@@ -374,7 +374,7 @@
   "channels_muteChannel": "Wycisz kanał",
   "channels_unmuteChannel": "Wyłącz wyciszenie kanału",
   "channels_deleteChannel": "Usuń kanał",
-  "channels_deleteChannelConfirm": "Usuń \"{name}\"? Nie można tego cofnąć.",
+  "channels_deleteChannelConfirm": "Usunąć \"{name}\" i wszystkie jego wiadomości? Nie można tego cofnąć.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

@@ -1297,7 +1297,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Supprimer $name? Cela ne peut pas être annulé.';
+    return 'Supprimer $name et tous ses messages ? Cela ne peut pas être annulé.';
   }
 
   @override

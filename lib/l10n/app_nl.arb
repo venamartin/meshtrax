@@ -364,7 +364,7 @@
   "channels_muteChannel": "Kanaal dempen",
   "channels_unmuteChannel": "Kanaal dempen opheffen",
   "channels_deleteChannel": "Kanaal verwijderen",
-  "channels_deleteChannelConfirm": "Verwijderen \"{name}\"? Dit kan niet worden teruggedraaid.",
+  "channels_deleteChannelConfirm": "\"{name}\" en alle berichten verwijderen? Dit kan niet worden teruggedraaid.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

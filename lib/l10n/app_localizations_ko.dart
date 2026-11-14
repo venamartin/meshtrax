@@ -1235,7 +1235,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return '$name 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.';
+    return '$name 채널과 모든 메시지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.';
   }
 
   @override

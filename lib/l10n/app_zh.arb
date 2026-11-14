@@ -377,7 +377,7 @@
   "channels_muteChannel": "静音频道",
   "channels_unmuteChannel": "取消静音频道",
   "channels_deleteChannel": "删除频道",
-  "channels_deleteChannelConfirm": "删除频道 \"{name}\"？此操作不可撤销。",
+  "channels_deleteChannelConfirm": "删除频道 \"{name}\" 及其所有消息？此操作不可撤销。",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

@@ -1273,7 +1273,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Radera \"$name\"? Detta kan inte ångras.';
+    return 'Radera \"$name\" och alla dess meddelanden? Detta kan inte ångras.';
   }
 
   @override

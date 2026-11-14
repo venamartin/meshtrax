@@ -615,7 +615,7 @@
   "channels_muteChannel": "Mute channel",
   "channels_unmuteChannel": "Unmute channel",
   "channels_deleteChannel": "Delete channel",
-  "channels_deleteChannelConfirm": "Delete \"{name}\"? This cannot be undone.",
+  "channels_deleteChannelConfirm": "Delete \"{name}\" and all its messages? This cannot be undone.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

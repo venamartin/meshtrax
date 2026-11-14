@@ -1238,7 +1238,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return '$name を削除しますか？ これは取り消すことができません。';
+    return '$name とそのすべてのメッセージを削除しますか？ これは取り消すことができません。';
   }
 
   @override

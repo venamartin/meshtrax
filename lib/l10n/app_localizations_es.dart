@@ -1294,7 +1294,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String channels_deleteChannelConfirm(String name) {
-    return 'Eliminar \"$name\"? Esto no se puede deshacer.';
+    return '¿Eliminar \"$name\" y todos sus mensajes? Esto no se puede deshacer.';
   }
 
   @override

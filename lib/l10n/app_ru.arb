@@ -264,7 +264,7 @@
   "channels_muteChannel": "Отключить уведомления канала",
   "channels_unmuteChannel": "Включить уведомления канала",
   "channels_deleteChannel": "Удалить канал",
-  "channels_deleteChannelConfirm": "Удалить \"{name}\"? Это действие нельзя отменить.",
+  "channels_deleteChannelConfirm": "Удалить \"{name}\" и все его сообщения? Это действие нельзя отменить.",
   "channels_channelDeleted": "Канал \"{name}\" удалён",
   "channels_addChannel": "Добавить канал",
   "channels_channelIndexLabel": "Индекс канала",

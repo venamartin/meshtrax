@@ -364,7 +364,7 @@
   "channels_muteChannel": "Silenzia canale",
   "channels_unmuteChannel": "Attiva notifiche canale",
   "channels_deleteChannel": "Elimina canale",
-  "channels_deleteChannelConfirm": "Eliminare \"{name}\"? Non può essere annullato.",
+  "channels_deleteChannelConfirm": "Eliminare \"{name}\" e tutti i suoi messaggi? Non può essere annullato.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

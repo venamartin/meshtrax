@@ -364,7 +364,7 @@
   "channels_muteChannel": "Kanal stummschalten",
   "channels_unmuteChannel": "Kanal Stummschaltung aufheben",
   "channels_deleteChannel": "Lösche den Kanal",
-  "channels_deleteChannelConfirm": "Löschen von \"{name}\"? Dies kann nicht rückgängig gemacht werden.",
+  "channels_deleteChannelConfirm": "\"{name}\" mit allen Nachrichten löschen? Dies kann nicht rückgängig gemacht werden.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {

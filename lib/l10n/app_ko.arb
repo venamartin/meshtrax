@@ -497,7 +497,7 @@
   "channels_muteChannel": "음소거 채널",
   "channels_unmuteChannel": "채널 음소거 해제",
   "channels_deleteChannel": "채널 삭제",
-  "channels_deleteChannelConfirm": "{name} 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+  "channels_deleteChannelConfirm": "{name} 채널과 모든 메시지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
   "@channels_deleteChannelConfirm": {
     "placeholders": {
       "name": {
