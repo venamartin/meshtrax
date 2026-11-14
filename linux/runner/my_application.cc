@@ -57,6 +57,18 @@ static void my_application_activate(GApplication* application) {
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
+#ifdef GDK_WINDOWING_X11
+  // Since Flutter 3.41, Dart runs on the GTK thread by default
+  // (flutter/flutter#176759). There, every step of Dart's event loop waits
+  // about 1 ms, and 5 to 6 ms under XWayland while frames are drawn. On its
+  // own thread a step takes under 0.1 ms. With it, a clean close depends on
+  // the _exit() in main.cc. Under Wayland Dart stays on the GTK thread: on
+  // its own thread, a window resize freezes more often there
+  // (flutter/flutter#196529).
+  if (GDK_IS_X11_SCREEN(screen)) {
+    fl_dart_project_set_ui_thread_policy(project, FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  }
+#endif
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
