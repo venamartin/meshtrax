@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Premakni zemljevid",
   "drawing_mapHint": "S premikanjem in povečavo poiščite želeno območje, nato tapnite »Riši tukaj«.",
   "drawing_mapAcross": "{map}, širina {distance}",
-  "drawing_mapNotDownloaded": "To območje ni preneseno"
+  "drawing_mapNotDownloaded": "To območje ni preneseno",
+  "listFilter_hopsAway": "Število skokov",
+  "listFilter_hopsDirect": "Neposredno",
+  "listFilter_hops": "{count, plural, one{{count} skok} two{{count} skoka} few{{count} skoki} other{{count} skokov}}",
+  "listFilter_hopsOrMore": "{count} ali več skokov",
+  "settings_radioFirmware": "Strojna programska oprema radia {version}",
+  "settings_locationTapMap": "Tapnite zemljevid, da nastavite položaj, ali vnesite številke."
 }

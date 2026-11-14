@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Posunúť mapu",
   "drawing_mapHint": "Posúvaním a približovaním mapy nájdite miesto, potom klepnite na „Kresliť tu“.",
   "drawing_mapAcross": "{map}, šírka {distance}",
-  "drawing_mapNotDownloaded": "Táto oblasť nie je stiahnutá"
+  "drawing_mapNotDownloaded": "Táto oblasť nie je stiahnutá",
+  "listFilter_hopsAway": "Počet skokov",
+  "listFilter_hopsDirect": "Priamo",
+  "listFilter_hops": "{count, plural, =1{1 skok} few{{count} skoky} many{{count} skoku} other{{count} skokov}}",
+  "listFilter_hopsOrMore": "{count} alebo viac skokov",
+  "settings_radioFirmware": "Firmvér rádia {version}",
+  "settings_locationTapMap": "Ťuknutím na mapu nastavte polohu alebo zadajte čísla."
 }

@@ -6610,4 +6610,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Эта область не скачана';
+
+  @override
+  String get listFilter_hopsAway => 'Число переходов';
+
+  @override
+  String get listFilter_hopsDirect => 'Напрямую';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count перехода',
+      many: '$count переходов',
+      few: '$count перехода',
+      one: '1 переход',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count и более переходов';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Прошивка радио $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Коснитесь карты, чтобы задать позицию, или введите числа.';
 }

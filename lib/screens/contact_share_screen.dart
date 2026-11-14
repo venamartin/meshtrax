@@ -7,6 +7,7 @@ import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_code_display.dart';
+import '../widgets/qr_share_button.dart';
 
 /// A QR code and a meshcore:// link that add a contact, room or repeater on
 /// another phone. A room's link carries no password: the person who scans
@@ -47,6 +48,7 @@ class ContactShareScreen extends StatelessWidget {
       appBar: AppBar(
         title: AdaptiveAppBarTitle(title),
         centerTitle: true,
+        actions: [QrShareButton(data: qrData, name: name)],
       ),
       body: SingleChildScrollView(
         child: Padding(

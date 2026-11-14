@@ -6597,4 +6597,35 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Esta área não foi baixada';
+
+  @override
+  String get listFilter_hopsAway => 'Saltos de distância';
+
+  @override
+  String get listFilter_hopsDirect => 'Direto';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saltos',
+      one: '1 salto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count saltos ou mais';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmware do rádio $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Toque no mapa para definir a posição ou digite os números.';
 }

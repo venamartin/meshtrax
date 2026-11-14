@@ -6585,4 +6585,37 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'To območje ni preneseno';
+
+  @override
+  String get listFilter_hopsAway => 'Število skokov';
+
+  @override
+  String get listFilter_hopsDirect => 'Neposredno';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skokov',
+      few: '$count skoki',
+      two: '$count skoka',
+      one: '$count skok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count ali več skokov';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Strojna programska oprema radia $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tapnite zemljevid, da nastavite položaj, ali vnesite številke.';
 }

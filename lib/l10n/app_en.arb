@@ -3257,5 +3257,32 @@
       }
     }
   },
-  "drawing_mapNotDownloaded": "This area isn't downloaded"
+  "drawing_mapNotDownloaded": "This area isn't downloaded",
+  "listFilter_hopsAway": "Hops away",
+  "listFilter_hopsDirect": "Direct",
+  "listFilter_hops": "{count, plural, =1{1 hop} other{{count} hops}}",
+  "@listFilter_hops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listFilter_hopsOrMore": "{count} or more hops",
+  "@listFilter_hopsOrMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settings_radioFirmware": "Radio firmware {version}",
+  "@settings_radioFirmware": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_locationTapMap": "Tap the map to set the position, or type the numbers."
 }

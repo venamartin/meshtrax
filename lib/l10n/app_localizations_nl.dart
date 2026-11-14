@@ -6573,4 +6573,35 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Dit gebied is niet gedownload';
+
+  @override
+  String get listFilter_hopsAway => 'Hops verwijderd';
+
+  @override
+  String get listFilter_hopsDirect => 'Direct';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hops',
+      one: '1 hop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count of meer hops';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Radiofirmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tik op de kaart om de positie te kiezen, of typ de getallen.';
 }

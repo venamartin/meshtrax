@@ -11388,6 +11388,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This area isn\'t downloaded'**
   String get drawing_mapNotDownloaded;
+
+  /// No description provided for @listFilter_hopsAway.
+  ///
+  /// In en, this message translates to:
+  /// **'Hops away'**
+  String get listFilter_hopsAway;
+
+  /// No description provided for @listFilter_hopsDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct'**
+  String get listFilter_hopsDirect;
+
+  /// No description provided for @listFilter_hops.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hop} other{{count} hops}}'**
+  String listFilter_hops(int count);
+
+  /// No description provided for @listFilter_hopsOrMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} or more hops'**
+  String listFilter_hopsOrMore(int count);
+
+  /// No description provided for @settings_radioFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio firmware {version}'**
+  String settings_radioFirmware(String version);
+
+  /// No description provided for @settings_locationTapMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to set the position, or type the numbers.'**
+  String get settings_locationTapMap;
 }
 
 class _AppLocalizationsDelegate

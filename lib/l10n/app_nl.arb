@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Kaart verplaatsen",
   "drawing_mapHint": "Schuif en zoom naar de plek en tik dan op Hier tekenen.",
   "drawing_mapAcross": "{map}, {distance} breed",
-  "drawing_mapNotDownloaded": "Dit gebied is niet gedownload"
+  "drawing_mapNotDownloaded": "Dit gebied is niet gedownload",
+  "listFilter_hopsAway": "Hops verwijderd",
+  "listFilter_hopsDirect": "Direct",
+  "listFilter_hops": "{count, plural, =1{1 hop} other{{count} hops}}",
+  "listFilter_hopsOrMore": "{count} of meer hops",
+  "settings_radioFirmware": "Radiofirmware {version}",
+  "settings_locationTapMap": "Tik op de kaart om de positie te kiezen, of typ de getallen."
 }

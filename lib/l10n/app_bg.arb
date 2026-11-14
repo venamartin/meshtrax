@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Премести картата",
   "drawing_mapHint": "Преместете и мащабирайте картата до мястото, после докоснете „Рисувай тук“.",
   "drawing_mapAcross": "{map}, {distance} в ширина",
-  "drawing_mapNotDownloaded": "Тази област не е изтеглена"
+  "drawing_mapNotDownloaded": "Тази област не е изтеглена",
+  "listFilter_hopsAway": "Брой скокове",
+  "listFilter_hopsDirect": "Директно",
+  "listFilter_hops": "{count, plural, =1{1 скок} other{{count} скока}}",
+  "listFilter_hopsOrMore": "{count} или повече скока",
+  "settings_radioFirmware": "Фърмуер на радиото {version}",
+  "settings_locationTapMap": "Докоснете картата, за да зададете позицията, или въведете числата."
 }

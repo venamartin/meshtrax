@@ -2814,5 +2814,11 @@
   "drawing_moveMap": "지도 이동",
   "drawing_mapHint": "지도를 움직이고 확대/축소해 원하는 곳을 찾은 다음 '여기에 그리기'를 탭하세요.",
   "drawing_mapAcross": "{map}, 가로 {distance}",
-  "drawing_mapNotDownloaded": "이 지역은 다운로드되지 않았습니다"
+  "drawing_mapNotDownloaded": "이 지역은 다운로드되지 않았습니다",
+  "listFilter_hopsAway": "홉 수",
+  "listFilter_hopsDirect": "직접",
+  "listFilter_hops": "{count, plural, other{{count}홉}}",
+  "listFilter_hopsOrMore": "{count}홉 이상",
+  "settings_radioFirmware": "무전기 펌웨어 {version}",
+  "settings_locationTapMap": "지도를 탭하여 위치를 정하거나 숫자를 입력하세요."
 }

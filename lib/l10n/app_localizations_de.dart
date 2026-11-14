@@ -6611,4 +6611,35 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get drawing_mapNotDownloaded =>
       'Dieses Gebiet ist nicht heruntergeladen';
+
+  @override
+  String get listFilter_hopsAway => 'Hops entfernt';
+
+  @override
+  String get listFilter_hopsDirect => 'Direkt';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hops',
+      one: '1 Hop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count oder mehr Hops';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Funkgerät-Firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein.';
 }

@@ -6308,4 +6308,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => '이 지역은 다운로드되지 않았습니다';
+
+  @override
+  String get listFilter_hopsAway => '홉 수';
+
+  @override
+  String get listFilter_hopsDirect => '직접';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count홉',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count홉 이상';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '무전기 펌웨어 $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '지도를 탭하여 위치를 정하거나 숫자를 입력하세요.';
 }

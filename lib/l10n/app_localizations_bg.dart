@@ -6589,4 +6589,35 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Тази област не е изтеглена';
+
+  @override
+  String get listFilter_hopsAway => 'Брой скокове';
+
+  @override
+  String get listFilter_hopsDirect => 'Директно';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count скока',
+      one: '1 скок',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count или повече скока';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Фърмуер на радиото $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Докоснете картата, за да зададете позицията, или въведете числата.';
 }

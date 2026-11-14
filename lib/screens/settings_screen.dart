@@ -33,7 +33,10 @@ import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
 import 'wifi_settings_screen.dart';
+import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../utils/platform_info.dart';
+import 'package:traxmap/traxmap.dart' show LatLng;
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
 /// to the UI enum range (always 5-8).
@@ -115,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildExportCard(connector),
                 const SizedBox(height: 16),
-                _buildAboutCard(context),
+                _buildAboutCard(context, connector),
               ],
             );
           },
@@ -644,8 +647,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAboutCard(BuildContext context) {
+  Widget _buildAboutCard(BuildContext context, MeshCoreConnector connector) {
     final l10n = context.l10n;
+    final firmware = connector.isConnected ? connector.firmwareVersion : null;
     return Card(
       child: Column(
         children: [
@@ -653,9 +657,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.info_outline),
             title: Text(l10n.settings_about),
             subtitle: Text(
-              l10n.settings_aboutVersion(
-                _appVersion.isEmpty ? l10n.common_loading : _appVersion,
-              ),
+              [
+                l10n.settings_aboutVersion(
+                  _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+                ),
+                if (firmware != null) l10n.settings_radioFirmware(firmware),
+              ].join('\n'),
             ),
             onTap: () => _showAbout(context),
           ),
@@ -895,16 +902,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
 
+    LatLng? typedPosition() {
+      final lat = double.tryParse(latController.text.trim());
+      final lon = double.tryParse(lonController.text.trim());
+      if (lat == null || lon == null) return null;
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+      // A radio with no position reports 0, 0.
+      if (lat == 0 && lon == 0) return null;
+      return LatLng(lat, lon);
+    }
+
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.settings_location),
-          content: Column(
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Web has no map packs service, so no map.
+              if (!PlatformInfo.isWeb) ...[
+                PositionPickerMap(
+                  position: typedPosition(),
+                  onPicked: (point) => setDialogState(() {
+                    latController.text = point.latitude.toStringAsFixed(6);
+                    lonController.text = point.longitude.toStringAsFixed(6);
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.settings_locationTapMap,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+              ],
               TextField(
                 controller: latController,
+                onChanged: (_) => setDialogState(() {}),
                 decoration: InputDecoration(
                   labelText: l10n.settings_latitude,
                   border: const OutlineInputBorder(),
@@ -917,6 +954,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: lonController,
+                onChanged: (_) => setDialogState(() {}),
                 decoration: InputDecoration(
                   labelText: l10n.settings_longitude,
                   border: const OutlineInputBorder(),
@@ -939,6 +977,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ],
+              ),
+            ),
           ),
           actions: [
             TextButton(

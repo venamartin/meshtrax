@@ -6583,4 +6583,37 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Táto oblasť nie je stiahnutá';
+
+  @override
+  String get listFilter_hopsAway => 'Počet skokov';
+
+  @override
+  String get listFilter_hopsDirect => 'Priamo';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skokov',
+      many: '$count skoku',
+      few: '$count skoky',
+      one: '1 skok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count alebo viac skokov';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmvér rádia $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Ťuknutím na mapu nastavte polohu alebo zadajte čísla.';
 }

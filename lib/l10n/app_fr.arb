@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Déplacer la carte",
   "drawing_mapHint": "Déplacez la carte et zoomez sur le lieu, puis appuyez sur « Dessiner ici ».",
   "drawing_mapAcross": "{map}, {distance} de large",
-  "drawing_mapNotDownloaded": "Cette zone n'est pas téléchargée"
+  "drawing_mapNotDownloaded": "Cette zone n'est pas téléchargée",
+  "listFilter_hopsAway": "Nombre de sauts",
+  "listFilter_hopsDirect": "Direct",
+  "listFilter_hops": "{count, plural, =1{1 saut} other{{count} sauts}}",
+  "listFilter_hopsOrMore": "{count} sauts ou plus",
+  "settings_radioFirmware": "Micrologiciel de la radio {version}",
+  "settings_locationTapMap": "Touchez la carte pour définir la position, ou saisissez les nombres."
 }

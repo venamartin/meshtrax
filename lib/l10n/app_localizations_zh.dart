@@ -6182,4 +6182,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => '此区域尚未下载';
+
+  @override
+  String get listFilter_hopsAway => '跳数';
+
+  @override
+  String get listFilter_hopsDirect => '直连';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 跳',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count 跳或以上';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '电台固件 $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '点按地图设置位置，或输入数值。';
 }

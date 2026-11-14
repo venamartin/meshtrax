@@ -2144,5 +2144,11 @@
   "drawing_moveMap": "Переместить карту",
   "drawing_mapHint": "Найдите нужное место, перемещая и масштабируя карту, затем нажмите «Рисовать здесь».",
   "drawing_mapAcross": "{map}, {distance} в ширину",
-  "drawing_mapNotDownloaded": "Эта область не скачана"
+  "drawing_mapNotDownloaded": "Эта область не скачана",
+  "listFilter_hopsAway": "Число переходов",
+  "listFilter_hopsDirect": "Напрямую",
+  "listFilter_hops": "{count, plural, =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}",
+  "listFilter_hopsOrMore": "{count} и более переходов",
+  "settings_radioFirmware": "Прошивка радио {version}",
+  "settings_locationTapMap": "Коснитесь карты, чтобы задать позицию, или введите числа."
 }

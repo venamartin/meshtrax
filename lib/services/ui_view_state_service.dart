@@ -28,6 +28,7 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyContactsTypeFilter = 'ui_contacts_type_filter';
   static const _keyRepeatersSortOption = 'ui_repeaters_sort_option';
   static const _keyRepeatersTypeFilter = 'ui_repeaters_type_filter';
+  static const _keyRepeatersHopFilter = 'ui_repeaters_hop_filter';
   static const _keyChannelsSortOption = 'ui_channels_sort_option';
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
@@ -46,6 +47,7 @@ class UiViewStateService extends ChangeNotifier {
   ContactTypeFilter _contactsTypeFilter = ContactTypeFilter.all;
   ContactSortOption _repeatersSortOption = ContactSortOption.lastSeen;
   ContactTypeFilter _repeatersTypeFilter = ContactTypeFilter.all;
+  RepeaterHopFilter _repeatersHopFilter = RepeaterHopFilter.any;
 
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
@@ -76,6 +78,7 @@ class UiViewStateService extends ChangeNotifier {
   ContactTypeFilter get contactsTypeFilter => _contactsTypeFilter;
   ContactSortOption get repeatersSortOption => _repeatersSortOption;
   ContactTypeFilter get repeatersTypeFilter => _repeatersTypeFilter;
+  RepeaterHopFilter get repeatersHopFilter => _repeatersHopFilter;
   String get channelsSearchText => _channelsSearchText;
   ChannelSortOption get channelsSortOption => _channelsSortOption;
   bool get renderGifs => _renderGifs;
@@ -130,6 +133,14 @@ class UiViewStateService extends ChangeNotifier {
       _repeatersTypeFilter = ContactTypeFilter.values.firstWhere(
         (e) => e.name == repeatersTypeStr,
         orElse: () => ContactTypeFilter.all,
+      );
+    }
+
+    final repeatersHopStr = prefs.getString(_keyRepeatersHopFilter);
+    if (repeatersHopStr != null) {
+      _repeatersHopFilter = RepeaterHopFilter.values.firstWhere(
+        (e) => e.name == repeatersHopStr,
+        orElse: () => RepeaterHopFilter.any,
       );
     }
 
@@ -256,6 +267,15 @@ class UiViewStateService extends ChangeNotifier {
     notifyListeners();
     unawaited(
       PrefsManager.instance.setString(_keyRepeatersTypeFilter, value.name),
+    );
+  }
+
+  void setRepeatersHopFilter(RepeaterHopFilter value) {
+    if (_repeatersHopFilter == value) return;
+    _repeatersHopFilter = value;
+    notifyListeners();
+    unawaited(
+      PrefsManager.instance.setString(_keyRepeatersHopFilter, value.name),
     );
   }
 

@@ -6538,4 +6538,35 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Det här området är inte nedladdat';
+
+  @override
+  String get listFilter_hopsAway => 'Antal hopp';
+
+  @override
+  String get listFilter_hopsDirect => 'Direkt';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hopp',
+      one: '1 hopp',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count eller fler hopp';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Radions firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tryck på kartan för att ange positionen, eller skriv in siffrorna.';
 }

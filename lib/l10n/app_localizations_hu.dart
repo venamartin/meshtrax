@@ -6611,4 +6611,35 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Ez a terület nincs letöltve';
+
+  @override
+  String get listFilter_hopsAway => 'Ugrások száma';
+
+  @override
+  String get listFilter_hopsDirect => 'Közvetlen';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ugrás',
+      one: '1 ugrás',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count vagy több ugrás';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Rádió firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Koppints a térképre a pozíció megadásához, vagy írd be a számokat.';
 }

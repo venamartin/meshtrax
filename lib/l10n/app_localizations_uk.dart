@@ -6615,4 +6615,37 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Цю область не завантажено';
+
+  @override
+  String get listFilter_hopsAway => 'Кількість переходів';
+
+  @override
+  String get listFilter_hopsDirect => 'Напряму';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count переходу',
+      many: '$count переходів',
+      few: '$count переходи',
+      one: '1 перехід',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count і більше переходів';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Прошивка радіо $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Торкніться карти, щоб задати позицію, або введіть числа.';
 }

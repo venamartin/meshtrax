@@ -6633,4 +6633,35 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Cette zone n\'est pas téléchargée';
+
+  @override
+  String get listFilter_hopsAway => 'Nombre de sauts';
+
+  @override
+  String get listFilter_hopsDirect => 'Direct';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sauts',
+      one: '1 saut',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count sauts ou plus';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Micrologiciel de la radio $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Touchez la carte pour définir la position, ou saisissez les nombres.';
 }

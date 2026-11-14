@@ -6608,4 +6608,35 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Quest\'area non è scaricata';
+
+  @override
+  String get listFilter_hopsAway => 'Salti di distanza';
+
+  @override
+  String get listFilter_hopsDirect => 'Diretto';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count salti',
+      one: '1 salto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count o più salti';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmware della radio $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tocca la mappa per impostare la posizione, oppure digita i numeri.';
 }

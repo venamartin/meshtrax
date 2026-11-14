@@ -2804,5 +2804,11 @@
   "drawing_moveMap": "Mover el mapa",
   "drawing_mapHint": "Mueve el mapa y usa el zoom hasta encontrar el lugar; luego toca Dibujar aquí.",
   "drawing_mapAcross": "{map}, {distance} de ancho",
-  "drawing_mapNotDownloaded": "Esta zona no está descargada"
+  "drawing_mapNotDownloaded": "Esta zona no está descargada",
+  "listFilter_hopsAway": "Saltos de distancia",
+  "listFilter_hopsDirect": "Directo",
+  "listFilter_hops": "{count, plural, =1{1 salto} other{{count} saltos}}",
+  "listFilter_hopsOrMore": "{count} saltos o más",
+  "settings_radioFirmware": "Firmware de la radio {version}",
+  "settings_locationTapMap": "Toca el mapa para fijar la posición o escribe los números."
 }

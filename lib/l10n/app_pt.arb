@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Mover o mapa",
   "drawing_mapHint": "Arraste o mapa e ajuste o zoom até o local, depois toque em Desenhar aqui.",
   "drawing_mapAcross": "{map}, {distance} de largura",
-  "drawing_mapNotDownloaded": "Esta área não foi baixada"
+  "drawing_mapNotDownloaded": "Esta área não foi baixada",
+  "listFilter_hopsAway": "Saltos de distância",
+  "listFilter_hopsDirect": "Direto",
+  "listFilter_hops": "{count, plural, =1{1 salto} other{{count} saltos}}",
+  "listFilter_hopsOrMore": "{count} saltos ou mais",
+  "settings_radioFirmware": "Firmware do rádio {version}",
+  "settings_locationTapMap": "Toque no mapa para definir a posição ou digite os números."
 }

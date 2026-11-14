@@ -6297,4 +6297,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'このエリアはダウンロードされていません';
+
+  @override
+  String get listFilter_hopsAway => 'ホップ数';
+
+  @override
+  String get listFilter_hopsDirect => '直接';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countホップ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$countホップ以上';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '無線機ファームウェア $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '地図をタップして位置を設定するか、数値を入力してください。';
 }

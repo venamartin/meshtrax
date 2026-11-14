@@ -2814,5 +2814,11 @@
   "drawing_moveMap": "地図を動かす",
   "drawing_mapHint": "地図を移動・ズームして場所を合わせ、「ここに描く」をタップしてください。",
   "drawing_mapAcross": "{map}、幅{distance}",
-  "drawing_mapNotDownloaded": "このエリアはダウンロードされていません"
+  "drawing_mapNotDownloaded": "このエリアはダウンロードされていません",
+  "listFilter_hopsAway": "ホップ数",
+  "listFilter_hopsDirect": "直接",
+  "listFilter_hops": "{count, plural, other{{count}ホップ}}",
+  "listFilter_hopsOrMore": "{count}ホップ以上",
+  "settings_radioFirmware": "無線機ファームウェア {version}",
+  "settings_locationTapMap": "地図をタップして位置を設定するか、数値を入力してください。"
 }

@@ -2814,5 +2814,11 @@
   "drawing_moveMap": "Térkép mozgatása",
   "drawing_mapHint": "Keresse meg a helyet a térkép mozgatásával és nagyításával, majd koppintson a „Rajzolás itt” gombra.",
   "drawing_mapAcross": "{map}, {distance} széles terület",
-  "drawing_mapNotDownloaded": "Ez a terület nincs letöltve"
+  "drawing_mapNotDownloaded": "Ez a terület nincs letöltve",
+  "listFilter_hopsAway": "Ugrások száma",
+  "listFilter_hopsDirect": "Közvetlen",
+  "listFilter_hops": "{count, plural, =1{1 ugrás} other{{count} ugrás}}",
+  "listFilter_hopsOrMore": "{count} vagy több ugrás",
+  "settings_radioFirmware": "Rádió firmware {version}",
+  "settings_locationTapMap": "Koppints a térképre a pozíció megadásához, vagy írd be a számokat."
 }

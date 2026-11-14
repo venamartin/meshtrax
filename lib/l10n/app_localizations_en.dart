@@ -6496,4 +6496,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+
+  @override
+  String get listFilter_hopsAway => 'Hops away';
+
+  @override
+  String get listFilter_hopsDirect => 'Direct';
+
+  @override
+  String listFilter_hops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hops',
+      one: '1 hop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listFilter_hopsOrMore(int count) {
+    return '$count or more hops';
+  }
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Radio firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tap the map to set the position, or type the numbers.';
 }

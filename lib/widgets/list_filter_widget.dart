@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../utils/contact_search.dart';
 
@@ -239,18 +240,36 @@ class _RepeaterTypeFilterAction extends _RepeaterFilterAction {
   const _RepeaterTypeFilterAction(this.filter);
 }
 
+class _RepeaterHopFilterAction extends _RepeaterFilterAction {
+  final RepeaterHopFilter filter;
+  const _RepeaterHopFilterAction(this.filter);
+}
+
+String repeaterHopFilterLabel(AppLocalizations l10n, RepeaterHopFilter filter) =>
+    switch (filter) {
+      RepeaterHopFilter.any => l10n.listFilter_all,
+      RepeaterHopFilter.direct => l10n.listFilter_hopsDirect,
+      RepeaterHopFilter.one => l10n.listFilter_hops(1),
+      RepeaterHopFilter.two => l10n.listFilter_hops(2),
+      RepeaterHopFilter.threeOrMore => l10n.listFilter_hopsOrMore(3),
+    };
+
 class RepeaterContactsFilterMenu extends StatelessWidget {
   final ContactSortOption sortOption;
   final ContactTypeFilter typeFilter;
+  final RepeaterHopFilter hopFilter;
   final ValueChanged<ContactSortOption> onSortChanged;
   final ValueChanged<ContactTypeFilter> onTypeFilterChanged;
+  final ValueChanged<RepeaterHopFilter> onHopFilterChanged;
 
   const RepeaterContactsFilterMenu({
     super.key,
     required this.sortOption,
     required this.typeFilter,
+    required this.hopFilter,
     required this.onSortChanged,
     required this.onTypeFilterChanged,
+    required this.onHopFilterChanged,
   });
 
   @override
@@ -289,6 +308,17 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
             ),
           ],
         ),
+        SortFilterMenuSection(
+          title: l10n.listFilter_hopsAway,
+          options: [
+            for (final filter in RepeaterHopFilter.values)
+              SortFilterMenuOption(
+                value: _RepeaterHopFilterAction(filter),
+                label: repeaterHopFilterLabel(l10n, filter),
+                checked: hopFilter == filter,
+              ),
+          ],
+        ),
       ],
       onSelected: (action) {
         switch (action) {
@@ -296,6 +326,8 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
             onSortChanged(option);
           case _RepeaterTypeFilterAction(:final filter):
             onTypeFilterChanged(filter);
+          case _RepeaterHopFilterAction(:final filter):
+            onHopFilterChanged(filter);
         }
       },
     );

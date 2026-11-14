@@ -2776,5 +2776,11 @@
   "drawing_moveMap": "Перемістити карту",
   "drawing_mapHint": "Наведіть карту на потрібне місце й налаштуйте масштаб, а потім натисніть «Малювати тут».",
   "drawing_mapAcross": "{map}, ширина {distance}",
-  "drawing_mapNotDownloaded": "Цю область не завантажено"
+  "drawing_mapNotDownloaded": "Цю область не завантажено",
+  "listFilter_hopsAway": "Кількість переходів",
+  "listFilter_hopsDirect": "Напряму",
+  "listFilter_hops": "{count, plural, =1{1 перехід} few{{count} переходи} many{{count} переходів} other{{count} переходу}}",
+  "listFilter_hopsOrMore": "{count} і більше переходів",
+  "settings_radioFirmware": "Прошивка радіо {version}",
+  "settings_locationTapMap": "Торкніться карти, щоб задати позицію, або введіть числа."
 }

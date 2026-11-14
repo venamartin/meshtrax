@@ -2814,5 +2814,11 @@
   "drawing_moveMap": "Przesuń mapę",
   "drawing_mapHint": "Przesuń i przybliż mapę do wybranego miejsca, a potem stuknij „Rysuj tutaj”.",
   "drawing_mapAcross": "{map}, {distance} wszerz",
-  "drawing_mapNotDownloaded": "Ten obszar nie został pobrany"
+  "drawing_mapNotDownloaded": "Ten obszar nie został pobrany",
+  "listFilter_hopsAway": "Liczba skoków",
+  "listFilter_hopsDirect": "Bezpośrednio",
+  "listFilter_hops": "{count, plural, =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}",
+  "listFilter_hopsOrMore": "{count} lub więcej skoków",
+  "settings_radioFirmware": "Firmware radia {version}",
+  "settings_locationTapMap": "Dotknij mapy, aby ustawić pozycję, lub wpisz liczby."
 }
