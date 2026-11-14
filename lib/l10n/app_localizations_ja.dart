@@ -6319,15 +6319,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channels_pasteLinkNone => 'クリップボードにチャンネルリンクがありません。';
 
   @override
-  String get settings_locationGpsNote => 'GPS が測位するまで、無線機はこの位置を使います。';
+  String get settings_locationGpsNote => 'GPS がオンのとき、測位でき次第、無線機はこの位置を置き換えます。';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$countホップ先で受信',
-      zero: '直接受信',
+      other: '$countホップ',
+      zero: '直接',
     );
     return '$_temp0';
   }

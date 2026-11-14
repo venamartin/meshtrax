@@ -2821,6 +2821,6 @@
   "channels_pasteLink": "링크 붙여넣기",
   "channels_pasteLinkDesc": "복사한 meshcore:// 채널 링크.",
   "channels_pasteLinkNone": "클립보드에 채널 링크가 없습니다.",
-  "settings_locationGpsNote": "GPS가 위치를 잡을 때까지 무전기는 이 위치를 사용합니다.",
-  "contacts_hopsAway": "{count, plural, =0{직접 수신} other{{count}홉 거리에서 수신}}"
+  "settings_locationGpsNote": "GPS가 켜져 있으면 위치를 잡는 즉시 무전기가 이 위치를 바꿉니다.",
+  "contacts_hopsAway": "{count, plural, =0{직접} other{{count}홉}}"
 }

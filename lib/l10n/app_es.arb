@@ -2811,6 +2811,6 @@
   "channels_pasteLink": "Pegar un enlace",
   "channels_pasteLinkDesc": "Un enlace de canal meshcore:// que copiaste.",
   "channels_pasteLinkNone": "No hay ningún enlace de canal en el portapapeles.",
-  "settings_locationGpsNote": "La radio usa esta posición hasta que su GPS tenga señal.",
-  "contacts_hopsAway": "{count, plural, =0{oído directamente} =1{oído a 1 salto} other{oído a {count} saltos}}"
+  "settings_locationGpsNote": "Con el GPS encendido, la radio sustituye esta posición en cuanto su GPS tiene señal.",
+  "contacts_hopsAway": "{count, plural, =0{Directo} =1{1 salto} other{{count} saltos}}"
 }

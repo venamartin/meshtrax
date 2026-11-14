@@ -6608,18 +6608,18 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Rádio používa túto polohu, kým GPS nezíska polohu.';
+      'Pri zapnutom GPS rádio nahradí túto polohu, hneď ako GPS získa polohu.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'počutý cez $count skokov',
-      many: 'počutý cez $count skoku',
-      few: 'počutý cez $count skoky',
-      one: 'počutý cez 1 skok',
-      zero: 'počutý priamo',
+      other: '$count skokov',
+      many: '$count skoku',
+      few: '$count skoky',
+      one: '1 skok',
+      zero: 'Priamo',
     );
     return '$_temp0';
   }

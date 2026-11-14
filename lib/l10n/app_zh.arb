@@ -2788,6 +2788,6 @@
   "channels_pasteLink": "粘贴链接",
   "channels_pasteLinkDesc": "你复制的 meshcore:// 频道链接。",
   "channels_pasteLinkNone": "剪贴板中没有频道链接。",
-  "settings_locationGpsNote": "在 GPS 定位之前，电台使用此位置。",
-  "contacts_hopsAway": "{count, plural, =0{直接收到} other{经 {count} 跳收到}}"
+  "settings_locationGpsNote": "GPS 开启时，一旦定位成功，电台就会替换此位置。",
+  "contacts_hopsAway": "{count, plural, =0{直连} other{{count} 跳}}"
 }

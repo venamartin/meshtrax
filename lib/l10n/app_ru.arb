@@ -2151,6 +2151,6 @@
   "channels_pasteLink": "Вставить ссылку",
   "channels_pasteLinkDesc": "Скопированная ссылка meshcore:// на канал.",
   "channels_pasteLinkNone": "В буфере обмена нет ссылки на канал.",
-  "settings_locationGpsNote": "Радио использует эту позицию, пока GPS не определит местоположение.",
-  "contacts_hopsAway": "{count, plural, =0{слышен напрямую} =1{слышен через 1 переход} few{слышен через {count} перехода} many{слышен через {count} переходов} other{слышен через {count} перехода}}"
+  "settings_locationGpsNote": "При включённом GPS радио заменяет эту позицию, как только GPS определит местоположение.",
+  "contacts_hopsAway": "{count, plural, =0{Напрямую} =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}"
 }

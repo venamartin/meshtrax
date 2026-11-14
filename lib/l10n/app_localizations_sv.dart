@@ -6562,16 +6562,16 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Radion använder den här positionen tills dess GPS har en fix.';
+      'Med GPS på ersätter radion den här positionen så snart dess GPS har en fix.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'hörd $count hopp bort',
-      one: 'hörd 1 hopp bort',
-      zero: 'hörd direkt',
+      other: '$count hopp',
+      one: '1 hopp',
+      zero: 'Direkt',
     );
     return '$_temp0';
   }

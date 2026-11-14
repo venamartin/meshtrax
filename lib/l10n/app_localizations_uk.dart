@@ -6641,18 +6641,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Радіо використовує цю позицію, доки GPS не визначить місцезнаходження.';
+      'Коли GPS увімкнено, радіо замінює цю позицію, щойно GPS визначить місцезнаходження.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'чутно через $count переходу',
-      many: 'чутно через $count переходів',
-      few: 'чутно через $count переходи',
-      one: 'чутно через 1 перехід',
-      zero: 'чутно напряму',
+      other: '$count переходу',
+      many: '$count переходів',
+      few: '$count переходи',
+      one: '1 перехід',
+      zero: 'Напряму',
     );
     return '$_temp0';
   }

@@ -2783,6 +2783,6 @@
   "channels_pasteLink": "Klistra in en länk",
   "channels_pasteLinkDesc": "En kopierad meshcore://-kanallänk.",
   "channels_pasteLinkNone": "Det finns ingen kanallänk i urklipp.",
-  "settings_locationGpsNote": "Radion använder den här positionen tills dess GPS har en fix.",
-  "contacts_hopsAway": "{count, plural, =0{hörd direkt} =1{hörd 1 hopp bort} other{hörd {count} hopp bort}}"
+  "settings_locationGpsNote": "Med GPS på ersätter radion den här positionen så snart dess GPS har en fix.",
+  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 hopp} other{{count} hopp}}"
 }

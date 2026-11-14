@@ -6204,15 +6204,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channels_pasteLinkNone => '剪贴板中没有频道链接。';
 
   @override
-  String get settings_locationGpsNote => '在 GPS 定位之前，电台使用此位置。';
+  String get settings_locationGpsNote => 'GPS 开启时，一旦定位成功，电台就会替换此位置。';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '经 $count 跳收到',
-      zero: '直接收到',
+      other: '$count 跳',
+      zero: '直连',
     );
     return '$_temp0';
   }

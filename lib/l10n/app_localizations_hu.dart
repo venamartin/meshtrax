@@ -6636,16 +6636,16 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'A rádió ezt a pozíciót használja, amíg a GPS nem talál helyzetet.';
+      'Bekapcsolt GPS mellett a rádió lecseréli ezt a pozíciót, amint a GPS helyzetet talál.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count ugrásnyira hallva',
-      one: '1 ugrásnyira hallva',
-      zero: 'közvetlenül hallva',
+      other: '$count ugrás',
+      one: '1 ugrás',
+      zero: 'Közvetlen',
     );
     return '$_temp0';
   }

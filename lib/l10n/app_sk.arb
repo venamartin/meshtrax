@@ -2783,6 +2783,6 @@
   "channels_pasteLink": "Vložiť odkaz",
   "channels_pasteLinkDesc": "Skopírovaný odkaz meshcore:// na kanál.",
   "channels_pasteLinkNone": "V schránke nie je odkaz na kanál.",
-  "settings_locationGpsNote": "Rádio používa túto polohu, kým GPS nezíska polohu.",
-  "contacts_hopsAway": "{count, plural, =0{počutý priamo} =1{počutý cez 1 skok} few{počutý cez {count} skoky} many{počutý cez {count} skoku} other{počutý cez {count} skokov}}"
+  "settings_locationGpsNote": "Pri zapnutom GPS rádio nahradí túto polohu, hneď ako GPS získa polohu.",
+  "contacts_hopsAway": "{count, plural, =0{Priamo} =1{1 skok} few{{count} skoky} many{{count} skoku} other{{count} skokov}}"
 }

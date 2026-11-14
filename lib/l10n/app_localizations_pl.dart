@@ -6641,18 +6641,18 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Radio używa tej pozycji, dopóki GPS nie ustali położenia.';
+      'Przy włączonym GPS radio zastępuje tę pozycję, gdy tylko GPS ustali położenie.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'słyszany przez $count skoku',
-      many: 'słyszany przez $count skoków',
-      few: 'słyszany przez $count skoki',
-      one: 'słyszany przez 1 skok',
-      zero: 'słyszany bezpośrednio',
+      other: '$count skoku',
+      many: '$count skoków',
+      few: '$count skoki',
+      one: '1 skok',
+      zero: 'Bezpośrednio',
     );
     return '$_temp0';
   }

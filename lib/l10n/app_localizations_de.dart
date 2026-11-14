@@ -6636,16 +6636,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.';
+      'Bei eingeschaltetem GPS ersetzt das Funkgerät diese Position, sobald sein GPS einen Fix hat.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count Hops entfernt gehört',
-      one: '1 Hop entfernt gehört',
-      zero: 'direkt gehört',
+      other: '$count Hops',
+      one: '1 Hop',
+      zero: 'Direkt',
     );
     return '$_temp0';
   }

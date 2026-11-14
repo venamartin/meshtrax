@@ -6330,15 +6330,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_pasteLinkNone => '클립보드에 채널 링크가 없습니다.';
 
   @override
-  String get settings_locationGpsNote => 'GPS가 위치를 잡을 때까지 무전기는 이 위치를 사용합니다.';
+  String get settings_locationGpsNote =>
+      'GPS가 켜져 있으면 위치를 잡는 즉시 무전기가 이 위치를 바꿉니다.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count홉 거리에서 수신',
-      zero: '직접 수신',
+      other: '$count홉',
+      zero: '직접',
     );
     return '$_temp0';
   }

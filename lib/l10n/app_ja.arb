@@ -2821,6 +2821,6 @@
   "channels_pasteLink": "リンクを貼り付け",
   "channels_pasteLinkDesc": "コピーした meshcore:// チャンネルリンク。",
   "channels_pasteLinkNone": "クリップボードにチャンネルリンクがありません。",
-  "settings_locationGpsNote": "GPS が測位するまで、無線機はこの位置を使います。",
-  "contacts_hopsAway": "{count, plural, =0{直接受信} other{{count}ホップ先で受信}}"
+  "settings_locationGpsNote": "GPS がオンのとき、測位でき次第、無線機はこの位置を置き換えます。",
+  "contacts_hopsAway": "{count, plural, =0{直接} other{{count}ホップ}}"
 }

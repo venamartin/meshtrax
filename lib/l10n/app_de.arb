@@ -2811,6 +2811,6 @@
   "channels_pasteLink": "Link einfügen",
   "channels_pasteLinkDesc": "Ein kopierter meshcore://-Kanallink.",
   "channels_pasteLinkNone": "In der Zwischenablage ist kein Kanallink.",
-  "settings_locationGpsNote": "Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.",
-  "contacts_hopsAway": "{count, plural, =0{direkt gehört} =1{1 Hop entfernt gehört} other{{count} Hops entfernt gehört}}"
+  "settings_locationGpsNote": "Bei eingeschaltetem GPS ersetzt das Funkgerät diese Position, sobald sein GPS einen Fix hat.",
+  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 Hop} other{{count} Hops}}"
 }

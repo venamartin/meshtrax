@@ -3271,8 +3271,8 @@
   "channels_pasteLink": "Paste a link",
   "channels_pasteLinkDesc": "A meshcore:// channel link you copied.",
   "channels_pasteLinkNone": "There is no channel link on the clipboard.",
-  "settings_locationGpsNote": "The radio uses this position until its GPS has a fix.",
-  "contacts_hopsAway": "{count, plural, =0{heard directly} =1{heard 1 hop away} other{heard {count} hops away}}",
+  "settings_locationGpsNote": "With GPS on, the radio replaces this position as soon as its GPS has a fix.",
+  "contacts_hopsAway": "{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}",
   "@contacts_hopsAway": {
     "placeholders": {
       "count": {

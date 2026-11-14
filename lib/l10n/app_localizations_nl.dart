@@ -6599,16 +6599,16 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'De radio gebruikt deze positie totdat de gps een fix heeft.';
+      'Met gps aan vervangt de radio deze positie zodra de gps een fix heeft.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'op $count hops gehoord',
-      one: 'op 1 hop gehoord',
-      zero: 'direct gehoord',
+      other: '$count hops',
+      one: '1 hop',
+      zero: 'Direct',
     );
     return '$_temp0';
   }

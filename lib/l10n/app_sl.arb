@@ -2783,6 +2783,6 @@
   "channels_pasteLink": "Prilepi povezavo",
   "channels_pasteLinkDesc": "Kopirana povezava meshcore:// do kanala.",
   "channels_pasteLinkNone": "V odložišču ni povezave do kanala.",
-  "settings_locationGpsNote": "Radio uporablja ta položaj, dokler GPS ne določi lokacije.",
-  "contacts_hopsAway": "{count, plural, =0{slišan neposredno} one{slišan prek {count} skoka} two{slišan prek {count} skokov} few{slišan prek {count} skokov} other{slišan prek {count} skokov}}"
+  "settings_locationGpsNote": "Ko je GPS vklopljen, radio zamenja ta položaj, takoj ko GPS določi lokacijo.",
+  "contacts_hopsAway": "{count, plural, =0{Neposredno} one{{count} skok} two{{count} skoka} few{{count} skoki} other{{count} skokov}}"
 }

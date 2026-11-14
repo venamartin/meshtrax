@@ -6613,16 +6613,16 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Радиото използва тази позиция, докато GPS не определи местоположение.';
+      'При включен GPS радиото заменя тази позиция, щом GPS определи местоположение.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'чут на $count скока',
-      one: 'чут на 1 скок',
-      zero: 'чут директно',
+      other: '$count скока',
+      one: '1 скок',
+      zero: 'Директно',
     );
     return '$_temp0';
   }

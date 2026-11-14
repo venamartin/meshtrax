@@ -2821,6 +2821,6 @@
   "channels_pasteLink": "Wklej link",
   "channels_pasteLinkDesc": "Skopiowany link do kanału meshcore://.",
   "channels_pasteLinkNone": "W schowku nie ma linku do kanału.",
-  "settings_locationGpsNote": "Radio używa tej pozycji, dopóki GPS nie ustali położenia.",
-  "contacts_hopsAway": "{count, plural, =0{słyszany bezpośrednio} =1{słyszany przez 1 skok} few{słyszany przez {count} skoki} many{słyszany przez {count} skoków} other{słyszany przez {count} skoku}}"
+  "settings_locationGpsNote": "Przy włączonym GPS radio zastępuje tę pozycję, gdy tylko GPS ustali położenie.",
+  "contacts_hopsAway": "{count, plural, =0{Bezpośrednio} =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}"
 }

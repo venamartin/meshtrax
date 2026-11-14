@@ -6623,16 +6623,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'O rádio usa esta posição até o GPS obter um fix.';
+      'Com o GPS ligado, o rádio substitui esta posição assim que o GPS obtém um fix.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'ouvido a $count saltos',
-      one: 'ouvido a 1 salto',
-      zero: 'ouvido diretamente',
+      other: '$count saltos',
+      one: '1 salto',
+      zero: 'Direto',
     );
     return '$_temp0';
   }

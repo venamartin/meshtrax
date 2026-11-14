@@ -11428,13 +11428,13 @@ abstract class AppLocalizations {
   /// No description provided for @settings_locationGpsNote.
   ///
   /// In en, this message translates to:
-  /// **'The radio uses this position until its GPS has a fix.'**
+  /// **'With GPS on, the radio replaces this position as soon as its GPS has a fix.'**
   String get settings_locationGpsNote;
 
   /// No description provided for @contacts_hopsAway.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{heard directly} =1{heard 1 hop away} other{heard {count} hops away}}'**
+  /// **'{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}'**
   String contacts_hopsAway(int count);
 }
 

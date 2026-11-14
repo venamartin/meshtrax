@@ -2821,6 +2821,6 @@
   "channels_pasteLink": "Hivatkozás beillesztése",
   "channels_pasteLinkDesc": "Egy kimásolt meshcore:// csatornahivatkozás.",
   "channels_pasteLinkNone": "A vágólapon nincs csatornahivatkozás.",
-  "settings_locationGpsNote": "A rádió ezt a pozíciót használja, amíg a GPS nem talál helyzetet.",
-  "contacts_hopsAway": "{count, plural, =0{közvetlenül hallva} =1{1 ugrásnyira hallva} other{{count} ugrásnyira hallva}}"
+  "settings_locationGpsNote": "Bekapcsolt GPS mellett a rádió lecseréli ezt a pozíciót, amint a GPS helyzetet talál.",
+  "contacts_hopsAway": "{count, plural, =0{Közvetlen} =1{1 ugrás} other{{count} ugrás}}"
 }

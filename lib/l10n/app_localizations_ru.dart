@@ -6635,18 +6635,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'Радио использует эту позицию, пока GPS не определит местоположение.';
+      'При включённом GPS радио заменяет эту позицию, как только GPS определит местоположение.';
 
   @override
   String contacts_hopsAway(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'слышен через $count перехода',
-      many: 'слышен через $count переходов',
-      few: 'слышен через $count перехода',
-      one: 'слышен через 1 переход',
-      zero: 'слышен напрямую',
+      other: '$count перехода',
+      many: '$count переходов',
+      few: '$count перехода',
+      one: '1 переход',
+      zero: 'Напрямую',
     );
     return '$_temp0';
   }
