@@ -122,6 +122,11 @@ class PackIndex {
     if (root is! Map<String, Object?>) {
       throw const FormatException('pack index is not a JSON object');
     }
+    return PackIndex.fromJson(root);
+  }
+
+  /// The packs of an already decoded `index.json`.
+  factory PackIndex.fromJson(Map<String, Object?> root) {
     final packs = <PackIndexEntry>[];
     final skipped = <String>[];
     for (final e in root['packs'] as List<Object?>? ?? const []) {

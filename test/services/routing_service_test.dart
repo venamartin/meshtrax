@@ -49,7 +49,11 @@ class _FakeDownloader implements PackDownloader {
 
   /// A held download that failed for good.
   void fail(String id) => _emit(
-    PackDownload(_latest[id]!.item, PackDownloadState.failed, error: 'HTTP 500'),
+    PackDownload(
+      _latest[id]!.item,
+      PackDownloadState.failed,
+      error: 'HTTP 500',
+    ),
   );
 
   @override
@@ -293,7 +297,13 @@ void main() {
 
     // The next start without a catalogue: they come from the device.
     File('${tmp.path}/maps/index.json').deleteSync();
-    final offline = await RoutingService.create(maps);
+    final restarted = MapPacksService(
+      manager: maps.manager,
+      downloader: maps.downloader,
+      cacheDir: maps.cacheDir,
+      indexUrl: maps.indexUrl,
+    );
+    final offline = await RoutingService.create(restarted);
     expect(offline.catalog, isNull);
     expect(offline.credits, service.credits);
     expect(offline.notices, service.notices);
@@ -303,29 +313,32 @@ void main() {
     expect(service.notices, isEmpty);
   });
 
-  test('a new build replaces the old one once every bundle of it is in', () async {
-    catalogue = routing('b1', ['test/a', 'test/b']);
-    final (maps, service, downloader) = await services();
-    await service.download({'test/a', 'test/b'});
-    await service.idle;
+  test(
+    'a new build replaces the old one once every bundle of it is in',
+    () async {
+      catalogue = routing('b1', ['test/a', 'test/b']);
+      final (maps, service, downloader) = await services();
+      await service.download({'test/a', 'test/b'});
+      await service.idle;
 
-    // The server moves on to b2. test/a's bundle arrives first; test/b's
-    // is still on its way, as over a slow link or waiting for Wi-Fi.
-    catalogue = routing('b2', ['test/a', 'test/b']);
-    await maps.refresh();
-    final b = RoutingService.downloadId('test/b');
-    downloader.held.add(b);
-    await service.download({'test/a'});
-    await service.idle;
-    expect(service.store.build, 'b1');
-    expect(service.installedRegions, {'test/a', 'test/b'});
+      // The server moves on to b2. test/a's bundle arrives first; test/b's
+      // is still on its way, as over a slow link or waiting for Wi-Fi.
+      catalogue = routing('b2', ['test/a', 'test/b']);
+      await maps.refresh();
+      final b = RoutingService.downloadId('test/b');
+      downloader.held.add(b);
+      await service.download({'test/a'});
+      await service.idle;
+      expect(service.store.build, 'b1');
+      expect(service.installedRegions, {'test/a', 'test/b'});
 
-    await downloader.release(b);
-    await service.idle;
-    expect(service.store.build, 'b2');
-    expect(service.installedRegions, {'test/a', 'test/b'});
-    expect(leftovers(), isEmpty);
-  });
+      await downloader.release(b);
+      await service.idle;
+      expect(service.store.build, 'b2');
+      expect(service.installedRegions, {'test/a', 'test/b'});
+      expect(leftovers(), isEmpty);
+    },
+  );
 
   test('a failed bundle keeps the old build until it is canceled', () async {
     catalogue = routing('b1', ['test/a', 'test/b']);
@@ -350,67 +363,78 @@ void main() {
     expect(service.installedRegions, {'test/a'});
   });
 
-  test('a region removed while a new build installs waits for the install', () async {
-    catalogue = routing('b1', ['test/a', 'test/b']);
-    final (maps, service, _) = await services();
-    await service.download({'test/a', 'test/b'});
-    await service.idle;
+  test(
+    'a region removed while a new build installs waits for the install',
+    () async {
+      catalogue = routing('b1', ['test/a', 'test/b']);
+      final (maps, service, _) = await services();
+      await service.download({'test/a', 'test/b'});
+      await service.idle;
 
-    // b2 drops test/b. Its install and test/b's removal start together, as
-    // when a region is deleted while an update installs.
-    catalogue = routing('b2', ['test/a']);
-    await maps.refresh();
-    final update = service.download({'test/a'});
-    final removal = service.remove('test/b');
-    await Future.wait([update, removal]);
-    await service.idle;
+      // b2 drops test/b. Its install and test/b's removal start together, as
+      // when a region is deleted while an update installs.
+      catalogue = routing('b2', ['test/a']);
+      await maps.refresh();
+      final update = service.download({'test/a'});
+      final removal = service.remove('test/b');
+      await Future.wait([update, removal]);
+      await service.idle;
 
-    expect(service.store.build, 'b2');
-    expect(service.installedRegions, {'test/a'});
-    expect(service.hasRoutingData, isTrue);
-  });
+      expect(service.store.build, 'b2');
+      expect(service.installedRegions, {'test/a'});
+      expect(service.hasRoutingData, isTrue);
+    },
+  );
 
-  test('a bundle that will not install is reported, and its file removed', () async {
-    catalogue = routing('b1', ['test/a']);
-    // Not a routing tile: the store refuses it.
-    files['routing/valhalla-3.9/b1/test/a.tar.gz'] = _bundle('../../evil.gph');
-    final (_, service, downloader) = await services();
+  test(
+    'a bundle that will not install is reported, and its file removed',
+    () async {
+      catalogue = routing('b1', ['test/a']);
+      // Not a routing tile: the store refuses it.
+      files['routing/valhalla-3.9/b1/test/a.tar.gz'] = _bundle(
+        '../../evil.gph',
+      );
+      final (_, service, downloader) = await services();
 
-    await service.download({'test/a'});
-    await service.idle;
+      await service.download({'test/a'});
+      await service.idle;
 
-    final failed = downloader.latest(RoutingService.downloadId('test/a'))!;
-    expect(failed.state, PackDownloadState.failed);
-    expect(failed.error, contains('Not a routing tile'));
-    expect(service.installedRegions, isEmpty);
-    expect(leftovers(), isEmpty);
-  });
+      final failed = downloader.latest(RoutingService.downloadId('test/a'))!;
+      expect(failed.state, PackDownloadState.failed);
+      expect(failed.error, contains('Not a routing tile'));
+      expect(service.installedRegions, isEmpty);
+      expect(leftovers(), isEmpty);
+    },
+  );
 
-  test('a bundle handed over before the service started installs at start', () async {
-    catalogue = routing('b1', ['test/a']);
-    final (maps, downloader) = await mapsService();
-    // Downloaded while the app was closed: the downloader restores it
-    // before the routing service exists.
-    final item = DownloadFile(
-      id: RoutingService.downloadId('test/a'),
-      name: 'A',
-      region: 'test/a',
-      url: Uri.parse(
-        'https://maps.example/routing/valhalla-3.9/b1/test/a.tar.gz',
-      ),
-      bytes: 1,
-      sha256: 'x',
-      kind: RoutingService.downloadKind,
-      payload: {'build': 'b1'},
-    );
-    await downloader.start(item);
-    expect(downloader.latest(item.id)!.state, PackDownloadState.downloaded);
+  test(
+    'a bundle handed over before the service started installs at start',
+    () async {
+      catalogue = routing('b1', ['test/a']);
+      final (maps, downloader) = await mapsService();
+      // Downloaded while the app was closed: the downloader restores it
+      // before the routing service exists.
+      final item = DownloadFile(
+        id: RoutingService.downloadId('test/a'),
+        name: 'A',
+        region: 'test/a',
+        url: Uri.parse(
+          'https://maps.example/routing/valhalla-3.9/b1/test/a.tar.gz',
+        ),
+        bytes: 1,
+        sha256: 'x',
+        kind: RoutingService.downloadKind,
+        payload: {'build': 'b1'},
+      );
+      await downloader.start(item);
+      expect(downloader.latest(item.id)!.state, PackDownloadState.downloaded);
 
-    final service = await RoutingService.create(maps);
-    await service.idle;
-    expect(service.installedRegions, {'test/a'});
-    expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
-  });
+      final service = await RoutingService.create(maps);
+      await service.idle;
+      expect(service.installedRegions, {'test/a'});
+      expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
+    },
+  );
 
   test('routing only for a newer engine needs a newer app', () async {
     catalogue = {

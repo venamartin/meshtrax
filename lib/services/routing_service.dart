@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -350,10 +349,9 @@ class RoutingService extends ChangeNotifier {
     if (_catalogChecked && maps.fetchedAt == _catalogRead) return;
     _catalogChecked = true;
     _catalogRead = maps.fetchedAt;
-    final file = File('${maps.cacheDir.path}/index.json');
-    if (!file.existsSync()) return;
+    final index = maps.catalogue;
+    if (index == null) return;
     try {
-      final index = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
       _catalog = RoutingCatalog.fromIndex(index, maps.indexUrl);
       _needsNewerApp = RoutingCatalog.needsNewerApp(index);
       notifyListeners();

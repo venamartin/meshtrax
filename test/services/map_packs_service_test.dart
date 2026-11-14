@@ -126,6 +126,7 @@ void main() {
       await maps.refresh();
       expect(maps.status, CatalogueStatus.ready);
       expect(maps.index!.packs, hasLength(9));
+      expect(maps.catalogue!['packs'], hasLength(9));
       expect(maps.regions!.attribution, contains('Geofabrik'));
       expect(maps.chartAreas!.areas, hasLength(42));
       expect(requests.map((r) => r.url.path), [
@@ -160,6 +161,7 @@ void main() {
       await again.start();
       expect(again.status, CatalogueStatus.ready);
       expect(again.regions!['north-america/us/rhode-island'], isNotNull);
+      expect(again.catalogue, maps.catalogue);
     },
   );
 
@@ -419,6 +421,7 @@ void main() {
     await maps.refresh();
     expect(maps.status, CatalogueStatus.unavailable);
     expect(maps.error, isNull);
+    expect(maps.catalogue, isNull);
   });
 
   test('a network failure keeps the cached catalogue and reports it', () async {
@@ -430,6 +433,7 @@ void main() {
     expect(maps.status, CatalogueStatus.error);
     expect(maps.error, contains('500'));
     expect(maps.index!.packs, hasLength(9));
+    expect(maps.catalogue!['packs'], hasLength(9));
   });
 
   test('default selection: the map alone; contours follow the units', () async {
@@ -525,8 +529,9 @@ void main() {
     // Names, not paths: a listing joins with the system's separator, `\` on
     // Windows, where the test's own paths use `/`.
     expect(
-        support.listSync().map((e) => e.path.split(Platform.pathSeparator).last),
-        ['maps']);
+      support.listSync().map((e) => e.path.split(Platform.pathSeparator).last),
+      ['maps'],
+    );
     expect(keep.existsSync(), isTrue);
 
     // Nothing left to remove the next time.
