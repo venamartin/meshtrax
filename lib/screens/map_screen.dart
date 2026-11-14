@@ -135,6 +135,12 @@ class _MapScreenState extends State<MapScreen> {
   late final MeshCoreConnector _connector;
   late final UiViewStateService _viewState;
 
+  /// Back on the main map in the same run: it opens where it was left.
+  late final bool _keepView;
+
+  /// Your GPS position, when the map went there as it opened.
+  LatLng? _openedOnGps;
+
   /// The map of the quick-switch bar, not one pushed to show or pick a point.
   bool get _isMainMap =>
       widget.highlightPosition == null && !widget.pickPosition;
@@ -144,6 +150,10 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _loadRemovedMarkers();
     _viewState = context.read<UiViewStateService>();
+    _keepView =
+        _isMainMap &&
+        _viewState.mapShownThisRun &&
+        _viewState.mapCamera != null;
     final kept = _isMainMap ? _viewState.mapRoute : null;
     if (kept != null) {
       _routeTo = (name: kept.name, point: kept.to.toLatLong2());
@@ -164,7 +174,10 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    _saveCamera?.cancel();
+    if (_saveCamera?.isActive ?? false) {
+      _saveCamera!.cancel();
+      _viewState.setMapCamera(_viewState.mapCamera!);
+    }
     _placesTimer?.cancel();
     _connector.removeSelfPositionViewer();
     unawaited(_channelLatest?.cancel());
@@ -209,9 +222,17 @@ class _MapScreenState extends State<MapScreen> {
 
   void _onCameraChanged(MapCamera camera) {
     _saveCamera?.cancel();
-    _saveCamera = Timer(const Duration(seconds: 1), () {
-      if (mounted) context.read<UiViewStateService>().setMapCamera(camera);
-    });
+    // Only the main map's view is kept, at once for the next map of the
+    // run (a quick switch back starts it before this one is gone), and on
+    // the device after a pause. A map pushed to show or pick a point leaves
+    // it as it was.
+    if (_isMainMap) {
+      _viewState.setMapCamera(camera, save: false);
+      _saveCamera = Timer(
+        const Duration(seconds: 1),
+        () => _viewState.setMapCamera(camera),
+      );
+    }
     _placesTimer?.cancel();
     _placesTimer = Timer(
       const Duration(milliseconds: 300),
@@ -447,10 +468,6 @@ class _MapScreenState extends State<MapScreen> {
           center = highlightPosition;
           zoom = widget.highlightZoom;
         }
-        final lastCamera = context.read<UiViewStateService>().mapCamera;
-        final startCamera = hasMapContent || lastCamera == null
-            ? MapCamera(center: center.toOvm(), zoom: zoom)
-            : lastCamera;
 
         // A radio with no position reports 0, 0.
         final selfPosition =
@@ -461,18 +478,62 @@ class _MapScreenState extends State<MapScreen> {
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
 
+        // Once a run the main map goes to your position, as soon as the
+        // radio's GPS has one, unless you've touched the map first. A map
+        // still loading opens there.
+        if (_isMainMap &&
+            !_viewState.mapWentToGps &&
+            connector.gpsOn &&
+            selfPosition != null) {
+          _viewState.mapWentToGps = true;
+          if (_mapController.isReady) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                MapControls.centerOn(_mapController, selfPosition.toOvm());
+              }
+            });
+          } else {
+            _openedOnGps = selfPosition;
+          }
+        }
+        final lastCamera = _viewState.mapCamera;
+        final startCamera = switch (_openedOnGps) {
+          // As close as My location goes: where nothing is downloaded, as
+          // close as the base map's detail.
+          final gps? => MapCamera(
+            center: gps.toOvm(),
+            zoom:
+                context.read<MapPacksService?>()?.downloadedAt(
+                      MapType.parse(settings.mapType) ?? MapType.osm,
+                      gps.toOvm(),
+                    ) ??
+                    false
+                ? MapControls.locateZoom
+                : AppMap.baseMapZoom,
+          ),
+          null when _keepView => lastCamera!,
+          null when hasMapContent || lastCamera == null => MapCamera(
+            center: center.toOvm(),
+            zoom: zoom,
+          ),
+          null => lastCamera!,
+        };
+
         // Re center map after removed markers have loaded
         if (!_hasInitializedMap && _removedMarkersLoaded) {
           _hasInitializedMap = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             if (_routeTo != null) {
-              // A route kept from the last visit.
+              // A route kept from the last visit: the map stays as it was
+              // left, and the route is found again if it wasn't.
               if (_route == null) {
                 unawaited(_findRoute(selfPosition));
-              } else {
+              } else if (!_keepView) {
                 _fitRoute();
               }
+            } else if (_isMainMap && (_keepView || _viewState.mapWentToGps)) {
+              // Where it was left, or on your position.
             } else if (hasMapContent) {
               _mapController.move(center.toOvm(), zoom: zoom);
             } else if (lastCamera == null) {
@@ -741,6 +802,18 @@ class _MapScreenState extends State<MapScreen> {
                           guessedLocations.length,
                         ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
+                      // A touch on the main map makes it yours: it no longer
+                      // goes to your GPS position by itself.
+                      if (_isMainMap)
+                        Positioned.fill(
+                          child: Listener(
+                            behavior: HitTestBehavior.translucent,
+                            onPointerDown: (_) =>
+                                _viewState.mapWentToGps = true,
+                            onPointerSignal: (_) =>
+                                _viewState.mapWentToGps = true,
+                          ),
+                        ),
                     ],
                   ),
                 ),
