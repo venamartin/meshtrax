@@ -11,6 +11,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/screens/repeaters_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/repeater_login_dialog.dart';
@@ -90,6 +91,7 @@ void main() {
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider(create: (_) => UiViewStateService()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),

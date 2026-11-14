@@ -6,6 +6,7 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
+import '../services/ui_view_state_service.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
@@ -31,9 +32,27 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   bool showUnreadOnly = false;
 
   @override
+  void initState() {
+    super.initState();
+    final viewState = context.read<UiViewStateService>();
+    sortOption = viewState.repeatersSortOption;
+    typeFilter = viewState.repeatersTypeFilter;
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _setSortOption(ContactSortOption value) {
+    context.read<UiViewStateService>().setRepeatersSortOption(value);
+    setState(() => sortOption = value);
+  }
+
+  void _setTypeFilter(ContactTypeFilter value) {
+    context.read<UiViewStateService>().setRepeatersTypeFilter(value);
+    setState(() => typeFilter = value);
   }
 
   void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
@@ -259,8 +278,8 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                     RepeaterContactsFilterMenu(
                       sortOption: sortOption,
                       typeFilter: typeFilter,
-                      onSortChanged: (val) => setState(() => sortOption = val),
-                      onTypeFilterChanged: (val) => setState(() => typeFilter = val),
+                      onSortChanged: _setSortOption,
+                      onTypeFilterChanged: _setTypeFilter,
                     ),
                     PopupMenuButton(
                       itemBuilder: (context) => [
@@ -282,11 +301,43 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                   ],
                 ),
               ),
+              // The filter and sort are kept between visits, so they stay in
+              // view until cleared.
+              if (typeFilter == ContactTypeFilter.favorites ||
+                  sortOption != ContactSortOption.lastSeen)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      if (typeFilter == ContactTypeFilter.favorites)
+                        InputChip(
+                          avatar: const Icon(Icons.star, size: 18),
+                          label: Text(context.l10n.listFilter_favorites),
+                          deleteButtonTooltipMessage:
+                              context.l10n.listFilter_all,
+                          onDeleted: () =>
+                              _setTypeFilter(ContactTypeFilter.all),
+                        ),
+                      if (sortOption != ContactSortOption.lastSeen)
+                        InputChip(
+                          avatar: const Icon(Icons.sort_by_alpha, size: 18),
+                          label: Text(context.l10n.listFilter_az),
+                          deleteButtonTooltipMessage:
+                              context.l10n.listFilter_heardRecently,
+                          onDeleted: () =>
+                              _setSortOption(ContactSortOption.lastSeen),
+                        ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          searchQuery.isEmpty
+                          searchQuery.isEmpty &&
+                                  typeFilter == ContactTypeFilter.all
                               ? context.l10n.contacts_noContacts
                               : context.l10n.contacts_noMatchingContacts,
                         ),
