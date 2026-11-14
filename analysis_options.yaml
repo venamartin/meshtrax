@@ -14,6 +14,7 @@ analyzer:
     # Vendored third-party code (framing fix only) keeps upstream style.
     - tools/win_ble_patched/**
     - tools/flutter_blue_plus_winrt_patched/**
+    - tools/flserial_patched/**
     - build/**
     # packages/path_graph and packages/traxmap have their own pubspecs and CI
     # steps; the root analyze cannot resolve their dependencies before their

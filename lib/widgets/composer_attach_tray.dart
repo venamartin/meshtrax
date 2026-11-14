@@ -2,6 +2,19 @@ import 'package:material_ui/material_ui.dart';
 
 import '../l10n/l10n.dart';
 
+final _mention = RegExp(r'@\[[^\]]+\]');
+
+/// Whether the composer holds nothing but mentions. A GIF or a card can
+/// follow a mention, so the tray stays on offer until there is a message.
+bool isMentionOnly(String text) => text.replaceAll(_mention, '').trim().isEmpty;
+
+/// What a tray item puts in the composer: its [text], after any mention
+/// already typed; otherwise it replaces what was there.
+String afterMention(String current, String text) =>
+    current.trim().isNotEmpty && isMentionOnly(current)
+    ? '${current.trim()} $text'
+    : text;
+
 class AttachTile {
   final IconData icon;
   final String label;
@@ -61,7 +74,7 @@ class ComposerActionButton extends StatelessWidget {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
-        final empty = value.text.trim().isEmpty;
+        final empty = isMentionOnly(value.text);
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 150),
           transitionBuilder: (child, animation) =>

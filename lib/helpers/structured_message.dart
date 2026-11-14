@@ -91,6 +91,21 @@ sealed class StructuredMessage {
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
+  /// The `@[Name]` mentions a message starts with, as typed, or '' when it
+  /// starts with none. A card hides the text around it, so a chat draws
+  /// these above the card.
+  static String leadingMentions(String text) {
+    var rest = text.trimLeft();
+    final found = <String>[];
+    while (true) {
+      final m = _leadingMention.firstMatch(rest);
+      if (m == null || m.end == 0) break;
+      found.add(m.group(0)!.trim());
+      rest = rest.substring(m.end);
+    }
+    return found.join(' ');
+  }
+
   /// The body without leading `@[Name]` mentions and without a reply quote
   /// (`@[Name]\n>snippet..\n` or the older `@[Name] re:snippet…`).
   static String stripMarkup(String text) {

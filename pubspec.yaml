@@ -134,6 +134,12 @@ dependency_overrides:
   # windows/flutter_blue_plus_winrt_plugin.cpp, CreateBondAsync).
   flutter_blue_plus_winrt:
     path: tools/flutter_blue_plus_winrt_patched
+  # Vendored without its Android plugin, which the app never used (Android
+  # USB is MeshTraxUsbFunctions.kt): its manifest made USB host a required
+  # feature, and it still applies 'kotlin-android', which fails the build
+  # under AGP 9's built-in Kotlin. Desktop code is upstream 0.7.3 unchanged.
+  flserial:
+    path: tools/flserial_patched
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
