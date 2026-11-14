@@ -19,7 +19,8 @@ enum PoiDownload { points, addresses }
 /// Files download through the map downloader, as packs do, and live at
 /// `<maps>/poi/<region>/points-of-interest.sqlite` and `addresses.sqlite`,
 /// with `poi/manifest.json` recording each file's checksum for update
-/// checks.
+/// checks, and the catalogue build it came from (`pointsBuild`,
+/// `addressesBuild`) so an older copy can be told apart from a newer one.
 class PoiService extends ChangeNotifier {
   /// The [DownloadFile.kind]s of the two downloads.
   static const pointsKind = 'poi-points';
@@ -96,28 +97,30 @@ class PoiService extends ChangeNotifier {
 
   /// Downloads [which] of [region]'s files through the map downloader. Each
   /// installs as it arrives.
-  Future<void> download(String region, Set<PoiDownload> which) => maps.download(
-    [
-      for (final w in which)
-        if (fileFor(region, w) case final file?)
-          DownloadFile(
-            id: downloadId(region, w),
-            name: maps.regions?[region]?.name ?? region.split('/').last,
-            region: region,
-            url: file.url,
-            bytes: file.bytes,
-            sha256: file.sha256,
-            kind: kindOf(w),
-          ),
-    ],
-  );
+  Future<void> download(String region, Set<PoiDownload> which) =>
+      maps.download([
+        for (final w in which)
+          if (fileFor(region, w) case final file?)
+            DownloadFile(
+              id: downloadId(region, w),
+              name: maps.regions?[region]?.name ?? region.split('/').last,
+              region: region,
+              url: file.url,
+              bytes: file.bytes,
+              sha256: file.sha256,
+              kind: kindOf(w),
+              payload: {'build': _catalog!.build},
+            ),
+      ]);
 
   Future<void> remove(String region, {Set<PoiDownload>? which}) async {
     await _open.remove(region)?.close();
     for (final w in which ?? PoiDownload.values.toSet()) {
       final f = File('${root.path}/${_slug(region)}/${_fileName(w)}');
       if (f.existsSync()) f.deleteSync();
-      _manifest[region]?.remove(w.name);
+      _manifest[region]
+        ?..remove(w.name)
+        ..remove(_buildKey(w));
     }
     if (_manifest[region]?.isEmpty ?? false) _manifest.remove(region);
     _writeManifest();
@@ -167,7 +170,13 @@ class PoiService extends ChangeNotifier {
       final tmp = File('${target.path}.tmp');
       await gz.openRead().transform(gzip.decoder).pipe(tmp.openWrite());
       tmp.renameSync(target.path);
-      (_manifest[region] ??= {})[which.name] = d.item.sha256;
+      final entry = (_manifest[region] ??= {})..[which.name] = d.item.sha256;
+      switch (d.file?.payload['build']) {
+        case final String build:
+          entry[_buildKey(which)] = build;
+        default:
+          entry.remove(_buildKey(which));
+      }
       _writeManifest();
     } on Object catch (e) {
       appLogger.warn('Points of interest install failed: $e', tag: 'Poi');
@@ -203,6 +212,8 @@ class PoiService extends ChangeNotifier {
 
   static String _slug(String region) => region.replaceAll('/', '_');
 
+  static String _buildKey(PoiDownload w) => '${w.name}Build';
+
   File get _manifestFile => File('${root.path}/manifest.json');
 
   void _readManifest() {
@@ -229,13 +240,10 @@ class PoiService extends ChangeNotifier {
     if (_catalogChecked && maps.fetchedAt == _catalogRead) return;
     _catalogChecked = true;
     _catalogRead = maps.fetchedAt;
-    final file = File('${maps.cacheDir.path}/index.json');
-    if (!file.existsSync()) return;
+    final index = maps.catalogue;
+    if (index == null) return;
     try {
-      _catalog = PoiCatalog.fromIndex(
-        jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
-        maps.indexUrl,
-      );
+      _catalog = PoiCatalog.fromIndex(index, maps.indexUrl);
       notifyListeners();
     } on Object catch (e) {
       appLogger.warn('Points of interest catalogue unreadable: $e', tag: 'Poi');

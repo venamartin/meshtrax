@@ -139,44 +139,89 @@ void main() {
   List<FileSystemEntity> leftovers() =>
       Directory('${tmp.path}/downloads').listSync();
 
-  test('a places file downloads through the map downloader and installs', () async {
-    final body = utf8.encode('SQLite format 3 stand-in');
-    points(body);
-    final (service, downloader) = await services();
-    expect(service.fileFor('test/a', PoiDownload.points), isNotNull);
+  Object? manifest() =>
+      jsonDecode(File('${tmp.path}/maps/poi/manifest.json').readAsStringSync());
 
+  test(
+    'a places file downloads through the map downloader and installs',
+    () async {
+      final body = utf8.encode('SQLite format 3 stand-in');
+      points(body);
+      final (service, downloader) = await services();
+      expect(service.fileFor('test/a', PoiDownload.points), isNotNull);
+
+      await service.download('test/a', {PoiDownload.points});
+      final item = downloader.started.single as DownloadFile;
+      expect(item.id, PoiService.downloadId('test/a', PoiDownload.points));
+      expect(item.kind, PoiService.pointsKind);
+      expect(item.region, 'test/a');
+      expect(item.payload['build'], '2026110601');
+      await service.idle;
+
+      expect(service.isInstalled('test/a', PoiDownload.points), isTrue);
+      expect(service.installedRegions, {'test/a'});
+      expect(service.regionFor('test/a'), isNotNull);
+      expect(
+        File('${tmp.path}/maps/poi/test_a/points-of-interest.sqlite')
+            .readAsBytesSync(),
+        body,
+      );
+      expect(service.updateAvailable('test/a', PoiDownload.points), isFalse);
+      expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
+      expect(leftovers(), isEmpty);
+      expect(manifest(), {
+        'test/a': {
+          'points': sha256.convert(files[path]!).toString(),
+          'pointsBuild': '2026110601',
+        },
+      });
+    },
+  );
+
+  test('removing a file forgets its checksum and build', () async {
+    points(utf8.encode('fine'));
+    final (service, _) = await services();
     await service.download('test/a', {PoiDownload.points});
-    final item = downloader.started.single as DownloadFile;
-    expect(item.id, PoiService.downloadId('test/a', PoiDownload.points));
-    expect(item.kind, PoiService.pointsKind);
-    expect(item.region, 'test/a');
     await service.idle;
+
+    await service.remove('test/a');
+    expect(service.installedRegions, isEmpty);
+    expect(manifest(), isEmpty);
+  });
+
+  test('a manifest written before builds were recorded still reads', () async {
+    points(utf8.encode('fine'));
+    final sum = sha256.convert(files[path]!).toString();
+    File('${tmp.path}/maps/poi/manifest.json')
+      ..createSync(recursive: true)
+      ..writeAsStringSync(
+        jsonEncode({
+          'test/a': {'points': sum},
+        }),
+      );
+    File('${tmp.path}/maps/poi/test_a/points-of-interest.sqlite')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('fine');
+    final (service, _) = await services();
 
     expect(service.isInstalled('test/a', PoiDownload.points), isTrue);
-    expect(service.installedRegions, {'test/a'});
-    expect(service.regionFor('test/a'), isNotNull);
-    expect(
-      File(
-        '${tmp.path}/maps/poi/test_a/points-of-interest.sqlite',
-      ).readAsBytesSync(),
-      body,
-    );
     expect(service.updateAvailable('test/a', PoiDownload.points), isFalse);
-    expect(downloader.latest(item.id)!.state, PackDownloadState.installed);
-    expect(leftovers(), isEmpty);
   });
 
-  test('a file that will not unpack is reported, and its file removed', () async {
-    points(utf8.encode('fine'));
-    files[path] = Uint8List.fromList(utf8.encode('not gzip'));
-    final (service, downloader) = await services();
+  test(
+    'a file that will not unpack is reported, and its file removed',
+    () async {
+      points(utf8.encode('fine'));
+      files[path] = Uint8List.fromList(utf8.encode('not gzip'));
+      final (service, downloader) = await services();
 
-    await service.download('test/a', {PoiDownload.points});
-    await service.idle;
+      await service.download('test/a', {PoiDownload.points});
+      await service.idle;
 
-    final id = PoiService.downloadId('test/a', PoiDownload.points);
-    expect(downloader.latest(id)!.state, PackDownloadState.failed);
-    expect(service.isInstalled('test/a', PoiDownload.points), isFalse);
-    expect(leftovers(), isEmpty);
-  });
+      final id = PoiService.downloadId('test/a', PoiDownload.points);
+      expect(downloader.latest(id)!.state, PackDownloadState.failed);
+      expect(service.isInstalled('test/a', PoiDownload.points), isFalse);
+      expect(leftovers(), isEmpty);
+    },
+  );
 }
