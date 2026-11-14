@@ -6578,25 +6578,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops verwijderd';
 
   @override
-  String get listFilter_hopsDirect => 'Direct';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hops',
-      one: '1 hop',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count of meer hops';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Radiofirmware $version';
   }
@@ -6604,4 +6585,33 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tik op de kaart om de positie te kiezen, of typ de getallen.';
+
+  @override
+  String get channels_pasteLink => 'Link plakken';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Een gekopieerde meshcore://-kanaallink.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Er staat geen kanaallink op het klembord.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'De radio gebruikt deze positie totdat de gps een fix heeft.';
+
+  @override
+  String get settings_gpsFix => 'Positie bepaald';
+
+  @override
+  String get settings_gpsNoFix => 'Nog geen fix';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satellieten: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'De gps staat uit';
 }

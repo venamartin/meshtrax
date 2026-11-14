@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, širina {distance}",
   "drawing_mapNotDownloaded": "To območje ni preneseno",
   "listFilter_hopsAway": "Število skokov",
-  "listFilter_hopsDirect": "Neposredno",
-  "listFilter_hops": "{count, plural, one{{count} skok} two{{count} skoka} few{{count} skoki} other{{count} skokov}}",
-  "listFilter_hopsOrMore": "{count} ali več skokov",
   "settings_radioFirmware": "Strojna programska oprema radia {version}",
-  "settings_locationTapMap": "Tapnite zemljevid, da nastavite položaj, ali vnesite številke."
+  "settings_locationTapMap": "Tapnite zemljevid, da nastavite položaj, ali vnesite številke.",
+  "channels_pasteLink": "Prilepi povezavo",
+  "channels_pasteLinkDesc": "Kopirana povezava meshcore:// do kanala.",
+  "channels_pasteLinkNone": "V odložišču ni povezave do kanala.",
+  "settings_locationGpsNote": "Radio uporablja ta položaj, dokler GPS ne določi lokacije.",
+  "settings_gpsFix": "Položaj določen",
+  "settings_gpsNoFix": "Položaja še ni",
+  "settings_gpsSatellites": "Sateliti: {count}",
+  "settings_gpsOff": "GPS je izklopljen"
 }

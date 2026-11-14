@@ -3259,23 +3259,6 @@
   },
   "drawing_mapNotDownloaded": "This area isn't downloaded",
   "listFilter_hopsAway": "Hops away",
-  "listFilter_hopsDirect": "Direct",
-  "listFilter_hops": "{count, plural, =1{1 hop} other{{count} hops}}",
-  "@listFilter_hops": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "listFilter_hopsOrMore": "{count} or more hops",
-  "@listFilter_hopsOrMore": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "settings_radioFirmware": "Radio firmware {version}",
   "@settings_radioFirmware": {
     "placeholders": {
@@ -3284,5 +3267,20 @@
       }
     }
   },
-  "settings_locationTapMap": "Tap the map to set the position, or type the numbers."
+  "settings_locationTapMap": "Tap the map to set the position, or type the numbers.",
+  "channels_pasteLink": "Paste a link",
+  "channels_pasteLinkDesc": "A meshcore:// channel link you copied.",
+  "channels_pasteLinkNone": "There is no channel link on the clipboard.",
+  "settings_locationGpsNote": "The radio uses this position until its GPS has a fix.",
+  "settings_gpsFix": "Position fixed",
+  "settings_gpsNoFix": "No fix yet",
+  "settings_gpsSatellites": "Satellites: {count}",
+  "@settings_gpsSatellites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settings_gpsOff": "The GPS is switched off"
 }

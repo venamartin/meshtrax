@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, {distance} de large",
   "drawing_mapNotDownloaded": "Cette zone n'est pas téléchargée",
   "listFilter_hopsAway": "Nombre de sauts",
-  "listFilter_hopsDirect": "Direct",
-  "listFilter_hops": "{count, plural, =1{1 saut} other{{count} sauts}}",
-  "listFilter_hopsOrMore": "{count} sauts ou plus",
   "settings_radioFirmware": "Micrologiciel de la radio {version}",
-  "settings_locationTapMap": "Touchez la carte pour définir la position, ou saisissez les nombres."
+  "settings_locationTapMap": "Touchez la carte pour définir la position, ou saisissez les nombres.",
+  "channels_pasteLink": "Coller un lien",
+  "channels_pasteLinkDesc": "Un lien de canal meshcore:// que vous avez copié.",
+  "channels_pasteLinkNone": "Le presse-papiers ne contient aucun lien de canal.",
+  "settings_locationGpsNote": "La radio utilise cette position jusqu’à ce que son GPS ait un fix.",
+  "settings_gpsFix": "Position acquise",
+  "settings_gpsNoFix": "Pas encore de position",
+  "settings_gpsSatellites": "Satellites : {count}",
+  "settings_gpsOff": "Le GPS est éteint"
 }

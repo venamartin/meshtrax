@@ -33,6 +33,8 @@ import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
 import 'wifi_settings_screen.dart';
+import '../services/ui_view_state_service.dart';
+import '../widgets/gps_status_line.dart';
 import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../utils/platform_info.dart';
@@ -894,8 +896,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     final latController = TextEditingController();
     final lonController = TextEditingController();
-    latController.text = connector.selfLatitude?.toStringAsFixed(6) ?? '';
-    lonController.text = connector.selfLongitude?.toStringAsFixed(6) ?? '';
+    // A radio with no position reports 0, 0: nothing to show or to keep.
+    final lat0 = connector.selfLatitude;
+    final lon0 = connector.selfLongitude;
+    if (lat0 != null && lon0 != null && (lat0 != 0 || lon0 != 0)) {
+      latController.text = lat0.toStringAsFixed(6);
+      lonController.text = lon0.toStringAsFixed(6);
+    }
+    final lastMapView = context.read<UiViewStateService>().mapCamera;
 
     // Safe access to custom vars - may be null before device responds
     final customVars = connector.currentCustomVars ?? {};
@@ -927,6 +935,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!PlatformInfo.isWeb) ...[
                 PositionPickerMap(
                   position: typedPosition(),
+                  emptyCamera: lastMapView,
                   onPicked: (point) => setDialogState(() {
                     latController.text = point.latitude.toStringAsFixed(6);
                     lonController.text = point.longitude.toStringAsFixed(6);
@@ -975,6 +984,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     await connector.setGps(value);
                   },
                 ),
+                if (isGPSEnabled) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.settings_locationGpsNote,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  // Only firmware 1.18+ can say what its GPS is doing.
+                  if (connector.supportsCompanionCli) ...[
+                    const SizedBox(height: 8),
+                    GpsStatusLine(connector: connector),
+                  ],
+                ],
               ],
             ],
               ),

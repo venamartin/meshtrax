@@ -6313,28 +6313,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get listFilter_hopsAway => '홉 수';
 
   @override
-  String get listFilter_hopsDirect => '직접';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count홉',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count홉 이상';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return '무전기 펌웨어 $version';
   }
 
   @override
   String get settings_locationTapMap => '지도를 탭하여 위치를 정하거나 숫자를 입력하세요.';
+
+  @override
+  String get channels_pasteLink => '링크 붙여넣기';
+
+  @override
+  String get channels_pasteLinkDesc => '복사한 meshcore:// 채널 링크.';
+
+  @override
+  String get channels_pasteLinkNone => '클립보드에 채널 링크가 없습니다.';
+
+  @override
+  String get settings_locationGpsNote => 'GPS가 위치를 잡을 때까지 무전기는 이 위치를 사용합니다.';
+
+  @override
+  String get settings_gpsFix => '위치 확정됨';
+
+  @override
+  String get settings_gpsNoFix => '아직 위치를 잡지 못함';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return '위성: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS가 꺼져 있습니다';
 }

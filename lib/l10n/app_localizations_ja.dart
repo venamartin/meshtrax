@@ -6302,28 +6302,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get listFilter_hopsAway => 'ホップ数';
 
   @override
-  String get listFilter_hopsDirect => '直接';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$countホップ',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$countホップ以上';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return '無線機ファームウェア $version';
   }
 
   @override
   String get settings_locationTapMap => '地図をタップして位置を設定するか、数値を入力してください。';
+
+  @override
+  String get channels_pasteLink => 'リンクを貼り付け';
+
+  @override
+  String get channels_pasteLinkDesc => 'コピーした meshcore:// チャンネルリンク。';
+
+  @override
+  String get channels_pasteLinkNone => 'クリップボードにチャンネルリンクがありません。';
+
+  @override
+  String get settings_locationGpsNote => 'GPS が測位するまで、無線機はこの位置を使います。';
+
+  @override
+  String get settings_gpsFix => '測位済み';
+
+  @override
+  String get settings_gpsNoFix => 'まだ測位していません';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return '衛星数: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS はオフです';
 }

@@ -2783,9 +2783,14 @@
   "drawing_mapAcross": "{map}，宽 {distance}",
   "drawing_mapNotDownloaded": "此区域尚未下载",
   "listFilter_hopsAway": "跳数",
-  "listFilter_hopsDirect": "直连",
-  "listFilter_hops": "{count, plural, other{{count} 跳}}",
-  "listFilter_hopsOrMore": "{count} 跳或以上",
   "settings_radioFirmware": "电台固件 {version}",
-  "settings_locationTapMap": "点按地图设置位置，或输入数值。"
+  "settings_locationTapMap": "点按地图设置位置，或输入数值。",
+  "channels_pasteLink": "粘贴链接",
+  "channels_pasteLinkDesc": "你复制的 meshcore:// 频道链接。",
+  "channels_pasteLinkNone": "剪贴板中没有频道链接。",
+  "settings_locationGpsNote": "在 GPS 定位之前，电台使用此位置。",
+  "settings_gpsFix": "已定位",
+  "settings_gpsNoFix": "尚未定位",
+  "settings_gpsSatellites": "卫星数：{count}",
+  "settings_gpsOff": "GPS 已关闭"
 }

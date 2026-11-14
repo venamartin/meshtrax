@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, {distance} i bredd",
   "drawing_mapNotDownloaded": "Det här området är inte nedladdat",
   "listFilter_hopsAway": "Antal hopp",
-  "listFilter_hopsDirect": "Direkt",
-  "listFilter_hops": "{count, plural, =1{1 hopp} other{{count} hopp}}",
-  "listFilter_hopsOrMore": "{count} eller fler hopp",
   "settings_radioFirmware": "Radions firmware {version}",
-  "settings_locationTapMap": "Tryck på kartan för att ange positionen, eller skriv in siffrorna."
+  "settings_locationTapMap": "Tryck på kartan för att ange positionen, eller skriv in siffrorna.",
+  "channels_pasteLink": "Klistra in en länk",
+  "channels_pasteLinkDesc": "En kopierad meshcore://-kanallänk.",
+  "channels_pasteLinkNone": "Det finns ingen kanallänk i urklipp.",
+  "settings_locationGpsNote": "Radion använder den här positionen tills dess GPS har en fix.",
+  "settings_gpsFix": "Position fastställd",
+  "settings_gpsNoFix": "Ingen position ännu",
+  "settings_gpsSatellites": "Satelliter: {count}",
+  "settings_gpsOff": "GPS är avstängd"
 }

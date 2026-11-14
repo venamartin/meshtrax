@@ -2146,9 +2146,14 @@
   "drawing_mapAcross": "{map}, {distance} в ширину",
   "drawing_mapNotDownloaded": "Эта область не скачана",
   "listFilter_hopsAway": "Число переходов",
-  "listFilter_hopsDirect": "Напрямую",
-  "listFilter_hops": "{count, plural, =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}",
-  "listFilter_hopsOrMore": "{count} и более переходов",
   "settings_radioFirmware": "Прошивка радио {version}",
-  "settings_locationTapMap": "Коснитесь карты, чтобы задать позицию, или введите числа."
+  "settings_locationTapMap": "Коснитесь карты, чтобы задать позицию, или введите числа.",
+  "channels_pasteLink": "Вставить ссылку",
+  "channels_pasteLinkDesc": "Скопированная ссылка meshcore:// на канал.",
+  "channels_pasteLinkNone": "В буфере обмена нет ссылки на канал.",
+  "settings_locationGpsNote": "Радио использует эту позицию, пока GPS не определит местоположение.",
+  "settings_gpsFix": "Позиция определена",
+  "settings_gpsNoFix": "Позиции пока нет",
+  "settings_gpsSatellites": "Спутники: {count}",
+  "settings_gpsOff": "GPS выключен"
 }

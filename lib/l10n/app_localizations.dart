@@ -11395,24 +11395,6 @@ abstract class AppLocalizations {
   /// **'Hops away'**
   String get listFilter_hopsAway;
 
-  /// No description provided for @listFilter_hopsDirect.
-  ///
-  /// In en, this message translates to:
-  /// **'Direct'**
-  String get listFilter_hopsDirect;
-
-  /// No description provided for @listFilter_hops.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 hop} other{{count} hops}}'**
-  String listFilter_hops(int count);
-
-  /// No description provided for @listFilter_hopsOrMore.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} or more hops'**
-  String listFilter_hopsOrMore(int count);
-
   /// No description provided for @settings_radioFirmware.
   ///
   /// In en, this message translates to:
@@ -11424,6 +11406,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the map to set the position, or type the numbers.'**
   String get settings_locationTapMap;
+
+  /// No description provided for @channels_pasteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a link'**
+  String get channels_pasteLink;
+
+  /// No description provided for @channels_pasteLinkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A meshcore:// channel link you copied.'**
+  String get channels_pasteLinkDesc;
+
+  /// No description provided for @channels_pasteLinkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no channel link on the clipboard.'**
+  String get channels_pasteLinkNone;
+
+  /// No description provided for @settings_locationGpsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio uses this position until its GPS has a fix.'**
+  String get settings_locationGpsNote;
+
+  /// No description provided for @settings_gpsFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Position fixed'**
+  String get settings_gpsFix;
+
+  /// No description provided for @settings_gpsNoFix.
+  ///
+  /// In en, this message translates to:
+  /// **'No fix yet'**
+  String get settings_gpsNoFix;
+
+  /// No description provided for @settings_gpsSatellites.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites: {count}'**
+  String settings_gpsSatellites(int count);
+
+  /// No description provided for @settings_gpsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The GPS is switched off'**
+  String get settings_gpsOff;
 }
 
 class _AppLocalizationsDelegate

@@ -6501,25 +6501,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops away';
 
   @override
-  String get listFilter_hopsDirect => 'Direct';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hops',
-      one: '1 hop',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count or more hops';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Radio firmware $version';
   }
@@ -6527,4 +6508,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tap the map to set the position, or type the numbers.';
+
+  @override
+  String get channels_pasteLink => 'Paste a link';
+
+  @override
+  String get channels_pasteLinkDesc => 'A meshcore:// channel link you copied.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'There is no channel link on the clipboard.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'The radio uses this position until its GPS has a fix.';
+
+  @override
+  String get settings_gpsFix => 'Position fixed';
+
+  @override
+  String get settings_gpsNoFix => 'No fix yet';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satellites: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'The GPS is switched off';
 }

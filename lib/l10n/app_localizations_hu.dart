@@ -6616,25 +6616,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get listFilter_hopsAway => 'Ugrások száma';
 
   @override
-  String get listFilter_hopsDirect => 'Közvetlen';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ugrás',
-      one: '1 ugrás',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count vagy több ugrás';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Rádió firmware $version';
   }
@@ -6642,4 +6623,32 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Koppints a térképre a pozíció megadásához, vagy írd be a számokat.';
+
+  @override
+  String get channels_pasteLink => 'Hivatkozás beillesztése';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Egy kimásolt meshcore:// csatornahivatkozás.';
+
+  @override
+  String get channels_pasteLinkNone => 'A vágólapon nincs csatornahivatkozás.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'A rádió ezt a pozíciót használja, amíg a GPS nem talál helyzetet.';
+
+  @override
+  String get settings_gpsFix => 'Pozíció meghatározva';
+
+  @override
+  String get settings_gpsNoFix => 'Még nincs pozíció';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Műholdak: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'A GPS ki van kapcsolva';
 }

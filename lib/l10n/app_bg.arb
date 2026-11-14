@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, {distance} в ширина",
   "drawing_mapNotDownloaded": "Тази област не е изтеглена",
   "listFilter_hopsAway": "Брой скокове",
-  "listFilter_hopsDirect": "Директно",
-  "listFilter_hops": "{count, plural, =1{1 скок} other{{count} скока}}",
-  "listFilter_hopsOrMore": "{count} или повече скока",
   "settings_radioFirmware": "Фърмуер на радиото {version}",
-  "settings_locationTapMap": "Докоснете картата, за да зададете позицията, или въведете числата."
+  "settings_locationTapMap": "Докоснете картата, за да зададете позицията, или въведете числата.",
+  "channels_pasteLink": "Поставяне на връзка",
+  "channels_pasteLinkDesc": "Копирана връзка meshcore:// към канал.",
+  "channels_pasteLinkNone": "В клипборда няма връзка към канал.",
+  "settings_locationGpsNote": "Радиото използва тази позиция, докато GPS не определи местоположение.",
+  "settings_gpsFix": "Позицията е определена",
+  "settings_gpsNoFix": "Все още няма позиция",
+  "settings_gpsSatellites": "Спътници: {count}",
+  "settings_gpsOff": "GPS е изключен"
 }

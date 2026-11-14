@@ -6588,27 +6588,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get listFilter_hopsAway => 'Počet skokov';
 
   @override
-  String get listFilter_hopsDirect => 'Priamo';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count skokov',
-      many: '$count skoku',
-      few: '$count skoky',
-      one: '1 skok',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count alebo viac skokov';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Firmvér rádia $version';
   }
@@ -6616,4 +6595,32 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Ťuknutím na mapu nastavte polohu alebo zadajte čísla.';
+
+  @override
+  String get channels_pasteLink => 'Vložiť odkaz';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Skopírovaný odkaz meshcore:// na kanál.';
+
+  @override
+  String get channels_pasteLinkNone => 'V schránke nie je odkaz na kanál.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Rádio používa túto polohu, kým GPS nezíska polohu.';
+
+  @override
+  String get settings_gpsFix => 'Poloha určená';
+
+  @override
+  String get settings_gpsNoFix => 'Zatiaľ bez polohy';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satelity: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS je vypnuté';
 }

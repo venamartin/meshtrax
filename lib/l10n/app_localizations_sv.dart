@@ -6543,25 +6543,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get listFilter_hopsAway => 'Antal hopp';
 
   @override
-  String get listFilter_hopsDirect => 'Direkt';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hopp',
-      one: '1 hopp',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count eller fler hopp';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Radions firmware $version';
   }
@@ -6569,4 +6550,31 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tryck på kartan för att ange positionen, eller skriv in siffrorna.';
+
+  @override
+  String get channels_pasteLink => 'Klistra in en länk';
+
+  @override
+  String get channels_pasteLinkDesc => 'En kopierad meshcore://-kanallänk.';
+
+  @override
+  String get channels_pasteLinkNone => 'Det finns ingen kanallänk i urklipp.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Radion använder den här positionen tills dess GPS har en fix.';
+
+  @override
+  String get settings_gpsFix => 'Position fastställd';
+
+  @override
+  String get settings_gpsNoFix => 'Ingen position ännu';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satelliter: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS är avstängd';
 }

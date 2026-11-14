@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, {distance} di larghezza",
   "drawing_mapNotDownloaded": "Quest'area non è scaricata",
   "listFilter_hopsAway": "Salti di distanza",
-  "listFilter_hopsDirect": "Diretto",
-  "listFilter_hops": "{count, plural, =1{1 salto} other{{count} salti}}",
-  "listFilter_hopsOrMore": "{count} o più salti",
   "settings_radioFirmware": "Firmware della radio {version}",
-  "settings_locationTapMap": "Tocca la mappa per impostare la posizione, oppure digita i numeri."
+  "settings_locationTapMap": "Tocca la mappa per impostare la posizione, oppure digita i numeri.",
+  "channels_pasteLink": "Incolla un link",
+  "channels_pasteLinkDesc": "Un link di canale meshcore:// che hai copiato.",
+  "channels_pasteLinkNone": "Negli appunti non c’è alcun link di canale.",
+  "settings_locationGpsNote": "La radio usa questa posizione finché il GPS non ha un fix.",
+  "settings_gpsFix": "Posizione acquisita",
+  "settings_gpsNoFix": "Ancora nessuna posizione",
+  "settings_gpsSatellites": "Satelliti: {count}",
+  "settings_gpsOff": "Il GPS è spento"
 }

@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, ширина {distance}",
   "drawing_mapNotDownloaded": "Цю область не завантажено",
   "listFilter_hopsAway": "Кількість переходів",
-  "listFilter_hopsDirect": "Напряму",
-  "listFilter_hops": "{count, plural, =1{1 перехід} few{{count} переходи} many{{count} переходів} other{{count} переходу}}",
-  "listFilter_hopsOrMore": "{count} і більше переходів",
   "settings_radioFirmware": "Прошивка радіо {version}",
-  "settings_locationTapMap": "Торкніться карти, щоб задати позицію, або введіть числа."
+  "settings_locationTapMap": "Торкніться карти, щоб задати позицію, або введіть числа.",
+  "channels_pasteLink": "Вставити посилання",
+  "channels_pasteLinkDesc": "Скопійоване посилання meshcore:// на канал.",
+  "channels_pasteLinkNone": "У буфері обміну немає посилання на канал.",
+  "settings_locationGpsNote": "Радіо використовує цю позицію, доки GPS не визначить місцезнаходження.",
+  "settings_gpsFix": "Позицію визначено",
+  "settings_gpsNoFix": "Позиції ще немає",
+  "settings_gpsSatellites": "Супутники: {count}",
+  "settings_gpsOff": "GPS вимкнено"
 }

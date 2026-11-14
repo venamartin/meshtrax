@@ -6594,25 +6594,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get listFilter_hopsAway => 'Брой скокове';
 
   @override
-  String get listFilter_hopsDirect => 'Директно';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count скока',
-      one: '1 скок',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count или повече скока';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Фърмуер на радиото $version';
   }
@@ -6620,4 +6601,31 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Докоснете картата, за да зададете позицията, или въведете числата.';
+
+  @override
+  String get channels_pasteLink => 'Поставяне на връзка';
+
+  @override
+  String get channels_pasteLinkDesc => 'Копирана връзка meshcore:// към канал.';
+
+  @override
+  String get channels_pasteLinkNone => 'В клипборда няма връзка към канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Радиото използва тази позиция, докато GPS не определи местоположение.';
+
+  @override
+  String get settings_gpsFix => 'Позицията е определена';
+
+  @override
+  String get settings_gpsNoFix => 'Все още няма позиция';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Спътници: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS е изключен';
 }

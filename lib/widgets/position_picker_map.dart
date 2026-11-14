@@ -10,11 +10,15 @@ class PositionPickerMap extends StatefulWidget {
   final ValueChanged<LatLng> onPicked;
   final double height;
 
+  /// Where to look while there is no position to show.
+  final MapCamera? emptyCamera;
+
   const PositionPickerMap({
     super.key,
     required this.position,
     required this.onPicked,
     this.height = 200,
+    this.emptyCamera,
   });
 
   @override
@@ -50,10 +54,10 @@ class _PositionPickerMapState extends State<PositionPickerMap> {
           child: AppMap(
             compact: true,
             controller: _controller,
-            initialCamera: MapCamera(
-              center: position ?? const LatLng(0, 0),
-              zoom: position == null ? 2 : 13,
-            ),
+            initialCamera: position != null
+                ? MapCamera(center: position, zoom: 13)
+                : widget.emptyCamera ??
+                      const MapCamera(center: LatLng(0, 0), zoom: 2),
             onTap: widget.onPicked,
             overlays: [
               if (position != null)

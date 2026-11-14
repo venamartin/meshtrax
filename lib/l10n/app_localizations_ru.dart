@@ -6615,27 +6615,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get listFilter_hopsAway => 'Число переходов';
 
   @override
-  String get listFilter_hopsDirect => 'Напрямую';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count перехода',
-      many: '$count переходов',
-      few: '$count перехода',
-      one: '1 переход',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count и более переходов';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Прошивка радио $version';
   }
@@ -6643,4 +6622,32 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Коснитесь карты, чтобы задать позицию, или введите числа.';
+
+  @override
+  String get channels_pasteLink => 'Вставить ссылку';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Скопированная ссылка meshcore:// на канал.';
+
+  @override
+  String get channels_pasteLinkNone => 'В буфере обмена нет ссылки на канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Радио использует эту позицию, пока GPS не определит местоположение.';
+
+  @override
+  String get settings_gpsFix => 'Позиция определена';
+
+  @override
+  String get settings_gpsNoFix => 'Позиции пока нет';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Спутники: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS выключен';
 }

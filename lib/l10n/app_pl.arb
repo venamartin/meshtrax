@@ -2816,9 +2816,14 @@
   "drawing_mapAcross": "{map}, {distance} wszerz",
   "drawing_mapNotDownloaded": "Ten obszar nie został pobrany",
   "listFilter_hopsAway": "Liczba skoków",
-  "listFilter_hopsDirect": "Bezpośrednio",
-  "listFilter_hops": "{count, plural, =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}",
-  "listFilter_hopsOrMore": "{count} lub więcej skoków",
   "settings_radioFirmware": "Firmware radia {version}",
-  "settings_locationTapMap": "Dotknij mapy, aby ustawić pozycję, lub wpisz liczby."
+  "settings_locationTapMap": "Dotknij mapy, aby ustawić pozycję, lub wpisz liczby.",
+  "channels_pasteLink": "Wklej link",
+  "channels_pasteLinkDesc": "Skopiowany link do kanału meshcore://.",
+  "channels_pasteLinkNone": "W schowku nie ma linku do kanału.",
+  "settings_locationGpsNote": "Radio używa tej pozycji, dopóki GPS nie ustali położenia.",
+  "settings_gpsFix": "Pozycja ustalona",
+  "settings_gpsNoFix": "Jeszcze brak pozycji",
+  "settings_gpsSatellites": "Satelity: {count}",
+  "settings_gpsOff": "GPS jest wyłączony"
 }

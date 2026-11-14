@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, {distance} breed",
   "drawing_mapNotDownloaded": "Dit gebied is niet gedownload",
   "listFilter_hopsAway": "Hops verwijderd",
-  "listFilter_hopsDirect": "Direct",
-  "listFilter_hops": "{count, plural, =1{1 hop} other{{count} hops}}",
-  "listFilter_hopsOrMore": "{count} of meer hops",
   "settings_radioFirmware": "Radiofirmware {version}",
-  "settings_locationTapMap": "Tik op de kaart om de positie te kiezen, of typ de getallen."
+  "settings_locationTapMap": "Tik op de kaart om de positie te kiezen, of typ de getallen.",
+  "channels_pasteLink": "Link plakken",
+  "channels_pasteLinkDesc": "Een gekopieerde meshcore://-kanaallink.",
+  "channels_pasteLinkNone": "Er staat geen kanaallink op het klembord.",
+  "settings_locationGpsNote": "De radio gebruikt deze positie totdat de gps een fix heeft.",
+  "settings_gpsFix": "Positie bepaald",
+  "settings_gpsNoFix": "Nog geen fix",
+  "settings_gpsSatellites": "Satellieten: {count}",
+  "settings_gpsOff": "De gps staat uit"
 }

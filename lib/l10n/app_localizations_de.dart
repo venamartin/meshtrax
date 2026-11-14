@@ -6616,25 +6616,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops entfernt';
 
   @override
-  String get listFilter_hopsDirect => 'Direkt';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Hops',
-      one: '1 Hop',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count oder mehr Hops';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Funkgerät-Firmware $version';
   }
@@ -6642,4 +6623,32 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein.';
+
+  @override
+  String get channels_pasteLink => 'Link einfügen';
+
+  @override
+  String get channels_pasteLinkDesc => 'Ein kopierter meshcore://-Kanallink.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'In der Zwischenablage ist kein Kanallink.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.';
+
+  @override
+  String get settings_gpsFix => 'Position bestimmt';
+
+  @override
+  String get settings_gpsNoFix => 'Noch kein Fix';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satelliten: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'Das GPS ist ausgeschaltet';
 }

@@ -12,6 +12,7 @@ import '../models/contact.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
 import '../utils/contact_search.dart';
+import '../helpers/channel_join_helper.dart';
 import '../helpers/contact_import_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../utils/telemetry_dialog.dart';
@@ -590,6 +591,31 @@ class _NewChatScreenState extends State<NewChatScreen> {
                     ),
                     const Divider(height: 1),
                     buildOptionTile(
+                      optionIndex: 4,
+                      icon: Icons.content_paste,
+                      title: dialogContext.l10n.channels_pasteLink,
+                      subtitle: dialogContext.l10n.channels_pasteLinkDesc,
+                      onTapOverride: () async {
+                        final clip = await Clipboard.getData('text/plain');
+                        final link = clip?.text?.trim() ?? '';
+                        if (!dialogContext.mounted) return;
+                        if (MeshCoreQr.parseChannelQr(link) == null) {
+                          showDismissibleSnackBar(
+                            dialogContext,
+                            content: Text(
+                              dialogContext.l10n.channels_pasteLinkNone,
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.pop(dialogContext);
+                        if (context.mounted) {
+                          await ChannelJoinHelper.joinFromLink(context, link);
+                        }
+                      },
+                    ),
+                    const Divider(height: 1),
+                    buildOptionTile(
                       optionIndex: 3,
                       icon: Icons.add,
                       title: dialogContext.l10n.channels_joinPrivateChannel,
@@ -844,6 +870,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
 
         switch (sortOption) {
           case ContactSortOption.lastSeen:
+          case ContactSortOption.hops:
             filtered.sort((a, b) {
               int cmp = _resolveLastSeen(b, connector).compareTo(_resolveLastSeen(a, connector));
               if (cmp != 0) return cmp;

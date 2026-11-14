@@ -6613,25 +6613,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get listFilter_hopsAway => 'Salti di distanza';
 
   @override
-  String get listFilter_hopsDirect => 'Diretto';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count salti',
-      one: '1 salto',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count o più salti';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Firmware della radio $version';
   }
@@ -6639,4 +6620,33 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tocca la mappa per impostare la posizione, oppure digita i numeri.';
+
+  @override
+  String get channels_pasteLink => 'Incolla un link';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Un link di canale meshcore:// che hai copiato.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Negli appunti non c’è alcun link di canale.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'La radio usa questa posizione finché il GPS non ha un fix.';
+
+  @override
+  String get settings_gpsFix => 'Posizione acquisita';
+
+  @override
+  String get settings_gpsNoFix => 'Ancora nessuna posizione';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satelliti: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'Il GPS è spento';
 }

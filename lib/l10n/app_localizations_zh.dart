@@ -6187,28 +6187,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listFilter_hopsAway => '跳数';
 
   @override
-  String get listFilter_hopsDirect => '直连';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count 跳',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count 跳或以上';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return '电台固件 $version';
   }
 
   @override
   String get settings_locationTapMap => '点按地图设置位置，或输入数值。';
+
+  @override
+  String get channels_pasteLink => '粘贴链接';
+
+  @override
+  String get channels_pasteLinkDesc => '你复制的 meshcore:// 频道链接。';
+
+  @override
+  String get channels_pasteLinkNone => '剪贴板中没有频道链接。';
+
+  @override
+  String get settings_locationGpsNote => '在 GPS 定位之前，电台使用此位置。';
+
+  @override
+  String get settings_gpsFix => '已定位';
+
+  @override
+  String get settings_gpsNoFix => '尚未定位';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return '卫星数：$count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS 已关闭';
 }

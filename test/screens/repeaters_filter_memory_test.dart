@@ -138,48 +138,25 @@ void main() {
     expect(prefs.getString('ui_repeaters_type_filter'), 'favorites');
   });
 
-  test('the hops filter matches by how far the last advert travelled', () {
-    expect(RepeaterHopFilter.any.matches(null), isTrue);
-    expect(RepeaterHopFilter.direct.matches(0), isTrue);
-    expect(RepeaterHopFilter.direct.matches(1), isFalse);
-    expect(RepeaterHopFilter.one.matches(1), isTrue);
-    expect(RepeaterHopFilter.two.matches(2), isTrue);
-    expect(RepeaterHopFilter.threeOrMore.matches(2), isFalse);
-    expect(RepeaterHopFilter.threeOrMore.matches(3), isTrue);
-    expect(RepeaterHopFilter.threeOrMore.matches(7), isTrue);
-    // Never heard advertising: no count, so no hop filter shows it.
-    for (final filter in RepeaterHopFilter.values.skip(1)) {
-      expect(filter.matches(null), isFalse, reason: filter.name);
-    }
-  });
-
-  testWidgets('choosing a hop count shows its chip, filters and is kept', (
+  testWidgets('choosing Hops away sorts by it, shows its chip and is kept', (
     tester,
   ) async {
     await setUpWith({});
     await open(tester);
     await tester.tap(find.byTooltip('Filter and sort'));
     await settle(tester);
-    expect(find.text('Hops away'), findsOneWidget);
-    await tester.tap(find.text('2 hops'));
+    await tester.tap(find.text('Hops away'));
     await settle(tester);
-    expect(find.widgetWithText(InputChip, '2 hops'), findsOneWidget);
-    // These two were added by the radio, with no advert count behind them.
-    expect(find.text('Zenith'), findsNothing);
-    expect(viewState.repeatersHopFilter, RepeaterHopFilter.two);
+    expect(find.widgetWithText(InputChip, 'Hops away'), findsOneWidget);
+    // Neither has been heard advertising, so both stay, at the end.
+    expect(find.text('Zenith'), findsOneWidget);
+    expect(find.text('Alder'), findsOneWidget);
+    expect(viewState.repeatersSortOption, ContactSortOption.hops);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('ui_repeaters_hop_filter'), 'two');
+    expect(prefs.getString('ui_repeaters_sort_option'), 'hops');
 
-    await tester.tap(find.byTooltip('All'));
+    await tester.tap(find.byTooltip('Heard recently'));
     await settle(tester);
     expect(find.byType(InputChip), findsNothing);
-    expect(find.text('Zenith'), findsOneWidget);
-  });
-
-  testWidgets('a remembered hop filter is applied on opening', (tester) async {
-    await setUpWith({'ui_repeaters_hop_filter': 'threeOrMore'});
-    await open(tester);
-    expect(find.widgetWithText(InputChip, '3 or more hops'), findsOneWidget);
-    expect(find.text('Alder'), findsNothing);
   });
 }

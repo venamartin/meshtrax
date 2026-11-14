@@ -6620,27 +6620,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get listFilter_hopsAway => 'Кількість переходів';
 
   @override
-  String get listFilter_hopsDirect => 'Напряму';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count переходу',
-      many: '$count переходів',
-      few: '$count переходи',
-      one: '1 перехід',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count і більше переходів';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Прошивка радіо $version';
   }
@@ -6648,4 +6627,33 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Торкніться карти, щоб задати позицію, або введіть числа.';
+
+  @override
+  String get channels_pasteLink => 'Вставити посилання';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Скопійоване посилання meshcore:// на канал.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'У буфері обміну немає посилання на канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Радіо використовує цю позицію, доки GPS не визначить місцезнаходження.';
+
+  @override
+  String get settings_gpsFix => 'Позицію визначено';
+
+  @override
+  String get settings_gpsNoFix => 'Позиції ще немає';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Супутники: $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'GPS вимкнено';
 }

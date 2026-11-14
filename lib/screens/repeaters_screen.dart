@@ -29,7 +29,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   String searchQuery = '';
   ContactSortOption sortOption = ContactSortOption.lastSeen;
   ContactTypeFilter typeFilter = ContactTypeFilter.all;
-  RepeaterHopFilter hopFilter = RepeaterHopFilter.any;
   bool showUnreadOnly = false;
 
   @override
@@ -38,7 +37,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
     final viewState = context.read<UiViewStateService>();
     sortOption = viewState.repeatersSortOption;
     typeFilter = viewState.repeatersTypeFilter;
-    hopFilter = viewState.repeatersHopFilter;
   }
 
   @override
@@ -55,11 +53,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   void _setTypeFilter(ContactTypeFilter value) {
     context.read<UiViewStateService>().setRepeatersTypeFilter(value);
     setState(() => typeFilter = value);
-  }
-
-  void _setHopFilter(RepeaterHopFilter value) {
-    context.read<UiViewStateService>().setRepeatersHopFilter(value);
-    setState(() => hopFilter = value);
   }
 
   void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
@@ -233,7 +226,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
           if (typeFilter == ContactTypeFilter.favorites && !c.isFavorite) {
             return false;
           }
-          if (!hopFilter.matches(c.inboundHopCount)) return false;
           if (searchQueryLower.isEmpty) return true;
           return c.name.toLowerCase().contains(searchQueryLower) ||
                  c.publicKeyHex.toLowerCase().contains(searchQueryLower);
@@ -241,6 +233,15 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
         
         if (sortOption == ContactSortOption.lastSeen) {
           filtered.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+        } else if (sortOption == ContactSortOption.hops) {
+          // Fewest first; a repeater never heard advertising has no count
+          // and goes last. Ties by most recently heard.
+          filtered.sort((a, b) {
+            final byHops = (a.inboundHopCount ?? 1 << 20).compareTo(
+              b.inboundHopCount ?? 1 << 20,
+            );
+            return byHops != 0 ? byHops : b.lastSeen.compareTo(a.lastSeen);
+          });
         } else {
           filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         }
@@ -286,10 +287,8 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                     RepeaterContactsFilterMenu(
                       sortOption: sortOption,
                       typeFilter: typeFilter,
-                      hopFilter: hopFilter,
                       onSortChanged: _setSortOption,
                       onTypeFilterChanged: _setTypeFilter,
-                      onHopFilterChanged: _setHopFilter,
                     ),
                     PopupMenuButton(
                       itemBuilder: (context) => [
@@ -314,7 +313,6 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
               // The filter and sort are kept between visits, so they stay in
               // view until cleared.
               if (typeFilter == ContactTypeFilter.favorites ||
-                  hopFilter != RepeaterHopFilter.any ||
                   sortOption != ContactSortOption.lastSeen)
                 Container(
                   width: double.infinity,
@@ -331,21 +329,19 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                           onDeleted: () =>
                               _setTypeFilter(ContactTypeFilter.all),
                         ),
-                      if (hopFilter != RepeaterHopFilter.any)
-                        InputChip(
-                          avatar: const Icon(Icons.route, size: 18),
-                          label: Text(
-                            repeaterHopFilterLabel(context.l10n, hopFilter),
-                          ),
-                          deleteButtonTooltipMessage:
-                              context.l10n.listFilter_all,
-                          onDeleted: () =>
-                              _setHopFilter(RepeaterHopFilter.any),
-                        ),
                       if (sortOption != ContactSortOption.lastSeen)
                         InputChip(
-                          avatar: const Icon(Icons.sort_by_alpha, size: 18),
-                          label: Text(context.l10n.listFilter_az),
+                          avatar: Icon(
+                            sortOption == ContactSortOption.hops
+                                ? Icons.route
+                                : Icons.sort_by_alpha,
+                            size: 18,
+                          ),
+                          label: Text(
+                            sortOption == ContactSortOption.hops
+                                ? context.l10n.listFilter_hopsAway
+                                : context.l10n.listFilter_az,
+                          ),
                           deleteButtonTooltipMessage:
                               context.l10n.listFilter_heardRecently,
                           onDeleted: () =>
@@ -359,8 +355,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                     ? Center(
                         child: Text(
                           searchQuery.isEmpty &&
-                                  typeFilter == ContactTypeFilter.all &&
-                                  hopFilter == RepeaterHopFilter.any
+                                  typeFilter == ContactTypeFilter.all
                               ? context.l10n.contacts_noContacts
                               : context.l10n.contacts_noMatchingContacts,
                         ),

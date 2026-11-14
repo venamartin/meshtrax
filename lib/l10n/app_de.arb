@@ -2806,9 +2806,14 @@
   "drawing_mapAcross": "{map}, {distance} breit",
   "drawing_mapNotDownloaded": "Dieses Gebiet ist nicht heruntergeladen",
   "listFilter_hopsAway": "Hops entfernt",
-  "listFilter_hopsDirect": "Direkt",
-  "listFilter_hops": "{count, plural, =1{1 Hop} other{{count} Hops}}",
-  "listFilter_hopsOrMore": "{count} oder mehr Hops",
   "settings_radioFirmware": "Funkgerät-Firmware {version}",
-  "settings_locationTapMap": "Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein."
+  "settings_locationTapMap": "Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein.",
+  "channels_pasteLink": "Link einfügen",
+  "channels_pasteLinkDesc": "Ein kopierter meshcore://-Kanallink.",
+  "channels_pasteLinkNone": "In der Zwischenablage ist kein Kanallink.",
+  "settings_locationGpsNote": "Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.",
+  "settings_gpsFix": "Position bestimmt",
+  "settings_gpsNoFix": "Noch kein Fix",
+  "settings_gpsSatellites": "Satelliten: {count}",
+  "settings_gpsOff": "Das GPS ist ausgeschaltet"
 }

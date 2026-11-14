@@ -2816,9 +2816,14 @@
   "drawing_mapAcross": "{map}, 가로 {distance}",
   "drawing_mapNotDownloaded": "이 지역은 다운로드되지 않았습니다",
   "listFilter_hopsAway": "홉 수",
-  "listFilter_hopsDirect": "직접",
-  "listFilter_hops": "{count, plural, other{{count}홉}}",
-  "listFilter_hopsOrMore": "{count}홉 이상",
   "settings_radioFirmware": "무전기 펌웨어 {version}",
-  "settings_locationTapMap": "지도를 탭하여 위치를 정하거나 숫자를 입력하세요."
+  "settings_locationTapMap": "지도를 탭하여 위치를 정하거나 숫자를 입력하세요.",
+  "channels_pasteLink": "링크 붙여넣기",
+  "channels_pasteLinkDesc": "복사한 meshcore:// 채널 링크.",
+  "channels_pasteLinkNone": "클립보드에 채널 링크가 없습니다.",
+  "settings_locationGpsNote": "GPS가 위치를 잡을 때까지 무전기는 이 위치를 사용합니다.",
+  "settings_gpsFix": "위치 확정됨",
+  "settings_gpsNoFix": "아직 위치를 잡지 못함",
+  "settings_gpsSatellites": "위성: {count}",
+  "settings_gpsOff": "GPS가 꺼져 있습니다"
 }

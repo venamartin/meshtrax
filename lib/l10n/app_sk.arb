@@ -2778,9 +2778,14 @@
   "drawing_mapAcross": "{map}, šírka {distance}",
   "drawing_mapNotDownloaded": "Táto oblasť nie je stiahnutá",
   "listFilter_hopsAway": "Počet skokov",
-  "listFilter_hopsDirect": "Priamo",
-  "listFilter_hops": "{count, plural, =1{1 skok} few{{count} skoky} many{{count} skoku} other{{count} skokov}}",
-  "listFilter_hopsOrMore": "{count} alebo viac skokov",
   "settings_radioFirmware": "Firmvér rádia {version}",
-  "settings_locationTapMap": "Ťuknutím na mapu nastavte polohu alebo zadajte čísla."
+  "settings_locationTapMap": "Ťuknutím na mapu nastavte polohu alebo zadajte čísla.",
+  "channels_pasteLink": "Vložiť odkaz",
+  "channels_pasteLinkDesc": "Skopírovaný odkaz meshcore:// na kanál.",
+  "channels_pasteLinkNone": "V schránke nie je odkaz na kanál.",
+  "settings_locationGpsNote": "Rádio používa túto polohu, kým GPS nezíska polohu.",
+  "settings_gpsFix": "Poloha určená",
+  "settings_gpsNoFix": "Zatiaľ bez polohy",
+  "settings_gpsSatellites": "Satelity: {count}",
+  "settings_gpsOff": "GPS je vypnuté"
 }

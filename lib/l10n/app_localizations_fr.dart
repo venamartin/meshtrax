@@ -6638,25 +6638,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get listFilter_hopsAway => 'Nombre de sauts';
 
   @override
-  String get listFilter_hopsDirect => 'Direct';
-
-  @override
-  String listFilter_hops(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count sauts',
-      one: '1 saut',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String listFilter_hopsOrMore(int count) {
-    return '$count sauts ou plus';
-  }
-
-  @override
   String settings_radioFirmware(String version) {
     return 'Micrologiciel de la radio $version';
   }
@@ -6664,4 +6645,33 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Touchez la carte pour définir la position, ou saisissez les nombres.';
+
+  @override
+  String get channels_pasteLink => 'Coller un lien';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Un lien de canal meshcore:// que vous avez copié.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Le presse-papiers ne contient aucun lien de canal.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'La radio utilise cette position jusqu’à ce que son GPS ait un fix.';
+
+  @override
+  String get settings_gpsFix => 'Position acquise';
+
+  @override
+  String get settings_gpsNoFix => 'Pas encore de position';
+
+  @override
+  String settings_gpsSatellites(int count) {
+    return 'Satellites : $count';
+  }
+
+  @override
+  String get settings_gpsOff => 'Le GPS est éteint';
 }
