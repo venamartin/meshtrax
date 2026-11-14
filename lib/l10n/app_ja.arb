@@ -2822,8 +2822,5 @@
   "channels_pasteLinkDesc": "コピーした meshcore:// チャンネルリンク。",
   "channels_pasteLinkNone": "クリップボードにチャンネルリンクがありません。",
   "settings_locationGpsNote": "GPS が測位するまで、無線機はこの位置を使います。",
-  "settings_gpsFix": "測位済み",
-  "settings_gpsNoFix": "まだ測位していません",
-  "settings_gpsSatellites": "衛星数: {count}",
-  "settings_gpsOff": "GPS はオフです"
+  "contacts_hopsAway": "{count, plural, =0{直接受信} other{{count}ホップ先で受信}}"
 }

@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Kopirana povezava meshcore:// do kanala.",
   "channels_pasteLinkNone": "V odložišču ni povezave do kanala.",
   "settings_locationGpsNote": "Radio uporablja ta položaj, dokler GPS ne določi lokacije.",
-  "settings_gpsFix": "Položaj določen",
-  "settings_gpsNoFix": "Položaja še ni",
-  "settings_gpsSatellites": "Sateliti: {count}",
-  "settings_gpsOff": "GPS je izklopljen"
+  "contacts_hopsAway": "{count, plural, =0{slišan neposredno} one{slišan prek {count} skoka} two{slišan prek {count} skokov} few{slišan prek {count} skokov} other{slišan prek {count} skokov}}"
 }

@@ -6644,16 +6644,16 @@ class AppLocalizationsUk extends AppLocalizations {
       'Радіо використовує цю позицію, доки GPS не визначить місцезнаходження.';
 
   @override
-  String get settings_gpsFix => 'Позицію визначено';
-
-  @override
-  String get settings_gpsNoFix => 'Позиції ще немає';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Супутники: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'чутно через $count переходу',
+      many: 'чутно через $count переходів',
+      few: 'чутно через $count переходи',
+      one: 'чутно через 1 перехід',
+      zero: 'чутно напряму',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS вимкнено';
 }

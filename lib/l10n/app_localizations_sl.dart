@@ -6613,16 +6613,16 @@ class AppLocalizationsSl extends AppLocalizations {
       'Radio uporablja ta položaj, dokler GPS ne določi lokacije.';
 
   @override
-  String get settings_gpsFix => 'Položaj določen';
-
-  @override
-  String get settings_gpsNoFix => 'Položaja še ni';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Sateliti: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'slišan prek $count skokov',
+      few: 'slišan prek $count skokov',
+      two: 'slišan prek $count skokov',
+      one: 'slišan prek $count skoka',
+      zero: 'slišan neposredno',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS je izklopljen';
 }

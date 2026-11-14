@@ -6638,16 +6638,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Радио использует эту позицию, пока GPS не определит местоположение.';
 
   @override
-  String get settings_gpsFix => 'Позиция определена';
-
-  @override
-  String get settings_gpsNoFix => 'Позиции пока нет';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Спутники: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'слышен через $count перехода',
+      many: 'слышен через $count переходов',
+      few: 'слышен через $count перехода',
+      one: 'слышен через 1 переход',
+      zero: 'слышен напрямую',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS выключен';
 }

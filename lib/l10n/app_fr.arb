@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Un lien de canal meshcore:// que vous avez copié.",
   "channels_pasteLinkNone": "Le presse-papiers ne contient aucun lien de canal.",
   "settings_locationGpsNote": "La radio utilise cette position jusqu’à ce que son GPS ait un fix.",
-  "settings_gpsFix": "Position acquise",
-  "settings_gpsNoFix": "Pas encore de position",
-  "settings_gpsSatellites": "Satellites : {count}",
-  "settings_gpsOff": "Le GPS est éteint"
+  "contacts_hopsAway": "{count, plural, =0{entendu en direct} =1{entendu à 1 saut} other{entendu à {count} sauts}}"
 }

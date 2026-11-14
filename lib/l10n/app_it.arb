@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Un link di canale meshcore:// che hai copiato.",
   "channels_pasteLinkNone": "Negli appunti non c’è alcun link di canale.",
   "settings_locationGpsNote": "La radio usa questa posizione finché il GPS non ha un fix.",
-  "settings_gpsFix": "Posizione acquisita",
-  "settings_gpsNoFix": "Ancora nessuna posizione",
-  "settings_gpsSatellites": "Satelliti: {count}",
-  "settings_gpsOff": "Il GPS è spento"
+  "contacts_hopsAway": "{count, plural, =0{sentito direttamente} =1{sentito a 1 salto} other{sentito a {count} salti}}"
 }

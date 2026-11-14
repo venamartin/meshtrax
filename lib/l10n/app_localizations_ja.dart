@@ -6322,16 +6322,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_locationGpsNote => 'GPS が測位するまで、無線機はこの位置を使います。';
 
   @override
-  String get settings_gpsFix => '測位済み';
-
-  @override
-  String get settings_gpsNoFix => 'まだ測位していません';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return '衛星数: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countホップ先で受信',
+      zero: '直接受信',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS はオフです';
 }

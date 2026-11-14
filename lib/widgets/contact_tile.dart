@@ -34,6 +34,9 @@ class ContactTile extends StatelessWidget {
   /// They see this radio's position when they ask for telemetry.
   final bool sharesPosition;
 
+  /// Shown after the route, e.g. how many hops away it was last heard.
+  final String? routeDetail;
+
   const ContactTile({
     super.key,
     required this.contact,
@@ -44,6 +47,7 @@ class ContactTile extends StatelessWidget {
     required this.onLongPress,
     this.isDiscovered = false,
     this.sharesPosition = false,
+    this.routeDetail,
   });
 
   @override
@@ -110,7 +114,9 @@ class ContactTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      contact.pathLabel,
+                      routeDetail == null
+                          ? contact.pathLabel
+                          : '${contact.pathLabel} · $routeDetail',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -6207,16 +6207,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_locationGpsNote => '在 GPS 定位之前，电台使用此位置。';
 
   @override
-  String get settings_gpsFix => '已定位';
-
-  @override
-  String get settings_gpsNoFix => '尚未定位';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return '卫星数：$count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '经 $count 跳收到',
+      zero: '直接收到',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS 已关闭';
 }

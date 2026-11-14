@@ -6644,16 +6644,16 @@ class AppLocalizationsPl extends AppLocalizations {
       'Radio używa tej pozycji, dopóki GPS nie ustali położenia.';
 
   @override
-  String get settings_gpsFix => 'Pozycja ustalona';
-
-  @override
-  String get settings_gpsNoFix => 'Jeszcze brak pozycji';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Satelity: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'słyszany przez $count skoku',
+      many: 'słyszany przez $count skoków',
+      few: 'słyszany przez $count skoki',
+      one: 'słyszany przez 1 skok',
+      zero: 'słyszany bezpośrednio',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS jest wyłączony';
 }

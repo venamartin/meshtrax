@@ -6639,16 +6639,14 @@ class AppLocalizationsHu extends AppLocalizations {
       'A rádió ezt a pozíciót használja, amíg a GPS nem talál helyzetet.';
 
   @override
-  String get settings_gpsFix => 'Pozíció meghatározva';
-
-  @override
-  String get settings_gpsNoFix => 'Még nincs pozíció';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Műholdak: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ugrásnyira hallva',
+      one: '1 ugrásnyira hallva',
+      zero: 'közvetlenül hallva',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'A GPS ki van kapcsolva';
 }

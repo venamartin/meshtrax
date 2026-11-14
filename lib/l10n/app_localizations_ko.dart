@@ -6333,16 +6333,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_locationGpsNote => 'GPS가 위치를 잡을 때까지 무전기는 이 위치를 사용합니다.';
 
   @override
-  String get settings_gpsFix => '위치 확정됨';
-
-  @override
-  String get settings_gpsNoFix => '아직 위치를 잡지 못함';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return '위성: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count홉 거리에서 수신',
+      zero: '직접 수신',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS가 꺼져 있습니다';
 }

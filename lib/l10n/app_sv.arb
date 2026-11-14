@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "En kopierad meshcore://-kanallänk.",
   "channels_pasteLinkNone": "Det finns ingen kanallänk i urklipp.",
   "settings_locationGpsNote": "Radion använder den här positionen tills dess GPS har en fix.",
-  "settings_gpsFix": "Position fastställd",
-  "settings_gpsNoFix": "Ingen position ännu",
-  "settings_gpsSatellites": "Satelliter: {count}",
-  "settings_gpsOff": "GPS är avstängd"
+  "contacts_hopsAway": "{count, plural, =0{hörd direkt} =1{hörd 1 hopp bort} other{hörd {count} hopp bort}}"
 }

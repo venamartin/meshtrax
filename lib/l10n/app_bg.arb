@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Копирана връзка meshcore:// към канал.",
   "channels_pasteLinkNone": "В клипборда няма връзка към канал.",
   "settings_locationGpsNote": "Радиото използва тази позиция, докато GPS не определи местоположение.",
-  "settings_gpsFix": "Позицията е определена",
-  "settings_gpsNoFix": "Все още няма позиция",
-  "settings_gpsSatellites": "Спътници: {count}",
-  "settings_gpsOff": "GPS е изключен"
+  "contacts_hopsAway": "{count, plural, =0{чут директно} =1{чут на 1 скок} other{чут на {count} скока}}"
 }

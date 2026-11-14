@@ -2822,8 +2822,5 @@
   "channels_pasteLinkDesc": "Skopiowany link do kanału meshcore://.",
   "channels_pasteLinkNone": "W schowku nie ma linku do kanału.",
   "settings_locationGpsNote": "Radio używa tej pozycji, dopóki GPS nie ustali położenia.",
-  "settings_gpsFix": "Pozycja ustalona",
-  "settings_gpsNoFix": "Jeszcze brak pozycji",
-  "settings_gpsSatellites": "Satelity: {count}",
-  "settings_gpsOff": "GPS jest wyłączony"
+  "contacts_hopsAway": "{count, plural, =0{słyszany bezpośrednio} =1{słyszany przez 1 skok} few{słyszany przez {count} skoki} many{słyszany przez {count} skoków} other{słyszany przez {count} skoku}}"
 }

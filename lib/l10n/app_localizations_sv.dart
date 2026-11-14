@@ -6565,16 +6565,14 @@ class AppLocalizationsSv extends AppLocalizations {
       'Radion använder den här positionen tills dess GPS har en fix.';
 
   @override
-  String get settings_gpsFix => 'Position fastställd';
-
-  @override
-  String get settings_gpsNoFix => 'Ingen position ännu';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Satelliter: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hörd $count hopp bort',
+      one: 'hörd 1 hopp bort',
+      zero: 'hörd direkt',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS är avstängd';
 }

@@ -3272,15 +3272,12 @@
   "channels_pasteLinkDesc": "A meshcore:// channel link you copied.",
   "channels_pasteLinkNone": "There is no channel link on the clipboard.",
   "settings_locationGpsNote": "The radio uses this position until its GPS has a fix.",
-  "settings_gpsFix": "Position fixed",
-  "settings_gpsNoFix": "No fix yet",
-  "settings_gpsSatellites": "Satellites: {count}",
-  "@settings_gpsSatellites": {
+  "contacts_hopsAway": "{count, plural, =0{heard directly} =1{heard 1 hop away} other{heard {count} hops away}}",
+  "@contacts_hopsAway": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
-  },
-  "settings_gpsOff": "The GPS is switched off"
+  }
 }

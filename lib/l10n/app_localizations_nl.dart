@@ -6602,16 +6602,14 @@ class AppLocalizationsNl extends AppLocalizations {
       'De radio gebruikt deze positie totdat de gps een fix heeft.';
 
   @override
-  String get settings_gpsFix => 'Positie bepaald';
-
-  @override
-  String get settings_gpsNoFix => 'Nog geen fix';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Satellieten: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'op $count hops gehoord',
+      one: 'op 1 hop gehoord',
+      zero: 'direct gehoord',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'De gps staat uit';
 }

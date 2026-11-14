@@ -370,6 +370,11 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: !contact.isActive,
+                            routeDetail: contact.inboundHopCount == null
+                                ? null
+                                : context.l10n.contacts_hopsAway(
+                                    contact.inboundHopCount!,
+                                  ),
                             onTap: () => _manageRepeater(context, connector, contact),
                             onLongPress: () => _showRepeaterOptions(context, connector, contact),
                           );

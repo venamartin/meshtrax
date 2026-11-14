@@ -6616,16 +6616,14 @@ class AppLocalizationsBg extends AppLocalizations {
       'Радиото използва тази позиция, докато GPS не определи местоположение.';
 
   @override
-  String get settings_gpsFix => 'Позицията е определена';
-
-  @override
-  String get settings_gpsNoFix => 'Все още няма позиция';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Спътници: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'чут на $count скока',
+      one: 'чут на 1 скок',
+      zero: 'чут директно',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS е изключен';
 }

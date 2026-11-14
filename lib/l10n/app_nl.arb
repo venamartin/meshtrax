@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Een gekopieerde meshcore://-kanaallink.",
   "channels_pasteLinkNone": "Er staat geen kanaallink op het klembord.",
   "settings_locationGpsNote": "De radio gebruikt deze positie totdat de gps een fix heeft.",
-  "settings_gpsFix": "Positie bepaald",
-  "settings_gpsNoFix": "Nog geen fix",
-  "settings_gpsSatellites": "Satellieten: {count}",
-  "settings_gpsOff": "De gps staat uit"
+  "contacts_hopsAway": "{count, plural, =0{direct gehoord} =1{op 1 hop gehoord} other{op {count} hops gehoord}}"
 }

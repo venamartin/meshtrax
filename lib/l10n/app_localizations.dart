@@ -11431,29 +11431,11 @@ abstract class AppLocalizations {
   /// **'The radio uses this position until its GPS has a fix.'**
   String get settings_locationGpsNote;
 
-  /// No description provided for @settings_gpsFix.
+  /// No description provided for @contacts_hopsAway.
   ///
   /// In en, this message translates to:
-  /// **'Position fixed'**
-  String get settings_gpsFix;
-
-  /// No description provided for @settings_gpsNoFix.
-  ///
-  /// In en, this message translates to:
-  /// **'No fix yet'**
-  String get settings_gpsNoFix;
-
-  /// No description provided for @settings_gpsSatellites.
-  ///
-  /// In en, this message translates to:
-  /// **'Satellites: {count}'**
-  String settings_gpsSatellites(int count);
-
-  /// No description provided for @settings_gpsOff.
-  ///
-  /// In en, this message translates to:
-  /// **'The GPS is switched off'**
-  String get settings_gpsOff;
+  /// **'{count, plural, =0{heard directly} =1{heard 1 hop away} other{heard {count} hops away}}'**
+  String contacts_hopsAway(int count);
 }
 
 class _AppLocalizationsDelegate

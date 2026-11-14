@@ -34,7 +34,6 @@ import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
 import 'wifi_settings_screen.dart';
 import '../services/ui_view_state_service.dart';
-import '../widgets/gps_status_line.dart';
 import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
 import '../utils/platform_info.dart';
@@ -936,6 +935,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 PositionPickerMap(
                   position: typedPosition(),
                   emptyCamera: lastMapView,
+                  height: 150,
                   onPicked: (point) => setDialogState(() {
                     latController.text = point.latitude.toStringAsFixed(6);
                     lonController.text = point.longitude.toStringAsFixed(6);
@@ -948,30 +948,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              TextField(
-                controller: latController,
-                onChanged: (_) => setDialogState(() {}),
-                decoration: InputDecoration(
-                  labelText: l10n.settings_latitude,
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: lonController,
-                onChanged: (_) => setDialogState(() {}),
-                decoration: InputDecoration(
-                  labelText: l10n.settings_longitude,
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
+              // Side by side: the dialog has to fit a phone with the map in it.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: latController,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.settings_latitude,
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: lonController,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.settings_longitude,
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (hasGPS) ...[
                 const SizedBox(height: 16),
@@ -990,11 +1000,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     l10n.settings_locationGpsNote,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  // Only firmware 1.18+ can say what its GPS is doing.
-                  if (connector.supportsCompanionCli) ...[
-                    const SizedBox(height: 8),
-                    GpsStatusLine(connector: connector),
-                  ],
                 ],
               ],
             ],

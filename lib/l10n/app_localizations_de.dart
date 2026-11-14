@@ -6639,16 +6639,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.';
 
   @override
-  String get settings_gpsFix => 'Position bestimmt';
-
-  @override
-  String get settings_gpsNoFix => 'Noch kein Fix';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Satelliten: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hops entfernt gehört',
+      one: '1 Hop entfernt gehört',
+      zero: 'direkt gehört',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'Das GPS ist ausgeschaltet';
 }

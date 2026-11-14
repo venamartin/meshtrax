@@ -6611,16 +6611,16 @@ class AppLocalizationsSk extends AppLocalizations {
       'Rádio používa túto polohu, kým GPS nezíska polohu.';
 
   @override
-  String get settings_gpsFix => 'Poloha určená';
-
-  @override
-  String get settings_gpsNoFix => 'Zatiaľ bez polohy';
-
-  @override
-  String settings_gpsSatellites(int count) {
-    return 'Satelity: $count';
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'počutý cez $count skokov',
+      many: 'počutý cez $count skoku',
+      few: 'počutý cez $count skoky',
+      one: 'počutý cez 1 skok',
+      zero: 'počutý priamo',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get settings_gpsOff => 'GPS je vypnuté';
 }

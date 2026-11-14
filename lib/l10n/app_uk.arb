@@ -2784,8 +2784,5 @@
   "channels_pasteLinkDesc": "Скопійоване посилання meshcore:// на канал.",
   "channels_pasteLinkNone": "У буфері обміну немає посилання на канал.",
   "settings_locationGpsNote": "Радіо використовує цю позицію, доки GPS не визначить місцезнаходження.",
-  "settings_gpsFix": "Позицію визначено",
-  "settings_gpsNoFix": "Позиції ще немає",
-  "settings_gpsSatellites": "Супутники: {count}",
-  "settings_gpsOff": "GPS вимкнено"
+  "contacts_hopsAway": "{count, plural, =0{чутно напряму} =1{чутно через 1 перехід} few{чутно через {count} переходи} many{чутно через {count} переходів} other{чутно через {count} переходу}}"
 }

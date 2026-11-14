@@ -2812,8 +2812,5 @@
   "channels_pasteLinkDesc": "Ein kopierter meshcore://-Kanallink.",
   "channels_pasteLinkNone": "In der Zwischenablage ist kein Kanallink.",
   "settings_locationGpsNote": "Das Funkgerät nutzt diese Position, bis sein GPS einen Fix hat.",
-  "settings_gpsFix": "Position bestimmt",
-  "settings_gpsNoFix": "Noch kein Fix",
-  "settings_gpsSatellites": "Satelliten: {count}",
-  "settings_gpsOff": "Das GPS ist ausgeschaltet"
+  "contacts_hopsAway": "{count, plural, =0{direkt gehört} =1{1 Hop entfernt gehört} other{{count} Hops entfernt gehört}}"
 }
