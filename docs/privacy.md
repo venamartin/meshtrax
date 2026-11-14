@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** November 6, 2026
+**Last updated:** November 7, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -30,13 +30,15 @@ All of the following is stored locally in the App's private storage on your devi
 | App settings | Theme, language, notification preferences, map preferences, unit system, auto-connect preference, last connected device identifier, blocked-users list, etc. | Remember your preferences |
 | Message routing data | Path history and routing weights, kept in one graph per mesh, with the names you give the graphs and the public keys of the repeaters each graph has heard | Improve mesh message delivery, and tell one mesh from another |
 | Where repeaters heard you (GPS radio only) | With a radio that has its GPS on, which repeaters heard it in each area of about 500 m over the last 30 days, with no finer position than that; carried in a Pathfinder backup only when you choose "Include" | Pick routes that work where you are |
-| Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download, and the list of what's available | Show maps, plan routes and search for places without a connection |
+| Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download or install from a drive, and the list of what's available | Show maps, plan routes and search for places without a connection |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 
 **Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
 
 **Files you export:** The App can write a backup file, a debug log, or a copy of the message database, but only when you ask for one. You choose where each file goes through the system share sheet or file picker. A full device backup holds your contacts, channels and their keys, the companion device's settings and position, and, where the firmware allows it, the companion device's **private** identity key, so you can restore the same identity onto a radio later. Keep backup files somewhere safe; anyone holding one can read your channels and act as your node.
+
+**Maps from a drive:** When you choose **Use a drive** in Offline maps, the App reads the folder you pick (on a USB drive, an SD card or your device) and copies the map files you choose into its own storage. It reads nothing else there, and sends nothing anywhere.
 
 **Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest and addresses are kept out of these backups.
 
@@ -104,7 +106,7 @@ iOS does not require location permission for BLE scanning; the App never request
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
 | USB and serial ports | Connect to a companion device over a USB serial cable, through the serial port of the radio you plug in |
-| Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, or an image to scan a QR code from. The App reaches no other files outside its container |
+| Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, an image to scan a QR code from, or a folder of offline maps on a drive to install from. The App reaches no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Notifications | Show notifications for incoming mesh messages |
 

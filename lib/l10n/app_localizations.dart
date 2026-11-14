@@ -10813,6 +10813,102 @@ abstract class AppLocalizations {
   /// **'House addresses to search for'**
   String get offlineMaps_kindAddressesDetail;
 
+  /// No description provided for @offlineMaps_useDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a drive'**
+  String get offlineMaps_useDrive;
+
+  /// No description provided for @offlineMaps_onDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Maps on the drive {name}, from {date}'**
+  String offlineMaps_onDrive(String name, String date);
+
+  /// No description provided for @offlineMaps_backToInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to internet'**
+  String get offlineMaps_backToInternet;
+
+  /// No description provided for @offlineMaps_keepOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing from the drive. Keep MeshTrax open.'**
+  String get offlineMaps_keepOpen;
+
+  /// No description provided for @offlineMaps_driveRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'The drive was removed. Showing internet maps.'**
+  String get offlineMaps_driveRemoved;
+
+  /// No description provided for @offlineMaps_readingDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the drive…'**
+  String get offlineMaps_readingDrive;
+
+  /// No description provided for @offlineMaps_noMapsOnDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'No MeshTrax maps there. Choose the MeshTrax-maps folder on the drive.'**
+  String get offlineMaps_noMapsOnDrive;
+
+  /// No description provided for @offlineMaps_driveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the drive: {error}'**
+  String offlineMaps_driveError(String error);
+
+  /// No description provided for @offlineMaps_stopDriveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop installing from the drive?'**
+  String get offlineMaps_stopDriveTitle;
+
+  /// No description provided for @offlineMaps_stopDriveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s already installed stays on this device.'**
+  String get offlineMaps_stopDriveBody;
+
+  /// No description provided for @offlineMaps_stopDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get offlineMaps_stopDrive;
+
+  /// No description provided for @offlineMaps_keepInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep installing'**
+  String get offlineMaps_keepInstalling;
+
+  /// No description provided for @offlineMaps_install.
+  ///
+  /// In en, this message translates to:
+  /// **'Install {size}'**
+  String offlineMaps_install(String size);
+
+  /// No description provided for @offlineMaps_installTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get offlineMaps_installTotal;
+
+  /// No description provided for @offlineMaps_routingDriveOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has newer routing than the drive.'**
+  String get offlineMaps_routingDriveOlder;
+
+  /// No description provided for @offlineMaps_routingDriveIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The drive\'s routing doesn\'t cover every region on this device.'**
+  String get offlineMaps_routingDriveIncomplete;
+
   /// No description provided for @map_search.
   ///
   /// In en, this message translates to:

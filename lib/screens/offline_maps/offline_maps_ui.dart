@@ -7,6 +7,7 @@ import '../../helpers/date_time_helper.dart';
 import '../../helpers/snack_bar_builder.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
+import '../../services/drive_folder.dart';
 import '../../services/map_packs_service.dart';
 import '../../services/poi_service.dart';
 import '../../services/routing_service.dart';
@@ -112,6 +113,34 @@ class Callout extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Asks for a drive of maps (traxmapmaker's stick) and shows its maps
+/// instead of the server's, or says why it can't. True when a drive is
+/// then in use.
+Future<bool> chooseDrive(BuildContext context) async {
+  final maps = context.read<MapPacksService>();
+  final l10n = context.l10n;
+  MapDrive? drive;
+  try {
+    drive = await pickMapDrive();
+    if (drive == null) return false;
+    await maps.useDrive(drive);
+    return true;
+  } on Object catch (e) {
+    await drive?.close();
+    if (context.mounted) {
+      showDismissibleSnackBar(
+        context,
+        content: Text(
+          e is FormatException
+              ? l10n.offlineMaps_noMapsOnDrive
+              : l10n.offlineMaps_driveError('$e'),
+        ),
+      );
+    }
+    return false;
+  }
 }
 
 /// Asks before deleting a region's installed packs, then deletes them.
@@ -393,6 +422,11 @@ class CatalogueState extends StatelessWidget {
               FilledButton.tonal(
                 onPressed: maps.refresh,
                 child: Text(l10n.common_retry),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => chooseDrive(context),
+                child: Text(l10n.offlineMaps_useDrive),
               ),
             ],
           ],

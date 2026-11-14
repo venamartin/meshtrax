@@ -6271,6 +6271,67 @@ class AppLocalizationsHu extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Kereshető címek házszámmal';
 
   @override
+  String get offlineMaps_useDrive => 'Meghajtó használata';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Térképek a(z) $name meghajtóról, $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Vissza az internethez';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Telepítés a meghajtóról. Tartsa nyitva a MeshTraxot.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'A meghajtót eltávolították. Ismét az internetes térképek látszanak.';
+
+  @override
+  String get offlineMaps_readingDrive => 'A meghajtó olvasása…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Ott nincsenek MeshTrax-térképek. Válassza a meghajtón a MeshTrax-maps mappát.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'A meghajtó nem olvasható: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Leállítja a telepítést a meghajtóról?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Ami már telepítve van, az ezen az eszközön marad.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Leállítás';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Telepítés folytatása';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Telepítés: $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Telepítés';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Ezen az eszközön újabb útvonaladatok vannak, mint a meghajtón.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'A meghajtó útvonaladatai nem fedik le az eszköz összes régióját.';
+
+  @override
   String get map_search => 'Keresés';
 
   @override

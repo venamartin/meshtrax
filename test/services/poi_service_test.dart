@@ -89,15 +89,16 @@ void main() {
 
   /// The catalogue's poi entry with one region's points file, [body]
   /// gzipped, which the server then holds.
-  void points(List<int> body) {
-    final gz = files[path] = Uint8List.fromList(gzip.encode(body));
+  void points(List<int> body, {String build = '2026110601'}) {
+    final at = 'poi/$build/test/a/points.sqlite.gz';
+    final gz = files[at] = Uint8List.fromList(gzip.encode(body));
     catalogue = {
       'schema_version': 1,
-      'build': '2026110601',
+      'build': build,
       'regions': {
         'test/a': {
           'points': {
-            'url': path,
+            'url': at,
             'bytes': gz.length,
             'unpacked_bytes': body.length,
             'sha256': sha256.convert(gz).toString(),
@@ -224,4 +225,46 @@ void main() {
       expect(leftovers(), isEmpty);
     },
   );
+
+  test('from a drive, only a later build replaces a file', () async {
+    points(utf8.encode('first'));
+    final (service, _) = await services();
+    await service.download('test/a', {PoiDownload.points});
+    await service.idle;
+    var sticks = 0;
+
+    /// Uses a stick holding the current catalogue and every file the
+    /// server holds.
+    Future<void> useStick() async {
+      final stick = Directory('${tmp.path}/stick-${sticks++}')..createSync();
+      File('${stick.path}/index.json')
+          .writeAsStringSync(jsonEncode({..._index, 'poi': catalogue}));
+      for (final MapEntry(:key, :value) in files.entries) {
+        File('${stick.path}/$key')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(value);
+      }
+      await service.maps.useDrive(IoMapDrive(stick));
+    }
+
+    points(utf8.encode('older'), build: '2026110501');
+    await useStick();
+    expect(service.updateAvailable('test/a', PoiDownload.points), isFalse);
+
+    points(utf8.encode('newer'), build: '2026110701');
+    await useStick();
+    expect(service.updateAvailable('test/a', PoiDownload.points), isTrue);
+
+    await service.download('test/a', {PoiDownload.points});
+    for (var i = 0; i < 500; i++) {
+      if ((manifest() as Map)['test/a']?['pointsBuild'] == '2026110701') break;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect((manifest() as Map)['test/a']['pointsBuild'], '2026110701');
+    expect(
+      File('${tmp.path}/maps/poi/test_a/points-of-interest.sqlite')
+          .readAsStringSync(),
+      'newer',
+    );
+  });
 }

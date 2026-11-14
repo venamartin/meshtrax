@@ -18,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val usbFunctions by lazy { MeshTraxUsbFunctions(this) }
     private val routing = MeshTraxRouting()
+    private val drive by lazy { MeshTraxDrive(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +29,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         usbFunctions.configureFlutterEngine(flutterEngine)
         routing.configureFlutterEngine(flutterEngine)
+        drive.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshtrax/system")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -95,9 +97,18 @@ class MainActivity : FlutterActivity() {
         return activityManager.isBackgroundRestricted
     }
 
+    // The drive folder picker answers here; anything else goes on to the plugins.
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!drive.onActivityResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
     override fun onDestroy() {
         usbFunctions.dispose()
         routing.dispose()
+        drive.dispose()
         super.onDestroy()
     }
 }
