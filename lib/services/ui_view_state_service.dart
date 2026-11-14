@@ -26,6 +26,8 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyContactsSortOption = 'ui_contacts_sort_option';
   static const _keyContactsShowUnreadOnly = 'ui_contacts_show_unread_only';
   static const _keyContactsTypeFilter = 'ui_contacts_type_filter';
+  static const _keyRepeatersSortOption = 'ui_repeaters_sort_option';
+  static const _keyRepeatersTypeFilter = 'ui_repeaters_type_filter';
   static const _keyChannelsSortOption = 'ui_channels_sort_option';
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
@@ -42,6 +44,8 @@ class UiViewStateService extends ChangeNotifier {
   ContactSortOption _contactsSortOption = ContactSortOption.lastSeen;
   bool _contactsShowUnreadOnly = false;
   ContactTypeFilter _contactsTypeFilter = ContactTypeFilter.all;
+  ContactSortOption _repeatersSortOption = ContactSortOption.lastSeen;
+  ContactTypeFilter _repeatersTypeFilter = ContactTypeFilter.all;
 
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
@@ -70,6 +74,8 @@ class UiViewStateService extends ChangeNotifier {
   ContactSortOption get contactsSortOption => _contactsSortOption;
   bool get contactsShowUnreadOnly => _contactsShowUnreadOnly;
   ContactTypeFilter get contactsTypeFilter => _contactsTypeFilter;
+  ContactSortOption get repeatersSortOption => _repeatersSortOption;
+  ContactTypeFilter get repeatersTypeFilter => _repeatersTypeFilter;
   String get channelsSearchText => _channelsSearchText;
   ChannelSortOption get channelsSortOption => _channelsSortOption;
   bool get renderGifs => _renderGifs;
@@ -107,6 +113,22 @@ class UiViewStateService extends ChangeNotifier {
     if (typeStr != null) {
       _contactsTypeFilter = ContactTypeFilter.values.firstWhere(
         (e) => e.name == typeStr,
+        orElse: () => ContactTypeFilter.all,
+      );
+    }
+
+    final repeatersSortStr = prefs.getString(_keyRepeatersSortOption);
+    if (repeatersSortStr != null) {
+      _repeatersSortOption = ContactSortOption.values.firstWhere(
+        (e) => e.name == repeatersSortStr,
+        orElse: () => ContactSortOption.lastSeen,
+      );
+    }
+
+    final repeatersTypeStr = prefs.getString(_keyRepeatersTypeFilter);
+    if (repeatersTypeStr != null) {
+      _repeatersTypeFilter = ContactTypeFilter.values.firstWhere(
+        (e) => e.name == repeatersTypeStr,
         orElse: () => ContactTypeFilter.all,
       );
     }
@@ -216,6 +238,24 @@ class UiViewStateService extends ChangeNotifier {
     notifyListeners();
     unawaited(
       PrefsManager.instance.setString(_keyContactsTypeFilter, value.name),
+    );
+  }
+
+  void setRepeatersSortOption(ContactSortOption value) {
+    if (_repeatersSortOption == value) return;
+    _repeatersSortOption = value;
+    notifyListeners();
+    unawaited(
+      PrefsManager.instance.setString(_keyRepeatersSortOption, value.name),
+    );
+  }
+
+  void setRepeatersTypeFilter(ContactTypeFilter value) {
+    if (_repeatersTypeFilter == value) return;
+    _repeatersTypeFilter = value;
+    notifyListeners();
+    unawaited(
+      PrefsManager.instance.setString(_keyRepeatersTypeFilter, value.name),
     );
   }
 
