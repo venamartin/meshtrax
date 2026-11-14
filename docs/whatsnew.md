@@ -2,6 +2,18 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.10.2
+
+- QR scanning works again on Android, with the camera and from a photo.
+- The route panel on the map is a sheet: pull it down to a bar, up for the height profile and options, or all the way for the directions. Wide screens get a side panel.
+- A chat opens showing its messages, and on your oldest unread message even when it is far back.
+- Logging in to a repeater or room no longer waits a minute per try: each try waits one round trip over the distance to it.
+- A GIF, your position or any other card can follow a mention: the "+" stays while the box holds only the mention.
+- On Linux, Windows and Mac, the app reconnects to your USB radio at startup and after it is unplugged or restarts. Linux shows the radio's name in the port list.
+- On iPhone, Back up this radio, Restore this radio, Export database and the Pathfinder backup and restore open the file dialogs again.
+- Google Play no longer requires USB host support, so the app reaches phones and tablets without it.
+- On Linux the app runs on XWayland where there is one. Flutter 3.50's Wayland support can freeze the window on a resize; `GDK_BACKEND=wayland` still forces Wayland.
+
 ## 1.10.1
 
 - Channels opened from Chats show the NEW MESSAGES line again and start at your first unread message. The Chats list previews the newest unread message, and repeats of your own messages no longer count as unread.
