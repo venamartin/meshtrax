@@ -283,7 +283,7 @@ void main() {
         'test/b': {'attribution': '$osm; $glo30', 'notice': notice},
       },
     );
-    final (maps, service, _) = await services();
+    final (maps, service, downloader) = await services();
     expect(service.credits, isEmpty);
 
     await service.download({'test/a', 'test/b'});
@@ -299,7 +299,7 @@ void main() {
     File('${tmp.path}/maps/index.json').deleteSync();
     final restarted = MapPacksService(
       manager: maps.manager,
-      downloader: maps.downloader,
+      downloader: downloader,
       cacheDir: maps.cacheDir,
       indexUrl: maps.indexUrl,
     );
@@ -443,5 +443,66 @@ void main() {
     final (_, service, _) = await services();
     expect(service.catalog, isNull);
     expect(service.needsNewerApp, isTrue);
+  });
+
+  group('from a drive', () {
+    var sticks = 0;
+
+    /// Uses a stick holding the current catalogue, and every file the
+    /// server holds.
+    Future<void> useStick(MapPacksService maps) async {
+      final stick = Directory('${tmp.path}/stick-${sticks++}')..createSync();
+      File('${stick.path}/index.json')
+          .writeAsStringSync(jsonEncode({..._index, 'routing': catalogue}));
+      for (final MapEntry(:key, :value) in files.entries) {
+        File('${stick.path}/$key')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(value);
+      }
+      await maps.useDrive(IoMapDrive(stick));
+    }
+
+    test('an older build is never offered', () async {
+      catalogue = routing('b2', ['test/a']);
+      final (maps, service, _) = await services();
+      await service.download({'test/a'});
+      await service.idle;
+
+      catalogue = routing('b1', ['test/a', 'test/b']);
+      await useStick(maps);
+      expect(service.driveBlock, RoutingDriveBlock.older);
+      expect(service.downloadsFor({'test/b'}), isEmpty);
+      expect(service.updateAvailable('test/a'), isFalse);
+    });
+
+    test('a newer build comes only with every region the device has, and '
+        'installs from the stick', () async {
+      catalogue = routing('b1', ['test/a', 'test/b']);
+      final (maps, service, downloader) = await services();
+      await service.download({'test/a', 'test/b'});
+      await service.idle;
+      downloader.started.clear();
+
+      catalogue = routing('b2', ['test/a']);
+      await useStick(maps);
+      expect(service.driveBlock, RoutingDriveBlock.incomplete);
+      expect(service.updateAvailable('test/a'), isFalse);
+
+      catalogue = routing('b2', ['test/a', 'test/b']);
+      await useStick(maps);
+      expect(service.driveBlock, isNull);
+      expect(service.updateAvailable('test/a'), isTrue);
+
+      await service.download({'test/a'});
+      for (var i = 0; i < 500 && service.store.build != 'b2'; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(service.store.build, 'b2');
+      expect(service.installedRegions, {'test/a', 'test/b'});
+      expect(downloader.started, isEmpty);
+
+      await maps.useInternet();
+      expect(service.driveBlock, isNull);
+    });
   });
 }

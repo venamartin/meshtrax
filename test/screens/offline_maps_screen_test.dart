@@ -290,4 +290,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Download failed: Not enough storage'), findsNothing);
   });
+
+  testWidgets("a drive: only what it holds, Install, and Back to internet", (
+    tester,
+  ) async {
+    final stick = Directory('${tmp.path}/MeshTrax-maps')..createSync();
+    final bytes = fakePmTiles(
+      metadata: {'kind': 'osm', 'region': 'north-america/us/rhode-island'},
+    );
+    File('${stick.path}/v1/north-america/us/rhode-island/osm.pmtiles')
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(bytes);
+    final entry = ((jsonDecode(_index) as Map)['packs'] as List)
+        .cast<Map<String, dynamic>>()
+        .firstWhere((p) => p['id'] == 'us-rhode-island-osm');
+    File('${stick.path}/index.json').writeAsStringSync(
+      jsonEncode({
+        'generated': '2026-11-07T19:32:55Z',
+        'schema_version': 1,
+        'packs': [
+          {...entry, 'bytes': bytes.length},
+        ],
+      }),
+    );
+    File('${stick.path}/picker.geojson').writeAsStringSync(_picker);
+    await tester.runAsync(() => maps.useDrive(IoMapDrive(stick)));
+
+    await open(tester, size: const Size(400, 900));
+    expect(
+      find.textContaining('Maps on the drive MeshTrax-maps'),
+      findsOneWidget,
+    );
+    await tester.tap(find.textContaining('North America'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('United States'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Rhode Island'), findsOneWidget);
+    expect(find.textContaining('California'), findsNothing);
+
+    await tester.tap(find.textContaining('Rhode Island'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(RegExp(r'^Install \d')), findsOneWidget);
+    expect(find.textContaining(RegExp(r'^Download \d')), findsNothing);
+
+    await tester.tap(find.text('Back to internet'));
+    await tester.pumpAndSettle();
+    expect(maps.drive, isNull);
+    expect(find.textContaining('Maps on the drive'), findsNothing);
+  });
 }

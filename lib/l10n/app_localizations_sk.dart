@@ -6245,6 +6245,66 @@ class AppLocalizationsSk extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Adresy domov na vyhľadávanie';
 
   @override
+  String get offlineMaps_useDrive => 'Použiť disk';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Mapy z disku $name, zo dňa $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Späť na internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Inštaluje sa z disku. Nechajte MeshTrax otvorený.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Disk bol odpojený. Znova sa zobrazujú mapy z internetu.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Číta sa disk…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Nie sú tam mapy MeshTrax. Vyberte na disku priečinok MeshTrax-maps.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Disk sa nedá prečítať: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Zastaviť inštaláciu z disku?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Čo je už nainštalované, zostane v tomto zariadení.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Zastaviť';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Pokračovať';
+
+  @override
+  String offlineMaps_install(String size) {
+    return 'Inštalovať $size';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Inštalovať';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Toto zariadenie má novšie údaje trás ako disk.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Údaje trás na disku nepokrývajú všetky regióny tohto zariadenia.';
+
+  @override
   String get map_search => 'Hľadať';
 
   @override

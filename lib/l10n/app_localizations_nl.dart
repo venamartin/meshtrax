@@ -6235,6 +6235,67 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Huisadressen om op te zoeken';
 
   @override
+  String get offlineMaps_useDrive => 'Schijf gebruiken';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Kaarten van schijf $name, van $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Terug naar internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installeren vanaf de schijf. Houd MeshTrax open.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'De schijf is verwijderd. Je ziet weer de kaarten van internet.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Schijf lezen…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Daar staan geen MeshTrax-kaarten. Kies de map MeshTrax-maps op de schijf.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Schijf niet leesbaar: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle =>
+      'Installeren vanaf de schijf stoppen?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Wat al geïnstalleerd is, blijft op dit apparaat.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Stoppen';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Doorgaan';
+
+  @override
+  String offlineMaps_install(String size) {
+    return '$size installeren';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Installeren';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Dit apparaat heeft nieuwere routegegevens dan de schijf.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'De routegegevens op de schijf dekken niet alle regio\'s op dit apparaat.';
+
+  @override
   String get map_search => 'Zoeken';
 
   @override

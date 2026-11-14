@@ -12,6 +12,7 @@ import 'package:traxmap/traxmap.dart';
 import '../models/app_settings.dart';
 import '../utils/app_logger.dart';
 import 'app_settings_service.dart';
+import 'drive_folder.dart';
 
 /// Where the catalogue stands, for the Offline maps screen.
 enum CatalogueStatus {
@@ -64,7 +65,10 @@ class MapPacksService extends ChangeNotifier {
   static const updateCheckInterval = Duration(days: 1);
 
   final PackManager manager;
-  final PackDownloader downloader;
+
+  /// Downloads from the server and installs from a drive, as one: what the
+  /// screens, and the routing and places installers, follow.
+  final CombinedPackDownloader downloader;
   final Uri indexUrl;
 
   /// Holds the cached catalogue (`index.json`, `picker.geojson`,
@@ -93,14 +97,20 @@ class MapPacksService extends ChangeNotifier {
   Future<void>? _refreshing;
   final _subscriptions = <StreamSubscription<Object?>>[];
 
+  /// [downloader] downloads from the server; installs from a drive have a
+  /// downloader of their own beside it.
   MapPacksService({
     required this.manager,
-    required this.downloader,
+    required PackDownloader downloader,
     required this.cacheDir,
     http.Client? client,
     Uri? indexUrl,
     StyleRegistry? styles,
-  }) : _client = client ?? http.Client(),
+  }) : downloader = CombinedPackDownloader(
+         downloader,
+         DrivePackDownloader(manager),
+       ),
+       _client = client ?? http.Client(),
        indexUrl = indexUrl ?? defaultIndexUrl,
        styles = styles ?? bundledStyles();
 
@@ -121,7 +131,7 @@ class MapPacksService extends ChangeNotifier {
       manager: manager,
       downloader: BackgroundPackDownloader(manager),
       cacheDir: root,
-    );
+    )..keepAwake = keepScreenOn;
     await service.start();
     await service.openWorld();
     await service._followWifiSetting(settings);
@@ -192,7 +202,12 @@ class MapPacksService extends ChangeNotifier {
       ..add(manager.changes.listen((_) => unawaited(reloadInstalled())));
     await _loadCache();
     await reloadInstalled();
-    final d = downloader;
+    try {
+      await downloader.drive.clean();
+    } on Object catch (e) {
+      appLogger.warn('Clearing drive copies failed: $e', tag: 'Maps');
+    }
+    final d = downloader.network;
     if (d is BackgroundPackDownloader) {
       try {
         await d.restore();
@@ -212,26 +227,31 @@ class MapPacksService extends ChangeNotifier {
     }
   }
 
-  CatalogueStatus get status => _status;
-  String? get error => _error;
+  CatalogueStatus get status =>
+      _onDrive != null ? CatalogueStatus.ready : _status;
+  String? get error => _onDrive != null ? null : _error;
 
-  /// The cached or fetched pack index; null before the first fetch.
-  PackIndex? get index => _index;
+  /// The cached or fetched pack index, or the drive's in use; null before
+  /// the first fetch.
+  PackIndex? get index => _onDrive?.index ?? _index;
 
   /// The whole `index.json` behind [index], decoded, for the modules that
   /// download beside the packs (routing, places) to read their entries
   /// from. Null before the first fetch.
-  Map<String, dynamic>? get catalogue => _catalogue;
+  Map<String, dynamic>? get catalogue =>
+      _onDrive != null ? _onDrive!.catalogue : _catalogue;
 
   /// The picker's region tree; null before the first fetch.
-  RegionIndex? get regions => _regions;
+  RegionIndex? get regions => _onDrive?.regions ?? _regions;
 
   /// When the catalogue shown was fetched (the cache file's time).
   DateTime? get fetchedAt => _fetchedAt;
 
   /// The NOAA chart areas for the Charts tab; null before the first fetch
-  /// and while the server has none.
-  ChartAreaIndex? get chartAreas => _chartAreas;
+  /// and while the server has none. On a drive, only those whose charts it
+  /// holds.
+  ChartAreaIndex? get chartAreas =>
+      _onDrive != null ? _onDrive!.chartAreas : _chartAreas;
 
   /// Small map facts the styles need (desert parks, …), fetched with the
   /// catalogue and kept for offline use.
@@ -288,7 +308,8 @@ class MapPacksService extends ChangeNotifier {
   /// Fetches `index.json` and `picker.geojson`. Concurrent calls share one
   /// fetch.
   Future<void> refresh() =>
-      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+      _refreshing ??= (_onDrive != null ? _rereadDrive() : _refresh())
+          .whenComplete(() => _refreshing = null);
 
   Future<void> _refresh() async {
     _status = CatalogueStatus.loading;
@@ -449,6 +470,7 @@ class MapPacksService extends ChangeNotifier {
     }
     _index = index;
     _catalogue = json;
+    _catalogueVersion++;
   }
 
   /// Re-reads the installed packs from disk.
@@ -475,11 +497,31 @@ class MapPacksService extends ChangeNotifier {
     final verifying =
         _downloads[download.id]?.state == PackDownloadState.verifying;
     _downloads[download.id] = download;
+    final busy = downloader.drive.downloads.any(
+      (d) => switch (d.state) {
+        PackDownloadState.queued ||
+        PackDownloadState.running ||
+        PackDownloadState.verifying => true,
+        _ => false,
+      },
+    );
+    if (busy != _driveBusy) {
+      _driveBusy = busy;
+      unawaited(
+        keepAwake?.call(busy).catchError((Object e) {
+          appLogger.warn('Keeping the screen on failed: $e', tag: 'Maps');
+        }),
+      );
+    }
     notifyListeners();
     // Rejected once downloaded (its SHA-256): the pack may have been
     // republished during the download, so the entry it began with is old.
-    // Routing and places look after their own.
-    if (pack && verifying && download.state == PackDownloadState.failed) {
+    // Routing and places look after their own. A drive's copy is simply
+    // damaged.
+    if (pack &&
+        verifying &&
+        download.state == PackDownloadState.failed &&
+        !downloader.drive.owns(download.id)) {
       unawaited(_retryIfRepublished(download));
     }
   }
@@ -502,7 +544,7 @@ class MapPacksService extends ChangeNotifier {
   }
 
   PackIndexEntry? _entryOf(String id) =>
-      _index?.usable.where((e) => e.id == id).firstOrNull;
+      index?.usable.where((e) => e.id == id).firstOrNull;
 
   // --- Drawing -------------------------------------------------------------
 
@@ -563,7 +605,7 @@ class MapPacksService extends ChangeNotifier {
 
   /// Packs offered for the region at [path].
   List<PackIndexEntry> packsForRegion(String path) =>
-      _index?.forRegion(path) ?? const [];
+      index?.forRegion(path) ?? const [];
 
   /// The packs a region's Download button starts with: the map alone.
   /// Contours, hill shading and USGS are opt-in (Martin, 2026-11-02).
@@ -601,13 +643,13 @@ class MapPacksService extends ChangeNotifier {
   Map<String, List<List<List<LatLng>>>> downloadedAreas(MapType type) {
     final kinds = _requiredKinds[type] ?? const <PackKind>{};
     final charts = {
-      for (final area in _chartAreas?.areas ?? const <ChartArea>[])
+      for (final area in _allChartAreas?.areas ?? const <ChartArea>[])
         area.packRegion: area.polygons,
     };
     return {
       for (final pack in _installed)
         if (pack.region case final region? when kinds.contains(pack.kind))
-          region: ?(_regions?[region]?.polygons ?? charts[region]),
+          region: ?(_allRegions?[region]?.polygons ?? charts[region]),
     };
   }
 
@@ -616,12 +658,20 @@ class MapPacksService extends ChangeNotifier {
     final areas = downloadedAreas(type);
     final here = type == MapType.charts
         ? [
-            for (final a in _chartAreas?.areasAt(point) ?? const <ChartArea>[])
+            for (final a
+                in _allChartAreas?.areasAt(point) ?? const <ChartArea>[])
               a.packRegion,
           ]
-        : [?_regions?.regionAt(point)?.path];
+        : [?_allRegions?.regionAt(point)?.path];
     return here.any(areas.containsKey);
   }
+
+  /// Every region's outline, for packs installed from anywhere: the
+  /// server's, else a drive's.
+  RegionIndex? get _allRegions => _regions ?? _onDrive?.regions;
+
+  /// Every chart area, for charts installed from anywhere.
+  ChartAreaIndex? get _allChartAreas => _chartAreas ?? _onDrive?.allChartAreas;
 
   /// The download in progress (or last finished) for [id], if any.
   PackDownload? downloadOf(String id) => _downloads[id];
@@ -644,14 +694,24 @@ class MapPacksService extends ChangeNotifier {
     if (downloading != null) return downloading;
     final pack = installedPack(entry.id);
     if (pack == null) return PackStatus.available;
-    return pack.isBuild(entry.sha256) == false
+    return pack.isBuild(entry.sha256) == false && _mayReplace(entry, pack)
         ? PackStatus.updateAvailable
         : PackStatus.installed;
   }
 
+  /// Whether [entry] may replace the installed [pack]: always from the
+  /// server, so a build it takes back still reaches phones, but from a
+  /// drive only when it's a later build, so an old drive never takes a
+  /// phone back.
+  bool _mayReplace(PackIndexEntry entry, Pack pack) {
+    if (_onDrive == null) return true;
+    final built = pack.buildDate;
+    return built == null || entry.buildDate.isAfter(built);
+  }
+
   /// Index entries whose installed pack is an older build.
   List<PackIndexEntry> get updates => [
-    for (final entry in _index?.usable ?? const <PackIndexEntry>[])
+    for (final entry in index?.usable ?? const <PackIndexEntry>[])
       if (statusOf(entry) == PackStatus.updateAvailable) entry,
   ];
 
@@ -668,12 +728,326 @@ class MapPacksService extends ChangeNotifier {
   /// Badge for "Offline maps": active downloads plus available updates.
   int get badgeCount => activeDownloadCount + updates.length;
 
+  // --- Drive ---------------------------------------------------------------
+
+  /// The folder a stick's maps sit in (traxmapmaker's thumb drive).
+  static const driveFolder = 'MeshTrax-maps';
+
+  _OnDrive? _onDrive;
+  Timer? _driveCheck;
+  var _driveRemoved = false;
+  var _catalogueVersion = 0;
+
+  /// Changes whenever the catalogue shown changes: fetched, read from the
+  /// cache, or switched to or from a drive.
+  int get catalogueVersion => _catalogueVersion;
+
+  /// The drive whose maps the screens show and install, or null for the
+  /// server's ("Use a drive").
+  MapDrive? get drive => _onDrive?.drive;
+
+  /// When the drive's maps were made: its `index.json`'s `generated`.
+  DateTime? get driveMapsDate => _onDrive?.index.generated;
+
+  /// Whether the drive in use went away; until another is chosen, or the
+  /// notice is dismissed.
+  bool get driveRemoved => _driveRemoved;
+
+  void dismissDriveRemoved() {
+    _driveRemoved = false;
+    notifyListeners();
+  }
+
+  /// Whether files are copying from the drive: the app must stay open.
+  bool get driveBusy => _driveBusy;
+  var _driveBusy = false;
+
+  /// Keeps the screen on while files copy from a drive; set by [create].
+  Future<void> Function(bool on)? keepAwake;
+
+  /// Whether a drive chosen is being read, before its maps show.
+  bool get readingDrive => _readingDrive;
+  var _readingDrive = false;
+
+  /// Whether the region at [path], or one inside it, has anything to
+  /// install from the drive in use. Always true for the server's.
+  bool hasContent(String path) =>
+      _onDrive?.regionPaths.any((r) => r == path || r.startsWith('$path/')) ??
+      true;
+
+  /// Shows and installs what [drive] holds instead of the server's
+  /// catalogue: the files its `index.json` lists that are on it, at their
+  /// URL paths, with the sizes it lists. Takes the folder chosen, or the
+  /// one inside it that holds the maps ([driveFolder] first). Throws a
+  /// [FormatException] when neither has an `index.json`.
+  Future<void> useDrive(MapDrive drive) async {
+    _readingDrive = true;
+    notifyListeners();
+    final _OnDrive read;
+    try {
+      read = await _readDrive(drive);
+    } finally {
+      _readingDrive = false;
+      notifyListeners();
+    }
+    await _leaveDrive();
+    downloader.drive.attach(read.drive, _drivePath);
+    _onDrive = read;
+    _driveRemoved = false;
+    _catalogueVersion++;
+    _driveCheck = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(checkDrive()),
+    );
+    notifyListeners();
+    await _seedCache(read);
+    await _takeNewerHints(read);
+  }
+
+  /// Back to the server's catalogue. Unfinished installs from the drive
+  /// stop: canceled, or failed when the drive was [removed].
+  Future<void> useInternet({bool removed = false}) async {
+    if (_onDrive == null) return;
+    await _leaveDrive(error: removed ? DrivePackDownloader.removedError : null);
+    _driveRemoved = removed;
+    _catalogueVersion++;
+    notifyListeners();
+  }
+
+  /// Goes back to the server's catalogue when the drive in use can't be
+  /// read any more. True while the drive is there.
+  Future<bool> checkDrive() async {
+    final drive = this.drive;
+    if (drive == null) return false;
+    if (await drive.isReadable()) return true;
+    if (this.drive == drive) await useInternet(removed: true);
+    return false;
+  }
+
+  Future<void> _leaveDrive({String? error}) async {
+    final onDrive = _onDrive;
+    if (onDrive == null) return;
+    _driveCheck?.cancel();
+    _onDrive = null;
+    await downloader.drive.detach(error: error);
+    try {
+      await onDrive.drive.close();
+    } on Object catch (e) {
+      appLogger.warn('Letting go of the drive failed: $e', tag: 'Maps');
+    }
+  }
+
+  /// The drive in use, read again: files added or gone since.
+  Future<void> _rereadDrive() async {
+    final onDrive = _onDrive;
+    if (onDrive == null || !await checkDrive()) return;
+    try {
+      final read = await _readDrive(onDrive.drive);
+      if (_onDrive != onDrive) return;
+      _onDrive = read;
+      _catalogueVersion++;
+      notifyListeners();
+    } on Object catch (e) {
+      appLogger.warn('Reading the drive again failed: $e', tag: 'Maps');
+    }
+  }
+
+  /// Where the file at [url] sits on a drive: its path below the server's
+  /// root, the folder of [indexUrl]; null when it's elsewhere.
+  String? _drivePath(Uri url) {
+    final root = Uri.decodeFull(indexUrl.resolve('.').path);
+    final path = Uri.decodeFull(url.path);
+    return path.startsWith(root) && path.length > root.length
+        ? path.substring(root.length)
+        : null;
+  }
+
+  /// Reads [drive]'s catalogue, keeping only the files that are on it.
+  Future<_OnDrive> _readDrive(MapDrive drive) async {
+    var files = await drive.list();
+    if (!files.containsKey('index.json')) {
+      final folders = [
+        for (final path in files.keys)
+          if (path.split('/') case [final folder, 'index.json']) folder,
+      ];
+      final folder = folders.contains(driveFolder)
+          ? driveFolder
+          : folders.firstOrNull;
+      if (folder == null) {
+        throw const FormatException('No index.json on the drive');
+      }
+      drive = drive.inFolder(folder);
+      files = {
+        for (final MapEntry(:key, :value) in files.entries)
+          if (key.startsWith('$folder/'))
+            key.substring(folder.length + 1): value,
+      };
+    }
+    final body = await drive.readText('index.json');
+    final json = jsonDecode(body);
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('pack index is not a JSON object');
+    }
+    bool onDrive(Object? entry) {
+      if (entry is! Map || entry['url'] is! String) return false;
+      final path = _drivePath(indexUrl.resolve(entry['url'] as String));
+      return path != null && files[path] == entry['bytes'];
+    }
+
+    final catalogue = _onlyOnDrive(json, onDrive);
+    final index = PackIndex.fromJson(catalogue);
+    Future<String?> text(String name) async =>
+        files.containsKey(name) ? drive.readText(name) : null;
+    final picker = await text('picker.geojson');
+    final chartsBody = await text('chart_areas.geojson');
+    final charts = chartsBody == null ? null : _parseChartAreas(chartsBody);
+    final chartRegions = {
+      for (final e in index.usable)
+        if (e.kind == PackKind.charts) e.region,
+    };
+    final routing = catalogue['routing'];
+    final poi = catalogue['poi'];
+    return _OnDrive(
+      drive: drive,
+      files: files,
+      body: body,
+      index: index,
+      catalogue: catalogue,
+      pickerBody: picker,
+      regions: picker == null ? null : RegionIndex.parse(picker),
+      chartAreasBody: chartsBody,
+      allChartAreas: charts,
+      chartAreas: charts?.where((a) => chartRegions.contains(a.packRegion)),
+      regionPaths: {
+        for (final e in index.usable) ?e.region,
+        if (routing is Map)
+          for (final engine in routing.values)
+            if (engine is Map && engine['regions'] is Map)
+              ...(engine['regions'] as Map).keys.cast<String>(),
+        if (poi is Map && poi['regions'] is Map)
+          ...(poi['regions'] as Map).keys.cast<String>(),
+      },
+    );
+  }
+
+  /// [json], an `index.json`, with only the files [onDrive] keeps: packs,
+  /// routing bundles and places files. Everything else stays as it is.
+  static Map<String, dynamic> _onlyOnDrive(
+    Map<String, dynamic> json,
+    bool Function(Object? entry) onDrive,
+  ) {
+    final routing = json['routing'];
+    final poi = json['poi'];
+    return <String, dynamic>{
+      ...json,
+      'packs': [
+        for (final e in json['packs'] as List<Object?>? ?? const [])
+          if (onDrive(e)) e,
+      ],
+      if (routing is Map)
+        'routing': {
+          for (final MapEntry(:key, :value) in routing.entries)
+            key: value is Map && value['regions'] is Map
+                ? {
+                    ...value,
+                    'regions': {
+                      for (final MapEntry(key: region, value: bundle)
+                          in (value['regions'] as Map).entries)
+                        if (onDrive(bundle)) region: bundle,
+                    },
+                  }
+                : value,
+        },
+      if (poi is Map && poi['regions'] is Map)
+        'poi': {
+          ...poi,
+          'regions': {
+            for (final MapEntry(key: region, value: files)
+                in (poi['regions'] as Map).entries)
+              if (files is Map)
+                if ({
+                      for (final MapEntry(:key, :value) in files.entries)
+                        if (onDrive(value)) key: value,
+                    }
+                    case final kept when kept.isNotEmpty)
+                  region: kept,
+          },
+        },
+    };
+  }
+
+  /// A phone that has never had the server's catalogue keeps the drive's
+  /// as its cache, dated by its `generated` and with no ETag, so the first
+  /// refresh online replaces it.
+  Future<void> _seedCache(_OnDrive read) async {
+    try {
+      if (await File('${cacheDir.path}/index.json').exists()) return;
+      await cacheDir.create(recursive: true);
+      final generated = read.index.generated;
+      for (final (name, body) in [
+        ('picker.geojson', read.pickerBody),
+        ('chart_areas.geojson', read.chartAreasBody),
+        ('index.json', read.body),
+      ]) {
+        if (body == null) continue;
+        final file = File('${cacheDir.path}/$name');
+        await file.writeAsString(body);
+        if (generated != null) await file.setLastModified(generated);
+      }
+      await _loadCache();
+      notifyListeners();
+    } on Object catch (e) {
+      appLogger.warn('Keeping the drive catalogue failed: $e', tag: 'Maps');
+    }
+  }
+
+  /// Takes the drive's map hints when they're newer than the phone's.
+  Future<void> _takeNewerHints(_OnDrive read) async {
+    final entry = read.catalogue['hints'];
+    if (entry is! Map || entry['url'] is! String) return;
+    final have = (_catalogue?['hints'] as Map?)?['build'];
+    final build = entry['build'];
+    if (_hints != null &&
+        have is String &&
+        (build is! String || build.compareTo(have) <= 0)) {
+      return;
+    }
+    final path = _drivePath(indexUrl.resolve(entry['url'] as String));
+    if (path == null || read.files[path] != entry['bytes']) return;
+    try {
+      final body = await read.drive.readText(path);
+      if (sha256.convert(utf8.encode(body)).toString() != entry['sha256']) {
+        return;
+      }
+      await cacheDir.create(recursive: true);
+      await File('${cacheDir.path}/hints.json').writeAsString(body);
+      _hints = MapHints.parse(body);
+      notifyListeners();
+    } on Object catch (e) {
+      appLogger.warn('Map hints on the drive unreadable: $e', tag: 'Maps');
+    }
+  }
+
   // --- Actions -------------------------------------------------------------
 
-  /// Starts downloading [items] (packs, or routing and places files);
-  /// already-active ones are left alone.
+  /// Starts downloading [items] (packs, or routing and places files), or
+  /// installing them from the drive in use; already-active ones are left
+  /// alone. From a drive, items still downloading from the server are
+  /// left to finish.
   Future<void> download(Iterable<DownloadItem> items) async {
-    final d = downloader;
+    if (drive != null) {
+      if (!await checkDrive()) return;
+      for (final item in items) {
+        if (downloader.network.downloads.any(
+          (d) => d.id == item.id && !d.state.isFinal,
+        )) {
+          continue;
+        }
+        await downloader.startFromDrive(item);
+      }
+      return;
+    }
+    final d = downloader.network;
     if (d is BackgroundPackDownloader) {
       await d.requestNotificationPermission();
     }
@@ -691,7 +1065,7 @@ class MapPacksService extends ChangeNotifier {
     final titles = (running, paused, failed);
     if (titles == _notificationTitles) return;
     _notificationTitles = titles;
-    final d = downloader;
+    final d = downloader.network;
     if (d is BackgroundPackDownloader) {
       d.configureNotifications(
         running: running,
@@ -706,14 +1080,15 @@ class MapPacksService extends ChangeNotifier {
   Future<void> pause(String id) => downloader.pause(id);
 
   /// Resumes a paused download. A failed one starts again from the
-  /// catalogue's current entry, as the pack may have been republished.
+  /// catalogue's current entry, as the pack may have been republished;
+  /// from the drive, if one is in use.
   Future<void> resume(String id) async {
     final failed = _downloads[id];
     if (failed?.state != PackDownloadState.failed) {
       return downloader.resume(id);
     }
     await downloader.cancel(id);
-    await downloader.start(_entryOf(id) ?? failed!.item);
+    await download([_entryOf(id) ?? failed!.item]);
   }
 
   Future<void> cancel(String id) => downloader.cancel(id);
@@ -741,7 +1116,7 @@ class MapPacksService extends ChangeNotifier {
   Future<void> deletePack(Pack pack) => manager.delete(pack);
 
   Future<void> _followWifiSetting(AppSettingsService settings) async {
-    final d = downloader;
+    final d = downloader.network;
     if (d is! BackgroundPackDownloader) return;
     var wifiOnly = settings.settings.mapDownloadsWifiOnly;
     await d.setRequiresWiFi(wifiOnly);
@@ -755,10 +1130,54 @@ class MapPacksService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _driveCheck?.cancel();
     for (final s in _subscriptions) {
       unawaited(s.cancel());
     }
     _client.close();
     super.dispose();
   }
+}
+
+/// A drive in use, and what's on it.
+class _OnDrive {
+  /// Read from the folder that holds the maps.
+  final MapDrive drive;
+
+  /// Its files and their sizes.
+  final Map<String, int> files;
+
+  /// Its `index.json` as read, which lists the server's whole catalogue.
+  final String body;
+
+  /// The packs of [catalogue].
+  final PackIndex index;
+
+  /// Its `index.json` with only the files that are on it.
+  final Map<String, dynamic> catalogue;
+
+  final String? pickerBody;
+  final RegionIndex? regions;
+  final String? chartAreasBody;
+  final ChartAreaIndex? allChartAreas;
+
+  /// The chart areas whose charts are on it.
+  final ChartAreaIndex? chartAreas;
+
+  /// The regions with a file on it.
+  final Set<String> regionPaths;
+
+  const _OnDrive({
+    required this.drive,
+    required this.files,
+    required this.body,
+    required this.index,
+    required this.catalogue,
+    required this.pickerBody,
+    required this.regions,
+    required this.chartAreasBody,
+    required this.allChartAreas,
+    required this.chartAreas,
+    required this.regionPaths,
+  });
 }

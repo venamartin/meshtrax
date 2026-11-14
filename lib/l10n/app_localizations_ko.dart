@@ -5992,6 +5992,62 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => '검색할 수 있는 건물 주소';
 
   @override
+  String get offlineMaps_useDrive => '드라이브 사용';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return '드라이브 $name의 지도($date 기준)';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => '인터넷으로 돌아가기';
+
+  @override
+  String get offlineMaps_keepOpen => '드라이브에서 설치 중입니다. MeshTrax를 열어 두세요.';
+
+  @override
+  String get offlineMaps_driveRemoved => '드라이브가 분리되었습니다. 인터넷 지도를 다시 표시합니다.';
+
+  @override
+  String get offlineMaps_readingDrive => '드라이브 읽는 중…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'MeshTrax 지도가 없습니다. 드라이브의 MeshTrax-maps 폴더를 선택하세요.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return '드라이브를 읽을 수 없습니다: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => '드라이브에서 설치를 중지할까요?';
+
+  @override
+  String get offlineMaps_stopDriveBody => '이미 설치된 항목은 이 기기에 남습니다.';
+
+  @override
+  String get offlineMaps_stopDrive => '중지';
+
+  @override
+  String get offlineMaps_keepInstalling => '계속 설치';
+
+  @override
+  String offlineMaps_install(String size) {
+    return '$size 설치';
+  }
+
+  @override
+  String get offlineMaps_installTotal => '설치';
+
+  @override
+  String get offlineMaps_routingDriveOlder => '이 기기에 드라이브보다 새로운 경로 데이터가 있습니다.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      '드라이브의 경로 데이터가 이 기기의 모든 지역을 포함하지 않습니다.';
+
+  @override
   String get map_search => '검색';
 
   @override

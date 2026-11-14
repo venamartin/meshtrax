@@ -80,7 +80,11 @@ class _RegionList extends StatelessWidget {
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
     final routing = context.watch<RoutingService?>();
-    final children = regions.childrenOf(browse);
+    // On a drive, only the regions it has something for.
+    final children = [
+      for (final r in regions.childrenOf(browse))
+        if (maps.hasContent(r.path)) r,
+    ];
     final suggested = _suggestedRegion(context, maps);
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -235,7 +239,10 @@ class _RegionChip extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
-    final inside = regions.childrenOf(region).length;
+    final inside = regions
+        .childrenOf(region)
+        .where((r) => maps.hasContent(r.path))
+        .length;
     final installed = maps.installedRegions.contains(region.path);
     final hasPacks = maps.packsForRegion(region.path).isNotEmpty;
 

@@ -6271,6 +6271,66 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offlineMaps_kindAddressesDetail => 'Hausadressen für die Suche';
 
   @override
+  String get offlineMaps_useDrive => 'Laufwerk verwenden';
+
+  @override
+  String offlineMaps_onDrive(String name, String date) {
+    return 'Karten vom Laufwerk $name, Stand $date';
+  }
+
+  @override
+  String get offlineMaps_backToInternet => 'Zurück zum Internet';
+
+  @override
+  String get offlineMaps_keepOpen =>
+      'Installation vom Laufwerk. Lassen Sie MeshTrax geöffnet.';
+
+  @override
+  String get offlineMaps_driveRemoved =>
+      'Das Laufwerk wurde entfernt. Es werden wieder die Internetkarten angezeigt.';
+
+  @override
+  String get offlineMaps_readingDrive => 'Laufwerk wird gelesen…';
+
+  @override
+  String get offlineMaps_noMapsOnDrive =>
+      'Dort sind keine MeshTrax-Karten. Wählen Sie den Ordner MeshTrax-maps auf dem Laufwerk.';
+
+  @override
+  String offlineMaps_driveError(String error) {
+    return 'Laufwerk nicht lesbar: $error';
+  }
+
+  @override
+  String get offlineMaps_stopDriveTitle => 'Installation vom Laufwerk beenden?';
+
+  @override
+  String get offlineMaps_stopDriveBody =>
+      'Bereits Installiertes bleibt auf diesem Gerät.';
+
+  @override
+  String get offlineMaps_stopDrive => 'Beenden';
+
+  @override
+  String get offlineMaps_keepInstalling => 'Weiter installieren';
+
+  @override
+  String offlineMaps_install(String size) {
+    return '$size installieren';
+  }
+
+  @override
+  String get offlineMaps_installTotal => 'Installieren';
+
+  @override
+  String get offlineMaps_routingDriveOlder =>
+      'Dieses Gerät hat neuere Routendaten als das Laufwerk.';
+
+  @override
+  String get offlineMaps_routingDriveIncomplete =>
+      'Die Routendaten auf dem Laufwerk decken nicht alle Regionen dieses Geräts ab.';
+
+  @override
   String get map_search => 'Suchen';
 
   @override
