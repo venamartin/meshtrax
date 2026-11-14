@@ -264,12 +264,20 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
         .convert(graph.saveSession(includePlaces: includePlaces));
     // The system save dialog, like the log export: the silent save lands
     // in the app's private folder where nobody can find it.
-    final saved = await FileSaver.instance.saveAs(
-      name: 'path-graph-${DateTime.now().toIso8601String().substring(0, 10)}',
-      bytes: utf8.encode(doc),
-      fileExtension: 'json',
-      mimeType: MimeType.json,
-    );
+    final String? saved;
+    try {
+      saved = await FileSaver.instance.saveAs(
+        name: 'path-graph-${DateTime.now().toIso8601String().substring(0, 10)}',
+        bytes: utf8.encode(doc),
+        fileExtension: 'json',
+        mimeType: MimeType.json,
+      );
+    } catch (e) {
+      if (mounted) {
+        showDismissibleSnackBar(context, content: Text('Backup failed: $e'));
+      }
+      return;
+    }
     if (mounted && saved != null && saved.isNotEmpty) {
       showDismissibleSnackBar(context, content: Text('Backup saved to $saved'));
     }

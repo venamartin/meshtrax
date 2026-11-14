@@ -265,22 +265,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.15"
-  dio:
-    dependency: transitive
-    description:
-      name: dio
-      sha256: "852ec3b48cc431ac04fff978413c541502b67ffc3e26921e74e3d994694192c1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.11.1"
-  dio_web_adapter:
-    dependency: transitive
-    description:
-      name: dio_web_adapter
-      sha256: "3a1b2cd7be71086f38504956e3ebcd2837288d231ff454bafa78021244102bfc"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.2"
   drift:
     dependency: "direct main"
     description:
@@ -349,10 +333,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_saver
-      sha256: "9d93db09bd4da9e43238f9dd485360fc51a5c138eea5ef5f407ec56e58079ac0"
+      sha256: fdb82a10b134b6bd03c48599268eb4ca04d5424029d73b30733327f4957c4037
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "0.7.0"
   file_selector:
     dependency: "direct main"
     description:
@@ -501,10 +485,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_foreground_task
-      sha256: fc5c01a5e1b8f7bb51d0c737714f0c50440dbdf1aeddc5f8cbba313aa6fd4856
+      sha256: fe0e8c88fbdeb703161e20c54ffd10593fb112ccfa068c989ad2a93d28e4b976
       url: "https://pub.dev"
     source: hosted
-    version: "9.2.2"
+    version: "11.0.3"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
