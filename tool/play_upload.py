@@ -19,6 +19,7 @@ docs/store/google-play-notes.md.
 
 import argparse
 import os
+import socket
 import sys
 from pathlib import Path
 
@@ -30,6 +31,12 @@ from googleapiclient.http import MediaFileUpload
 PACKAGE = "com.vena.meshtrax"
 DEFAULT_KEY = Path.home() / "Desktop" / "keyStore" / "meshtrax-play-service-account.json"
 NOTES_LIMIT = 500
+# Play answers a bundle upload only once it has processed the bundle, which
+# can take longer than the API client's default 60 s read timeout.
+HTTP_TIMEOUT_S = 600
+# Each call is retried this often after a 5xx or 429 answer, with the client's
+# own backoff.
+RETRIES = 3
 
 
 def key_path() -> Path:
@@ -46,11 +53,13 @@ def service():
     creds = service_account.Credentials.from_service_account_file(
         str(key), scopes=["https://www.googleapis.com/auth/androidpublisher"]
     )
+    # build() takes its HTTP client's timeout from the socket default.
+    socket.setdefaulttimeout(HTTP_TIMEOUT_S)
     return build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
 
 
 def highest_version_code(edits, edit_id: str) -> int:
-    tracks = edits.tracks().list(packageName=PACKAGE, editId=edit_id).execute()
+    tracks = edits.tracks().list(packageName=PACKAGE, editId=edit_id).execute(num_retries=RETRIES)
     codes = [
         int(code)
         for track in tracks.get("tracks", [])
@@ -62,11 +71,11 @@ def highest_version_code(edits, edit_id: str) -> int:
 
 def check(args) -> None:
     edits = service().edits()
-    edit_id = edits.insert(packageName=PACKAGE, body={}).execute()["id"]
+    edit_id = edits.insert(packageName=PACKAGE, body={}).execute(num_retries=RETRIES)["id"]
     try:
         highest = highest_version_code(edits, edit_id)
     finally:
-        edits.delete(packageName=PACKAGE, editId=edit_id).execute()
+        edits.delete(packageName=PACKAGE, editId=edit_id).execute(num_retries=RETRIES)
     if args.version_code <= highest:
         sys.exit(
             f"error: versionCode {args.version_code} is not above the highest on Play "
@@ -88,11 +97,13 @@ def read_notes(path: Path) -> str:
 def upload(args) -> None:
     notes = read_notes(args.notes_file)
     edits = service().edits()
-    edit_id = edits.insert(packageName=PACKAGE, body={}).execute()["id"]
+    edit_id = edits.insert(packageName=PACKAGE, body={}).execute(num_retries=RETRIES)["id"]
 
     print(f"PLAY: uploading {args.aab} ...")
     media = MediaFileUpload(str(args.aab), mimetype="application/octet-stream", resumable=True)
-    bundle = edits.bundles().upload(packageName=PACKAGE, editId=edit_id, media_body=media).execute()
+    bundle = edits.bundles().upload(
+        packageName=PACKAGE, editId=edit_id, media_body=media
+    ).execute(num_retries=RETRIES)
     version_code = bundle["versionCode"]
 
     release = {
@@ -107,9 +118,9 @@ def upload(args) -> None:
         editId=edit_id,
         track=args.track,
         body={"track": args.track, "releases": [release]},
-    ).execute()
+    ).execute(num_retries=RETRIES)
 
-    edits.commit(packageName=PACKAGE, editId=edit_id).execute()
+    edits.commit(packageName=PACKAGE, editId=edit_id).execute(num_retries=RETRIES)
     rollout = "full rollout" if args.rollout >= 1 else f"{args.rollout:.0%} staged rollout"
     print(f"PLAY: versionCode {version_code} committed to '{args.track}' ({rollout}).")
     print("      Google reviews it before it reaches users; watch Play Console > Publishing overview.")
