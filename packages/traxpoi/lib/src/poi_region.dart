@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift/native.dart';
@@ -33,6 +34,10 @@ class SearchResult {
   /// Identifies the same place in two regions' files.
   final String key;
 
+  /// For a place without a name: the name of what it is next to, a named
+  /// place or a park or village, to tell it apart ([PoiRegion.searchKinds]).
+  final String? near;
+
   const SearchResult({
     required this.type,
     required this.id,
@@ -43,6 +48,7 @@ class SearchResult {
     required this.km,
     required this.score,
     required this.key,
+    this.near,
   });
 
   SearchResult withScore(double score) => SearchResult(
@@ -55,6 +61,7 @@ class SearchResult {
     km: km,
     score: score,
     key: key,
+    near: near,
   );
 }
 
@@ -88,11 +95,15 @@ class PoiRegion {
   }
 
   /// Places and features whose names match [query], typos included, best
-  /// first. With [near], nearer matches rank higher.
+  /// first. With [near], nearer matches rank higher. When the query names
+  /// [kinds], a place of one of them ranks as [searchKinds] ranks it, and
+  /// no name gets a lift for being typed exactly or for a notable place:
+  /// "Gas Station" is then a word for a kind, not one place's name.
   Future<List<SearchResult>> searchNames(
     String query, {
     GeoPoint? near,
     int limit = 20,
+    Map<String, double> kinds = const {},
   }) async {
     final db = points;
     if (db == null) return const [];
@@ -143,18 +154,18 @@ class PoiRegion {
             point: point,
             match: match,
             km: km,
-            score: rankScore(
-              match: match,
-              queryWords: queryWords,
-              nameWords: nameWords,
-              km: km,
-              notability: p.rank,
-              exact: exact,
-            ),
-            key:
-                p.osm ??
-                p.wikidata ??
-                '${p.name}@${p.lat.toStringAsFixed(3)},${p.lon.toStringAsFixed(3)}',
+            score: switch (kinds[p.kind]) {
+              final kindMatch? => _kindScore(kindMatch, km),
+              null => rankScore(
+                match: match,
+                queryWords: queryWords,
+                nameWords: nameWords,
+                km: km,
+                notability: kinds.isEmpty ? p.rank : 0,
+                exact: exact && kinds.isEmpty,
+              ),
+            },
+            key: _placeKey(p),
           ),
         );
       } else {
@@ -175,8 +186,8 @@ class PoiRegion {
               queryWords: queryWords,
               nameWords: nameWords,
               km: km,
-              notability: _towns.contains(f.kind) ? 1 : 0,
-              exact: exact,
+              notability: kinds.isEmpty && _towns.contains(f.kind) ? 1 : 0,
+              exact: exact && kinds.isEmpty,
             ),
             key:
                 '${f.kind}:${f.name}@${f.lat.toStringAsFixed(2)},${f.lon.toStringAsFixed(2)}',
@@ -186,6 +197,124 @@ class PoiRegion {
     }
     results.sort((a, b) => b.score.compareTo(a.score));
     return results.take(limit).toList();
+  }
+
+  /// The places of the [kinds] a search names ([kindsNamed]) nearest to
+  /// [near], named or not, nearest first: "toilets" finds the unnamed ones
+  /// around you, which a name search can't.
+  Future<List<SearchResult>> searchKinds(
+    Map<String, double> kinds, {
+    required GeoPoint near,
+    int limit = 20,
+  }) async {
+    final db = points;
+    if (db == null || kinds.isEmpty) return const [];
+    // The nearest in a box around [near] that doubles until they are all
+    // inside the circle within it (none outside can be nearer), or it
+    // reaches about 300 km out.
+    final cos = math.max(0.1, math.cos(near.lat * math.pi / 180));
+    var found = <(PlaceData, double)>[];
+    for (var half = 0.05; ; half *= 2) {
+      final rows = await db
+          .placesOfKindsIn(
+            near.lat + half,
+            near.lat - half,
+            near.lon + half / cos,
+            near.lon - half / cos,
+            kinds.keys.toList(),
+            near.lat,
+            near.lon,
+            cos * cos,
+            limit,
+          )
+          .get();
+      found = [
+        for (final r in rows) (r.p, near.kmTo(GeoPoint(r.p.lat, r.p.lon))),
+      ];
+      if ((found.length == limit && found.last.$2 <= half * 111) || half >= 3) {
+        break;
+      }
+    }
+    found.sort((a, b) => a.$2.compareTo(b.$2));
+    final nextTo = await _nearNames([
+      for (final (p, _) in found)
+        if (p.name.isEmpty) p,
+    ]);
+    return [
+      for (final (p, km) in found)
+        SearchResult(
+          type: ResultType.place,
+          id: p.id,
+          name: p.name,
+          kind: p.kind,
+          point: GeoPoint(p.lat, p.lon),
+          match: kinds[p.kind]!,
+          km: km,
+          score: _kindScore(kinds[p.kind]!, km),
+          key: _placeKey(p),
+          near: nextTo[p.id],
+        ),
+    ];
+  }
+
+  /// What each of the unnamed [places] is next to, by id: the nearest named
+  /// place within 100 m that says where you are (not a rock, a spring or
+  /// another toilet), else the nearest park or village within 250 m. Parks
+  /// and villages are search-only names, found in one look over the area.
+  Future<Map<int, String>> _nearNames(List<PlaceData> places) async {
+    final db = points!;
+    final near = <int, String>{};
+    for (final p in places) {
+      final here = GeoPoint(p.lat, p.lon);
+      final cos = math.max(0.1, math.cos(p.lat * math.pi / 180));
+      const half = 0.001;
+      final rows = await db
+          .namedPlacesIn(
+            p.lat + half,
+            p.lat - half,
+            p.lon + half / cos,
+            p.lon - half / cos,
+            p.lat,
+            p.lon,
+            cos * cos,
+            5,
+          )
+          .get();
+      for (final r in rows) {
+        if (_saysWhere(r.p.kind) &&
+            here.kmTo(GeoPoint(r.p.lat, r.p.lon)) <= 0.1) {
+          near[p.id] = r.p.name;
+          break;
+        }
+      }
+    }
+    final rest = [
+      for (final p in places)
+        if (!near.containsKey(p.id)) p,
+    ];
+    if (rest.isEmpty) return near;
+    const half = 0.003;
+    final cos = math.max(0.1, math.cos(rest.first.lat * math.pi / 180));
+    final features = await db
+        .featuresOfKindsIn(
+          rest.map((p) => p.lat).reduce(math.max) + half,
+          rest.map((p) => p.lat).reduce(math.min) - half,
+          rest.map((p) => p.lon).reduce(math.max) + half / cos,
+          rest.map((p) => p.lon).reduce(math.min) - half / cos,
+          _areaKinds.toList(),
+        )
+        .get();
+    for (final p in rest) {
+      final here = GeoPoint(p.lat, p.lon);
+      FeatureData? best;
+      var bestKm = 0.25;
+      for (final f in features) {
+        final km = here.kmTo(GeoPoint(f.lat, f.lon));
+        if (km <= bestKm) (best, bestKm) = (f, km);
+      }
+      if (best != null) near[p.id] = best.name;
+    }
+    return near;
   }
 
   /// Addresses matching [query] ("816 Farmington Ave West Hartford"): the
@@ -316,17 +445,26 @@ class PoiRegion {
 /// Searches every region and merges the results, best first. A place in
 /// two regions' files (near a border) appears once. Addresses, and the
 /// street in case the house isn't mapped, are searched when [query] starts
-/// with a house number.
+/// with a house number. With [near], the places of the [kinds] the query
+/// names ([kindsNamed]) are searched too.
 Future<List<SearchResult>> searchRegions(
   Iterable<PoiRegion> regions,
   String query, {
   GeoPoint? near,
   int limit = 20,
+  Map<String, double> kinds = const {},
 }) async {
   final all = <String, SearchResult>{};
   for (final region in regions) {
     for (final r in [
-      ...await region.searchNames(query, near: near, limit: limit),
+      ...await region.searchNames(
+        query,
+        near: near,
+        limit: limit,
+        kinds: kinds,
+      ),
+      if (near != null)
+        ...await region.searchKinds(kinds, near: near, limit: limit),
       ...await region.searchAddresses(query, near: near, limit: limit),
       ...await region.searchStreets(query, near: near, limit: limit),
     ]) {
@@ -341,3 +479,35 @@ Future<List<SearchResult>> searchRegions(
 
 /// Search-only names that count as notable, like a place with an article.
 const _towns = {'place=city', 'place=town', 'place=village'};
+
+/// Search-only names an unnamed place can be said to be near.
+const _areaKinds = {
+  'leisure=park',
+  'boundary=protected_area',
+  'place=town',
+  'place=village',
+  'place=hamlet',
+};
+
+/// Whether a named place says where you are, for an unnamed one next to
+/// it: a picnic area or a museum does, a boulder or another toilet doesn't.
+bool _saysWhere(String kind) =>
+    !(kind.startsWith('natural=') && kind != 'natural=beach') &&
+    !const {
+      'amenity=toilets',
+      'amenity=drinking_water',
+      'amenity=water_point',
+      'emergency=phone',
+    }.contains(kind);
+
+/// A place of a kind the search names ranks by distance alone, as a name
+/// typed in full would: one named "Toilets" gets no lift over an unnamed
+/// one.
+double _kindScore(double match, double? km) =>
+    rankScore(match: match, queryWords: 1, nameWords: 1, km: km);
+
+/// Identifies the same place in two regions' files.
+String _placeKey(PlaceData p) =>
+    p.osm ??
+    p.wikidata ??
+    '${p.name}@${p.lat.toStringAsFixed(3)},${p.lon.toStringAsFixed(3)}';

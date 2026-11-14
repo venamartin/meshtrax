@@ -307,6 +307,128 @@ void main() {
     expect(r.where((x) => x.name == 'Camp Bird Mine'), hasLength(1));
   });
 
+  group('kinds', () {
+    const names = {
+      'amenity=toilets': ['Toilets', 'toilet', 'restroom'],
+      'amenity=fuel': ['Fuel', 'gas station', 'gas'],
+      'amenity=fire_station': ['Fire station'],
+    };
+
+    /// The fixture plus toilets: an unnamed one near Ouray, by a picnic
+    /// area and a boulder; a named one 7 km away; one named just "Toilets"
+    /// 100 km away; an unnamed one 150 km away, in a park; and a notable
+    /// historic place called "Toilets" 200 km away.
+    Future<PoiRegion> withToilets() async {
+      final file = buildPoints(dir, 'toilets.sqlite');
+      final db = sqlite3.open(file.path);
+      for (final (id, kind, name, lat, lon, rank) in [
+        (20, 'amenity=toilets', '', 38.0240, -107.6700, 0),
+        (21, 'amenity=toilets', 'Pit Toilet', 38.0700, -107.7300, 0),
+        (22, 'amenity=toilets', 'Toilets', 38.9200, -107.6714, 0),
+        (23, 'amenity=toilets', '', 39.3700, -107.6714, 0),
+        (24, 'historic=yes', 'Toilets', 39.8200, -107.6714, 2),
+        (
+          25,
+          'tourism=picnic_site',
+          'Box Canyon Picnic Area',
+          38.0242,
+          -107.6700,
+          0,
+        ),
+        (26, 'natural=stone', 'Big Rock', 38.02405, -107.6700, 0),
+      ]) {
+        db.execute(
+          'INSERT INTO place (id, kind, name, lat, lon, sources, rank) '
+          "VALUES (?, ?, ?, ?, ?, 'osm', ?)",
+          [id, kind, name, lat, lon, rank],
+        );
+        db.execute('INSERT INTO place_area VALUES (?, ?, ?, ?, ?)', [
+          id,
+          lat,
+          lat,
+          lon,
+          lon,
+        ]);
+        if (name.isNotEmpty) {
+          db.execute(
+            'INSERT INTO name (place_id, name, norm, role) '
+            "VALUES (?, ?, ?, 'main')",
+            [id, name, normalizeName(name, NameRules.places)],
+          );
+        }
+      }
+      db.execute(
+        'INSERT INTO feature (id, kind, name, lat, lon) '
+        "VALUES (30, 'leisure=park', 'Lakeside Park', 39.3715, -107.6714)",
+      );
+      db.execute("INSERT INTO name_search (name_search) VALUES ('rebuild')");
+      db.close();
+      final toilets = PoiRegion.open(points: file);
+      addTearDown(toilets.close);
+      return toilets;
+    }
+
+    test('a search names a kind by its label or another word for it', () {
+      expect(kindsNamed('toilet', names).keys, ['amenity=toilets']);
+      expect(kindsNamed('restrom', names).keys, ['amenity=toilets']);
+      expect(kindsNamed('gas station', names), {'amenity=fuel': 100});
+      expect(kindsNamed('mount sneffels', names), isEmpty);
+      expect(kindsNamed('to', names), isEmpty, reason: 'under three letters');
+    });
+
+    test('the nearest of a kind, named or not, nearest first', () async {
+      final toilets = await withToilets();
+      final r = await toilets.searchKinds(
+        kindsNamed('toilets', names),
+        near: ouray,
+        limit: 3,
+      );
+      expect(r.map((x) => x.id), [20, 21, 22]);
+      expect(r.first.name, '', reason: 'unnamed: the app shows its kind');
+      expect(r.first.km, lessThan(1));
+    });
+
+    test('a place named for its kind gets no lift over nearer ones', () async {
+      final toilets = await withToilets();
+      final r = await searchRegions(
+        [toilets],
+        'toilets',
+        near: ouray,
+        kinds: kindsNamed('toilets', names),
+      );
+      expect(
+        r.take(5).map((x) => x.id),
+        [20, 21, 22, 23, 24],
+        reason:
+            'by distance: no lift for a name typed exactly or a notable '
+            'place when the search names a kind',
+      );
+      expect(r.where((x) => x.id == 22), hasLength(1));
+    });
+
+    test('an unnamed place says what it is next to', () async {
+      final toilets = await withToilets();
+      final r = await toilets.searchKinds(
+        kindsNamed('toilets', names),
+        near: ouray,
+      );
+      String? near(int id) => r.firstWhere((x) => x.id == id).near;
+      expect(
+        near(20),
+        'Box Canyon Picnic Area',
+        reason: 'a picnic area says where you are; the boulder nearer does not',
+      );
+      expect(near(23), 'Lakeside Park', reason: 'a park, 170 m away');
+      expect(near(21), isNull, reason: 'it has a name of its own');
+    });
+
+    test('a name search alone still finds no unnamed place', () async {
+      final toilets = await withToilets();
+      final r = await searchRegions([toilets], 'toilets', near: ouray);
+      expect(r.map((x) => x.id), isNot(contains(20)));
+    });
+  });
+
   test('a file from a newer schema is refused', () async {
     final file = buildPoints(dir, 'newer.sqlite');
     final db = sqlite3.open(file.path)..execute('PRAGMA user_version = 2');

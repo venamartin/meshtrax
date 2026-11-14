@@ -2663,6 +2663,7 @@
   "search_hint": "Orte, Adressen oder Koordinaten suchen",
   "search_noPlaces": "Laden Sie „Interessante Orte“ für eine Region herunter, um dort nach Orten zu suchen. Koordinaten funktionieren auch ohne diesen Download.",
   "search_noResults": "Keine Treffer",
+  "search_near": "bei {name}",
   "coordFormat_decimalDegrees": "Dezimalgrad",
   "coordFormat_degreesMinutes": "Grad und Minuten",
   "coordFormat_dms": "Grad, Minuten, Sekunden",

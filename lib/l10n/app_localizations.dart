@@ -10399,6 +10399,12 @@ abstract class AppLocalizations {
   /// **'No matches'**
   String get search_noResults;
 
+  /// Where a place without a name is: next to a named place, park or village
+  ///
+  /// In en, this message translates to:
+  /// **'near {name}'**
+  String search_near(String name);
+
   /// No description provided for @coordFormat_decimalDegrees.
   ///
   /// In en, this message translates to:

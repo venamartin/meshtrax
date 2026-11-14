@@ -6026,6 +6026,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get search_noResults => 'Geen resultaten';
 
   @override
+  String search_near(String name) {
+    return 'bij $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Decimale graden';
 
   @override

@@ -6085,6 +6085,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get search_noResults => 'Aucun résultat';
 
   @override
+  String search_near(String name) {
+    return 'près de $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Degrés décimaux';
 
   @override

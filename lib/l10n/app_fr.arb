@@ -2635,6 +2635,7 @@
   "search_hint": "Lieux, adresses ou coordonnées",
   "search_noPlaces": "Téléchargez « Points d'intérêt » pour une région afin d'y rechercher des lieux. La recherche par coordonnées fonctionne sans ce téléchargement.",
   "search_noResults": "Aucun résultat",
+  "search_near": "près de {name}",
   "coordFormat_decimalDegrees": "Degrés décimaux",
   "coordFormat_degreesMinutes": "Degrés et minutes",
   "coordFormat_dms": "Degrés, minutes, secondes",

@@ -3049,6 +3049,15 @@
   "search_hint": "Search places, addresses or coordinates",
   "search_noPlaces": "Download Points of interest for a region to search its places. Coordinates work without it.",
   "search_noResults": "No matches",
+  "search_near": "near {name}",
+  "@search_near": {
+    "description": "Where a place without a name is: next to a named place, park or village",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "coordFormat_decimalDegrees": "Decimal degrees",
   "coordFormat_degreesMinutes": "Degrees and minutes",
   "coordFormat_dms": "Degrees, minutes, seconds",

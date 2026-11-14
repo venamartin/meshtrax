@@ -6055,6 +6055,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get search_noResults => 'Sin resultados';
 
   @override
+  String search_near(String name) {
+    return 'cerca de $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Grados decimales';
 
   @override

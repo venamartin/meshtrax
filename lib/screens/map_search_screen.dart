@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:traxcoords/traxcoords.dart';
 import 'package:traxpoi/traxpoi.dart';
@@ -7,6 +8,7 @@ import 'package:traxpoi/traxpoi.dart';
 import '../helpers/geo_format.dart';
 import '../helpers/poi_kinds.dart';
 import '../helpers/position_text.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 
@@ -78,12 +80,14 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
   Future<void> _search(String text) async {
     final generation = ++_generation;
     final found = <(SearchResult, PoiRegion)>[];
-    if (text.trim().isNotEmpty) {
+    if (text.trim().isNotEmpty && mounted) {
+      final kinds = poiKindsNamed(context.l10n, text);
       for (final region in widget.regions) {
         for (final r in await searchRegions(
           [region],
           text,
           near: widget.near,
+          kinds: kinds,
         )) {
           found.add((r, region));
         }
@@ -159,18 +163,23 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
           for (final (r, region) in _results)
             ListTile(
               leading: Icon(poiKindIcon(r.kind)),
-              title: Text(r.name),
+              title: Text(_title(l10n, r)),
               subtitle: Text(
                 [
-                  poiKindLabel(l10n, r.kind),
-                  if (r.km != null)
-                    GeoFormat.distanceText(r.km! * 1000, widget.units),
+                  if (r.name.isNotEmpty) poiKindLabel(l10n, r.kind),
+                  if (r.near case final nextTo?) l10n.search_near(nextTo),
+                  if (widget.near case final near?)
+                    GeoFormat.offset(
+                      LatLng(near.lat, near.lon),
+                      LatLng(r.point.lat, r.point.lon),
+                      widget.units,
+                    ).text,
                 ].join(' · '),
               ),
               onTap: () => Navigator.pop(
                 context,
                 MapSearchPick(
-                  r.name,
+                  _title(l10n, r),
                   r.point,
                   placeId: r.type == ResultType.place ? r.id : null,
                   region: region,
@@ -186,4 +195,8 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
       ),
     );
   }
+
+  /// A place without a name goes by its kind ("Toilets").
+  String _title(AppLocalizations l10n, SearchResult r) =>
+      r.name.isEmpty ? poiKindLabel(l10n, r.kind) : r.name;
 }

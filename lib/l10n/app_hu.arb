@@ -2673,6 +2673,7 @@
   "search_hint": "Helyek, címek vagy koordináták keresése",
   "search_noPlaces": "A helyek kereséséhez töltse le egy régióhoz az Érdekes helyeket. Koordinátákra enélkül is kereshet.",
   "search_noResults": "Nincs találat",
+  "search_near": "{name} közelében",
   "coordFormat_decimalDegrees": "Tizedes fok",
   "coordFormat_degreesMinutes": "Fok és perc",
   "coordFormat_dms": "Fok, perc, másodperc",

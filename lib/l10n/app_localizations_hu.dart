@@ -6062,6 +6062,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get search_noResults => 'Nincs találat';
 
   @override
+  String search_near(String name) {
+    return '$name közelében';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Tizedes fok';
 
   @override

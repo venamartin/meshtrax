@@ -2673,6 +2673,7 @@
   "search_hint": "場所・住所・座標を検索",
   "search_noPlaces": "地域の「スポット情報」をダウンロードすると、その地域の場所を検索できます。座標の検索にはダウンロードは不要です。",
   "search_noResults": "一致なし",
+  "search_near": "{name}付近",
   "coordFormat_decimalDegrees": "度（10進数）",
   "coordFormat_degreesMinutes": "度・分",
   "coordFormat_dms": "度・分・秒",

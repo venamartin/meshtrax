@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:traxpoi/traxpoi.dart' show kindsNamed;
 
 import '../l10n/app_localizations.dart';
 
@@ -157,4 +158,68 @@ String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'highway=road' => l10n.poiKind_road,
   'address' => l10n.poiKind_address,
   _ => l10n.poiKind_place,
+};
+
+/// The kinds of place [query] names, by their label in the app's language
+/// or a common English word for them ("toilet", "restroom", "gas station"),
+/// with how well it matches each. The search then offers the nearest places
+/// of those kinds, named or not.
+Map<String, double> poiKindsNamed(AppLocalizations l10n, String query) =>
+    kindsNamed(query, {
+      for (final MapEntry(key: kind, value: words) in _kindWords.entries)
+        kind: [poiKindLabel(l10n, kind), ...words],
+    });
+
+/// The kinds of place a search can name, with English words for them
+/// besides their label.
+const _kindWords = <String, List<String>>{
+  'natural=peak': ['summit'],
+  'natural=volcano': [],
+  'natural=saddle': [],
+  'mountain_pass=yes': [],
+  'natural=spring': [],
+  'natural=hot_spring': [],
+  'waterway=waterfall': ['falls'],
+  'natural=cave_entrance': [],
+  'natural=arch': [],
+  'natural=glacier': [],
+  'natural=rock': [],
+  'natural=stone': [],
+  'natural=cliff': [],
+  'natural=beach': [],
+  'highway=trailhead': [],
+  'tourism=camp_site': ['camping', 'campsite'],
+  'tourism=picnic_site': ['picnic area'],
+  'tourism=wilderness_hut': ['cabin'],
+  'tourism=alpine_hut': ['cabin'],
+  'amenity=shelter': [],
+  'amenity=drinking_water': ['water fountain'],
+  'amenity=water_point': [],
+  'amenity=toilets': ['toilet', 'restroom', 'bathroom', 'wc', 'outhouse'],
+  'tourism=viewpoint': ['vista', 'overlook', 'lookout'],
+  'tourism=attraction': [],
+  'man_made=observatory': [],
+  'tourism=zoo': [],
+  'tourism=theme_park': ['amusement park'],
+  'historic=mine': [],
+  'man_made=mineshaft': [],
+  'man_made=adit': [],
+  'historic=ghost_town': [],
+  'historic=ruins': [],
+  'historic=monument': [],
+  'historic=memorial': [],
+  'historic=fort': ['castle'],
+  'historic=castle': [],
+  'historic=yes': [],
+  'amenity=ranger_station': [],
+  'tourism=visitor_centre': ['visitor centre'],
+  'amenity=hospital': ['emergency room'],
+  'amenity=police': ['police station', 'sheriff'],
+  'amenity=fire_station': [],
+  'emergency=phone': ['call box'],
+  'amenity=fuel': ['gas station', 'gas', 'petrol', 'gasoline'],
+  'highway=rest_area': ['rest stop'],
+  'highway=services': ['truck stop'],
+  'tourism=museum': [],
+  'boundary=protected_area': [],
 };

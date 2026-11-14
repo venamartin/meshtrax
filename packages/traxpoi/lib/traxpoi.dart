@@ -8,5 +8,5 @@ export 'src/db/points_database.dart'
     show FeatureData, PhotoData, PlaceData, PointsDatabase, WikiData;
 export 'src/normalize.dart';
 export 'src/poi_region.dart';
-export 'src/search.dart' show GeoPoint;
+export 'src/search.dart' show GeoPoint, kindsNamed;
 export 'src/summary.dart';

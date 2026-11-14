@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'normalize.dart';
+
 /// A position in degrees.
 class GeoPoint {
   final double lat;
@@ -70,6 +72,26 @@ double wordMatch(String query, String name) {
     total += best;
   }
   return total / queryWords.length;
+}
+
+/// The kinds a search names, with how well it matches each, for a kind's
+/// [names] (its label and other words for it): every typed word must match,
+/// as for a place's name, and loosely matched kinds are left out. Nothing
+/// until three letters are typed.
+Map<String, double> kindsNamed(
+  String query,
+  Map<String, Iterable<String>> names,
+) {
+  final norm = normalizeName(query, NameRules.places);
+  if (norm.length < 3) return const {};
+  final found = <String, double>{};
+  for (final MapEntry(key: kind, value: words) in names.entries) {
+    for (final word in words) {
+      final match = wordMatch(norm, normalizeName(word, NameRules.places));
+      if (match >= 85 && match > (found[kind] ?? 0)) found[kind] = match;
+    }
+  }
+  return found;
 }
 
 /// The order of results: good matches first, then nearer ones, with a lift

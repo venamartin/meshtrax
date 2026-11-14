@@ -85,7 +85,8 @@ redirect). `norm` is the name normalized as below.
 
 A place with no name (an unnamed spring, toilet or trailhead) has
 `place.name` = `''` and no rows here: it's an icon on the map with its own
-sheet, but search never finds it by name. Features always have a name.
+sheet, and search never finds it by name, only by its kind (see Search).
+Features always have a name.
 
 ### photo
 
@@ -123,3 +124,8 @@ both sides must pass.
    and names much longer than what was typed get a small cost.
 4. **Addresses:** the house number must match exactly. The street name, city
    or ZIP may have typos.
+5. **Kinds:** a search that names a kind of place ("toilets", "gas station",
+   by the words the app gives for each kind) also gets the places of that
+   kind nearest to you, named or not. They rank by distance, and a name that
+   only repeats the kind's word ("Toilets") gets no lift for being typed in
+   full.

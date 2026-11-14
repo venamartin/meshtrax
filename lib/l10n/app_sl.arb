@@ -2635,6 +2635,7 @@
   "search_hint": "Iskanje krajev, naslovov ali koordinat",
   "search_noPlaces": "Prenesite »Zanimive točke« za regijo, da boste lahko iskali njene kraje. Koordinate delujejo tudi brez tega.",
   "search_noResults": "Ni zadetkov",
+  "search_near": "blizu {name}",
   "coordFormat_decimalDegrees": "Decimalne stopinje",
   "coordFormat_degreesMinutes": "Stopinje in minute",
   "coordFormat_dms": "Stopinje, minute, sekunde",
