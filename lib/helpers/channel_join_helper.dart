@@ -50,6 +50,9 @@ class ChannelJoinHelper {
         context,
         content: Text(l10n.link_alreadyJoined(existing.first.displayName)),
       );
+      // Tapped inside that very chat: stay put, don't stack a second copy.
+      final here = context.findAncestorWidgetOfExactType<ChannelChatScreen>();
+      if (here != null && here.channel.idKey.toLowerCase() == wanted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
