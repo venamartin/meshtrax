@@ -62,6 +62,7 @@ import '../widgets/swipe_reply_bubble.dart';
 import '../l10n/l10n.dart';
 import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../helpers/structured_message.dart';
 import '../widgets/reaction_details_sheet.dart';
 import 'telemetry_screen.dart';
 
@@ -2807,6 +2808,11 @@ class _MessageBubble extends StatelessWidget {
 
     final gifId = facts.gifId;
     final structured = facts.structured;
+    // A card hides the text around it: the mentions it was sent with go
+    // above it. A reply's quote already names who it is for.
+    final mentions = structured == null || replyInfo != null
+        ? ''
+        : StructuredMessage.leadingMentions(message.text);
     final isFailed = message.status == MessageStatus.failed;
     final warmLight = ChatColors.isLight(context);
     // Same palette as the channel chat screen: warm ChatColors in light
@@ -2935,15 +2941,26 @@ class _MessageBubble extends StatelessWidget {
                             renderGifs,
                           ),
                         ],
-                        if (structured != null)
+                        if (structured != null) ...[
+                          if (mentions.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: MessageText(
+                                text: mentions,
+                                style: TextStyle(
+                                  color: displayTextColor,
+                                  fontSize: bodyFontSize * textScale,
+                                ),
+                              ),
+                            ),
                           StructuredMessageCard(
                             message: structured,
                             textScale: textScale,
                             isOutgoing: isOutgoing,
                             // A room's own post is nobody's position.
                             senderName: isAnnouncement ? null : senderName,
-                          )
-                        else if (gifId != null)
+                          ),
+                        ] else if (gifId != null)
                           Stack(
                             children: [
                               ClipRRect(
