@@ -1569,6 +1569,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     }
     final gifId = facts.gifId;
     final structured = facts.structured;
+    // A card hides the text around it: the mentions it was sent with go
+    // above it. A reply's quote already names who it is for.
+    final mentions = structured == null || message.replyToSenderName != null
+        ? ''
+        : StructuredMessage.leadingMentions(message.text);
     // An unresolved reaction shows what it reacted with and to — never the
     // Crockford hash line, which means nothing to a reader.
     final cleanDisplayText = orphanReaction != null
@@ -1684,6 +1689,16 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                         _buildReplyPreview(context, message, textScale),
                       ],
                       if (structured != null) ...[
+                        if (mentions.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: MessageText(
+                              text: mentions,
+                              style: TextStyle(
+                                fontSize: bodyFontSize * textScale,
+                              ),
+                            ),
+                          ),
                         StructuredMessageCard(
                           message: structured,
                           textScale: textScale,
@@ -2209,8 +2224,11 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   /// down: a dialog just closed, and asking for the keyboard while Android
   /// is still hiding it leaves a black gap where the keyboard should be.
   void _insertComposerText(String text) {
-    _textController.text = text;
-    _textController.selection = TextSelection.collapsed(offset: text.length);
+    final composed = afterMention(_textController.text, text);
+    _textController.text = composed;
+    _textController.selection = TextSelection.collapsed(
+      offset: composed.length,
+    );
     setState(() => _trayOpen = false);
   }
 
@@ -2340,9 +2358,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       isScrollControlled: true,
       builder: (context) => GifPicker(
         onGifSelected: (gifId) {
-          _textController.text = GifHelper.encodeGif(
-            gifId,
-            asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+          _textController.text = afterMention(
+            _textController.text,
+            GifHelper.encodeGif(
+              gifId,
+              asLink: context.read<UiViewStateService>().sendGifsAsLinks,
+            ),
           );
         },
       ),
