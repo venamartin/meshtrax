@@ -285,7 +285,10 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
 
   Future<void> _restore(PathGraph graph) async {
     final file = await openFile(acceptedTypeGroups: const [
-      XTypeGroup(label: 'Path graph backup', extensions: ['json'])
+      XTypeGroup(
+          label: 'Path graph backup',
+          extensions: ['json'],
+          uniformTypeIdentifiers: ['public.json'])
     ]);
     if (file == null) return;
     try {

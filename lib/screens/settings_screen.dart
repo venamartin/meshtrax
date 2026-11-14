@@ -626,7 +626,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Set up the radio from a backup file'),
             onTap: () async {
               final XFile? file = await openFile(
-                acceptedTypeGroups: [const XTypeGroup(label: 'JSON', extensions: ['json'])],
+                acceptedTypeGroups: [
+                  const XTypeGroup(
+                    label: 'JSON',
+                    extensions: ['json'],
+                    uniformTypeIdentifiers: ['public.json'],
+                  ),
+                ],
               );
               if (file != null && context.mounted) {
                 _processImport(context, connector, file.path);
@@ -743,7 +749,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       if (temp.existsSync()) temp.deleteSync();
       await AppDatabase.instance.snapshotTo(temp.path);
-      if (Platform.isAndroid) {
+      if (Platform.isAndroid || Platform.isIOS) {
         savedPath = await FileSaver.instance.saveAs(
           name: name,
           file: temp,
@@ -1518,7 +1524,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.pop(context);
 
     String? savedPath;
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid || Platform.isIOS) {
       savedPath = await BackupService.exportToFile(json);
     } else {
       final FileSaveLocation? location = await getSaveLocation(
