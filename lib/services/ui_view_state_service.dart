@@ -52,6 +52,7 @@ class UiViewStateService extends ChangeNotifier {
   bool _renderGifs = true;
   bool _sendGifsAsLinks = true;
   MapCamera? _mapCamera;
+  bool _mapShownThisRun = false;
 
   /// Pinned-bar dismissals per chat: chat id → message ids the viewer closed.
   Map<String, List<String>> _dismissedPins = {};
@@ -81,9 +82,18 @@ class UiViewStateService extends ChangeNotifier {
   bool get renderGifs => _renderGifs;
   bool get sendGifsAsLinks => _sendGifsAsLinks;
 
-  /// Where the main map was last left (MapLibre zoom), for opening it with
-  /// nothing else to show.
+  /// Where the main map was last left (MapLibre zoom). Back on the map in
+  /// the same run it opens there; the first map of a run opens there only
+  /// with nothing else to show.
   MapCamera? get mapCamera => _mapCamera;
+
+  /// Whether the main map has been shown since the app started.
+  bool get mapShownThisRun => _mapShownThisRun;
+
+  /// Set once the main map has gone to your GPS position since the app
+  /// started, or you touched it before it could: it goes there by itself
+  /// once a run. Not saved.
+  bool mapWentToGps = false;
 
   /// The main map's route, kept as it changes: the quick switch puts another
   /// screen in the map's place, and the route is there when the map is back.
@@ -288,8 +298,11 @@ class UiViewStateService extends ChangeNotifier {
     unawaited(PrefsManager.instance.setBool(_keySendGifsAsLinks, value));
   }
 
-  void setMapCamera(MapCamera value) {
+  /// Keeps where the main map is; with [save], on the device too.
+  void setMapCamera(MapCamera value, {bool save = true}) {
     _mapCamera = value;
+    _mapShownThisRun = true;
+    if (!save) return;
     unawaited(
       PrefsManager.instance.setStringList(_keyMapCamera, [
         '${value.center.latitude}',

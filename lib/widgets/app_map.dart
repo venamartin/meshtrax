@@ -29,6 +29,10 @@ import 'charts_notice_dialog.dart';
 /// screen overrides them. See docs/technical/offline-maps-roadmap.md, "App
 /// architecture".
 class AppMap extends StatefulWidget {
+  /// Where no region is downloaded, the map stops zooming in here: the
+  /// base map's detail ends (about 25 km across a phone; Martin).
+  static const baseMapZoom = 10.0;
+
   final List<MapOverlay> overlays;
   final OfflineMapController? controller;
   final MapCamera? initialCamera;
@@ -95,17 +99,13 @@ class AppMap extends StatefulWidget {
 }
 
 class _AppMapState extends State<AppMap> {
-  /// Where no region is downloaded, the map stops zooming in here: the
-  /// base map's detail ends (about 25 km across a phone; Martin).
-  static const _baseMapZoom = 10.0;
-
   /// Whether installed packs cover the view centre; null until known.
   bool? _covered;
 
   /// The zoom cap while [_covered] is false: the base map's detail, or the
   /// zoom the view had when it left the downloaded regions, so panning off
   /// one never zooms the map out.
-  double _uncoveredMaxZoom = _baseMapZoom;
+  double _uncoveredMaxZoom = AppMap.baseMapZoom;
   double _zoom = 0;
   MapStyleState? _style;
 
@@ -207,9 +207,9 @@ class _AppMapState extends State<AppMap> {
       final c?
           when widget.compact &&
               !widget.exact &&
-              c.zoom > _baseMapZoom &&
+              c.zoom > AppMap.baseMapZoom &&
               !maps.downloadedAt(type, c.center) =>
-        c.copyWith(zoom: _baseMapZoom),
+        c.copyWith(zoom: AppMap.baseMapZoom),
       final c => c,
     };
 
@@ -271,7 +271,7 @@ class _AppMapState extends State<AppMap> {
           onCoverageChanged: (covered) => setState(() {
             _covered = covered;
             if (!covered) {
-              _uncoveredMaxZoom = math.max(_baseMapZoom, _zoom);
+              _uncoveredMaxZoom = math.max(AppMap.baseMapZoom, _zoom);
               _atZoomStop = _zoom >= _uncoveredMaxZoom - 0.5;
             }
           }),

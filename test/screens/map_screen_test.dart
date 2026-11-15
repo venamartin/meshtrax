@@ -41,7 +41,13 @@ class _FakeConnector extends MeshCoreConnector {
   _FakeConnector({required this.nodes, this.self, this.gps});
 
   final List<Contact> nodes;
-  final ll.LatLng? self;
+  ll.LatLng? self;
+
+  /// The radio reports a new position of its own.
+  void moveSelf(ll.LatLng? position) {
+    self = position;
+    notifyListeners();
+  }
 
   /// The radio's `gps` setting: null when it has no GPS module.
   String? gps;
@@ -236,6 +242,7 @@ void main() {
     Widget screen = const MapScreen(),
     RoutingService? routing,
     Size view = const Size(800, 900),
+    UiViewStateService? viewState,
   }) async {
     tester.view.physicalSize = view;
     tester.view.devicePixelRatio = 1;
@@ -252,7 +259,10 @@ void main() {
                   ..setMapShowMarkers(true)
                   ..setMapShowGuessedLocations(guessedLocationsOn),
           ),
-          ChangeNotifierProvider(create: (_) => UiViewStateService()),
+          if (viewState != null)
+            ChangeNotifierProvider.value(value: viewState)
+          else
+            ChangeNotifierProvider(create: (_) => UiViewStateService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           ChangeNotifierProvider.value(value: PathGraphService()),
           if (routing != null) ChangeNotifierProvider.value(value: routing),
@@ -1423,6 +1433,120 @@ void main() {
       _FakeConnector(nodes: const [], self: const ll.LatLng(0, 0)),
     );
     expect(overlays(tester).where((o) => o.id == 'self'), isEmpty);
+  });
+
+  group('where the map opens', () {
+    final contact = _node('Contact', advTypeChat, 3, 37.3, -122.0);
+    const gps = ll.LatLng(41.81, -71.42);
+    // Leaves the map for another screen, as the quick switch does.
+    Future<void> leave(WidgetTester tester) async {
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 2));
+    }
+
+    testWidgets('back on the map in the same run: where it was left', (
+      tester,
+    ) async {
+      final viewState = UiViewStateService();
+      final connector = _FakeConnector(nodes: [contact]);
+      await pumpMap(tester, connector, viewState: viewState);
+      expect(camera(tester).center.latitude, closeTo(37.3, 0.01));
+      tester
+          .widget<AppMap>(find.byType(AppMap))
+          .controller!
+          .move(const LatLng(40, -100), zoom: 6);
+      await tester.pump();
+      await leave(tester);
+
+      await pumpMap(tester, connector, viewState: viewState);
+      expect(camera(tester).center.latitude, closeTo(40, 1e-6));
+      expect(camera(tester).center.longitude, closeTo(-100, 1e-6));
+      expect(camera(tester).zoom, closeTo(6, 1e-6));
+    });
+
+    testWidgets("the first map of a run opens on the radio's GPS position", (
+      tester,
+    ) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: [contact], self: gps, gps: '1'),
+      );
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+      expect(camera(tester).center.longitude, closeTo(-71.42, 1e-6));
+      expect(
+        camera(tester).zoom,
+        AppMap.baseMapZoom,
+        reason: 'nothing downloaded there: as close as My location goes',
+      );
+    });
+
+    testWidgets('a fix that comes later moves the map there, once a run', (
+      tester,
+    ) async {
+      final viewState = UiViewStateService();
+      final connector = _FakeConnector(nodes: [contact], gps: '1');
+      await pumpMap(tester, connector, viewState: viewState);
+      expect(camera(tester).center.latitude, closeTo(37.3, 0.01));
+
+      connector.moveSelf(gps);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+
+      // From then on the map is yours: it doesn't follow, here or later.
+      connector.moveSelf(const ll.LatLng(42.5, -72.5));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+      await leave(tester);
+      await pumpMap(tester, connector, viewState: viewState);
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+    });
+
+    testWidgets('a map touched before the fix stays where you put it', (
+      tester,
+    ) async {
+      final connector = _FakeConnector(nodes: [contact], gps: '1');
+      await pumpMap(tester, connector);
+      await tester.drag(find.byType(AppMap), const Offset(80, 0));
+      await tester.pump(const Duration(milliseconds: 200));
+      final moved = camera(tester).center;
+
+      connector.moveSelf(gps);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(camera(tester).center.latitude, closeTo(moved.latitude, 1e-6));
+      expect(camera(tester).center.longitude, closeTo(moved.longitude, 1e-6));
+    });
+
+    testWidgets('GPS off: the position typed into the radio moves nothing', (
+      tester,
+    ) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: [contact], self: gps, gps: '0'),
+      );
+      expect(camera(tester).center.latitude, closeTo(37.3, 0.01));
+    });
+
+    testWidgets("a map pushed to show a point keeps the main map's view", (
+      tester,
+    ) async {
+      final viewState = UiViewStateService();
+      final connector = _FakeConnector(nodes: [contact]);
+      await pumpMap(tester, connector, viewState: viewState);
+      await leave(tester);
+      final main = viewState.mapCamera!;
+
+      await pumpMap(
+        tester,
+        connector,
+        viewState: viewState,
+        screen: const MapScreen(highlightPosition: ll.LatLng(45, -110)),
+      );
+      await leave(tester);
+      expect(viewState.mapCamera!.center.latitude, main.center.latitude);
+    });
   });
 
   testWidgets('no zoom buttons on phones: they pinch', (tester) async {
