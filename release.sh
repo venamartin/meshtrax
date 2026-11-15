@@ -10,19 +10,21 @@ fi
 
 # Default flag values
 BUILD_APK=false
-BUILD_IOS=false
 BUILD_WINDOWS=false
 BUILD_LINUX=false
 BUILD_MSIX=false
 PUBLISH_PLAY=false
 PUBLISH_MSSTORE=false
+PUBLISH_IOS=false
+PUBLISH_MACOS=false
 APPEND_ONLY=false
 
 # 1. Parse Command Line Arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --apk) BUILD_APK=true ;;
-        --ios) BUILD_IOS=true ;;
+        --ios) PUBLISH_IOS=true ;;
+        --macos) PUBLISH_MACOS=true ;;
         --windows) BUILD_WINDOWS=true ;;
         --linux) BUILD_LINUX=true ;;
         --msix) BUILD_WINDOWS=true; BUILD_MSIX=true ;;
@@ -35,15 +37,20 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if at least one platform was selected
-if [ "$BUILD_APK" = false ] && [ "$BUILD_IOS" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ] && [ "$PUBLISH_PLAY" = false ] && [ "$PUBLISH_MSSTORE" = false ]; then
-    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux, ./release.sh --play, ./release.sh --msstore)"
+if [ "$BUILD_APK" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" = false ] && [ "$PUBLISH_PLAY" = false ] && [ "$PUBLISH_MSSTORE" = false ] && [ "$PUBLISH_IOS" = false ] && [ "$PUBLISH_MACOS" = false ]; then
+    echo "ERROR: Please specify a platform (e.g., ./release.sh --apk, ./release.sh --windows, ./release.sh --msix, ./release.sh --linux, ./release.sh --play, ./release.sh --msstore, ./release.sh --ios, ./release.sh --macos)"
     exit 1
+fi
+
+PUBLISH_APPLE=false
+if [ "$PUBLISH_IOS" = true ] || [ "$PUBLISH_MACOS" = true ]; then
+    PUBLISH_APPLE=true
 fi
 
 # Store-only runs (e.g. ./release.sh --play or --msstore to retry a failed
 # upload) build and publish to the stores without touching GitHub releases or tags.
 GITHUB_RELEASE=false
-if [ "$BUILD_APK" = true ] || [ "$BUILD_IOS" = true ] || [ "$BUILD_WINDOWS" = true ] || [ "$BUILD_LINUX" = true ]; then
+if [ "$BUILD_APK" = true ] || [ "$BUILD_WINDOWS" = true ] || [ "$BUILD_LINUX" = true ]; then
     GITHUB_RELEASE=true
 fi
 
@@ -214,7 +221,7 @@ collect_release_notes() {
         open_editor=true
 
         notes=$(grep -v '^[[:space:]]*#' "$NOTES_FILE" | tr -d '\r' | sed -e '/[^[:space:]]/,$!d')
-        length=$(printf '%s' "$notes" | LC_ALL=C.UTF-8 wc -m)
+        length=$(printf '%s' "$notes" | LC_ALL=C.UTF-8 wc -m | tr -d ' ')
         if [ -z "$notes" ]; then
             echo "ERROR: The store notes are empty."
         elif [ "$length" -gt 500 ]; then
@@ -224,6 +231,91 @@ collect_release_notes() {
             return 0
         fi
     done
+}
+
+# Archives the App Store build into Xcode's Organizer, so a failed upload can
+# also be finished by hand there (Distribute App).
+archive_apple() {
+    local platform=$1 name=iOS
+    [ "$platform" = macos ] && name=macOS
+    local archive="$HOME/Library/Developer/Xcode/Archives/$(date +%F)/MeshTrax $name $VERSION ($BUILD_NUMBER).xcarchive"
+
+    echo "BUILD: Archiving $name v$VERSION ($BUILD_NUMBER) for the App Store..."
+    flutter build "$platform" --release --config-only "${GIPHY_DEFINE[@]}" || return 1
+    rm -rf "$archive"
+    xcodebuild archive -quiet -workspace "$platform/Runner.xcworkspace" -scheme Runner \
+        -configuration Release -destination "generic/platform=$name" -archivePath "$archive" \
+        -allowProvisioningUpdates || return 1
+
+    local plist="$archive/Info.plist" built
+    built="$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$plist")+$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleVersion' "$plist")"
+    if [ "$built" != "$VERSION+$BUILD_NUMBER" ]; then
+        echo "ERROR: The $name archive is $built, not $VERSION+$BUILD_NUMBER from pubspec.yaml."
+        return 1
+    fi
+
+    # The Mac App Store requires the sandbox, and USB radios need the serial
+    # entitlement inside it (a temporary-exception path never matched a port).
+    if [ "$platform" = macos ]; then
+        local entitlements
+        entitlements=$(codesign -d --entitlements - --xml "$archive/Products/Applications/MeshTrax.app" 2>/dev/null)
+        for key in com.apple.security.app-sandbox com.apple.security.device.serial; do
+            if ! grep -q "$key" <<< "$entitlements"; then
+                echo "ERROR: The macOS archive is missing the $key entitlement."
+                return 1
+            fi
+        done
+    fi
+
+    echo "FILE: $archive (App Store only, not GitHub)"
+    if [ "$platform" = ios ]; then
+        IOS_ARCHIVE="$archive"
+    else
+        MACOS_ARCHIVE="$archive"
+        echo "TESTING: Try the Mac build before the upload: open \"$archive/Products/Applications/MeshTrax.app\""
+    fi
+}
+
+# Uploads with the Apple account signed in under Xcode > Settings > Accounts.
+# Nothing is submitted for review: that, the version and its What's New are
+# done in App Store Connect.
+upload_apple() {
+    local name=$1 archive=$2 out="$DIST_DIR/appstore-$1"
+    echo "PUBLISH: Uploading $name v$VERSION ($BUILD_NUMBER) to App Store Connect..."
+    rm -rf "$out"
+    xcodebuild -exportArchive -archivePath "$archive" \
+        -exportOptionsPlist tool/ExportOptions-appstore.plist \
+        -exportPath "$out" -allowProvisioningUpdates
+    if [ $? -ne 0 ]; then
+        echo "ERROR: App Store Connect upload failed for $name."
+        echo "       On \"No Accounts\", \"Failed to Use Accounts\" or \"App Store Connect access ... is required\","
+        echo "       sign in again under Xcode > Settings > Accounts, then upload the same archive:"
+        echo "       xcodebuild -exportArchive -archivePath \"$archive\" -exportOptionsPlist tool/ExportOptions-appstore.plist -exportPath \"$out\" -allowProvisioningUpdates"
+        echo "       or use Distribute App in Xcode's Organizer."
+        return 1
+    fi
+}
+
+# Uploads only on a y, so the archives can be tried first. Anything else
+# leaves them in the Organizer and counts as a failed store.
+publish_apple() {
+    echo "PROMPT: Upload v$VERSION ($BUILD_NUMBER) to App Store Connect? (y/n)"
+    read -r UPLOAD_APPLE
+    if [ "$UPLOAD_APPLE" != "y" ]; then
+        echo "INFO: Not uploaded. The archives stay in Xcode's Organizer (Distribute App)."
+        return 1
+    fi
+    local failed=0
+    if [ "$PUBLISH_IOS" = true ]; then
+        upload_apple iOS "$IOS_ARCHIVE" || failed=1
+    fi
+    if [ "$PUBLISH_MACOS" = true ]; then
+        upload_apple macOS "$MACOS_ARCHIVE" || failed=1
+    fi
+    [ "$failed" -eq 0 ] || return 1
+    grep -v '^[[:space:]]*#' "$NOTES_FILE" | tr -d '\r' | sed -e '/[^[:space:]]/,$!d' | LC_ALL=C.UTF-8 pbcopy
+    echo "NEXT: In App Store Connect: + version $VERSION, paste What's New (on the clipboard),"
+    echo "      Add Build $BUILD_NUMBER once it has processed, Save, Add for Review, Submit."
 }
 
 # Each store is tried even when another failed, so a retry names only the
@@ -245,6 +337,9 @@ publish_stores() {
             echo "ERROR: Microsoft Store submission failed. Retry the Store alone with: ./release.sh --msstore"
             failed=1
         fi
+    fi
+    if [ "$PUBLISH_APPLE" = true ]; then
+        publish_apple || failed=1
     fi
     if [ "$failed" -ne 0 ] && [ "$GITHUB_RELEASE" = true ]; then
         echo "       The GitHub release is done; retry only the failed store."
@@ -364,7 +459,11 @@ if [ "$PUBLISH_MSSTORE" = true ]; then
         exit 1
     fi
 fi
-if [ "$PUBLISH_PLAY" = true ] || [ "$PUBLISH_MSSTORE" = true ]; then
+if [ "$PUBLISH_APPLE" = true ] && ! command -v xcodebuild &> /dev/null; then
+    echo "ERROR: --ios and --macos need a Mac with Xcode."
+    exit 1
+fi
+if [ "$PUBLISH_PLAY" = true ] || [ "$PUBLISH_MSSTORE" = true ] || [ "$PUBLISH_APPLE" = true ]; then
     collect_release_notes
 fi
 
@@ -394,6 +493,17 @@ bash tool/strip_integration_registrant.sh
 
 # Sets GIPHY_DEFINE from the untracked giphy.key when present.
 source tool/giphy_define.sh
+
+if [ "$PUBLISH_APPLE" = true ] && [ ${#GIPHY_DEFINE[@]} -eq 0 ]; then
+    echo "ERROR: App Store builds need the project's Giphy key in giphy.key."
+    exit 1
+fi
+if [ "$PUBLISH_IOS" = true ]; then
+    archive_apple ios || { echo "ERROR: iOS App Store archive failed."; exit 1; }
+fi
+if [ "$PUBLISH_MACOS" = true ]; then
+    archive_apple macos || { echo "ERROR: macOS App Store archive failed."; exit 1; }
+fi
 
 if [ "$PUBLISH_PLAY" = true ]; then
     # buildaab.sh refuses to build without the upload keystore, which Play needs.

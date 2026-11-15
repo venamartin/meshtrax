@@ -45,5 +45,6 @@ Used when publishing MeshTrax to the app stores.
 | Page | What it covers |
 |---|---|
 | [App Review notes](app-review-notes.md) | Ready-to-paste text for Apple's review forms |
+| [App Store](store/app-store-notes.md) | iOS and Mac App Store releases |
 | [Google Play](store/google-play-notes.md) | Setting up and running Play releases |
 | [Microsoft Store](store/microsoft-store-notes.md) | Building and submitting the Windows package |
