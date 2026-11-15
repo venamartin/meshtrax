@@ -282,10 +282,24 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   );
 
   @override
+  Offset toScreen(LatLng point) => _map.camera.latLngToScreenOffset(_ll(point));
+
+  @override
   void fit(MapFit fit) {
     if (fit.isSinglePoint) {
-      // A fit without extent would zoom to the limit; clamp it instead.
-      move(fit.coordinates.first, fit.maxZoom ?? widget.maxZoom);
+      // A fit without extent would zoom to the limit; clamp it instead, with
+      // the point in the middle of what the padding leaves.
+      final zoom = (fit.maxZoom ?? widget.maxZoom) + _zoomOffset;
+      final p = fit.padding;
+      final shift = Offset((p.left - p.right) / 2, (p.top - p.bottom) / 2);
+      final camera = _map.camera;
+      _map.move(
+        camera.unprojectAtZoom(
+          camera.projectAtZoom(_ll(fit.coordinates.first), zoom) - shift,
+          zoom,
+        ),
+        zoom,
+      );
     } else {
       _map.fitCamera(_cameraFit(fit));
     }

@@ -52,6 +52,7 @@ class MapFit {
 abstract interface class OfflineMapDelegate {
   MapCamera get camera;
   LatLngBounds get visibleBounds;
+  Offset toScreen(LatLng point);
   void move(LatLng center, double? zoom);
   void fit(MapFit fit);
 }
@@ -76,6 +77,10 @@ class OfflineMapController extends ChangeNotifier {
   /// The visible area; null until the map is ready.
   LatLngBounds? get visibleBounds => _delegate?.visibleBounds;
 
+  /// Where [point] is on the map, in logical pixels from its top left; null
+  /// until the map is ready.
+  Offset? toScreen(LatLng point) => _delegate?.toScreen(point);
+
   void move(LatLng center, {double? zoom}) => _run((d) => d.move(center, zoom));
 
   void fitBounds(
@@ -94,7 +99,8 @@ class OfflineMapController extends ChangeNotifier {
     ),
   );
 
-  /// Frames [points]; does nothing for an empty list.
+  /// Frames [points]; does nothing for an empty list. A single point goes in
+  /// the middle of what [padding] leaves, at [maxZoom].
   void fitPoints(
     List<LatLng> points, {
     EdgeInsets padding = const EdgeInsets.all(32),

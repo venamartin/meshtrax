@@ -207,6 +207,19 @@ void main() {
     controller.fitPoints(const [_center], maxZoom: 11);
     await tester.pump();
     expect(controller.camera!.zoom, closeTo(11, 1e-6));
+    expect(controller.toScreen(_center)!.dy, closeTo(300, 0.5));
+
+    // Padding moves the point to the middle of what it leaves, as above a
+    // sheet over the lower 200 px.
+    controller.fitPoints(
+      const [_center],
+      maxZoom: 11,
+      padding: const EdgeInsets.only(bottom: 200),
+    );
+    await tester.pump();
+    expect(controller.camera!.zoom, closeTo(11, 1e-6));
+    expect(controller.toScreen(_center)!.dx, closeTo(400, 0.5));
+    expect(controller.toScreen(_center)!.dy, closeTo(200, 0.5));
 
     // A tight box respects maxZoom too.
     controller.fitBounds(
