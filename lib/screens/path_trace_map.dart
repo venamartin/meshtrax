@@ -16,6 +16,7 @@ import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/utils/app_logger.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/path_selection_dialog.dart';
+import 'package:meshtrax/widgets/pull_down_card.dart';
 import 'package:meshtrax/widgets/snr_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
@@ -758,90 +759,67 @@ class _PathTraceMapScreenState extends State<PathTraceMapScreen> {
     final estimatedHeight = 72.0 + ((pathTraceData.pathData.length + 1) * 76.0);
     final cardHeight = max(120.0, min(maxHeight, estimatedHeight));
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: SizedBox(
-        height: cardHeight,
-        child: Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  '${l10n.channelPath_repeaterHops} ${formatDistance(_pathDistanceMeters, isImperial: isImperial)}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: pathTraceData.pathData.isEmpty
-                    ? Center(
-                        child: Text(l10n.channelPath_noHopDetailsAvailable),
-                      )
-                    : Scrollbar(
-                        controller: _scrollController,
-                        child: ListView.separated(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: pathTraceData.pathData.length + 1,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final snrUi = snrUiFromSNR(
-                              index < pathTraceData.snrData.length
-                                  ? pathTraceData.snrData[index]
-                                  : null,
-                              context.read<MeshCoreConnector>().currentSf,
-                            );
-                            return Column(
-                              children: [
-                                ListTile(
-                                  leading:
-                                      index >= pathTraceData.snrData.length / 2
-                                      ? Icon(Icons.call_received)
-                                      : Icon(Icons.call_made),
-                                  title: Text(
-                                    formatDirectionText(pathTraceData, index),
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  subtitle: Text(
-                                    formatDirectionSubText(
-                                      pathTraceData,
-                                      index,
-                                    ),
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  trailing: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        snrUi.icon,
-                                        color: snrUi.color,
-                                        size: 18.0,
-                                      ),
-                                      Text(
-                                        snrUi.text,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: snrUi.color,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  onTap: () {
-                                    // Handle item tap
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-              ),
-            ],
-          ),
+    return PullDownCard(
+      openHeight: cardHeight,
+      header: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Text(
+          '${l10n.channelPath_repeaterHops} ${formatDistance(_pathDistanceMeters, isImperial: isImperial)}',
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
+      child: pathTraceData.pathData.isEmpty
+          ? Center(child: Text(l10n.channelPath_noHopDetailsAvailable))
+          : Scrollbar(
+              controller: _scrollController,
+              child: ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: pathTraceData.pathData.length + 1,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final snrUi = snrUiFromSNR(
+                    index < pathTraceData.snrData.length
+                        ? pathTraceData.snrData[index]
+                        : null,
+                    context.read<MeshCoreConnector>().currentSf,
+                  );
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: index >= pathTraceData.snrData.length / 2
+                            ? Icon(Icons.call_received)
+                            : Icon(Icons.call_made),
+                        title: Text(
+                          formatDirectionText(pathTraceData, index),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        subtitle: Text(
+                          formatDirectionSubText(pathTraceData, index),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(snrUi.icon, color: snrUi.color, size: 18.0),
+                            Text(
+                              snrUi.text,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: snrUi.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          // Handle item tap
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
     );
   }
 }
