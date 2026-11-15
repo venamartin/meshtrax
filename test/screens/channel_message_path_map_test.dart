@@ -127,5 +127,24 @@ void main() {
     final mapRect = tester.getRect(find.byType(AppMap));
     final listRect = tester.getRect(find.textContaining('Hilltop').last);
     expect(listRect.top, greaterThanOrEqualTo(mapRect.bottom));
+
+    // Its header slides it down, giving the map the room; a tap brings it
+    // back.
+    Future<void> settle() async {
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    final header = find.textContaining('Repeater Hops');
+    await tester.drag(header, const Offset(0, 400));
+    await settle();
+    expect(
+      tester.getRect(find.byType(AppMap)).height,
+      greaterThan(mapRect.height + 100),
+    );
+    await tester.tap(header);
+    await settle();
+    expect(tester.getRect(find.byType(AppMap)).height, mapRect.height);
   });
 }

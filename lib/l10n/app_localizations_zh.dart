@@ -5936,6 +5936,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get map_search => '搜索';
 
   @override
+  String get map_fullScreen => '全屏';
+
+  @override
+  String get map_leaveFullScreen => '退出全屏';
+
+  @override
+  String get map_fullScreenHintBack => '要退出全屏，请按返回键或点按同一按钮。';
+
+  @override
+  String get map_fullScreenHintTap => '要退出全屏，请点按同一按钮。';
+
+  @override
+  String get map_fullScreenHintKey => '要退出全屏，请按 Esc 键或点击同一按钮。';
+
+  @override
   String get route_fromHere => '从这里出发';
 
   @override

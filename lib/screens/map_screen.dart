@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/helpers/guessed_location_helper.dart';
@@ -115,6 +116,10 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
 
+  /// The main map without the title bar and the tabs, and on a phone without
+  /// its status and navigation bars. Never saved: the app starts without it.
+  bool _fullScreen = false;
+
   // Offline routing: where to and from (null: your position), and the route
   // found.
   ({String name, LatLng point})? _routeTo;
@@ -154,6 +159,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
     _loadRemovedMarkers();
     _viewState = context.read<UiViewStateService>();
     _keepView =
@@ -188,7 +194,63 @@ class _MapScreenState extends State<MapScreen> {
     _connector.removeSelfPositionViewer();
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    if (_fullScreen && _phone) unawaited(_showSystemBars());
     super.dispose();
+  }
+
+  static bool get _phone =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  /// The phone's status and navigation bars as they are by default.
+  static Future<void> _showSystemBars() => SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+
+  /// Full screen on or off. On the way in, a hint says how to get out: the
+  /// same button, or Back on Android and Esc on a computer.
+  void _setFullScreen(bool on) {
+    if (on == _fullScreen) return;
+    setState(() => _fullScreen = on);
+    if (_phone) {
+      unawaited(
+        on
+            ? SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky)
+            : _showSystemBars(),
+      );
+    }
+    if (!on) return;
+    final l10n = context.l10n;
+    showDismissibleSnackBar(
+      context,
+      duration: const Duration(seconds: 3),
+      content: Text(switch (defaultTargetPlatform) {
+        TargetPlatform.android => l10n.map_fullScreenHintBack,
+        TargetPlatform.iOS => l10n.map_fullScreenHintTap,
+        _ => l10n.map_fullScreenHintKey,
+      }),
+    );
+  }
+
+  /// Esc leaves full screen; F11 turns it on and off on Windows and Linux,
+  /// as it does in their browsers. Only while the map itself is in front.
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent || !_isMainMap) return false;
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return false;
+    if (event.logicalKey == LogicalKeyboardKey.escape && _fullScreen) {
+      _setFullScreen(false);
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.f11 &&
+        (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.linux)) {
+      _setFullScreen(!_fullScreen);
+      return true;
+    }
+    return false;
   }
 
   /// My location: the radio's GPS position. With the GPS off, offers to turn
@@ -561,135 +623,134 @@ class _MapScreenState extends State<MapScreen> {
         final routeAtSide = screen.width >= 600 && screen.width > screen.height;
 
         return PopScope(
-          // Back lowers a raised route sheet, then closes the route, before
-          // anything else.
-          canPop: allowBack && _routeTo == null,
+          // Back leaves full screen, then lowers a raised route sheet, then
+          // closes the route, before anything else.
+          canPop: allowBack && _routeTo == null && !_fullScreen,
           onPopInvokedWithResult: (didPop, _) {
-            if (didPop || _routeTo == null) return;
+            if (didPop) return;
+            if (_fullScreen) return _setFullScreen(false);
+            if (_routeTo == null) return;
             if (!(_sheetKey.currentState?.lower() ?? false)) _clearRoute();
           },
           child: Scaffold(
-            appBar: AppBar(
-              // The map needs no name, and the room goes to the map; picking
-              // a position still says what to do.
-              title: AppBarTitle(
-                widget.pickPosition ? context.l10n.map_pickPositionHint : '',
-                subtitle: false,
-              ),
-              centerTitle: true,
-              automaticallyImplyLeading: isPoiLink,
-              actions: [
-                if (!widget.pickPosition) ...[
-                  const GpsStatusButton(),
-                  const LocationSharingButton(),
-                ],
-                if (!_isBuildingPathTrace && !widget.pickPosition)
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    tooltip: context.l10n.map_search,
-                    onPressed: () => _openSearch(
-                      connector,
-                      selfPosition,
-                      settings.unitSystem,
+            appBar: _fullScreen
+                ? null
+                : AppBar(
+                    // The map needs no name, and the room goes to the map; picking
+                    // a position still says what to do.
+                    title: AppBarTitle(
+                      widget.pickPosition
+                          ? context.l10n.map_pickPositionHint
+                          : '',
+                      subtitle: false,
                     ),
-                  ),
-                if (!_isBuildingPathTrace)
-                  IconButton(
-                    icon: const Icon(Icons.radar),
-                    onPressed: () => _startPath(selfPosition),
-                    tooltip: context.l10n.contacts_pathTrace,
-                  ),
-                if (!_isBuildingPathTrace)
-                  IconButton(
-                    icon: const LosIcon(),
-                    onPressed: () {
-                      final candidates = <LineOfSightEndpoint>[];
-                      if (selfPosition != null) {
-                        candidates.add(
-                          LineOfSightEndpoint(
-                            label: context.l10n.pathTrace_you,
-                            point: selfPosition,
-                            color: Colors.teal,
-                            icon: Icons.person_pin_circle,
-                          ),
-                        );
-                      }
-                      final sortedContacts = List.of(contactsWithLocation)
-                        ..sort(
-                          (a, b) => a.name.toLowerCase().compareTo(
-                            b.name.toLowerCase(),
-                          ),
-                        );
-                      for (final c in sortedContacts) {
-                        candidates.add(
-                          LineOfSightEndpoint(
-                            label: c.name,
-                            point: LatLng(c.latitude!, c.longitude!),
-                            color: _getNodeColor(c.type),
-                            icon: _getNodeIcon(c.type),
-                          ),
-                        );
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LineOfSightMapScreen(
-                            title: context.l10n.map_losScreenTitle,
-                            candidates: candidates,
-                          ),
+                    centerTitle: true,
+                    automaticallyImplyLeading: isPoiLink,
+                    actions: [
+                      if (!widget.pickPosition) ...[
+                        const GpsStatusButton(),
+                        const LocationSharingButton(),
+                      ],
+                      if (!_isBuildingPathTrace)
+                        IconButton(
+                          icon: const Icon(Icons.radar),
+                          onPressed: () => _startPath(selfPosition),
+                          tooltip: context.l10n.contacts_pathTrace,
                         ),
-                      );
-                    },
-                    tooltip: context.l10n.map_lineOfSight,
-                  ),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
-                    if (!PlatformInfo.isWeb)
-                      PopupMenuItem(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.download_for_offline_outlined),
-                            const SizedBox(width: 8),
-                            Text(context.l10n.offlineMaps_title),
-                          ],
+                      if (!_isBuildingPathTrace)
+                        IconButton(
+                          icon: const LosIcon(),
+                          onPressed: () {
+                            final candidates = <LineOfSightEndpoint>[];
+                            if (selfPosition != null) {
+                              candidates.add(
+                                LineOfSightEndpoint(
+                                  label: context.l10n.pathTrace_you,
+                                  point: selfPosition,
+                                  color: Colors.teal,
+                                  icon: Icons.person_pin_circle,
+                                ),
+                              );
+                            }
+                            final sortedContacts = List.of(contactsWithLocation)
+                              ..sort(
+                                (a, b) => a.name.toLowerCase().compareTo(
+                                  b.name.toLowerCase(),
+                                ),
+                              );
+                            for (final c in sortedContacts) {
+                              candidates.add(
+                                LineOfSightEndpoint(
+                                  label: c.name,
+                                  point: LatLng(c.latitude!, c.longitude!),
+                                  color: _getNodeColor(c.type),
+                                  icon: _getNodeIcon(c.type),
+                                ),
+                              );
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LineOfSightMapScreen(
+                                  title: context.l10n.map_losScreenTitle,
+                                  candidates: candidates,
+                                ),
+                              ),
+                            );
+                          },
+                          tooltip: context.l10n.map_lineOfSight,
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const OfflineMapsScreen(),
+                      PopupMenuButton(
+                        itemBuilder: (context) => [
+                          if (!PlatformInfo.isWeb)
+                            PopupMenuItem(
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.download_for_offline_outlined,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(context.l10n.offlineMaps_title),
+                                ],
+                              ),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const OfflineMapsScreen(),
+                                ),
+                              ),
+                            ),
+                          PopupMenuItem(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.logout, color: Colors.red),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.common_disconnect),
+                              ],
+                            ),
+                            onTap: () => _disconnect(context, connector),
                           ),
-                        ),
-                      ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.logout, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.common_disconnect),
+                          PopupMenuItem(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.settings),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.settings_title),
+                              ],
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SettingsScreen(),
+                              ),
+                            ),
+                          ),
                         ],
+                        icon: const Icon(Icons.more_vert),
                       ),
-                      onTap: () => _disconnect(context, connector),
-                    ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.settings),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.settings_title),
-                        ],
-                      ),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
-                  icon: const Icon(Icons.more_vert),
-                ),
-              ],
-            ),
+                    ],
+                  ),
             // Always a row, so that the map keeps its state when a route
             // moves between the side and the bottom.
             body: Row(
@@ -842,7 +903,7 @@ class _MapScreenState extends State<MapScreen> {
             bottomSheet: _routeTo == null || routeAtSide
                 ? null
                 : _buildRouteSheet(settingsService, selfPosition, side: false),
-            bottomNavigationBar: isPoiLink
+            bottomNavigationBar: isPoiLink || _fullScreen
                 ? null
                 : QuickSwitchBar(
                     selectedIndex: 1,
@@ -856,6 +917,17 @@ class _MapScreenState extends State<MapScreen> {
                   ? () => unawaited(_myLocation(connector, selfPosition))
                   : null,
               gpsOff: !connector.gpsOn,
+              onSearch: !_isBuildingPathTrace && !widget.pickPosition
+                  ? () => _openSearch(
+                      connector,
+                      selfPosition,
+                      settings.unitSystem,
+                    )
+                  : null,
+              onFullScreen: _isMainMap
+                  ? () => _setFullScreen(!_fullScreen)
+                  : null,
+              fullScreen: _fullScreen,
               onLayers: () => showMapLayersSheet(
                 context,
                 places: !widget.pickPosition,

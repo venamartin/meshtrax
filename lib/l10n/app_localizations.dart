@@ -10921,6 +10921,36 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get map_search;
 
+  /// No description provided for @map_fullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen'**
+  String get map_fullScreen;
+
+  /// No description provided for @map_leaveFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave full screen'**
+  String get map_leaveFullScreen;
+
+  /// No description provided for @map_fullScreenHintBack.
+  ///
+  /// In en, this message translates to:
+  /// **'To leave full screen, press Back or tap the same button.'**
+  String get map_fullScreenHintBack;
+
+  /// No description provided for @map_fullScreenHintTap.
+  ///
+  /// In en, this message translates to:
+  /// **'To leave full screen, tap the same button.'**
+  String get map_fullScreenHintTap;
+
+  /// No description provided for @map_fullScreenHintKey.
+  ///
+  /// In en, this message translates to:
+  /// **'To leave full screen, press Esc or click the same button.'**
+  String get map_fullScreenHintKey;
+
   /// No description provided for @route_fromHere.
   ///
   /// In en, this message translates to:

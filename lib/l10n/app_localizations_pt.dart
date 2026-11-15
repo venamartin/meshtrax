@@ -6328,6 +6328,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get map_search => 'Pesquisar';
 
   @override
+  String get map_fullScreen => 'Tela cheia';
+
+  @override
+  String get map_leaveFullScreen => 'Sair da tela cheia';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Para sair da tela cheia, pressione Voltar ou toque no mesmo botão.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Para sair da tela cheia, toque no mesmo botão.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Para sair da tela cheia, pressione Esc ou clique no mesmo botão.';
+
+  @override
   String get route_fromHere => 'Trajeto a partir daqui';
 
   @override

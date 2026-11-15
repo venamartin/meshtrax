@@ -21,6 +21,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/path_resolver.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/app_map.dart';
+import '../widgets/pull_down_card.dart';
 
 class ChannelMessagePathScreen extends StatelessWidget {
   final ChannelMessage message;
@@ -66,6 +67,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: AdaptiveAppBarTitle(l10n.channelPath_title),
+            centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.radar_outlined),
@@ -414,6 +416,7 @@ class _ChannelMessagePathMapScreenState
         return Scaffold(
           appBar: AppBar(
             title: AdaptiveAppBarTitle(context.l10n.channelPath_mapTitle),
+            centerTitle: true,
           ),
           body: SafeArea(
             top: false,
@@ -597,66 +600,50 @@ class _ChannelMessagePathMapScreenState
     final estimatedHeight = 72.0 + (hops.length * 56.0);
     final cardHeight = max(96.0, min(maxHeight, estimatedHeight));
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: SizedBox(
-        height: cardHeight,
-        child: Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  '${l10n.channelPath_repeaterHops} ${formatDistance(_pathDistance, isImperial: isImperial)}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: hops.isEmpty
-                    ? Center(
-                        child: Text(l10n.channelPath_noHopDetailsAvailable),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        itemCount: hops.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final hop = hops[index];
-                          final isFocused = _focusedHopIndex == hop.index;
-                          return ListTile(
-                            dense: true,
-                            enabled: hop.hasLocation,
-                            selected: isFocused,
-                            selectedTileColor: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.12),
-                            onTap: hop.hasLocation
-                                ? () => _onHopTapped(hop)
-                                : null,
-                            leading: CircleAvatar(
-                              radius: 14,
-                              child: Text(
-                                hop.index.toString(),
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                            title: Text('(${hop.fullPrefixLabel}) ${_resolveName(hop.contact, l10n)}'),
-                            subtitle: Text(
-                              hop.hasLocation
-                                  ? '${hop.effectivePosition!.latitude.toStringAsFixed(5)}, '
-                                        '${hop.effectivePosition!.longitude.toStringAsFixed(5)}'
-                                  : l10n.channelPath_noLocationData,
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+    return PullDownCard(
+      openHeight: cardHeight,
+      header: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Text(
+          '${l10n.channelPath_repeaterHops} ${formatDistance(_pathDistance, isImperial: isImperial)}',
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
+      child: hops.isEmpty
+          ? Center(child: Text(l10n.channelPath_noHopDetailsAvailable))
+          : ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: hops.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final hop = hops[index];
+                final isFocused = _focusedHopIndex == hop.index;
+                return ListTile(
+                  dense: true,
+                  enabled: hop.hasLocation,
+                  selected: isFocused,
+                  selectedTileColor: Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.12),
+                  onTap: hop.hasLocation ? () => _onHopTapped(hop) : null,
+                  leading: CircleAvatar(
+                    radius: 14,
+                    child: Text(
+                      hop.index.toString(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  title: Text(
+                    '(${hop.fullPrefixLabel}) ${_resolveName(hop.contact, l10n)}',
+                  ),
+                  subtitle: Text(
+                    hop.hasLocation
+                        ? '${hop.effectivePosition!.latitude.toStringAsFixed(5)}, '
+                              '${hop.effectivePosition!.longitude.toStringAsFixed(5)}'
+                        : l10n.channelPath_noLocationData,
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -6363,6 +6363,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get map_search => 'Rechercher';
 
   @override
+  String get map_fullScreen => 'Plein écran';
+
+  @override
+  String get map_leaveFullScreen => 'Quitter le plein écran';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Pour quitter le plein écran, appuyez sur Retour ou touchez le même bouton.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Pour quitter le plein écran, touchez le même bouton.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Pour quitter le plein écran, appuyez sur Échap ou cliquez sur le même bouton.';
+
+  @override
   String get route_fromHere => 'Trajet depuis ce lieu';
 
   @override

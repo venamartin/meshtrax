@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -1696,5 +1697,146 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Path Trace'), findsOneWidget);
     expect(find.text('Tap on nodes to add them to the path.'), findsOneWidget);
+  });
+
+  testWidgets('search is a map button, not in the title bar', (tester) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.search),
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.byTooltip('Search'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
+  group('full screen', () {
+    late List<String> system;
+
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    // The map with the system calls recorded: how the phone's bars are set.
+    Future<void> showMap(WidgetTester tester, {Widget? screen}) async {
+      system = [];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method.startsWith('SystemChrome.setEnabledSystemUI')) {
+            system.add('${call.method.split('.').last} ${call.arguments}');
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const []),
+        screen: screen ?? const MapScreen(),
+      );
+    }
+
+    bool full(WidgetTester tester) =>
+        find.byType(AppBar).evaluate().isEmpty &&
+        find.byType(QuickSwitchBar).evaluate().isEmpty;
+
+    testWidgets('hides the title bar, the tabs and the phone\'s bars', (
+      tester,
+    ) async {
+      await showMap(tester);
+      await tester.tap(find.byTooltip('Full screen'));
+      await settle(tester);
+      expect(full(tester), isTrue);
+      expect(system, ['setEnabledSystemUIMode SystemUiMode.immersiveSticky']);
+      expect(
+        find.text('To leave full screen, press Back or tap the same button.'),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Search'), findsOneWidget, reason: 'still there');
+
+      // The same button, in the same place, brings everything back.
+      await tester.tap(find.byTooltip('Leave full screen'));
+      await settle(tester);
+      expect(full(tester), isFalse);
+      expect(find.byType(QuickSwitchBar), findsOneWidget);
+      expect(system.last, startsWith('setEnabledSystemUIOverlays'));
+      expect(system.last, contains('SystemUiOverlay.top'));
+      expect(system.last, contains('SystemUiOverlay.bottom'));
+    });
+
+    testWidgets('Back leaves it before it leaves the map', (tester) async {
+      await showMap(tester);
+      await tester.tap(find.byTooltip('Full screen'));
+      await settle(tester);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(MapScreen), findsOneWidget);
+      expect(full(tester), isFalse);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(MapScreen), findsNothing);
+    });
+
+    testWidgets('Esc leaves it; F11 turns it on and off on Linux', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await showMap(tester);
+        await tester.sendKeyEvent(LogicalKeyboardKey.f11);
+        await settle(tester);
+        expect(full(tester), isTrue);
+        expect(
+          find.text(
+            'To leave full screen, press Esc or click the same button.',
+          ),
+          findsOneWidget,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await settle(tester);
+        expect(full(tester), isFalse);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.f11);
+        await settle(tester);
+        await tester.sendKeyEvent(LogicalKeyboardKey.f11);
+        await settle(tester);
+        expect(full(tester), isFalse);
+        expect(system, isEmpty, reason: 'a computer has no phone bars');
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('leaving the map gives the phone its bars back', (
+      tester,
+    ) async {
+      await showMap(tester);
+      await tester.tap(find.byTooltip('Full screen'));
+      await settle(tester);
+      await tester.pumpWidget(const SizedBox());
+      expect(system.last, startsWith('setEnabledSystemUIOverlays'));
+    });
+
+    testWidgets('only the main map has it', (tester) async {
+      await showMap(
+        tester,
+        screen: const MapScreen(highlightPosition: ll.LatLng(41.8, -71.4)),
+      );
+      expect(find.byTooltip('Full screen'), findsNothing);
+    });
   });
 }

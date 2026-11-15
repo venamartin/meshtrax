@@ -6056,6 +6056,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get map_search => '검색';
 
   @override
+  String get map_fullScreen => '전체 화면';
+
+  @override
+  String get map_leaveFullScreen => '전체 화면 종료';
+
+  @override
+  String get map_fullScreenHintBack => '전체 화면을 종료하려면 뒤로 버튼을 누르거나 같은 버튼을 탭하세요.';
+
+  @override
+  String get map_fullScreenHintTap => '전체 화면을 종료하려면 같은 버튼을 탭하세요.';
+
+  @override
+  String get map_fullScreenHintKey => '전체 화면을 종료하려면 Esc 키를 누르거나 같은 버튼을 클릭하세요.';
+
+  @override
   String get route_fromHere => '여기서 출발';
 
   @override

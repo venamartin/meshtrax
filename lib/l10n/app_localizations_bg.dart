@@ -6321,6 +6321,24 @@ class AppLocalizationsBg extends AppLocalizations {
   String get map_search => 'Търсене';
 
   @override
+  String get map_fullScreen => 'Цял екран';
+
+  @override
+  String get map_leaveFullScreen => 'Изход от цял екран';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'За изход от цял екран натиснете „Назад“ или същия бутон.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'За изход от цял екран докоснете същия бутон.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'За изход от цял екран натиснете Esc или щракнете върху същия бутон.';
+
+  @override
   String get route_fromHere => 'Маршрут оттук';
 
   @override

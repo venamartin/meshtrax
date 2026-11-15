@@ -33,6 +33,7 @@ class _BleDebugLogScreenState extends State<BleDebugLogScreen> {
         return Scaffold(
           appBar: AppBar(
             title: AdaptiveAppBarTitle(context.l10n.debugLog_bleTitle),
+            centerTitle: true,
             actions: [
               IconButton(
                 tooltip: context.l10n.debugLog_copyLog,
