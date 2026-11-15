@@ -1,7 +1,4 @@
 import 'dart:typed_data';
-
-import 'package:characters/characters.dart';
-
 import '../connector/meshcore_protocol.dart';
 import '../helpers/reaction_helper.dart';
 import '../helpers/path_helper.dart';
@@ -311,17 +308,18 @@ class ChannelMessage {
   /// one line, starting after any leading mentions, as MeshCore One quotes.
   /// A quote that is part of a mention says nothing about which message is
   /// meant, and matches none (field 2026-11-15: a reply to "@[long name]
-  /// words" showed "Original message not found"). Whole characters: half an
-  /// emoji goes out as a broken character.
+  /// words" showed "Original message not found"). Counted in code points:
+  /// half of one goes out as a broken character, and ten are at most 40
+  /// bytes of the message, where ten whole emoji could be all of it.
   static String buildReplySnippet(String targetText, int chars) =>
-      _quotable(targetText).take(chars).toString();
+      String.fromCharCodes(_quotable(targetText).take(chars));
 
   /// [text] on one line, without its leading mentions unless it has nothing
   /// else.
-  static Characters _quotable(String text) {
+  static Runes _quotable(String text) {
     String flat(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();
     final words = flat(stripLeadingMentions(text));
-    return (words.isEmpty ? flat(text) : words).characters;
+    return (words.isEmpty ? flat(text) : words).runes;
   }
 
   /// Whether a stored message [text] is the one a reply [snippet] quotes.

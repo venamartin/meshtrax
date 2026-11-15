@@ -143,15 +143,24 @@ void main() {
       expect(ChannelMessage.snippetMatches(parent, snippet), isTrue);
     });
 
-    test('never cuts an emoji in two', () {
-      // Eight units each, one character: a cut by units leaves half of one,
-      // which goes out as U+FFFD.
+    test('never cuts a character in two', () {
+      // An emoji is two units: a cut by units leaves half of one, which
+      // goes out as U+FFFD and matches nothing.
+      final wire = build('Hi ${'\u{1F642}' * 9}', 'ok')!;
+      expect(wire, '@[Alice]\n>Hi ${'\u{1F642}' * 7}..\nok');
+      expect(utf8.decode(utf8.encode(wire)), wire);
+    });
+
+    test('a quote of combined emoji still leaves room to type', () {
+      // A family is five code points and 18 bytes: ten whole ones would be
+      // more than a channel message holds.
       final family = String.fromCharCodes([
         0x1F468, 0x200D, 0x1F469, 0x200D, 0x1F467, //
       ]);
-      final wire = build('Hi ${family * 9}', 'ok')!;
-      expect(wire, '@[Alice]\n>Hi ${family * 7}..\nok');
-      expect(utf8.decode(utf8.encode(wire)), wire);
+      final snippet = ChannelMessage.buildReplySnippet(family * 9, 10);
+      expect(snippet.runes.length, 10);
+      expect(utf8.encode(snippet).length, lessThanOrEqualTo(40));
+      expect(utf8.decode(utf8.encode(snippet)), snippet);
     });
   });
 

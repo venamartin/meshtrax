@@ -63,8 +63,9 @@ Nice!
 
 - The quote is the first 10 characters of the original, whitespace
   collapsed to single spaces and trimmed. `..` follows only when the
-  original was longer. An emoji counts as one character and is never cut
-  in two.
+  original was longer. Characters are counted as code points, so the cut
+  never sends half of an emoji as a broken character; a combined emoji,
+  such as a flag, can be cut between its parts.
 - Mentions at the start of the original are left out, so the quote starts
   at its words, as MeshCore One's does. Ten characters of
   `@[Long name] see you` would otherwise be part of the mention, and fit
