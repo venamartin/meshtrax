@@ -82,6 +82,7 @@ These are the same rules as in #240's plan, shortened. A session in a new worktr
 | Backups | Saved routes are your content: they go in phone backups and in Export database. The raw recorded track from location sharing stays out, as #240 plans. |
 | Sharing a planned route | A readable `Route:` text message with its waypoints and path type; MeshTrax rebuilds it. MeshTrax only for now: not added to the public [message format](../message-format.md). |
 | Sharing a recorded track | Compressed line packets, private channels only. They may go through repeaters. |
+| Route name and fitting | Part 0 carries the route's name as a tagged extension item (tag 1), and tracks are fitted by bisection, both as in #240's plan (2026-11-15) |
 | With location sharing | First version: save my track as a route, save someone's shared trail as a route, share a route to the channel. Later: members' active routes on the map during a session. |
 
 ## Order of work and dependencies
@@ -271,13 +272,13 @@ ROUTE_PART (subtype 4) starts with the 12-byte common header. Its `session` fiel
 **Parts:**
 - Each part decodes on its own, so a lost part leaves a gap, not a broken route.
 - Each part's anchor is the previous part's last point, so the parts join.
-- Part 0 carries the name in an extension block: a u8 length, then up to 31 bytes of UTF-8.
-- Payloads stay within 157 bytes, which leaves 132 for points.
+- Part 0 carries the route's name as an extension item (bit 15): tag 1, UTF-8, cut at a character boundary to 31 bytes. The items are those of #240's wire format: `[tag u8][len u8][value]`, and unknown tags are skipped. So a later field, such as the route's length, is a new tag rather than a format change.
+- Payloads stay within 157 bytes, which leaves 132 for points. In part 0, the name item takes 3 bytes plus the name out of that.
 
 PARTS_REQUEST (subtype 5) is the common header, with the share id in `session`, plus a u16 bitmask of missing parts. The sender's app resends those parts with a new `seq`, if it still holds the share. Keep shares for 1 hour.
 
 **Sending:**
-- Simplify with traxshare's trail recipe (epsilon from 15 m, ×1.5) until the track fits in 8 parts or fewer. Keep that cap in the constants block; it is Martin's call.
+- Find the finest tolerance that fits with traxshare's trail recipe. From epsilon 15 m, double until the track fits in 8 parts or fewer, then bisect, as #240's recipe does for one report. Keep that cap in the constants block; it is Martin's call.
 - Pace the parts, one every few seconds after the radio has gone quiet, the way channel text waits today. Each part is about 0.58 s on air and is repeated by every repeater.
 - Show "Sending part 3 of 6".
 - Measured part counts are in the [track compression review](#track-compression-review-2026-11-12).
@@ -317,6 +318,7 @@ Martin edits these; the PR carries drafts.
   - ` ~` stretches survive
 - **Track packets:**
   - parts encode and decode and join
+  - part 0's name is a tag 1 item, cut at a character boundary at 31 bytes; unknown tags are skipped
   - a lost part leaves a gap
   - a parts request resends only the missing parts
   - the 8-part cap holds
@@ -362,7 +364,7 @@ The last three rows were measured on two road lines; the others come from this p
 
 ### R4: a recorded track in parts
 
-Measured on two road lines from OpenStreetMap with traxshare's code (#240 has the lines and the method). A part holds 132 bytes of points, and the name takes up to 32 bytes of part 0.
+Measured on two road lines from OpenStreetMap with traxshare's code (#240 has the lines and the method). A part holds 132 bytes of points, and the name takes up to 32 bytes of part 0 (34 since 2026-11-15, with the item's tag and length).
 
 | Line | At 15 m, the recipe's start | At 10 m |
 |---|---|---|
@@ -372,7 +374,7 @@ Measured on two road lines from OpenStreetMap with traxshare's code (#240 has th
 - **The 8-part cap** leaves about 1,024 bytes for points, about 600 points at 13–14 bits each.
 - **A recorded trail needs more.** The draft's test track, a GPS-recorded 39.5 km loop with switchbacks, kept 398 points at 10 m and 247 at 20 m. At 13–14 bits a point that is about 670 bytes (6 parts) and 420 bytes (4 parts). These are estimates: that track was not run through this code.
 - **As polyline text,** the two road lines at 10 m would take about 4 and 7 messages of 148 characters.
-- **The recipe:** #240's review proposes finding the finest tolerance that fits by bisection in place of the ×1.5 loop. The same applies to "fits in 8 parts".
+- **The recipe:** #240's review proposes finding the finest tolerance that fits by bisection in place of the ×1.5 loop. The same applies to "fits in 8 parts". Adopted on 2026-11-15.
 
 ### R4: the `Route:` message
 
