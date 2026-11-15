@@ -288,7 +288,7 @@ upload_apple() {
         -exportPath "$out" -allowProvisioningUpdates
     if [ $? -ne 0 ]; then
         echo "ERROR: App Store Connect upload failed for $name."
-        echo "       On \"App Store Connect access ... is required\" or \"Failed to Use Accounts\","
+        echo "       On \"No Accounts\", \"Failed to Use Accounts\" or \"App Store Connect access ... is required\","
         echo "       sign in again under Xcode > Settings > Accounts, then upload the same archive:"
         echo "       xcodebuild -exportArchive -archivePath \"$archive\" -exportOptionsPlist tool/ExportOptions-appstore.plist -exportPath \"$out\" -allowProvisioningUpdates"
         echo "       or use Distribute App in Xcode's Organizer."

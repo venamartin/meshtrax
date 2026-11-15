@@ -44,8 +44,8 @@ of its own, then run that platform alone.
 
 ## If an upload fails
 
-"App Store Connect access … is required" or "Failed to Use Accounts" means the
-Xcode sign-in has expired. Sign in again under Xcode → Settings → Accounts,
-then upload the same archive without rebuilding: run the `xcodebuild
--exportArchive` command the script prints, or use Distribute App in Xcode's
-Organizer.
+"No Accounts", "Failed to Use Accounts" or "App Store Connect access … is
+required" means Xcode is not signed in, or its sign-in has expired. Sign in
+again under Xcode → Settings → Accounts, then upload the same archive without
+rebuilding: run the `xcodebuild -exportArchive` command the script prints, or
+use Distribute App in Xcode's Organizer.
