@@ -31,7 +31,7 @@ import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/map_controls.dart';
-import 'package:meshtrax/widgets/map_legend_sheet.dart';
+import 'package:meshtrax/widgets/map_layers_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import 'package:meshtrax/widgets/room_login_dialog.dart';
 import 'package:meshtrax/widgets/route_sheet.dart';
@@ -1077,10 +1077,24 @@ void main() {
         overlays(tester).map((o) => o.id);
     AppSettingsService settingsOf(WidgetTester tester) =>
         tester.element(find.byType(AppMap)).read<AppSettingsService>();
-    int legendGuesses(WidgetTester tester) => tester
-        .widget<MapLegendButton>(find.byType(MapLegendButton))
-        .counts!()
-        .guessed;
+    // What the legend counts, as the layers sheet hands it over.
+    Future<int> legendGuesses(WidgetTester tester) async {
+      Future<void> settle() async {
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      await tester.tap(find.byTooltip('Map layers'));
+      await settle();
+      final guessed = tester
+          .widget<MapLayersSheet>(find.byType(MapLayersSheet))
+          .legendCounts!()
+          .guessed;
+      await tester.tap(find.byTooltip('Close'));
+      await settle();
+      return guessed;
+    }
 
     testWidgets('follow the node layers, and the legend counts what is drawn', (
       tester,
@@ -1094,23 +1108,23 @@ void main() {
         ids(tester),
         containsAll([guessId(chat), guessId(repeater), guessId(room)]),
       );
-      expect(legendGuesses(tester), 3);
+      expect(await legendGuesses(tester), 3);
 
       await settings.setMapShowChatNodes(false);
       await tester.pump();
       expect(ids(tester), isNot(contains(guessId(chat))));
       expect(ids(tester), contains(guessId(repeater)));
-      expect(legendGuesses(tester), 2);
+      expect(await legendGuesses(tester), 2);
 
       await settings.setMapShowRepeaters(false);
       await tester.pump();
       expect(ids(tester), isNot(contains(guessId(repeater))));
-      expect(legendGuesses(tester), 1);
+      expect(await legendGuesses(tester), 1);
 
       await settings.setMapShowOtherNodes(false);
       await tester.pump();
       expect(ids(tester), isNot(contains(guessId(room))));
-      expect(legendGuesses(tester), 0);
+      expect(await legendGuesses(tester), 0);
     });
 
     testWidgets('are off in the overlaps view, and off the legend', (
@@ -1139,7 +1153,7 @@ void main() {
 
       expect(ids(tester), isNot(contains(guessId(first))));
       expect(ids(tester), isNot(contains(guessId(second))));
-      expect(legendGuesses(tester), 0);
+      expect(await legendGuesses(tester), 0);
     });
 
     testWidgets('in a trace: no chat nodes, repeaters whatever the layer', (
@@ -1419,7 +1433,83 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(OfflineMapsScreen), findsOneWidget);
+    expect(
+      tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
+      OfflineMapsTab.maps.index,
+      reason: 'where it can be downloaded',
+    );
     expect(settings.settings.mapParks, isTrue, reason: 'kept for later');
+  });
+
+  testWidgets('the layers sheet: its buttons by the X, five tiles to a row', (
+    tester,
+  ) async {
+    // A narrow phone: tiles shrink so five still fit.
+    await pumpMap(
+      tester,
+      _FakeConnector(nodes: const []),
+      view: const Size(360, 800),
+    );
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    // Legend, More filters and Offline maps, left of the X, and no rows
+    // under the tiles for them.
+    final xs = [
+      for (final tooltip in ['Legend', 'More filters', 'Offline maps', 'Close'])
+        tester.getCenter(find.byTooltip(tooltip)).dx,
+    ];
+    expect(xs, orderedEquals([...xs]..sort()));
+    expect(find.text('More filters'), findsNothing);
+    expect(find.text('Offline maps'), findsNothing);
+
+    // The five node types share one row on a phone.
+    expect(
+      tester.getTopLeft(find.text('Guessed')).dy,
+      tester.getTopLeft(find.text('Repeaters')).dy,
+    );
+
+    // With nothing to update, Offline maps opens on maps to download.
+    await tester.tap(find.byTooltip('Offline maps'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(
+      tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
+      OfflineMapsTab.maps.index,
+    );
+  });
+
+  testWidgets('a filter button on the map while it draws nodes', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    final settings = tester
+        .element(find.byType(MapScreen))
+        .read<AppSettingsService>();
+    await tester.tap(find.byTooltip('Filter Nodes'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.widgetWithText(AlertDialog, 'Filter Nodes'), findsOneWidget);
+    await tester.tapAt(const Offset(4, 4));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    // With every node layer off there's nothing to filter.
+    await settings.setMapShowRepeaters(false);
+    await settings.setMapShowChatNodes(false);
+    await settings.setMapShowOtherNodes(false);
+    await settings.setMapShowMarkers(false);
+    await settings.setMapShowGuessedLocations(false);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byTooltip('Filter Nodes'), findsNothing);
+
+    await settings.setMapShowChatNodes(true);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byTooltip('Filter Nodes'), findsOneWidget);
   });
 
   testWidgets('the layers Charts tile, not downloaded, opens the Charts tab', (
@@ -1664,7 +1754,7 @@ void main() {
     },
   );
 
-  testWidgets('the legend opens as a sheet from the info button', (
+  testWidgets('the legend opens from the layers sheet, not the map', (
     tester,
   ) async {
     await pumpMap(
@@ -1674,7 +1764,12 @@ void main() {
       ),
     );
     expect(find.textContaining('Nodes:'), findsNothing);
+    expect(find.byTooltip('Legend'), findsNothing, reason: 'not on the map');
 
+    await tester.tap(find.byTooltip('Map layers'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     await tester.tap(find.byTooltip('Legend'));
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));

@@ -874,13 +874,11 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                         ],
                       ),
-                      if (!_isBuildingPathTrace)
-                        _buildLegend(
-                          contacts,
-                          settings,
-                          connector.pathHashByteWidth,
-                          sharedMarkers.length,
-                          guessedLocations.length,
+                      if (!_isBuildingPathTrace && _nodesShown(settings))
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: _filterButton(settingsService),
                         ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
                       // A touch on the main map makes it yours: it no longer
@@ -932,6 +930,14 @@ class _MapScreenState extends State<MapScreen> {
                 context,
                 places: !widget.pickPosition,
                 extra: _nodeLayers,
+                legend: !_isBuildingPathTrace,
+                legendCounts: () => _legendCounts(
+                  contacts,
+                  settings,
+                  connector.pathHashByteWidth,
+                  sharedMarkers.length,
+                  guessedLocations.length,
+                ),
                 onMoreFilters: () =>
                     _showFilterDialog(context, settingsService),
               ),
@@ -1152,7 +1158,31 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Widget _buildLegend(
+  /// Whether the map draws any of the layers the node filters apply to.
+  static bool _nodesShown(AppSettings settings) =>
+      settings.mapShowRepeaters ||
+      settings.mapShowChatNodes ||
+      settings.mapShowOtherNodes ||
+      settings.mapShowMarkers ||
+      settings.mapShowGuessedLocations;
+
+  /// The node filters, a tap away while nodes are on the map; the layers
+  /// sheet has the same button.
+  Widget _filterButton(AppSettingsService settingsService) {
+    final colors = Theme.of(context).colorScheme;
+    return FloatingActionButton.small(
+      heroTag: null,
+      tooltip: context.l10n.map_filterNodes,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurfaceVariant,
+      onPressed: () => _showFilterDialog(context, settingsService),
+      child: const Icon(Icons.filter_list),
+    );
+  }
+
+  /// What the legend's Mesh part counts: the nodes the map draws, those it
+  /// can't place, pins and guesses.
+  MeshLegendCounts _legendCounts(
     List<Contact> contacts,
     AppSettings settings,
     int stride,
@@ -1165,20 +1195,12 @@ class _MapScreenState extends State<MapScreen> {
       stride,
       noLocations: noLocations,
     ).length;
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: MapLegendButton(
-        counts: () {
-          final located = count(noLocations: false);
-          return (
-            located: located,
-            unlocated: count(noLocations: true) - located,
-            pins: markerCount,
-            guessed: guessedCount,
-          );
-        },
-      ),
+    final located = count(noLocations: false);
+    return (
+      located: located,
+      unlocated: count(noLocations: true) - located,
+      pins: markerCount,
+      guessed: guessedCount,
     );
   }
 

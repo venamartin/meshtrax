@@ -8,11 +8,12 @@ import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/poi_service.dart';
 import 'app_map.dart';
+import 'map_legend_sheet.dart';
 
 /// Opens the map layers sheet, laid out like Google Maps': which map, its
-/// details (contours, hill shading, dark, downloaded areas), any [extra]
-/// section a screen adds (the Node Map's node types), [onMoreFilters], and
-/// Offline maps.
+/// details (contours, hill shading, dark, downloaded areas) and any [extra]
+/// section a screen adds (the Node Map's node types). Buttons by its close
+/// button open the [legend], [onMoreFilters] and Offline maps.
 ///
 /// [extra] builds inside the sheet, so it rebuilds as settings change.
 /// [places]: the map draws Points of interest, so it offers their switch.
@@ -20,6 +21,8 @@ Future<void> showMapLayersSheet(
   BuildContext context, {
   WidgetBuilder? extra,
   VoidCallback? onMoreFilters,
+  bool legend = false,
+  MeshLegendCounts Function()? legendCounts,
   bool places = false,
 }) => showModalBottomSheet<void>(
   context: context,
@@ -28,6 +31,8 @@ Future<void> showMapLayersSheet(
   builder: (_) => MapLayersSheet(
     extra: extra,
     onMoreFilters: onMoreFilters,
+    legend: legend,
+    legendCounts: legendCounts,
     places: places,
   ),
 );
@@ -35,12 +40,19 @@ Future<void> showMapLayersSheet(
 class MapLayersSheet extends StatelessWidget {
   final WidgetBuilder? extra;
   final VoidCallback? onMoreFilters;
+
+  /// The map has a legend to offer: always with [legendCounts] (the mesh's
+  /// symbols), otherwise only on maps with symbols to explain.
+  final bool legend;
+  final MeshLegendCounts Function()? legendCounts;
   final bool places;
 
   const MapLayersSheet({
     super.key,
     this.extra,
     this.onMoreFilters,
+    this.legend = false,
+    this.legendCounts,
     this.places = false,
   });
 
@@ -55,14 +67,27 @@ class MapLayersSheet extends StatelessWidget {
     final downloadedAreas = settings.mapDownloadedAreas;
     final hasPlaces =
         context.watch<PoiService?>()?.installedRegions.isNotEmpty ?? false;
+    final showLegend =
+        legend &&
+        (legendCounts != null ||
+            mapShowsCharts(settings, maps) ||
+            mapShowsParkIcons(settings, maps));
 
-    void openOfflineMaps({OfflineMapsTab? tab}) => Navigator.of(context)
+    void openOfflineMaps(OfflineMapsTab tab) => Navigator.of(context)
       ..pop()
       ..push(
         MaterialPageRoute<void>(
           builder: (_) => OfflineMapsScreen(initialTab: tab),
         ),
       );
+
+    // This sheet closes first, as for More filters.
+    void openLegend() {
+      final navigator = Navigator.of(context);
+      final counts = legendCounts?.call();
+      navigator.pop();
+      showMapLegend(navigator.context, counts: counts);
+    }
 
     Widget mapTile(MapType type, String picture, String label) {
       final available = maps.hasMap(type);
@@ -75,7 +100,9 @@ class MapLayersSheet extends StatelessWidget {
         onTap: available
             ? () => settingsService.setMapType(type.name)
             : () => openOfflineMaps(
-                tab: type == MapType.charts ? OfflineMapsTab.charts : null,
+                type == MapType.charts
+                    ? OfflineMapsTab.charts
+                    : OfflineMapsTab.maps,
               ),
       );
     }
@@ -94,7 +121,9 @@ class MapLayersSheet extends StatelessWidget {
       note: available ? null : l10n.mapLayers_notDownloaded,
       selected: available && on,
       enabled: available,
-      onTap: available ? () => set(!on) : () => openOfflineMaps(),
+      onTap: available
+          ? () => set(!on)
+          : () => openOfflineMaps(OfflineMapsTab.maps),
     );
 
     final badge = maps.badgeCount;
@@ -106,10 +135,44 @@ class MapLayersSheet extends StatelessWidget {
           children: [
             MapLayerSection(
               title: l10n.mapLayers_mapType,
-              trailing: IconButton(
-                icon: const Icon(Icons.close),
-                tooltip: l10n.common_close,
-                onPressed: () => Navigator.pop(context),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showLegend)
+                    IconButton(
+                      icon: const Icon(Icons.info_outline),
+                      tooltip: l10n.map_legend,
+                      onPressed: openLegend,
+                    ),
+                  if (onMoreFilters case final onMoreFilters?)
+                    IconButton(
+                      icon: const Icon(Icons.filter_list),
+                      tooltip: l10n.mapLayers_moreFilters,
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onMoreFilters();
+                      },
+                    ),
+                  // Downloads under way and updates are on the Downloaded tab.
+                  IconButton(
+                    icon: Badge(
+                      isLabelVisible: badge > 0,
+                      label: Text('$badge'),
+                      child: const Icon(Icons.download_for_offline_outlined),
+                    ),
+                    tooltip: l10n.offlineMaps_title,
+                    onPressed: () => openOfflineMaps(
+                      badge > 0
+                          ? OfflineMapsTab.downloaded
+                          : OfflineMapsTab.maps,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.common_close,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
               children: [
                 mapTile(MapType.osm, 'standard', l10n.mapLayers_standard),
@@ -117,7 +180,7 @@ class MapLayersSheet extends StatelessWidget {
                 mapTile(MapType.charts, 'charts', l10n.mapLayers_charts),
               ],
             ),
-            const Divider(height: 24),
+            const Divider(height: 16),
             MapLayerSection(
               title: l10n.mapLayers_details,
               children: [
@@ -168,35 +231,9 @@ class MapLayersSheet extends StatelessWidget {
               ],
             ),
             if (extra case final extra?) ...[
-              const Divider(height: 24),
+              const Divider(height: 16),
               extra(context),
             ],
-            const Divider(height: 24),
-            if (onMoreFilters case final onMoreFilters?)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.filter_list),
-                title: Text(l10n.mapLayers_moreFilters),
-                subtitle: Text(l10n.mapLayers_moreFiltersDetail),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context);
-                  onMoreFilters();
-                },
-              ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.download_for_offline_outlined),
-              title: Text(l10n.offlineMaps_title),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (badge > 0) Badge(label: Text('$badge')),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () => openOfflineMaps(),
-            ),
           ],
         ),
       ),
@@ -282,9 +319,31 @@ class MapLayerSection extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 8),
-      Wrap(spacing: 4, runSpacing: 8, children: children),
+      // Five to a row on a phone: tiles shrink to fit, down to [_minWidth].
+      LayoutBuilder(
+        builder: (context, box) => _TileWidth(
+          width: ((box.maxWidth - 4 * _spacing) / 5).floorToDouble().clamp(
+            _minWidth,
+            MapLayerTile.width,
+          ),
+          child: Wrap(spacing: _spacing, runSpacing: 8, children: children),
+        ),
+      ),
     ],
   );
+
+  static const _spacing = 4.0;
+  static const _minWidth = 60.0;
+}
+
+/// How wide a [MapLayerSection] makes its tiles.
+class _TileWidth extends InheritedWidget {
+  final double width;
+
+  const _TileWidth({required this.width, required super.child});
+
+  @override
+  bool updateShouldNotify(_TileWidth oldWidget) => width != oldWidget.width;
 }
 
 /// A square picture with a caption, outlined when [selected]: one map type
@@ -309,10 +368,17 @@ class MapLayerTile extends StatelessWidget {
     required this.onTap,
   });
 
+  /// A tile's width outside a [MapLayerSection], and its widest in one.
+  static const width = 72.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final width =
+        context.dependOnInheritedWidgetOfExactType<_TileWidth>()?.width ??
+        MapLayerTile.width;
+    final side = width - 12;
     return Semantics(
       selected: selected,
       button: true,
@@ -320,15 +386,15 @@ class MapLayerTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          width: 84,
+          width: width,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               children: [
                 Container(
-                  width: 72,
-                  height: 72,
-                  padding: const EdgeInsets.all(3),
+                  width: side,
+                  height: side,
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -337,7 +403,7 @@ class MapLayerTile extends StatelessWidget {
                     ),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(12),
                     child: enabled
                         ? picture
                         : Opacity(opacity: 0.4, child: picture),

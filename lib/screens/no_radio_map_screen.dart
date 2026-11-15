@@ -10,7 +10,6 @@ import '../services/ui_view_state_service.dart';
 import '../widgets/app_map.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
-import '../widgets/map_legend_sheet.dart';
 
 /// The map without a radio, opened from the scanner: downloaded maps and
 /// the base map, the layers sheet and, on charts, their legend, but no nodes
@@ -57,12 +56,11 @@ class _NoRadioMapScreenState extends State<NoRadioMapScreen> {
                 : null,
             onCameraChanged: _onCameraChanged,
           ),
-          const Positioned(top: 16, right: 16, child: MapLegendButton()),
         ],
       ),
       floatingActionButton: MapControls(
         controller: _controller,
-        onLayers: () => showMapLayersSheet(context),
+        onLayers: () => showMapLayersSheet(context, legend: true),
       ),
     );
   }
