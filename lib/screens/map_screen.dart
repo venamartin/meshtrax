@@ -120,6 +120,10 @@ class _MapScreenState extends State<MapScreen> {
   /// its status and navigation bars. Never saved: the app starts without it.
   bool _fullScreen = false;
 
+  /// In full screen the map's buttons fade after a few seconds untouched.
+  bool _controlsFaded = false;
+  Timer? _fadeTimer;
+
   // Offline routing: where to and from (null: your position), and the route
   // found.
   ({String name, LatLng point})? _routeTo;
@@ -195,6 +199,7 @@ class _MapScreenState extends State<MapScreen> {
     unawaited(_channelLatest?.cancel());
     _mapController.dispose();
     HardwareKeyboard.instance.removeHandler(_onKey);
+    _fadeTimer?.cancel();
     if (_fullScreen && _phone) unawaited(_showSystemBars());
     super.dispose();
   }
@@ -214,7 +219,12 @@ class _MapScreenState extends State<MapScreen> {
   /// same button, or Back on Android and Esc on a computer.
   void _setFullScreen(bool on) {
     if (on == _fullScreen) return;
-    setState(() => _fullScreen = on);
+    _fadeTimer?.cancel();
+    setState(() {
+      _fullScreen = on;
+      _controlsFaded = false;
+    });
+    _wakeControls();
     if (_phone) {
       unawaited(
         on
@@ -233,6 +243,18 @@ class _MapScreenState extends State<MapScreen> {
         _ => l10n.map_fullScreenHintKey,
       }),
     );
+  }
+
+  /// In full screen, any touch on the map or its buttons (or a mouse moving
+  /// over them) brings the buttons back, and they fade again a few seconds
+  /// later. The full-screen button itself never fades: it's the way out.
+  void _wakeControls() {
+    if (!_fullScreen) return;
+    _fadeTimer?.cancel();
+    _fadeTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _fullScreen) setState(() => _controlsFaded = true);
+    });
+    if (_controlsFaded) setState(() => _controlsFaded = false);
   }
 
   /// Esc leaves full screen; F11 turns it on and off on Windows and Linux,
@@ -882,15 +904,22 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
                       // A touch on the main map makes it yours: it no longer
-                      // goes to your GPS position by itself.
+                      // goes to your GPS position by itself. In full screen
+                      // it also brings back the faded buttons.
                       if (_isMainMap)
                         Positioned.fill(
                           child: Listener(
                             behavior: HitTestBehavior.translucent,
-                            onPointerDown: (_) =>
-                                _viewState.mapWentToGps = true,
-                            onPointerSignal: (_) =>
-                                _viewState.mapWentToGps = true,
+                            onPointerDown: (_) {
+                              _viewState.mapWentToGps = true;
+                              _wakeControls();
+                            },
+                            onPointerSignal: (_) {
+                              _viewState.mapWentToGps = true;
+                              _wakeControls();
+                            },
+                            onPointerMove: (_) => _wakeControls(),
+                            onPointerHover: (_) => _wakeControls(),
                           ),
                         ),
                     ],
@@ -926,6 +955,8 @@ class _MapScreenState extends State<MapScreen> {
                   ? () => _setFullScreen(!_fullScreen)
                   : null,
               fullScreen: _fullScreen,
+              faded: _controlsFaded,
+              onTouch: _fullScreen ? _wakeControls : null,
               onLayers: () => showMapLayersSheet(
                 context,
                 places: !widget.pickPosition,
@@ -1167,16 +1198,20 @@ class _MapScreenState extends State<MapScreen> {
       settings.mapShowGuessedLocations;
 
   /// The node filters, a tap away while nodes are on the map; the layers
-  /// sheet has the same button.
+  /// sheet has the same button. It fades in full screen with the others.
   Widget _filterButton(AppSettingsService settingsService) {
     final colors = Theme.of(context).colorScheme;
-    return FloatingActionButton.small(
-      heroTag: null,
-      tooltip: context.l10n.map_filterNodes,
-      backgroundColor: colors.surface,
-      foregroundColor: colors.onSurfaceVariant,
-      onPressed: () => _showFilterDialog(context, settingsService),
-      child: const Icon(Icons.filter_list),
+    return AnimatedOpacity(
+      opacity: _controlsFaded ? MapControls.fadedOpacity : 1,
+      duration: const Duration(milliseconds: 300),
+      child: FloatingActionButton.small(
+        heroTag: null,
+        tooltip: context.l10n.map_filterNodes,
+        backgroundColor: colors.surface,
+        foregroundColor: colors.onSurfaceVariant,
+        onPressed: () => _showFilterDialog(context, settingsService),
+        child: const Icon(Icons.filter_list),
+      ),
     );
   }
 
