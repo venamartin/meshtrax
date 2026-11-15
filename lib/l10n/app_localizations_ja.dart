@@ -4777,7 +4777,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get structured_addSensor => 'センサーを追加';
 
   @override
-  String get structured_open => '開く';
+  String get structured_open => 'チャットを開く';
 
   @override
   String get structured_added => '追加済み';

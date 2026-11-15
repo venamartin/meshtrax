@@ -5022,7 +5022,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get structured_addSensor => 'Додати сенсор';
 
   @override
-  String get structured_open => 'Відкрити';
+  String get structured_open => 'Відкрити чат';
 
   @override
   String get structured_added => 'Додано';

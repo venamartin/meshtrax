@@ -4995,7 +4995,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get structured_addSensor => 'Dodaj senzor';
 
   @override
-  String get structured_open => 'Odpri';
+  String get structured_open => 'Odpri klepet';
 
   @override
   String get structured_added => 'Dodano';

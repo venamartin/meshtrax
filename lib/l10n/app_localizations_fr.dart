@@ -5036,7 +5036,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get structured_addSensor => 'Ajouter le capteur';
 
   @override
-  String get structured_open => 'Ouvrir';
+  String get structured_open => 'Ouvrir le chat';
 
   @override
   String get structured_added => 'Ajouté';

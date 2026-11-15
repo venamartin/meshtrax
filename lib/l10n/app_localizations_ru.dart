@@ -5017,7 +5017,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get structured_addSensor => 'Добавить сенсор';
 
   @override
-  String get structured_open => 'Открыть';
+  String get structured_open => 'Открыть чат';
 
   @override
   String get structured_added => 'Добавлено';

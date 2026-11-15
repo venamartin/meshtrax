@@ -4669,7 +4669,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get structured_addSensor => '添加传感器';
 
   @override
-  String get structured_open => '打开';
+  String get structured_open => '打开聊天';
 
   @override
   String get structured_added => '已添加';

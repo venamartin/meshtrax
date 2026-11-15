@@ -5011,7 +5011,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get structured_addSensor => 'Añadir sensor';
 
   @override
-  String get structured_open => 'Abrir';
+  String get structured_open => 'Abrir chat';
 
   @override
   String get structured_added => 'Añadido';

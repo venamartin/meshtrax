@@ -719,9 +719,10 @@ class SvgMessage extends StructuredMessage {
 /// What a meshcore:// share link adds to the radio.
 enum ShareKind { channel, contact, repeater, room, sensor }
 
-/// A `meshcore://channel/add` or `meshcore://contact/add` link, alone or with
-/// up to two lines of text around it, shown as a card with a join or add
-/// button. A link inside a longer message stays a tappable link.
+/// A `meshcore://channel/add` or `meshcore://contact/add` link, or another
+/// app's `<public key:type:name>`, alone or with up to two lines of text
+/// around it, shown as a card with a join or add button. A link inside a
+/// longer message stays a tappable link.
 class ShareMessage extends StructuredMessage {
   final ShareKind kind;
   final String name;
@@ -733,12 +734,17 @@ class ShareMessage extends StructuredMessage {
   final String url;
   final String? note;
 
+  /// Another app's `<public key:type:name>` line as it came; [url] is the
+  /// contact/add link it amounts to.
+  final String? textForm;
+
   const ShareMessage({
     required this.kind,
     required this.name,
     required this.keyHex,
     required this.url,
     this.note,
+    this.textForm,
     super.extraText,
   });
 
@@ -747,9 +753,17 @@ class ShareMessage extends StructuredMessage {
   /// The share in [lines] when exactly one of them is a valid meshcore://
   /// link; the other lines become the note.
   static ShareMessage? fromLines(List<String> lines) {
-    final links = lines.where(_link.hasMatch).toList();
+    final links = lines
+        .where(
+          (l) => _link.hasMatch(l) || MeshCoreQr.parseContactText(l) != null,
+        )
+        .toList();
     if (links.length != 1) return null;
-    final url = links.single;
+    final line = links.single;
+    final text = MeshCoreQr.parseContactText(line);
+    final url = text == null
+        ? line
+        : MeshCoreQr.encodeContact(text.name, text.pubKeyHex, text.type);
     final ShareKind kind;
     final String name;
     final String keyHex;
@@ -777,13 +791,14 @@ class ShareMessage extends StructuredMessage {
       // A malformed query (bad % escape) is just text.
       return null;
     }
-    final free = lines.where((l) => l != url).toList();
+    final free = lines.where((l) => l != line).toList();
     return ShareMessage(
       kind: kind,
       name: name.trim(),
       keyHex: keyHex,
       url: url,
       note: free.isNotEmpty ? free.first : null,
+      textForm: text == null ? null : line,
       extraText: free.skip(1).toList(),
     );
   }
@@ -804,7 +819,7 @@ class ShareMessage extends StructuredMessage {
   String get summary => name.isEmpty ? keyword : '$keyword: $name';
 
   @override
-  String toWire() => [?note, url, ...extraText].join('\n');
+  String toWire() => [?note, textForm ?? url, ...extraText].join('\n');
 }
 
 void _appendCommon(

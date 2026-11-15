@@ -4985,7 +4985,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get structured_addSensor => 'Sensor toevoegen';
 
   @override
-  String get structured_open => 'Openen';
+  String get structured_open => 'Chat openen';
 
   @override
   String get structured_added => 'Toegevoegd';

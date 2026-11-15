@@ -4784,7 +4784,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get structured_addSensor => '센서 추가';
 
   @override
-  String get structured_open => '열기';
+  String get structured_open => '채팅 열기';
 
   @override
   String get structured_added => '추가됨';

@@ -4997,7 +4997,7 @@ class AppLocalizationsBg extends AppLocalizations {
   String get structured_addSensor => 'Добави датчик';
 
   @override
-  String get structured_open => 'Отвори';
+  String get structured_open => 'Отвори чата';
 
   @override
   String get structured_added => 'Добавено';

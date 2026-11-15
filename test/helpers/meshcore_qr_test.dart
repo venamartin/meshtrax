@@ -93,4 +93,24 @@ void main() {
           isNull);
     });
   });
+
+
+  group('parseContactText', () {
+    final key = 'F00DFACE' * 8;
+
+    test('key, type and name, with the key in lowercase', () {
+      final c = MeshCoreQr.parseContactText('  <$key:1:Owl>  ')!;
+      expect(c.pubKeyHex, key.toLowerCase());
+      expect(c.type, 1);
+      expect(c.name, 'Owl');
+    });
+
+    test('only the whole text, only node types', () {
+      expect(MeshCoreQr.parseContactText('hi <$key:1:Owl>'), isNull);
+      expect(MeshCoreQr.parseContactText('<$key:0:Owl>'), isNull);
+      expect(MeshCoreQr.parseContactText('<$key:5:Owl>'), isNull);
+      expect(MeshCoreQr.parseContactText('<${key}0:1:Owl>'), isNull);
+      expect(MeshCoreQr.parseContactText('<$key:1: >'), isNull);
+    });
+  });
 }

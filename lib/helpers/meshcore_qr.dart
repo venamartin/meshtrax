@@ -103,6 +103,23 @@ class MeshCoreQr {
     );
   }
 
+  /// A contact as text, `<public key hex:type:name>`, the way some apps
+  /// post one in chat. Upper- or lowercase hex; types 1 to 4 (companion,
+  /// repeater, room, sensor), anything else is ordinary text.
+  static ContactQrData? parseContactText(String data) {
+    final m = _contactText.firstMatch(data.trim());
+    if (m == null) return null;
+    final name = m.group(3)!.trim();
+    if (name.isEmpty) return null;
+    return ContactQrData(
+      name: name,
+      pubKeyHex: m.group(1)!.toLowerCase(),
+      type: int.parse(m.group(2)!),
+    );
+  }
+
+  static final _contactText = RegExp(r'^<([0-9a-fA-F]{64}):([1-4]):(.+)>$');
+
   /// A contact card: `meshcore://` and the hex of a raw advert packet, as
   /// the firmware's `card` command and CMD_EXPORT_CONTACT give it. The
   /// signature is not checked, so a card is trusted as far as a
