@@ -77,8 +77,57 @@ class ChannelChatScreen extends StatefulWidget {
 class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   final MentionTextEditingController _textController = MentionTextEditingController();
   final FocusNode _textFieldFocusNode = FocusNode();
-  final ItemScrollController _itemScrollController = ItemScrollController();
+  final _ListScroller _itemScrollController = _ListScroller();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+  final _listAreaKey = GlobalKey();
+
+  /// The rows as the list was last built with them, newest first: the row
+  /// numbers the list reports are numbers in this.
+  List<ChannelMessage> _shown = const [];
+
+  /// A finger is dragging the list, or it is coasting or being scrolled to
+  /// a row. Asked of the list itself, so nothing here can fall out of step.
+  bool get _listScrolling {
+    var scrolling = false;
+    void visit(Element element) {
+      if (element is StatefulElement && element.state is ScrollableState) {
+        final position = (element.state as ScrollableState).position;
+        scrolling = scrolling || position.isScrollingNotifier.value;
+      } else {
+        element.visitChildren(visit);
+      }
+    }
+
+    _listAreaKey.currentContext?.visitChildElements(visit);
+    return scrolling;
+  }
+
+  /// Rows arrived, or went, below a reader who is not at the newest message.
+  /// The list keeps its place by row number, so it is given the new number
+  /// of the lowest row on screen, at the height that row stands at. Not
+  /// while a finger or a scroll is moving the list: this would stop both.
+  void _keepReaderInPlace() {
+    final scroller = _itemScrollController;
+    if (_atBottom.value ||
+        !scroller.isAttached ||
+        scroller.moving ||
+        _listScrolling) {
+      return;
+    }
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+    final lowest = positions.reduce((a, b) => a.index < b.index ? a : b);
+    if (lowest.index >= _shown.length) return;
+    final id = _shown[lowest.index].messageId;
+    final rows = _visibleMessages(context.read<AppSettingsService>());
+    final at = rows.lastIndexWhere((m) => m.messageId == id);
+    if (at == -1) return;
+    final index = rows.length - 1 - at;
+    // The list still counts the rows it was last built with.
+    if (index == lowest.index || index >= _shown.length) return;
+    _anchoredAboveNewest = true;
+    scroller.hold(index, lowest.itemLeadingEdge);
+  }
 
   String? _mentionSearchText;
   bool _showMentions = false;
@@ -313,6 +362,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             }
           }
         });
+        if (pendingJump == null) _keepReaderInPlace();
       });
     });
   }
@@ -1383,6 +1433,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   ) {
     // Reverse messages so newest appear at bottom with reverse: true
     final reversedMessages = messages.reversed.toList();
+    _shown = reversedMessages;
     final itemCount = reversedMessages.length;
 
     // Auto-scroll to bottom if user is already at bottom
@@ -1420,6 +1471,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     return ExcludeSemantics(
       child: ChatZoomWrapper(
         child: NotificationListener<SizeChangedLayoutNotification>(
+          key: _listAreaKey,
           onNotification: _onRowResized,
           child: ScrollablePositionedList.builder(
           reverse: true, // List grows from bottom up
@@ -2939,4 +2991,49 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       content: Text(context.l10n.chat_messageDeleted),
     );
   }
+}
+
+/// The list's controller, noting each move the screen asks of it. The list
+/// says where its rows are once a frame has been drawn: until the frame
+/// after a move, that is where they were before it.
+class _ListScroller extends ItemScrollController {
+  int _asked = 0;
+  bool moving = false;
+
+  void _note() {
+    moving = true;
+    final asked = ++_asked;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (asked == _asked) moving = false;
+    });
+  }
+
+  @override
+  void jumpTo({required int index, double alignment = 0}) {
+    _note();
+    super.jumpTo(index: index, alignment: alignment);
+  }
+
+  @override
+  Future<void> scrollTo({
+    required int index,
+    double alignment = 0,
+    required Duration duration,
+    Curve curve = Curves.linear,
+    List<double> opacityAnimationWeights = const [40, 20, 40],
+  }) {
+    _note();
+    return super.scrollTo(
+      index: index,
+      alignment: alignment,
+      duration: duration,
+      curve: curve,
+      opacityAnimationWeights: opacityAnimationWeights,
+    );
+  }
+
+  /// Row [index] with its lower edge at [edge] of the list's height, where
+  /// it already stands. Not a move: the rows on screen stay on screen.
+  void hold(int index, double edge) =>
+      super.jumpTo(index: index, alignment: edge);
 }
