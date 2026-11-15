@@ -2834,7 +2834,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         targetName: replyTarget.senderName,
         quoteText: replyTarget.text,
         body: text,
-        selfName: connector.selfName ?? '',
         fits: fits,
       );
       if (built == null) {

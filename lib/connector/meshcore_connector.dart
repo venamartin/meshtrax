@@ -5308,7 +5308,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           targetName: message.replyToSenderName!,
           quoteText: message.replyToText ?? '',
           body: message.text,
-          selfName: _selfName ?? '',
           fits: (candidate) =>
               utf8
                   .encode(prepareChannelOutboundText(channelIndex, candidate))

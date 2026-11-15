@@ -304,11 +304,22 @@ class ChannelMessage {
     return true;
   }
 
-  /// A single-line, trimmed prefix of [targetText], at most [chars] characters.
-  /// Used to quote the message being replied to in a cross-app-compatible way.
-  static String buildReplySnippet(String targetText, int chars) {
-    final flat = targetText.replaceAll(RegExp(r'\s+'), ' ').trim();
-    return flat.length <= chars ? flat : flat.substring(0, chars);
+  /// What a reply quotes of [targetText]: its first [chars] characters, on
+  /// one line, starting after any leading mentions, as MeshCore One quotes.
+  /// A quote that is part of a mention says nothing about which message is
+  /// meant, and matches none (field 2026-11-15: a reply to "@[long name]
+  /// words" showed "Original message not found"). Counted in code points:
+  /// half of one goes out as a broken character, and ten are at most 40
+  /// bytes of the message, where ten whole emoji could be all of it.
+  static String buildReplySnippet(String targetText, int chars) =>
+      String.fromCharCodes(_quotable(targetText).take(chars));
+
+  /// [text] on one line, without its leading mentions unless it has nothing
+  /// else.
+  static Runes _quotable(String text) {
+    String flat(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final words = flat(stripLeadingMentions(text));
+    return (words.isEmpty ? flat(text) : words).runes;
   }
 
   /// Whether a stored message [text] is the one a reply [snippet] quotes.
@@ -334,8 +345,7 @@ class ChannelMessage {
   }
 
   /// Removes ALL leading `@[name]` mentions (each with an optional trailing
-  /// space or newline) from [text] — the generic form of
-  /// [stripLeadingMention] for when the mentioned name is unknown.
+  /// space or newline) from [text].
   ///
   /// Other clients treat a leading mention as addressing, not content: they
   /// build reply snippets and reaction hashes over the STRIPPED body. Any
@@ -381,35 +391,21 @@ class ChannelMessage {
     unicode: true,
   );
 
-  /// Removes a single leading `@[name]` mention (with an optional trailing
-  /// space or newline) from [text]. Used to avoid echoing our own handle back
-  /// inside a reply's quoted snippet.
-  static String stripLeadingMention(String text, String name) {
-    final bare = '@[$name]';
-    if (name.isEmpty || !text.startsWith(bare)) return text;
-    final rest = text.substring(bare.length);
-    return (rest.startsWith(' ') || rest.startsWith('\n'))
-        ? rest.substring(1)
-        : rest;
-  }
-
   /// Builds the on-wire reply text `@[targetName]\n><snippet>[..]\n<body>`
   /// (MeshCore One dialect: ".." only when the parent was truncated),
-  /// shrinking the quoted snippet until [fits]. A leading self-mention is
-  /// stripped from [quoteText] so we don't re-quote our own handle. Falls back
-  /// to `@[targetName]\n<body>`; returns null if even that doesn't fit.
+  /// shrinking the quoted snippet (see [buildReplySnippet]) until [fits].
+  /// Falls back to `@[targetName]\n<body>`; returns null if even that
+  /// doesn't fit.
   static String? buildReplyWireText({
     required String targetName,
     required String quoteText,
     required String body,
-    required String selfName,
     required bool Function(String candidate) fits,
   }) {
-    final quote = stripLeadingMention(quoteText, selfName);
-    final flatLength = quote.replaceAll(RegExp(r'\s+'), ' ').trim().length;
+    final quoteLength = _quotable(quoteText).length;
     for (int len = 10; len >= 6; len--) {
-      final snippet = buildReplySnippet(quote, len);
-      final suffix = flatLength > len ? '..' : '';
+      final snippet = buildReplySnippet(quoteText, len);
+      final suffix = quoteLength > len ? '..' : '';
       final candidate = '@[$targetName]\n>$snippet$suffix\n$body';
       if (fits(candidate)) return candidate;
     }
@@ -424,8 +420,8 @@ class ChannelMessage {
   /// and the response may follow on a new line.
   ///
   /// MeshCore One: `@[Name]\n><snippet>[..]\n<response>` — snippet is the
-  /// parent's first 10 chars, ".." only when truncated
-  /// (MentionUtilities.buildReplyText in Avi0n/MeshCoreOne).
+  /// parent's first 10 chars after a leading mention, ".." only when
+  /// truncated (MentionUtilities.buildReplyText in Avi0n/MeshCoreOne).
   static ReplyInfo? parseReply(String text) {
     final regex = RegExp(
       r'^@\[([^\]]+)\]\s+re:(.*?)(?:…|\.\.\.)\s*([\s\S]+)$',
