@@ -70,6 +70,12 @@ These are how the owner, Martin, runs this repo. A session in a new worktree doe
 | PR shape | This draft PR becomes the feature PR: Steps 2–4, with Martin testing between steps. Step 1 goes first in its own small PR. | 2026-11-05 |
 | Order against #210 | Step 1, Step 2 and Step 3's connector part start now. Step 3's screens, settings and coordinate display start after #210 (offline routing and points of interest) merges. | 2026-11-05 |
 | Route here | Yes, in Step 3 | 2026-11-05 |
+| Names in packets | Every request carries the radio's name. A one-time answer carries it too, and so does a session's first report, then at most one report every 30 minutes. Shown as unverified ([names](#names)). | 2026-11-15 |
+| Battery and status | Every report carries the radio's battery. A status (OK, need help, heading back) is in the format at no cost; whether the screens offer it is open (question 9). | 2026-11-15 |
+| Trail fitting | Bisection finds the finest tolerance that fits, in place of the ×1.5 loop | 2026-11-15 |
+| Early report on a sharp turn | Try it in Step 4 | 2026-11-15 |
+| Not taken from other clients | Their formats (also not as a per-channel compatibility mode), always-on flooding beacons, phone GPS, per-send region scope ([looked at elsewhere](#looked-at-elsewhere-2026-11-15)) | 2026-11-15 |
+| Later, own PRs | Who got it, Follow, SOS ([later](#later-after-sharing-works-own-prs)) | 2026-11-15 |
 
 ## Steps
 
@@ -96,9 +102,9 @@ Both are bugs today, with or without this feature.
 - **CI:** add analyze and test steps to [.github/workflows/flutter_dart.yml](../../.github/workflows/flutter_dart.yml), the same way path_graph and traxmap have them (#210 does this for its own packages).
   - #210 also changes this file, `pubspec.yaml`, `lib/main.dart` and the 17 `app_*.arb` files. If Step 2 or 3a reaches master first, the conflicts are additions side by side. They get resolved when #210 merges master in.
 - **Modules** under `lib/src/`:
-  - `codec/`: bit writer and reader, zigzag, exp-Golomb, packet encode and decode ([wire format](#wire-format-version-1))
+  - `codec/`: bit writer and reader, zigzag, exp-Golomb, extension items, packet encode and decode ([wire format](#wire-format-version-1))
   - `movement/`: the movement gate, derived heading and speed, fix age ([rules](#position-and-movement))
-  - `trail/`: window, simplify, quantize, fit to budget ([recipe](#trail-recipe))
+  - `trail/`: window, simplify, quantize, fit to budget by bisection ([recipe](#trail-recipe))
   - `gate/`: `isSharableChannel(name, psk)` ([channel gate](#channel-gate))
   - `session/`: request, consent, keepalive and stop state machines
   - `scheduler/`: interval, jitter, heartbeat
@@ -133,7 +139,7 @@ Both are bugs today, with or without this feature.
 - **Flow:**
   1. The request goes out. The requester's strip shows it waiting.
   2. A member sees a consent dialog, plus a notification that follows the channel's mute rule (muted: strip only). The dialog:
-     - names the claimed sender as unverified, falling back to the hex prefix when no contact matches
+     - names the claimed sender as unverified, following the [name rules](#names): the contact's name, else the name in the request, else the hex prefix
      - says the whole channel will see the answer
      - says anyone who has the channel key can read it
   3. Requests are rate limited per sender. Resolve names with `contactByKeyPrefix4` and apply `isSenderBlocked`. **Ignore this sender** is stored by prefix, so senders who aren't contacts can be silenced too.
@@ -151,7 +157,7 @@ Both are bugs today, with or without this feature.
     - People sharing draws markers, so it fits under Nodes, with its own badge. Show Martin a render first.
   - **Performance:** feed lines from a cut-down copy per person, at most 200 points, recomputed only when a point is added. The map rebuilds its overlays on every connector notify. #210 adds a rebuild 300 ms after every pan at zoom 12 and above, when it loads the places in view. Map markers are already the main cost on a busy map (Windows profile, 2026-10-31).
   - **Updates:** the map subscribes to `TraxShareService` itself and repaints when a position or style changes. Keep Trax data out of the message pin scan.
-  - **Pin sheet:** name, coordinates in the user's coordinate format (#210's setting, traxcoords), age through `DateTimeHelper`, and **Route here**. That opens #210's route panel with the person's name and position as the destination.
+  - **Pin sheet:** name ([name rules](#names)), coordinates in the user's coordinate format (#210's setting, traxcoords), age through `DateTimeHelper`, the radio's battery and the status when the report carries them, and **Route here**. That opens #210's route panel with the person's name and position as the destination.
     - Reuse what #210's long-press sheet on the map does (`_showShareMarkerAtPositionSheet` in map_screen.dart):
       - `coordFormatOf(settings)` and `positionLines(lat, lon, format)` for the coordinates, with `CopyPositionButton`
       - `_routeHere(name, point, selfPosition)` for Route here, shown when `RoutingService.available`; with no routing data installed, it says so
@@ -191,6 +197,7 @@ Both are bugs today, with or without this feature.
   - A stationary heartbeat every 15 minutes, using the movement gate.
   - The effective interval is `max(chosen, N × 20 s)`, with N the senders heard in the session.
   - A trail every 5th report, and no sooner than 10 minutes after the last.
+  - **To try:** an early report when the heading derived from kept points turns by 35° or more (the corner rule of APRS smart beaconing), so trails follow bends with fewer reports. At most one between two scheduled reports, and never sooner than `max(1 min, N × 20 s)` after the last. Keep it only if a real drive shows better trails: the derived heading is coarse, since a point is kept only every 25 m.
 - **Disconnects and app kills:**
   - On disconnect, stop sending but keep the session until it expires. On reconnect, resume if it's the same radio key and the channel is verified; otherwise end.
   - If the app is killed, the session ends and the others time out.
@@ -200,6 +207,13 @@ Both are bugs today, with or without this feature.
   - Swiping the app away ends the session (`stopWithTask`).
 - **Other platforms:** on iOS, promise no background sharing until a device test. On Windows and Linux, in-app only.
 - **Help text,** in plain words: these packets share the radio's message queue with channel messages while a phone is away. Five members at 2 minutes is about 2 frames a minute on each away radio. That fills 256 slots in about 2 hours, 128 in about 1 hour and 16 in about 7 minutes, and then the oldest channel messages are lost first.
+
+### Later: after sharing works (own PRs)
+
+Ideas from [looking at other clients](#looked-at-elsewhere-2026-11-15), each in its own PR once Steps 3 and 4 are in use:
+- **Who got it:** while sharing, a report also carries the 16-bit hashes of the last few channel messages its sender heard, as an extension item. They are the same hashes as reactions (`ReactionHelper.computeReactionHash`). The sender of a channel message then sees which members got it, with no extra packets.
+- **Follow:** Route here that keeps range and bearing to the person and asks for a new route when their reported position moves well away from the route's end.
+- **SOS:** an alert with the radio's position to the channel, with a full-screen alarm on the receivers. It is sent twice, 10 s apart, and repeated every minute while active. It needs its own wording and consent rules.
 
 ### Later: off-grid group mode (own PR, after field use)
 
@@ -240,6 +254,7 @@ All lines are in `./MeshCore`.
 | **data_type:** FF00–FFFF is free for development (use 0xFF54). Before release, one ID in 0100–FEFF is requested by a PR to `docs/number_allocations.md`, after showing the app works. The newest taken value is 0150 (firmware `dev`, November 2026). | `docs/number_allocations.md` |
 | **Position:** lat, lon and altitude only; no heading, speed, accuracy or fix flag. Self telemetry gives 0.0001° (about 11 m) and altitude to 0.01 m. On most boards it carries the position whenever GPS is on, and with no fix it repeats the last or stored position. | `src/helpers/sensors/EnvironmentSensorManager.cpp:687-688, 931-946`, `MyMesh.cpp:981-982` |
 | **Don't use:** CMD 63 (set default flood scope) rewrites all settings to flash on every call. CMD 13 (reset path) rewrites the contacts file. | `MyMesh.cpp:1989-2005, 1317-1327` |
+| **Flood scope:** a channel flood goes under the radio's default scope (CMD 63) unless CMD 54 has set an override in RAM: `[54][0][16-byte key]` sets it, `[54][0]` clears it, `[54][1]` sends unscoped (ver code 12+). The override lasts until it is cleared or the radio reboots. A repeater forwards a scoped flood only when it has that region. | `MyMesh.cpp:514-525, 1978-1988`, `examples/simple_repeater/MyMesh.cpp:434-442, 557-567` |
 | **Airtime** at SF7, 62.5 kHz, CR 4/5, 32-symbol preamble: 17- or 29-byte payload = 37 bytes on air, about 214 ms (53 ms at 250 kHz); 157-byte payload = 165 bytes, about 582 ms; 12-byte STOP = 21 bytes, about 162 ms. Payloads pad to 16-byte blocks, so 13, 29, 45 … 157 bytes are the largest sizes at each cost. | `src/Mesh.cpp:540-558`, `src/helpers/radiolib/RadioLibWrappers.h:56` |
 
 ## Wire format, version 1
@@ -258,7 +273,7 @@ The `data_type` is 0xFF54 during development. Multi-byte numbers are little-endi
 
 On an unknown version, read the common header only, show "<name> has a newer MeshTrax" once per session in the strip, and decode nothing more. Receivers drop repeats of `(sender_prefix, session, seq)`.
 
-### REQUEST (subtype 1, 17 bytes)
+### REQUEST (subtype 1, 18 bytes plus the name)
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -267,8 +282,10 @@ On an unknown version, read the common header only, show "<name> has a newer Mes
 | 14 | 1 | duration_min | 1–240; 0 for one-time |
 | 15 | 1 | trail_window | 0.1 km units; 0 = no trail; 161 = 10 miles; at most 25.5 km |
 | 16 | 1 | accuracy_wanted | reserved, 0 |
+| 17 | 1 | name_len | 0–20 |
+| 18 | n | name | the requester's radio name (`connector.selfName`), UTF-8, cut at a character boundary to 20 bytes. Up to 11 bytes, the request still costs what 17 bytes did. |
 
-### REPORT (subtype 2, 29 bytes plus the trail)
+### REPORT (subtype 2, 29 bytes, plus the trail and extensions)
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -278,9 +295,13 @@ On an unknown version, read the common header only, show "<name> has a newer Mes
 | 23 | 1 | heading | `round(degrees × 256 / 360) mod 256` |
 | 24 | 1 | speed | 0.5 m/s units; 255 = 127.5 m/s or more |
 | 25 | 2 | altitude_m | int16 |
-| 27 | 1 | grid_unit_m | metres per trail step; 0 = no trail |
-| 28 | 1 | point_count | trail points that follow |
-| 29 | n | points | bitstream below; the whole payload stays within 157 bytes, so the trail gets at most 128 |
+| 27 | 1 | battery | the radio's battery in percent, 0–100: the latest `connector.batteryPercent`, which applies the radio's battery type setting |
+| 28 | 1 | status | 0 none, 1 OK, 2 need help, 3 heading back; others reserved. Sent only if the screens offer it (question 9). |
+| 29 | 1 | grid_unit_m | with mask bit 10 only: metres per trail step |
+| 30 | 1 | point_count | with mask bit 10 only: trail points that follow |
+| 31 | n | points | with mask bit 10 only: bitstream below. The whole payload, extension block included, stays within 157 bytes, so the points get at most 126. |
+
+The battery and status take the two bytes a report without a trail used to spend on an empty grid and count. So a report without a trail stays at 29 bytes, the largest size at its airtime cost ([airtime](#firmware-facts-companion-v1180)). One more byte there would cost a whole extra 16-byte block.
 
 Position encoding:
 - `lat_u = round((lat + 90) × 100000)` (0–18,000,000, 25 bits)
@@ -298,15 +319,20 @@ Position encoding:
 | 3 | fix_age valid |
 | 4 | moving |
 | 5 | sent by the session's requester |
-| 6–7 | reserved |
+| 6 | battery valid |
+| 7 | status valid |
 | 8 | per-point time present (v1: off) |
 | 9 | per-point altitude present (v1: off) |
-| 10–14 | reserved |
-| 15 | an extension block follows the points: u8 length, then bytes; decoders that don't know it skip it |
+| 10 | a trail follows: grid_unit_m, point_count and the points |
+| 11–14 | reserved |
+| 15 | an extension block follows: u8 length, then items. It starts after the points, or at offset 29 when there is no trail. |
 
 - **Unused fields:** a field whose mask bit is clear is sent as 0.
 - **fix_age:** saturated at 0xFFFF, it would make every report from a parked radio repeat its second cipher block, and ECB shows that to anyone in range. So at 0xFFFF, clear bit 3 and fill the field with random bytes instead.
-- **Future changes:** append new header fields and gate them with a mask bit. Append new per-point fields in mask order. Changing an existing encoding bumps the version.
+- **Extension items:** each is `[tag u8][len u8][value]`, and receivers skip tags they don't know.
+  - Tag 1 is the sender's radio name, UTF-8, cut at a character boundary to 20 bytes. It goes in every one-time answer and in a session's first report, then in at most one report every 30 minutes.
+  - On a report without a trail, a name of up to 13 bytes costs one more 16-byte block.
+- **Future changes:** add a field as an extension item. Append new per-point fields in mask order. Changing an existing encoding bumps the version.
 
 ### Trail bitstream
 
@@ -323,7 +349,7 @@ Position encoding:
 - **Exp-Golomb, order k,** for `u ≥ 0`: `q = u >> k`; `m = floor(log2(q + 1))`; write `m` zero bits, then `q + 1` in `m + 1` bits, then the low `k` bits of `u`.
   - Example, k = 3 and u = 100: q = 12, m = 3, written as `000 1101 100`, 10 bits.
   - The earlier draft's "q zero bits" was wrong.
-- **Padding:** after the last point, pad with zero bits to a byte boundary. The extension block (bit 15) starts there.
+- **Padding:** after the last point, pad with zero bits to a byte boundary. The extension block (bit 15), if any, starts there.
 
 ### STOP (subtype 3, 12 bytes)
 
@@ -358,12 +384,15 @@ Tag every frame 27 live or backlog, as described in Step 3a.
 1. Take own-track points back from the newest, by distance only, up to `min(request window, kept-distance setting)`.
 2. Simplify in 2D with Douglas–Peucker, always keeping the first and last points.
 3. Start at epsilon 15 m with a grid of `max(8, ceil(epsilon / 2))` m. Quantize and delta-encode as above.
-4. Until it fits in 128 bytes and 255 points, multiply epsilon by 1.5 and repeat from 2.
+4. Fit the room left: at most 126 bytes, less any extension block, and 255 points.
+   - If 15 m doesn't fit, double epsilon until it does.
+   - Then bisect between the last epsilon that failed and the first that fit, to within 1 m, repeating from step 2 with each epsilon tried.
+   - Keep the finest that fits, as `SvgDrawing.fit` in [svg_drawing.dart](../../lib/helpers/svg_drawing.dart) does for drawings.
 5. Log epsilon, point count and bytes for the debug log.
 
 At 10 miles, that is about 57 points.
 
-The [track compression review](#track-compression-review-2026-11-12) measured this recipe and proposes two changes: bisection in step 4, and a graded tolerance.
+The [track compression review](#track-compression-review-2026-11-12) measured the earlier ×1.5 loop and proposed two changes. Bisection was adopted on 2026-11-15. A graded tolerance is still open (question 7).
 
 ### Channel gate
 
@@ -377,6 +406,15 @@ It denies:
 - any stored name that starts with `#` and is exactly 31 UTF-8 bytes. The radio cuts names to 31 bytes, so a long hashtag can't be re-derived; denying only hides the feature, which is the safe side.
 
 It can't catch a renamed hashtag channel or a key that was shared widely, which is why the dialog says anyone with the key can read the answer. A denied channel's inbound packets get no prompt, reply or storage, and sending on one throws.
+
+### Names
+
+Requests carry the requester's radio name and reports carry the sender's ([name item](#report-subtype-2-29-bytes-plus-the-trail-and-extensions)), so people who aren't contacts show by name. Everywhere a person is named (the consent dialog, the strip, the pin sheet):
+1. A contact's name, when the sender prefix matches one (`contactByKeyPrefix4`).
+2. Otherwise the name from the packet, marked unverified, since any member can claim any name, as with the prefix.
+3. Otherwise the hex prefix.
+
+The last name from a packet is kept in `people.name_cached`, so later reports without it still show it.
 
 ### Display thresholds
 
@@ -397,7 +435,7 @@ It can't catch a renamed hashtag channel or a key that was shared widely, which 
 - **Migrations** must survive an interrupted first launch: `createTable`, and add columns only if they're missing (see `app_database.dart`'s `_createIndexIfMissing` and path_graph's `addIfMissing`).
 - **Tables:**
   - `own_track(recorded_at, lat, lon, alt_m, dist_m_from_prev)`: raw kept points in order, compressed only when sent. A later "save as route" can turn them into #210's route shape (points plus elevations) without a format change.
-  - `people(prefix PK, name_cached, last_lat, last_lon, last_alt_m, last_heading, last_speed, accuracy_class, fix_age_s, last_sent_at, last_seen_at, last_channel_id_key, last_hops, session_state, ignored)`.
+  - `people(prefix PK, name_cached, last_lat, last_lon, last_alt_m, last_heading, last_speed, accuracy_class, fix_age_s, last_battery, last_status, last_sent_at, last_seen_at, last_channel_id_key, last_hops, session_state, ignored)`.
   - `people_track(prefix, seq, lat, lon, dist_m_from_prev)`: received trails have no per-point times and each overlaps the last, so a new trail replaces that person's line; position reports since then are appended. Order and retention use `seq`.
 - **Retention:**
   - One distance setting (default 16,094 m), walking back from the newest point, for the own track and for each person. Age is never used.
@@ -412,9 +450,10 @@ It can't catch a renamed hashtag channel or a key that was shared widely, which 
   - bit writer and reader with odd lengths
   - exp-Golomb orders 2–4 at edge values and with random values, including the 10-bit example above
   - zigzag; position packing at the poles and the antimeridian
-  - a report with no trail is exactly 29 bytes, and no encoded report exceeds 157
+  - a report with no trail is exactly 29 bytes, battery and status included, and no encoded report exceeds 157, a trail and a 20-byte name included
+  - a name is cut at a character boundary at 20 bytes; a request with an 11-byte name is 29 bytes; unknown extension tags are skipped
   - for 50 random tracks, decoding the encoding gives exactly the sender's quantized points
-- **Trail:** GPX fixtures of a city walk, a mountain drive and a straight highway, each logging epsilon, points and bytes.
+- **Trail:** GPX fixtures of a city walk, a mountain drive and a straight highway, each logging epsilon, points and bytes. Bisection keeps a tolerance at least as fine as a scan in 1 m steps.
 - **Gate:** every denial above, including `Family` with `sha256('#family')`, an all-zero key and a 31-byte `#` name.
 - **Movement:** a reading that flips between two neighbouring cells adds no rows and stays not moving; fix age grows while the reading is frozen.
 - **Time:** a backlog request older than 10 minutes is dropped; a live frame from a sender whose clock is off still prompts; ages never show below 0.
@@ -448,6 +487,8 @@ It can't catch a renamed hashtag channel or a key that was shared widely, which 
 ## Track compression review (2026-11-12)
 
 Martin drafted a text encoding for "a position plus the track that led there" in one message, and asked for a quick look at how tracks can be compressed for MeshCore's packet size. This is that look. **Nothing here is decided:** it is input for the later review of this plan and of the saved-routes plan (#242), which uses the same codec.
+
+Its numbers use the report as it was on 2026-11-12, with 128 bytes for a trail. Since 2026-11-15 a trail gets 126, less any extension block.
 
 ### The draft
 
@@ -544,7 +585,7 @@ That is too little to change the format on road lines. Recorded tracks have shor
 For the later review, in order of value:
 
 1. **Keep the datagram and this code for channels.** The same points take 1.5 to 2.3 times as many bytes as text, and a datagram stays out of the chat on every app.
-2. **Recipe step 4:** find the finest tolerance that fits by bisection, the way drawings do, in place of the ×1.5 loop.
+2. **Recipe step 4:** find the finest tolerance that fits by bisection, the way drawings do, in place of the ×1.5 loop. Adopted on 2026-11-15.
 3. **Graded tolerance** as an option of the recipe (15 m for the newest 2 km, a ramp beyond, a 16 m grid). Try it on recorded tracks before deciding.
 4. **If a text form is wanted** (DMs, older firmware, other apps), there are two ways, and the choice is a product one:
    - the polyline as drafted. Many tools decode it, and it is a second codec to keep.
@@ -575,6 +616,48 @@ For the later review, in order of value:
 - [Extensive Comparison of Trajectory Simplification Algorithms](https://studenttheses.uu.nl/handle/20.500.12932/25654) (Utrecht University thesis; abstract only)
 - [Batch Simplification Algorithm for Trajectories over Road Networks](https://mdpi.com/2220-9964/12/10/399/xml) (abstract only)
 
+## Looked at elsewhere (2026-11-15)
+
+Martin asked what other open-source MeshCore clients and firmware do for position sharing, as input rather than a change of plan. Seven were read in their code:
+- a team-awareness client, and the firmware for its standalone devices
+- a group-tracking app
+- a plugin and a bridge for a team-awareness map app
+- a firmware with live location sharing
+- a road-events format
+
+Nothing was copied. Their licences run from MIT to GPL and non-commercial.
+
+**What they do**
+- **Carriers:** channel datagrams (three formats: one on a registered type, one in the development range, one on an unregistered type in the range meant for registration), channel text behind a prefix (two), and telemetry requests (one).
+- **Pacing:** on while enabled, though one ends sessions after 1–12 hours. They use APRS-style smart beaconing (every 90 s moving, 10 minutes still, early on a 35° turn or after 75 m, never under 30 s), a timer of 60–120 s, or a distance and time gate.
+- **Routing:** every beacon floods. Some can keep floods to a region.
+- **Trails:** where kept at all, each receiver builds them from successive beacons. None sends a trail.
+- **Position source:** the phone's GPS in the phone apps, with the radio as a fallback in some. The firmware uses the radio's own GPS.
+
+**What it confirms here**
+- **seq and sent_at:**
+  - **Parked members fade out.** The datagram format with neither seq nor a time loses parked members to the firmware's duplicate filter (`src/Mesh.cpp:225-247`). A member whose position comes from the radio stops being heard, and fades out while still beaconing.
+  - **Old positions look fresh.** At least four of them time a position by its arrival, so a position that waited in a radio's queue shows as live. One format keeps a timestamp for exactly that reason ("the companion's offline queue can delay datagrams by hours"), and its code then ignores it.
+  - **Parking shows.** While someone is parked, that format's first cipher block repeats.
+  - The [common header](#common-header-12-bytes-every-packet) and the [time rules](#time) avoid all three.
+- **Zero-hop sessions:** five people moving at 90 s make about 3 floods a minute, each repeated by every repeater, for as long as sharing is on. Each one also lands in every away radio's queue. None adapts the rate to the group's size.
+- **The channel gate:** only one derives hashtag keys as this plan's [gate](#channel-gate) does. The others check for a leading `#`, refuse the first slot, or check nothing.
+- **A registered data type,** as planned.
+
+**Taken:** names, battery and status, bisection, and a turn report to try ([owner decisions](#owner-decisions)). Who got it, Follow and SOS come [later](#later-after-sharing-works-own-prs).
+
+**Not taken**
+- **Their formats,** also not as a per-channel compatibility mode:
+  - most carry no seq or time
+  - one sits on an unregistered type with no version field
+  - a mode named for another app goes against the rule on naming other apps
+  - the apps a "compatible" label would suggest can't read that format anyway
+- **Wasteful choices:** always-on flooding beacons, positions to 1 cm (8 bytes for precision the radio's GPS doesn't have), and the sender's name in every packet.
+- **Per-send region scope with CMD 54.** It is safe for flash: it only sets the scope in the radio's RAM ([flood scope](#firmware-facts-companion-v1180)). But it adds nothing and risks a lot:
+  - A channel flood already goes under the radio's default scope.
+  - A repeater forwards a scoped flood only when it has that region.
+  - An app that dies between set and clear leaves every flood scoped until the next clear or a reboot.
+
 ## Open questions for Martin
 
 1. Do test version bumps stay in the PR, or are they reverted at merge as in #229?
@@ -585,6 +668,7 @@ For the later review, in order of value:
 6. From the [track compression review](#track-compression-review-2026-11-12): is the draft's text form (`T4:`) meant to replace the datagrams, or to add a way in for DMs, older firmware and other apps?
 7. Graded tolerance: is a coarser far end a fair price for a finer near end, and how far back counts as near? The draft says about 2 km.
 8. Are per-point times or heights wanted in a trail? The format reserves both (mask bits 8 and 9), and each takes room from the points.
+9. Should the screens offer a status (OK, need help, heading back)? The format carries it at no cost (mask bit 7), and a receiver shows it on the pin sheet.
 
 ## What the earlier draft got wrong (don't bring these back)
 
