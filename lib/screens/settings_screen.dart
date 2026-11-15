@@ -33,7 +33,11 @@ import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
 import 'wifi_settings_screen.dart';
+import '../services/ui_view_state_service.dart';
+import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../utils/platform_info.dart';
+import 'package:traxmap/traxmap.dart' show LatLng;
 
 /// Convert device coding-rate value (1-4 on some firmware, 5-8 on others)
 /// to the UI enum range (always 5-8).
@@ -115,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildExportCard(connector),
                 const SizedBox(height: 16),
-                _buildAboutCard(context),
+                _buildAboutCard(context, connector),
               ],
             );
           },
@@ -644,8 +648,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAboutCard(BuildContext context) {
+  Widget _buildAboutCard(BuildContext context, MeshCoreConnector connector) {
     final l10n = context.l10n;
+    final firmware = connector.isConnected ? connector.firmwareVersion : null;
     return Card(
       child: Column(
         children: [
@@ -653,9 +658,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.info_outline),
             title: Text(l10n.settings_about),
             subtitle: Text(
-              l10n.settings_aboutVersion(
-                _appVersion.isEmpty ? l10n.common_loading : _appVersion,
-              ),
+              [
+                l10n.settings_aboutVersion(
+                  _appVersion.isEmpty ? l10n.common_loading : _appVersion,
+                ),
+                if (firmware != null) l10n.settings_radioFirmware(firmware),
+              ].join('\n'),
             ),
             onTap: () => _showAbout(context),
           ),
@@ -887,44 +895,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     final latController = TextEditingController();
     final lonController = TextEditingController();
-    latController.text = connector.selfLatitude?.toStringAsFixed(6) ?? '';
-    lonController.text = connector.selfLongitude?.toStringAsFixed(6) ?? '';
+    // A radio with no position reports 0, 0: nothing to show or to keep.
+    final lat0 = connector.selfLatitude;
+    final lon0 = connector.selfLongitude;
+    if (lat0 != null && lon0 != null && (lat0 != 0 || lon0 != 0)) {
+      latController.text = lat0.toStringAsFixed(6);
+      lonController.text = lon0.toStringAsFixed(6);
+    }
+    final lastMapView = context.read<UiViewStateService>().mapCamera;
 
     // Safe access to custom vars - may be null before device responds
     final customVars = connector.currentCustomVars ?? {};
     final bool hasGPS = customVars.containsKey("gps");
     bool isGPSEnabled = customVars["gps"] == "1";
 
+    LatLng? typedPosition() {
+      final lat = double.tryParse(latController.text.trim());
+      final lon = double.tryParse(lonController.text.trim());
+      if (lat == null || lon == null) return null;
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+      // A radio with no position reports 0, 0.
+      if (lat == 0 && lon == 0) return null;
+      return LatLng(lat, lon);
+    }
+
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.settings_location),
-          content: Column(
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: latController,
-                decoration: InputDecoration(
-                  labelText: l10n.settings_latitude,
-                  border: const OutlineInputBorder(),
+              // Web has no map packs service, so no map.
+              if (!PlatformInfo.isWeb) ...[
+                PositionPickerMap(
+                  position: typedPosition(),
+                  emptyCamera: lastMapView,
+                  height: 150,
+                  onPicked: (point) => setDialogState(() {
+                    latController.text = point.latitude.toStringAsFixed(6);
+                    lonController.text = point.longitude.toStringAsFixed(6);
+                  }),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+                const SizedBox(height: 8),
+                Text(
+                  l10n.settings_locationTapMap,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: lonController,
-                decoration: InputDecoration(
-                  labelText: l10n.settings_longitude,
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
+                const SizedBox(height: 16),
+              ],
+              // Side by side: the dialog has to fit a phone with the map in it.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: latController,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.settings_latitude,
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: lonController,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.settings_longitude,
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (hasGPS) ...[
                 const SizedBox(height: 16),
@@ -937,8 +994,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     await connector.setGps(value);
                   },
                 ),
+                if (isGPSEnabled) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.settings_locationGpsNote,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ],
             ],
+              ),
+            ),
           ),
           actions: [
             TextButton(

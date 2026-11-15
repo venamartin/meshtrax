@@ -2776,5 +2776,13 @@
   "drawing_moveMap": "Kaart verplaatsen",
   "drawing_mapHint": "Schuif en zoom naar de plek en tik dan op Hier tekenen.",
   "drawing_mapAcross": "{map}, {distance} breed",
-  "drawing_mapNotDownloaded": "Dit gebied is niet gedownload"
+  "drawing_mapNotDownloaded": "Dit gebied is niet gedownload",
+  "listFilter_hopsAway": "Hops verwijderd",
+  "settings_radioFirmware": "Radiofirmware {version}",
+  "settings_locationTapMap": "Tik op de kaart om de positie te kiezen, of typ de getallen.",
+  "channels_pasteLink": "Link plakken",
+  "channels_pasteLinkDesc": "Een gekopieerde meshcore://-kanaallink.",
+  "channels_pasteLinkNone": "Er staat geen kanaallink op het klembord.",
+  "settings_locationGpsNote": "Met gps aan vervangt de radio deze positie zodra de gps een fix heeft.",
+  "contacts_hopsAway": "{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}"
 }

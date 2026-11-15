@@ -2776,5 +2776,13 @@
   "drawing_moveMap": "Flytta kartan",
   "drawing_mapHint": "Panorera och zooma till platsen och tryck sedan på Rita här.",
   "drawing_mapAcross": "{map}, {distance} i bredd",
-  "drawing_mapNotDownloaded": "Det här området är inte nedladdat"
+  "drawing_mapNotDownloaded": "Det här området är inte nedladdat",
+  "listFilter_hopsAway": "Antal hopp",
+  "settings_radioFirmware": "Radions firmware {version}",
+  "settings_locationTapMap": "Tryck på kartan för att ange positionen, eller skriv in siffrorna.",
+  "channels_pasteLink": "Klistra in en länk",
+  "channels_pasteLinkDesc": "En kopierad meshcore://-kanallänk.",
+  "channels_pasteLinkNone": "Det finns ingen kanallänk i urklipp.",
+  "settings_locationGpsNote": "Med GPS på ersätter radion den här positionen så snart dess GPS har en fix.",
+  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 hopp} other{{count} hopp}}"
 }

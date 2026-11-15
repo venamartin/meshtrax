@@ -6615,4 +6615,45 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Цю область не завантажено';
+
+  @override
+  String get listFilter_hopsAway => 'Кількість переходів';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Прошивка радіо $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Торкніться карти, щоб задати позицію, або введіть числа.';
+
+  @override
+  String get channels_pasteLink => 'Вставити посилання';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Скопійоване посилання meshcore:// на канал.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'У буфері обміну немає посилання на канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Коли GPS увімкнено, радіо замінює цю позицію, щойно GPS визначить місцезнаходження.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count переходу',
+      many: '$count переходів',
+      few: '$count переходи',
+      one: '1 перехід',
+      zero: 'Напряму',
+    );
+    return '$_temp0';
+  }
 }

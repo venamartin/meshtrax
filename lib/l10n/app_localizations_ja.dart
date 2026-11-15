@@ -6297,4 +6297,38 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'このエリアはダウンロードされていません';
+
+  @override
+  String get listFilter_hopsAway => 'ホップ数';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '無線機ファームウェア $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '地図をタップして位置を設定するか、数値を入力してください。';
+
+  @override
+  String get channels_pasteLink => 'リンクを貼り付け';
+
+  @override
+  String get channels_pasteLinkDesc => 'コピーした meshcore:// チャンネルリンク。';
+
+  @override
+  String get channels_pasteLinkNone => 'クリップボードにチャンネルリンクがありません。';
+
+  @override
+  String get settings_locationGpsNote => 'GPS がオンのとき、測位でき次第、無線機はこの位置を置き換えます。';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countホップ',
+      zero: '直接',
+    );
+    return '$_temp0';
+  }
 }

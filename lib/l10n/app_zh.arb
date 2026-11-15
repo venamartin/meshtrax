@@ -2781,5 +2781,13 @@
   "drawing_moveMap": "移动地图",
   "drawing_mapHint": "平移并缩放地图到目标位置，然后点按“在此绘制”。",
   "drawing_mapAcross": "{map}，宽 {distance}",
-  "drawing_mapNotDownloaded": "此区域尚未下载"
+  "drawing_mapNotDownloaded": "此区域尚未下载",
+  "listFilter_hopsAway": "跳数",
+  "settings_radioFirmware": "电台固件 {version}",
+  "settings_locationTapMap": "点按地图设置位置，或输入数值。",
+  "channels_pasteLink": "粘贴链接",
+  "channels_pasteLinkDesc": "你复制的 meshcore:// 频道链接。",
+  "channels_pasteLinkNone": "剪贴板中没有频道链接。",
+  "settings_locationGpsNote": "GPS 开启时，一旦定位成功，电台就会替换此位置。",
+  "contacts_hopsAway": "{count, plural, =0{直连} other{{count} 跳}}"
 }

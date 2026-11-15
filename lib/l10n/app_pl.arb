@@ -2814,5 +2814,13 @@
   "drawing_moveMap": "Przesuń mapę",
   "drawing_mapHint": "Przesuń i przybliż mapę do wybranego miejsca, a potem stuknij „Rysuj tutaj”.",
   "drawing_mapAcross": "{map}, {distance} wszerz",
-  "drawing_mapNotDownloaded": "Ten obszar nie został pobrany"
+  "drawing_mapNotDownloaded": "Ten obszar nie został pobrany",
+  "listFilter_hopsAway": "Liczba skoków",
+  "settings_radioFirmware": "Firmware radia {version}",
+  "settings_locationTapMap": "Dotknij mapy, aby ustawić pozycję, lub wpisz liczby.",
+  "channels_pasteLink": "Wklej link",
+  "channels_pasteLinkDesc": "Skopiowany link do kanału meshcore://.",
+  "channels_pasteLinkNone": "W schowku nie ma linku do kanału.",
+  "settings_locationGpsNote": "Przy włączonym GPS radio zastępuje tę pozycję, gdy tylko GPS ustali położenie.",
+  "contacts_hopsAway": "{count, plural, =0{Bezpośrednio} =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}"
 }

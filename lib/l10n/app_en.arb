@@ -3257,5 +3257,27 @@
       }
     }
   },
-  "drawing_mapNotDownloaded": "This area isn't downloaded"
+  "drawing_mapNotDownloaded": "This area isn't downloaded",
+  "listFilter_hopsAway": "Hops away",
+  "settings_radioFirmware": "Radio firmware {version}",
+  "@settings_radioFirmware": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settings_locationTapMap": "Tap the map to set the position, or type the numbers.",
+  "channels_pasteLink": "Paste a link",
+  "channels_pasteLinkDesc": "A meshcore:// channel link you copied.",
+  "channels_pasteLinkNone": "There is no channel link on the clipboard.",
+  "settings_locationGpsNote": "With GPS on, the radio replaces this position as soon as its GPS has a fix.",
+  "contacts_hopsAway": "{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}",
+  "@contacts_hopsAway": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

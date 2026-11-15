@@ -2776,5 +2776,13 @@
   "drawing_moveMap": "Posunúť mapu",
   "drawing_mapHint": "Posúvaním a približovaním mapy nájdite miesto, potom klepnite na „Kresliť tu“.",
   "drawing_mapAcross": "{map}, šírka {distance}",
-  "drawing_mapNotDownloaded": "Táto oblasť nie je stiahnutá"
+  "drawing_mapNotDownloaded": "Táto oblasť nie je stiahnutá",
+  "listFilter_hopsAway": "Počet skokov",
+  "settings_radioFirmware": "Firmvér rádia {version}",
+  "settings_locationTapMap": "Ťuknutím na mapu nastavte polohu alebo zadajte čísla.",
+  "channels_pasteLink": "Vložiť odkaz",
+  "channels_pasteLinkDesc": "Skopírovaný odkaz meshcore:// na kanál.",
+  "channels_pasteLinkNone": "V schránke nie je odkaz na kanál.",
+  "settings_locationGpsNote": "Pri zapnutom GPS rádio nahradí túto polohu, hneď ako GPS získa polohu.",
+  "contacts_hopsAway": "{count, plural, =0{Priamo} =1{1 skok} few{{count} skoky} many{{count} skoku} other{{count} skokov}}"
 }

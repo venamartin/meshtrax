@@ -6583,4 +6583,44 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Táto oblasť nie je stiahnutá';
+
+  @override
+  String get listFilter_hopsAway => 'Počet skokov';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmvér rádia $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Ťuknutím na mapu nastavte polohu alebo zadajte čísla.';
+
+  @override
+  String get channels_pasteLink => 'Vložiť odkaz';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Skopírovaný odkaz meshcore:// na kanál.';
+
+  @override
+  String get channels_pasteLinkNone => 'V schránke nie je odkaz na kanál.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Pri zapnutom GPS rádio nahradí túto polohu, hneď ako GPS získa polohu.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skokov',
+      many: '$count skoku',
+      few: '$count skoky',
+      one: '1 skok',
+      zero: 'Priamo',
+    );
+    return '$_temp0';
+  }
 }

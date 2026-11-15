@@ -6496,4 +6496,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'This area isn\'t downloaded';
+
+  @override
+  String get listFilter_hopsAway => 'Hops away';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Radio firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tap the map to set the position, or type the numbers.';
+
+  @override
+  String get channels_pasteLink => 'Paste a link';
+
+  @override
+  String get channels_pasteLinkDesc => 'A meshcore:// channel link you copied.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'There is no channel link on the clipboard.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'With GPS on, the radio replaces this position as soon as its GPS has a fix.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hops',
+      one: '1 hop',
+      zero: 'Direct',
+    );
+    return '$_temp0';
+  }
 }

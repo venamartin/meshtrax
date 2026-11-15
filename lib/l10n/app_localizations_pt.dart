@@ -6597,4 +6597,43 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Esta área não foi baixada';
+
+  @override
+  String get listFilter_hopsAway => 'Saltos de distância';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmware do rádio $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Toque no mapa para definir a posição ou digite os números.';
+
+  @override
+  String get channels_pasteLink => 'Colar um link';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Um link de canal meshcore:// que você copiou.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Não há nenhum link de canal na área de transferência.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Com o GPS ligado, o rádio substitui esta posição assim que o GPS obtém um fix.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saltos',
+      one: '1 salto',
+      zero: 'Direto',
+    );
+    return '$_temp0';
+  }
 }

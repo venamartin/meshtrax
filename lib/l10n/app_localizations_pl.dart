@@ -6617,4 +6617,43 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Ten obszar nie został pobrany';
+
+  @override
+  String get listFilter_hopsAway => 'Liczba skoków';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Firmware radia $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Dotknij mapy, aby ustawić pozycję, lub wpisz liczby.';
+
+  @override
+  String get channels_pasteLink => 'Wklej link';
+
+  @override
+  String get channels_pasteLinkDesc => 'Skopiowany link do kanału meshcore://.';
+
+  @override
+  String get channels_pasteLinkNone => 'W schowku nie ma linku do kanału.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Przy włączonym GPS radio zastępuje tę pozycję, gdy tylko GPS ustali położenie.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skoku',
+      many: '$count skoków',
+      few: '$count skoki',
+      one: '1 skok',
+      zero: 'Bezpośrednio',
+    );
+    return '$_temp0';
+  }
 }

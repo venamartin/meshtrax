@@ -6308,4 +6308,39 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => '이 지역은 다운로드되지 않았습니다';
+
+  @override
+  String get listFilter_hopsAway => '홉 수';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '무전기 펌웨어 $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '지도를 탭하여 위치를 정하거나 숫자를 입력하세요.';
+
+  @override
+  String get channels_pasteLink => '링크 붙여넣기';
+
+  @override
+  String get channels_pasteLinkDesc => '복사한 meshcore:// 채널 링크.';
+
+  @override
+  String get channels_pasteLinkNone => '클립보드에 채널 링크가 없습니다.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'GPS가 켜져 있으면 위치를 잡는 즉시 무전기가 이 위치를 바꿉니다.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count홉',
+      zero: '직접',
+    );
+    return '$_temp0';
+  }
 }

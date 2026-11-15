@@ -6611,4 +6611,42 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Ez a terület nincs letöltve';
+
+  @override
+  String get listFilter_hopsAway => 'Ugrások száma';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Rádió firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Koppints a térképre a pozíció megadásához, vagy írd be a számokat.';
+
+  @override
+  String get channels_pasteLink => 'Hivatkozás beillesztése';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Egy kimásolt meshcore:// csatornahivatkozás.';
+
+  @override
+  String get channels_pasteLinkNone => 'A vágólapon nincs csatornahivatkozás.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Bekapcsolt GPS mellett a rádió lecseréli ezt a pozíciót, amint a GPS helyzetet talál.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ugrás',
+      one: '1 ugrás',
+      zero: 'Közvetlen',
+    );
+    return '$_temp0';
+  }
 }

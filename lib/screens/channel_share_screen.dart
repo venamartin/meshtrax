@@ -7,6 +7,7 @@ import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_code_display.dart';
+import '../widgets/qr_share_button.dart';
 
 class ChannelShareScreen extends StatelessWidget {
   final Channel channel;
@@ -21,6 +22,7 @@ class ChannelShareScreen extends StatelessWidget {
       appBar: AppBar(
         title: AdaptiveAppBarTitle(context.l10n.channels_shareChannel),
         centerTitle: true,
+        actions: [QrShareButton(data: qrData, name: channel.name)],
       ),
       body: SingleChildScrollView(
         child: Padding(

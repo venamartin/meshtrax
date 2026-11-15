@@ -272,6 +272,11 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
               label: l10n.listFilter_az,
               checked: sortOption == ContactSortOption.name,
             ),
+            SortFilterMenuOption(
+              value: _RepeaterSortAction(ContactSortOption.hops),
+              label: l10n.listFilter_hopsAway,
+              checked: sortOption == ContactSortOption.hops,
+            ),
           ],
         ),
         SortFilterMenuSection(

@@ -6611,4 +6611,42 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get drawing_mapNotDownloaded =>
       'Dieses Gebiet ist nicht heruntergeladen';
+
+  @override
+  String get listFilter_hopsAway => 'Hops entfernt';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Funkgerät-Firmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein.';
+
+  @override
+  String get channels_pasteLink => 'Link einfügen';
+
+  @override
+  String get channels_pasteLinkDesc => 'Ein kopierter meshcore://-Kanallink.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'In der Zwischenablage ist kein Kanallink.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Bei eingeschaltetem GPS ersetzt das Funkgerät diese Position, sobald sein GPS einen Fix hat.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hops',
+      one: '1 Hop',
+      zero: 'Direkt',
+    );
+    return '$_temp0';
+  }
 }

@@ -233,6 +233,15 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
         
         if (sortOption == ContactSortOption.lastSeen) {
           filtered.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+        } else if (sortOption == ContactSortOption.hops) {
+          // Fewest first; a repeater never heard advertising has no count
+          // and goes last. Ties by most recently heard.
+          filtered.sort((a, b) {
+            final byHops = (a.inboundHopCount ?? 1 << 20).compareTo(
+              b.inboundHopCount ?? 1 << 20,
+            );
+            return byHops != 0 ? byHops : b.lastSeen.compareTo(a.lastSeen);
+          });
         } else {
           filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         }
@@ -322,8 +331,17 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                         ),
                       if (sortOption != ContactSortOption.lastSeen)
                         InputChip(
-                          avatar: const Icon(Icons.sort_by_alpha, size: 18),
-                          label: Text(context.l10n.listFilter_az),
+                          avatar: Icon(
+                            sortOption == ContactSortOption.hops
+                                ? Icons.route
+                                : Icons.sort_by_alpha,
+                            size: 18,
+                          ),
+                          label: Text(
+                            sortOption == ContactSortOption.hops
+                                ? context.l10n.listFilter_hopsAway
+                                : context.l10n.listFilter_az,
+                          ),
                           deleteButtonTooltipMessage:
                               context.l10n.listFilter_heardRecently,
                           onDeleted: () =>
@@ -352,6 +370,11 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: !contact.isActive,
+                            routeLabel: contact.inboundHopCount == null
+                                ? null
+                                : context.l10n.contacts_hopsAway(
+                                    contact.inboundHopCount!,
+                                  ),
                             onTap: () => _manageRepeater(context, connector, contact),
                             onLongPress: () => _showRepeaterOptions(context, connector, contact),
                           );

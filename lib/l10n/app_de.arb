@@ -2804,5 +2804,13 @@
   "drawing_moveMap": "Karte verschieben",
   "drawing_mapHint": "Verschieben und zoomen Sie die Karte zur gewünschten Stelle und tippen Sie dann auf „Hier zeichnen“.",
   "drawing_mapAcross": "{map}, {distance} breit",
-  "drawing_mapNotDownloaded": "Dieses Gebiet ist nicht heruntergeladen"
+  "drawing_mapNotDownloaded": "Dieses Gebiet ist nicht heruntergeladen",
+  "listFilter_hopsAway": "Hops entfernt",
+  "settings_radioFirmware": "Funkgerät-Firmware {version}",
+  "settings_locationTapMap": "Tippe auf die Karte, um die Position zu setzen, oder gib die Zahlen ein.",
+  "channels_pasteLink": "Link einfügen",
+  "channels_pasteLinkDesc": "Ein kopierter meshcore://-Kanallink.",
+  "channels_pasteLinkNone": "In der Zwischenablage ist kein Kanallink.",
+  "settings_locationGpsNote": "Bei eingeschaltetem GPS ersetzt das Funkgerät diese Position, sobald sein GPS einen Fix hat.",
+  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 Hop} other{{count} Hops}}"
 }

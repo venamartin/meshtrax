@@ -2814,5 +2814,13 @@
   "drawing_moveMap": "Térkép mozgatása",
   "drawing_mapHint": "Keresse meg a helyet a térkép mozgatásával és nagyításával, majd koppintson a „Rajzolás itt” gombra.",
   "drawing_mapAcross": "{map}, {distance} széles terület",
-  "drawing_mapNotDownloaded": "Ez a terület nincs letöltve"
+  "drawing_mapNotDownloaded": "Ez a terület nincs letöltve",
+  "listFilter_hopsAway": "Ugrások száma",
+  "settings_radioFirmware": "Rádió firmware {version}",
+  "settings_locationTapMap": "Koppints a térképre a pozíció megadásához, vagy írd be a számokat.",
+  "channels_pasteLink": "Hivatkozás beillesztése",
+  "channels_pasteLinkDesc": "Egy kimásolt meshcore:// csatornahivatkozás.",
+  "channels_pasteLinkNone": "A vágólapon nincs csatornahivatkozás.",
+  "settings_locationGpsNote": "Bekapcsolt GPS mellett a rádió lecseréli ezt a pozíciót, amint a GPS helyzetet talál.",
+  "contacts_hopsAway": "{count, plural, =0{Közvetlen} =1{1 ugrás} other{{count} ugrás}}"
 }

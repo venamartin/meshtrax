@@ -137,4 +137,26 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('ui_repeaters_type_filter'), 'favorites');
   });
+
+  testWidgets('choosing Hops away sorts by it, shows its chip and is kept', (
+    tester,
+  ) async {
+    await setUpWith({});
+    await open(tester);
+    await tester.tap(find.byTooltip('Filter and sort'));
+    await settle(tester);
+    await tester.tap(find.text('Hops away'));
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, 'Hops away'), findsOneWidget);
+    // Neither has been heard advertising, so both stay, at the end.
+    expect(find.text('Zenith'), findsOneWidget);
+    expect(find.text('Alder'), findsOneWidget);
+    expect(viewState.repeatersSortOption, ContactSortOption.hops);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('ui_repeaters_sort_option'), 'hops');
+
+    await tester.tap(find.byTooltip('Heard recently'));
+    await settle(tester);
+    expect(find.byType(InputChip), findsNothing);
+  });
 }

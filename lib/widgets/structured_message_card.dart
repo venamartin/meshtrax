@@ -496,6 +496,9 @@ class StructuredMessageCard extends StatelessWidget {
           .where((c) => c.idKey.toLowerCase() == key)
           .firstOrNull;
       if (channel == null) return;
+      // Tapped inside that very chat: stay put, don't stack a second copy.
+      final here = context.findAncestorWidgetOfExactType<ChannelChatScreen>();
+      if (here != null && here.channel.idKey.toLowerCase() == key) return;
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel)),
@@ -505,8 +508,11 @@ class StructuredMessageCard extends StatelessWidget {
     final contact = connector.contacts
         .where((c) => c.publicKeyHex.toLowerCase() == key)
         .firstOrNull;
+    if (contact == null) return;
+    final here = context.findAncestorWidgetOfExactType<ChatScreen>();
+    if (here != null && here.contact.publicKeyHex.toLowerCase() == key) return;
     // A room asks for its password when none is remembered.
-    if (contact != null) ChatScreen.open(context, contact);
+    ChatScreen.open(context, contact);
   }
 
   Widget _locationCard(

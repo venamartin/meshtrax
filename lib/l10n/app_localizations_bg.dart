@@ -6589,4 +6589,41 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Тази област не е изтеглена';
+
+  @override
+  String get listFilter_hopsAway => 'Брой скокове';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Фърмуер на радиото $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Докоснете картата, за да зададете позицията, или въведете числата.';
+
+  @override
+  String get channels_pasteLink => 'Поставяне на връзка';
+
+  @override
+  String get channels_pasteLinkDesc => 'Копирана връзка meshcore:// към канал.';
+
+  @override
+  String get channels_pasteLinkNone => 'В клипборда няма връзка към канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'При включен GPS радиото заменя тази позиция, щом GPS определи местоположение.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count скока',
+      one: '1 скок',
+      zero: 'Директно',
+    );
+    return '$_temp0';
+  }
 }

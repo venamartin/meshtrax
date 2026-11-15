@@ -6610,4 +6610,44 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Эта область не скачана';
+
+  @override
+  String get listFilter_hopsAway => 'Число переходов';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Прошивка радио $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Коснитесь карты, чтобы задать позицию, или введите числа.';
+
+  @override
+  String get channels_pasteLink => 'Вставить ссылку';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Скопированная ссылка meshcore:// на канал.';
+
+  @override
+  String get channels_pasteLinkNone => 'В буфере обмена нет ссылки на канал.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'При включённом GPS радио заменяет эту позицию, как только GPS определит местоположение.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count перехода',
+      many: '$count переходов',
+      few: '$count перехода',
+      one: '1 переход',
+      zero: 'Напрямую',
+    );
+    return '$_temp0';
+  }
 }

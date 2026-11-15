@@ -2776,5 +2776,13 @@
   "drawing_moveMap": "Перемістити карту",
   "drawing_mapHint": "Наведіть карту на потрібне місце й налаштуйте масштаб, а потім натисніть «Малювати тут».",
   "drawing_mapAcross": "{map}, ширина {distance}",
-  "drawing_mapNotDownloaded": "Цю область не завантажено"
+  "drawing_mapNotDownloaded": "Цю область не завантажено",
+  "listFilter_hopsAway": "Кількість переходів",
+  "settings_radioFirmware": "Прошивка радіо {version}",
+  "settings_locationTapMap": "Торкніться карти, щоб задати позицію, або введіть числа.",
+  "channels_pasteLink": "Вставити посилання",
+  "channels_pasteLinkDesc": "Скопійоване посилання meshcore:// на канал.",
+  "channels_pasteLinkNone": "У буфері обміну немає посилання на канал.",
+  "settings_locationGpsNote": "Коли GPS увімкнено, радіо замінює цю позицію, щойно GPS визначить місцезнаходження.",
+  "contacts_hopsAway": "{count, plural, =0{Напряму} =1{1 перехід} few{{count} переходи} many{{count} переходів} other{{count} переходу}}"
 }

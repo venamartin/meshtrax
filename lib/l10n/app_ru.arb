@@ -2144,5 +2144,13 @@
   "drawing_moveMap": "Переместить карту",
   "drawing_mapHint": "Найдите нужное место, перемещая и масштабируя карту, затем нажмите «Рисовать здесь».",
   "drawing_mapAcross": "{map}, {distance} в ширину",
-  "drawing_mapNotDownloaded": "Эта область не скачана"
+  "drawing_mapNotDownloaded": "Эта область не скачана",
+  "listFilter_hopsAway": "Число переходов",
+  "settings_radioFirmware": "Прошивка радио {version}",
+  "settings_locationTapMap": "Коснитесь карты, чтобы задать позицию, или введите числа.",
+  "channels_pasteLink": "Вставить ссылку",
+  "channels_pasteLinkDesc": "Скопированная ссылка meshcore:// на канал.",
+  "channels_pasteLinkNone": "В буфере обмена нет ссылки на канал.",
+  "settings_locationGpsNote": "При включённом GPS радио заменяет эту позицию, как только GPS определит местоположение.",
+  "contacts_hopsAway": "{count, plural, =0{Напрямую} =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}"
 }

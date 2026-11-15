@@ -6182,4 +6182,38 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => '此区域尚未下载';
+
+  @override
+  String get listFilter_hopsAway => '跳数';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return '电台固件 $version';
+  }
+
+  @override
+  String get settings_locationTapMap => '点按地图设置位置，或输入数值。';
+
+  @override
+  String get channels_pasteLink => '粘贴链接';
+
+  @override
+  String get channels_pasteLinkDesc => '你复制的 meshcore:// 频道链接。';
+
+  @override
+  String get channels_pasteLinkNone => '剪贴板中没有频道链接。';
+
+  @override
+  String get settings_locationGpsNote => 'GPS 开启时，一旦定位成功，电台就会替换此位置。';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 跳',
+      zero: '直连',
+    );
+    return '$_temp0';
+  }
 }

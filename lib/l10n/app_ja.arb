@@ -2814,5 +2814,13 @@
   "drawing_moveMap": "地図を動かす",
   "drawing_mapHint": "地図を移動・ズームして場所を合わせ、「ここに描く」をタップしてください。",
   "drawing_mapAcross": "{map}、幅{distance}",
-  "drawing_mapNotDownloaded": "このエリアはダウンロードされていません"
+  "drawing_mapNotDownloaded": "このエリアはダウンロードされていません",
+  "listFilter_hopsAway": "ホップ数",
+  "settings_radioFirmware": "無線機ファームウェア {version}",
+  "settings_locationTapMap": "地図をタップして位置を設定するか、数値を入力してください。",
+  "channels_pasteLink": "リンクを貼り付け",
+  "channels_pasteLinkDesc": "コピーした meshcore:// チャンネルリンク。",
+  "channels_pasteLinkNone": "クリップボードにチャンネルリンクがありません。",
+  "settings_locationGpsNote": "GPS がオンのとき、測位でき次第、無線機はこの位置を置き換えます。",
+  "contacts_hopsAway": "{count, plural, =0{直接} other{{count}ホップ}}"
 }

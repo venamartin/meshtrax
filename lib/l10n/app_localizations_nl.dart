@@ -6573,4 +6573,43 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Dit gebied is niet gedownload';
+
+  @override
+  String get listFilter_hopsAway => 'Hops verwijderd';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Radiofirmware $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tik op de kaart om de positie te kiezen, of typ de getallen.';
+
+  @override
+  String get channels_pasteLink => 'Link plakken';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Een gekopieerde meshcore://-kanaallink.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Er staat geen kanaallink op het klembord.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Met gps aan vervangt de radio deze positie zodra de gps een fix heeft.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hops',
+      one: '1 hop',
+      zero: 'Direct',
+    );
+    return '$_temp0';
+  }
 }

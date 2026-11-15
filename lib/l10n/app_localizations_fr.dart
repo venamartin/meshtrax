@@ -6633,4 +6633,43 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'Cette zone n\'est pas téléchargée';
+
+  @override
+  String get listFilter_hopsAway => 'Nombre de sauts';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Micrologiciel de la radio $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Touchez la carte pour définir la position, ou saisissez les nombres.';
+
+  @override
+  String get channels_pasteLink => 'Coller un lien';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Un lien de canal meshcore:// que vous avez copié.';
+
+  @override
+  String get channels_pasteLinkNone =>
+      'Le presse-papiers ne contient aucun lien de canal.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Avec le GPS activé, la radio remplace cette position dès que son GPS a un fix.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sauts',
+      one: '1 saut',
+      zero: 'Direct',
+    );
+    return '$_temp0';
+  }
 }

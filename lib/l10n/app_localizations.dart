@@ -11388,6 +11388,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This area isn\'t downloaded'**
   String get drawing_mapNotDownloaded;
+
+  /// No description provided for @listFilter_hopsAway.
+  ///
+  /// In en, this message translates to:
+  /// **'Hops away'**
+  String get listFilter_hopsAway;
+
+  /// No description provided for @settings_radioFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio firmware {version}'**
+  String settings_radioFirmware(String version);
+
+  /// No description provided for @settings_locationTapMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to set the position, or type the numbers.'**
+  String get settings_locationTapMap;
+
+  /// No description provided for @channels_pasteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a link'**
+  String get channels_pasteLink;
+
+  /// No description provided for @channels_pasteLinkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A meshcore:// channel link you copied.'**
+  String get channels_pasteLinkDesc;
+
+  /// No description provided for @channels_pasteLinkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no channel link on the clipboard.'**
+  String get channels_pasteLinkNone;
+
+  /// No description provided for @settings_locationGpsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'With GPS on, the radio replaces this position as soon as its GPS has a fix.'**
+  String get settings_locationGpsNote;
+
+  /// No description provided for @contacts_hopsAway.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}'**
+  String contacts_hopsAway(int count);
 }
 
 class _AppLocalizationsDelegate

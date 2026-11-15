@@ -6585,4 +6585,44 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get drawing_mapNotDownloaded => 'To območje ni preneseno';
+
+  @override
+  String get listFilter_hopsAway => 'Število skokov';
+
+  @override
+  String settings_radioFirmware(String version) {
+    return 'Strojna programska oprema radia $version';
+  }
+
+  @override
+  String get settings_locationTapMap =>
+      'Tapnite zemljevid, da nastavite položaj, ali vnesite številke.';
+
+  @override
+  String get channels_pasteLink => 'Prilepi povezavo';
+
+  @override
+  String get channels_pasteLinkDesc =>
+      'Kopirana povezava meshcore:// do kanala.';
+
+  @override
+  String get channels_pasteLinkNone => 'V odložišču ni povezave do kanala.';
+
+  @override
+  String get settings_locationGpsNote =>
+      'Ko je GPS vklopljen, radio zamenja ta položaj, takoj ko GPS določi lokacijo.';
+
+  @override
+  String contacts_hopsAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skokov',
+      few: '$count skoki',
+      two: '$count skoka',
+      one: '$count skok',
+      zero: 'Neposredno',
+    );
+    return '$_temp0';
+  }
 }
