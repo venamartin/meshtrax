@@ -105,8 +105,8 @@ void main() {
     expect(find.text('Map type'), findsOneWidget);
     expect(find.text('Map details'), findsOneWidget);
     expect(find.text('Nodes'), findsNothing);
-    expect(find.text('More filters'), findsNothing);
-    expect(find.text('Offline maps'), findsOneWidget);
+    expect(find.byTooltip('More filters'), findsNothing);
+    expect(find.byTooltip('Offline maps'), findsOneWidget);
   });
 
   testWidgets('no radio: no My location', (tester) async {
@@ -131,17 +131,33 @@ void main() {
     expect(tester.getTopLeft(find.text('Map details')).dy, lessThan(before));
   });
 
-  testWidgets('the legend button shows on maps with symbols', (tester) async {
+  testWidgets('the layers sheet offers the legend on maps with symbols', (
+    tester,
+  ) async {
+    Future<void> openLayers() async {
+      await tester.tap(find.byTooltip('Map layers'));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
     await pumpScreen(tester);
+    expect(find.byTooltip('Legend'), findsNothing, reason: 'not on the map');
+    await openLayers();
     expect(
       find.byTooltip('Legend'),
       findsNothing,
       reason: 'the base map has no symbols to explain',
     );
+    await tester.tap(find.byTooltip('Close'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
     await settings.setChartsNoticeDismissed(true);
     await settings.setMapType('charts');
     await tester.pump();
+    await openLayers();
     await tester.tap(find.byTooltip('Legend'));
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));

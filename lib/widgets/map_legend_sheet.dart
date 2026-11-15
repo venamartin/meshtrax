@@ -49,36 +49,6 @@ Future<void> showMapLegend(BuildContext context, {MeshLegendCounts? counts}) =>
       ),
     );
 
-/// The map's "i" button, opening [showMapLegend]. Without [counts] (no
-/// radio) there's only the map's symbols, so it shows only on maps that
-/// have some to explain (charts, the offline OSM map).
-class MapLegendButton extends StatelessWidget {
-  final MeshLegendCounts Function()? counts;
-
-  const MapLegendButton({super.key, this.counts});
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = this.counts;
-    final settings = context.watch<AppSettingsService>().settings;
-    final maps = context.watch<MapPacksService>();
-    if (counts == null &&
-        !mapShowsCharts(settings, maps) &&
-        !mapShowsParkIcons(settings, maps)) {
-      return const SizedBox.shrink();
-    }
-    final colors = Theme.of(context).colorScheme;
-    return FloatingActionButton.small(
-      heroTag: null,
-      tooltip: context.l10n.map_legend,
-      backgroundColor: colors.surface,
-      foregroundColor: colors.onSurfaceVariant,
-      onPressed: () => showMapLegend(context, counts: counts?.call()),
-      child: const Icon(Icons.info_outline),
-    );
-  }
-}
-
 class MapLegendSheet extends StatelessWidget {
   final MeshLegendCounts? counts;
   final ScrollController? controller;

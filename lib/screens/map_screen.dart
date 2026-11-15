@@ -874,14 +874,6 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                         ],
                       ),
-                      if (!_isBuildingPathTrace)
-                        _buildLegend(
-                          contacts,
-                          settings,
-                          connector.pathHashByteWidth,
-                          sharedMarkers.length,
-                          guessedLocations.length,
-                        ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
                       // A touch on the main map makes it yours: it no longer
                       // goes to your GPS position by itself.
@@ -932,6 +924,14 @@ class _MapScreenState extends State<MapScreen> {
                 context,
                 places: !widget.pickPosition,
                 extra: _nodeLayers,
+                legend: !_isBuildingPathTrace,
+                legendCounts: () => _legendCounts(
+                  contacts,
+                  settings,
+                  connector.pathHashByteWidth,
+                  sharedMarkers.length,
+                  guessedLocations.length,
+                ),
                 onMoreFilters: () =>
                     _showFilterDialog(context, settingsService),
               ),
@@ -1152,7 +1152,9 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Widget _buildLegend(
+  /// What the legend's Mesh part counts: the nodes the map draws, those it
+  /// can't place, pins and guesses.
+  MeshLegendCounts _legendCounts(
     List<Contact> contacts,
     AppSettings settings,
     int stride,
@@ -1165,20 +1167,12 @@ class _MapScreenState extends State<MapScreen> {
       stride,
       noLocations: noLocations,
     ).length;
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: MapLegendButton(
-        counts: () {
-          final located = count(noLocations: false);
-          return (
-            located: located,
-            unlocated: count(noLocations: true) - located,
-            pins: markerCount,
-            guessed: guessedCount,
-          );
-        },
-      ),
+    final located = count(noLocations: false);
+    return (
+      located: located,
+      unlocated: count(noLocations: true) - located,
+      pins: markerCount,
+      guessed: guessedCount,
     );
   }
 
