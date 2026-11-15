@@ -125,6 +125,12 @@ class _MapScreenState extends State<MapScreen> {
   int _routeGeneration = 0;
   final _sheetKey = GlobalKey<RouteSheetState>();
 
+  /// The map's area on screen, to see how much of it a sheet covers.
+  final _mapKey = GlobalKey();
+
+  /// The point a place or position sheet is about, pinned while it's open.
+  LatLng? _sheetPoint;
+
   // Points of interest in view, and whether the region in view has them
   // (the map then drops its own icons for the same kinds).
   List<MapPlace> _places = const [];
@@ -702,6 +708,7 @@ class _MapScreenState extends State<MapScreen> {
                 ],
                 Expanded(
                   child: Stack(
+                    key: _mapKey,
                     children: [
                       AppMap(
                         controller: _mapController,
@@ -789,6 +796,19 @@ class _MapScreenState extends State<MapScreen> {
                               child: _nodeDot(
                                 Colors.teal,
                                 Icons.person_pin_circle,
+                              ),
+                            ),
+                          if (_sheetPoint case final point?)
+                            MapMarker(
+                              id: 'sheet-pin',
+                              position: point.toOvm(),
+                              size: const Size(40, 40),
+                              anchor: Alignment.bottomCenter,
+                              interactive: false,
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.red[600],
+                                size: 38,
                               ),
                             ),
                         ],
@@ -1590,6 +1610,7 @@ class _MapScreenState extends State<MapScreen> {
     required LatLng position,
     LatLng? selfPosition,
     String? title,
+    Future<void>? centerAfter,
   }) {
     final routing = context.read<RoutingService?>();
     final canRoute =
@@ -1610,11 +1631,10 @@ class _MapScreenState extends State<MapScreen> {
         : to != null
         ? l10n.route_startNowYou
         : null;
-    showModalBottomSheet(
-      context: context,
+    _showPointSheet(
+      position,
+      centerAfter: centerAfter,
       // As tall as its rows, which scroll on a screen too small for them.
-      isScrollControlled: true,
-      useSafeArea: true,
       builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -1775,6 +1795,63 @@ class _MapScreenState extends State<MapScreen> {
   /// nothing is downloaded, and it lifts the cap only once it sees it is
   /// over a downloaded region, so a jump from far away tries again for a
   /// moment.
+  /// A sheet about [point] over a clear map: no dimming, a pin on the point,
+  /// and the point clear of the sheet. A search pick goes in the middle of
+  /// the map left above the sheet once [centerAfter] (its move) is done; a
+  /// point on the map moves only if the sheet would cover it.
+  Future<void> _showPointSheet(
+    LatLng point, {
+    required WidgetBuilder builder,
+    Future<void>? centerAfter,
+    bool dragHandle = false,
+  }) async {
+    setState(() => _sheetPoint = point);
+    await showModalBottomSheet<void>(
+      context: context,
+      barrierColor: Colors.transparent,
+      isScrollControlled: true,
+      showDragHandle: dragHandle,
+      useSafeArea: true,
+      builder: (sheetContext) => _ReportHeight(
+        // The drag handle sits above what the builder gives.
+        onHeight: (height) => _keepClear(
+          point,
+          height + (dragHandle ? kMinInteractiveDimension : 0),
+          centerAfter: centerAfter,
+        ),
+        child: builder(sheetContext),
+      ),
+    );
+    if (mounted && _sheetPoint == point) setState(() => _sheetPoint = null);
+  }
+
+  /// Moves the map so a sheet [sheetHeight] tall leaves [point] in view.
+  Future<void> _keepClear(
+    LatLng point,
+    double sheetHeight, {
+    Future<void>? centerAfter,
+  }) async {
+    await centerAfter;
+    final box = _mapKey.currentContext?.findRenderObject() as RenderBox?;
+    if (!mounted || _sheetPoint != point || box == null || !box.hasSize) {
+      return;
+    }
+    // How much of the map's bottom the sheet covers.
+    final top = MediaQuery.sizeOf(context).height - sheetHeight;
+    final covered = box.localToGlobal(Offset.zero).dy + box.size.height - top;
+    if (covered <= 0) return;
+    if (centerAfter == null) {
+      final at = _mapController.toScreen(point.toOvm());
+      // The pin stands on the point, so a little room above the sheet will do.
+      if (at == null || at.dy < box.size.height - covered - 16) return;
+    }
+    _mapController.fitPoints(
+      [point.toOvm()],
+      padding: EdgeInsets.only(bottom: covered),
+      maxZoom: _mapController.camera?.zoom,
+    );
+  }
+
   Future<void> _moveTo(LatLng point, double zoom) async {
     _mapController.move(point.toOvm(), zoom: zoom);
     for (var i = 0; i < 20 && mounted; i++) {
@@ -1970,7 +2047,7 @@ class _MapScreenState extends State<MapScreen> {
     LatLng? selfPosition,
     UnitSystem units,
   ) async {
-    unawaited(_moveTo(point, 15));
+    final moved = _moveTo(point, 15);
     if (detail == null || region == null) {
       _showShareMarkerAtPositionSheet(
         context: context,
@@ -1978,10 +2055,18 @@ class _MapScreenState extends State<MapScreen> {
         position: point,
         selfPosition: selfPosition,
         title: name,
+        centerAfter: moved,
       );
       return;
     }
-    await _showPlaceSheet(detail, region, connector, selfPosition, units);
+    await _showPlaceSheet(
+      detail,
+      region,
+      connector,
+      selfPosition,
+      units,
+      centerAfter: moved,
+    );
   }
 
   Future<void> _openPlace(
@@ -2034,8 +2119,9 @@ class _MapScreenState extends State<MapScreen> {
     PoiRegion region,
     MeshCoreConnector connector,
     LatLng? selfPosition,
-    UnitSystem units,
-  ) async {
+    UnitSystem units, {
+    Future<void>? centerAfter,
+  }) async {
     final point = LatLng(detail.place.lat, detail.place.lon);
     // An unnamed place goes by its kind ("Toilets").
     final name = detail.place.name.isEmpty
@@ -2046,11 +2132,10 @@ class _MapScreenState extends State<MapScreen> {
         routing != null &&
         routing.available &&
         routing.offeredAt((lat: detail.place.lat, lon: detail.place.lon));
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
+    await _showPointSheet(
+      point,
+      centerAfter: centerAfter,
+      dragHandle: true,
       builder: (sheetContext) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.5,
@@ -2925,6 +3010,32 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
+}
+
+/// Tells [onHeight] how tall [child] is once laid out: how much of the
+/// screen a bottom sheet covers. It slides in, but its height is final.
+class _ReportHeight extends StatefulWidget {
+  final ValueChanged<double> onHeight;
+  final Widget child;
+
+  const _ReportHeight({required this.onHeight, required this.child});
+
+  @override
+  State<_ReportHeight> createState() => _ReportHeightState();
+}
+
+class _ReportHeightState extends State<_ReportHeight> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final height = mounted ? context.size?.height : null;
+      if (height != null) widget.onHeight(height);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// The radio's live GPS position: a blue dot.

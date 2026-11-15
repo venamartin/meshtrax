@@ -370,6 +370,91 @@ void main() {
 
   // On a phone the layers button straddled the route sheet's top edge and
   // covered its X, the only way to close the route.
+  group("a point's sheet", () {
+    Future<void> settle(WidgetTester tester, [int frames = 6]) async {
+      for (var i = 0; i < frames; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    OfflineMapController map(WidgetTester tester) =>
+        tester.widget<AppMap>(find.byType(AppMap)).controller!;
+
+    Future<void> showMap(WidgetTester tester) => pumpMap(
+      tester,
+      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+    );
+
+    // A point a [share] of the way up the map, in the middle.
+    LatLng up(WidgetTester tester, double share) {
+      final b = map(tester).visibleBounds!;
+      return LatLng(
+        b.south + (b.north - b.south) * share,
+        (b.west + b.east) / 2,
+      );
+    }
+
+    Future<void> longPress(WidgetTester tester, LatLng at) async {
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(at);
+      await settle(tester);
+    }
+
+    // Where [point] is on the screen, and the middle of the map left above
+    // the sheet.
+    (double, double) whereAndMiddle(WidgetTester tester, LatLng point) {
+      final top = tester.getTopLeft(find.byType(AppMap)).dy;
+      final sheet = tester.getTopLeft(find.byType(BottomSheet)).dy;
+      return (top + map(tester).toScreen(point)!.dy, (top + sheet) / 2);
+    }
+
+    testWidgets('leaves the map clear, with a pin while it is open', (
+      tester,
+    ) async {
+      await showMap(tester);
+      final point = up(tester, 0.8);
+      final center = map(tester).camera!.center;
+      await longPress(tester, point);
+      expect(find.text('Share marker here'), findsOneWidget);
+      expect(find.byType(AnimatedModalBarrier), findsNothing);
+      expect(overlay<MapMarker>(tester, 'sheet-pin').position, point);
+      // In clear view: the map stays where it was.
+      expect(map(tester).camera!.center, center);
+
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+      expect(overlays(tester).where((o) => o.id == 'sheet-pin'), isEmpty);
+    });
+
+    testWidgets('moves a point it would cover to the middle above it', (
+      tester,
+    ) async {
+      await showMap(tester);
+      final point = up(tester, 0.1);
+      await longPress(tester, point);
+      final (at, middle) = whereAndMiddle(tester, point);
+      expect(at, closeTo(middle, 1));
+    });
+
+    testWidgets('puts a search pick in the middle of the map above it', (
+      tester,
+    ) async {
+      await showMap(tester);
+      await tester.tap(find.byTooltip('Search'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), '41.85, -71.35');
+      await settle(tester);
+      await tester.tap(find.widgetWithIcon(ListTile, Icons.my_location));
+      // The map gets there in a few tries while it learns what is downloaded.
+      await settle(tester, 40);
+
+      const point = LatLng(41.85, -71.35);
+      expect(find.text('41.85, -71.35'), findsOneWidget);
+      expect(overlay<MapMarker>(tester, 'sheet-pin').position, point);
+      final (at, middle) = whereAndMiddle(tester, point);
+      expect(at, closeTo(middle, 1));
+    });
+  });
+
   group('a route', () {
     late _Routing routing;
     const steps = [
