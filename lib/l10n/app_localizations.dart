@@ -8512,7 +8512,7 @@ abstract class AppLocalizations {
   /// No description provided for @structured_open.
   ///
   /// In en, this message translates to:
-  /// **'Open'**
+  /// **'Open chat'**
   String get structured_open;
 
   /// No description provided for @structured_added.

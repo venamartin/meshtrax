@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/meshcore_qr.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/notification_service.dart';
@@ -587,6 +588,59 @@ void main() {
       expect(StructuredMessage.parse('a\nb\nc\n$channel'), isNull);
       // Two links.
       expect(StructuredMessage.parse('$channel\n${contact(1)}'), isNull);
+    });
+  });
+
+
+  // As people posted them in November 2026, on Public and in a room: the key
+  // in either case, the type, the node name. Made-up keys and names.
+  group('contacts as text', () {
+    final key = 'A1B2C3D4' * 8;
+    const name = 'TRAIL HANDHELD | 2 💯';
+    final line = '<$key:1:$name>';
+
+    test('becomes a contact card that reads as it came', () {
+      final m = StructuredMessage.parse(line) as ShareMessage;
+      expect(m.kind, ShareKind.contact);
+      expect(m.name, name);
+      expect(m.keyHex, key.toLowerCase());
+      expect(m.note, isNull);
+      expect(m.toWire(), line);
+      // The Add button hands this link to the import code.
+      final link = MeshCoreQr.parseContactQr(m.url)!;
+      expect(link.pubKeyHex, key.toLowerCase());
+      expect(link.name, name);
+      expect(link.type, 1);
+    });
+
+    test('lowercase hex, and a repeater', () {
+      final m = StructuredMessage.parse(
+        '<${key.toLowerCase()}:2:Ridge Top Repeater>',
+      ) as ShareMessage;
+      expect(m.kind, ShareKind.repeater);
+      expect(m.name, 'Ridge Top Repeater');
+    });
+
+    test('a line of text with it becomes the note', () {
+      final m = StructuredMessage.parse('add me\n$line') as ShareMessage;
+      expect(m.note, 'add me');
+      expect(m.toWire(), 'add me\n$line');
+    });
+
+    test('after a mention', () {
+      expect(StructuredMessage.parse('@[Bob] $line'), isA<ShareMessage>());
+    });
+
+    test('anything else stays text', () {
+      // Inside a sentence.
+      expect(StructuredMessage.parse('add me $line thanks'), isNull);
+      // A type that is not a node.
+      expect(StructuredMessage.parse('<$key:7:$name>'), isNull);
+      // A short key, or no name.
+      expect(StructuredMessage.parse('<${key.substring(2)}:1:$name>'), isNull);
+      expect(StructuredMessage.parse('<$key:1:>'), isNull);
+      // Two of them.
+      expect(StructuredMessage.parse('$line\n$line'), isNull);
     });
   });
 }

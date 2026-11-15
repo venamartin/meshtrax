@@ -5027,7 +5027,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get structured_addSensor => 'Dodaj czujnik';
 
   @override
-  String get structured_open => 'Otwórz';
+  String get structured_open => 'Otwórz czat';
 
   @override
   String get structured_added => 'Dodano';

@@ -4958,7 +4958,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get structured_addSensor => 'Lägg till sensor';
 
   @override
-  String get structured_open => 'Öppna';
+  String get structured_open => 'Öppna chatt';
 
   @override
   String get structured_added => 'Tillagd';

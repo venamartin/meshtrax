@@ -4996,7 +4996,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get structured_addSensor => 'Pridať senzor';
 
   @override
-  String get structured_open => 'Otvoriť';
+  String get structured_open => 'Otvoriť čet';
 
   @override
   String get structured_added => 'Pridané';

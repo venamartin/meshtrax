@@ -4923,7 +4923,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get structured_addSensor => 'Add sensor';
 
   @override
-  String get structured_open => 'Open';
+  String get structured_open => 'Open chat';
 
   @override
   String get structured_added => 'Added';

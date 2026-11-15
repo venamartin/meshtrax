@@ -40,7 +40,8 @@ class ContactImportHelper {
 
   static void importFromScannedData(BuildContext context, String data) {
     final link = MeshCoreQr.parseContactParams(data) ??
-        MeshCoreQr.parseAdvertCard(data);
+        MeshCoreQr.parseAdvertCard(data) ??
+        MeshCoreQr.parseContactText(data);
     if (link != null) {
       unawaited(_importFromPublicKeyHex(context, link.pubKeyHex,
           name: link.name,

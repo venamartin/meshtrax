@@ -5007,7 +5007,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get structured_addSensor => 'Adicionar sensor';
 
   @override
-  String get structured_open => 'Abrir';
+  String get structured_open => 'Abrir chat';
 
   @override
   String get structured_added => 'Adicionado';

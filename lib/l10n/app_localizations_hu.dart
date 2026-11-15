@@ -5019,7 +5019,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get structured_addSensor => 'Érzékelő hozzáadása';
 
   @override
-  String get structured_open => 'Megnyitás';
+  String get structured_open => 'Csevegés megnyitása';
 
   @override
   String get structured_added => 'Hozzáadva';
