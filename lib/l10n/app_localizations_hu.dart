@@ -6340,6 +6340,24 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_search => 'Keresés';
 
   @override
+  String get map_fullScreen => 'Teljes képernyő';
+
+  @override
+  String get map_leaveFullScreen => 'Kilépés a teljes képernyőből';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'A teljes képernyőből a Vissza gombbal vagy ugyanezzel a gombbal léphet ki.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'A teljes képernyőből ugyanezzel a gombbal léphet ki.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'A teljes képernyőből az Esc billentyűvel vagy ugyanezzel a gombbal léphet ki.';
+
+  @override
   String get route_fromHere => 'Útvonal innen';
 
   @override

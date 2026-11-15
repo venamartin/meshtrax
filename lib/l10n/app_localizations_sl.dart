@@ -6314,6 +6314,24 @@ class AppLocalizationsSl extends AppLocalizations {
   String get map_search => 'Iskanje';
 
   @override
+  String get map_fullScreen => 'Celozaslonski način';
+
+  @override
+  String get map_leaveFullScreen => 'Izhod iz celozaslonskega načina';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Za izhod iz celozaslonskega načina pritisnite Nazaj ali tapnite isti gumb.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Za izhod iz celozaslonskega načina tapnite isti gumb.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Za izhod iz celozaslonskega načina pritisnite Esc ali kliknite isti gumb.';
+
+  @override
   String get route_fromHere => 'Pot od tukaj';
 
   @override

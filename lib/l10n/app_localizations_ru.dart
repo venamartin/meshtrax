@@ -6339,6 +6339,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_search => 'Поиск';
 
   @override
+  String get map_fullScreen => 'Полноэкранный режим';
+
+  @override
+  String get map_leaveFullScreen => 'Выйти из полноэкранного режима';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Чтобы выйти из полноэкранного режима, нажмите «Назад» или ту же кнопку.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Чтобы выйти из полноэкранного режима, нажмите ту же кнопку.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Чтобы выйти из полноэкранного режима, нажмите Esc или ту же кнопку.';
+
+  @override
   String get route_fromHere => 'Маршрут отсюда';
 
   @override

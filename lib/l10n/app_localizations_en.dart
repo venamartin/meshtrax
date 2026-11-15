@@ -6233,6 +6233,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_search => 'Search';
 
   @override
+  String get map_fullScreen => 'Full screen';
+
+  @override
+  String get map_leaveFullScreen => 'Leave full screen';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'To leave full screen, press Back or tap the same button.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'To leave full screen, tap the same button.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'To leave full screen, press Esc or click the same button.';
+
+  @override
   String get route_fromHere => 'Route from here';
 
   @override

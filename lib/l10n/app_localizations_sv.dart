@@ -6274,6 +6274,24 @@ class AppLocalizationsSv extends AppLocalizations {
   String get map_search => 'Sök';
 
   @override
+  String get map_fullScreen => 'Helskärm';
+
+  @override
+  String get map_leaveFullScreen => 'Lämna helskärm';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Tryck på Tillbaka eller samma knapp för att lämna helskärm.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Tryck på samma knapp för att lämna helskärm.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Tryck på Esc eller klicka på samma knapp för att lämna helskärm.';
+
+  @override
   String get route_fromHere => 'Färdväg härifrån';
 
   @override

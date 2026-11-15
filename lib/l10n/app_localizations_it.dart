@@ -6340,6 +6340,24 @@ class AppLocalizationsIt extends AppLocalizations {
   String get map_search => 'Cerca';
 
   @override
+  String get map_fullScreen => 'Schermo intero';
+
+  @override
+  String get map_leaveFullScreen => 'Esci da schermo intero';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Per uscire da schermo intero, premi Indietro o tocca lo stesso pulsante.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Per uscire da schermo intero, tocca lo stesso pulsante.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Per uscire da schermo intero, premi Esc o fai clic sullo stesso pulsante.';
+
+  @override
   String get route_fromHere => 'Itinerario da qui';
 
   @override

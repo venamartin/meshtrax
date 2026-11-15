@@ -6313,6 +6313,24 @@ class AppLocalizationsSk extends AppLocalizations {
   String get map_search => 'Hľadať';
 
   @override
+  String get map_fullScreen => 'Celá obrazovka';
+
+  @override
+  String get map_leaveFullScreen => 'Ukončiť celú obrazovku';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Celú obrazovku ukončíte tlačidlom Späť alebo klepnutím na to isté tlačidlo.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Celú obrazovku ukončíte klepnutím na to isté tlačidlo.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Celú obrazovku ukončíte klávesom Esc alebo kliknutím na to isté tlačidlo.';
+
+  @override
   String get route_fromHere => 'Trasa odtiaľto';
 
   @override

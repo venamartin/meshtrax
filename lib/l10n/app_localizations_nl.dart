@@ -6304,6 +6304,24 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_search => 'Zoeken';
 
   @override
+  String get map_fullScreen => 'Volledig scherm';
+
+  @override
+  String get map_leaveFullScreen => 'Volledig scherm verlaten';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Druk op Terug of tik op dezelfde knop om volledig scherm te verlaten.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Tik op dezelfde knop om volledig scherm te verlaten.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Druk op Esc of klik op dezelfde knop om volledig scherm te verlaten.';
+
+  @override
   String get route_fromHere => 'Route vanaf hier';
 
   @override

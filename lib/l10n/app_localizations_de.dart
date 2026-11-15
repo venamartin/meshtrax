@@ -6339,6 +6339,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get map_search => 'Suchen';
 
   @override
+  String get map_fullScreen => 'Vollbild';
+
+  @override
+  String get map_leaveFullScreen => 'Vollbild beenden';
+
+  @override
+  String get map_fullScreenHintBack =>
+      'Zum Beenden des Vollbilds Zurück drücken oder dieselbe Schaltfläche antippen.';
+
+  @override
+  String get map_fullScreenHintTap =>
+      'Zum Beenden des Vollbilds dieselbe Schaltfläche antippen.';
+
+  @override
+  String get map_fullScreenHintKey =>
+      'Zum Beenden des Vollbilds Esc drücken oder dieselbe Schaltfläche anklicken.';
+
+  @override
   String get route_fromHere => 'Route von hier';
 
   @override

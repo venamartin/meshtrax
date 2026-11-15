@@ -6,12 +6,18 @@ import 'package:traxmap/traxmap.dart';
 
 import '../l10n/l10n.dart';
 
-/// The map's buttons, bottom right: zoom (desktop only; phones pinch), My
-/// location, and the layers button. My location shows only when the screen
-/// handles it ([onMyLocation]).
+/// The map's buttons, bottom right: search, full screen, zoom (desktop only;
+/// phones pinch), My location, and the layers button. Search, full screen and
+/// My location show only when the screen handles them.
 class MapControls extends StatelessWidget {
   final OfflineMapController controller;
   final VoidCallback onLayers;
+
+  final VoidCallback? onSearch;
+
+  /// Full screen on or off; [fullScreen] says which way a tap goes.
+  final VoidCallback? onFullScreen;
+  final bool fullScreen;
 
   /// My location: the screen decides what a tap does (the radio's GPS).
   final VoidCallback? onMyLocation;
@@ -34,6 +40,9 @@ class MapControls extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onLayers,
+    this.onSearch,
+    this.onFullScreen,
+    this.fullScreen = false,
     this.onMyLocation,
     this.gpsOff = false,
   });
@@ -66,6 +75,22 @@ class MapControls extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: 12,
       children: [
+        if (onSearch != null)
+          FloatingActionButton.small(
+            heroTag: null,
+            tooltip: l10n.map_search,
+            onPressed: onSearch,
+            child: const Icon(Icons.search),
+          ),
+        if (onFullScreen != null)
+          FloatingActionButton.small(
+            heroTag: null,
+            tooltip: fullScreen
+                ? l10n.map_leaveFullScreen
+                : l10n.map_fullScreen,
+            onPressed: onFullScreen,
+            child: Icon(fullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
+          ),
         if (_desktop)
           Card(
             margin: EdgeInsets.zero,

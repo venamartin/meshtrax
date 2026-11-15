@@ -6048,6 +6048,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get map_search => '検索';
 
   @override
+  String get map_fullScreen => '全画面表示';
+
+  @override
+  String get map_leaveFullScreen => '全画面表示を終了';
+
+  @override
+  String get map_fullScreenHintBack => '全画面表示を終了するには、戻るを押すか、同じボタンをタップします。';
+
+  @override
+  String get map_fullScreenHintTap => '全画面表示を終了するには、同じボタンをタップします。';
+
+  @override
+  String get map_fullScreenHintKey => '全画面表示を終了するには、Esc キーを押すか、同じボタンをクリックします。';
+
+  @override
   String get route_fromHere => 'ここからの道順';
 
   @override
