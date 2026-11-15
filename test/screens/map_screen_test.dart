@@ -1926,6 +1926,57 @@ void main() {
       expect(system.last, startsWith('setEnabledSystemUIOverlays'));
     });
 
+    testWidgets('its buttons fade when left alone, but not the way out', (
+      tester,
+    ) async {
+      double opacity(String tooltip) => tester
+          .widget<AnimatedOpacity>(
+            find.ancestor(
+              of: find.byTooltip(tooltip),
+              matching: find.byType(AnimatedOpacity),
+            ),
+          )
+          .opacity;
+
+      await showMap(tester);
+      await tester.tap(find.byTooltip('Full screen'));
+      await settle(tester);
+      expect(opacity('Search'), 1);
+
+      await tester.pump(const Duration(seconds: 5));
+      expect(opacity('Search'), MapControls.fadedOpacity);
+      expect(opacity('Map layers'), MapControls.fadedOpacity);
+      expect(opacity('Filter Nodes'), MapControls.fadedOpacity);
+      expect(
+        find.ancestor(
+          of: find.byTooltip('Leave full screen'),
+          matching: find.byType(AnimatedOpacity),
+        ),
+        findsNothing,
+        reason: 'the way out never fades',
+      );
+
+      // A touch on the map brings them back, and they fade again later.
+      await tester.tapAt(tester.getCenter(find.byType(AppMap)));
+      await tester.pump();
+      expect(opacity('Search'), 1);
+      await tester.pump(const Duration(seconds: 5));
+      expect(opacity('Search'), MapControls.fadedOpacity);
+
+      // A faded button still works.
+      await tester.tap(find.byTooltip('Search'));
+      await settle(tester);
+      expect(find.byType(TextField), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+
+      // Out of full screen they never fade.
+      await tester.tap(find.byTooltip('Leave full screen'));
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 5));
+      expect(opacity('Search'), 1);
+    });
+
     testWidgets('only the main map has it', (tester) async {
       await showMap(
         tester,

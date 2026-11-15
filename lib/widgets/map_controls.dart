@@ -19,6 +19,14 @@ class MapControls extends StatelessWidget {
   final VoidCallback? onFullScreen;
   final bool fullScreen;
 
+  /// The buttons, all but full screen's own, faded to [fadedOpacity]: in
+  /// full screen, while the map is left alone. The way out never fades.
+  final bool faded;
+  static const fadedOpacity = 0.4;
+
+  /// A touch on the buttons, or a mouse over them: they wake up.
+  final VoidCallback? onTouch;
+
   /// My location: the screen decides what a tap does (the radio's GPS).
   final VoidCallback? onMyLocation;
 
@@ -43,6 +51,8 @@ class MapControls extends StatelessWidget {
     this.onSearch,
     this.onFullScreen,
     this.fullScreen = false,
+    this.faded = false,
+    this.onTouch,
     this.onMyLocation,
     this.gpsOff = false,
   });
@@ -71,16 +81,23 @@ class MapControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Column(
+    Widget fade(Widget button) => AnimatedOpacity(
+      opacity: faded ? fadedOpacity : 1,
+      duration: const Duration(milliseconds: 300),
+      child: button,
+    );
+    final buttons = Column(
       mainAxisSize: MainAxisSize.min,
       spacing: 12,
       children: [
         if (onSearch != null)
-          FloatingActionButton.small(
-            heroTag: null,
-            tooltip: l10n.map_search,
-            onPressed: onSearch,
-            child: const Icon(Icons.search),
+          fade(
+            FloatingActionButton.small(
+              heroTag: null,
+              tooltip: l10n.map_search,
+              onPressed: onSearch,
+              child: const Icon(Icons.search),
+            ),
           ),
         if (onFullScreen != null)
           FloatingActionButton.small(
@@ -92,39 +109,52 @@ class MapControls extends StatelessWidget {
             child: Icon(fullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
           ),
         if (_desktop)
-          Card(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: l10n.map_zoomIn,
-                  onPressed: () => _zoom(1),
-                  icon: const Icon(Icons.add),
-                ),
-                const SizedBox(width: 40, child: Divider(height: 1)),
-                IconButton(
-                  tooltip: l10n.map_zoomOut,
-                  onPressed: () => _zoom(-1),
-                  icon: const Icon(Icons.remove),
-                ),
-              ],
+          fade(
+            Card(
+              margin: EdgeInsets.zero,
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: l10n.map_zoomIn,
+                    onPressed: () => _zoom(1),
+                    icon: const Icon(Icons.add),
+                  ),
+                  const SizedBox(width: 40, child: Divider(height: 1)),
+                  IconButton(
+                    tooltip: l10n.map_zoomOut,
+                    onPressed: () => _zoom(-1),
+                    icon: const Icon(Icons.remove),
+                  ),
+                ],
+              ),
             ),
           ),
         if (onMyLocation != null)
-          FloatingActionButton.small(
-            heroTag: null,
-            tooltip: l10n.map_myLocation,
-            onPressed: onMyLocation,
-            child: Icon(gpsOff ? Icons.location_disabled : Icons.my_location),
+          fade(
+            FloatingActionButton.small(
+              heroTag: null,
+              tooltip: l10n.map_myLocation,
+              onPressed: onMyLocation,
+              child: Icon(gpsOff ? Icons.location_disabled : Icons.my_location),
+            ),
           ),
-        FloatingActionButton(
-          onPressed: onLayers,
-          tooltip: l10n.mapLayers_title,
-          child: const Icon(Icons.layers_outlined),
+        fade(
+          FloatingActionButton(
+            onPressed: onLayers,
+            tooltip: l10n.mapLayers_title,
+            child: const Icon(Icons.layers_outlined),
+          ),
         ),
       ],
+    );
+    final touch = onTouch;
+    if (touch == null) return buttons;
+    return Listener(
+      onPointerDown: (_) => touch(),
+      onPointerHover: (_) => touch(),
+      child: buttons,
     );
   }
 }
