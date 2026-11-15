@@ -221,7 +221,7 @@ collect_release_notes() {
         open_editor=true
 
         notes=$(grep -v '^[[:space:]]*#' "$NOTES_FILE" | tr -d '\r' | sed -e '/[^[:space:]]/,$!d')
-        length=$(printf '%s' "$notes" | LC_ALL=C.UTF-8 wc -m)
+        length=$(printf '%s' "$notes" | LC_ALL=C.UTF-8 wc -m | tr -d ' ')
         if [ -z "$notes" ]; then
             echo "ERROR: The store notes are empty."
         elif [ "$length" -gt 500 ]; then
