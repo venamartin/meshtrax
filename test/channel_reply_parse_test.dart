@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/models/channel_message.dart';
 
@@ -70,7 +72,6 @@ void main() {
         targetName: 'Alice',
         quoteText: quote,
         body: body,
-        selfName: 'Me',
         fits: fits ?? (_) => true,
       );
     }
@@ -119,11 +120,38 @@ void main() {
       expect(build('quote', 'body', fits: (_) => false), isNull);
     });
 
-    test('strips our own leading mention from the quoted snippet', () {
+    test('quotes the words after a leading mention, whoever it names', () {
       expect(
         build('@[Me] thanks for that', 'welcome'),
         '@[Alice]\n>thanks for..\nwelcome',
       );
+      // Ten characters of this one do not reach past its mention.
+      expect(
+        build('@[Ridge Top Repeater] the pass is open again', 'good'),
+        '@[Alice]\n>the pass i..\ngood',
+      );
+      expect(build('@[Bob] @[Dan] hi all', 'hi'), '@[Alice]\n>hi all\nhi');
+    });
+
+    test('a parent that is only a mention is quoted as it is', () {
+      expect(build('@[Bob]', 'yes?'), '@[Alice]\n>@[Bob]\nyes?');
+    });
+
+    test('the quote of a mention-led parent finds it again', () {
+      const parent = '@[Ridge Top Repeater] the pass is open again';
+      final snippet = ChannelMessage.parseReply(build(parent, 'good')!)!.snippet;
+      expect(ChannelMessage.snippetMatches(parent, snippet), isTrue);
+    });
+
+    test('never cuts an emoji in two', () {
+      // Eight units each, one character: a cut by units leaves half of one,
+      // which goes out as U+FFFD.
+      final family = String.fromCharCodes([
+        0x1F468, 0x200D, 0x1F469, 0x200D, 0x1F467, //
+      ]);
+      final wire = build('Hi ${family * 9}', 'ok')!;
+      expect(wire, '@[Alice]\n>Hi ${family * 7}..\nok');
+      expect(utf8.decode(utf8.encode(wire)), wire);
     });
   });
 

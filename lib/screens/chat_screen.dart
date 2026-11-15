@@ -2197,7 +2197,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         quoteText: ChannelMessage.parseReply(replyTarget.text)?.actualMessage ??
             replyTarget.text,
         body: text,
-        selfName: connector.selfName ?? '',
         fits: fits,
       );
       if (built == null) {

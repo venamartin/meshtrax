@@ -15,7 +15,7 @@ formats from other apps that it reads but never sends.
 | Feature | MeshTrax sends | MeshTrax also reads |
 |---|---|---|
 | Mention | `@[Name]` | |
-| Reply | MeshCore One reply | meshcore-open `@[Name] re:…` |
+| Reply | MeshCore One reply | older MeshTrax `@[Name] re:…` |
 | Reaction | MeshCore One reaction | meshcore-open `r:HASH:INDEX`, older MeshCore One emoji-first order |
 | GIF | Giphy link (default) or `g:ID` | `media.giphy.com` links |
 | Markdown | whatever the user types | |
@@ -63,9 +63,13 @@ Nice!
 
 - The quote is the first 10 characters of the original, whitespace
   collapsed to single spaces and trimmed. `..` follows only when the
-  original was longer.
-- If the original started with your own mention, it is left out of the
-  quote.
+  original was longer. An emoji counts as one character and is never cut
+  in two.
+- Mentions at the start of the original are left out, so the quote starts
+  at its words, as MeshCore One's does. Ten characters of
+  `@[Long name] see you` would otherwise be part of the mention, and fit
+  every message to that person. An original that is only a mention is
+  quoted as it is.
 - When the reply is too long to fit, the quote shrinks to 6 characters, and
   if that still doesn't fit the quote line is dropped, leaving
   `@[Name]` + newline + reply.
@@ -76,11 +80,12 @@ Nice!
 
 - **MeshCore One**: the format above. A `..` at the end of the quote is
   dropped before matching.
-- **meshcore-open** (and MeshTrax before it switched):
+- **MeshTrax before it switched to that format**:
   `@[Name] re:{quote}…{reply}` on one line. The marker may be `…` or `...`,
   `re:` is case-insensitive, and the reply may start on a new line.
 
-A plain mention, `@[Name] hello`, is not a reply.
+A plain mention, `@[Name] hello`, is not a reply. That is also what a reply
+from meshcore-open looks like: it sends `@[Name] {reply}` with no quote.
 
 ### Finding the original
 
@@ -90,6 +95,9 @@ quote. The comparison ignores case, collapses whitespace and strips leading
 mentions on both sides. When found, the quote bubble shows the full original
 and tapping it jumps there. When not found, the quote bubble shows the
 quoted characters and the name.
+
+A quote that ends inside a mention is never found. MeshTrax before 1.10.3
+sent those for an original that starts with a long mention.
 
 ## Reactions
 

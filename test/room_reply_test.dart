@@ -28,7 +28,6 @@ void main() {
       targetName: 'Trunks 🩳',
       quoteText: 'Let me see if I can see it',
       body: 'Looks good from here',
-      selfName: 'MRY',
       fits: fitsRoom,
     );
 
@@ -47,7 +46,6 @@ void main() {
       targetName: 'Alice',
       quoteText: 'first message text',
       body: 'second message body',
-      selfName: 'Bob',
       fits: fitsRoom,
     )!;
 
@@ -60,7 +58,6 @@ void main() {
       targetName: 'Bob',
       quoteText: quoteSource,
       body: 'third message',
-      selfName: 'Alice',
       fits: fitsRoom,
     );
     final parsed = ChannelMessage.parseReply(nested!);
@@ -74,7 +71,6 @@ void main() {
       targetName: 'VeryLongRoomMemberName',
       quoteText: 'a quoted message that will not fit alongside the body',
       body: longBody,
-      selfName: '',
       fits: fitsRoom,
     );
     // 120 + name + markup still fits as a mention-only reply.
@@ -86,7 +82,6 @@ void main() {
       targetName: 'VeryLongRoomMemberName',
       quoteText: 'quote',
       body: 'y' * 160,
-      selfName: '',
       fits: fitsRoom,
     );
     expect(hopeless, isNull);
