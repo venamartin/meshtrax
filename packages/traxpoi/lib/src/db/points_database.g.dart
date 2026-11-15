@@ -3057,6 +3057,94 @@ abstract class _$PointsDatabase extends GeneratedDatabase {
     );
   }
 
+  Selectable<PlacesOfKindsInResult> placesOfKindsIn(
+    double north,
+    double south,
+    double east,
+    double west,
+    List<String> kinds,
+    double lat,
+    double lon,
+    double lonScale,
+    int limit,
+  ) {
+    var $arrayStartIndex = 9;
+    final expandedkinds = $expandVar($arrayStartIndex, kinds.length);
+    $arrayStartIndex += kinds.length;
+    return customSelect(
+      'SELECT"p"."id" AS "nested_0.id", "p"."kind" AS "nested_0.kind", "p"."name" AS "nested_0.name", "p"."detail" AS "nested_0.detail", "p"."lat" AS "nested_0.lat", "p"."lon" AS "nested_0.lon", "p"."ele" AS "nested_0.ele", "p"."heritage" AS "nested_0.heritage", "p"."wikidata" AS "nested_0.wikidata", "p"."osm" AS "nested_0.osm", "p"."gnis" AS "nested_0.gnis", "p"."sources" AS "nested_0.sources", "p"."rank" AS "nested_0.rank" FROM place_area AS a INNER JOIN place AS p ON p.id = a.id WHERE a.min_lat <= ?1 AND a.max_lat >= ?2 AND a.min_lon <= ?3 AND a.max_lon >= ?4 AND p.kind IN ($expandedkinds) ORDER BY(p.lat - ?5)*(p.lat - ?5)+(p.lon - ?6)*(p.lon - ?6)* ?7 LIMIT ?8',
+      variables: [
+        Variable<double>(north),
+        Variable<double>(south),
+        Variable<double>(east),
+        Variable<double>(west),
+        Variable<double>(lat),
+        Variable<double>(lon),
+        Variable<double>(lonScale),
+        Variable<int>(limit),
+        for (var $ in kinds) Variable<String>($),
+      ],
+      readsFrom: {this.placeArea, this.place},
+    ).asyncMap(
+      (QueryRow row) async => PlacesOfKindsInResult(
+        p: await this.place.mapFromRow(row, tablePrefix: 'nested_0'),
+      ),
+    );
+  }
+
+  Selectable<NamedPlacesInResult> namedPlacesIn(
+    double north,
+    double south,
+    double east,
+    double west,
+    double lat,
+    double lon,
+    double lonScale,
+    int limit,
+  ) {
+    return customSelect(
+      'SELECT"p"."id" AS "nested_0.id", "p"."kind" AS "nested_0.kind", "p"."name" AS "nested_0.name", "p"."detail" AS "nested_0.detail", "p"."lat" AS "nested_0.lat", "p"."lon" AS "nested_0.lon", "p"."ele" AS "nested_0.ele", "p"."heritage" AS "nested_0.heritage", "p"."wikidata" AS "nested_0.wikidata", "p"."osm" AS "nested_0.osm", "p"."gnis" AS "nested_0.gnis", "p"."sources" AS "nested_0.sources", "p"."rank" AS "nested_0.rank" FROM place_area AS a INNER JOIN place AS p ON p.id = a.id WHERE a.min_lat <= ?1 AND a.max_lat >= ?2 AND a.min_lon <= ?3 AND a.max_lon >= ?4 AND p.name <> \'\' ORDER BY(p.lat - ?5)*(p.lat - ?5)+(p.lon - ?6)*(p.lon - ?6)* ?7 LIMIT ?8',
+      variables: [
+        Variable<double>(north),
+        Variable<double>(south),
+        Variable<double>(east),
+        Variable<double>(west),
+        Variable<double>(lat),
+        Variable<double>(lon),
+        Variable<double>(lonScale),
+        Variable<int>(limit),
+      ],
+      readsFrom: {this.placeArea, this.place},
+    ).asyncMap(
+      (QueryRow row) async => NamedPlacesInResult(
+        p: await this.place.mapFromRow(row, tablePrefix: 'nested_0'),
+      ),
+    );
+  }
+
+  Selectable<FeatureData> featuresOfKindsIn(
+    double north,
+    double south,
+    double east,
+    double west,
+    List<String> kinds,
+  ) {
+    var $arrayStartIndex = 5;
+    final expandedkinds = $expandVar($arrayStartIndex, kinds.length);
+    $arrayStartIndex += kinds.length;
+    return customSelect(
+      'SELECT * FROM feature WHERE lat <= ?1 AND lat >= ?2 AND lon <= ?3 AND lon >= ?4 AND kind IN ($expandedkinds)',
+      variables: [
+        Variable<double>(north),
+        Variable<double>(south),
+        Variable<double>(east),
+        Variable<double>(west),
+        for (var $ in kinds) Variable<String>($),
+      ],
+      readsFrom: {this.feature},
+    ).asyncMap(this.feature.mapFromRow);
+  }
+
   Selectable<PlaceData> placeById(int id) {
     return customSelect(
       'SELECT * FROM place WHERE id = ?1',
@@ -3138,4 +3226,14 @@ class NamePrefixResult {
 class PlacesInResult {
   final PlaceData p;
   PlacesInResult({required this.p});
+}
+
+class PlacesOfKindsInResult {
+  final PlaceData p;
+  PlacesOfKindsInResult({required this.p});
+}
+
+class NamedPlacesInResult {
+  final PlaceData p;
+  NamedPlacesInResult({required this.p});
 }

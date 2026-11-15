@@ -6063,6 +6063,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get search_noResults => 'Nessun risultato';
 
   @override
+  String search_near(String name) {
+    return 'vicino a $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Gradi decimali';
 
   @override

@@ -6062,6 +6062,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get search_noResults => 'Ничего не найдено';
 
   @override
+  String search_near(String name) {
+    return 'рядом с $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Десятичные градусы';
 
   @override

@@ -2640,6 +2640,7 @@
   "search_hint": "搜索地点、地址或坐标",
   "search_noPlaces": "下载某个地区的“兴趣点”后，即可搜索其中的地点。坐标无需下载即可搜索。",
   "search_noResults": "无匹配结果",
+  "search_near": "{name}附近",
   "coordFormat_decimalDegrees": "十进制度",
   "coordFormat_degreesMinutes": "度分",
   "coordFormat_dms": "度分秒",

@@ -2635,6 +2635,7 @@
   "search_hint": "Hľadať miesta, adresy alebo súradnice",
   "search_noPlaces": "Ak chcete hľadať miesta v regióne, stiahnite si preň „Zaujímavé miesta“. Súradnice fungujú aj bez nich.",
   "search_noResults": "Žiadne výsledky",
+  "search_near": "pri {name}",
   "coordFormat_decimalDegrees": "Desatinné stupne",
   "coordFormat_degreesMinutes": "Stupne a minúty",
   "coordFormat_dms": "Stupne, minúty, sekundy",

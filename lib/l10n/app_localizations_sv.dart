@@ -5996,6 +5996,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get search_noResults => 'Inga träffar';
 
   @override
+  String search_near(String name) {
+    return 'nära $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Decimalgrader';
 
   @override

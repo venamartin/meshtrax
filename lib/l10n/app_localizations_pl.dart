@@ -6071,6 +6071,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get search_noResults => 'Brak wyników';
 
   @override
+  String search_near(String name) {
+    return 'w pobliżu $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Stopnie dziesiętne';
 
   @override

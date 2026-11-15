@@ -5777,6 +5777,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get search_noResults => '一致なし';
 
   @override
+  String search_near(String name) {
+    return '$name付近';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => '度（10進数）';
 
   @override

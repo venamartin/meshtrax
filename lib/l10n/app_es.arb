@@ -2663,6 +2663,7 @@
   "search_hint": "Buscar lugares, direcciones o coordenadas",
   "search_noPlaces": "Descarga Puntos de interés de una región para buscar sus lugares. Las coordenadas funcionan sin esa descarga.",
   "search_noResults": "Sin resultados",
+  "search_near": "cerca de {name}",
   "coordFormat_decimalDegrees": "Grados decimales",
   "coordFormat_degreesMinutes": "Grados y minutos",
   "coordFormat_dms": "Grados, minutos y segundos",

@@ -2673,6 +2673,7 @@
   "search_hint": "Szukaj miejsc, adresów lub współrzędnych",
   "search_noPlaces": "Aby wyszukiwać miejsca w regionie, pobierz dla niego \"Ciekawe miejsca\". Współrzędne działają i bez tego.",
   "search_noResults": "Brak wyników",
+  "search_near": "w pobliżu {name}",
   "coordFormat_decimalDegrees": "Stopnie dziesiętne",
   "coordFormat_degreesMinutes": "Stopnie i minuty",
   "coordFormat_dms": "Stopnie, minuty, sekundy",

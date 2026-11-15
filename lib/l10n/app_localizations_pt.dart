@@ -6050,6 +6050,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get search_noResults => 'Nenhum resultado';
 
   @override
+  String search_near(String name) {
+    return 'perto de $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Graus decimais';
 
   @override

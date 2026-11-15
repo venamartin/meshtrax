@@ -2003,6 +2003,7 @@
   "search_hint": "Поиск мест, адресов или координат",
   "search_noPlaces": "Скачайте «Точки интереса» для региона, чтобы искать в нём места. Поиск по координатам работает и без них.",
   "search_noResults": "Ничего не найдено",
+  "search_near": "рядом с {name}",
   "coordFormat_decimalDegrees": "Десятичные градусы",
   "coordFormat_degreesMinutes": "Градусы и минуты",
   "coordFormat_dms": "Градусы, минуты, секунды",

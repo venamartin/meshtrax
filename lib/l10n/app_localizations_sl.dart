@@ -6036,6 +6036,11 @@ class AppLocalizationsSl extends AppLocalizations {
   String get search_noResults => 'Ni zadetkov';
 
   @override
+  String search_near(String name) {
+    return 'blizu $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Decimalne stopinje';
 
   @override

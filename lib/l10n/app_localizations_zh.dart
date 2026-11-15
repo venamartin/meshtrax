@@ -5666,6 +5666,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search_noResults => '无匹配结果';
 
   @override
+  String search_near(String name) {
+    return '$name附近';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => '十进制度';
 
   @override

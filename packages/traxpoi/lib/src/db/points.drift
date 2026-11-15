@@ -18,6 +18,28 @@ placesIn: SELECT p.** FROM place_area a INNER JOIN place p ON p.id = a.id
   ORDER BY p."rank" DESC
   LIMIT :limit;
 
+-- Nearest first: lonScale is cos² of the latitude, for a flat distance.
+placesOfKindsIn: SELECT p.** FROM place_area a INNER JOIN place p ON p.id = a.id
+  WHERE a.min_lat <= :north AND a.max_lat >= :south
+    AND a.min_lon <= :east AND a.max_lon >= :west
+    AND p.kind IN :kinds
+  ORDER BY (p.lat - :lat) * (p.lat - :lat)
+    + (p.lon - :lon) * (p.lon - :lon) * :lonScale
+  LIMIT :limit;
+
+-- Named places nearest first, to tell an unnamed one apart.
+namedPlacesIn: SELECT p.** FROM place_area a INNER JOIN place p ON p.id = a.id
+  WHERE a.min_lat <= :north AND a.max_lat >= :south
+    AND a.min_lon <= :east AND a.max_lon >= :west
+    AND p.name <> ''
+  ORDER BY (p.lat - :lat) * (p.lat - :lat)
+    + (p.lon - :lon) * (p.lon - :lon) * :lonScale
+  LIMIT :limit;
+
+featuresOfKindsIn: SELECT * FROM feature
+  WHERE lat <= :north AND lat >= :south AND lon <= :east AND lon >= :west
+    AND kind IN :kinds;
+
 placeById: SELECT * FROM place WHERE id = :id;
 
 featureById: SELECT * FROM feature WHERE id = :id;

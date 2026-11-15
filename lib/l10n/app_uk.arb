@@ -2635,6 +2635,7 @@
   "search_hint": "Пошук місць, адрес або координат",
   "search_noPlaces": "Щоб шукати місця в регіоні, завантажте для нього «Точки інтересу». Пошук за координатами працює й без цього.",
   "search_noResults": "Нічого не знайдено",
+  "search_near": "поблизу {name}",
   "coordFormat_decimalDegrees": "Десяткові градуси",
   "coordFormat_degreesMinutes": "Градуси та мінути",
   "coordFormat_dms": "Градуси, мінути, секунди",

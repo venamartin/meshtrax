@@ -2635,6 +2635,7 @@
   "search_hint": "Zoek plaatsen, adressen of coördinaten",
   "search_noPlaces": "Download Interessante plaatsen voor een regio om daar plaatsen te zoeken. Coördinaten werken ook zonder.",
   "search_noResults": "Geen resultaten",
+  "search_near": "bij {name}",
   "coordFormat_decimalDegrees": "Decimale graden",
   "coordFormat_degreesMinutes": "Graden en minuten",
   "coordFormat_dms": "Graden, minuten, seconden",

@@ -2635,6 +2635,7 @@
   "search_hint": "Sök platser, adresser eller koordinater",
   "search_noPlaces": "Ladda ner Intressanta platser för en region för att söka bland dess platser. Koordinater fungerar ändå.",
   "search_noResults": "Inga träffar",
+  "search_near": "nära {name}",
   "coordFormat_decimalDegrees": "Decimalgrader",
   "coordFormat_degreesMinutes": "Grader och minuter",
   "coordFormat_dms": "Grader, minuter, sekunder",

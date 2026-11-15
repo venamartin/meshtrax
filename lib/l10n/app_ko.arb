@@ -2673,6 +2673,7 @@
   "search_hint": "장소, 주소 또는 좌표 검색",
   "search_noPlaces": "장소를 검색하려면 해당 지역의 '관심 지점'을 다운로드하세요. 좌표는 다운로드 없이도 검색할 수 있습니다.",
   "search_noResults": "검색 결과 없음",
+  "search_near": "{name} 근처",
   "coordFormat_decimalDegrees": "십진 도",
   "coordFormat_degreesMinutes": "도·분",
   "coordFormat_dms": "도·분·초",

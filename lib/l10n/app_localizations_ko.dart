@@ -5785,6 +5785,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get search_noResults => '검색 결과 없음';
 
   @override
+  String search_near(String name) {
+    return '$name 근처';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => '십진 도';
 
   @override

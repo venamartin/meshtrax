@@ -6068,6 +6068,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get search_noResults => 'Нічого не знайдено';
 
   @override
+  String search_near(String name) {
+    return 'поблизу $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Десяткові градуси';
 
   @override

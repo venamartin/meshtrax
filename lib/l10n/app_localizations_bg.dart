@@ -6043,6 +6043,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get search_noResults => 'Няма резултати';
 
   @override
+  String search_near(String name) {
+    return 'близо до $name';
+  }
+
+  @override
   String get coordFormat_decimalDegrees => 'Десетични градуси';
 
   @override
