@@ -1198,6 +1198,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
+  String get contact_nameAndNote => 'Nome e nota';
+
+  @override
+  String get contact_realName => 'Nome real';
+
+  @override
+  String get contact_note => 'Nota';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Fica neste dispositivo e nas cópias de segurança do rádio. Nunca é enviado.';
+
+  @override
   String get contact_lastSeen => 'Visto pela última vez';
 
   @override

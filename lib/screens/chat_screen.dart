@@ -34,6 +34,7 @@ import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/connection_status_banner.dart';
+import '../widgets/contact_note_dialog.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
@@ -785,7 +786,15 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         final connector = context.read<MeshCoreConnector>();
 
         final filtered = _roomMentionCandidates(connector)
-            .where((c) => c.name.toLowerCase().contains(search))
+            .where(
+              (c) =>
+                  c.name.toLowerCase().contains(search) ||
+                  (connector
+                          .realNameFor(c.publicKeyHex)
+                          ?.toLowerCase()
+                          .contains(search) ??
+                      false),
+            )
             .toList();
         filtered.sort((a, b) {
           final aStart = a.name.toLowerCase().startsWith(search);
@@ -905,6 +914,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
             // "Unread: 0" is noise while the chat is open (it marks itself
             // read) and it ellipsized the role badge off the narrow title.
             final subtitle = [
+              ?connector.realNameFor(contact.publicKeyHex),
               pathLabel,
               if (unreadCount > 0) context.l10n.chat_unread(unreadCount),
               ?roleLabel,
@@ -1015,6 +1025,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                   if (value == 'info') {
                     _showContactInfo(context);
                   }
+                  if (value == 'nameAndNote') {
+                    ContactNoteDialog.show(
+                      context,
+                      _resolveContact(connector),
+                    );
+                  }
                   if (value == 'share') {
                     final contact = _resolveContact(connector);
                     Navigator.push(
@@ -1071,6 +1087,16 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                         const Icon(Icons.info_outline, size: 20),
                         const SizedBox(width: 12),
                         Text(context.l10n.contact_info),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'nameAndNote',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.badge_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.contact_nameAndNote),
                       ],
                     ),
                   ),
@@ -1202,6 +1228,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 MentionsOverlay(
                   contacts: _filteredMentionContacts,
                   onSelect: _insertMention,
+                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
                 ),
               if (_isRoom && _roomRole(connector) == 0)
                 _buildReadOnlyBanner(),

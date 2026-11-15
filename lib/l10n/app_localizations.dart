@@ -2207,6 +2207,30 @@ abstract class AppLocalizations {
   /// **'Telemetry'**
   String get contact_telemetry;
 
+  /// No description provided for @contact_nameAndNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Name and note'**
+  String get contact_nameAndNote;
+
+  /// No description provided for @contact_realName.
+  ///
+  /// In en, this message translates to:
+  /// **'Real name'**
+  String get contact_realName;
+
+  /// No description provided for @contact_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get contact_note;
+
+  /// No description provided for @contact_nameAndNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept on this device and in radio backups. Never sent.'**
+  String get contact_nameAndNoteHint;
+
   /// No description provided for @contact_lastSeen.
   ///
   /// In en, this message translates to:

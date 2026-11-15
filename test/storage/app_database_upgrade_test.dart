@@ -54,25 +54,45 @@ void main() {
 
   test('a 1.7.x database gets the arrival and shown-order indexes', () async {
     await rewindTo(7, dropIndexes: [...v8Indexes, v9Index]);
-    expect(await reopenVersion(), 9);
+    expect(await reopenVersion(), 10);
     expect(await indexNames(), containsAll([...v8Indexes, v9Index]));
   });
 
   test('a half-finished upgrade (indexes made, still v7) opens', () async {
     await rewindTo(7);
-    expect(await reopenVersion(), 9);
+    expect(await reopenVersion(), 10);
     expect(await indexNames(), containsAll([...v8Indexes, v9Index]));
   });
 
   test('a 1.10.1 database gets the shown-order index', () async {
     await rewindTo(8, dropIndexes: [v9Index]);
-    expect(await reopenVersion(), 9);
+    expect(await reopenVersion(), 10);
     expect(await indexNames(), contains(v9Index));
   });
 
   test('a half-finished v9 upgrade (index made, still v8) opens', () async {
     await rewindTo(8);
-    expect(await reopenVersion(), 9);
+    expect(await reopenVersion(), 10);
     expect(await indexNames(), contains(v9Index));
+  });
+
+  Future<Set<String>> tableNames() async {
+    final rows = await AppDatabase.instance
+        .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .get();
+    return {for (final r in rows) r.read<String>('name')};
+  }
+
+  test('a 1.10.2 database gets the contact notes table', () async {
+    await AppDatabase.instance.customStatement('DROP TABLE contact_note_rows');
+    await rewindTo(9);
+    expect(await reopenVersion(), 10);
+    expect(await tableNames(), contains('contact_note_rows'));
+  });
+
+  test('a half-finished v10 upgrade (table made, still v9) opens', () async {
+    await rewindTo(9);
+    expect(await reopenVersion(), 10);
+    expect(await tableNames(), contains('contact_note_rows'));
   });
 }

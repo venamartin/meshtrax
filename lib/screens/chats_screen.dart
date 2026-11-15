@@ -27,6 +27,8 @@ import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
+import '../widgets/contact_name.dart';
+import '../widgets/contact_note_dialog.dart';
 import '../widgets/gps_status_button.dart';
 import '../widgets/location_sharing_button.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
@@ -478,9 +480,11 @@ class _ChatsScreenState extends State<ChatsScreen>
 
       showModalBottomSheet(
         context: context,
+        // A list, not a column: a room's entries are taller than a sheet
+        // may be on a phone, and then they scroll.
         builder: (sheetContext) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: ListView(
+            shrinkWrap: true,
             children: [
               ListTile(
                 leading: Icon(
@@ -498,6 +502,14 @@ class _ChatsScreenState extends State<ChatsScreen>
                     contact,
                     isFavorite: !contact.isFavorite,
                   );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.badge_outlined),
+                title: Text(context.l10n.contact_nameAndNote),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ContactNoteDialog.show(context, contact);
                 },
               ),
               if (contact.type == advTypeRoom)
@@ -1069,10 +1081,13 @@ class _ChatsScreenState extends State<ChatsScreen>
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
-                                          child: Text(
+                                          child: ContactName(
                                             item.title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                            realName: item.contact == null
+                                                ? null
+                                                : connector.realNameFor(
+                                                    item.contact!.publicKeyHex,
+                                                  ),
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                             ),

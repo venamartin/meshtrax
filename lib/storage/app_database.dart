@@ -153,6 +153,18 @@ class CachedChannelRows extends Table {
   Set<Column> get primaryKey => {nodeScope, slotIndex};
 }
 
+/// The real name and note the user gave a contact (v10). App-only and
+/// shared across radios: a person keeps the name whichever radio is
+/// connected. Never sent anywhere.
+class ContactNoteRows extends Table {
+  TextColumn get publicKeyHex => text()();
+  TextColumn get realName => text().withDefault(const Constant(''))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+
+  @override
+  Set<Column> get primaryKey => {publicKeyHex};
+}
+
 /// One row per contact (DM) message — same contract as channel rows: a
 /// message exists exactly once per (node, contact), writes are transactional.
 @TableIndex(
@@ -205,6 +217,7 @@ class ContactMessageRows extends Table {
     ContactRows,
     DiscoveredContactRows,
     CachedChannelRows,
+    ContactNoteRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -236,7 +249,7 @@ class AppDatabase extends _$AppDatabase {
       customStatement('VACUUM INTO ?', [path]);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// v7: cached routes predate the persisted hash width, and a guessed width
   /// is how 2-byte routes read as four 1-byte hops. Clear every cached route
@@ -341,6 +354,11 @@ class AppDatabase extends _$AppDatabase {
       // by index instead of sorting every row.
       if (from < 9) {
         await _createIndexIfMissing(idxChannelShownOrder);
+      }
+      // v10: the real names and notes the user gives contacts. drift
+      // creates a table IF NOT EXISTS, so a second run is safe.
+      if (from < 10) {
+        await m.createTable(contactNoteRows);
       }
     },
     beforeOpen: (details) async {

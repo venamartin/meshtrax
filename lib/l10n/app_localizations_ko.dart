@@ -1140,6 +1140,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact_telemetry => '텔레메트리';
 
   @override
+  String get contact_nameAndNote => '이름과 메모';
+
+  @override
+  String get contact_realName => '실명';
+
+  @override
+  String get contact_note => '메모';
+
+  @override
+  String get contact_nameAndNoteHint => '이 기기와 무전기 백업에만 저장되며 전송되지 않습니다.';
+
+  @override
   String get contact_lastSeen => '마지막으로 목격';
 
   @override

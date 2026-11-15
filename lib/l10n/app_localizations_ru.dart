@@ -1193,6 +1193,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contact_telemetry => 'Телеметрия';
 
   @override
+  String get contact_nameAndNote => 'Имя и заметка';
+
+  @override
+  String get contact_realName => 'Настоящее имя';
+
+  @override
+  String get contact_note => 'Заметка';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Хранится на этом устройстве и в резервных копиях радио. Никогда не отправляется.';
+
+  @override
   String get contact_lastSeen => 'Последний раз видели';
 
   @override

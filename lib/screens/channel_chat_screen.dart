@@ -586,8 +586,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           // Filter out repeaters as they are non-human nodes
           if (c.type == advTypeRepeater) return false;
           
-          return c.name.toLowerCase().contains(search) || 
-                 c.publicKeyHex.toLowerCase().startsWith(search);
+          return c.name.toLowerCase().contains(search) ||
+              (connector
+                      .realNameFor(c.publicKeyHex)
+                      ?.toLowerCase()
+                      .contains(search) ??
+                  false) ||
+              c.publicKeyHex.toLowerCase().startsWith(search);
         }).toList();
 
         filtered.sort((a, b) {
@@ -770,6 +775,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                     unreadCount: 0,
                     isFavorite: candidate.contact.isFavorite,
                     isDiscovered: !candidate.saved,
+                    realName: connector.realNameFor(
+                      candidate.contact.publicKeyHex,
+                    ),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       _openDmWith(
@@ -1369,9 +1377,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               ),
             ),
             if (_showMentions)
-              MentionsOverlay(
-                contacts: _filteredMentionContacts,
-                onSelect: _insertMention,
+              Consumer<MeshCoreConnector>(
+                builder: (context, connector, _) => MentionsOverlay(
+                  contacts: _filteredMentionContacts,
+                  onSelect: _insertMention,
+                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
+                ),
               ),
             Consumer<MeshCoreConnector>(
               builder: (context, connector, _) =>

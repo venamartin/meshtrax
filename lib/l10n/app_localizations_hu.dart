@@ -1200,6 +1200,19 @@ class AppLocalizationsHu extends AppLocalizations {
   String get contact_telemetry => 'Adatvisszaadás';
 
   @override
+  String get contact_nameAndNote => 'Név és jegyzet';
+
+  @override
+  String get contact_realName => 'Valódi név';
+
+  @override
+  String get contact_note => 'Jegyzet';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Ezen az eszközön és a rádió mentéseiben marad. Soha nem kerül elküldésre.';
+
+  @override
   String get contact_lastSeen => 'Utoljára, amikor látták';
 
   @override

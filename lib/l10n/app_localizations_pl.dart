@@ -1205,6 +1205,19 @@ class AppLocalizationsPl extends AppLocalizations {
   String get contact_telemetry => 'Telemetryka';
 
   @override
+  String get contact_nameAndNote => 'Imię i notatka';
+
+  @override
+  String get contact_realName => 'Prawdziwe imię';
+
+  @override
+  String get contact_note => 'Notatka';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Przechowywane na tym urządzeniu i w kopiach zapasowych radia. Nigdy nie jest wysyłane.';
+
+  @override
   String get contact_lastSeen => 'Ostatnio widziany';
 
   @override

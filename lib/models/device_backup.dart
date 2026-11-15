@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import '../connector/meshcore_protocol.dart';
 import 'contact.dart';
+import 'contact_note.dart';
 
 /// One contact in a full backup: the app-side record plus the raw signed
 /// advert blob the radio needs before it can share/export the contact again.
@@ -10,16 +11,24 @@ class BackupContact {
   final Uint8List? rawAdvert;
   final int? lastAdvertTimestamp;
 
+  /// The real name and note the user gave the contact, if any.
+  final ContactNote? note;
+
   BackupContact({
     required this.contact,
     this.rawAdvert,
     this.lastAdvertTimestamp,
+    this.note,
   });
 
   Map<String, dynamic> toJson() => {
     ...contact.toJson(),
     'rawAdvert': rawAdvert != null ? pubKeyToHex(rawAdvert!) : null,
     'lastAdvertTimestamp': lastAdvertTimestamp,
+    if (note case final note? when !note.isEmpty) ...{
+      'realName': note.realName,
+      'note': note.note,
+    },
   };
 
   factory BackupContact.fromJson(Map<String, dynamic> json) {
@@ -30,7 +39,16 @@ class BackupContact {
           ? hex2Uint8List(rawHex)
           : null,
       lastAdvertTimestamp: (json['lastAdvertTimestamp'] as num?)?.toInt(),
+      note: _note(json),
     );
+  }
+
+  static ContactNote? _note(Map<String, dynamic> json) {
+    final note = ContactNote(
+      realName: json['realName'] as String? ?? '',
+      note: json['note'] as String? ?? '',
+    );
+    return note.isEmpty ? null : note;
   }
 }
 

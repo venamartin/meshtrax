@@ -15,6 +15,7 @@ import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../models/companion_radio_stats.dart';
 import '../models/contact.dart';
+import '../models/contact_note.dart';
 import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../utils/restore_settings.dart';
@@ -46,6 +47,7 @@ import '../storage/channel_order_store.dart';
 import '../storage/channel_settings_store.dart';
 import '../storage/channel_store.dart';
 import '../storage/contact_discovery_store.dart';
+import '../storage/contact_note_store.dart';
 import '../storage/contact_settings_store.dart';
 import '../storage/contact_store.dart';
 import '../storage/message_store.dart';
@@ -857,6 +859,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final ContactSettingsStore _contactSettingsStore = ContactSettingsStore();
   final ContactStore _contactStore = ContactStore();
   final ContactDiscoveryStore _discoveryContactStore = ContactDiscoveryStore();
+  final ContactNoteStore _contactNoteStore = ContactNoteStore();
+  Map<String, ContactNote> _contactNotes = const {};
+  StreamSubscription<Map<String, ContactNote>>? _contactNotesSub;
   final ChannelStore _channelStore = ChannelStore();
   List<Channel> _cachedChannels = [];
   final Map<String, bool> _channelSmazEnabled = {}; // keyed by Channel.idKey
@@ -1530,6 +1535,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// The real name and note the user gave a contact, if any.
+  ContactNote? contactNote(String publicKeyHex) =>
+      _contactNotes[publicKeyHex.toLowerCase()];
+
+  /// The real name the user gave a contact, or null.
+  String? realNameFor(String publicKeyHex) {
+    final name = contactNote(publicKeyHex)?.realName ?? '';
+    return name.isEmpty ? null : name;
+  }
+
+  /// Saves what the user wrote about a contact; an empty note removes it.
+  Future<void> setContactNote(String publicKeyHex, ContactNote note) =>
+      _contactNoteStore.save(publicKeyHex, note);
+
   int getUnreadCountForContact(Contact contact) {
     if (contact.type == advTypeRepeater) return 0;
     return getUnreadCountForContactKey(contact.publicKeyHex);
@@ -1714,6 +1733,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _notificationService.initialize();
     _loadChannelOrder();
     _restoreLastBleDevice();
+    _contactNotesSub ??= _contactNoteStore.watchAll().listen((notes) {
+      _contactNotes = notes;
+      notifyListeners();
+    });
 
     // Initialize retry service callbacks
     _retryService?.initialize(
@@ -11227,6 +11250,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @override
   void dispose() {
     if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
+    _contactNotesSub?.cancel();
     _contactPersistTimer?.cancel();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
@@ -11565,6 +11589,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           lastAdvertTimestamp: blob != null
               ? _advertTimestampFromBlob(blob)
               : null,
+          note: contactNote(contact.publicKeyHex),
         ),
       );
       onContactProgress?.call(i + 1, deviceContacts.length);
@@ -11805,6 +11830,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       restorable.length,
       restorable.length,
     );
+    // What the user wrote about these contacts lives on this device, not
+    // the radio. A backup without it leaves the notes here as they are.
+    for (final bc in backup.contacts) {
+      final note = bc.note;
+      if (note != null) {
+        await _contactNoteStore.save(bc.contact.publicKeyHex, note);
+      }
+    }
 
     // 5. Resync the app's view of the radio (new identity included). The
     // radio serves one request protocol at a time, so the contact stream

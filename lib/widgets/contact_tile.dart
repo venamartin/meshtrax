@@ -3,6 +3,7 @@ import '../models/contact.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../utils/platform_info.dart';
+import 'contact_name.dart';
 import 'shares_position_icon.dart';
 import 'unread_badge.dart';
 
@@ -38,6 +39,9 @@ class ContactTile extends StatelessWidget {
   /// travelled.
   final String? routeLabel;
 
+  /// The real name the user gave the contact, beside its radio name.
+  final String? realName;
+
   const ContactTile({
     super.key,
     required this.contact,
@@ -49,6 +53,7 @@ class ContactTile extends StatelessWidget {
     this.isDiscovered = false,
     this.sharesPosition = false,
     this.routeLabel,
+    this.realName,
   });
 
   @override
@@ -77,10 +82,9 @@ class ContactTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: ContactName(
                   contact.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  realName: realName,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

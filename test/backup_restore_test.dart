@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/contact_note.dart';
 import 'package:meshtrax/models/device_backup.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/backup_service.dart';
@@ -130,6 +131,28 @@ void main() {
       expect(bc.contact.flags, 5);
       expect(bc.rawAdvert, Uint8List.fromList([1, 2, 3, 4]));
       expect(bc.lastAdvertTimestamp, 1700000123);
+    });
+
+    test('a contact keeps the real name and note given it', () async {
+      final noted = BackupContact(
+        contact: Contact.fromJson(_contactJson('cc' * 32, 'Ridge Walker')),
+        note: const ContactNote(
+          realName: 'Ann Smith',
+          note: 'Lives up the hill',
+        ),
+      );
+      final backup = _sampleBackup();
+      final withNote = DeviceBackup.fromJson(
+        backup.toJson(),
+        channels: backup.channels,
+        contacts: [...backup.contacts, noted],
+      );
+      final json = await BackupService.createBackupJson(withNote);
+      final d = (BackupService.parseBackup(json) as FullBackup).device;
+      expect(d.contacts.first.note, isNull, reason: 'none was given');
+      expect(d.contacts.last.note?.realName, 'Ann Smith');
+      expect(d.contacts.last.note?.note, 'Lives up the hill');
+      expect(d.contacts.first.toJson().containsKey('realName'), isFalse);
     });
 
     test('identity-less backup keeps privateKey null', () async {

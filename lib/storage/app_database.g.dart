@@ -2731,6 +2731,274 @@ class CachedChannelRowsCompanion extends UpdateCompanion<CachedChannelRow> {
   }
 }
 
+class $ContactNoteRowsTable extends ContactNoteRows
+    with TableInfo<$ContactNoteRowsTable, ContactNoteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactNoteRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _publicKeyHexMeta = const VerificationMeta(
+    'publicKeyHex',
+  );
+  @override
+  late final GeneratedColumn<String> publicKeyHex = GeneratedColumn<String>(
+    'public_key_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _realNameMeta = const VerificationMeta(
+    'realName',
+  );
+  @override
+  late final GeneratedColumn<String> realName = GeneratedColumn<String>(
+    'real_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [publicKeyHex, realName, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_note_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactNoteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('public_key_hex')) {
+      context.handle(
+        _publicKeyHexMeta,
+        publicKeyHex.isAcceptableOrUnknown(
+          data['public_key_hex']!,
+          _publicKeyHexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_publicKeyHexMeta);
+    }
+    if (data.containsKey('real_name')) {
+      context.handle(
+        _realNameMeta,
+        realName.isAcceptableOrUnknown(data['real_name']!, _realNameMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {publicKeyHex};
+  @override
+  ContactNoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactNoteRow(
+      publicKeyHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}public_key_hex'],
+      )!,
+      realName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}real_name'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+    );
+  }
+
+  @override
+  $ContactNoteRowsTable createAlias(String alias) {
+    return $ContactNoteRowsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
+  final String publicKeyHex;
+  final String realName;
+  final String note;
+  const ContactNoteRow({
+    required this.publicKeyHex,
+    required this.realName,
+    required this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['public_key_hex'] = Variable<String>(publicKeyHex);
+    map['real_name'] = Variable<String>(realName);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  ContactNoteRowsCompanion toCompanion(bool nullToAbsent) {
+    return ContactNoteRowsCompanion(
+      publicKeyHex: Value(publicKeyHex),
+      realName: Value(realName),
+      note: Value(note),
+    );
+  }
+
+  factory ContactNoteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactNoteRow(
+      publicKeyHex: serializer.fromJson<String>(json['publicKeyHex']),
+      realName: serializer.fromJson<String>(json['realName']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'publicKeyHex': serializer.toJson<String>(publicKeyHex),
+      'realName': serializer.toJson<String>(realName),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  ContactNoteRow copyWith({
+    String? publicKeyHex,
+    String? realName,
+    String? note,
+  }) => ContactNoteRow(
+    publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+    realName: realName ?? this.realName,
+    note: note ?? this.note,
+  );
+  ContactNoteRow copyWithCompanion(ContactNoteRowsCompanion data) {
+    return ContactNoteRow(
+      publicKeyHex: data.publicKeyHex.present
+          ? data.publicKeyHex.value
+          : this.publicKeyHex,
+      realName: data.realName.present ? data.realName.value : this.realName,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactNoteRow(')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('realName: $realName, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(publicKeyHex, realName, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactNoteRow &&
+          other.publicKeyHex == this.publicKeyHex &&
+          other.realName == this.realName &&
+          other.note == this.note);
+}
+
+class ContactNoteRowsCompanion extends UpdateCompanion<ContactNoteRow> {
+  final Value<String> publicKeyHex;
+  final Value<String> realName;
+  final Value<String> note;
+  final Value<int> rowid;
+  const ContactNoteRowsCompanion({
+    this.publicKeyHex = const Value.absent(),
+    this.realName = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactNoteRowsCompanion.insert({
+    required String publicKeyHex,
+    this.realName = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : publicKeyHex = Value(publicKeyHex);
+  static Insertable<ContactNoteRow> custom({
+    Expression<String>? publicKeyHex,
+    Expression<String>? realName,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (publicKeyHex != null) 'public_key_hex': publicKeyHex,
+      if (realName != null) 'real_name': realName,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactNoteRowsCompanion copyWith({
+    Value<String>? publicKeyHex,
+    Value<String>? realName,
+    Value<String>? note,
+    Value<int>? rowid,
+  }) {
+    return ContactNoteRowsCompanion(
+      publicKeyHex: publicKeyHex ?? this.publicKeyHex,
+      realName: realName ?? this.realName,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (publicKeyHex.present) {
+      map['public_key_hex'] = Variable<String>(publicKeyHex.value);
+    }
+    if (realName.present) {
+      map['real_name'] = Variable<String>(realName.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactNoteRowsCompanion(')
+          ..write('publicKeyHex: $publicKeyHex, ')
+          ..write('realName: $realName, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2749,6 +3017,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DiscoveredContactRowsTable(this);
   late final $CachedChannelRowsTable cachedChannelRows =
       $CachedChannelRowsTable(this);
+  late final $ContactNoteRowsTable contactNoteRows = $ContactNoteRowsTable(
+    this,
+  );
   late final Index idxChannelPacketHash = Index(
     'idx_channel_packet_hash',
     'CREATE INDEX idx_channel_packet_hash ON channel_message_rows (node_scope, channel_id_key, packet_hash)',
@@ -2777,6 +3048,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     contactRows,
     discoveredContactRows,
     cachedChannelRows,
+    contactNoteRows,
     idxChannelPacketHash,
     idxChannelArrival,
     idxChannelShownOrder,
@@ -3070,7 +3342,18 @@ class $$ChannelMessageRowsTableTableManager
                 payload: payload,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ChannelMessageRowsTable, ChannelMessageRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ChannelMessageRowsTable,
+                    ChannelMessageRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3363,7 +3646,18 @@ class $$ContactMessageRowsTableTableManager
                 payload: payload,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ContactMessageRowsTable, ContactMessageRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ContactMessageRowsTable,
+                    ContactMessageRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3558,7 +3852,16 @@ class $$ChannelReadMarksTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ChannelReadMarksTable, ChannelReadMark>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ChannelReadMarksTable,
+                    ChannelReadMark
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3751,7 +4054,16 @@ class $$ContactReadMarksTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ContactReadMarksTable, ContactReadMark>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ContactReadMarksTable,
+                    ContactReadMark
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3915,7 +4227,16 @@ class $$ContactRowsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ContactRowsTable, ContactRow>(table),
+                  BaseReferences<_$AppDatabase, $ContactRowsTable, ContactRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4094,7 +4415,19 @@ class $$DiscoveredContactRowsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $DiscoveredContactRowsTable,
+                    DiscoveredContactRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $DiscoveredContactRowsTable,
+                    DiscoveredContactRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4269,7 +4602,16 @@ class $$CachedChannelRowsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CachedChannelRowsTable, CachedChannelRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CachedChannelRowsTable,
+                    CachedChannelRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4297,6 +4639,185 @@ typedef $$CachedChannelRowsTableProcessedTableManager =
       CachedChannelRow,
       PrefetchHooks Function()
     >;
+typedef $$ContactNoteRowsTableCreateCompanionBuilder =
+    ContactNoteRowsCompanion Function({
+      required String publicKeyHex,
+      Value<String> realName,
+      Value<String> note,
+      Value<int> rowid,
+    });
+typedef $$ContactNoteRowsTableUpdateCompanionBuilder =
+    ContactNoteRowsCompanion Function({
+      Value<String> publicKeyHex,
+      Value<String> realName,
+      Value<String> note,
+      Value<int> rowid,
+    });
+
+class $$ContactNoteRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContactNoteRowsTable> {
+  $$ContactNoteRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get realName => $composableBuilder(
+    column: $table.realName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ContactNoteRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContactNoteRowsTable> {
+  $$ContactNoteRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get realName => $composableBuilder(
+    column: $table.realName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ContactNoteRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContactNoteRowsTable> {
+  $$ContactNoteRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get publicKeyHex => $composableBuilder(
+    column: $table.publicKeyHex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get realName =>
+      $composableBuilder(column: $table.realName, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$ContactNoteRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContactNoteRowsTable,
+          ContactNoteRow,
+          $$ContactNoteRowsTableFilterComposer,
+          $$ContactNoteRowsTableOrderingComposer,
+          $$ContactNoteRowsTableAnnotationComposer,
+          $$ContactNoteRowsTableCreateCompanionBuilder,
+          $$ContactNoteRowsTableUpdateCompanionBuilder,
+          (
+            ContactNoteRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ContactNoteRowsTable,
+              ContactNoteRow
+            >,
+          ),
+          ContactNoteRow,
+          PrefetchHooks Function()
+        > {
+  $$ContactNoteRowsTableTableManager(
+    _$AppDatabase db,
+    $ContactNoteRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactNoteRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactNoteRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactNoteRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> publicKeyHex = const Value.absent(),
+                Value<String> realName = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactNoteRowsCompanion(
+                publicKeyHex: publicKeyHex,
+                realName: realName,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String publicKeyHex,
+                Value<String> realName = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactNoteRowsCompanion.insert(
+                publicKeyHex: publicKeyHex,
+                realName: realName,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ContactNoteRowsTable, ContactNoteRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ContactNoteRowsTable,
+                    ContactNoteRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ContactNoteRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContactNoteRowsTable,
+      ContactNoteRow,
+      $$ContactNoteRowsTableFilterComposer,
+      $$ContactNoteRowsTableOrderingComposer,
+      $$ContactNoteRowsTableAnnotationComposer,
+      $$ContactNoteRowsTableCreateCompanionBuilder,
+      $$ContactNoteRowsTableUpdateCompanionBuilder,
+      (
+        ContactNoteRow,
+        BaseReferences<_$AppDatabase, $ContactNoteRowsTable, ContactNoteRow>,
+      ),
+      ContactNoteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4315,4 +4836,6 @@ class $AppDatabaseManager {
       $$DiscoveredContactRowsTableTableManager(_db, _db.discoveredContactRows);
   $$CachedChannelRowsTableTableManager get cachedChannelRows =>
       $$CachedChannelRowsTableTableManager(_db, _db.cachedChannelRows);
+  $$ContactNoteRowsTableTableManager get contactNoteRows =>
+      $$ContactNoteRowsTableTableManager(_db, _db.contactNoteRows);
 }

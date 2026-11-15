@@ -1188,6 +1188,19 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
+  String get contact_nameAndNote => 'Meno a poznámka';
+
+  @override
+  String get contact_realName => 'Skutočné meno';
+
+  @override
+  String get contact_note => 'Poznámka';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Zostáva v tomto zariadení a v zálohách rádia. Nikdy sa neodosiela.';
+
+  @override
   String get contact_lastSeen => 'Naposledy videný';
 
   @override

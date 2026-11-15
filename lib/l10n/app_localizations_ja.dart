@@ -1143,6 +1143,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contact_telemetry => 'テレメトリー';
 
   @override
+  String get contact_nameAndNote => '名前とメモ';
+
+  @override
+  String get contact_realName => '本名';
+
+  @override
+  String get contact_note => 'メモ';
+
+  @override
+  String get contact_nameAndNoteHint => 'この端末と無線機のバックアップにのみ保存され、送信されることはありません。';
+
+  @override
   String get contact_lastSeen => '最後に確認された場所';
 
   @override

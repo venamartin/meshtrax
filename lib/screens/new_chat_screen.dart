@@ -861,7 +861,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
           final isDiscovered = !contact.isActive;
           if (sourceFilter == ContactSourceFilter.saved && isDiscovered) return false;
           if (sourceFilter == ContactSourceFilter.discovered && !isDiscovered) return false;
-          if (searchQuery.isNotEmpty && !matchesContactQuery(contact, searchQuery)) return false;
+          if (searchQuery.isNotEmpty &&
+              !matchesContactQuery(
+                contact,
+                searchQuery,
+                realName: connector.realNameFor(contact.publicKeyHex),
+              )) {
+            return false;
+          }
           if (typeFilter != ContactTypeFilter.all && !_matchesTypeFilter(contact, typeFilter)) return false;
           if (showUnreadOnly && connector.getUnreadCountForContact(contact) == 0) return false;
           if (contact.publicKeyHex == selfPubKeyHex) return false;
@@ -1020,6 +1027,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
+                            realName:
+                                connector.realNameFor(contact.publicKeyHex),
                             sharesPosition:
                                 connector.positionVisibleTo(contact),
                             onTap: () async {
