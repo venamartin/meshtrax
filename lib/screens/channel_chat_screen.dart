@@ -49,6 +49,7 @@ import '../widgets/pinned_messages_bar.dart';
 import '../widgets/structured_message_card.dart';
 import '../widgets/structured_message_dialogs.dart';
 import '../widgets/reaction_details_sheet.dart';
+import '../widgets/wavy_divider.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
 import 'chat_screen.dart';
@@ -1476,17 +1477,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               currentWidget = Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(context.l10n.chat_newMessages, style: TextStyle(color: Colors.red[400], fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                        Expanded(child: Divider(color: Colors.red[400], thickness: 1)),
-                      ],
+                  WavyDivider(
+                    label: context.l10n.chat_newMessages,
+                    color: Colors.red[400]!,
+                    labelStyle: TextStyle(
+                      color: Colors.red[400],
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   currentWidget,
@@ -1498,20 +1495,13 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               currentWidget = Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            DateTimeHelper.dayHeading(context, message.timestamp),
-                            style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w600)
-                          ),
-                        ),
-                        Expanded(child: Divider(color: Colors.grey[400], thickness: 1)),
-                      ],
+                  WavyDivider(
+                    label: DateTimeHelper.dayHeading(context, message.timestamp),
+                    color: Colors.grey[600]!,
+                    labelStyle: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   currentWidget,
