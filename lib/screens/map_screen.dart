@@ -874,6 +874,12 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                         ],
                       ),
+                      if (!_isBuildingPathTrace && _nodesShown(settings))
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: _filterButton(settingsService),
+                        ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
                       // A touch on the main map makes it yours: it no longer
                       // goes to your GPS position by itself.
@@ -1150,6 +1156,28 @@ class _MapScreenState extends State<MapScreen> {
       default:
         return Icons.device_unknown;
     }
+  }
+
+  /// Whether the map draws any of the layers the node filters apply to.
+  static bool _nodesShown(AppSettings settings) =>
+      settings.mapShowRepeaters ||
+      settings.mapShowChatNodes ||
+      settings.mapShowOtherNodes ||
+      settings.mapShowMarkers ||
+      settings.mapShowGuessedLocations;
+
+  /// The node filters, a tap away while nodes are on the map; the layers
+  /// sheet has the same button.
+  Widget _filterButton(AppSettingsService settingsService) {
+    final colors = Theme.of(context).colorScheme;
+    return FloatingActionButton.small(
+      heroTag: null,
+      tooltip: context.l10n.map_filterNodes,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurfaceVariant,
+      onPressed: () => _showFilterDialog(context, settingsService),
+      child: const Icon(Icons.filter_list),
+    );
   }
 
   /// What the legend's Mesh part counts: the nodes the map draws, those it

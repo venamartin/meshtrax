@@ -319,9 +319,31 @@ class MapLayerSection extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 8),
-      Wrap(spacing: 4, runSpacing: 8, children: children),
+      // Five to a row on a phone: tiles shrink to fit, down to [_minWidth].
+      LayoutBuilder(
+        builder: (context, box) => _TileWidth(
+          width: ((box.maxWidth - 4 * _spacing) / 5).floorToDouble().clamp(
+            _minWidth,
+            MapLayerTile.width,
+          ),
+          child: Wrap(spacing: _spacing, runSpacing: 8, children: children),
+        ),
+      ),
     ],
   );
+
+  static const _spacing = 4.0;
+  static const _minWidth = 60.0;
+}
+
+/// How wide a [MapLayerSection] makes its tiles.
+class _TileWidth extends InheritedWidget {
+  final double width;
+
+  const _TileWidth({required this.width, required super.child});
+
+  @override
+  bool updateShouldNotify(_TileWidth oldWidget) => width != oldWidget.width;
 }
 
 /// A square picture with a caption, outlined when [selected]: one map type
@@ -346,10 +368,17 @@ class MapLayerTile extends StatelessWidget {
     required this.onTap,
   });
 
+  /// A tile's width outside a [MapLayerSection], and its widest in one.
+  static const width = 72.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final width =
+        context.dependOnInheritedWidgetOfExactType<_TileWidth>()?.width ??
+        MapLayerTile.width;
+    final side = width - 12;
     return Semantics(
       selected: selected,
       button: true,
@@ -357,14 +386,14 @@ class MapLayerTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          width: 72,
+          width: width,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: side,
+                  height: side,
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),

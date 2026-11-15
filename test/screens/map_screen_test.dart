@@ -1444,10 +1444,11 @@ void main() {
   testWidgets('the layers sheet: its buttons by the X, five tiles to a row', (
     tester,
   ) async {
+    // A narrow phone: tiles shrink so five still fit.
     await pumpMap(
       tester,
       _FakeConnector(nodes: const []),
-      view: const Size(412, 892),
+      view: const Size(360, 800),
     );
     await tester.tap(find.byTooltip('Map layers'));
     for (var i = 0; i < 10; i++) {
@@ -1478,6 +1479,37 @@ void main() {
       tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
       OfflineMapsTab.maps.index,
     );
+  });
+
+  testWidgets('a filter button on the map while it draws nodes', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    final settings = tester
+        .element(find.byType(MapScreen))
+        .read<AppSettingsService>();
+    await tester.tap(find.byTooltip('Filter Nodes'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.widgetWithText(AlertDialog, 'Filter Nodes'), findsOneWidget);
+    await tester.tapAt(const Offset(4, 4));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    // With every node layer off there's nothing to filter.
+    await settings.setMapShowRepeaters(false);
+    await settings.setMapShowChatNodes(false);
+    await settings.setMapShowOtherNodes(false);
+    await settings.setMapShowMarkers(false);
+    await settings.setMapShowGuessedLocations(false);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byTooltip('Filter Nodes'), findsNothing);
+
+    await settings.setMapShowChatNodes(true);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byTooltip('Filter Nodes'), findsOneWidget);
   });
 
   testWidgets('the layers Charts tile, not downloaded, opens the Charts tab', (
