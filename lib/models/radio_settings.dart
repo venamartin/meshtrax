@@ -264,6 +264,22 @@ class RadioSettings {
     ),
   ];
 
+  /// The name of the preset on these numbers, the frequency in kHz as the
+  /// radio reports it; null for settings no preset uses.
+  static String? presetNameFor(
+          {required int freqKHz,
+          required int bwHz,
+          required int sf,
+          required int cr}) =>
+      presets
+          .where((p) =>
+              p.$2.frequencyHz == freqKHz &&
+              p.$2.bandwidthHz == bwHz &&
+              p.$2.sf == sf &&
+              p.$2.cr == cr)
+          .firstOrNull
+          ?.$1;
+
   /// Where off-grid repeat moves a radio on [baseMHz]: the allowed frequency
   /// nearest it, from the radio's own list when it gave one. Without a list,
   /// stock firmware's: 869.495 MHz from ver code 13 (1.16), 869.000 before

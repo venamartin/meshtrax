@@ -260,8 +260,11 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       if (choice == null || !mounted) return;
       includePlaces = choice;
     }
-    final doc = const JsonEncoder.withIndent(' ')
-        .convert(graph.saveSession(includePlaces: includePlaces));
+    final document = context
+        .read<PathGraphService>()
+        .backupDocument(includePlaces: includePlaces);
+    if (document == null) return;
+    final doc = const JsonEncoder.withIndent(' ').convert(document);
     // The system save dialog, like the log export: the silent save lands
     // in the app's private folder where nobody can find it.
     final String? saved;
@@ -291,13 +294,29 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
           uniformTypeIdentifiers: ['public.json'])
     ]);
     if (file == null) return;
+    final Map<String, dynamic> doc;
     try {
-      final doc = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      doc = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    } catch (_) {
+      if (mounted) {
+        showDismissibleSnackBar(context,
+            content: const Text(
+                'Restore failed: this file is not a Pathfinder backup'));
+      }
+      return;
+    }
+    if (!mounted || !await confirmRestore(context, doc)) return;
+    try {
       await graph.loadSession(doc);
       if (mounted) {
         showDismissibleSnackBar(context,
             content: const Text('Backup restored'));
         setState(() {});
+      }
+    } on FormatException catch (e) {
+      if (mounted) {
+        showDismissibleSnackBar(context,
+            content: Text('Restore failed: ${e.message}'));
       }
     } catch (e) {
       if (mounted) {
@@ -1419,4 +1438,59 @@ class _PathGraphScreenState extends State<PathGraphScreen> {
       ),
     );
   }
+}
+
+/// Before a restore replaces the open graph: a backup for another preset is
+/// refused in words, any other is restored only after the user has seen
+/// which graph it came from and which it replaces.
+@visibleForTesting
+Future<bool> confirmRestore(
+    BuildContext context, Map<String, dynamic> document) async {
+  final service = context.read<PathGraphService>();
+  final refusal = service.restoreRefusal(document);
+  if (refusal != null) {
+    await showDialog<void>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('Backup for another mesh'),
+        content: Text(refusal),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+  final saved = DateTime.tryParse('${document['saved_at']}')?.toLocal();
+  final when = saved == null
+      ? ''
+      : ', saved ${DateTimeHelper.date(context, saved)} '
+          '${DateTimeHelper.time(context, saved)}';
+  final sure = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: const Text('Replace this graph?'),
+      content: Text(
+          'Restoring replaces everything Pathfinder knows in '
+          '${service.openGraphName} with the backup of '
+          '${PathGraphService.backupGraphName(document)}$when. What it '
+          'learned since then is lost.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialog, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialog).colorScheme.error),
+          onPressed: () => Navigator.pop(dialog, true),
+          child: const Text('Replace'),
+        ),
+      ],
+    ),
+  );
+  return sure == true;
 }
