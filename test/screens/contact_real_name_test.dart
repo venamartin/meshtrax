@@ -207,8 +207,17 @@ void main() {
     expect(saved.nickname, 'Annie');
     expect(saved.realName, 'Ann Smith');
     expect(saved.note, 'Lives up the hill');
-    expect(find.text('Ridge Walker  Ann Smith'), findsOneWidget,
-        reason: 'the radio name first, the full name beside it');
+    expect(find.text('Ridge Walker'), findsOneWidget);
+    expect(find.text('Annie'), findsOneWidget,
+        reason: 'the nickname in a pill beside the handle');
+
+    // No nickname: the full name stands in, cut to a nickname's length.
+    await tester.longPress(find.text('Ridge Walker'));
+    await _settle(tester);
+    await tester.tap(find.text('Contact Info'));
+    await _settle(tester);
+    await fillDialog(tester, fullName: 'Christopher Alexander', note: '');
+    expect(find.text('Christopher…'), findsOneWidget);
   });
 
   testWidgets('a DM shows the name under its title, set from Contact Info',

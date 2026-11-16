@@ -40,6 +40,7 @@ import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/message_status_icon.dart';
+import '../widgets/nickname_pill.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
@@ -1730,7 +1731,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                               if (nickname != null) ...[
                                 const SizedBox(width: 6),
                                 Flexible(
-                                  child: _buildNicknamePill(context, nickname),
+                                  child: NicknamePill(
+                                    nickname.name,
+                                    guess: nickname.guess,
+                                  ),
                                 ),
                               ],
                               // Some copy of this message was heard with
@@ -2490,45 +2494,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     return hsl
         .withLightness((hsl.lightness - 0.28).clamp(0.30, 0.42))
         .toColor();
-  }
-
-  /// The nickname the user gave the sender (else the full name), beside the
-  /// handle. A "?" marks a guess: more than one contact uses the handle.
-  Widget _buildNicknamePill(
-    BuildContext context,
-    ({String name, bool guess}) nickname,
-  ) {
-    final ink = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-      decoration: BoxDecoration(
-        color: ink.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: ink.withValues(alpha: 0.35), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (nickname.guess) ...[
-            Icon(Icons.help_outline, size: 11, color: ink),
-            const SizedBox(width: 3),
-          ],
-          Flexible(
-            child: Text(
-              nickname.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w500,
-                color: ink,
-                height: 1.25,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Tiny "Direct" pill for zero-hop messages — the packet's path is empty,
