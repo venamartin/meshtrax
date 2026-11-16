@@ -96,6 +96,9 @@ dependencies:
     path: packages/traxpoi
   traxroute:
     path: packages/traxroute
+  # Line of sight and radio reach, offline from the contours packs
+  traxlos:
+    path: packages/traxlos
   # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
   traxroute_ios:
     path: packages/traxroute_ios

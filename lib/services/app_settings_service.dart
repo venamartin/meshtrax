@@ -141,6 +141,13 @@ class AppSettingsService extends ChangeNotifier {
     await updateSettings(_settings.copyWith(routeOptions: value));
   }
 
+  /// Your antenna for line of sight, and the raised one's height.
+  Future<void> setLosAntenna(String kind, {double? raisedM}) async {
+    await updateSettings(
+      _settings.copyWith(losAntenna: kind, losRaisedM: raisedM),
+    );
+  }
+
   Future<void> setMapTheme(String value) async {
     await updateSettings(_settings.copyWith(mapTheme: value));
   }

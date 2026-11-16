@@ -69,6 +69,10 @@ class AppMap extends StatefulWidget {
   /// sits beside them rather than above.
   final double controlsWidth;
 
+  /// How much of the map's bottom a sheet covers: the credits and the
+  /// offline card stay above it.
+  final ValueListenable<double>? coveredBottom;
+
   /// The downloaded areas' outline.
   static const areaColor = Color(0xFF00897B);
 
@@ -92,6 +96,7 @@ class AppMap extends StatefulWidget {
     this.exact = false,
     this.onCreditsChanged,
     this.controlsWidth = 0,
+    this.coveredBottom,
   });
 
   @override
@@ -286,27 +291,49 @@ class _AppMapState extends State<AppMap> {
           },
         ),
         if (showCard)
-          Positioned(
-            left: 8,
-            // Beside the screen's map buttons and above the credits chip,
-            // or clear of the screen's floating action button.
-            right: widget.controlsWidth > 0 ? widget.controlsWidth : 8,
-            bottom: widget.controlsWidth > 0 ? 40 : 88,
-            child: Center(
-              child: type == MapType.charts
-                  ? _NoCharts(areas: _chartsHere)
-                  : _NoOfflineMap(regionPath: _regionPath),
+          _AboveSheet(
+            covered: widget.coveredBottom,
+            builder: (covered) => Positioned(
+              left: 8,
+              // Beside the screen's map buttons and above the credits chip,
+              // or clear of the screen's floating action button.
+              right: widget.controlsWidth > 0 ? widget.controlsWidth : 8,
+              bottom: (widget.controlsWidth > 0 ? 40 : 88) + covered,
+              child: Center(
+                child: type == MapType.charts
+                    ? _NoCharts(areas: _chartsHere)
+                    : _NoOfflineMap(regionPath: _regionPath),
+              ),
             ),
           ),
         if (credits.isNotEmpty && widget.onCreditsChanged == null)
-          Positioned(
-            left: 8,
-            bottom: 8,
-            child: AttributionChip(credits: credits, dark: dark),
+          _AboveSheet(
+            covered: widget.coveredBottom,
+            builder: (covered) => Positioned(
+              left: 8,
+              bottom: 8 + covered,
+              child: AttributionChip(credits: credits, dark: dark),
+            ),
           ),
       ],
     );
   }
+}
+
+/// Builds [builder] with how much of the map's bottom a sheet covers.
+class _AboveSheet extends StatelessWidget {
+  final ValueListenable<double>? covered;
+  final Widget Function(double covered) builder;
+
+  const _AboveSheet({required this.covered, required this.builder});
+
+  @override
+  Widget build(BuildContext context) => covered == null
+      ? builder(0)
+      : ValueListenableBuilder(
+          valueListenable: covered!,
+          builder: (context, value, _) => builder(value),
+        );
 }
 
 /// Where the base map stops zooming in: what to download for detail.

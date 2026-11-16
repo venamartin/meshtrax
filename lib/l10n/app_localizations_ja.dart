@@ -4317,7 +4317,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineMaps_kindContours => '等高線';
 
   @override
-  String get offlineMaps_kindContoursDetail => '標高を示す線';
+  String get offlineMaps_kindContoursDetail => '標高を示す線、見通しにも使います';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS地形図';
@@ -6261,4 +6261,195 @@ class AppLocalizationsJa extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => '見通し';
+
+  @override
+  String get los_reachFromMe => '現在地からの電波到達範囲';
+
+  @override
+  String get los_lineFromMe => '現在地からの見通し';
+
+  @override
+  String get los_reachFromHere => 'ここからの電波到達範囲';
+
+  @override
+  String los_reachFrom(String name) {
+    return '$nameからの電波到達範囲';
+  }
+
+  @override
+  String get los_clear => '良好';
+
+  @override
+  String get los_marginal => 'ぎりぎり';
+
+  @override
+  String get los_blocked => '遮断';
+
+  @override
+  String get los_cantTell => '不明';
+
+  @override
+  String get los_checking => '確認中…';
+
+  @override
+  String get los_failed => 'ここでは見通しを計算できませんでした。';
+
+  @override
+  String get los_pickTarget => '地図上の人か場所をタップしてください。';
+
+  @override
+  String get los_noPosition => '現在地がまだわかりません。地図をタップすると、そこから始めます。';
+
+  @override
+  String get los_nothingInWay => '遮るものはありません。';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return '現在地から$distanceの地点で、地面が線より$height高くなっています。';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return '始点から$distanceの地点で、地面が線より$height高くなっています。';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return '現在地から$distanceの地点で、地面と線の間が$heightしかありません。';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return '始点から$distanceの地点で、地面と線の間が$heightしかありません。';
+  }
+
+  @override
+  String get los_higherHelps => 'より高い場所に移るか、アンテナを高くすると改善します。';
+
+  @override
+  String los_noContours(String length) {
+    return 'この線のうち$lengthは等高線がありません。';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'この線のうち$lengthは等高線がありません（$regions）。';
+  }
+
+  @override
+  String get los_noContoursArea => 'この範囲の一部に等高線がありません。';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'この範囲の一部に等高線がありません（$regions）。';
+  }
+
+  @override
+  String get los_noHeightData => 'この地域の高さデータはまだありません。';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return '$regionsの等高線をダウンロード（$size）';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      '出発前にこの地域の等高線をダウンロードしてください。インターネット接続が必要です。';
+
+  @override
+  String get los_spotBelowLowest => 'この地点は最も低い等高線より下（海面下）にあるため、高さがわかりません。';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$nameは最も低い等高線より下（海面下）にいるため、その場所の高さがわかりません。';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      '現在地は最も低い等高線より下（海面下）にあるため、その場所の高さがわかりません。無線機のGPSがオンなら、その高度を使います。';
+
+  @override
+  String get los_noLinesNear => '線のこちらの端の近くに等高線がないため、その場所の高さがわかりません。';
+
+  @override
+  String get los_from => '始点';
+
+  @override
+  String get los_to => '終点';
+
+  @override
+  String get los_thisRadio => 'この無線機';
+
+  @override
+  String get los_me => '自分';
+
+  @override
+  String los_meAgo(String age) {
+    return '自分、$age';
+  }
+
+  @override
+  String get los_meByHand => '自分、手動で設定した位置';
+
+  @override
+  String get los_meNotYetGps => '自分、GPSでの位置更新はまだ';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name、$age';
+  }
+
+  @override
+  String get los_antenna => 'アンテナ';
+
+  @override
+  String get los_handHeld => '手持ち';
+
+  @override
+  String get los_vehicle => '車載';
+
+  @override
+  String get los_raised => '高所';
+
+  @override
+  String get los_raisedTitle => '高所のアンテナ';
+
+  @override
+  String get los_raisedLabel => '地面からの高さ';
+
+  @override
+  String get los_terrainOnly => 'ダウンロードした等高線による地形のみです。';
+
+  @override
+  String los_credits(String credits) {
+    return '高さ：$credits';
+  }
+
+  @override
+  String get los_aboutTitle => '見通しについて';
+
+  @override
+  String get los_helpBody =>
+      '結果は、ダウンロードした等高線から読み取った地形だけをもとにしています。木、建物、人、電線、ほかのアンテナは考慮されません。また、山頂は描かれているより最大で等高線1本分高いことがあります。\n\n「良好」は、地形が遮っていないという意味です。メッセージが届くとは限りません。「ぎりぎり」は、地形が線に近づいているという意味です。「遮断」は、地形が遮っているという意味です。低い尾根ひとつなら越えて届くこともありますが、当てにしないでください。\n\n頼りにする前に、自分の無線機を使って現地で試してください。';
+
+  @override
+  String los_reachShaded(String distance) {
+    return '色付きの範囲：$distance以内で、そこにいる手持ち無線機との間を地形が遮っていません。';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'さらに遠くまで（$distance）';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return '$distance以内に位置のわかる人はいません。';
+  }
+
+  @override
+  String get offlineMaps_losContours => '見通し用の等高線';
 }

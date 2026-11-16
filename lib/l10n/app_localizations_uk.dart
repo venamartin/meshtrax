@@ -4549,7 +4549,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get offlineMaps_kindContours => 'Горизонталі';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Лінії висот';
+  String get offlineMaps_kindContoursDetail =>
+      'Лінії висот, також використовуються для прямої видимості';
 
   @override
   String get offlineMaps_kindUsgs => 'Топокарта USGS';
@@ -6586,4 +6587,199 @@ class AppLocalizationsUk extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Пряма видимість';
+
+  @override
+  String get los_reachFromMe => 'Радіопокриття від мене';
+
+  @override
+  String get los_lineFromMe => 'Пряма видимість від мене';
+
+  @override
+  String get los_reachFromHere => 'Радіопокриття звідси';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Радіопокриття: $name';
+  }
+
+  @override
+  String get los_clear => 'Вільно';
+
+  @override
+  String get los_marginal => 'На межі';
+
+  @override
+  String get los_blocked => 'Закрито';
+
+  @override
+  String get los_cantTell => 'Невідомо';
+
+  @override
+  String get los_checking => 'Перевірка…';
+
+  @override
+  String get los_failed => 'Тут не вдалося розрахувати пряму видимість.';
+
+  @override
+  String get los_pickTarget => 'Торкніться людини або місця на карті.';
+
+  @override
+  String get los_noPosition =>
+      'Ваше розташування ще невідоме. Торкніться карти, щоб почати звідти.';
+
+  @override
+  String get los_nothingInWay => 'Перешкод немає.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Рельєф за $distance від вас на $height вище лінії.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Рельєф за $distance від початку на $height вище лінії.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Рельєф за $distance від вас підходить до лінії на $height.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Рельєф за $distance від початку підходить до лінії на $height.';
+  }
+
+  @override
+  String get los_higherHelps => 'Допоможе вище місце або вища антена.';
+
+  @override
+  String los_noContours(String length) {
+    return 'На $length цієї лінії немає горизонталей.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'На $length цієї лінії немає горизонталей ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea =>
+      'Для частини цієї області немає горизонталей.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Для частини цієї області немає горизонталей ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'Для цієї області ще немає даних про висоту.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Завантажити горизонталі: $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Завантажте горизонталі для цієї області до поїздки. Для цього потрібне з\'єднання з інтернетом.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Ця точка нижче найнижчої горизонталі (нижче рівня моря), тому її висота невідома.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name перебуває нижче найнижчої горизонталі (нижче рівня моря), тому висота там невідома.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Ви перебуваєте нижче найнижчої горизонталі (нижче рівня моря), тому висота там невідома. Якщо GPS рації увімкнено, використовується її висота.';
+
+  @override
+  String get los_noLinesNear =>
+      'Біля цього кінця лінії немає горизонталей, тому висота там невідома.';
+
+  @override
+  String get los_from => 'Від';
+
+  @override
+  String get los_to => 'До';
+
+  @override
+  String get los_thisRadio => 'Ця рація';
+
+  @override
+  String get los_me => 'Я';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Я, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Я, розташування задано вручну';
+
+  @override
+  String get los_meNotYetGps => 'Я, розташування ще не оновлено за GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Антена';
+
+  @override
+  String get los_handHeld => 'У руці';
+
+  @override
+  String get los_vehicle => 'На машині';
+
+  @override
+  String get los_raised => 'Піднята';
+
+  @override
+  String get los_raisedTitle => 'Піднята антена';
+
+  @override
+  String get los_raisedLabel => 'Висота над землею';
+
+  @override
+  String get los_terrainOnly => 'Лише рельєф, за завантаженими горизонталями.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Висоти: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'Про пряму видимість';
+
+  @override
+  String get los_helpBody =>
+      'Відповідь ґрунтується лише на рельєфі, взятому із завантажених горизонталей. Вона нічого не знає про дерева, будівлі, людей, лінії електропередачі чи інші антени, а вершина пагорба може бути до однієї горизонталі вищою, ніж намальовано.\n\n«Вільно» означає, що рельєф не заважає. Це не гарантує, що повідомлення дійде. «На межі» означає, що рельєф підходить близько до лінії. «Закрито» означає, що рельєф заважає: повідомлення ще може пройти через один невисокий хребет, але не розраховуйте на це.\n\nПеревірте це на місцевості зі своїми раціями, перш ніж покладатися на результат.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Зафарбовано: там рельєф не заважає зв\'язку з рацією в руці, до $distance.';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Дивитися далі ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Нікого з розташуванням у межах $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Горизонталі для прямої видимості';
 }

@@ -4457,7 +4457,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineMaps_kindContours => 'Contours';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Elevation lines';
+  String get offlineMaps_kindContoursDetail =>
+      'Elevation lines, also used for line of sight';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS topo map';
@@ -6466,4 +6467,199 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Line of sight';
+
+  @override
+  String get los_reachFromMe => 'Radio reach from me';
+
+  @override
+  String get los_lineFromMe => 'Line of sight from me';
+
+  @override
+  String get los_reachFromHere => 'Radio reach from here';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Radio reach from $name';
+  }
+
+  @override
+  String get los_clear => 'Clear';
+
+  @override
+  String get los_marginal => 'Marginal';
+
+  @override
+  String get los_blocked => 'Blocked';
+
+  @override
+  String get los_cantTell => 'Can\'t tell';
+
+  @override
+  String get los_checking => 'Checking…';
+
+  @override
+  String get los_failed => 'Line of sight couldn\'t be worked out here.';
+
+  @override
+  String get los_pickTarget => 'Tap a person or a place on the map.';
+
+  @override
+  String get los_noPosition =>
+      'Your position isn\'t known yet. Tap the map to start from there.';
+
+  @override
+  String get los_nothingInWay => 'Nothing in the way.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'The ground $distance from you is $height above the line.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'The ground $distance from the start is $height above the line.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'The ground $distance from you comes within $height of the line.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'The ground $distance from the start comes within $height of the line.';
+  }
+
+  @override
+  String get los_higherHelps => 'Higher ground or a higher antenna helps.';
+
+  @override
+  String los_noContours(String length) {
+    return 'No contour lines for $length of this line.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'No contour lines for $length of this line ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'No contour lines for part of this area.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'No contour lines for part of this area ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'No height data for this area yet.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Download $regions contours ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Download the contours for this area before your trip. It needs an internet connection.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'This spot is below the lowest contour line (below sea level), so its height isn\'t known.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name is below the lowest contour line (below sea level), so the height there isn\'t known.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'You are below the lowest contour line (below sea level), so the height there isn\'t known. With the radio\'s GPS on, its altitude is used.';
+
+  @override
+  String get los_noLinesNear =>
+      'There are no contour lines near this end of the line, so its height isn\'t known.';
+
+  @override
+  String get los_from => 'From';
+
+  @override
+  String get los_to => 'To';
+
+  @override
+  String get los_thisRadio => 'This radio';
+
+  @override
+  String get los_me => 'Me';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Me, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Me, position set by hand';
+
+  @override
+  String get los_meNotYetGps => 'Me, not yet updated by GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antenna';
+
+  @override
+  String get los_handHeld => 'Hand-held';
+
+  @override
+  String get los_vehicle => 'Vehicle';
+
+  @override
+  String get los_raised => 'Raised';
+
+  @override
+  String get los_raisedTitle => 'Raised antenna';
+
+  @override
+  String get los_raisedLabel => 'Height above the ground';
+
+  @override
+  String get los_terrainOnly =>
+      'Terrain only, from the contour lines you downloaded.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Heights: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'About line of sight';
+
+  @override
+  String get los_helpBody =>
+      'The answer comes from the ground alone, read from the contour lines you downloaded. It knows nothing of trees, buildings, people, power lines or other antennas, and a hilltop can be up to one contour line higher than drawn.\n\nClear means the ground isn\'t in the way. It doesn\'t promise that a message gets through. Marginal means the ground comes close to the line. Blocked means the ground is in the way: a message may still get over one low ridge, but don\'t count on it.\n\nTest it with your own radios in the field before you rely on it.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Shaded: the ground isn\'t in the way to a hand-held there, up to $distance.';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Look further ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'No one with a position within $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Contours for line of sight';
 }

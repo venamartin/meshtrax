@@ -4325,7 +4325,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_kindContours => '등고선';
 
   @override
-  String get offlineMaps_kindContoursDetail => '고도를 나타내는 선';
+  String get offlineMaps_kindContoursDetail => '고도를 나타내는 선, 가시선에도 사용';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS 지형도';
@@ -6273,4 +6273,196 @@ class AppLocalizationsKo extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => '가시선';
+
+  @override
+  String get los_reachFromMe => '내 위치의 전파 도달 범위';
+
+  @override
+  String get los_lineFromMe => '내 위치에서의 가시선';
+
+  @override
+  String get los_reachFromHere => '여기서의 전파 도달 범위';
+
+  @override
+  String los_reachFrom(String name) {
+    return '$name의 전파 도달 범위';
+  }
+
+  @override
+  String get los_clear => '양호';
+
+  @override
+  String get los_marginal => '아슬아슬';
+
+  @override
+  String get los_blocked => '막힘';
+
+  @override
+  String get los_cantTell => '알 수 없음';
+
+  @override
+  String get los_checking => '확인 중…';
+
+  @override
+  String get los_failed => '여기서는 가시선을 계산할 수 없습니다.';
+
+  @override
+  String get los_pickTarget => '지도에서 사람이나 장소를 탭하세요.';
+
+  @override
+  String get los_noPosition => '아직 내 위치를 모릅니다. 지도를 탭하면 그곳에서 시작합니다.';
+
+  @override
+  String get los_nothingInWay => '가로막는 것이 없습니다.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return '나에게서 $distance 떨어진 지면이 선보다 $height 높습니다.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return '시작점에서 $distance 떨어진 지면이 선보다 $height 높습니다.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return '나에게서 $distance 떨어진 지면과 선 사이가 $height밖에 되지 않습니다.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return '시작점에서 $distance 떨어진 지면과 선 사이가 $height밖에 되지 않습니다.';
+  }
+
+  @override
+  String get los_higherHelps => '더 높은 곳이나 더 높은 안테나가 도움이 됩니다.';
+
+  @override
+  String los_noContours(String length) {
+    return '이 선의 $length 구간에 등고선이 없습니다.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return '이 선의 $length 구간에 등고선이 없습니다($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => '이 지역 일부에 등고선이 없습니다.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return '이 지역 일부에 등고선이 없습니다($regions).';
+  }
+
+  @override
+  String get los_noHeightData => '이 지역에는 아직 높이 데이터가 없습니다.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return '$regions 등고선 다운로드($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      '여행 전에 이 지역의 등고선을 다운로드하세요. 인터넷 연결이 필요합니다.';
+
+  @override
+  String get los_spotBelowLowest =>
+      '이 지점은 가장 낮은 등고선보다 아래(해수면 아래)에 있어 높이를 알 수 없습니다.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name의 위치는 가장 낮은 등고선보다 아래(해수면 아래)라서 그곳의 높이를 알 수 없습니다.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      '내 위치가 가장 낮은 등고선보다 아래(해수면 아래)라서 그곳의 높이를 알 수 없습니다. 무전기 GPS가 켜져 있으면 그 고도를 사용합니다.';
+
+  @override
+  String get los_noLinesNear => '선의 이쪽 끝 근처에 등고선이 없어 그곳의 높이를 알 수 없습니다.';
+
+  @override
+  String get los_from => '출발';
+
+  @override
+  String get los_to => '도착';
+
+  @override
+  String get los_thisRadio => '이 무전기';
+
+  @override
+  String get los_me => '나';
+
+  @override
+  String los_meAgo(String age) {
+    return '나, $age';
+  }
+
+  @override
+  String get los_meByHand => '나, 직접 설정한 위치';
+
+  @override
+  String get los_meNotYetGps => '나, 아직 GPS로 위치가 업데이트되지 않음';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => '안테나';
+
+  @override
+  String get los_handHeld => '휴대용';
+
+  @override
+  String get los_vehicle => '차량';
+
+  @override
+  String get los_raised => '높게 설치';
+
+  @override
+  String get los_raisedTitle => '높게 설치한 안테나';
+
+  @override
+  String get los_raisedLabel => '지면에서의 높이';
+
+  @override
+  String get los_terrainOnly => '다운로드한 등고선에 따른 지형만 반영합니다.';
+
+  @override
+  String los_credits(String credits) {
+    return '높이: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => '가시선 정보';
+
+  @override
+  String get los_helpBody =>
+      '결과는 다운로드한 등고선에서 읽은 지형만으로 계산합니다. 나무, 건물, 사람, 전선, 다른 안테나는 고려하지 않으며, 산꼭대기는 그려진 것보다 최대 등고선 한 칸만큼 더 높을 수 있습니다.\n\n\'양호\'는 지형이 가로막지 않는다는 뜻입니다. 메시지가 전달된다는 보장은 아닙니다. \'아슬아슬\'은 지형이 선에 가깝게 다가온다는 뜻입니다. \'막힘\'은 지형이 가로막는다는 뜻입니다. 낮은 능선 하나 정도는 메시지가 넘어갈 수도 있지만 기대하지 마세요.\n\n믿고 쓰기 전에 내 무전기로 현장에서 직접 시험해 보세요.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return '색칠된 곳: 그곳의 휴대용 무전기까지 지형이 가로막지 않습니다(최대 $distance).';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return '더 멀리 보기($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return '$distance 이내에 위치가 알려진 사람이 없습니다.';
+  }
+
+  @override
+  String get offlineMaps_losContours => '가시선용 등고선';
 }

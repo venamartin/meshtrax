@@ -55,6 +55,11 @@ class AppSettings {
   final PathType routePathType;
   final RouteOptions routeOptions;
 
+  /// Line of sight: your antenna (`handHeld`, `vehicle` or `raised`), and
+  /// the raised one's height in metres (null: 20 ft or 6 m).
+  final String losAntenna;
+  final double? losRaisedM;
+
   final bool notificationsEnabled;
   final bool notifyOnNewMessage;
   final bool notifyOnNewChannelMessage;
@@ -167,6 +172,8 @@ class AppSettings {
     this.mapTheme = 'light',
     this.routePathType = PathType.hiking,
     this.routeOptions = const RouteOptions(),
+    this.losAntenna = 'handHeld',
+    this.losRaisedM,
     this.notificationsEnabled = true,
     this.notifyOnNewMessage = true,
     this.notifyOnNewChannelMessage = true,
@@ -253,6 +260,8 @@ class AppSettings {
       'map_theme': mapTheme,
       'route_path_type': routePathType.name,
       'route_options': routeOptions.toJson(),
+      'los_antenna': losAntenna,
+      'los_raised_m': losRaisedM,
       'notifications_enabled': notificationsEnabled,
       'notify_on_new_message': notifyOnNewMessage,
       'notify_on_new_channel_message': notifyOnNewChannelMessage,
@@ -331,6 +340,8 @@ class AppSettings {
         final Map<String, dynamic> options => RouteOptions.fromJson(options),
         _ => const RouteOptions(),
       },
+      losAntenna: json['los_antenna'] as String? ?? 'handHeld',
+      losRaisedM: (json['los_raised_m'] as num?)?.toDouble(),
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       notifyOnNewMessage: json['notify_on_new_message'] as bool? ?? true,
       notifyOnNewChannelMessage:
@@ -433,6 +444,8 @@ class AppSettings {
     String? mapTheme,
     PathType? routePathType,
     RouteOptions? routeOptions,
+    String? losAntenna,
+    double? losRaisedM,
     bool? notificationsEnabled,
     bool? notifyOnNewMessage,
     bool? notifyOnNewChannelMessage,
@@ -495,6 +508,8 @@ class AppSettings {
       mapTheme: mapTheme ?? this.mapTheme,
       routePathType: routePathType ?? this.routePathType,
       routeOptions: routeOptions ?? this.routeOptions,
+      losAntenna: losAntenna ?? this.losAntenna,
+      losRaisedM: losRaisedM ?? this.losRaisedM,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyOnNewMessage: notifyOnNewMessage ?? this.notifyOnNewMessage,
       notifyOnNewChannelMessage:

@@ -11,6 +11,7 @@ import 'offline_maps/charts_tab.dart';
 import 'offline_maps/downloaded_tab.dart';
 import 'offline_maps/maps_tab.dart';
 import 'offline_maps/offline_maps_ui.dart';
+import 'offline_maps/pack_offer.dart';
 
 /// The Offline maps screen's tabs, in order.
 enum OfflineMapsTab { maps, charts, downloaded }
@@ -28,11 +29,16 @@ class OfflineMapsScreen extends StatefulWidget {
   /// Opens the Charts tab with this chart area ticked (its pack region).
   final String? initialChartArea;
 
+  /// Opens the Maps tab with these packs ticked for one download, from one
+  /// region or several (the contours line of sight is missing).
+  final List<String>? initialPacks;
+
   const OfflineMapsScreen({
     super.key,
     this.initialRegionPath,
     this.initialTab,
     this.initialChartArea,
+    this.initialPacks,
   });
 
   @override
@@ -52,6 +58,9 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
   /// Chart areas ticked for download, by pack region.
   late Set<String> _chartSelection;
 
+  /// Packs offered ticked in place of the region list.
+  List<String>? _offer;
+
   /// Checks the drive in use is still there when the app comes back.
   late final AppLifecycleListener _lifecycle;
 
@@ -64,6 +73,8 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
         ? null
         : maps.regions?[_selectedPath!]?.parentPath;
     _chartSelection = {?widget.initialChartArea};
+    final offer = widget.initialPacks;
+    _offer = offer == null || offer.isEmpty ? null : offer;
     // Maps unless asked otherwise, packs on the device or not: opening on
     // Downloaded hid what there is to get (owner, 2026-11-16).
     final tab = widget.initialChartArea != null
@@ -102,6 +113,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
       _browsePath = null;
       _selectedPath = null;
       _chartSelection = {};
+      _offer = null;
     });
     _tabs.animateTo(OfflineMapsTab.maps.index);
   }
@@ -110,6 +122,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
     final regions = context.read<MapPacksService>().regions;
     final region = regions?[path];
     setState(() {
+      _offer = null;
       // A region since split (whole-Alaska packs once Alaska became 8
       // regions) has nothing to download itself: show what it holds.
       if (region != null && regions!.childrenOf(region).isNotEmpty) {
@@ -177,17 +190,23 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
               child: TabBarView(
                 controller: _tabs,
                 children: [
-                  MapsTab(
-                    browsePath: _browsePath,
-                    selectedPath: _selectedPath,
-                    onBrowse: (path) => setState(() {
-                      _browsePath = path;
-                      _selectedPath = null;
-                    }),
-                    onSelect: (path) => setState(() => _selectedPath = path),
-                    onOpenCharts: () =>
-                        _tabs.animateTo(OfflineMapsTab.charts.index),
-                  ),
+                  if (_offer case final offer?)
+                    PackOffer(
+                      ids: offer,
+                      onBack: () => setState(() => _offer = null),
+                    )
+                  else
+                    MapsTab(
+                      browsePath: _browsePath,
+                      selectedPath: _selectedPath,
+                      onBrowse: (path) => setState(() {
+                        _browsePath = path;
+                        _selectedPath = null;
+                      }),
+                      onSelect: (path) => setState(() => _selectedPath = path),
+                      onOpenCharts: () =>
+                          _tabs.animateTo(OfflineMapsTab.charts.index),
+                    ),
                   ChartsTab(
                     openArea: widget.initialChartArea,
                     selected: _chartSelection,

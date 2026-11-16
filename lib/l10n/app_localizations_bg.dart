@@ -4528,7 +4528,8 @@ class AppLocalizationsBg extends AppLocalizations {
   String get offlineMaps_kindContours => 'Хоризонтали';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Линии на надморската височина';
+  String get offlineMaps_kindContoursDetail =>
+      'Линии на надморската височина, използват се и за пряка видимост';
 
   @override
   String get offlineMaps_kindUsgs => 'Топографска карта USGS';
@@ -6557,4 +6558,199 @@ class AppLocalizationsBg extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Пряка видимост';
+
+  @override
+  String get los_reachFromMe => 'Радиообхват от мен';
+
+  @override
+  String get los_lineFromMe => 'Пряка видимост от мен';
+
+  @override
+  String get los_reachFromHere => 'Радиообхват оттук';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Радиообхват от $name';
+  }
+
+  @override
+  String get los_clear => 'Свободно';
+
+  @override
+  String get los_marginal => 'На ръба';
+
+  @override
+  String get los_blocked => 'Блокирано';
+
+  @override
+  String get los_cantTell => 'Неясно';
+
+  @override
+  String get los_checking => 'Проверка…';
+
+  @override
+  String get los_failed => 'Пряката видимост не можа да бъде изчислена тук.';
+
+  @override
+  String get los_pickTarget => 'Докоснете човек или място на картата.';
+
+  @override
+  String get los_noPosition =>
+      'Местоположението ви още не е известно. Докоснете картата, за да започнете оттам.';
+
+  @override
+  String get los_nothingInWay => 'Нищо не пречи.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Теренът на $distance от вас е $height над линията.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Теренът на $distance от началото е $height над линията.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Теренът на $distance от вас стига на $height от линията.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Теренът на $distance от началото стига на $height от линията.';
+  }
+
+  @override
+  String get los_higherHelps => 'Помага по-високо място или по-висока антена.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Няма хоризонтали за $length от тази линия.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Няма хоризонтали за $length от тази линия ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'Няма хоризонтали за част от тази област.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Няма хоризонтали за част от тази област ($regions).';
+  }
+
+  @override
+  String get los_noHeightData =>
+      'Все още няма данни за височината в тази област.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Изтегли хоризонтали за $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Изтеглете хоризонталите за тази област преди пътуването. Нужна е интернет връзка.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Това място е под най-ниската хоризонтала (под морското равнище), затова височината му не е известна.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name е под най-ниската хоризонтала (под морското равнище), затова височината там не е известна.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Вие сте под най-ниската хоризонтала (под морското равнище), затова височината там не е известна. Ако GPS на радиото е включен, се използва неговата височина.';
+
+  @override
+  String get los_noLinesNear =>
+      'Близо до този край на линията няма хоризонтали, затова височината там не е известна.';
+
+  @override
+  String get los_from => 'От';
+
+  @override
+  String get los_to => 'До';
+
+  @override
+  String get los_thisRadio => 'Това радио';
+
+  @override
+  String get los_me => 'Аз';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Аз, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Аз, местоположение зададено ръчно';
+
+  @override
+  String get los_meNotYetGps => 'Аз, местоположението още не е обновено от GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Антена';
+
+  @override
+  String get los_handHeld => 'Ръчна';
+
+  @override
+  String get los_vehicle => 'На автомобил';
+
+  @override
+  String get los_raised => 'Издигната';
+
+  @override
+  String get los_raisedTitle => 'Издигната антена';
+
+  @override
+  String get los_raisedLabel => 'Височина над земята';
+
+  @override
+  String get los_terrainOnly => 'Само терен, по изтеглените хоризонтали.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Височини: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'За пряката видимост';
+
+  @override
+  String get los_helpBody =>
+      'Отговорът се базира само на терена, прочетен от изтеглените от вас хоризонтали. Той не знае нищо за дървета, сгради, хора, електропроводи или други антени, а един връх може да е до една хоризонтала по-висок от начертаното.\n\n„Свободно“ означава, че теренът не пречи. Това не гарантира, че съобщението ще стигне. „На ръба“ означава, че теренът се доближава до линията. „Блокирано“ означава, че теренът пречи: съобщението все пак може да мине над един нисък хребет, но не разчитайте на това.\n\nИзпробвайте го на място със своите радиостанции, преди да разчитате на него.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Оцветено: там теренът не пречи на връзка с ръчно радио, до $distance.';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Виж по-далеч ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Няма никого с местоположение в радиус $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Хоризонтали за пряка видимост';
 }
