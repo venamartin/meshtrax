@@ -4968,6 +4968,36 @@ class AppLocalizationsNl extends AppLocalizations {
   String get structured_navigate => 'Navigeren';
 
   @override
+  String get route_otherApp => 'Openen in andere app';
+
+  @override
+  String get navigate_otherApp => 'Andere app';
+
+  @override
+  String get navigate_showDownload => 'Download tonen';
+
+  @override
+  String get navigate_pickStart => 'Start kiezen';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Offline routes voor $region staan niet op deze telefoon.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'De download is $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Voor dit gebied zijn nog geen offline routes.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax weet niet waar je bent: je radio heeft geen GPS-positie. Kies een start op de kaart of gebruik een andere app.';
+
+  @override
   String get structured_channel => 'Kanaal';
 
   @override

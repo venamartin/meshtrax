@@ -60,6 +60,9 @@ class RouteSheet extends StatefulWidget {
   final UnitSystem units;
   final VoidCallback onClose;
 
+  /// Hands the destination to another map app, as Navigate does.
+  final VoidCallback? onOtherApp;
+
   /// Docked at the side of a wide screen: no handle, nothing to slide.
   final bool side;
 
@@ -85,6 +88,7 @@ class RouteSheet extends StatefulWidget {
     required this.error,
     required this.units,
     required this.onClose,
+    this.onOtherApp,
     this.side = false,
     this.bottomInset = 0,
   });
@@ -341,6 +345,13 @@ class RouteSheetState extends State<RouteSheet> {
                       _to = _Stop.open;
                     }),
                   ),
+                  if (widget.onOtherApp case final onOtherApp?)
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.near_me_outlined),
+                      tooltip: l10n.route_otherApp,
+                      onPressed: onOtherApp,
+                    ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.close),

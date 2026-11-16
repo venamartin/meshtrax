@@ -4979,6 +4979,36 @@ class AppLocalizationsSk extends AppLocalizations {
   String get structured_navigate => 'Navigovať';
 
   @override
+  String get route_otherApp => 'Otvoriť v inej aplikácii';
+
+  @override
+  String get navigate_otherApp => 'Iná aplikácia';
+
+  @override
+  String get navigate_showDownload => 'Zobraziť sťahovanie';
+
+  @override
+  String get navigate_pickStart => 'Vybrať štart';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Offline trasy pre $region nie sú v tomto telefóne.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Sťahovanie má $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Pre túto oblasť zatiaľ nie sú offline trasy.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax nevie, kde ste: vaše rádio nemá polohu GPS. Vyberte štart na mape alebo použite inú aplikáciu.';
+
+  @override
   String get structured_channel => 'Kanál';
 
   @override

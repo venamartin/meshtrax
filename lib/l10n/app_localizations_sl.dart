@@ -4978,6 +4978,36 @@ class AppLocalizationsSl extends AppLocalizations {
   String get structured_navigate => 'Navigiraj';
 
   @override
+  String get route_otherApp => 'Odpri v drugi aplikaciji';
+
+  @override
+  String get navigate_otherApp => 'Druga aplikacija';
+
+  @override
+  String get navigate_showDownload => 'Pokaži prenos';
+
+  @override
+  String get navigate_pickStart => 'Izberi začetek';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Poti brez povezave za $region niso v tem telefonu.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Prenos je velik $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Za to območje še ni poti brez povezave.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax ne ve, kje ste: vaš radio nima položaja GPS. Izberite začetek na zemljevidu ali uporabite drugo aplikacijo.';
+
+  @override
   String get structured_channel => 'Kanal';
 
   @override

@@ -4941,6 +4941,36 @@ class AppLocalizationsSv extends AppLocalizations {
   String get structured_navigate => 'Navigera';
 
   @override
+  String get route_otherApp => 'Öppna i en annan app';
+
+  @override
+  String get navigate_otherApp => 'Annan app';
+
+  @override
+  String get navigate_showDownload => 'Visa nedladdning';
+
+  @override
+  String get navigate_pickStart => 'Välj start';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Offlinerutter för $region finns inte på den här telefonen.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Nedladdningen är $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Det finns inga offlinerutter för det här området än.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax vet inte var du är: din radio har ingen GPS-position. Välj en start på kartan eller använd en annan app.';
+
+  @override
   String get structured_channel => 'Kanal';
 
   @override

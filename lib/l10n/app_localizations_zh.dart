@@ -4651,6 +4651,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get structured_navigate => '导航';
 
   @override
+  String get route_otherApp => '在其他应用中打开';
+
+  @override
+  String get navigate_otherApp => '其他应用';
+
+  @override
+  String get navigate_showDownload => '查看下载';
+
+  @override
+  String get navigate_pickStart => '选择起点';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return '此手机上没有 $region 的离线路线。';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return '下载大小为 $size。';
+  }
+
+  @override
+  String get navigate_noRoutingHere => '该地区还没有离线路线。';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax 不知道你的位置：你的电台没有 GPS 位置。请在地图上选择起点，或使用其他应用。';
+
+  @override
   String get structured_channel => '频道';
 
   @override

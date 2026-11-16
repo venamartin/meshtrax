@@ -4766,6 +4766,35 @@ class AppLocalizationsKo extends AppLocalizations {
   String get structured_navigate => '길 안내';
 
   @override
+  String get route_otherApp => '다른 앱에서 열기';
+
+  @override
+  String get navigate_otherApp => '다른 앱';
+
+  @override
+  String get navigate_showDownload => '다운로드 보기';
+
+  @override
+  String get navigate_pickStart => '출발지 선택';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return '$region의 오프라인 경로가 이 휴대폰에 없습니다.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return '다운로드 크기는 $size입니다.';
+  }
+
+  @override
+  String get navigate_noRoutingHere => '이 지역에는 아직 오프라인 경로가 없습니다.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax가 현재 위치를 모릅니다: 무전기에 GPS 위치가 없습니다. 지도에서 출발지를 선택하거나 다른 앱을 사용하세요.';
+
+  @override
   String get structured_channel => '채널';
 
   @override

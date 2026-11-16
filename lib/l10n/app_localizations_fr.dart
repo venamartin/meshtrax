@@ -5019,6 +5019,36 @@ class AppLocalizationsFr extends AppLocalizations {
   String get structured_navigate => 'Y aller';
 
   @override
+  String get route_otherApp => 'Ouvrir dans une autre app';
+
+  @override
+  String get navigate_otherApp => 'Autre app';
+
+  @override
+  String get navigate_showDownload => 'Voir le téléchargement';
+
+  @override
+  String get navigate_pickStart => 'Choisir un départ';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Les itinéraires hors ligne pour $region ne sont pas sur ce téléphone.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Le téléchargement fait $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Il n’y a pas encore d’itinéraires hors ligne pour cette zone.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax ne sait pas où vous êtes : votre radio n’a pas de position GPS. Choisissez un départ sur la carte ou utilisez une autre app.';
+
+  @override
   String get structured_channel => 'Canal';
 
   @override

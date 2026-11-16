@@ -4906,6 +4906,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get structured_navigate => 'Navigate';
 
   @override
+  String get route_otherApp => 'Open in another app';
+
+  @override
+  String get navigate_otherApp => 'Another app';
+
+  @override
+  String get navigate_showDownload => 'Show download';
+
+  @override
+  String get navigate_pickStart => 'Pick a start';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Offline routing for $region isn\'t on this phone.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Its download is $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'There\'s no offline routing for this area yet.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax doesn\'t know where you are: your radio has no GPS position. Pick a start on the map, or use another app.';
+
+  @override
   String get structured_channel => 'Channel';
 
   @override

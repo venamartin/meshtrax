@@ -28,6 +28,7 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../helpers/link_handler.dart';
 import '../helpers/map_places.dart';
 import '../helpers/poi_kinds.dart';
 import '../helpers/path_helper.dart';
@@ -80,6 +81,10 @@ class MapScreen extends StatefulWidget {
   /// Pick mode: a tap or long press pops the screen with the chosen LatLng.
   final bool pickPosition;
 
+  /// Opens with the route from your position to [highlightPosition], as
+  /// Route here does; Back then goes straight back (Navigate on a card).
+  final bool routeToHighlight;
+
   const MapScreen({
     super.key,
     this.highlightPosition,
@@ -87,6 +92,7 @@ class MapScreen extends StatefulWidget {
     this.highlightZoom = 14.0,
     this.hideBackButton = false,
     this.pickPosition = false,
+    this.routeToHighlight = false,
   });
 
   @override
@@ -176,6 +182,28 @@ class _MapScreenState extends State<MapScreen> {
       _route = kept.result;
     }
     final connector = _connector = context.read<MeshCoreConnector>();
+    final to = widget.highlightPosition;
+    if (widget.routeToHighlight && to != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final settings = context.read<AppSettingsService>().settings;
+        _routeHere(
+          widget.highlightLabel ??
+              positionLines(
+                to.latitude,
+                to.longitude,
+                coordFormatOf(settings),
+              ).first,
+          to,
+          connector.hasValidLocation(
+                connector.selfLatitude,
+                connector.selfLongitude,
+              )
+              ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+              : null,
+        );
+      });
+    }
     // A new channel message may carry a pin.
     _channelLatest = connector.watchChannelLatest().listen((_) {
       if (mounted) unawaited(_refreshChannelMarkers(connector));
@@ -645,8 +673,11 @@ class _MapScreenState extends State<MapScreen> {
 
         return PopScope(
           // Back leaves full screen, then lowers a raised route sheet, then
-          // closes the route, before anything else.
-          canPop: allowBack && _routeTo == null && !_fullScreen,
+          // closes the route, before anything else. A map opened to route
+          // somewhere goes straight back to where you came from.
+          canPop: allowBack &&
+              !_fullScreen &&
+              (_routeTo == null || widget.routeToHighlight),
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
             if (_fullScreen) return _setFullScreen(false);
@@ -2072,6 +2103,11 @@ class _MapScreenState extends State<MapScreen> {
       error: _routeError,
       units: settings.unitSystem,
       onClose: _clearRoute,
+      onOtherApp: () {
+        final to = _routeTo;
+        if (to == null) return;
+        unawaited(LinkHandler.openInMapsApp(context, to.point, label: to.name));
+      },
       side: side,
       // With no quick-switch bar under the map, the sheet reaches the
       // screen's edge.

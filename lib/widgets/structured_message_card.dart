@@ -10,6 +10,7 @@ import '../connector/meshcore_connector.dart';
 import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../helpers/link_handler.dart';
+import '../helpers/navigate_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/app_localizations.dart';
@@ -254,7 +255,7 @@ class StructuredMessageCard extends StatelessWidget {
             _Action(
               Icons.near_me_outlined,
               l10n.structured_navigate,
-              () => LinkHandler.openInMapsApp(context, m.position,
+              () => NavigateHelper.navigate(context, m.position,
                   label: l10n.structured_sos),
             ),
             _Action(
@@ -544,7 +545,7 @@ class StructuredMessageCard extends StatelessWidget {
         _Action(
           Icons.near_me_outlined,
           l10n.structured_navigate,
-          () => LinkHandler.openInMapsApp(context, m.position, label: pinLabel),
+          () => NavigateHelper.navigate(context, m.position, label: pinLabel),
           primary: false,
         ),
       ],
