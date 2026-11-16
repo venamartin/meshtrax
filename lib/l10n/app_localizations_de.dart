@@ -4997,6 +4997,36 @@ class AppLocalizationsDe extends AppLocalizations {
   String get structured_navigate => 'Navigieren';
 
   @override
+  String get route_otherApp => 'In anderer App öffnen';
+
+  @override
+  String get navigate_otherApp => 'Andere App';
+
+  @override
+  String get navigate_showDownload => 'Download anzeigen';
+
+  @override
+  String get navigate_pickStart => 'Start wählen';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Offline-Routen für $region sind nicht auf diesem Telefon.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Der Download hat $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Für dieses Gebiet gibt es noch keine Offline-Routen.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax weiß nicht, wo du bist: Dein Funkgerät hat keine GPS-Position. Wähle einen Start auf der Karte oder nutze eine andere App.';
+
+  @override
   String get structured_channel => 'Kanal';
 
   @override

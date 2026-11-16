@@ -4980,6 +4980,36 @@ class AppLocalizationsBg extends AppLocalizations {
   String get structured_navigate => 'Навигация';
 
   @override
+  String get route_otherApp => 'Отвори в друго приложение';
+
+  @override
+  String get navigate_otherApp => 'Друго приложение';
+
+  @override
+  String get navigate_showDownload => 'Покажи изтеглянето';
+
+  @override
+  String get navigate_pickStart => 'Избери начало';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Офлайн маршрутите за $region не са на този телефон.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Изтеглянето е $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'За тази област все още няма офлайн маршрути.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax не знае къде сте: радиото ви няма GPS позиция. Изберете начало на картата или използвайте друго приложение.';
+
+  @override
   String get structured_channel => 'Канал';
 
   @override

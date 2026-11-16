@@ -5005,6 +5005,36 @@ class AppLocalizationsUk extends AppLocalizations {
   String get structured_navigate => 'Навігація';
 
   @override
+  String get route_otherApp => 'Відкрити в іншому застосунку';
+
+  @override
+  String get navigate_otherApp => 'Інший застосунок';
+
+  @override
+  String get navigate_showDownload => 'Показати завантаження';
+
+  @override
+  String get navigate_pickStart => 'Вибрати старт';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Офлайн-маршрутів для $region немає на цьому телефоні.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Розмір завантаження — $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Для цієї області ще немає офлайн-маршрутів.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax не знає, де ви: ваша рація не має GPS-позиції. Виберіть старт на карті або скористайтеся іншим застосунком.';
+
+  @override
   String get structured_channel => 'Канал';
 
   @override

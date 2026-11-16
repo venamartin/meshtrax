@@ -5000,6 +5000,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get structured_navigate => 'Навигация';
 
   @override
+  String get route_otherApp => 'Открыть в другом приложении';
+
+  @override
+  String get navigate_otherApp => 'Другое приложение';
+
+  @override
+  String get navigate_showDownload => 'Показать загрузку';
+
+  @override
+  String get navigate_pickStart => 'Выбрать старт';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'Офлайн-маршрутов для $region нет на этом телефоне.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'Размер загрузки — $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Для этой области пока нет офлайн-маршрутов.';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax не знает, где вы: у вашей рации нет GPS-позиции. Выберите старт на карте или используйте другое приложение.';
+
+  @override
   String get structured_channel => 'Канал';
 
   @override

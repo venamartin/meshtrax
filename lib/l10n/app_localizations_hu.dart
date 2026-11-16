@@ -5002,6 +5002,36 @@ class AppLocalizationsHu extends AppLocalizations {
   String get structured_navigate => 'Navigálás';
 
   @override
+  String get route_otherApp => 'Megnyitás másik alkalmazásban';
+
+  @override
+  String get navigate_otherApp => 'Másik alkalmazás';
+
+  @override
+  String get navigate_showDownload => 'Letöltés megnyitása';
+
+  @override
+  String get navigate_pickStart => 'Kezdőpont választása';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'A(z) $region offline útvonaladatai nincsenek ezen a telefonon.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'A letöltés mérete $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Ehhez a területhez még nincs offline útvonaltervezés.';
+
+  @override
+  String get navigate_noPosition =>
+      'A MeshTrax nem tudja, hol vagy: a rádiódnak nincs GPS-pozíciója. Válassz kezdőpontot a térképen, vagy használj másik alkalmazást.';
+
+  @override
   String get structured_channel => 'Csatorna';
 
   @override

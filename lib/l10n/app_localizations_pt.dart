@@ -4990,6 +4990,36 @@ class AppLocalizationsPt extends AppLocalizations {
   String get structured_navigate => 'Navegar';
 
   @override
+  String get route_otherApp => 'Abrir noutra app';
+
+  @override
+  String get navigate_otherApp => 'Outra app';
+
+  @override
+  String get navigate_showDownload => 'Mostrar transferência';
+
+  @override
+  String get navigate_pickStart => 'Escolher partida';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return 'As rotas offline de $region não estão neste telemóvel.';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'A transferência tem $size.';
+  }
+
+  @override
+  String get navigate_noRoutingHere =>
+      'Ainda não há rotas offline para esta zona.';
+
+  @override
+  String get navigate_noPosition =>
+      'O MeshTrax não sabe onde está: o seu rádio não tem posição GPS. Escolha uma partida no mapa ou use outra app.';
+
+  @override
   String get structured_channel => 'Canal';
 
   @override

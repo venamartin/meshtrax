@@ -8473,6 +8473,54 @@ abstract class AppLocalizations {
   /// **'Navigate'**
   String get structured_navigate;
 
+  /// No description provided for @route_otherApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in another app'**
+  String get route_otherApp;
+
+  /// No description provided for @navigate_otherApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Another app'**
+  String get navigate_otherApp;
+
+  /// No description provided for @navigate_showDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Show download'**
+  String get navigate_showDownload;
+
+  /// No description provided for @navigate_pickStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a start'**
+  String get navigate_pickStart;
+
+  /// No description provided for @navigate_routingMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline routing for {region} isn\'t on this phone.'**
+  String navigate_routingMissing(String region);
+
+  /// No description provided for @navigate_routingSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Its download is {size}.'**
+  String navigate_routingSize(String size);
+
+  /// No description provided for @navigate_noRoutingHere.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s no offline routing for this area yet.'**
+  String get navigate_noRoutingHere;
+
+  /// No description provided for @navigate_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax doesn\'t know where you are: your radio has no GPS position. Pick a start on the map, or use another app.'**
+  String get navigate_noPosition;
+
   /// No description provided for @structured_channel.
   ///
   /// In en, this message translates to:

@@ -4759,6 +4759,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get structured_navigate => 'ナビ';
 
   @override
+  String get route_otherApp => '別のアプリで開く';
+
+  @override
+  String get navigate_otherApp => '別のアプリ';
+
+  @override
+  String get navigate_showDownload => 'ダウンロードを表示';
+
+  @override
+  String get navigate_pickStart => '出発地を選ぶ';
+
+  @override
+  String navigate_routingMissing(String region) {
+    return '$region のオフラインルートはこの端末にありません。';
+  }
+
+  @override
+  String navigate_routingSize(String size) {
+    return 'ダウンロードサイズは $size です。';
+  }
+
+  @override
+  String get navigate_noRoutingHere => 'この地域のオフラインルートはまだありません。';
+
+  @override
+  String get navigate_noPosition =>
+      'MeshTrax は現在地を知りません：無線機に GPS 位置がありません。地図で出発地を選ぶか、別のアプリを使ってください。';
+
+  @override
   String get structured_channel => 'チャンネル';
 
   @override
