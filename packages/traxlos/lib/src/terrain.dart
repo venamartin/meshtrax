@@ -37,7 +37,9 @@ class ContourTerrain {
   final int maxCachedTiles;
 
   /// How far above the contours' own hilltop height a peak's height may
-  /// be and still be used, in contour intervals.
+  /// be and still be used, in contour intervals. Three by default: a
+  /// summit can stand well above its highest line (Telescope Peak is
+  /// 3369 m in OpenStreetMap, against about 3353 m from the 20 ft lines).
   final double peakMaxAboveIntervals;
 
   final List<_Pack> _packs;
@@ -56,7 +58,7 @@ class ContourTerrain {
     required List<ContourPack> contours,
     List<String> peakPacks = const [],
     this.maxCachedTiles = 400,
-    this.peakMaxAboveIntervals = 1.5,
+    this.peakMaxAboveIntervals = 3,
   }) : _packs = [for (final p in contours) _Pack(PmtilesFile(p.path), p)],
        _peakPacks = [for (final p in peakPacks) _PeakPack(PmtilesFile(p))] {
     if (_packs.length > 255) throw ArgumentError('too many packs');

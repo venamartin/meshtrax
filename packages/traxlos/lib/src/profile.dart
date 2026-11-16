@@ -196,7 +196,7 @@ ProfileData buildProfile({
   required List<double> packInterval,
   double fillStepM = 50,
   List<PathPeak> peaks = const [],
-  double peakMaxAboveIntervals = 1.5,
+  double peakMaxAboveIntervals = 3,
 }) {
   final b = _Builder(packInterval, fillStepM);
   final maxInterval = packInterval.isEmpty

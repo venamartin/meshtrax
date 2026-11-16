@@ -259,7 +259,9 @@ void main() {
         'contours', () {
       for (final (ele, used) in [
         (70.0, true),
-        (top + 1.6 * interval, false),
+        // Up to three intervals above the contours' own top.
+        (top + 2.9 * interval, true),
+        (top + 3.1 * interval, false),
         (65.0, false),
       ]) {
         final t = terrainOf(

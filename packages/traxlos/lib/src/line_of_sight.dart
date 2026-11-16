@@ -12,8 +12,14 @@ const kFactor = 4 / 3;
 const defaultFrequencyMHz = 915.0;
 
 /// Within this distance of a radio, ground only counts when it is above
-/// the line, and then makes the answer Marginal at worst.
+/// the line. It makes the answer Marginal, or Blocked when it is more than
+/// one contour interval plus [nearEndBlockedM] above the line.
 const nearEndM = 50.0;
+
+/// How far above one contour interval ground next to a radio must rise
+/// over the line to block it: a bank 20 m high in front of a hand-held
+/// does, a hummock a few metres high doesn't.
+const nearEndBlockedM = 5.0;
 
 /// Ground within this distance of a radio is reported as near that radio.
 const nearRadioM = 100.0;
@@ -42,7 +48,8 @@ enum Verdict {
   marginal,
 
   /// Ground is more than one contour interval above the line (or above it
-  /// where the earth's curve alone already is).
+  /// where the earth's curve alone already is), or rises more than one
+  /// interval and [nearEndBlockedM] above it just in front of a radio.
   blocked,
 
   /// Can't tell: part of the line has no data, or an end's height isn't
@@ -316,7 +323,8 @@ class Judgement {
 ///
 /// Per point x metres from the From end, with o the ground (plus the
 /// earth's curve) above the line and I the contour interval there:
-/// - within 50 m of an end, ground above the line (o > 0) is Marginal;
+/// - within 50 m of an end, ground above the line (o > 0) is Marginal,
+///   and Blocked when o > I + 5 m (a bank in front of the radio);
 /// - Blocked when o > I, or o > 0 where the earth's curve alone already
 ///   rises above the line (the margin is for the data's error, and the
 ///   earth's curve has none);
@@ -350,7 +358,7 @@ Judgement judge(
     double key;
     if (x < nearEndM || x > length - nearEndM) {
       if (o <= 0) continue;
-      cls = 1;
+      cls = o > iv[i] + nearEndBlockedM ? 2 : 1;
       key = o;
     } else {
       final e = bulge - (antA + (antB - antA) * f);

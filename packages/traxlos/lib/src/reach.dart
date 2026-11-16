@@ -74,30 +74,43 @@ class Reach {
     return area / (rays * radiusM * radiusM);
   }
 
-  /// Every run with one of [verdicts] as a closed ring: its slice of the
-  /// ray's wedge, ready to draw.
+  /// The parts of each ray with one of [verdicts] as closed rings: slices
+  /// of the ray's wedge, ready to draw. Neighbouring runs that both have
+  /// one of them make one slice.
   List<List<Geo>> areas(Set<Verdict> verdicts) {
     final half = 180.0 / rays;
     final out = <List<Geo>>[];
+    void add(double b, double start, double end) {
+      final far = [
+        destination(center, b - half, end),
+        destination(center, b + half, end),
+      ];
+      out.add(
+        start <= 0
+            ? [center, ...far, center]
+            : [
+                destination(center, b - half, start),
+                ...far,
+                destination(center, b + half, start),
+                destination(center, b - half, start),
+              ],
+      );
+    }
+
     for (var k = 0; k < runs.length; k++) {
       final b = bearingOf(k);
+      double? start;
+      var end = 0.0;
       for (final r in runs[k]) {
-        if (!verdicts.contains(r.verdict)) continue;
-        final far = [
-          destination(center, b - half, r.endM),
-          destination(center, b + half, r.endM),
-        ];
-        out.add(
-          r.startM <= 0
-              ? [center, ...far, center]
-              : [
-                  destination(center, b - half, r.startM),
-                  ...far,
-                  destination(center, b + half, r.startM),
-                  destination(center, b - half, r.startM),
-                ],
-        );
+        if (verdicts.contains(r.verdict)) {
+          start ??= r.startM;
+          end = r.endM;
+        } else if (start != null) {
+          add(b, start, end);
+          start = null;
+        }
       }
+      if (start != null) add(b, start, end);
     }
     return out;
   }
@@ -345,6 +358,10 @@ List<ReachRun> _rayRuns(
         final f = x / t;
         final o = h[i] + x * (t - x) / twoKR - (za + (zt - za) * f);
         if (x < nearEndM || x > t - nearEndM) {
+          if (o > iv[i] + nearEndBlockedM) {
+            cls = 2;
+            break;
+          }
           if (o > 0) cls = 1;
           continue;
         }

@@ -102,21 +102,50 @@ void main() {
   });
 
   group('near the radios', () {
-    test('ground above the line within 50 m of a radio is marginal, never '
-        'ignored and never blocked', () {
+    test('a bank more than one interval and 5 m above the line within 50 m '
+        'of a radio blocks it', () {
       // A 20 m bank 30 m in front of a hand-held, a mast at the far end.
-      final r = lineOfSightOver(
-        [0, 29, 30, 31, 5000],
+      for (final interval in [0.0, 6.096, 10.0]) {
+        final r = lineOfSightOver(
+          [0, 29, 30, 31, 5000],
+          [100, 100, 120, 100, 100],
+          fromAntennaM: 1.5,
+          toAntennaM: 60,
+          intervalM: interval,
+        );
+        expect(r.verdict, Verdict.blocked, reason: '$interval');
+        expect(r.deciding!.distanceM, 30);
+        expect(r.deciding!.aboveLineM, greaterThan(15));
+        expect(r.nearRadio, NearRadio.from);
+        // Farther out it is the hand-held's own low line that limits.
+        expect(r.beyondNearGround!.distanceM, greaterThanOrEqualTo(100));
+      }
+      // The same at the far end.
+      final far = lineOfSightOver(
+        [0, 4969, 4970, 4971, 5000],
         [100, 100, 120, 100, 100],
-        fromAntennaM: 1.5,
-        toAntennaM: 60,
+        fromAntennaM: 60,
+        toAntennaM: 1.5,
       );
-      expect(r.verdict, Verdict.marginal);
-      expect(r.deciding!.distanceM, 30);
-      expect(r.deciding!.aboveLineM, greaterThan(15));
-      expect(r.nearRadio, NearRadio.from);
-      // Farther out it is the hand-held's own low line that limits.
-      expect(r.beyondNearGround!.distanceM, greaterThanOrEqualTo(100));
+      expect(far.verdict, Verdict.blocked);
+      expect(far.nearRadio, NearRadio.to);
+    });
+
+    test('ground less than one interval and 5 m above the line within 50 m '
+        'of a radio is marginal, never ignored', () {
+      for (final (rise, interval) in [(4.0, 0.0), (9.0, 6.096), (14.0, 10.0)]) {
+        final r = lineOfSightOver(
+          [0, 29, 30, 31, 5000],
+          [100, 100, 100 + rise, 100, 100],
+          fromAntennaM: 1.5,
+          toAntennaM: 60,
+          intervalM: interval,
+        );
+        expect(r.verdict, Verdict.marginal, reason: '$rise/$interval');
+        expect(r.deciding!.distanceM, 30);
+        expect(r.deciding!.aboveLineM, greaterThan(0));
+        expect(r.nearRadio, NearRadio.from);
+      }
     });
 
     test('a deep valley reports its own clearance, not the antenna '

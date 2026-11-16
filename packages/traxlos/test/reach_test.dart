@@ -67,6 +67,27 @@ void main() {
       expect(ring.first, ring.last);
       expect(ring.length, anyOf(4, 5));
     }
+    // Neighbouring clear and marginal runs make one slice each.
+    const open = {Verdict.clear, Verdict.marginal};
+    var slices = 0;
+    for (final ray in r.runs) {
+      for (var i = 0; i < ray.length; i++) {
+        if (open.contains(ray[i].verdict) &&
+            (i == 0 || !open.contains(ray[i - 1].verdict))) {
+          slices++;
+        }
+      }
+    }
+    expect(r.areas(open), hasLength(slices));
+    expect(
+      slices,
+      lessThan(
+        r.runs
+            .expand((ray) => ray)
+            .where((x) => open.contains(x.verdict))
+            .length,
+      ),
+    );
   });
 
   test('from Badwater at its true height: the salt pan around is "can\'t '
