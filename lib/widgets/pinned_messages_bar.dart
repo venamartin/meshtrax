@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/markdown_helper.dart';
@@ -68,7 +67,6 @@ class PinnedMessagesBar extends StatefulWidget {
     required Set<String> dismissed,
     required bool isRoom,
     DateTime? now,
-    LatLng? Function(String url)? resolveShortLink,
   }) {
     final clock = now ?? DateTime.now();
     final sos = <(DateTime, PinnedEntry)>[];
@@ -81,10 +79,8 @@ class PinnedMessagesBar extends StatefulWidget {
       if (dismissed.contains(c.id)) continue;
       final server = isRoom && c.serverAuthored;
       final parsed = server
-          ? StructuredMessage.parseAnnouncement(c.text,
-              resolveShortLink: resolveShortLink, now: clock)
-          : StructuredMessage.parse(c.text,
-              resolveShortLink: resolveShortLink, now: clock);
+          ? StructuredMessage.parseAnnouncement(c.text, now: clock)
+          : StructuredMessage.parse(c.text, now: clock);
       if (parsed == null) continue;
       final entry = PinnedEntry(id: c.id, message: parsed, index: c.index);
 

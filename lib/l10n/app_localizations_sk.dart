@@ -5090,10 +5090,11 @@ class AppLocalizationsSk extends AppLocalizations {
   String get paste_convert => 'Previesť';
 
   @override
-  String get paste_resolving => 'Rozbaľuje sa odkaz…';
+  String get paste_resolveFailed => 'Odkaz sa nepodarilo rozbaliť';
 
   @override
-  String get paste_resolveFailed => 'Odkaz sa nepodarilo rozbaliť';
+  String get paste_shortLinkNoPosition =>
+      'Tento krátky odkaz neobsahuje polohu. Otvorte ho v aplikácii s mapami a skopírujte súradnice.';
 
   @override
   String get pinned_dismiss => 'Zavrieť';
@@ -6441,9 +6442,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Tu sa nedá prečítať poloha';
-
-  @override
-  String get dialog_positionLookingUp => 'Overuje sa odkaz…';
 
   @override
   String get locationSharing_share => 'Zdieľať moju polohu';

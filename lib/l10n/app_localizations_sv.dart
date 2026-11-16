@@ -5052,10 +5052,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get paste_convert => 'Konvertera';
 
   @override
-  String get paste_resolving => 'Slår upp länken…';
+  String get paste_resolveFailed => 'Kunde inte slå upp länken';
 
   @override
-  String get paste_resolveFailed => 'Kunde inte slå upp länken';
+  String get paste_shortLinkNoPosition =>
+      'Den här korta länken innehåller ingen position. Öppna den i din kartapp och kopiera koordinaterna.';
 
   @override
   String get pinned_dismiss => 'Stäng';
@@ -6401,9 +6402,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Kan inte läsa en position här';
-
-  @override
-  String get dialog_positionLookingUp => 'Slår upp länken…';
 
   @override
   String get locationSharing_share => 'Dela min plats';

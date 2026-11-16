@@ -5017,10 +5017,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paste_convert => 'Convert';
 
   @override
-  String get paste_resolving => 'Resolving link…';
+  String get paste_resolveFailed => 'Could not resolve the link';
 
   @override
-  String get paste_resolveFailed => 'Could not resolve the link';
+  String get paste_shortLinkNoPosition =>
+      'This short link has no position in it. Open it in your maps app and copy the coordinates.';
 
   @override
   String get pinned_dismiss => 'Dismiss';
@@ -6360,9 +6361,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Can\'t read a position here';
-
-  @override
-  String get dialog_positionLookingUp => 'Looking up the link…';
 
   @override
   String get locationSharing_share => 'Share my location';

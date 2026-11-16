@@ -5079,10 +5079,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get paste_convert => 'Omzetten';
 
   @override
-  String get paste_resolving => 'Link opzoeken…';
+  String get paste_resolveFailed => 'Kon de link niet opzoeken';
 
   @override
-  String get paste_resolveFailed => 'Kon de link niet opzoeken';
+  String get paste_shortLinkNoPosition =>
+      'Deze korte link bevat geen positie. Open hem in je kaarten-app en kopieer de coördinaten.';
 
   @override
   String get pinned_dismiss => 'Sluiten';
@@ -6433,9 +6434,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Hier is geen positie te lezen';
-
-  @override
-  String get dialog_positionLookingUp => 'Link opzoeken…';
 
   @override
   String get locationSharing_share => 'Mijn locatie delen';

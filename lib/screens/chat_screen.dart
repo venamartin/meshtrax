@@ -51,7 +51,6 @@ import '../widgets/mention_composer.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/message_actions.dart';
 import '../widgets/room_login_dialog.dart';
-import '../services/short_link_resolver.dart';
 import '../widgets/composer_attach_tray.dart';
 import '../widgets/paste_conversion_bar.dart';
 import '../widgets/pinned_messages_bar.dart';
@@ -228,7 +227,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   DateTime? _lastTextSendAt;
   int _previousMessageCount = 0;
   String? _previousNewestId;
-  int _shortLinkRevision = 0;
 
   // The list as shown, and the built list and pins with what each was made
   // from. Most connector notifies change none of it; building every row
@@ -251,9 +249,9 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   int _watchLimit = 200;
   bool _didInitialAnchor = false;
 
-  // What rows show by the clock (an event's day or end, a notice's expiry,
-  // a short link to look up again) changes with no write and no notify.
-  // The soonest such moment among the rows built rebuilds the list.
+  // What rows show by the clock (an event's day or end, a notice's expiry)
+  // changes with no write and no notify. The soonest such moment among the
+  // rows built rebuilds the list.
   Timer? _clockTimer;
   DateTime? _clockAt;
   int _clockTick = 0;
@@ -374,7 +372,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   void initState() {
     super.initState();
     _textFieldFocusNode.addListener(_closeTrayOnFocus);
-    ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
@@ -890,7 +887,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     _textController.removeListener(_keepDraft);
     _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
-    ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -1274,7 +1270,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       connector.selfName,
       _firstUnreadMessage,
       _flashedMessageId,
-      _shortLinkRevision,
       _clockTick,
       DateUtils.dateOnly(DateTime.now()),
       Localizations.localeOf(context),
@@ -1392,7 +1387,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 announcement: isAnnouncement,
               );
               _rebuildAt(facts.changesAt);
-              _rebuildAt(facts.prefetchShortLinks());
               final replyTargetIndex = replyInfo == null
                   ? -1
                   : _findReplyTargetIndex(
@@ -1931,11 +1925,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     );
   }
 
-  /// A short link landed: a plain row may now be a location card.
-  void _onShortLinkResolved() {
-    if (mounted) setState(() => _shortLinkRevision++);
-  }
-
   void _toggleTray() {
     if (!_trayOpen) _textFieldFocusNode.unfocus();
     setState(() => _trayOpen = !_trayOpen);
@@ -2055,7 +2044,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
           messages,
           // Only a room's pins read contacts (which posts the server made).
           _isRoom ? connector.contactsStamp : null,
-          _shortLinkRevision,
           _clockTick,
           DateUtils.dateOnly(DateTime.now()),
         );
@@ -2087,7 +2075,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
           candidates: candidates,
           dismissed: dismissed,
           isRoom: _isRoom,
-          resolveShortLink: ShortLinkResolver.instance.cached,
         );
         // The bar drops an entry that runs out; the next one in line comes
         // in only when the pins are worked out again.

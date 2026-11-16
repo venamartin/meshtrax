@@ -5116,10 +5116,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get paste_convert => 'Перетворити';
 
   @override
-  String get paste_resolving => 'Обробка посилання…';
+  String get paste_resolveFailed => 'Не вдалося обробити посилання';
 
   @override
-  String get paste_resolveFailed => 'Не вдалося обробити посилання';
+  String get paste_shortLinkNoPosition =>
+      'Це коротке посилання не містить позиції. Відкрийте його в застосунку карт і скопіюйте координати.';
 
   @override
   String get pinned_dismiss => 'Сховати';
@@ -6474,9 +6475,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Тут не вдається прочитати позицію';
-
-  @override
-  String get dialog_positionLookingUp => 'Перевірка посилання…';
 
   @override
   String get locationSharing_share => 'Ділитися моїм розташуванням';

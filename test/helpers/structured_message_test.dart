@@ -444,14 +444,20 @@ void main() {
       expect(geo.position, const LatLng(47.0707, 15.4395));
     });
 
-    test('short link waits for the resolver', () {
-      const url = 'https://maps.app.goo.gl/AbCdEf';
-      expect(StructuredMessage.parse(url), isNull);
-      final resolved = StructuredMessage.parse(
-        url,
-        resolveShortLink: (u) => u == url ? const LatLng(47.07, 15.44) : null,
-      ) as LocationMessage;
-      expect(resolved.position, const LatLng(47.07, 15.44));
+    test('a short link carries no position: plain text, or just a link', () {
+      expect(StructuredMessage.parse('https://maps.app.goo.gl/AbCdEf'), isNull);
+      expect(StructuredMessage.parse('Hut\ngoo.gl/maps/AbCdEf'), isNull);
+      expect(
+        StructuredMessage.parse(
+          'Location: Hut | https://maps.app.goo.gl/AbCdEf',
+        ),
+        isNull,
+      );
+      final event = StructuredMessage.parse(
+        'Event: Net\n2026-10-18 19:00\nhttps://maps.app.goo.gl/AbCdEf',
+      ) as EventMessage;
+      expect(event.position, isNull);
+      expect(event.link, 'https://maps.app.goo.gl/AbCdEf');
     });
 
     test('ordinary text with inline coordinates in a long message is plain', () {

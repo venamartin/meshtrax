@@ -5091,10 +5091,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get paste_convert => 'Превърни';
 
   @override
-  String get paste_resolving => 'Обработка на връзката…';
+  String get paste_resolveFailed => 'Връзката не можа да се обработи';
 
   @override
-  String get paste_resolveFailed => 'Връзката не можа да се обработи';
+  String get paste_shortLinkNoPosition =>
+      'Тази кратка връзка не съдържа позиция. Отворете я в приложението си за карти и копирайте координатите.';
 
   @override
   String get pinned_dismiss => 'Скрий';
@@ -6450,9 +6451,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Тук не може да се разчете позиция';
-
-  @override
-  String get dialog_positionLookingUp => 'Проверка на линка…';
 
   @override
   String get locationSharing_share => 'Споделяй местоположението ми';

@@ -5101,10 +5101,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get paste_convert => 'Converter';
 
   @override
-  String get paste_resolving => 'Resolvendo link…';
+  String get paste_resolveFailed => 'Não foi possível resolver o link';
 
   @override
-  String get paste_resolveFailed => 'Não foi possível resolver o link';
+  String get paste_shortLinkNoPosition =>
+      'Este link curto não contém uma posição. Abra-o no seu app de mapas e copie as coordenadas.';
 
   @override
   String get pinned_dismiss => 'Dispensar';
@@ -6457,9 +6458,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get dialog_positionUnreadable =>
       'Não foi possível ler uma posição aqui';
-
-  @override
-  String get dialog_positionLookingUp => 'Consultando o link…';
 
   @override
   String get locationSharing_share => 'Compartilhar minha localização';
