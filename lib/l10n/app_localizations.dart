@@ -11449,6 +11449,36 @@ abstract class AppLocalizations {
   /// **'Hops away'**
   String get listFilter_hopsAway;
 
+  /// No description provided for @listFilter_lastHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'Last heard'**
+  String get listFilter_lastHeard;
+
+  /// No description provided for @listFilter_heardAnyTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Any time'**
+  String get listFilter_heardAnyTime;
+
+  /// No description provided for @listFilter_heardHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Last hour'**
+  String get listFilter_heardHour;
+
+  /// No description provided for @listFilter_heardTwoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 48 hours'**
+  String get listFilter_heardTwoDays;
+
+  /// No description provided for @listFilter_heardWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get listFilter_heardWeek;
+
   /// No description provided for @settings_radioFirmware.
   ///
   /// In en, this message translates to:

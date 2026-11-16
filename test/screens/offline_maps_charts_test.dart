@@ -491,6 +491,17 @@ void main() {
     expect(find.text('Delete Rhode Island NOAA charts?'), findsOneWidget);
   });
 
+  // Opening on Downloaded hid what there is to get (owner, 2026-11-16).
+  testWidgets('opens on Maps even with packs on the device', (tester) async {
+    final maps = (await tester.runAsync(service))!;
+    await tester.runAsync(() => installCharts(maps, 'charts/us/texas'));
+    await open(tester, maps, tab: null);
+    expect(
+      tester.widget<TabBar>(find.byType(TabBar)).controller!.index,
+      OfflineMapsTab.maps.index,
+    );
+  });
+
   testWidgets('an installed area the file no longer lists keeps a name', (
     tester,
   ) async {

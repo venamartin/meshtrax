@@ -6535,6 +6535,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops away';
 
   @override
+  String get listFilter_lastHeard => 'Last heard';
+
+  @override
+  String get listFilter_heardAnyTime => 'Any time';
+
+  @override
+  String get listFilter_heardHour => 'Last hour';
+
+  @override
+  String get listFilter_heardTwoDays => 'Last 48 hours';
+
+  @override
+  String get listFilter_heardWeek => 'Last 7 days';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Radio firmware $version';
   }

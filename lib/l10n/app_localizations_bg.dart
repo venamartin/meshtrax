@@ -6628,6 +6628,21 @@ class AppLocalizationsBg extends AppLocalizations {
   String get listFilter_hopsAway => 'Брой скокове';
 
   @override
+  String get listFilter_lastHeard => 'Последно чут';
+
+  @override
+  String get listFilter_heardAnyTime => 'По всяко време';
+
+  @override
+  String get listFilter_heardHour => 'Последната минута';
+
+  @override
+  String get listFilter_heardTwoDays => 'Последните 48 часа';
+
+  @override
+  String get listFilter_heardWeek => 'Последните 7 дни';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Фърмуер на радиото $version';
   }

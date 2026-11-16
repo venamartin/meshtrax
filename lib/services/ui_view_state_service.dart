@@ -28,6 +28,7 @@ class UiViewStateService extends ChangeNotifier {
   static const _keyContactsTypeFilter = 'ui_contacts_type_filter';
   static const _keyRepeatersSortOption = 'ui_repeaters_sort_option';
   static const _keyRepeatersTypeFilter = 'ui_repeaters_type_filter';
+  static const _keyRepeatersHeardWithin = 'ui_repeaters_heard_within';
   static const _keyChannelsSortOption = 'ui_channels_sort_option';
   static const _keyChannelsSortIndexLegacy = 'ui_channels_sort_index';
   static const _keyRenderGifs = 'ui_render_gifs';
@@ -46,6 +47,7 @@ class UiViewStateService extends ChangeNotifier {
   ContactTypeFilter _contactsTypeFilter = ContactTypeFilter.all;
   ContactSortOption _repeatersSortOption = ContactSortOption.lastSeen;
   ContactTypeFilter _repeatersTypeFilter = ContactTypeFilter.all;
+  HeardWithin _repeatersHeardWithin = HeardWithin.anyTime;
 
   String _channelsSearchText = '';
   ChannelSortOption _channelsSortOption = ChannelSortOption.manual;
@@ -77,6 +79,7 @@ class UiViewStateService extends ChangeNotifier {
   ContactTypeFilter get contactsTypeFilter => _contactsTypeFilter;
   ContactSortOption get repeatersSortOption => _repeatersSortOption;
   ContactTypeFilter get repeatersTypeFilter => _repeatersTypeFilter;
+  HeardWithin get repeatersHeardWithin => _repeatersHeardWithin;
   String get channelsSearchText => _channelsSearchText;
   ChannelSortOption get channelsSortOption => _channelsSortOption;
   bool get renderGifs => _renderGifs;
@@ -142,6 +145,12 @@ class UiViewStateService extends ChangeNotifier {
         orElse: () => ContactTypeFilter.all,
       );
     }
+
+    final heardStr = prefs.getString(_keyRepeatersHeardWithin);
+    _repeatersHeardWithin = HeardWithin.values.firstWhere(
+      (e) => e.name == heardStr,
+      orElse: () => HeardWithin.anyTime,
+    );
 
     _renderGifs = prefs.getBool(_keyRenderGifs) ?? true;
     _sendGifsAsLinks = prefs.getBool(_keySendGifsAsLinks) ?? true;
@@ -266,6 +275,15 @@ class UiViewStateService extends ChangeNotifier {
     notifyListeners();
     unawaited(
       PrefsManager.instance.setString(_keyRepeatersTypeFilter, value.name),
+    );
+  }
+
+  void setRepeatersHeardWithin(HeardWithin value) {
+    if (_repeatersHeardWithin == value) return;
+    _repeatersHeardWithin = value;
+    notifyListeners();
+    unawaited(
+      PrefsManager.instance.setString(_keyRepeatersHeardWithin, value.name),
     );
   }
 

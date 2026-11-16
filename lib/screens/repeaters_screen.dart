@@ -29,6 +29,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   String searchQuery = '';
   ContactSortOption sortOption = ContactSortOption.lastSeen;
   ContactTypeFilter typeFilter = ContactTypeFilter.all;
+  HeardWithin heardWithin = HeardWithin.anyTime;
   bool showUnreadOnly = false;
 
   @override
@@ -37,6 +38,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
     final viewState = context.read<UiViewStateService>();
     sortOption = viewState.repeatersSortOption;
     typeFilter = viewState.repeatersTypeFilter;
+    heardWithin = viewState.repeatersHeardWithin;
   }
 
   @override
@@ -53,6 +55,11 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
   void _setTypeFilter(ContactTypeFilter value) {
     context.read<UiViewStateService>().setRepeatersTypeFilter(value);
     setState(() => typeFilter = value);
+  }
+
+  void _setHeardWithin(HeardWithin value) {
+    context.read<UiViewStateService>().setRepeatersHeardWithin(value);
+    setState(() => heardWithin = value);
   }
 
   void _manageRepeater(BuildContext context, MeshCoreConnector connector, Contact contact) {
@@ -221,19 +228,23 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
             .toList();
 
         final searchQueryLower = searchQuery.toLowerCase();
-        
+        final now = DateTime.now();
+
         final filtered = repeaters.where((c) {
           if (typeFilter == ContactTypeFilter.favorites && !c.isFavorite) {
             return false;
           }
+          if (!heardWithin.keeps(connector.heardAt(c), now)) return false;
           if (searchQueryLower.isEmpty) return true;
           return c.name.toLowerCase().contains(searchQueryLower) ||
                  (connector.contactNote(c.publicKeyHex)?.namesContain(searchQueryLower) ?? false) ||
                  c.publicKeyHex.toLowerCase().contains(searchQueryLower);
         }).toList();
         
+        int newestFirst(Contact a, Contact b) =>
+            connector.heardAt(b).compareTo(connector.heardAt(a));
         if (sortOption == ContactSortOption.lastSeen) {
-          filtered.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+          filtered.sort(newestFirst);
         } else if (sortOption == ContactSortOption.hops) {
           // Fewest first; a repeater never heard advertising has no count
           // and goes last. Ties by most recently heard.
@@ -241,7 +252,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
             final byHops = (a.inboundHopCount ?? 1 << 20).compareTo(
               b.inboundHopCount ?? 1 << 20,
             );
-            return byHops != 0 ? byHops : b.lastSeen.compareTo(a.lastSeen);
+            return byHops != 0 ? byHops : newestFirst(a, b);
           });
         } else {
           filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -288,8 +299,10 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                     RepeaterContactsFilterMenu(
                       sortOption: sortOption,
                       typeFilter: typeFilter,
+                      heardWithin: heardWithin,
                       onSortChanged: _setSortOption,
                       onTypeFilterChanged: _setTypeFilter,
+                      onHeardWithinChanged: _setHeardWithin,
                     ),
                     PopupMenuButton(
                       itemBuilder: (context) => [
@@ -314,7 +327,8 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
               // The filter and sort are kept between visits, so they stay in
               // view until cleared.
               if (typeFilter == ContactTypeFilter.favorites ||
-                  sortOption != ContactSortOption.lastSeen)
+                  sortOption != ContactSortOption.lastSeen ||
+                  heardWithin != HeardWithin.anyTime)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -344,9 +358,18 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                                 : context.l10n.listFilter_az,
                           ),
                           deleteButtonTooltipMessage:
-                              context.l10n.listFilter_heardRecently,
+                              context.l10n.listFilter_lastHeard,
                           onDeleted: () =>
                               _setSortOption(ContactSortOption.lastSeen),
+                        ),
+                      if (heardWithin != HeardWithin.anyTime)
+                        InputChip(
+                          avatar: const Icon(Icons.history, size: 18),
+                          label: Text(heardWithinLabel(context, heardWithin)),
+                          deleteButtonTooltipMessage:
+                              context.l10n.listFilter_heardAnyTime,
+                          onDeleted: () =>
+                              _setHeardWithin(HeardWithin.anyTime),
                         ),
                     ],
                   ),
@@ -356,7 +379,8 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                     ? Center(
                         child: Text(
                           searchQuery.isEmpty &&
-                                  typeFilter == ContactTypeFilter.all
+                                  typeFilter == ContactTypeFilter.all &&
+                                  heardWithin == HeardWithin.anyTime
                               ? context.l10n.contacts_noContacts
                               : context.l10n.contacts_noMatchingContacts,
                         ),
@@ -367,7 +391,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                           final contact = filtered[index];
                           return ContactTile(
                             contact: contact,
-                            lastSeen: contact.lastSeen,
+                            lastSeen: connector.heardAt(contact),
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: !contact.isActive,

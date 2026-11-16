@@ -6612,6 +6612,21 @@ class AppLocalizationsNl extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops verwijderd';
 
   @override
+  String get listFilter_lastHeard => 'Laatst gehoord';
+
+  @override
+  String get listFilter_heardAnyTime => 'Altijd';
+
+  @override
+  String get listFilter_heardHour => 'Afgelopen uur';
+
+  @override
+  String get listFilter_heardTwoDays => 'Laatste 48 uur';
+
+  @override
+  String get listFilter_heardWeek => 'Laatste 7 dagen';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Radiofirmware $version';
   }

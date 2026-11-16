@@ -6650,6 +6650,21 @@ class AppLocalizationsHu extends AppLocalizations {
   String get listFilter_hopsAway => 'Ugrások száma';
 
   @override
+  String get listFilter_lastHeard => 'Utoljára hallva';
+
+  @override
+  String get listFilter_heardAnyTime => 'Bármikor';
+
+  @override
+  String get listFilter_heardHour => 'Az utolsó óra';
+
+  @override
+  String get listFilter_heardTwoDays => 'Utolsó 48 óra';
+
+  @override
+  String get listFilter_heardWeek => 'Utolsó 7 nap';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Rádió firmware $version';
   }

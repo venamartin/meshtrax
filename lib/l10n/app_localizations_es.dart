@@ -6640,6 +6640,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get listFilter_hopsAway => 'Saltos de distancia';
 
   @override
+  String get listFilter_lastHeard => 'Última vez oído';
+
+  @override
+  String get listFilter_heardAnyTime => 'Cualquier momento';
+
+  @override
+  String get listFilter_heardHour => 'Última hora';
+
+  @override
+  String get listFilter_heardTwoDays => 'Últimas 48 horas';
+
+  @override
+  String get listFilter_heardWeek => 'Últimos 7 días';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Firmware de la radio $version';
   }

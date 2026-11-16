@@ -28,7 +28,12 @@ class _Radio extends MeshCoreConnector {
   }) async {}
 }
 
-Uint8List _heardRepeater(String name, int seed) {
+/// An advert heard from a repeater, sent [ago] before now.
+Uint8List _heardRepeater(
+  String name,
+  int seed, {
+  Duration ago = Duration.zero,
+}) {
   final w = BytesBuilder();
   w.addByte(pushCodeNewAdvert);
   w.add(Uint8List.fromList(List.generate(32, (i) => seed + i)));
@@ -39,7 +44,8 @@ Uint8List _heardRepeater(String name, int seed) {
   final nameBytes = Uint8List(maxNameSize);
   nameBytes.setRange(0, name.length, name.codeUnits);
   w.add(nameBytes);
-  w.add([1, 0, 0, 0]);
+  final secs = DateTime.now().subtract(ago).millisecondsSinceEpoch ~/ 1000;
+  w.add((ByteData(4)..setUint32(0, secs, Endian.little)).buffer.asUint8List());
   w.add(Uint8List(8));
   return w.toBytes();
 }
@@ -109,12 +115,12 @@ void main() {
     expect(alder.dy, lessThan(zenith.dy));
   });
 
-  testWidgets('clearing the chip returns to heard recently and is kept', (
+  testWidgets('clearing the chip returns to last heard and is kept', (
     tester,
   ) async {
     await setUpWith({'ui_repeaters_sort_option': 'name'});
     await open(tester);
-    await tester.tap(find.byTooltip('Heard recently'));
+    await tester.tap(find.byTooltip('Last heard'));
     await settle(tester);
     expect(find.byType(InputChip), findsNothing);
     expect(viewState.repeatersSortOption, ContactSortOption.lastSeen);
@@ -155,8 +161,68 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('ui_repeaters_sort_option'), 'hops');
 
-    await tester.tap(find.byTooltip('Heard recently'));
+    await tester.tap(find.byTooltip('Last heard'));
     await settle(tester);
     expect(find.byType(InputChip), findsNothing);
+  });
+
+  // Heard recently was a sort, so it could not go with Hops away (owner,
+  // 2026-11-16). Now it is a window that goes with any sort and Favorites.
+  testWidgets('a Heard window hides older repeaters, with any sort', (
+    tester,
+  ) async {
+    await setUpWith({'ui_repeaters_sort_option': 'hops'});
+    radio.handleFrameForTest(
+      _heardRepeater('Faraway', 0xC0, ago: const Duration(hours: 3)),
+    );
+    await open(tester);
+    expect(find.text('Faraway'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Filter and sort'));
+    await settle(tester);
+    await tester.tap(find.text('Last hour'));
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, 'Last hour'), findsOneWidget);
+    expect(find.widgetWithText(InputChip, 'Hops away'), findsOneWidget,
+        reason: 'the sort stays as it was');
+    expect(find.text('Faraway'), findsNothing);
+    expect(find.text('Zenith'), findsOneWidget);
+    expect(viewState.repeatersHeardWithin, HeardWithin.hour);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('ui_repeaters_heard_within'), 'hour');
+
+    await tester.tap(find.byTooltip('Any time'));
+    await settle(tester);
+    expect(find.text('Faraway'), findsOneWidget);
+    expect(viewState.repeatersHeardWithin, HeardWithin.anyTime);
+  });
+
+  testWidgets('a remembered Heard window comes back with its chip', (
+    tester,
+  ) async {
+    await setUpWith({'ui_repeaters_heard_within': 'week'});
+    await open(tester);
+    expect(find.widgetWithText(InputChip, 'Last 7 days'), findsOneWidget);
+  });
+
+  test('a window keeps what was heard inside it', () {
+    final now = DateTime(2026, 11, 16, 12);
+    final twoHoursAgo = now.subtract(const Duration(hours: 2));
+    expect(HeardWithin.anyTime.keeps(DateTime(2020), now), isTrue);
+    expect(HeardWithin.hour.keeps(twoHoursAgo, now), isFalse);
+    expect(HeardWithin.twoDays.keeps(twoHoursAgo, now), isTrue);
+    expect(
+      HeardWithin.twoDays.keeps(now.subtract(const Duration(hours: 47)), now),
+      isTrue,
+      reason: 'a repeater adverts every 47 hours by default',
+    );
+    expect(
+      HeardWithin.twoDays.keeps(now.subtract(const Duration(hours: 49)), now),
+      isFalse,
+    );
+    expect(
+      HeardWithin.week.keeps(now.subtract(const Duration(days: 8)), now),
+      isFalse,
+    );
   });
 }

@@ -6216,6 +6216,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listFilter_hopsAway => '跳数';
 
   @override
+  String get listFilter_lastHeard => '最近收到';
+
+  @override
+  String get listFilter_heardAnyTime => '任何时间';
+
+  @override
+  String get listFilter_heardHour => '过去一小时';
+
+  @override
+  String get listFilter_heardTwoDays => '最近 48 小时';
+
+  @override
+  String get listFilter_heardWeek => '最近 7 天';
+
+  @override
   String settings_radioFirmware(String version) {
     return '电台固件 $version';
   }
