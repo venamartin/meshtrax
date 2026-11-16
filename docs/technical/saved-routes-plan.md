@@ -4,7 +4,7 @@
 >
 > **Who it's for:** the developer or AI session building it.
 >
-> **Status:** active plan, nothing built. The work happens on branch `feat/saved-routes` (draft PR). Decisions dated 2026-11-15 and later are preliminary; Martin wants them kept fluid until real-world tests. The same goes for the safety rules and for every change tagged with a safety-review ID (SR, CH) or an audit ID (A, B, C, D, R, TSX): they are proposed, and field tests can change them.
+> **Status:** active plan, nothing built. The work happens on branch `feat/saved-routes` (draft PR). It is built after location sharing (#240), which keeps it in mind meanwhile (decision 35, preliminary). Decisions dated 2026-11-15 and later are preliminary; Martin wants them kept fluid until real-world tests. The same goes for the safety rules and for every change tagged with a safety-review ID (SR, CH) or an audit ID (A, B, C, D, R, TSX): they are proposed, and field tests can change them.
 >
 > New to the terms? See the [glossary](../glossary.md).
 
@@ -105,7 +105,8 @@ Decisions dated 2026-11-15 and later are preliminary: each is the current choice
 | Sharing a planned route | A readable `Route:` text message with its waypoints and path type; MeshTrax rebuilds it. MeshTrax only for now: not added to the public [message format](../message-format.md). |
 | Sharing a recorded track | Compressed line packets, private channels only. They may go through repeaters. |
 | Route name and fitting | Part 0 carries the route's name as a tagged extension item, and tracks are fitted by bisection, both as in #240's plan (2026-11-15). Tag 1 was chosen; R-04 proposes the route name's own tag from one list for the whole format, since tag 1 is the sender's name in traxshare. |
-| Recorder (1) | 2026-11-16, preliminary: its own feature, with start and stop, no cap, times kept and a list of tracks. traxshare's own trail and Save my track read from it. Built after traxshare's Step 2 package, alongside R1. Its rules (CH-13) are in #240's plan. |
+| Recorder (1) | 2026-11-16, preliminary: its own feature, with start and stop, no cap, times kept and a list of tracks. traxshare's own trail and Save my track read from it. Built in #240's work, after its Step 2 package; traxbook comes after #240 (35). Its rules (CH-13) are in #240's plan. |
+| Order (35) | 2026-11-16, preliminary: location sharing (#240) first, through its Step 4 and field tests, then traxbook. Meanwhile #240 keeps traxbook in mind: subtypes 4 and 5 stay reserved, the extension tags are one list, the recorder keeps times, gaps and each point's source, and other people's positions never go into routes. (Was: interleaved with #240's steps.) |
 | Times (3) | 2026-11-16, preliminary: a route saved from a track keeps each point's time, in a times column stored with the line. |
 | Directions (5) | 2026-11-16, preliminary: the turn list is stored with the route and stays in the language it was made in. It is rebuilt for changed stretches, or shows "Directions out of date. Find again" (CH-34). |
 | Other people's positions (6a, 6b) | 2026-11-16, preliminary, one rule in both plans (R-01). 6a: a route to a person (traxshare's Route here) is kept with the sharing data, never in `routes`. It survives closing the app, is never in phone backups or Export database, and is removed with that person's data (after 30 days, decision 11, or by Delete all sharing data). 6b: no Save a shared trail; someone who wants their trail kept shares it as a route themselves. |
@@ -118,7 +119,7 @@ Decisions dated 2026-11-15 and later are preliminary: each is the current choice
 
 Each entry gives the dialog number, the current choice, the alternatives Martin was offered, and the test or measurement that would confirm or change it ("Checked by"). Field test numbers are those of #240's field tests (its Verification section), 1 to 20; test 14 is also [below](#field-tests-proposed-preliminary).
 
-- **1, recorder:** its own feature, built alongside R1. Alternative: keep recording inside location sharing. Checked by field tests 5 (a locked iPhone's recorder points), 8 (kill and restart: two marked gaps) and 17 (a day's battery with the recorder on).
+- **1, recorder:** its own feature, built in #240's work after its Step 2 (timing per 35). Alternative: keep recording inside location sharing. Checked by field tests 5 (a locked iPhone's recorder points), 8 (kill and restart: two marked gaps) and 17 (a day's battery with the recorder on).
 - **3, times:** a times column with the line. Alternative: drop times. Checked by measuring its size on the longest recorded track (4 bytes a point, beside the line's 8) and by the GPX round trip keeping times.
 - **5, directions:** stored with the route. Alternative: find the route again on open. Checked by field test 14: whether stored directions on a saved desert route still match the roads, and whether "Found with map data from <date>. Find again" shows once newer data is installed.
 - **6a, a route to a person:** kept with the sharing data, out of backups. Alternative: in the routes table. Checked by field test 15 (retention and a spare radio: the route to a person is still there after connecting a second radio).
@@ -129,27 +130,27 @@ Each entry gives the dialog number, the current choice, the alternatives Martin 
 - **25, `Route:` length:** the length, a 3 % warning and Send the exact line. Alternatives: the length only; as planned. Checked by field test 14's last step (open a `Route:` on a phone with other route options), which also tunes the 3 %.
 - **26, route caveats:** the caveat and data date on every Dirt and Hiking route, and a test before choosing the default. Alternatives: caveat and date only; also close very rough tracks in the routing data. Checked by field test 14, which compares Fastest and Balanced Dirt routes on desert park data. With high-clearance 4x4s, rough tracks are less of a risk, so Balanced may stay the default; the test decides.
 - **29, master PRs:** the route caveat, data date and start gap (CH-17, CH-18) and your dot after a lost fix (CH-07's master part), each its own small master PR, merged only on Martin's "ship it". No alternatives were offered. Checked by field test 14 for the route parts, and field test 1 (a bench test of whether a parked radio's reading keeps changing) before the dot change.
+- **35, order:** location sharing first, through its Step 4 and field tests, then traxbook, kept in mind meanwhile. Alternatives: interleave as planned; traxbook alongside in another session; traxbook first. Revisit once #240's field tests are done.
 
 ## Order of work and dependencies
 
-**First, on master** (own small PRs, merged only on Martin's "ship it"; preliminary 2026-11-16): the DM fix (20), then the minimal SOS (16), then decision 29's items: the springs and drinking-water caveat and line of sight's "needs an internet connection" (CH-35, CH-36), the route caveat, data date and start gap (CH-17, CH-18), and your dot after a lost fix (CH-07's master part, after the bench test). The old-texts fix (TSX-03, CH-10 part 1) waits for a review of the earlier message-time fixes, which Martin asked for. R1 builds on the route items, and R4's `Route:` DMs wait for the DM fix.
+**First, on master** (own small PRs, merged only on Martin's "ship it"; preliminary 2026-11-16): the DM fix (20), then the minimal SOS (16), then decision 29's items: the springs and drinking-water caveat and line of sight's "needs an internet connection" (CH-35, CH-36), the route caveat, data date and start gap (CH-17, CH-18), and your dot after a lost fix (CH-07's master part, after the bench test). The old-texts fix (TSX-03, CH-10 part 1) waits for a review of the earlier message-time fixes, which Martin asked for. TRAX mode's radio part follows, also on master (#240, decisions 31–34). R1 builds on the route items, and R4's `Route:` DMs wait for the DM fix.
 
 | Step | What | Can start |
 |---|---|---|
-| R1 | Route library: save, active route, Routes layer, Routes list and details, photo | #210 has merged (v1.10.0). Once the cross-plan rule (R-01, decision 6a) and the saved-route mode (R-02) are written; alongside the recorder (decision 1) |
+| R1 | Route library: save, active route, Routes layer, Routes list and details, photo | After #240's Step 4 and its field tests (decision 35). #210 has merged (v1.10.0). The cross-plan rule (R-01, decision 6a) and the saved-route mode (R-02) are written first. |
 | R2 | GPX import and export | after R1 |
 | R3 | Route editor | after R1 |
 | R4 | Sharing: `Route:` message, track packets | `Route:` after R1, and `Route:` DMs after the DM fix (20). Track packets need `packages/traxshare` (#240's Step 2) on master. |
 | R5 | Links with the recorder and location sharing | Save my track and Back the way I came after the recorder; Share from the sharing strip after #240's Step 3 is on master |
 
-The suggested order across both plans (audit and safety review, 2026-11-15/16, preliminary):
-1. The master fixes above, each its own PR.
-2. Settle the v1 wire rules in #240's plan: one tag list (R-04), unknown subtypes (R-05), ordering and replay (A1, A2), the channel gate (TSX-01) and the safety review's mask bits (CH-23). Then build traxshare's Step 2 package as its own PR. That freezes v1 and unblocks R4.
-3. The recorder, and R1.
-4. traxshare's Step 3 (3a, then 3b).
-5. R2, R3, R4 and R5.
-6. traxshare's Step 4.
-7. The field tests (CH-24).
+The order across both plans (decision 35, preliminary 2026-11-16):
+1. The master fixes above, each its own PR, then TRAX mode's radio part (#240).
+2. Settle the v1 wire rules in #240's plan: one tag list (R-04), unknown subtypes (R-05), ordering and replay (A1, A2), the channel gate (TSX-01) and the safety review's mask bits (CH-23). Then build traxshare's Step 2 package as its own PR. That freezes v1, which R4 needs.
+3. The recorder (#240).
+4. traxshare's Step 3 (3a, then 3b), then Step 4.
+5. The field tests (CH-24).
+6. Then traxbook: R1, R2, R3, R4 and R5.
 
 Each step is one commit series on this branch, with Martin testing on a phone between steps.
 
@@ -554,7 +555,7 @@ Measured on two road lines from OpenStreetMap with traxshare's code (#240 has th
 - On 2026-11-15 both plans were audited, and eight agents checked that audit's claims and swept each plan. A life-safety review for remote desert trips followed the same day: five lenses, a synthesis and two checkers. Martin answered the decisions in question dialogs on 2026-11-15 and 2026-11-16, and all of them are preliminary.
 - Everything was read-only, against master `d774d052` and MeshCore's `companion-v1.18.0` tag. Routing claims were measured with Valhalla 3.9.1, the app's version.
 - The notes, with their evidence and scripts, are kept locally in the gitignored `build/trax-audit/`.
-- IDs: decisions 1 to 29 are Martin's dialog numbers. SR (rules), CH (changes) and D-01 to D-20 (its decision drafts, which became most of dialogs 7 to 29) come from the safety review. A, B, C, D1 to D11 (no dash), R and TSX come from the audit. Where the checkers corrected an item, the corrected version is the one used.
+- IDs: decisions 1 to 35 are Martin's dialog numbers (30 to 34 are #240's: the regular mesh and TRAX mode). SR (rules), CH (changes) and D-01 to D-20 (its decision drafts, which became most of dialogs 7 to 29) come from the safety review. A, B, C, D1 to D11 (no dash), R and TSX come from the audit. Where the checkers corrected an item, the corrected version is the one used.
 
 **Index**
 - **Decision 1** (recorder): Owner decisions; R5. Its rules are in #240's plan.
@@ -571,6 +572,7 @@ Measured on two road lines from OpenStreetMap with traxshare's code (#240 has th
 - **Decision 25** (`Route:` length): Owner decisions; R4; answers open question 8.
 - **Decision 26** (route caveats): Owner decisions; R1 route details; field test 14.
 - **Decision 29** (master PRs): order of work; R1 start and route details.
+- **Decision 35** (order across the plans): header; Owner decisions; order of work.
 - **SR-01, SR-08, SR-09, SR-10:** Safety first. **SR-02 to SR-07:** #240's plan; SR-02's live test reaches R1's start through CH-07.
 - **CH-07:** R1 start; its master part is under 29.
 - **CH-08:** R5 (iPhone gaps).
