@@ -447,7 +447,7 @@ Credits, the source switch and the online fallback come through `AppMap`.
 | `lib/widgets/repeater_login_dialog.dart` | `AppMap(compact: true)`, 180 px, cell_tower marker |
 | `lib/screens/channel_message_path_screen.dart` | `MapLine`, hop labels from zoom 7.5, `MapFit.points(maxZoom: 15)` |
 | `lib/screens/path_trace_map.dart` | Same pattern; `centerTitle: true` |
-| `lib/screens/line_of_sight_map_screen.dart` | `MapLine` segments; long-press passes through lines; elevation stays online |
+| `lib/widgets/line_of_sight_sheet.dart` | Line of sight and radio reach in a sheet on the Node Map (it replaced `LineOfSightMapScreen` on 2026-11-16): the line, the deciding spot and the reach's shade as overlays; heights offline from the contours packs (`packages/traxlos`), no Open-Meteo |
 
 ### S6. Route planner (Phase 7)
 
@@ -653,7 +653,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
 
 - Night style
 - **Map legend, more screens:** parks when the overlays come; a switch for only the chart symbols in view. (Built 2026-10-23: the "i" button opens a sheet with the MeshCore symbols and, on the chart map, the chart symbols by section, drawn from the chart style itself.)
-- **Line of sight from the contours packs, offline only** (Martin, 2026-11-03). The Open-Meteo lookup goes, with its credit and licence entry.
+- **Line of sight from the contours packs, offline only** (Martin, 2026-11-03). **Built 2026-11-16** (`feat/offline-line-of-sight`): `packages/traxlos` reads the contours packs in a worker isolate; a sheet on the Node Map (⋮, the long-press sheet, a contact's dialog) gives Clear, Marginal, Blocked or Can't tell with the deciding spot, and Radio reach shades 20 km (then 30 km) with a list of who can be reached. Open-Meteo, its credit and its licence entry are gone. The notes below are the plan it followed.
   - **Heights:** where the line crosses each contour (the installed contours pack's z13 tiles, `ele_m`), straight between crossings. The source is 3DEP 1″ against Open-Meteo's 90 m grid, and no ridge falls between samples (today: at most 81). The error is at most one interval (20 ft or 10 m); a hilltop inside its last ring can be up to one interval higher, and Points of interest peaks with `ele` fill some.
   - **Needs the contours pack** of every region the line crosses, drawn or not. They aren't ticked by default since 2026-11-02, so the screen offers to download them where a stretch has none. US only until Canada and Mexico contours are built.
   - **360° sweep from a point:** the same check along rays all round (e.g. every 1°) out to a chosen range, shading where a node at a given height would be seen. Runs off the UI thread.

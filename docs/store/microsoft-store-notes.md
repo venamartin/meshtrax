@@ -188,7 +188,7 @@ CONTACTS
 MAP & COVERAGE
 • Nodes, repeaters, and neighbors on an interactive map
 • Download map areas for offline use
-• Line-of-sight terrain analysis
+• Line of sight and radio reach, offline from downloaded contours
 • Export tracks and points as GPX
 
 DEVICE INSIGHTS
@@ -209,7 +209,7 @@ PRIVACY FIRST
 • No MeshTrax servers — the developer receives none of your data
 • Block and report tools to keep conversations civil
 
-Optional online features (offline map downloads, terrain, GIFs) connect only when you use them. See the privacy policy for details.
+The app reaches the internet only for the MeshTrax map server (map downloads) and Giphy (GIFs), plus links you tap. Line of sight, routing, and place search run on your device. See the privacy policy for details.
 
 BUILT ON MESHCORE
 MeshTrax builds on the open MeshCore ecosystem and is forked from the open-source MeshCore Open client. All credit for the protocol, firmware, and official apps goes to the MeshCore project.
