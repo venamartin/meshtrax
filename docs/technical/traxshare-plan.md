@@ -118,7 +118,7 @@ Decisions from 2026-11-15 on are preliminary: Martin wants them kept fluid until
 | Delivery wording | Your own channel texts read "Sent · no sign of who got it" and DMs "Their radio got it", on master now; Who got it moves into Step 4 (24). | 2026-11-16, preliminary |
 | Firmware requests | None about the queue's drop order for now (27). | 2026-11-16, preliminary |
 | Not taken from other clients | Their formats (also not as a per-channel compatibility mode), always-on flooding beacons (trip mode sends on a timer only while it is on: until its end time, or until Stop when the phone is out of touch then (13); zero-hop unless on an off-grid frequency; 8), phone GPS in reports (21), per-send region scope ([looked at elsewhere](#looked-at-elsewhere-2026-11-15)) | 2026-11-15; trip mode 2026-11-16, preliminary |
-| Later, own PRs | Follow ([later](#later-after-sharing-works-own-prs)). The off-grid group mode became TRAX mode (31–34), Who got it moves into Step 4 (24) and SOS into a master PR (16). | 2026-11-16, preliminary |
+| Later, own PRs | The SOS alarm and Beep their radio ([later](#later-after-sharing-works-own-prs)). The off-grid group mode became TRAX mode (31–34), Who got it moves into Step 4 (24), SOS into a master PR (16), and Follow is dropped (55). | 2026-11-16, preliminary |
 
 ### Preliminary decisions: alternatives and what decides them
 
@@ -155,6 +155,7 @@ Each row is the current choice, preliminary as of 2026-11-16, under Martin's dia
 | 33 | Tell the group: a TRAX message on the trip channel, and one tap each to follow; never automatic | A trip QR at the trailhead; both; each by hand | The TRAX drills |
 | 34 | TRAX mode's radio part is its own PR soon, after the DM fix and the minimal SOS | With Step 4; after sharing's field tests | Field tests 10 (line test) and 13 (range day) |
 | 35 | Location sharing first, through Step 4 and its field tests, then traxbook, kept in mind meanwhile | Interleave as planned; traxbook alongside in another session; traxbook first | — |
+| 55 | Follow (Route here that keeps re-routing to a moving person) is dropped: the focus and trail view keeps the person centred, and Route here offers one tap when they have moved more than 100 m | Keep it for later, renamed 'Route to a moving person'; keep it as Follow | Field test 19 (drive): whether the one-tap re-route is enough |
 
 ## Steps
 
@@ -342,7 +343,7 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
   - **Contact pins (CH-29, decision 18):** when a person has a sharing pin, hide their contact pin or label it "advert position · <age>". A trip member's advert, matched by key, updates their pin and Last heard row with the advert's own time, labelled "sent from the radio". Its master part: next to a contact's position, show the time of the advert that carried it, not "Last seen".
   - **Performance:** feed lines from a cut-down copy per person, at most 200 points, recomputed only when a point is added. The map rebuilds its overlays on every connector notify, and since #210 also 300 ms after every pan at zoom 12 and above. Map markers are already the main cost on a busy map (Windows profile, 2026-10-31).
   - **Updates:** the map subscribes to `TraxShareService` itself and repaints when a position or style changes. Keep Trax data out of the message pin scan.
-  - **Focus and trail view (Martin, 2026-11-16, preliminary):**
+  - **Focus and trail view (Martin, 2026-11-16, preliminary):** this is how the group's earlier APRS app behaved on all its desert trips.
     - By default the map follows me, and my own track line shows behind my dot as I drive, drawn live from [the recorder](#the-recorder-decision-1-preliminary-2026-11-16). It is as long as the trail setting: at 10 miles it trails ten miles behind me, like a snake.
     - Other people's trails are hidden until I tap them.
     - Tap another person: the map centres on them and keeps them centred as their reports come in. Their trail shows; mine hides.
@@ -440,7 +441,6 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
 ### Later: after sharing works (own PRs)
 
 Ideas from [looking at other clients](#looked-at-elsewhere-2026-11-15) and the safety review, each in its own PR once Steps 3 and 4 are in use:
-- **Follow:** Route here that keeps range and bearing to the person and asks for a new route when their reported position moves well away from the route's end.
 - **The SOS alarm:** a full-screen alarm on the receivers, on top of the minimal SOS, which moved to a [master PR](#master-safety-fixes-own-prs-before-step-3-preliminary-2026-11-16) (decision 16).
 - **Beep their radio** (an idea, not decided): on the original UI, a DM to a radio with no phone connected plays a tone, so searchers close by can follow it and a conscious member learns someone is near. A short DM, at most one every 15 s for 2 minutes, since each DM stays in that radio's queue. Members would leave the buzzer on (a triple press silences it).
 - **Who got it** moved into Step 4 (decision 24).
@@ -930,7 +930,7 @@ Nothing was copied. Their licences run from MIT to GPL and non-commercial.
 - **The channel gate:** only one derives hashtag keys as this plan's [gate](#channel-gate) does. The others check for a leading `#`, refuse the first slot, or check nothing.
 - **A registered data type,** as planned.
 
-**Taken:** names, battery and status, bisection, and a turn report to try ([owner decisions](#owner-decisions)). Follow comes [later](#later-after-sharing-works-own-prs); Who got it moved into Step 4 (decision 24) and SOS into a master PR (decision 16), both preliminary.
+**Taken:** names, battery and status, bisection, and a turn report to try ([owner decisions](#owner-decisions)). Who got it moved into Step 4 (decision 24) and SOS into a master PR (decision 16); Follow was dropped (decision 55); all preliminary.
 
 **Not taken**
 - **Their formats,** also not as a per-channel compatibility mode:
