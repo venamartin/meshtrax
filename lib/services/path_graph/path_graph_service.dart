@@ -15,6 +15,7 @@ import '../../connector/meshcore_protocol.dart';
 import '../../helpers/path_helper.dart';
 import '../../models/contact.dart';
 import '../../models/path_selection.dart';
+import '../../models/radio_settings.dart';
 import '../../storage/prefs_manager.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_info.dart';
@@ -118,6 +119,59 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// The open graph, among the graphs kept for its preset ([GraphBook]);
   /// null with no mesh yet, or with a database the caller handed in.
   GraphEntry? get graphEntry => _entry;
+
+  /// What Pathfinder's Backup writes: the graph's checkpoint with the
+  /// graph's name and its preset's, so a restore can say what it holds.
+  Map<String, dynamic>? backupDocument({bool includePlaces = false}) {
+    final graph = _graph;
+    if (graph == null) return null;
+    final mesh = graph.mesh;
+    final preset = mesh == null ? null : _presetName(mesh);
+    return {
+      ...graph.saveSession(includePlaces: includePlaces),
+      'graph_name': ?_entry?.name,
+      'preset_name': ?preset,
+    };
+  }
+
+  /// Why [document] cannot go into the open graph, in words for the user;
+  /// null when it can. Repeater codes name other repeaters on another
+  /// preset, so a backup from one never restores into another.
+  String? restoreRefusal(Map<String, dynamic> document) {
+    final from = MeshId.fromJson(document['mesh']);
+    final to = _graph?.mesh;
+    if (from == null || to == null || from == to) return null;
+    return 'This backup is for ${meshText(from, document['preset_name'])}. '
+        'The radio is on ${meshText(to)}. Switch the radio to that preset, '
+        'then restore.';
+  }
+
+  /// The open graph in words: its name, else its preset's.
+  String get openGraphName =>
+      _graphName(_entry?.name, _graph?.mesh, null) ?? 'this graph';
+
+  /// The graph [document] was saved from, in words.
+  static String backupGraphName(Map<String, dynamic> document) =>
+      _graphName(document['graph_name'], MeshId.fromJson(document['mesh']),
+          document['preset_name']) ??
+      'an unnamed graph';
+
+  /// A preset's name and numbers:
+  /// `USA/Canada, 910.525 MHz · 62.5 kHz · SF7 · CR5`.
+  static String meshText(MeshId mesh, [Object? presetName]) {
+    final name = presetName is String ? presetName : _presetName(mesh);
+    return name == null ? mesh.label : '$name, ${mesh.label}';
+  }
+
+  static String? _graphName(Object? name, MeshId? mesh, Object? presetName) {
+    if (name is String) return '“$name”';
+    if (mesh == null) return null;
+    final preset = presetName is String ? presetName : _presetName(mesh);
+    return 'the ${preset ?? mesh.label} graph';
+  }
+
+  static String? _presetName(MeshId mesh) => RadioSettings.presetNameFor(
+      freqKHz: mesh.freqKHz, bwHz: mesh.bwHz, sf: mesh.sf, cr: mesh.cr);
 
   // The "a different mesh?" check: repeater keys heard since connecting
   // (8-byte prefixes) and whether the open graph knew each.
