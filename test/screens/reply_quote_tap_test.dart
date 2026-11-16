@@ -88,6 +88,7 @@ ChannelMessage _post(
   int i, {
   String sender = 'Ann',
   String? text,
+  String? wireText,
   String? replyTo,
   String? quotedSender,
   String? quoted,
@@ -96,6 +97,7 @@ ChannelMessage _post(
       senderKey: null,
       senderName: sender,
       text: text ?? 'post $i',
+      wireText: wireText,
       timestamp: _start.add(Duration(minutes: i)),
       isOutgoing: false,
       status: ChannelMessageStatus.sent,
@@ -431,6 +433,26 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('finds a reply quoted quote line and all', (tester) async {
+      await openRoom(tester, [
+        _roomPost(0, text: 'way back when'),
+        _roomPost(1, text: '@[Bob]\n>Pine cones..\nI got mine'),
+        _roomPost(2, text: '@[$authorHex]\n>>Pine cone..\nHow many?'),
+      ]);
+
+      await tester.tap(find.text('Reply to $authorHex'));
+      await tapLands(tester);
+      await tester.pumpAndSettle();
+
+      expect(notFound, findsNothing);
+      expect(
+        find.ancestor(of: find.text('I got mine'), matching: roomTint()),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('tints an original that is already on screen, then fades',
         (tester) async {
       await openRoom(tester, [
@@ -490,6 +512,31 @@ void main() {
       final reply = _post(3, sender: 'Cy', quotedSender: 'Ann', quoted: 'hello worl');
       await put(reply);
       await put(_post(4, text: 'hello world, after the reply'));
+
+      final found = await store.findReplyTarget(idKey, reply);
+
+      expect(found!.message.messageId, 'p1');
+    });
+
+    test('a quote of a reply, quote line and all, finds that reply', () async {
+      // An app that doesn't read replies quotes one as it went out.
+      await put(_post(0, sender: 'Bob', text: 'Pine cones are free'));
+      await put(_post(
+        1,
+        text: 'I got mine at the store',
+        wireText: '@[Bob]\n>Pine cones..\nI got mine at the store',
+        replyTo: 'p0',
+        quotedSender: 'Bob',
+        quoted: 'Pine cones are free',
+      ));
+      final reply = _post(
+        2,
+        sender: 'Bob',
+        text: 'How many?',
+        quotedSender: 'Ann',
+        quoted: '>Pine cone',
+      );
+      await put(reply);
 
       final found = await store.findReplyTarget(idKey, reply);
 
