@@ -10646,7 +10646,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     for (int i = messages.length - 1; i >= 0; i--) {
       final m = messages[i];
       if (m.senderName != mentionedNode) continue;
-      if (ChannelMessage.snippetMatches(m.text, snippet)) return m;
+      if (ChannelMessage.snippetMatches(m.text, snippet, wireText: m.wireText)) {
+        return m;
+      }
     }
     return null;
   }

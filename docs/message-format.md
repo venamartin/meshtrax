@@ -81,6 +81,11 @@ Nice!
 
 - **MeshCore One**: the format above. A `..` at the end of the quote is
   dropped before matching.
+- **A reply to a reply**: an app that doesn't read replies shows the reply
+  above as it went out, so its quote starts with that reply's quote line:
+  `>>Heading t..`. MeshTrax compares a quote with the text each message went
+  out as, not only with the reply text it shows, so the quote still finds
+  the reply it came from.
 - **MeshTrax before it switched to that format**:
   `@[Name] re:{quote}…{reply}` on one line. The marker may be `…` or `...`,
   `re:` is case-insensitive, and the reply may start on a new line.

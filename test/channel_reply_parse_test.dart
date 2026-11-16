@@ -202,5 +202,23 @@ void main() {
     test('empty snippet matches anything', () {
       expect(ChannelMessage.snippetMatches('whatever', ''), isTrue);
     });
+
+    test('a quote of a reply, quote line and all, matches what it sent', () {
+      const wire = '@[Bob]\n>Pine cones..\nI got mine';
+      expect(ChannelMessage.snippetMatches('I got mine', '>Pine cone'), isFalse);
+      expect(
+        ChannelMessage.snippetMatches('I got mine', '>Pine cone', wireText: wire),
+        isTrue,
+      );
+      expect(
+        ChannelMessage.snippetMatches('I got mine', 'I got', wireText: wire),
+        isTrue,
+        reason: 'a quote of the body still matches',
+      );
+      expect(
+        ChannelMessage.snippetMatches('I got mine', '>Fir cones', wireText: wire),
+        isFalse,
+      );
+    });
   });
 }

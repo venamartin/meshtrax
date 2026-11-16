@@ -327,13 +327,20 @@ class ChannelMessage {
   /// its snippet from the parent as it displays it (mention stripped), while
   /// stored text keeps the mention. Whitespace-collapsed, case-insensitive
   /// prefix test; an empty snippet matches anything.
-  static bool snippetMatches(String text, String snippet) {
+  ///
+  /// When the parent is itself a reply, pass the text it went out as in
+  /// [wireText]: an app that doesn't read replies quotes it, quote line and
+  /// all, so ">Pine cone" can quote "@[Bob]\n>Pine cones..\nI got mine",
+  /// shown as "I got mine" (field 2026-11-16: such replies never linked).
+  static bool snippetMatches(String text, String snippet, {String? wireText}) {
     String norm(String s) => stripLeadingMentions(s)
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim()
         .toLowerCase();
     final needle = norm(snippet);
-    return needle.isEmpty || norm(text).startsWith(needle);
+    return needle.isEmpty ||
+        norm(text).startsWith(needle) ||
+        (wireText != null && norm(wireText).startsWith(needle));
   }
 
   /// Whether [text] mentions [name] via the `@[Name]` wire syntax anywhere —

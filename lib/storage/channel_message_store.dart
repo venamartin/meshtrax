@@ -259,7 +259,11 @@ class ChannelMessageStore {
     for (final found in await searchChannelMessages(idKey, name)) {
       if (found.message.senderName != name ||
           found.message.messageId == reply.messageId ||
-          !ChannelMessage.snippetMatches(found.message.text, snippet)) {
+          !ChannelMessage.snippetMatches(
+            found.message.text,
+            snippet,
+            wireText: found.message.wireText,
+          )) {
         continue;
       }
       if (found.fromNewest > replyAt) return found;

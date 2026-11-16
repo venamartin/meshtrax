@@ -639,7 +639,9 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     for (var j = index + 1; j < reversed.length; j++) {
       final m = reversed[j];
       final body = MessageFacts.of(m.text).reply?.actualMessage ?? m.text;
-      if (!ChannelMessage.snippetMatches(body, reply.snippet)) continue;
+      if (!ChannelMessage.snippetMatches(body, reply.snippet, wireText: m.text)) {
+        continue;
+      }
       if (_replyTargetName(m, connector) == reply.mentionedNode ||
           (_isOwnPost(m, connector) &&
               reply.mentionedNode == connector.selfName)) {
