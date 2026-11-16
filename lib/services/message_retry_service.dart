@@ -176,6 +176,9 @@ class MessageRetryService extends ChangeNotifier {
   final Set<String> _activeMessages = {};
   final Set<String> _resolvedMessages = {};
   final Map<String, String> _expectedHashToMessageId = {};
+  // Messages whose attempt went out with no ACK hash to know its SENT by
+  // (no self key yet): the only ones a SENT that matches nothing may go to.
+  final Set<String> _sentWithoutHash = {};
 
   RetryServiceConfig? _config;
 
@@ -401,6 +404,18 @@ class MessageRetryService extends ChangeNotifier {
   bool isSendingTo(String contactKey) => _activeMessages
       .any((id) => _pendingContacts[id]?.publicKeyHex == contactKey);
 
+  /// Whether the DM [text] to [contactKey] stamped [timestampSeconds] still
+  /// waits for its ACK. A copy of it that waited for a quiet radio while
+  /// the ACK came is not worth sending.
+  bool awaitsAck(String contactKey, int timestampSeconds, String text) =>
+      _pendingMessages.entries.any(
+        (e) =>
+            e.value.text == text &&
+            e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
+                timestampSeconds &&
+            _pendingContacts[e.key]?.publicKeyHex == contactKey,
+      );
+
   /// The attempt number a parked rung is sent again with. Its own number
   /// would repeat the packet exactly, and every radio that heard it drops
   /// a packet it has seen, unforwarded and unACKed (Mesh.cpp, wasSeen). A
@@ -492,7 +507,10 @@ class MessageRetryService extends ChangeNotifier {
     // Compute expected ACK hash that device will return in RESP_CODE_SENT
     // IMPORTANT: Use the transformed text (with SMAZ encoding if enabled) to match device's hash
     final selfPubKey = config.getSelfPublicKey?.call();
-    if (selfPubKey != null) {
+    if (selfPubKey == null) {
+      _sentWithoutHash.add(messageId);
+    } else {
+      _sentWithoutHash.remove(messageId);
       final outboundText =
           config.prepareContactOutboundText?.call(contact, message.text) ??
           message.text;
@@ -571,22 +589,34 @@ class MessageRetryService extends ChangeNotifier {
           'RESP_CODE_SENT: ACK hash $ackHashHex matched but message no longer pending',
           tag: 'AckHash',
         );
-        messageId = null;
-        contact = null;
+        return true;
       }
+    } else if (_checkAckHistory(ackHash)) {
+      // A copy of a message already done with, such as a resend that went
+      // out as its ACK came: it is nobody else's SENT.
+      config.debugLogService?.info(
+        'RESP_CODE_SENT: ACK hash $ackHashHex is a completed message\'s copy',
+        tag: 'AckHash',
+      );
+      return true;
     }
 
     if (messageId == null || contact == null) {
       // Hash lookup failed. This can happen when selfPubKey was null during
       // _attemptSend, so no hash was stored. Fall back to the oldest active
-      // pending message so the timeout timer is always started and the message
-      // never gets stuck at 'pending' forever.
-      if (_activeMessages.isNotEmpty) {
-        final fallbackId = _activeMessages.first;
+      // pending message sent that way so the timeout timer is always started
+      // and the message never gets stuck at 'pending' forever. A message
+      // sent with a hash only takes its own SENT: another contact's once
+      // marked it delivered on that contact's ACK.
+      final fallbackId = _activeMessages
+          .where(_sentWithoutHash.contains)
+          .firstOrNull;
+      if (fallbackId != null) {
         final fallbackMsg = _pendingMessages[fallbackId];
         final fallbackContact = _pendingContacts[fallbackId];
         if (fallbackMsg != null && fallbackContact != null &&
             fallbackMsg.status == MessageStatus.pending) {
+          _sentWithoutHash.remove(fallbackId);
           messageId = fallbackId;
           contact = fallbackContact;
           config.debugLogService?.warn(
@@ -874,6 +904,7 @@ class MessageRetryService extends ChangeNotifier {
       (_, mapping) => mapping.messageId == messageId,
     );
     _expectedHashToMessageId.removeWhere((_, msgId) => msgId == messageId);
+    _sentWithoutHash.remove(messageId);
     _pendingMessages.remove(messageId);
     _pendingContacts.remove(messageId);
     _plans.remove(messageId);
@@ -1171,6 +1202,7 @@ class MessageRetryService extends ChangeNotifier {
     _sendQueue.clear();
     _activeMessages.clear();
     _resolvedMessages.clear();
+    _sentWithoutHash.clear();
     super.dispose();
   }
 }
