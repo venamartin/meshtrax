@@ -1189,6 +1189,19 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contact_telemetry => 'Телеметрія';
 
   @override
+  String get contact_nickname => 'Прізвисько';
+
+  @override
+  String get contact_fullName => 'Повне ім’я';
+
+  @override
+  String get contact_note => 'Нотатка';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Зберігається на цьому пристрої та в резервних копіях радіо. Ніколи не надсилається.';
+
+  @override
   String get contact_lastSeen => 'Останній раз бачили';
 
   @override

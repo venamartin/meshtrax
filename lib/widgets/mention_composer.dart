@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../connector/meshcore_protocol.dart';
 import '../models/contact.dart';
 import '../utils/emoji_utils.dart';
+import 'contact_name.dart';
 
 /// Composer controller that renders `@[Name]` mention tokens in the accent
 /// color while keeping the IME composing region visible.
@@ -143,10 +144,14 @@ class MentionsOverlay extends StatelessWidget {
   final List<Contact> contacts;
   final ValueChanged<Contact> onSelect;
 
+  /// The real name the user gave a contact, shown beside its radio name.
+  final String? Function(Contact contact)? realNameOf;
+
   const MentionsOverlay({
     super.key,
     required this.contacts,
     required this.onSelect,
+    this.realNameOf,
   });
 
   @override
@@ -158,8 +163,9 @@ class MentionsOverlay extends StatelessWidget {
         final contact = contacts[index];
         return ListTile(
           leading: mentionAvatar(contact, colorScheme),
-          title: Text(
+          title: ContactName(
             contact.name,
+            realName: realNameOf?.call(contact),
             style: const TextStyle(fontWeight: FontWeight.w500),
           ),
           onTap: () => onSelect(contact),

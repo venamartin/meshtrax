@@ -228,6 +228,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
           }
           if (searchQueryLower.isEmpty) return true;
           return c.name.toLowerCase().contains(searchQueryLower) ||
+                 (connector.contactNote(c.publicKeyHex)?.namesContain(searchQueryLower) ?? false) ||
                  c.publicKeyHex.toLowerCase().contains(searchQueryLower);
         }).toList();
         
@@ -370,6 +371,8 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: !contact.isActive,
+                            realName:
+                                connector.realNameFor(contact.publicKeyHex),
                             routeLabel: contact.inboundHopCount == null
                                 ? null
                                 : context.l10n.contacts_hopsAway(

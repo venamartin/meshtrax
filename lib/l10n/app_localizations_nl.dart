@@ -1189,6 +1189,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String get contact_nickname => 'Bijnaam';
+
+  @override
+  String get contact_fullName => 'Volledige naam';
+
+  @override
+  String get contact_note => 'Notitie';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Blijft op dit apparaat en in back-ups van de radio. Wordt nooit verzonden.';
+
+  @override
   String get contact_lastSeen => 'Laatst gezien';
 
   @override

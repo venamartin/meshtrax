@@ -1196,6 +1196,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get contact_telemetry => 'Telemetría';
 
   @override
+  String get contact_nickname => 'Apodo';
+
+  @override
+  String get contact_fullName => 'Nombre completo';
+
+  @override
+  String get contact_note => 'Nota';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Se guarda en este dispositivo y en las copias de seguridad de la radio. Nunca se envía.';
+
+  @override
   String get contact_lastSeen => 'Visto por última vez';
 
   @override

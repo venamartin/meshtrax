@@ -1,12 +1,18 @@
 import '../models/contact.dart';
+import '../models/contact_note.dart';
 
 export 'contact_filter_types.dart';
 
-bool matchesContactQuery(Contact contact, String query) {
+bool matchesContactQuery(
+  Contact contact,
+  String query, {
+  ContactNote? note,
+}) {
   final normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.isEmpty) return true;
 
-  if (contact.name.toLowerCase().contains(normalizedQuery)) {
+  if (contact.name.toLowerCase().contains(normalizedQuery) ||
+      (note?.namesContain(normalizedQuery) ?? false)) {
     return true;
   }
 

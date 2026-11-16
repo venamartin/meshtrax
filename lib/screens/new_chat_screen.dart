@@ -9,6 +9,7 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
+import '../widgets/contact_info_dialog.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
 import '../utils/contact_search.dart';
@@ -148,6 +149,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(context.l10n.contact_info),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                ContactInfoDialog.show(context, contact);
+              },
+            ),
             ListTile(
               leading: Icon(
                 isFavorite ? Icons.star : Icons.star_border,
@@ -771,6 +780,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text(l10n.contact_info),
+                onTap: () => Navigator.of(sheetContext).pop('info'),
+              ),
+              ListTile(
                 leading: const Icon(Icons.add_reaction_sharp),
                 title: Text(l10n.discoveredContacts_addContact),
                 onTap: () => Navigator.of(sheetContext).pop('import_contact'),
@@ -794,6 +808,9 @@ class _NewChatScreenState extends State<NewChatScreen> {
     if (!mounted || action == null) return;
 
     switch (action) {
+      case 'info':
+        ContactInfoDialog.show(context, contact);
+        break;
       case 'import_contact':
         connector.importDiscoveredContact(contact);
         break;
@@ -861,7 +878,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
           final isDiscovered = !contact.isActive;
           if (sourceFilter == ContactSourceFilter.saved && isDiscovered) return false;
           if (sourceFilter == ContactSourceFilter.discovered && !isDiscovered) return false;
-          if (searchQuery.isNotEmpty && !matchesContactQuery(contact, searchQuery)) return false;
+          if (searchQuery.isNotEmpty &&
+              !matchesContactQuery(
+                contact,
+                searchQuery,
+                note: connector.contactNote(contact.publicKeyHex),
+              )) {
+            return false;
+          }
           if (typeFilter != ContactTypeFilter.all && !_matchesTypeFilter(contact, typeFilter)) return false;
           if (showUnreadOnly && connector.getUnreadCountForContact(contact) == 0) return false;
           if (contact.publicKeyHex == selfPubKeyHex) return false;
@@ -1020,6 +1044,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                             unreadCount: connector.getUnreadCountForContact(contact),
                             isFavorite: contact.isFavorite,
                             isDiscovered: isDiscovered,
+                            realName:
+                                connector.realNameFor(contact.publicKeyHex),
                             sharesPosition:
                                 connector.positionVisibleTo(contact),
                             onTap: () async {

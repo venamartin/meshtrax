@@ -1174,6 +1174,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contact_telemetry => 'Telemetry';
 
   @override
+  String get contact_nickname => 'Nickname';
+
+  @override
+  String get contact_fullName => 'Full name';
+
+  @override
+  String get contact_note => 'Note';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Kept on this device and in radio backups. Never sent.';
+
+  @override
   String get contact_lastSeen => 'Last seen';
 
   @override

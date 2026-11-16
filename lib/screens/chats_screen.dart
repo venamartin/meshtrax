@@ -27,8 +27,11 @@ import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
+import '../widgets/contact_name.dart';
+import '../widgets/contact_info_dialog.dart';
 import '../widgets/gps_status_button.dart';
 import '../widgets/location_sharing_button.dart';
+import '../widgets/nickname_pill.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
 import '../widgets/shares_position_icon.dart';
@@ -478,10 +481,20 @@ class _ChatsScreenState extends State<ChatsScreen>
 
       showModalBottomSheet(
         context: context,
+        // A list, not a column: a room's entries are taller than a sheet
+        // may be on a phone, and then they scroll.
         builder: (sheetContext) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: ListView(
+            shrinkWrap: true,
             children: [
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text(context.l10n.contact_info),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ContactInfoDialog.show(context, contact);
+                },
+              ),
               ListTile(
                 leading: Icon(
                   contact.isFavorite ? Icons.star : Icons.star_border,
@@ -1069,13 +1082,26 @@ class _ChatsScreenState extends State<ChatsScreen>
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
-                                          child: Text(
-                                            item.title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          child: Row(
+                                            children: [
+                                              Flexible(
+                                                child: ContactName(
+                                                  item.title,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (item.contact?.publicKeyHex
+                                                  case final key?)
+                                                if (connector
+                                                        .contactNote(key)
+                                                        ?.pillName
+                                                    case final pill?) ...[
+                                                  const SizedBox(width: 6),
+                                                  NicknamePill(pill),
+                                                ],
+                                            ],
                                           ),
                                         ),
                                         const SizedBox(width: 8),

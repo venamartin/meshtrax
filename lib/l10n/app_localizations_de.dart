@@ -1194,6 +1194,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String get contact_nickname => 'Spitzname';
+
+  @override
+  String get contact_fullName => 'Vollständiger Name';
+
+  @override
+  String get contact_note => 'Notiz';
+
+  @override
+  String get contact_nameAndNoteHint =>
+      'Bleibt auf diesem Gerät und in Funkgerät-Sicherungen. Wird nie gesendet.';
+
+  @override
   String get contact_lastSeen => 'Zuletzt gesehen';
 
   @override

@@ -40,6 +40,7 @@ import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
 import '../widgets/message_status_icon.dart';
+import '../widgets/nickname_pill.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../helpers/structured_message.dart';
 import '../services/short_link_resolver.dart';
@@ -586,8 +587,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           // Filter out repeaters as they are non-human nodes
           if (c.type == advTypeRepeater) return false;
           
-          return c.name.toLowerCase().contains(search) || 
-                 c.publicKeyHex.toLowerCase().startsWith(search);
+          return c.name.toLowerCase().contains(search) ||
+              (connector.contactNote(c.publicKeyHex)?.namesContain(search) ??
+                  false) ||
+              c.publicKeyHex.toLowerCase().startsWith(search);
         }).toList();
 
         filtered.sort((a, b) {
@@ -770,6 +773,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                     unreadCount: 0,
                     isFavorite: candidate.contact.isFavorite,
                     isDiscovered: !candidate.saved,
+                    realName: connector.realNameFor(
+                      candidate.contact.publicKeyHex,
+                    ),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       _openDmWith(
@@ -1369,9 +1375,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               ),
             ),
             if (_showMentions)
-              MentionsOverlay(
-                contacts: _filteredMentionContacts,
-                onSelect: _insertMention,
+              Consumer<MeshCoreConnector>(
+                builder: (context, connector, _) => MentionsOverlay(
+                  contacts: _filteredMentionContacts,
+                  onSelect: _insertMention,
+                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
+                ),
               ),
             Consumer<MeshCoreConnector>(
               builder: (context, connector, _) =>
@@ -1601,6 +1610,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         context.select<UiViewStateService, bool>((s) => s.renderGifs);
     final enableTracing = settingsService.settings.enableMessageTracing;
     final senderNameColors = settingsService.settings.senderNameColors;
+    final nickname =
+        context.select<MeshCoreConnector, ({String name, bool guess})?>(
+      (connector) => message.isOutgoing
+          ? null
+          : connector.nicknameForSender(message.senderName),
+    );
     final isOutgoing = message.isOutgoing;
     final facts = MessageFacts.of(message.text);
     _rebuildAt(facts.changesAt);
@@ -1713,6 +1728,15 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                   ),
                                 ),
                               ),
+                              if (nickname != null) ...[
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: NicknamePill(
+                                    nickname.name,
+                                    guess: nickname.guess,
+                                  ),
+                                ),
+                              ],
                               // Some copy of this message was heard with
                               // zero hops: our radio heard THEIR radio, no
                               // repeater in between — worth celebrating.

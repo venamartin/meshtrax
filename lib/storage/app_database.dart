@@ -153,6 +153,19 @@ class CachedChannelRows extends Table {
   Set<Column> get primaryKey => {nodeScope, slotIndex};
 }
 
+/// The full name and note the user gave a contact (v10), and a nickname
+/// (v11). App-only and shared across radios: a person keeps the names
+/// whichever radio is connected. Never sent anywhere.
+class ContactNoteRows extends Table {
+  TextColumn get publicKeyHex => text()();
+  TextColumn get realName => text().withDefault(const Constant(''))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get nickname => text().withDefault(const Constant(''))();
+
+  @override
+  Set<Column> get primaryKey => {publicKeyHex};
+}
+
 /// One row per contact (DM) message — same contract as channel rows: a
 /// message exists exactly once per (node, contact), writes are transactional.
 @TableIndex(
@@ -205,6 +218,7 @@ class ContactMessageRows extends Table {
     ContactRows,
     DiscoveredContactRows,
     CachedChannelRows,
+    ContactNoteRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -236,7 +250,7 @@ class AppDatabase extends _$AppDatabase {
       customStatement('VACUUM INTO ?', [path]);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   /// v7: cached routes predate the persisted hash width, and a guessed width
   /// is how 2-byte routes read as four 1-byte hops. Clear every cached route
@@ -265,6 +279,21 @@ class AppDatabase extends _$AppDatabase {
     index.createStatementsByDialect.values.first
         .replaceFirst('CREATE INDEX ', 'CREATE INDEX IF NOT EXISTS '),
   );
+
+  /// ADD COLUMN that a second run skips, for the same reason; a table
+  /// created in this same upgrade has the column already.
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    final columns = await customSelect(
+      'SELECT name FROM pragma_table_info(?)',
+      variables: [Variable.withString(table.actualTableName)],
+    ).get();
+    if (columns.any((c) => c.read<String>('name') == column.name)) return;
+    await m.addColumn(table, column);
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -341,6 +370,19 @@ class AppDatabase extends _$AppDatabase {
       // by index instead of sorting every row.
       if (from < 9) {
         await _createIndexIfMissing(idxChannelShownOrder);
+      }
+      // v10: the real names and notes the user gives contacts. drift
+      // creates a table IF NOT EXISTS, so a second run is safe.
+      if (from < 10) {
+        await m.createTable(contactNoteRows);
+      }
+      // v11: a nickname for each contact, beside the full name.
+      if (from < 11) {
+        await _addColumnIfMissing(
+          m,
+          contactNoteRows,
+          contactNoteRows.nickname,
+        );
       }
     },
     beforeOpen: (details) async {

@@ -34,6 +34,7 @@ import '../services/storage_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/connection_status_banner.dart';
+import '../widgets/contact_info_dialog.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/byte_count_input.dart';
 import 'channel_message_path_screen.dart';
@@ -785,7 +786,14 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         final connector = context.read<MeshCoreConnector>();
 
         final filtered = _roomMentionCandidates(connector)
-            .where((c) => c.name.toLowerCase().contains(search))
+            .where(
+              (c) =>
+                  c.name.toLowerCase().contains(search) ||
+                  (connector
+                          .contactNote(c.publicKeyHex)
+                          ?.namesContain(search) ??
+                      false),
+            )
             .toList();
         filtered.sort((a, b) {
           final aStart = a.name.toLowerCase().startsWith(search);
@@ -905,6 +913,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
             // "Unread: 0" is noise while the chat is open (it marks itself
             // read) and it ellipsized the role badge off the narrow title.
             final subtitle = [
+              ?connector.realNameFor(contact.publicKeyHex),
               pathLabel,
               if (unreadCount > 0) context.l10n.chat_unread(unreadCount),
               ?roleLabel,
@@ -1013,7 +1022,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 icon: const Icon(Icons.more_vert),
                 onSelected: (value) {
                   if (value == 'info') {
-                    _showContactInfo(context);
+                    ContactInfoDialog.show(context, _resolveContact(connector));
                   }
                   if (value == 'share') {
                     final contact = _resolveContact(connector);
@@ -1202,6 +1211,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 MentionsOverlay(
                   contacts: _filteredMentionContacts,
                   onSelect: _insertMention,
+                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
                 ),
               if (_isRoom && _roomRole(connector) == 0)
                 _buildReadOnlyBanner(),
@@ -2402,43 +2412,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     return context.l10n.chat_hopsCount(contact.pathLength);
   }
 
-  void _showContactInfo(BuildContext context) {
-    final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-    final contact = _resolveContact(connector);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: SelectableText(contact.name),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoRow(context.l10n.chat_type, contact.typeLabel),
-              _buildInfoRow(context.l10n.chat_path, contact.pathLabel),
-              _buildInfoRow(
-                context.l10n.contact_lastSeen,
-                _formatContactLastMessage(contact.lastMessageAt),
-              ),
-              if (contact.hasLocation)
-                _buildInfoRow(
-                  context.l10n.chat_location,
-                  '${contact.latitude?.toStringAsFixed(4)}, ${contact.longitude?.toStringAsFixed(4)}',
-                ),
-              _buildInfoRow(context.l10n.chat_publicKey, contact.publicKeyHex),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.common_close),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showContactSettings(BuildContext context) {
     final connector = Provider.of<MeshCoreConnector>(context, listen: false);
     connector.ensureContactSmazSettingLoaded(widget.contact.publicKeyHex);
@@ -2570,26 +2543,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         ],
       ),
     );
-  }
-
-  String _formatContactLastMessage(DateTime timestamp) {
-    final diff = DateTime.now().difference(timestamp);
-    if (diff.isNegative || diff.inMinutes < 5) {
-      return context.l10n.contacts_lastSeenNow;
-    }
-    if (diff.inMinutes < 60) {
-      return context.l10n.contacts_lastSeenMinsAgo(diff.inMinutes);
-    }
-    if (diff.inHours < 24) {
-      final hours = diff.inHours;
-      return hours == 1
-          ? context.l10n.contacts_lastSeenHourAgo
-          : context.l10n.contacts_lastSeenHoursAgo(hours);
-    }
-    final days = diff.inDays;
-    return days == 1
-        ? context.l10n.contacts_lastSeenDayAgo
-        : context.l10n.contacts_lastSeenDaysAgo(days);
   }
 
   void _openChat(BuildContext context, Contact contact) {
