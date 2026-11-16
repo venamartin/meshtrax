@@ -1,0 +1,100 @@
+{
+  "about": "Real z13 tiles from the MeshTrax contours packs (USGS 3DEP, public domain), copied byte for byte (gzip-compressed MVT) out of the packs listed in https://maps.meshtrax.io/index.json with HTTP range requests on 2026-11-16. Each pack holds the tiles the tests touch; \"absent\" lists the tiles they touch that the pack does not have. The tests build small PMTiles packs from them.",
+  "packs": {
+    "norcal-contours-10m": {
+      "source": "https://maps.meshtrax.io/v1/north-america/us/california/norcal/contours-10m.pmtiles",
+      "bytes": 310118909,
+      "sha256": "37227a7e43b25be2d40bc1f07e660e8c0d35b834902126236b5b5d18775247c3",
+      "metadata": {
+        "name": "Northern California (contours, 10m)",
+        "kind": "contours",
+        "region": "north-america/us/california/norcal",
+        "variant": "10m",
+        "units": "metric",
+        "interval": 10,
+        "interval_unit": "m",
+        "attribution": "USGS 3DEP",
+        "build_date": "2026-10-21",
+        "format": "pbf",
+        "minzoom": "11",
+        "maxzoom": "13",
+        "schema_version": 1
+      },
+      "tiles": [
+        "1435/3210",
+        "1436/3210",
+        "1436/3212",
+        "1437/3208",
+        "1438/3209",
+        "1438/3210",
+        "1438/3211",
+        "1439/3210"
+      ],
+      "absent": [
+        "1436/3207",
+        "1436/3208",
+        "1437/3209",
+        "1437/3210",
+        "1437/3211",
+        "1437/3212"
+      ]
+    },
+    "norcal-contours-20ft": {
+      "source": "https://maps.meshtrax.io/v1/north-america/us/california/norcal/contours-20ft.pmtiles",
+      "bytes": 504322371,
+      "sha256": "a1c6daedffa7e826fe4e001c312822f2b295416011e2bb5844983ea427d01af5",
+      "metadata": {
+        "name": "Northern California (contours, 20ft)",
+        "kind": "contours",
+        "region": "north-america/us/california/norcal",
+        "variant": "20ft",
+        "units": "imperial",
+        "interval": 20,
+        "interval_unit": "ft",
+        "attribution": "USGS 3DEP",
+        "build_date": "2026-10-21",
+        "format": "pbf",
+        "minzoom": "11",
+        "maxzoom": "13",
+        "schema_version": 1
+      },
+      "tiles": [
+        "1435/3207",
+        "1435/3210",
+        "1436/3203",
+        "1436/3204",
+        "1436/3210",
+        "1436/3212",
+        "1437/3204",
+        "1437/3205",
+        "1437/3206",
+        "1437/3208",
+        "1438/3206",
+        "1438/3207",
+        "1438/3208",
+        "1438/3209",
+        "1438/3210",
+        "1438/3211",
+        "1438/3212",
+        "1439/3208",
+        "1439/3209",
+        "1439/3210",
+        "1439/3211",
+        "1440/3209",
+        "1440/3210",
+        "1440/3211",
+        "1441/3210"
+      ],
+      "absent": [
+        "1436/3207",
+        "1436/3208",
+        "1437/3209",
+        "1437/3210",
+        "1437/3211",
+        "1437/3212",
+        "1438/3213",
+        "1438/3214"
+      ]
+    }
+  }
+}

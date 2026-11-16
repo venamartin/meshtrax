@@ -1,0 +1,13 @@
+name: traxlos
+description: >
+  Radio line of sight and radio reach for MeshTrax, worked out offline from
+  the installed contours packs. Pure Dart, no network.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.8
