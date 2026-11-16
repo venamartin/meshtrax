@@ -684,10 +684,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Открытое клиентское приложение на Flutter для устройств MeshCore с LoRa-сетями.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Данные о высоте LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Сообщить об ошибке';
 
   @override
@@ -1836,12 +1832,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Неправильный формат ссылки';
-
-  @override
-  String get map_lineOfSight => 'Линия видимости';
-
-  @override
-  String get map_losScreenTitle => 'Линия видимости';
 
   @override
   String get map_noNodesWithLocation => 'Нет нод с данными о местоположении';
@@ -3231,144 +3221,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Очистить путь';
-
-  @override
-  String get losSelectStartEnd => 'Выберите начальный и конечный узлы для LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Проверка прямой видимости не удалась: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Очистить все точки';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Запустите LOS, чтобы просмотреть профиль высот.';
-
-  @override
-  String get losMenuTitle => 'ЛОС Меню';
-
-  @override
-  String get losMenuSubtitle =>
-      'Коснитесь узлов или нажмите и удерживайте карту для выбора пользовательских точек.';
-
-  @override
-  String get losShowDisplayNodes => 'Показать узлы отображения';
-
-  @override
-  String get losCustomPoints => 'Пользовательские точки';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Пользовательский $index';
-  }
-
-  @override
-  String get losPointA => 'Точка А';
-
-  @override
-  String get losPointB => 'Точка Б';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Антенна А: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Антенна Б: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Запустить ЛОС';
-
-  @override
-  String get losNoElevationData => 'Нет данных о высоте';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, свободная зона видимости, минимальный зазор $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, заблокирован $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'ЛОС: проверяю...';
-
-  @override
-  String get losStatusNoData => 'ЛОС: нет данных';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total очищено, $blocked заблокировано, $unknown неизвестно.';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Данные о высоте недоступны для одного или нескольких образцов.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Неверные данные о точках/высоте для расчета LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Переименовать пользовательскую точку';
-
-  @override
-  String get losPointName => 'Имя точки';
-
-  @override
-  String get losShowPanelTooltip => 'Показать панель LOS';
-
-  @override
-  String get losHidePanelTooltip => 'Скрыть панель LOS';
-
-  @override
-  String get losElevationAttribution =>
-      'Данные о высоте: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Радиогоризонт';
-
-  @override
-  String get losLegendLosBeam => 'Линия прямой видимости';
-
-  @override
-  String get losLegendTerrain => 'Рельеф';
-
-  @override
-  String get losFrequencyLabel => 'Частота';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Просмотреть детали расчёта';
-
-  @override
-  String get losFrequencyDialogTitle => 'Расчёт радиогоризонта';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Начиная с k=$baselineK на частоте $baselineFreq МГц, расчет корректирует коэффициент k для текущего диапазона $frequencyMHz МГц, который определяет изогнутую границу радиогоризонта.';
-  }
 
   @override
   String get contacts_pathTrace => 'Трассировка пути';

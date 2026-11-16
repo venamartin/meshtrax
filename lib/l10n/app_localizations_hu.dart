@@ -687,10 +687,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Egy nyílt forráskódú Flutter kliens a MeshCore LoRa hálózati eszközök számára.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS magassági adatok: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Hiba bejelentése';
 
   @override
@@ -1846,12 +1842,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Érvénytelen hivatkozás formátum';
-
-  @override
-  String get map_lineOfSight => 'Látási vonal';
-
-  @override
-  String get map_losScreenTitle => 'Látási vonal';
 
   @override
   String get map_noNodesWithLocation =>
@@ -3245,146 +3235,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Egyértelmű út.';
-
-  @override
-  String get losSelectStartEnd =>
-      'Válassza ki a kezdő és a végpontokat a LOS-hoz.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'A látószög ellenőrzése sikertelen: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Teljesen tisztázzuk az összes pontot';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Használja a LOS-t, hogy megtekinthesse a magasságkülönbségek diagramját.';
-
-  @override
-  String get losMenuTitle => 'LOS menü';
-
-  @override
-  String get losMenuSubtitle =>
-      'A térképen található pontok kiválasztására vagy a térképen hosszúra nyomva, hogy egyedi pontokat definiálhassunk.';
-
-  @override
-  String get losShowDisplayNodes => 'Megjelenítsen a megjelenítési egységeket';
-
-  @override
-  String get losCustomPoints => 'Egyedi pontok';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Egyedi $index';
-  }
-
-  @override
-  String get losPointA => 'A pont A';
-
-  @override
-  String get losPointB => 'Pont B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenna A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenna B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Futtass a LOS-on';
-
-  @override
-  String get losNoElevationData => 'Nincsenek emelkedési adatok.';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, clear LOS, min clearance $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, amelyet $obstruction akadályoz meg $heightUnit-ban';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: ellenőrzés...';
-
-  @override
-  String get losStatusNoData => 'LOS: nincs adat';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total tisztított, $blocked blokkolt, $unknown ismeretlen';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Az alábbi minták esetében nem áll rendelkezésre magasságadat.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Hibás vagy hiányos táblázatok a LOS (Loss of Signal) számításához.';
-
-  @override
-  String get losRenameCustomPoint => 'Állítsa meg a saját pont nevét';
-
-  @override
-  String get losPointName => 'Pont neve';
-
-  @override
-  String get losShowPanelTooltip => 'Megjelenítse a LOS paneelt';
-
-  @override
-  String get losHidePanelTooltip => 'Rejtse el a LOS paneelt';
-
-  @override
-  String get losElevationAttribution =>
-      'Magasságadatok: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radio Horizont';
-
-  @override
-  String get losLegendLosBeam => 'LOS jelzés';
-
-  @override
-  String get losLegendTerrain => 'Terület';
-
-  @override
-  String get losFrequencyLabel => 'Hatósság';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Lásd a számítás részleteit';
-
-  @override
-  String get losFrequencyDialogTitle =>
-      'A rádióhullámok hatótávolságának kiszámítása';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'A $baselineK értékből kezdve, $baselineFreq MHz-os frekvencián, a számítás az aktuális $frequencyMHz MHz-os sávhoz igazítja a k-tényezőt, amely meghatározza a görbös rádióhatótávolság határát.';
-  }
 
   @override
   String get contacts_pathTrace => 'Útvonal követése';

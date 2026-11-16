@@ -681,10 +681,6 @@ class AppLocalizationsSk extends AppLocalizations {
       'Otvorený zdrojový Flutter klient pre MeshCore LoRa sieťové zariadenia.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Údaje o nadmorskej výške LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Nahlásiť chybu';
 
   @override
@@ -1828,12 +1824,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Neplatný formát odkazu';
-
-  @override
-  String get map_lineOfSight => 'Line of Sight';
-
-  @override
-  String get map_losScreenTitle => 'Line of Sight';
 
   @override
   String get map_noNodesWithLocation => 'Žiadne uzly s údajmi o polohe';
@@ -3215,144 +3205,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Zmazať cestu';
-
-  @override
-  String get losSelectStartEnd => 'Vyberte počiatočný a koncový uzol pre LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Kontrola priamej viditeľnosti zlyhala: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Vymazať všetky body';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Ak chcete zobraziť výškový profil, spustite LOS';
-
-  @override
-  String get losMenuTitle => 'Menu LOS';
-
-  @override
-  String get losMenuSubtitle =>
-      'Klepnutím na uzly alebo dlhým stlačením mapy získate vlastné body';
-
-  @override
-  String get losShowDisplayNodes => 'Zobraziť uzly zobrazenia';
-
-  @override
-  String get losCustomPoints => 'Vlastné body';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Vlastné $index';
-  }
-
-  @override
-  String get losPointA => 'Bod A';
-
-  @override
-  String get losPointB => 'Bod B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Anténa A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Anténa B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Spustite LOS';
-
-  @override
-  String get losNoElevationData => 'Žiadne údaje o nadmorskej výške';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, vymazať LOS, min. vôľa $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blokovaný $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: kontrolujem...';
-
-  @override
-  String get losStatusNoData => 'LOS: žiadne údaje';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total vymazané, $blocked blokované, $unknown neznáme';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Údaje o nadmorskej výške nie sú k dispozícii pre jednu alebo viacero vzoriek.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Neplatné body/údaje o nadmorskej výške pre výpočet LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Premenovať vlastný bod';
-
-  @override
-  String get losPointName => 'Názov bodu';
-
-  @override
-  String get losShowPanelTooltip => 'Zobraziť panel LOS';
-
-  @override
-  String get losHidePanelTooltip => 'Skryť panel LOS';
-
-  @override
-  String get losElevationAttribution =>
-      'Údaje o nadmorskej výške: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Rádiový horizont';
-
-  @override
-  String get losLegendLosBeam => 'Priama viditeľnosť';
-
-  @override
-  String get losLegendTerrain => 'Terén';
-
-  @override
-  String get losFrequencyLabel => 'Frekvencia';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Zobraziť podrobnosti výpočtu';
-
-  @override
-  String get losFrequencyDialogTitle => 'Výpočet rádiového horizontu';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Počnúc od k=$baselineK pri $baselineFreq MHz výpočet upraví k-faktor pre aktuálne pásmo $frequencyMHz MHz, ktorý definuje zakrivený strop rádiového horizontu.';
-  }
 
   @override
   String get contacts_pathTrace => 'Sledovanie lúčov';

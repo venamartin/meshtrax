@@ -655,10 +655,6 @@ class AppLocalizationsKo extends AppLocalizations {
       'MeshCore LoRa 메시 네트워크 장치를 위한 오픈 소스 Flutter 클라이언트.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS 고도 데이터: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => '버그 신고';
 
   @override
@@ -1765,12 +1761,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chat_invalidLink => '유효하지 않은 링크 형식';
-
-  @override
-  String get map_lineOfSight => '시야';
-
-  @override
-  String get map_losScreenTitle => '시야';
 
   @override
   String get map_noNodesWithLocation => '위치 정보가 있는 노드가 없습니다.';
@@ -3099,140 +3089,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => '명확한 경로.';
-
-  @override
-  String get losSelectStartEnd => 'LOS(최소 거리 경로)의 시작 및 종료 노드를 선택합니다.';
-
-  @override
-  String losRunFailed(String error) {
-    return '시야 확인 실패: $error';
-  }
-
-  @override
-  String get losClearAllPoints => '모든 사항을 명확히 합니다.';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'LOS(Line of Sight)를 사용하여 고도 프로필을 확인합니다.';
-
-  @override
-  String get losMenuTitle => 'LOS 메뉴';
-
-  @override
-  String get losMenuSubtitle => '사용자 지정 지점을 추가하려면, 노드를 탭하거나 맵을 길게 눌러 주세요.';
-
-  @override
-  String get losShowDisplayNodes => '노드 표시';
-
-  @override
-  String get losCustomPoints => '사용자 지정 포인트';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return '맞춤형 $index';
-  }
-
-  @override
-  String get losPointA => 'A 지점';
-
-  @override
-  String get losPointB => '점 B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return '안테나 A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenna B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'LOS (Loss of Signal) 상태로 전환';
-
-  @override
-  String get losNoElevationData => '고도 정보 없음';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, clear LOS, min clearance $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blocked by $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: 확인 중...';
-
-  @override
-  String get losStatusNoData => 'LOS: 데이터 없음';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total 개, $blocked 개, $unknown 개';
-  }
-
-  @override
-  String get losErrorElevationUnavailable => '샘플 중 하나 이상에 대한 고도 데이터가 없습니다.';
-
-  @override
-  String get losErrorInvalidInput => 'LOS 계산에 사용되는 부정확한 지점/고도 데이터.';
-
-  @override
-  String get losRenameCustomPoint => '사용자 지정된 지점의 이름을 변경';
-
-  @override
-  String get losPointName => '항목 이름';
-
-  @override
-  String get losShowPanelTooltip => 'LOS 패널 표시';
-
-  @override
-  String get losHidePanelTooltip => 'LOS 패널 숨기기';
-
-  @override
-  String get losElevationAttribution => '고도 데이터: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => '라디오 호라이즌';
-
-  @override
-  String get losLegendLosBeam => 'LOS 빔';
-
-  @override
-  String get losLegendTerrain => '지형';
-
-  @override
-  String get losFrequencyLabel => '빈도';
-
-  @override
-  String get losFrequencyInfoTooltip => '계산 내역 보기';
-
-  @override
-  String get losFrequencyDialogTitle => '라디오 수신 가능 범위 계산';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return '$baselineK에서 시작하여 $baselineFreq MHz의 주파수에서 계산을 시작하면, 현재 $frequencyMHz MHz 대역에 대한 k-값을 조정하여, 이는 곡선형 라디오 지평선 상한선을 정의합니다.';
-  }
 
   @override
   String get contacts_pathTrace => '경로 추적';

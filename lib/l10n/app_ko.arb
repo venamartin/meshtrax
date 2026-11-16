@@ -232,7 +232,6 @@
   },
   "settings_aboutLegalese": "2026년 MeshCore 오픈 소스 프로젝트",
   "settings_aboutDescription": "MeshCore LoRa 메시 네트워크 장치를 위한 오픈 소스 Flutter 클라이언트.",
-  "settings_aboutOpenMeteoAttribution": "LOS 고도 데이터: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "버그 신고",
   "settings_reportBugSubtitle": "GitHub에서 버그 신고를 엽니다",
   "settings_infoName": "이름",
@@ -757,8 +756,6 @@
     }
   },
   "chat_invalidLink": "유효하지 않은 링크 형식",
-  "map_lineOfSight": "시야",
-  "map_losScreenTitle": "시야",
   "map_noNodesWithLocation": "위치 정보가 있는 노드가 없습니다.",
   "map_nodesNeedGps": "노드는 지도에 표시되려면 GPS 좌표를 공유해야 합니다.",
   "map_nodesCount": "노드: {count}",
@@ -1539,139 +1536,6 @@
   "pathTrace_refreshTooltip": "경로 추적 재시작",
   "pathTrace_someHopsNoLocation": "홉 중 하나 또는 여러 개에 위치 정보가 누락되었습니다!",
   "pathTrace_clearTooltip": "명확한 경로.",
-  "losSelectStartEnd": "LOS(최소 거리 경로)의 시작 및 종료 노드를 선택합니다.",
-  "losRunFailed": "시야 확인 실패: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "모든 사항을 명확히 합니다.",
-  "losRunToViewElevationProfile": "LOS(Line of Sight)를 사용하여 고도 프로필을 확인합니다.",
-  "losMenuTitle": "LOS 메뉴",
-  "losMenuSubtitle": "사용자 지정 지점을 추가하려면, 노드를 탭하거나 맵을 길게 눌러 주세요.",
-  "losShowDisplayNodes": "노드 표시",
-  "losCustomPoints": "사용자 지정 포인트",
-  "losCustomPointLabel": "맞춤형 {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "A 지점",
-  "losPointB": "점 B",
-  "losAntennaA": "안테나 A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenna B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "LOS (Loss of Signal) 상태로 전환",
-  "losNoElevationData": "고도 정보 없음",
-  "losProfileClear": "{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blocked by {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: 확인 중...",
-  "losStatusNoData": "LOS: 데이터 없음",
-  "losStatusSummary": "LOS: {clear}/{total} 개, {blocked} 개, {unknown} 개",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "샘플 중 하나 이상에 대한 고도 데이터가 없습니다.",
-  "losErrorInvalidInput": "LOS 계산에 사용되는 부정확한 지점/고도 데이터.",
-  "losRenameCustomPoint": "사용자 지정된 지점의 이름을 변경",
-  "losPointName": "항목 이름",
-  "losShowPanelTooltip": "LOS 패널 표시",
-  "losHidePanelTooltip": "LOS 패널 숨기기",
-  "losElevationAttribution": "고도 데이터: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "라디오 호라이즌",
-  "losLegendLosBeam": "LOS 빔",
-  "losLegendTerrain": "지형",
-  "losFrequencyLabel": "빈도",
-  "losFrequencyInfoTooltip": "계산 내역 보기",
-  "losFrequencyDialogTitle": "라디오 수신 가능 범위 계산",
-  "losFrequencyDialogDescription": "{baselineK}에서 시작하여 {baselineFreq} MHz의 주파수에서 계산을 시작하면, 현재 {frequencyMHz} MHz 대역에 대한 k-값을 조정하여, 이는 곡선형 라디오 지평선 상한선을 정의합니다.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "contacts_pathTrace": "경로 추적",
   "contacts_ping": "핑",
   "contacts_repeaterPathTrace": "리피터로 가는 경로",

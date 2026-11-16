@@ -682,10 +682,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Een open-source Flutter client voor MeshCore LoRa mesh netwerkapparaten.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS-hoogtegegevens: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Bug melden';
 
   @override
@@ -1830,12 +1826,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Ongeldig linkformaat';
-
-  @override
-  String get map_lineOfSight => 'Zichtlijn';
-
-  @override
-  String get map_losScreenTitle => 'Zichtlijn';
 
   @override
   String get map_noNodesWithLocation => 'Geen nodes met locatiegegevens';
@@ -3223,145 +3213,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Weg wissen';
-
-  @override
-  String get losSelectStartEnd =>
-      'Selecteer begin- en eindknooppunten voor LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Zichtlijncontrole mislukt: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Wis alle punten';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Voer LOS uit om het hoogteprofiel te bekijken';
-
-  @override
-  String get losMenuTitle => 'LOS-menu';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tik op knooppunten of druk lang op de kaart voor aangepaste punten';
-
-  @override
-  String get losShowDisplayNodes => 'Toon weergaveknooppunten';
-
-  @override
-  String get losCustomPoints => 'Aangepaste punten';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Aangepast $index';
-  }
-
-  @override
-  String get losPointA => 'Punt A';
-
-  @override
-  String get losPointB => 'Punt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenne A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenne B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Voer LOS uit';
-
-  @override
-  String get losNoElevationData => 'Geen hoogtegegevens';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, vrije LOS, min. vrije ruimte $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, geblokkeerd door $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: controleren...';
-
-  @override
-  String get losStatusNoData => 'LOS: geen gegevens';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total gewist, $blocked geblokkeerd, $unknown onbekend';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Hoogtegegevens niet beschikbaar voor een of meer monsters.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Ongeldige punten/hoogtegegevens voor LOS-berekening.';
-
-  @override
-  String get losRenameCustomPoint => 'Hernoem aangepast punt';
-
-  @override
-  String get losPointName => 'Puntnaam';
-
-  @override
-  String get losShowPanelTooltip => 'Toon LOS-paneel';
-
-  @override
-  String get losHidePanelTooltip => 'LOS-paneel verbergen';
-
-  @override
-  String get losElevationAttribution =>
-      'Hoogtegegevens: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radiohorizon';
-
-  @override
-  String get losLegendLosBeam => 'Zichtlijn';
-
-  @override
-  String get losLegendTerrain => 'Terrein';
-
-  @override
-  String get losFrequencyLabel => 'Frequentie';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Bekijk details van de berekening';
-
-  @override
-  String get losFrequencyDialogTitle => 'Berekening van de radiohorizon';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Beginnend met k=$baselineK bij $baselineFreq MHz, wordt bij de berekening de k-factor aangepast voor de huidige $frequencyMHz MHz-band, die de gebogen radiohorizonkap definieert.';
-  }
 
   @override
   String get contacts_pathTrace => 'Pad Traceren';

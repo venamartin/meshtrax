@@ -297,7 +297,6 @@
   },
   "settings_aboutLegalese": "© 2026 MeshTrax Contributors",
   "settings_aboutDescription": "An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.",
-  "settings_aboutOpenMeteoAttribution": "LOS elevation data: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Report a bug",
   "settings_reportBugSubtitle": "Opens a bug report on GitHub",
   "settings_infoName": "Name",
@@ -956,8 +955,6 @@
     }
   },
   "chat_invalidLink": "Invalid link format",
-  "map_lineOfSight": "Line of Sight",
-  "map_losScreenTitle": "Line of Sight",
   "map_noNodesWithLocation": "No nodes with location data",
   "map_nodesNeedGps": "Nodes need to share their GPS coordinates\nto appear on the map",
   "map_nodesCount": "Nodes: {count}",
@@ -1756,139 +1753,6 @@
   "pathTrace_refreshTooltip": "Refresh Path Trace.",
   "pathTrace_someHopsNoLocation": "One or more of the hops is missing a location!",
   "pathTrace_clearTooltip": "Clear path.",
-  "losSelectStartEnd": "Select start and end nodes for LOS.",
-  "losRunFailed": "Line-of-sight check failed: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Clear all points",
-  "losRunToViewElevationProfile": "Run LOS to view elevation profile",
-  "losMenuTitle": "LOS Menu",
-  "losMenuSubtitle": "Tap nodes or long-press map for custom points",
-  "losShowDisplayNodes": "Show display nodes",
-  "losCustomPoints": "Custom points",
-  "losCustomPointLabel": "Custom {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Point A",
-  "losPointB": "Point B",
-  "losAntennaA": "Antenna A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenna B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Run LOS",
-  "losNoElevationData": "No elevation data",
-  "losProfileClear": "{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blocked by {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: checking...",
-  "losStatusNoData": "LOS: no data",
-  "losStatusSummary": "LOS: {clear}/{total} clear, {blocked} blocked, {unknown} unknown",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Elevation data unavailable for one or more samples.",
-  "losErrorInvalidInput": "Invalid points/elevation data for LOS calculation.",
-  "losRenameCustomPoint": "Rename custom point",
-  "losPointName": "Point name",
-  "losShowPanelTooltip": "Show LOS panel",
-  "losHidePanelTooltip": "Hide LOS panel",
-  "losElevationAttribution": "Elevation data: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Radio horizon",
-  "losLegendLosBeam": "LOS beam",
-  "losLegendTerrain": "Terrain",
-  "losFrequencyLabel": "Frequency",
-  "losFrequencyInfoTooltip": "View calculation details",
-  "losFrequencyDialogTitle": "Radio horizon calculation",
-  "losFrequencyDialogDescription": "Starting from k={baselineK} at {baselineFreq} MHz, the calculation adjusts the k-factor for the current {frequencyMHz} MHz band, which defines the curved radio horizon cap.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "contacts_pathTrace": "Path Trace",
   "contacts_ping": "Ping",
   "contacts_repeaterPathTrace": "Path trace to repeater",

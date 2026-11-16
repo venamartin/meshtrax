@@ -232,7 +232,6 @@
   },
   "settings_aboutLegalese": "2026-os MeshCore nyílt forráskódú projekt",
   "settings_aboutDescription": "Egy nyílt forráskódú Flutter kliens a MeshCore LoRa hálózati eszközök számára.",
-  "settings_aboutOpenMeteoAttribution": "LOS magassági adatok: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Hiba bejelentése",
   "settings_reportBugSubtitle": "Hibajelentést nyit a GitHubon",
   "settings_infoName": "Név",
@@ -757,8 +756,6 @@
     }
   },
   "chat_invalidLink": "Érvénytelen hivatkozás formátum",
-  "map_lineOfSight": "Látási vonal",
-  "map_losScreenTitle": "Látási vonal",
   "map_noNodesWithLocation": "Nincs olyan adatpont, amelyhez helyszín-információk tartoznak.",
   "map_nodesNeedGps": "A pontoknak meg kell osztaniuk GPS koordinátáikat, hogy megjelenjenek a térképen.",
   "map_nodesCount": "Csúcsok: {count}",
@@ -1539,139 +1536,6 @@
   "pathTrace_refreshTooltip": "Út mentesség frissítése.",
   "pathTrace_someHopsNoLocation": "Egy vagy több búzavirág hiányozik a helyszínéről!",
   "pathTrace_clearTooltip": "Egyértelmű út.",
-  "losSelectStartEnd": "Válassza ki a kezdő és a végpontokat a LOS-hoz.",
-  "losRunFailed": "A látószög ellenőrzése sikertelen: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Teljesen tisztázzuk az összes pontot",
-  "losRunToViewElevationProfile": "Használja a LOS-t, hogy megtekinthesse a magasságkülönbségek diagramját.",
-  "losMenuTitle": "LOS menü",
-  "losMenuSubtitle": "A térképen található pontok kiválasztására vagy a térképen hosszúra nyomva, hogy egyedi pontokat definiálhassunk.",
-  "losShowDisplayNodes": "Megjelenítsen a megjelenítési egységeket",
-  "losCustomPoints": "Egyedi pontok",
-  "losCustomPointLabel": "Egyedi {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "A pont A",
-  "losPointB": "Pont B",
-  "losAntennaA": "Antenna A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenna B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Futtass a LOS-on",
-  "losNoElevationData": "Nincsenek emelkedési adatok.",
-  "losProfileClear": "{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, amelyet {obstruction} akadályoz meg {heightUnit}-ban",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: ellenőrzés...",
-  "losStatusNoData": "LOS: nincs adat",
-  "losStatusSummary": "LOS: {clear}/{total} tisztított, {blocked} blokkolt, {unknown} ismeretlen",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Az alábbi minták esetében nem áll rendelkezésre magasságadat.",
-  "losErrorInvalidInput": "Hibás vagy hiányos táblázatok a LOS (Loss of Signal) számításához.",
-  "losRenameCustomPoint": "Állítsa meg a saját pont nevét",
-  "losPointName": "Pont neve",
-  "losShowPanelTooltip": "Megjelenítse a LOS paneelt",
-  "losHidePanelTooltip": "Rejtse el a LOS paneelt",
-  "losElevationAttribution": "Magasságadatok: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Radio Horizont",
-  "losLegendLosBeam": "LOS jelzés",
-  "losLegendTerrain": "Terület",
-  "losFrequencyLabel": "Hatósság",
-  "losFrequencyInfoTooltip": "Lásd a számítás részleteit",
-  "losFrequencyDialogTitle": "A rádióhullámok hatótávolságának kiszámítása",
-  "losFrequencyDialogDescription": "A {baselineK} értékből kezdve, {baselineFreq} MHz-os frekvencián, a számítás az aktuális {frequencyMHz} MHz-os sávhoz igazítja a k-tényezőt, amely meghatározza a görbös rádióhatótávolság határát.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "contacts_pathTrace": "Útvonal követése",
   "contacts_ping": "Ping",
   "contacts_repeaterPathTrace": "Az útvonal követése a repeaterig",

@@ -683,10 +683,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ein Open-Source-Flutter-Client für MeshCore LoRa-Meshnetzwerkgeräte.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS-Höhendaten: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Fehler melden';
 
   @override
@@ -1840,12 +1836,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Ungültiges Link-Format';
-
-  @override
-  String get map_lineOfSight => 'Sichtlinie';
-
-  @override
-  String get map_losScreenTitle => 'Sichtlinie';
 
   @override
   String get map_noNodesWithLocation => 'Keine Knoten mit Standortdaten';
@@ -3241,145 +3231,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Pfad löschen';
-
-  @override
-  String get losSelectStartEnd =>
-      'Wählen Sie Start- und Endknoten für LOS aus.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Sichtlinienprüfung fehlgeschlagen: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Löschen Sie alle Punkte';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Führen Sie LOS aus, um das Höhenprofil anzuzeigen';
-
-  @override
-  String get losMenuTitle => 'LOS-Menü';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tippen Sie auf Knoten oder drücken Sie lange auf die Karte, um benutzerdefinierte Punkte anzuzeigen';
-
-  @override
-  String get losShowDisplayNodes => 'Anzeigeknoten anzeigen';
-
-  @override
-  String get losCustomPoints => 'Benutzerdefinierte Punkte';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Benutzerdefiniert $index';
-  }
-
-  @override
-  String get losPointA => 'Punkt A';
-
-  @override
-  String get losPointB => 'Punkt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenne A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenne B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Führen Sie LOS aus';
-
-  @override
-  String get losNoElevationData => 'Keine Höhendaten';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, freie Sichtlinie, Mindestabstand $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blockiert durch $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: Überprüfen...';
-
-  @override
-  String get losStatusNoData => 'LOS: keine Daten';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'Sichtlinie: $clear/$total frei, $blocked blockiert, $unknown unbekannt';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Für eine oder mehrere Proben sind keine Höhendaten verfügbar.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Ungültige Punkte/Höhendaten für die LOS-Berechnung.';
-
-  @override
-  String get losRenameCustomPoint =>
-      'Benennen Sie den benutzerdefinierten Punkt um';
-
-  @override
-  String get losPointName => 'Punktname';
-
-  @override
-  String get losShowPanelTooltip => 'LOS-Panel anzeigen';
-
-  @override
-  String get losHidePanelTooltip => 'LOS-Panel ausblenden';
-
-  @override
-  String get losElevationAttribution => 'Höhendaten: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Funkhorizont';
-
-  @override
-  String get losLegendLosBeam => 'Sichtlinie';
-
-  @override
-  String get losLegendTerrain => 'Gelände';
-
-  @override
-  String get losFrequencyLabel => 'Frequenz';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Details zur Berechnung anzeigen';
-
-  @override
-  String get losFrequencyDialogTitle => 'Berechnung des Funkhorizonts';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Ausgehend von k=$baselineK bei $baselineFreq MHz passt die Berechnung den k-Faktor für das aktuelle $frequencyMHz MHz-Band an, das die gekrümmte Funkhorizontobergrenze definiert.';
-  }
 
   @override
   String get contacts_pathTrace => 'Pfadverfolgung';

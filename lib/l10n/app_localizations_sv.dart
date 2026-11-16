@@ -676,10 +676,6 @@ class AppLocalizationsSv extends AppLocalizations {
       'En öppen källkods Flutter-klient för MeshCore LoRa meshnätverksenheter.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS-höjddata: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Rapportera ett fel';
 
   @override
@@ -1817,12 +1813,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Ogiltigt länkformat';
-
-  @override
-  String get map_lineOfSight => 'Synlinje';
-
-  @override
-  String get map_losScreenTitle => 'Synlinje';
 
   @override
   String get map_noNodesWithLocation => 'Inga noder med platsinformation';
@@ -3203,142 +3193,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get pathTrace_clearTooltip => 'Rensa väg';
-
-  @override
-  String get losSelectStartEnd => 'Välj start- och slutnoder för LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Synlinjekontroll misslyckades: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Rensa alla punkter';
-
-  @override
-  String get losRunToViewElevationProfile => 'Kör LOS för att se höjdprofil';
-
-  @override
-  String get losMenuTitle => 'LOS-menyn';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tryck på noder eller tryck länge på kartan för anpassade punkter';
-
-  @override
-  String get losShowDisplayNodes => 'Visa displaynoder';
-
-  @override
-  String get losCustomPoints => 'Anpassade poäng';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Anpassad $index';
-  }
-
-  @override
-  String get losPointA => 'Punkt A';
-
-  @override
-  String get losPointB => 'Punkt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenn A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenn B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Kör LOS';
-
-  @override
-  String get losNoElevationData => 'Inga höjddata';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, rensa LOS, min clearance $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blockerad av $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: kollar...';
-
-  @override
-  String get losStatusNoData => 'LOS: inga data';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total rensa, $blocked blockerad, $unknown okänd';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Höjddata är inte tillgänglig för ett eller flera prover.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Ogiltiga poäng/höjddata för LOS-beräkning.';
-
-  @override
-  String get losRenameCustomPoint => 'Byt namn på anpassad punkt';
-
-  @override
-  String get losPointName => 'Punktnamn';
-
-  @override
-  String get losShowPanelTooltip => 'Visa LOS-panelen';
-
-  @override
-  String get losHidePanelTooltip => 'Dölj LOS-panelen';
-
-  @override
-  String get losElevationAttribution => 'Höjddata: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radiohorisont';
-
-  @override
-  String get losLegendLosBeam => 'Siktlinje';
-
-  @override
-  String get losLegendTerrain => 'Terräng';
-
-  @override
-  String get losFrequencyLabel => 'Frekvens';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Visa detaljer om beräkningen';
-
-  @override
-  String get losFrequencyDialogTitle => 'Beräkning av radiohorisonten';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Med start från k=$baselineK vid $baselineFreq MHz, justerar beräkningen k-faktorn för det aktuella $frequencyMHz MHz-bandet, som definierar den böjda radiohorisonten.';
-  }
 
   @override
   String get contacts_pathTrace => 'Path Trace';

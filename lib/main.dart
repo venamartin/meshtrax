@@ -165,22 +165,6 @@ void main() async {
 void _registerThirdPartyLicenses() {
   LicenseRegistry.addLicense(() async* {
     yield const LicenseEntryWithLineBreaks(
-      <String>['Open-Meteo Elevation API Data'],
-      '''
-Data used by LOS elevation lookups is provided by Open-Meteo.
-
-Open-Meteo terms and attribution:
-https://open-meteo.com/en/terms
-
-Elevation API:
-https://open-meteo.com/en/docs/elevation-api
-
-Attribution license reference:
-Creative Commons Attribution 4.0 International (CC BY 4.0)
-https://creativecommons.org/licenses/by/4.0/
-''',
-    );
-    yield const LicenseEntryWithLineBreaks(
       <String>['GeoNames'],
       '''
 The town names and positions in the base map that comes with the app are

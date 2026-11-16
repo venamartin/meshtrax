@@ -232,7 +232,6 @@
   },
   "settings_aboutLegalese": "2026年のMeshCoreオープンソースプロジェクト",
   "settings_aboutDescription": "MeshCore LoRaメッシュネットワークデバイス用の、オープンソースのFlutterクライアント。",
-  "settings_aboutOpenMeteoAttribution": "LOS 標高データ：Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "不具合を報告",
   "settings_reportBugSubtitle": "GitHub で不具合報告を開きます",
   "settings_infoName": "名前",
@@ -757,8 +756,6 @@
     }
   },
   "chat_invalidLink": "無効なリンク形式",
-  "map_lineOfSight": "視界",
-  "map_losScreenTitle": "視界",
   "map_noNodesWithLocation": "位置情報データを持つノードは存在しません",
   "map_nodesNeedGps": "ノードは、地図上に表示されるために、GPS座標を共有する必要があります。",
   "map_nodesCount": "ノード：{count}",
@@ -1539,139 +1536,6 @@
   "pathTrace_refreshTooltip": "パスの追跡をリフレッシュする。",
   "pathTrace_someHopsNoLocation": "ホップの1つまたは複数について、場所が特定されていません。",
   "pathTrace_clearTooltip": "明確な道筋。",
-  "losSelectStartEnd": "LOS の開始ノードと終了ノードを選択してください。",
-  "losRunFailed": "視界確認に失敗: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "すべての項目をクリア",
-  "losRunToViewElevationProfile": "LOS（レーザー測距）を使用して、標高プロファイルを表示する",
-  "losMenuTitle": "LOS メニュー",
-  "losMenuSubtitle": "特定の場所をタップするか、地図を長押ししてカスタムポイントを作成する。",
-  "losShowDisplayNodes": "表示ノードを表示する",
-  "losCustomPoints": "カスタマイズ可能なポイント",
-  "losCustomPointLabel": "カスタマイズ {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "ポイントA",
-  "losPointB": "ポイントB",
-  "losAntennaA": "アンテナ A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "アンテナ B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "LOS（レーティングシステム）を使用する",
-  "losNoElevationData": "標高データは含まれていません",
-  "losProfileClear": "{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blocked by {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS：確認中…",
-  "losStatusNoData": "LOS: データの欠如",
-  "losStatusSummary": "LOS: {clear}/{total} clear, {blocked} blocked, {unknown} unknown",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "あるサンプルまたは複数のサンプルについて、標高データが利用できません。",
-  "losErrorInvalidInput": "LOS（レーダー）計算に必要な、無効な点/標高データ。",
-  "losRenameCustomPoint": "カスタムポイントの名前を変更する",
-  "losPointName": "項目名",
-  "losShowPanelTooltip": "LOSパネルを表示する",
-  "losHidePanelTooltip": "LOSパネルを隠す",
-  "losElevationAttribution": "標高データ：Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "ラジオ・ホライゾン",
-  "losLegendLosBeam": "LOS ビーミング",
-  "losLegendTerrain": "地形",
-  "losFrequencyLabel": "周波数",
-  "losFrequencyInfoTooltip": "計算の詳細を見る",
-  "losFrequencyDialogTitle": "ラジオによる水平線計算",
-  "losFrequencyDialogDescription": "k={baselineK} ( {baselineFreq} MHz) から開始し、現在の {frequencyMHz} MHz の帯域に対して k の値を調整します。これにより、曲面状の無線通信範囲の限界が定義されます。",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "contacts_pathTrace": "経路追跡",
   "contacts_ping": "パング",
   "contacts_repeaterPathTrace": "リピーターまでの経路を追跡する",

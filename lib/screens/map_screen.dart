@@ -50,7 +50,6 @@ import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
 import '../widgets/route_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
-import '../icons/los_icon.dart';
 import 'chat_screen.dart';
 import 'chats_screen.dart';
 import '../widgets/path_selection_dialog.dart';
@@ -64,7 +63,6 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
-import 'line_of_sight_map_screen.dart';
 import 'map_search_screen.dart';
 import 'offline_maps_screen.dart';
 
@@ -712,49 +710,6 @@ class _MapScreenState extends State<MapScreen> {
                           icon: const Icon(Icons.radar),
                           onPressed: () => _startPath(selfPosition),
                           tooltip: context.l10n.contacts_pathTrace,
-                        ),
-                      if (!_isBuildingPathTrace)
-                        IconButton(
-                          icon: const LosIcon(),
-                          onPressed: () {
-                            final candidates = <LineOfSightEndpoint>[];
-                            if (selfPosition != null) {
-                              candidates.add(
-                                LineOfSightEndpoint(
-                                  label: context.l10n.pathTrace_you,
-                                  point: selfPosition,
-                                  color: Colors.teal,
-                                  icon: Icons.person_pin_circle,
-                                ),
-                              );
-                            }
-                            final sortedContacts = List.of(contactsWithLocation)
-                              ..sort(
-                                (a, b) => a.name.toLowerCase().compareTo(
-                                  b.name.toLowerCase(),
-                                ),
-                              );
-                            for (final c in sortedContacts) {
-                              candidates.add(
-                                LineOfSightEndpoint(
-                                  label: c.name,
-                                  point: LatLng(c.latitude!, c.longitude!),
-                                  color: _getNodeColor(c.type),
-                                  icon: _getNodeIcon(c.type),
-                                ),
-                              );
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LineOfSightMapScreen(
-                                  title: context.l10n.map_losScreenTitle,
-                                  candidates: candidates,
-                                ),
-                              ),
-                            );
-                          },
-                          tooltip: context.l10n.map_lineOfSight,
                         ),
                       PopupMenuButton(
                         itemBuilder: (context) => [
