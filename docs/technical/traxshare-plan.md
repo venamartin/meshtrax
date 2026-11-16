@@ -101,6 +101,7 @@ Decisions from 2026-11-15 on are preliminary: Martin wants them kept fluid until
 | Others' positions and trails | Removed 30 days after they arrived (11; was: 7 days, decision 4, and before that kept by distance, never by age). | 2026-11-16, preliminary |
 | Where the data lives | One sharing database per phone, not per radio (14; was: one file per radio). Route here to a person is kept there, never in phone backups or Export database (6a). | 2026-11-16, preliminary |
 | Off-grid group mode | A minimal first version before relying on sharing in desert terrain; the full mode stays later (19; was: later, own PR, after field use, 2026-10-31). | 2026-11-16, preliminary |
+| Automatic reports on the regular mesh | Sessions and trip mode stay zero-hop there and never go through repeaters; they flood only on an off-grid frequency. One-time requests and Ask their radio still go through repeaters (30). | 2026-11-16, preliminary |
 | When a phone is dead | Trip members' adverts update their pins, and Trip setup offers position in adverts for the trip (18). A radio that beacons on its own is not taken for now (28), so a dead phone means a silent member unless someone asks their radio or the member presses its button. | 2026-11-16, preliminary |
 | SOS | A minimal SOS on today's SOS message, in its own master PR before Step 3, after the DM fix (16). Its dialog offers "Also send to Public", ticked, first send only (17). | 2026-11-16, preliminary |
 | Direct messages | A flood DM is parked only if a repeater was heard in the last 10 minutes, fixed on master first (20; was: parked until a repeater is heard). | 2026-11-16, preliminary |
@@ -147,6 +148,7 @@ Each row is the current choice, preliminary as of 2026-11-16, under Martin's dia
 | 27 | No request to the firmware project about the queue's drop order for now | Ask once Step 3 is on air; ask now | Field test 12 |
 | 28 | Not taken for now: a radio that beacons its position on its own (a timed advert in firmware, upstream or in a custom ESP32 companion) | Ask upstream and build it in an ESP32 companion; only one of the two | Field tests 4 and 18: what Ask their radio and the button give |
 | 29 | Own small master PRs, merged only on "ship it": springs and drinking water, line of sight's "needs an internet connection", route caveat and start gap, your dot after a lost fix. The old-texts fix waits for a review of the earlier message-time fixes. | — | Field tests 1, 3 and 14, and the altitude bench test |
+| 30 | On the regular mesh, sessions and trip mode stay zero-hop and never go through repeaters; they flood only on an off-grid frequency, where the group's radios and any repeater the group brings relay them | No automatic reporting at all on the regular mesh; through repeaters with a 10-minute minimum and a warning; as written (any frequency, any interval) | The bench check that F857's RX log shows no retransmission of a session packet, and field tests 10 (line test) and 13 (range day) |
 
 ## Steps
 
@@ -339,11 +341,11 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
 | One-time request | flood |
 | Reply without a trail | flood |
 | Reply with a trail | zero-hop if the request was heard directly (`path_len` 0xFF, or `path_len & 63 == 0`), otherwise a position-only flood |
-| Timed session and trip mode: request, keepalive, reports, STOP | zero-hop; flood when this radio is on an off-grid repeat frequency (CMD 60's list), or when the requester picks "also through repeaters" for a group repeater (decision 19, CH-15) |
+| Timed session and trip mode: request, keepalive, reports, STOP | zero-hop; flood only when this radio is on an off-grid repeat frequency (CMD 60's list), where the group's radios, and any repeater the group brings on that frequency, relay them (decision 19, CH-15). On the regular mesh they never go through repeaters, so there is no "also through repeaters" choice (decision 30). |
 
 ### Step 4: timed sharing and trip mode
 
-- **Choices (decision 12):** the requester picks an interval (2, 5 or 10 min) and a duration (15, 60 or 240 min). The 240-minute cap stays for now, and v1 reserves `duration_min` values above 240. The requester is warned 15 minutes before the end, with a one-tap **Renew**; trip-mode members rejoin with no tap. A session goes zero-hop, so it reaches direct radio range only, except on an off-grid frequency or with "also through repeaters" (routing table above), and the screen says so in plain words.
+- **Choices (decision 12):** the requester picks an interval (2, 5 or 10 min) and a duration (15, 60 or 240 min). The 240-minute cap stays for now, and v1 reserves `duration_min` values above 240. The requester is warned 15 minutes before the end, with a one-tap **Renew**; trip-mode members rejoin with no tap. A session goes zero-hop, so it reaches direct radio range only, except on an off-grid frequency, where the group's radios relay it (routing table above; never through the regular mesh's repeaters, decision 30), and the screen says so in plain words.
 - **Requester reports:** the requester shares too (mask bit 5) and sends a keepalive request (flag b2) every 5 minutes.
 - **Consent (decision 9, CH-02 with its corrections):** a member is asked once per session.
   - Within the approved time, sharing never stops by itself. Any packet of the session from anyone in it resets a member's silence timer. After 12.5 minutes with nothing heard, reports slow to one every 10 minutes (±20 %), and go back to the chosen interval when anyone is heard.
@@ -727,7 +729,7 @@ From the safety review (CH-24), with its checkers' corrections. They are the gat
 7. **Requester loss:** in a 60-minute session, switch the requester's phone off for 20 minutes. The others keep seeing each other at the chosen interval, and when the phone comes back every pin returns with no taps.
 8. **Kill and restart:** kill MeshTrax 30 minutes into a session and reopen it, then restart the phone and reopen it. Sharing and recording resume with no prompt, the strip says what wasn't shared, and the track shows two marked gaps.
 9. **Walk out of range:** one member walks out of range for 45 minutes and comes back, with a third radio left along the route logging reports. Slow reports keep coming about every 10 minutes, the walker's phone warns once at about 13 minutes, the grey pin and Last heard row keep the last position and time through the session's end and an app restart, and the group sees the walker within one interval of their return.
-10. **Line test:** three radios in a line, the ends out of each other's range; start a session at one end. The far end keeps sharing to the middle, and the middle uses "Send to this channel". Repeat with all three on 918.000 MHz with Off-Grid Repeat on (the ends then see each other), and with a repeater on a vehicle roof and "also through repeaters". Log radio battery over the day.
+10. **Line test:** three radios in a line, the ends out of each other's range; start a session at one end. The far end keeps sharing to the middle, and the middle uses "Send to this channel". Repeat with all three on 918.000 MHz with Off-Grid Repeat on (the ends then see each other), and with a repeater on a vehicle roof on the same frequency. Log radio battery over the day.
 11. **SOS:** send an SOS from the edge of range to phones with the channel muted and the screens locked, Android and iPhone, in airplane mode with Bluetooth on. Every phone alerts, the sender sees which radios got the DM copies, and a member who walks into range gets the next repeat. The card's main button opens MeshTrax's offline map, and one more tap gives Route here.
 12. **Queue:** with a 16-slot radio's phone off, send it 20 positions, 5 channel texts and 1 DM. On reconnect the DM is there and most of the texts are gone, as the help text says. Note each radio model's queue size.
 13. **Range day:** at the same spots (valley floor, a canyon, a ridge), 1–10 km apart, with radios carried as in real use, log who hears whom, with and without Off-Grid Repeat, and with a vehicle repeater if the group has one. Where the group still carries APRS, log both. Include an afternoon of normal summer use; never heat a phone on purpose.
@@ -923,7 +925,7 @@ Nothing was copied. Their licences run from MIT to GPL and non-commercial.
 
 ## Audit and safety review (2026-11-15/16)
 
-On 2026-11-15 Martin asked for an audit of this plan and the traxbook plan. A safety review for life-safety use followed the same day, and he answered both in the question dialog as decisions 1–29, all preliminary. Both were read-only, against master `d774d052` and MeshCore tag companion-v1.18.0: nothing was changed in either repo or on GitHub, and the app was not run. The notes, with their evidence and scripts, are kept locally in the gitignored `build/trax-audit/` (`verification-2026-11-15.md`, `safety-review-2026-11-15.md`); a `flutter clean` deletes that folder. The review's lens findings (LM, SW, REACH, DEV, APRS) are merged into its CH items there.
+On 2026-11-15 Martin asked for an audit of this plan and the traxbook plan. A safety review for life-safety use followed the same day, and he answered both in the question dialog as decisions 1–30, all preliminary. Both were read-only, against master `d774d052` and MeshCore tag companion-v1.18.0: nothing was changed in either repo or on GitHub, and the app was not run. The notes, with their evidence and scripts, are kept locally in the gitignored `build/trax-audit/` (`verification-2026-11-15.md`, `safety-review-2026-11-15.md`); a `flutter clean` deletes that folder. The review's lens findings (LM, SW, REACH, DEV, APRS) are merged into its CH items there.
 
 Where each ID went:
 
@@ -979,7 +981,7 @@ Where each ID went:
 | CH-12 | One database per phone: storage (decision 14) |
 | CH-13 | The recorder (decision 1) |
 | CH-14 | The phone GPS fallback: the recorder (decision 21) |
-| CH-15 | Relays: Step 4 minimal off-grid mode and the routing table (decision 19) |
+| CH-15 | Relays: Step 4 minimal off-grid mode and the routing table (decisions 19 and 30) |
 | CH-16 | Details for a search, Send to this channel: Step 3b (decision 23) |
 | CH-17, CH-18 | Route caveat, data date, start gap: master safety fixes (decision 29) and the traxbook plan (decision 26) |
 | CH-19, CH-20, CH-34, CH-37, CH-39 | The traxbook plan (#242) |
