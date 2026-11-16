@@ -342,6 +342,15 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
   - **Contact pins (CH-29, decision 18):** when a person has a sharing pin, hide their contact pin or label it "advert position · <age>". A trip member's advert, matched by key, updates their pin and Last heard row with the advert's own time, labelled "sent from the radio". Its master part: next to a contact's position, show the time of the advert that carried it, not "Last seen".
   - **Performance:** feed lines from a cut-down copy per person, at most 200 points, recomputed only when a point is added. The map rebuilds its overlays on every connector notify, and since #210 also 300 ms after every pan at zoom 12 and above. Map markers are already the main cost on a busy map (Windows profile, 2026-10-31).
   - **Updates:** the map subscribes to `TraxShareService` itself and repaints when a position or style changes. Keep Trax data out of the message pin scan.
+  - **Focus and trail view (Martin, 2026-11-16, preliminary):**
+    - By default the map follows me, and my own track line shows behind my dot as I drive, drawn live from [the recorder](#the-recorder-decision-1-preliminary-2026-11-16). It is as long as the trail setting: at 10 miles it trails ten miles behind me, like a snake.
+    - Other people's trails are hidden until I tap them.
+    - Tap another person: the map centres on them and keeps them centred as their reports come in. Their trail shows; mine hides.
+    - Tap myself: the map moves with me again. My trail shows; theirs hides.
+    - **Center on my location:** the map moves with me, but the trail of whoever I last tapped stays. That way I can follow someone's trail behind them while seeing where I am.
+    - Panning by hand stops the following. Tapping myself or **Center on my location** makes the map move with me again.
+    - Following someone whose last report is old centres on their last known position. Their pin is grey with its age ([thresholds](#display-thresholds)), and nothing moves until a new report arrives.
+    - Trail length: one report carries only the last stretch, a few miles ([trail recipe](#trail-recipe)). The longer trail builds up from repeated reports while we're in range. Stored trail points last 30 days (decision 11).
   - **Pin sheet:** name ([name rules](#names)), coordinates in the user's coordinate format (#210's setting, traxcoords), age through `DateTimeHelper`, "Radio battery" and the status when the report carries them, "Accuracy unknown: the radio's GPS reports none" (CH-38), "Reports come from <name>'s phone and stop when it stops" (CH-27), Ask their radio, Details for a search, and **Route here**. A trail says "drawn to within about N m" (2 × `grid_unit_m`), and with a "trail since" item, "since 11:40" (CH-38).
     - Reuse what #210's long-press sheet on the map does (`_showShareMarkerAtPositionSheet` in map_screen.dart):
       - `coordFormatOf(settings)` and `positionLines(lat, lon, format)` for the coordinates, with `CopyPositionButton`
