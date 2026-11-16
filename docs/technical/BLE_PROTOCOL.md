@@ -1008,6 +1008,8 @@ On connect, the app syncs queued messages:
 
 **Trigger**: Also triggered by `PUSH_CODE_MSG_WAITING` notification.
 
+**Give-up**: A request with no answer in 5 s is sent again, up to 3 times; then the drain gives up. The firmware pushes `PUSH_CODE_MSG_WAITING` only when it queues a new message, so the app starts another drain 30 s later, then after 60 s, 120 s and 240 s, then every 5 minutes, until one ends in `RESP_CODE_NO_MORE_MESSAGES`. A disconnect stops the retries.
+
 ## Error Handling
 
 ### Frame Validation

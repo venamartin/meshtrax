@@ -825,6 +825,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _queueSyncRetries = 0;
   static const int _maxQueueSyncRetries = 3;
   static const int _queueSyncTimeoutMs = 5000; // 5 second timeout
+  // After a drain gives up, the next try waits each of these in turn, the
+  // last one repeating, until a drain reaches NO_MORE_MESSAGES.
+  Timer? _queueDrainRetryTimer;
+  int _queueDrainGiveUps = 0;
+  static const List<int> _queueDrainRetrySecs = [30, 60, 120, 240, 300];
   // Serializes path operations (setContactPath/clearContactPath) to prevent
   // interleaved async calls from leaving in-memory state inconsistent with device.
   Future<void> _pathOpLock = Future.value();
@@ -4013,6 +4018,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _queueSyncTimeout?.cancel();
     _queueSyncTimeout = null;
     _queueSyncRetries = 0;
+    _stopQueueDrainRetries();
     _channelSyncTimeout?.cancel();
     _channelSyncTimeout = null;
     _channelSyncRetries = 0;
@@ -5935,7 +5941,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _requestNextQueuedMessage();
     } else {
       // Max retries reached, give up
-      debugPrint('[QueueSync] Max retries reached, stopping sync');
       _queuedMessageSyncInFlight = false;
       _isSyncingQueuedMessages = false;
       // A radio that never answers the first drain must not leave the sync
@@ -5943,7 +5948,51 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       _completedFirstQueueDrain = true;
       notifyListeners();
       _queueSyncRetries = 0;
+      _scheduleQueueDrainRetry();
     }
+  }
+
+  /// The radio pushes MSG_WAITING only when it queues a new message, so what
+  /// a drain that gave up left behind, DMs and SOS included, would wait for
+  /// the next one: on a quiet trip, for hours.
+  void _scheduleQueueDrainRetry() {
+    final gaveUp =
+        'Queue drain gave up: the radio did not answer '
+        '${_maxQueueSyncRetries + 1} requests';
+    if (!isConnected) {
+      appLogger.warn(gaveUp, tag: 'Connector');
+      return;
+    }
+    final step = math.min(_queueDrainGiveUps, _queueDrainRetrySecs.length - 1);
+    final secs = _queueDrainRetrySecs[step];
+    _queueDrainGiveUps++;
+    appLogger.warn('$gaveUp. Trying again in $secs s', tag: 'Connector');
+    _queueDrainRetryTimer?.cancel();
+    _queueDrainRetryTimer = Timer(Duration(seconds: secs), () {
+      _queueDrainRetryTimer = null;
+      // A drain already running ends in its own NO_MORE_MESSAGES or give-up.
+      if (_isSyncingQueuedMessages) return;
+      appLogger.info(
+        'Queue drain: retry $_queueDrainGiveUps',
+        tag: 'Connector',
+      );
+      unawaited(syncQueuedMessages(force: true));
+    });
+  }
+
+  void _stopQueueDrainRetries() {
+    _queueDrainRetryTimer?.cancel();
+    _queueDrainRetryTimer = null;
+    _queueDrainGiveUps = 0;
+  }
+
+  /// Fires the pending request's 5 s timeout now, so a test can make the
+  /// drain give up without waiting for each of its 4 requests.
+  @visibleForTesting
+  void fireQueueSyncTimeoutForTest() {
+    if (_queueSyncTimeout?.isActive != true) return;
+    _queueSyncTimeout!.cancel();
+    _handleQueueSyncTimeout();
   }
 
   Future<void> sendCliCommand(String command) async {
@@ -7217,6 +7266,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _handleNoMoreMessages() {
     debugPrint('[QueueSync] No more messages, sync complete');
     _queueSyncTimeout?.cancel();
+    if (_queueDrainGiveUps > 0) {
+      appLogger.info(
+        'Queue drain reached the end; no more retries',
+        tag: 'Connector',
+      );
+    }
+    _stopQueueDrainRetries();
     _completedFirstQueueDrain = true;
     // The drain is over; the next one snapshots fresh floors.
     _drainFloorByIdKey.clear();
@@ -11093,6 +11149,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _drainFloorByIdKey.clear();
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
+    _stopQueueDrainRetries();
     _isSyncingChannels = false;
     _channelSyncInFlight = false;
     _isLoadingChannels = false;
@@ -11143,6 +11200,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _setState(MeshCoreConnectionState.disconnected);
     _scheduleReconnect();
   }
+
+  @visibleForTesting
+  void handleBleDropForTest() => _handleDisconnection();
 
   void _trackPendingGenericAck(
     Uint8List data, {
@@ -11324,6 +11384,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _batteryPollTimer?.cancel();
     _gpsPollTimer?.cancel();
     _radioStatsPollTimer?.cancel();
+    _queueDrainRetryTimer?.cancel();
     for (final timer in _channelMessageTimers.values) {
       timer.cancel();
     }
