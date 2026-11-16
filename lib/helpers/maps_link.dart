@@ -11,7 +11,7 @@ class MapsLinkResult {
 
 /// Reads coordinates out of the links people paste from Google Maps, Apple
 /// Maps and `geo:` URIs. A Google short link (maps.app.goo.gl) carries no
-/// coordinates at all; see [isShortLink] and ShortLinkResolver.
+/// coordinates at all; see [isShortLink].
 class MapsLink {
   static final _shortLink = RegExp(
     r'^(?:https?://)?(?:maps\.app\.goo\.gl|goo\.gl/maps)/\S+',

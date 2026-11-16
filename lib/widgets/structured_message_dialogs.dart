@@ -14,7 +14,6 @@ import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
 import '../services/app_settings_service.dart';
-import '../services/short_link_resolver.dart';
 import 'drawing_canvas.dart';
 import 'drawing_map_view.dart';
 
@@ -292,6 +291,7 @@ InputDecoration _field(
     helperText: helper,
     helperMaxLines: 2,
     errorText: error,
+    errorMaxLines: 3,
     isDense: true,
     border: const OutlineInputBorder(),
     suffixIcon: suffix,
@@ -425,7 +425,6 @@ class _PositionFieldState extends State<_PositionField> {
   );
   late LatLng? _position = widget.initial;
   bool _unreadable = false;
-  bool _lookingUp = false;
 
   @override
   void dispose() {
@@ -433,32 +432,18 @@ class _PositionFieldState extends State<_PositionField> {
     super.dispose();
   }
 
-  void _report(LatLng? position, {bool unreadable = false, bool lookingUp = false}) {
+  void _report(LatLng? position, {bool unreadable = false}) {
     setState(() {
       _position = position;
       _unreadable = unreadable;
-      _lookingUp = lookingUp;
     });
-    widget.onChanged(position, !unreadable && !lookingUp);
+    widget.onChanged(position, !unreadable);
   }
 
   void _onText(String raw) {
     final text = raw.trim();
     if (text.isEmpty) return _report(null);
     final position = StructuredMessageDialogs.readPosition(text);
-    if (position != null) return _report(position);
-    if (MapsLink.isShortLink(text)) {
-      _lookUp(text);
-      return;
-    }
-    _report(null, unreadable: true);
-  }
-
-  /// A Google short link carries no coordinates: ask where it leads.
-  Future<void> _lookUp(String url) async {
-    _report(null, lookingUp: true);
-    final position = await ShortLinkResolver.instance.resolve(url);
-    if (!mounted || _controller.text.trim() != url) return;
     _report(position, unreadable: position == null);
   }
 
@@ -482,9 +467,7 @@ class _PositionFieldState extends State<_PositionField> {
         ? null
         : StructuredMessage.formatCoordinates(position);
     final String? helper;
-    if (_lookingUp) {
-      helper = l10n.dialog_positionLookingUp;
-    } else if (sent != null && sent != text) {
+    if (sent != null && sent != text) {
       helper = sent;
     } else if (text.isEmpty) {
       helper = widget.emptyHelper;
@@ -500,7 +483,11 @@ class _PositionFieldState extends State<_PositionField> {
         l10n.gps_position,
         hint: l10n.dialog_positionHint,
         helper: helper,
-        error: _unreadable ? l10n.dialog_positionUnreadable : null,
+        error: !_unreadable
+            ? null
+            : MapsLink.isShortLink(text)
+            ? l10n.paste_shortLinkNoPosition
+            : l10n.dialog_positionUnreadable,
         suffix: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

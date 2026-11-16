@@ -4867,10 +4867,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get paste_convert => '変換';
 
   @override
-  String get paste_resolving => 'リンクを確認中…';
+  String get paste_resolveFailed => 'リンクを確認できませんでした';
 
   @override
-  String get paste_resolveFailed => 'リンクを確認できませんでした';
+  String get paste_shortLinkNoPosition =>
+      'この短縮リンクには位置情報が含まれていません。地図アプリで開いて座標をコピーしてください。';
 
   @override
   String get pinned_dismiss => '閉じる';
@@ -6163,9 +6164,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => '位置を読み取れません';
-
-  @override
-  String get dialog_positionLookingUp => 'リンクを確認しています…';
 
   @override
   String get locationSharing_share => '位置情報を共有';

@@ -5121,10 +5121,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get paste_convert => 'Zamień';
 
   @override
-  String get paste_resolving => 'Rozwijanie linku…';
+  String get paste_resolveFailed => 'Nie udało się rozwinąć linku';
 
   @override
-  String get paste_resolveFailed => 'Nie udało się rozwinąć linku';
+  String get paste_shortLinkNoPosition =>
+      'Ten krótki link nie zawiera pozycji. Otwórz go w aplikacji z mapami i skopiuj współrzędne.';
 
   @override
   String get pinned_dismiss => 'Zamknij';
@@ -6475,9 +6476,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Nie można tu odczytać pozycji';
-
-  @override
-  String get dialog_positionLookingUp => 'Sprawdzanie linku…';
 
   @override
   String get locationSharing_share => 'Udostępniaj moją lokalizację';

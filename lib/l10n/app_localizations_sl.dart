@@ -5089,10 +5089,11 @@ class AppLocalizationsSl extends AppLocalizations {
   String get paste_convert => 'Pretvori';
 
   @override
-  String get paste_resolving => 'Razreševanje povezave…';
+  String get paste_resolveFailed => 'Povezave ni bilo mogoče razrešiti';
 
   @override
-  String get paste_resolveFailed => 'Povezave ni bilo mogoče razrešiti';
+  String get paste_shortLinkNoPosition =>
+      'Ta kratka povezava ne vsebuje položaja. Odprite jo v aplikaciji za zemljevide in kopirajte koordinate.';
 
   @override
   String get pinned_dismiss => 'Zapri';
@@ -6443,9 +6444,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Tukaj ni mogoče prebrati položaja';
-
-  @override
-  String get dialog_positionLookingUp => 'Preverjanje povezave…';
 
   @override
   String get locationSharing_share => 'Deli mojo lokacijo';

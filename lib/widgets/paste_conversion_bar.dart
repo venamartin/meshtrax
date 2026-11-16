@@ -1,18 +1,17 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../helpers/calendar_share.dart';
 import '../helpers/maps_link.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
-import '../services/short_link_resolver.dart';
 
-enum _Kind { none, maps, calendar }
+enum _Kind { none, maps, shortLink, calendar }
 
 /// Sits above the composer. When the text looks like a Google Maps or
 /// Google Calendar share, offers one tap to turn it into a Location or
 /// Event line, so the mesh carries the compact form and the receiver needs
-/// no internet.
+/// no internet. A Google short link has no position to read, so for one it
+/// only says so.
 class PasteConversionBar extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onReplace;
@@ -29,7 +28,6 @@ class PasteConversionBar extends StatefulWidget {
 
 class _PasteConversionBarState extends State<PasteConversionBar> {
   _Kind _kind = _Kind.none;
-  bool _resolving = false;
   String? _failedFor;
 
   @override
@@ -61,11 +59,12 @@ class _PasteConversionBarState extends State<PasteConversionBar> {
       return _Kind.none;
     }
     if (CalendarShare.looksLike(text)) return _Kind.calendar;
-    if (MapsLink.findAll(text).isNotEmpty) return _Kind.maps;
-    return _Kind.none;
+    final links = MapsLink.findAll(text);
+    if (links.isEmpty) return _Kind.none;
+    return MapsLink.isShortLink(links.first) ? _Kind.shortLink : _Kind.maps;
   }
 
-  Future<void> _convert() async {
+  void _convert() {
     final text = widget.controller.text;
     String? wire;
     if (_kind == _Kind.calendar) {
@@ -82,9 +81,8 @@ class _PasteConversionBarState extends State<PasteConversionBar> {
         ).toWire();
       }
     } else if (_kind == _Kind.maps) {
-      wire = await _convertMaps(text);
+      wire = _convertMaps(text);
     }
-    if (!mounted) return;
     if (wire == null) {
       setState(() => _failedFor = text);
       return;
@@ -92,29 +90,19 @@ class _PasteConversionBarState extends State<PasteConversionBar> {
     widget.onReplace(wire);
   }
 
-  Future<String?> _convertMaps(String text) async {
+  static String? _convertMaps(String text) {
     final url = MapsLink.findAll(text).first;
-    LatLng? position;
-    String? name;
     final parsed = MapsLink.parse(url);
-    if (parsed != null) {
-      position = parsed.position;
-      name = parsed.name;
-    } else if (MapsLink.isShortLink(url)) {
-      setState(() => _resolving = true);
-      position = await ShortLinkResolver.instance.resolve(url);
-      if (mounted) setState(() => _resolving = false);
-    }
-    if (position == null) return null;
+    if (parsed == null) return null;
     final free = text
         .replaceAll(url, '')
         .split('\n')
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList();
-    final label = free.isNotEmpty ? free.first : name;
+    final label = free.isNotEmpty ? free.first : parsed.name;
     return LocationMessage(
-      position: position,
+      position: parsed.position,
       label: label,
       note: free.length > 1 ? free[1] : null,
       extraText: free.skip(2).toList(),
@@ -127,13 +115,13 @@ class _PasteConversionBarState extends State<PasteConversionBar> {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final failed = _failedFor == widget.controller.text;
-    final message = _resolving
-        ? l10n.paste_resolving
-        : failed
-            ? l10n.paste_resolveFailed
-            : _kind == _Kind.calendar
-                ? l10n.paste_convertEvent
-                : l10n.paste_convertLocation;
+    final message = failed
+        ? l10n.paste_resolveFailed
+        : switch (_kind) {
+            _Kind.calendar => l10n.paste_convertEvent,
+            _Kind.shortLink => l10n.paste_shortLinkNoPosition,
+            _ => l10n.paste_convertLocation,
+          };
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -152,13 +140,7 @@ class _PasteConversionBarState extends State<PasteConversionBar> {
               style: TextStyle(fontSize: 13, color: scheme.onSecondaryContainer),
             ),
           ),
-          if (_resolving)
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else if (!failed)
+          if (!failed && _kind != _Kind.shortLink)
             TextButton(
               onPressed: _convert,
               child: Text(l10n.paste_convert),

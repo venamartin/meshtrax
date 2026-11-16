@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +27,16 @@ class _Radio extends MeshCoreConnector {
 }
 
 const _here = '36.970000, -121.900000';
+
+class _NoNetwork extends HttpOverrides {
+  int clients = 0;
+
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    clients++;
+    throw StateError('this test has no network');
+  }
+}
 
 void main() {
   setUp(() async {
@@ -192,6 +204,30 @@ void main() {
       await tester.enterText(field('Note (optional)'), 'behind the hut');
       await done(tester);
       expect(wire, 'Location: Water tap\n$_here\nbehind the hut');
+    });
+
+    testWidgets('Point on map: a short link says how to get its position, '
+        'offline', (tester) async {
+      await host(tester, _Radio(), (context) {
+        StructuredMessageDialogs.pointOnMap(context);
+      });
+      final network = _NoNetwork();
+      HttpOverrides.global = network;
+      addTearDown(() => HttpOverrides.global = null);
+      await tester.enterText(
+        field('Position'),
+        'https://maps.app.goo.gl/AbCdEf',
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'This short link has no position in it. Open it in your '
+          'maps app and copy the coordinates.',
+        ),
+        findsOneWidget,
+      );
+      expect(insert(tester).onPressed, isNull);
+      expect(network.clients, 0);
     });
 
     testWidgets('a note without a title goes out as the title',

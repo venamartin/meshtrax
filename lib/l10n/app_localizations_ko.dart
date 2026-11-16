@@ -4874,10 +4874,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get paste_convert => '변환';
 
   @override
-  String get paste_resolving => '링크 확인 중…';
+  String get paste_resolveFailed => '링크를 확인할 수 없습니다';
 
   @override
-  String get paste_resolveFailed => '링크를 확인할 수 없습니다';
+  String get paste_shortLinkNoPosition =>
+      '이 단축 링크에는 위치가 없습니다. 지도 앱에서 열고 좌표를 복사하세요.';
 
   @override
   String get pinned_dismiss => '닫기';
@@ -6172,9 +6173,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => '여기서 위치를 읽을 수 없어요';
-
-  @override
-  String get dialog_positionLookingUp => '링크를 확인하는 중…';
 
   @override
   String get locationSharing_share => '내 위치 공유';

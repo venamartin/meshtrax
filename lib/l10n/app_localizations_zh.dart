@@ -4759,10 +4759,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paste_convert => '转换';
 
   @override
-  String get paste_resolving => '正在解析链接…';
+  String get paste_resolveFailed => '无法解析链接';
 
   @override
-  String get paste_resolveFailed => '无法解析链接';
+  String get paste_shortLinkNoPosition => '此短链接不包含位置。请在地图应用中打开它并复制坐标。';
 
   @override
   String get pinned_dismiss => '关闭';
@@ -6050,9 +6050,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => '无法从这里读取位置';
-
-  @override
-  String get dialog_positionLookingUp => '正在查询链接…';
 
   @override
   String get locationSharing_share => '共享我的位置';

@@ -5108,10 +5108,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get paste_convert => 'Umwandeln';
 
   @override
-  String get paste_resolving => 'Link wird aufgelöst…';
+  String get paste_resolveFailed => 'Link konnte nicht aufgelöst werden';
 
   @override
-  String get paste_resolveFailed => 'Link konnte nicht aufgelöst werden';
+  String get paste_shortLinkNoPosition =>
+      'Dieser Kurzlink enthält keine Position. Öffnen Sie ihn in Ihrer Karten-App und kopieren Sie die Koordinaten.';
 
   @override
   String get pinned_dismiss => 'Ausblenden';
@@ -6468,9 +6469,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Hier ist keine Position lesbar';
-
-  @override
-  String get dialog_positionLookingUp => 'Link wird aufgelöst…';
 
   @override
   String get locationSharing_share => 'Meinen Standort teilen';

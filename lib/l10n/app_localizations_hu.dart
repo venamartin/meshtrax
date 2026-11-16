@@ -5113,10 +5113,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get paste_convert => 'Átalakítás';
 
   @override
-  String get paste_resolving => 'Link feloldása…';
+  String get paste_resolveFailed => 'Nem sikerült feloldani a linket';
 
   @override
-  String get paste_resolveFailed => 'Nem sikerült feloldani a linket';
+  String get paste_shortLinkNoPosition =>
+      'Ez a rövid link nem tartalmaz pozíciót. Nyissa meg a térképalkalmazásában, és másolja ki a koordinátákat.';
 
   @override
   String get pinned_dismiss => 'Elvetés';
@@ -6469,9 +6470,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Itt nem olvasható ki pozíció';
-
-  @override
-  String get dialog_positionLookingUp => 'A link ellenőrzése…';
 
   @override
   String get locationSharing_share => 'Helyzetem megosztása';

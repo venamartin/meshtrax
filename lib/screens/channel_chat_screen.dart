@@ -43,7 +43,6 @@ import '../widgets/message_status_icon.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/swipe_reply_bubble.dart';
 import '../helpers/structured_message.dart';
-import '../services/short_link_resolver.dart';
 import '../widgets/composer_attach_tray.dart';
 import '../widgets/paste_conversion_bar.dart';
 import '../widgets/pinned_messages_bar.dart';
@@ -174,7 +173,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   DateTime? _lastChannelSendAt;
   int _previousMessageCount = 0;
   String? _previousNewestId;
-  int _shortLinkRevision = 0;
 
   // The list as shown, and the built list and pins with what each was made
   // from (see ChatScreen): a notify that changed none of it reuses them.
@@ -195,9 +193,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   bool _didInitialAnchor = false;
 
   // What rows show by the clock (an event's day or end, a notice's expiry,
-  // a short link to look up again, a tracing time a day old) changes with
-  // no write and no notify. The soonest such moment among the rows built
-  // rebuilds the list.
+  // a tracing time a day old) changes with no write and no notify. The
+  // soonest such moment among the rows built rebuilds the list.
   Timer? _clockTimer;
   DateTime? _clockAt;
   int _clockTick = 0;
@@ -378,7 +375,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   void initState() {
     super.initState();
     _textFieldFocusNode.addListener(_closeTrayOnFocus);
-    ShortLinkResolver.instance.addListener(_onShortLinkResolved);
     _textFieldFocusNode.addListener(_onTextFieldFocusChange);
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
     // Before the mentions listener: a restored "@" must not open the list.
@@ -1013,7 +1009,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _textController.removeListener(_keepDraft);
     _drafts.flushDrafts();
     _textFieldFocusNode.removeListener(_closeTrayOnFocus);
-    ShortLinkResolver.instance.removeListener(_onShortLinkResolved);
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -1424,7 +1419,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       connector.selfName,
       _firstUnreadMessage,
       focusedMatchId,
-      _shortLinkRevision,
       _clockTick,
       DateUtils.dateOnly(DateTime.now()),
       Localizations.localeOf(context),
@@ -1619,7 +1613,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final isOutgoing = message.isOutgoing;
     final facts = MessageFacts.of(message.text);
     _rebuildAt(facts.changesAt);
-    _rebuildAt(facts.prefetchShortLinks());
     // With tracing on, a time reads with its date once it is a day old.
     if (enableTracing) {
       _rebuildAt(message.timestamp.add(const Duration(days: 1)));
@@ -2270,11 +2263,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     );
   }
 
-  /// A short link landed: a plain row may now be a location card.
-  void _onShortLinkResolved() {
-    if (mounted) setState(() => _shortLinkRevision++);
-  }
-
   void _toggleTray() {
     if (!_trayOpen) _textFieldFocusNode.unfocus();
     setState(() => _trayOpen = !_trayOpen);
@@ -2369,12 +2357,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         final chatId = widget.channel.idKey;
         final dismissed = uiState.dismissedPins(chatId);
         _catchUpSoon();
-        final key = (
-          messages,
-          _shortLinkRevision,
-          _clockTick,
-          DateUtils.dateOnly(DateTime.now()),
-        );
+        final key = (messages, _clockTick, DateUtils.dateOnly(DateTime.now()));
         if (key == _pinsKey && setEquals(dismissed, _pinsDismissed)) {
           return _pins;
         }
@@ -2395,7 +2378,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           candidates: candidates,
           dismissed: dismissed,
           isRoom: false,
-          resolveShortLink: ShortLinkResolver.instance.cached,
         );
         // The bar drops an entry that runs out; the next one in line comes
         // in only when the pins are worked out again.

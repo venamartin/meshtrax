@@ -137,14 +137,7 @@ sealed class StructuredMessage {
   }
 
   /// Parses [text] into a structured message, or null for ordinary text.
-  ///
-  /// [resolveShortLink] answers a Google short link from a cache; without it
-  /// a message that only carries a short link stays plain until resolved.
-  static StructuredMessage? parse(
-    String text, {
-    LatLng? Function(String url)? resolveShortLink,
-    DateTime? now,
-  }) {
+  static StructuredMessage? parse(String text, {DateTime? now}) {
     final body = stripMarkup(text);
     if (body.isEmpty) return null;
 
@@ -161,12 +154,12 @@ sealed class StructuredMessage {
     }
 
     final header = _header.firstMatch(body);
-    if (header == null) return _parseLoose(body, resolveShortLink, now);
+    if (header == null) return _parseLoose(body, now);
 
     final keyword = header.group(1)!.toLowerCase();
     if (keyword == 'svg') return SvgMessage._fromHeader(body, header);
     final fields = _splitFields(body.substring(header.end));
-    final sorted = _Fields.classify(fields, resolveShortLink);
+    final sorted = _Fields.classify(fields);
 
     switch (keyword) {
       case 'location':
@@ -221,12 +214,8 @@ sealed class StructuredMessage {
 
   /// A room server's own post (room.post): what [parse] makes of it, else
   /// the whole post as an announcement.
-  static StructuredMessage? parseAnnouncement(
-    String text, {
-    LatLng? Function(String url)? resolveShortLink,
-    DateTime? now,
-  }) {
-    final parsed = parse(text, resolveShortLink: resolveShortLink, now: now);
+  static StructuredMessage? parseAnnouncement(String text, {DateTime? now}) {
+    final parsed = parse(text, now: now);
     if (parsed != null) return parsed;
     final lines = text
         .split('\n')
@@ -238,11 +227,7 @@ sealed class StructuredMessage {
   }
 
   /// Things other apps send without a keyword.
-  static StructuredMessage? _parseLoose(
-    String body,
-    LatLng? Function(String url)? resolveShortLink,
-    DateTime? now,
-  ) {
+  static StructuredMessage? _parseLoose(String body, DateTime? now) {
     if (CalendarShare.looksLike(body)) {
       final share = CalendarShare.parse(body, now: now);
       if (share == null) return null;
@@ -279,11 +264,6 @@ sealed class StructuredMessage {
           name ??= parsed.name;
           continue;
         }
-        if (MapsLink.isShortLink(line)) {
-          position = resolveShortLink?.call(line);
-          if (position == null) return null;
-          continue;
-        }
         return null;
       }
       free.add(line);
@@ -315,10 +295,7 @@ class _Fields {
   final textAndDates = <String>[];
   final extensions = <String, String>{};
 
-  static _Fields classify(
-    List<String> fields,
-    LatLng? Function(String url)? resolveShortLink,
-  ) {
+  static _Fields classify(List<String> fields) {
     final out = _Fields();
     for (final field in fields) {
       final coords = StructuredMessage.parseCoordinates(field);
@@ -327,9 +304,7 @@ class _Fields {
         continue;
       }
       if (MapsLink.isMapsUrl(field)) {
-        final parsed = MapsLink.parse(field);
-        final position = parsed?.position ??
-            (MapsLink.isShortLink(field) ? resolveShortLink?.call(field) : null);
+        final position = MapsLink.parse(field)?.position;
         if (position != null) {
           out.position ??= position;
           continue;

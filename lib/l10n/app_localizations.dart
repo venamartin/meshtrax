@@ -8689,17 +8689,17 @@ abstract class AppLocalizations {
   /// **'Convert'**
   String get paste_convert;
 
-  /// No description provided for @paste_resolving.
-  ///
-  /// In en, this message translates to:
-  /// **'Resolving link…'**
-  String get paste_resolving;
-
   /// No description provided for @paste_resolveFailed.
   ///
   /// In en, this message translates to:
   /// **'Could not resolve the link'**
   String get paste_resolveFailed;
+
+  /// No description provided for @paste_shortLinkNoPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'This short link has no position in it. Open it in your maps app and copy the coordinates.'**
+  String get paste_shortLinkNoPosition;
 
   /// No description provided for @pinned_dismiss.
   ///
@@ -11148,12 +11148,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can\'t read a position here'**
   String get dialog_positionUnreadable;
-
-  /// No description provided for @dialog_positionLookingUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Looking up the link…'**
-  String get dialog_positionLookingUp;
 
   /// No description provided for @locationSharing_share.
   ///

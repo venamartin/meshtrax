@@ -5111,10 +5111,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paste_convert => 'Преобразовать';
 
   @override
-  String get paste_resolving => 'Обработка ссылки…';
+  String get paste_resolveFailed => 'Не удалось обработать ссылку';
 
   @override
-  String get paste_resolveFailed => 'Не удалось обработать ссылку';
+  String get paste_shortLinkNoPosition =>
+      'В этой короткой ссылке нет позиции. Откройте её в приложении карт и скопируйте координаты.';
 
   @override
   String get pinned_dismiss => 'Скрыть';
@@ -6468,9 +6469,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Здесь не удаётся прочитать позицию';
-
-  @override
-  String get dialog_positionLookingUp => 'Проверка ссылки…';
 
   @override
   String get locationSharing_share => 'Делиться моим местоположением';

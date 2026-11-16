@@ -5130,10 +5130,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get paste_convert => 'Convertir';
 
   @override
-  String get paste_resolving => 'Résolution du lien…';
+  String get paste_resolveFailed => 'Impossible de résoudre le lien';
 
   @override
-  String get paste_resolveFailed => 'Impossible de résoudre le lien';
+  String get paste_shortLinkNoPosition =>
+      'Ce lien court ne contient aucune position. Ouvrez-le dans votre application de cartes et copiez les coordonnées.';
 
   @override
   String get pinned_dismiss => 'Ignorer';
@@ -6492,9 +6493,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dialog_positionUnreadable => 'Impossible de lire une position ici';
-
-  @override
-  String get dialog_positionLookingUp => 'Recherche du lien…';
 
   @override
   String get locationSharing_share => 'Partager ma position';

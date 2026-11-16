@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:meshtrax/helpers/smaz.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/models/channel_message.dart';
@@ -41,21 +40,14 @@ void main() {
     'https://maps.google.com/?q=47.07,15.44',
     'geo:47,15',
     'GEO:47,15',
-    'https://maps.app.goo.gl/AbCdEf',
     // Without a scheme ("https:" alone would pass as s:).
     'maps.google.com/?q=47.07,15.44',
     'Location: Pub | maps.apple.com/?ll=47.07,15.44',
-    'goo.gl/maps/AbCdEf',
     'Treffpunkt 🍺\n$graz',
   ];
   const chatter = ['hello there', 'see you at 5', 'ok 👍', 'Event: 2026-10-18'];
 
-  // Short links count as pins once resolved; the filter must not depend on
-  // whether the resolver has answered yet.
-  bool isPin(String text) => switch (StructuredMessage.parse(
-    text,
-    resolveShortLink: (_) => const LatLng(1, 1),
-  )) {
+  bool isPin(String text) => switch (StructuredMessage.parse(text)) {
     LocationMessage() || SosMessage() => true,
     _ => false,
   };

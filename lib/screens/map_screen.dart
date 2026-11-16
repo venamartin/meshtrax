@@ -61,7 +61,6 @@ import '../widgets/structured_message_dialogs.dart';
 import 'path_graph_screen.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
-import '../services/short_link_resolver.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'line_of_sight_map_screen.dart';
@@ -1369,10 +1368,7 @@ class _MapScreenState extends State<MapScreen> {
     required bool outgoing,
     required String fromName,
   }) {
-    final parsed = StructuredMessage.parse(
-      text,
-      resolveShortLink: ShortLinkResolver.instance.cached,
-    );
+    final parsed = StructuredMessage.parse(text);
     final (LatLng position, String label, String flags) = switch (parsed) {
       LocationMessage m when m.isSendersOwn => (
           m.position,
