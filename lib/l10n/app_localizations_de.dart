@@ -6650,6 +6650,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get listFilter_hopsAway => 'Hops entfernt';
 
   @override
+  String get listFilter_lastHeard => 'Zuletzt gehört';
+
+  @override
+  String get listFilter_heardAnyTime => 'Jederzeit';
+
+  @override
+  String get listFilter_heardHour => 'Letzte Stunde';
+
+  @override
+  String get listFilter_heardTwoDays => 'Letzte 48 Stunden';
+
+  @override
+  String get listFilter_heardWeek => 'Letzte 7 Tage';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Funkgerät-Firmware $version';
   }

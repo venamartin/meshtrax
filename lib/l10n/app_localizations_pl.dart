@@ -6656,6 +6656,21 @@ class AppLocalizationsPl extends AppLocalizations {
   String get listFilter_hopsAway => 'Liczba skoków';
 
   @override
+  String get listFilter_lastHeard => 'Ostatnio słyszane';
+
+  @override
+  String get listFilter_heardAnyTime => 'Dowolny czas';
+
+  @override
+  String get listFilter_heardHour => 'Ostatnia godzina';
+
+  @override
+  String get listFilter_heardTwoDays => 'Ostatnie 48 godzin';
+
+  @override
+  String get listFilter_heardWeek => 'Ostatnie 7 dni';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Firmware radia $version';
   }

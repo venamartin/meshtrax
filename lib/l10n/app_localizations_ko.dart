@@ -6343,6 +6343,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get listFilter_hopsAway => '홉 수';
 
   @override
+  String get listFilter_lastHeard => '마지막 수신';
+
+  @override
+  String get listFilter_heardAnyTime => '전체 기간';
+
+  @override
+  String get listFilter_heardHour => '지난 시간';
+
+  @override
+  String get listFilter_heardTwoDays => '최근 48시간';
+
+  @override
+  String get listFilter_heardWeek => '최근 7일';
+
+  @override
   String settings_radioFirmware(String version) {
     return '무전기 펌웨어 $version';
   }

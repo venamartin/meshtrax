@@ -6332,6 +6332,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get listFilter_hopsAway => 'ホップ数';
 
   @override
+  String get listFilter_lastHeard => '最終受信';
+
+  @override
+  String get listFilter_heardAnyTime => 'すべての期間';
+
+  @override
+  String get listFilter_heardHour => '直前の';
+
+  @override
+  String get listFilter_heardTwoDays => '過去48時間';
+
+  @override
+  String get listFilter_heardWeek => '過去7日間';
+
+  @override
   String settings_radioFirmware(String version) {
     return '無線機ファームウェア $version';
   }

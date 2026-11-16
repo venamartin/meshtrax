@@ -6654,6 +6654,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get listFilter_hopsAway => 'Кількість переходів';
 
   @override
+  String get listFilter_lastHeard => 'Востаннє чутно';
+
+  @override
+  String get listFilter_heardAnyTime => 'Будь-коли';
+
+  @override
+  String get listFilter_heardHour => 'Останню годину';
+
+  @override
+  String get listFilter_heardTwoDays => 'Останні 48 годин';
+
+  @override
+  String get listFilter_heardWeek => 'Останні 7 днів';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Прошивка радіо $version';
   }

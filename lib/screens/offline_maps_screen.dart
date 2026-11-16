@@ -64,14 +64,11 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
         ? null
         : maps.regions?[_selectedPath!]?.parentPath;
     _chartSelection = {?widget.initialChartArea};
+    // Maps unless asked otherwise, packs on the device or not: opening on
+    // Downloaded hid what there is to get (owner, 2026-11-16).
     final tab = widget.initialChartArea != null
         ? OfflineMapsTab.charts
-        : widget.initialTab ??
-              (_selectedPath == null &&
-                      (maps.installed.isNotEmpty ||
-                          maps.activeDownloadCount > 0)
-                  ? OfflineMapsTab.downloaded
-                  : OfflineMapsTab.maps);
+        : widget.initialTab ?? OfflineMapsTab.maps;
     _tabs = TabController(
       length: OfflineMapsTab.values.length,
       vsync: this,

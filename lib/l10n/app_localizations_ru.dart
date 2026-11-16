@@ -6649,6 +6649,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get listFilter_hopsAway => 'Число переходов';
 
   @override
+  String get listFilter_lastHeard => 'Последний приём';
+
+  @override
+  String get listFilter_heardAnyTime => 'За всё время';
+
+  @override
+  String get listFilter_heardHour => 'Последний час';
+
+  @override
+  String get listFilter_heardTwoDays => 'Последние 48 часов';
+
+  @override
+  String get listFilter_heardWeek => 'Последние 7 дней';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Прошивка радио $version';
   }

@@ -401,6 +401,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     return _localDiscoveredTimes[pubKeyHex];
   }
 
+  /// When this radio last heard [contact]: the advert it heard this run,
+  /// else the time the contact's own clock gave, unless that clock was dead
+  /// (then the start of time, so it sorts last and no window keeps it).
+  DateTime heardAt(Contact contact) =>
+      getLocalDiscoveredTime(contact.publicKeyHex) ??
+      (contact.lastSeen.year > 2000
+          ? contact.lastSeen
+          : DateTime.fromMillisecondsSinceEpoch(0));
+
   // Room server admin sessions for this connection, keyed by room pubkey hex.
   // Lets the room chat offer the management hub without re-prompting for the
   // password; cleared on disconnect.

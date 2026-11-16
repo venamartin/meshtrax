@@ -239,18 +239,38 @@ class _RepeaterTypeFilterAction extends _RepeaterFilterAction {
   const _RepeaterTypeFilterAction(this.filter);
 }
 
+class _RepeaterHeardAction extends _RepeaterFilterAction {
+  final HeardWithin heard;
+  const _RepeaterHeardAction(this.heard);
+}
+
+/// What a [HeardWithin] window is called in the menu and on its chip.
+String heardWithinLabel(BuildContext context, HeardWithin heard) {
+  final l10n = context.l10n;
+  return switch (heard) {
+    HeardWithin.anyTime => l10n.listFilter_heardAnyTime,
+    HeardWithin.hour => l10n.listFilter_heardHour,
+    HeardWithin.twoDays => l10n.listFilter_heardTwoDays,
+    HeardWithin.week => l10n.listFilter_heardWeek,
+  };
+}
+
 class RepeaterContactsFilterMenu extends StatelessWidget {
   final ContactSortOption sortOption;
   final ContactTypeFilter typeFilter;
+  final HeardWithin heardWithin;
   final ValueChanged<ContactSortOption> onSortChanged;
   final ValueChanged<ContactTypeFilter> onTypeFilterChanged;
+  final ValueChanged<HeardWithin> onHeardWithinChanged;
 
   const RepeaterContactsFilterMenu({
     super.key,
     required this.sortOption,
     required this.typeFilter,
+    required this.heardWithin,
     required this.onSortChanged,
     required this.onTypeFilterChanged,
+    required this.onHeardWithinChanged,
   });
 
   @override
@@ -264,7 +284,7 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
           options: [
             SortFilterMenuOption(
               value: _RepeaterSortAction(ContactSortOption.lastSeen),
-              label: l10n.listFilter_heardRecently,
+              label: l10n.listFilter_lastHeard,
               checked: sortOption == ContactSortOption.lastSeen,
             ),
             SortFilterMenuOption(
@@ -294,6 +314,17 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
             ),
           ],
         ),
+        SortFilterMenuSection(
+          title: l10n.listFilter_heardRecently,
+          options: [
+            for (final heard in HeardWithin.values)
+              SortFilterMenuOption(
+                value: _RepeaterHeardAction(heard),
+                label: heardWithinLabel(context, heard),
+                checked: heardWithin == heard,
+              ),
+          ],
+        ),
       ],
       onSelected: (action) {
         switch (action) {
@@ -301,6 +332,8 @@ class RepeaterContactsFilterMenu extends StatelessWidget {
             onSortChanged(option);
           case _RepeaterTypeFilterAction(:final filter):
             onTypeFilterChanged(filter);
+          case _RepeaterHeardAction(:final heard):
+            onHeardWithinChanged(heard);
         }
       },
     );

@@ -6624,6 +6624,21 @@ class AppLocalizationsSl extends AppLocalizations {
   String get listFilter_hopsAway => 'Število skokov';
 
   @override
+  String get listFilter_lastHeard => 'Nazadnje slišan';
+
+  @override
+  String get listFilter_heardAnyTime => 'Kadarkoli';
+
+  @override
+  String get listFilter_heardHour => 'V zadnji uri';
+
+  @override
+  String get listFilter_heardTwoDays => 'Zadnjih 48 ur';
+
+  @override
+  String get listFilter_heardWeek => 'Zadnjih 7 dni';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Strojna programska oprema radia $version';
   }

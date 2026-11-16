@@ -833,15 +833,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
     }
   }
 
-  DateTime _resolveLastSeen(Contact contact, MeshCoreConnector connector) {
-    final localTime = connector.getLocalDiscoveredTime(contact.publicKeyHex);
-    if (localTime != null) {
-      return localTime;
-    }
-    return (contact.lastSeen.year > 2000)
-        ? contact.lastSeen
-        : DateTime.fromMillisecondsSinceEpoch(0);
-  }
+  DateTime _resolveLastSeen(Contact contact, MeshCoreConnector connector) =>
+      connector.heardAt(contact);
 
   bool _matchesTypeFilter(Contact contact, ContactTypeFilter filter) {
     if (filter == ContactTypeFilter.all) return true;

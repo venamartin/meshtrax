@@ -3276,6 +3276,11 @@
   },
   "drawing_mapNotDownloaded": "This area isn't downloaded",
   "listFilter_hopsAway": "Hops away",
+  "listFilter_lastHeard": "Last heard",
+  "listFilter_heardAnyTime": "Any time",
+  "listFilter_heardHour": "Last hour",
+  "listFilter_heardTwoDays": "Last 48 hours",
+  "listFilter_heardWeek": "Last 7 days",
   "settings_radioFirmware": "Radio firmware {version}",
   "@settings_radioFirmware": {
     "placeholders": {

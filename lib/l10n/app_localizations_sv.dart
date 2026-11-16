@@ -6577,6 +6577,21 @@ class AppLocalizationsSv extends AppLocalizations {
   String get listFilter_hopsAway => 'Antal hopp';
 
   @override
+  String get listFilter_lastHeard => 'Senast hörd';
+
+  @override
+  String get listFilter_heardAnyTime => 'När som helst';
+
+  @override
+  String get listFilter_heardHour => 'Sista timmen';
+
+  @override
+  String get listFilter_heardTwoDays => 'Senaste 48 timmarna';
+
+  @override
+  String get listFilter_heardWeek => 'Senaste 7 dagarna';
+
+  @override
   String settings_radioFirmware(String version) {
     return 'Radions firmware $version';
   }
