@@ -165,6 +165,10 @@ class _MapScreenState extends State<MapScreen> {
   bool get _isMainMap =>
       widget.highlightPosition == null && !widget.pickPosition;
 
+  /// Full screen on any map but one picking a position: a map opened from a
+  /// chat had none (owner, 2026-11-16, after Navigate).
+  bool get _canFullScreen => !widget.pickPosition;
+
   @override
   void initState() {
     super.initState();
@@ -287,7 +291,7 @@ class _MapScreenState extends State<MapScreen> {
   /// Esc leaves full screen; F11 turns it on and off on Windows and Linux,
   /// as it does in their browsers. Only while the map itself is in front.
   bool _onKey(KeyEvent event) {
-    if (event is! KeyDownEvent || !_isMainMap) return false;
+    if (event is! KeyDownEvent || !_canFullScreen) return false;
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return false;
     if (event.logicalKey == LogicalKeyboardKey.escape && _fullScreen) {
       _setFullScreen(false);
@@ -981,7 +985,7 @@ class _MapScreenState extends State<MapScreen> {
                       settings.unitSystem,
                     )
                   : null,
-              onFullScreen: _isMainMap
+              onFullScreen: _canFullScreen
                   ? () => _setFullScreen(!_fullScreen)
                   : null,
               fullScreen: _fullScreen,

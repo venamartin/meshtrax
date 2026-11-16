@@ -1977,11 +1977,29 @@ void main() {
       expect(opacity('Search'), 1);
     });
 
-    testWidgets('only the main map has it', (tester) async {
+    // A map opened from a chat (Navigate, a card's Map) had none (owner,
+    // 2026-11-16).
+    testWidgets('a map opened from a chat has it; Back leaves it first', (
+      tester,
+    ) async {
       await showMap(
         tester,
         screen: const MapScreen(highlightPosition: ll.LatLng(41.8, -71.4)),
       );
+      await tester.tap(find.byTooltip('Full screen'));
+      await settle(tester);
+      expect(find.byType(AppBar), findsNothing);
+      expect(system, ['setEnabledSystemUIMode SystemUiMode.immersiveSticky']);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(MapScreen), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(system.last, startsWith('setEnabledSystemUIOverlays'));
+    });
+
+    testWidgets('a map picking a position has none', (tester) async {
+      await showMap(tester, screen: const MapScreen(pickPosition: true));
       expect(find.byTooltip('Full screen'), findsNothing);
     });
   });
