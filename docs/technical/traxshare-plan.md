@@ -10,7 +10,7 @@
 
 ## The feature in one paragraph
 
-A member of a private channel taps **Where is everyone?** Each member who agrees answers once with their radio's GPS position, and, if they record their track, a short trail of where they've been. Answers show as pins and lines on the map and in a strip at the top of the channel, never as chat messages. A pin offers **Route here** through the offline routing from #210. Later in the plan, a member can start timed sharing for up to 4 hours, reaching people in direct radio range, and each member can turn on trip mode, which shares their position on a timer with no taps until a time they set (preliminary, 2026-11-16). Nothing goes to a server. Reports carry only the radio's GPS: the phone's own GPS is an opt-in local fallback for your own dot, Route here's start and the recorder, and it is never sent (decision 21, preliminary).
+A member of a private channel taps **Where is everyone?** Each member who agrees answers once with their radio's GPS position, and, if they record their track, a short trail of where they've been. Answers show as pins and lines on the map and in a strip at the top of the channel, never as chat messages. A pin offers **Route here** through the offline routing from #210. Later in the plan, a member can start timed sharing for up to 4 hours, reaching people in direct radio range, and each member can turn on trip mode, which shares their position on a timer with no taps until a time they set (preliminary, 2026-11-16). A **TRAX mode** button switches the radio and the app into the group's off-grid setup, where every radio relays for the others (preliminary, 2026-11-16). Nothing goes to a server. Reports carry only the radio's GPS: the phone's own GPS is an opt-in local fallback for your own dot, Route here's start and the recorder, and it is never sent (decision 21, preliminary).
 
 ## Safety first (proposed 2026-11-16, preliminary)
 
@@ -28,7 +28,7 @@ This plan is for life-safety use. These rules come from the read-only safety rev
 3. **SR-03:** Silence, a session ending, a restart or a radio change never ends, hides or deletes a last known position; only age past the retention time (30 days, decision 11) or a person removes it.
 4. **SR-04:** Inside the approved time, the approval never lapses by itself. Sending stops while MeshTrax is swiped away, killed or suspended on an iPhone, or the phone is off after a heat shutdown; it resumes as soon as MeshTrax runs again, and the member and the group are told what wasn't shared. Only the radio's own answer (SR-06) covers that gap.
 5. **SR-05:** Always tell people plainly when their own sharing or recording has stopped, paused or reached nobody, and why. Never a plain "Sharing" without when you last sent and when the group was last heard.
-6. **SR-06:** In radio range, there is a way to find a member that needs neither their phone nor a tap: their radio's own answer to a position request ([Ask their radio](#ask-their-radio-and-trip-setup-decision-15-preliminary-2026-11-16)), set up before the trip. It needs the radio on and in direct range (or relayed in off-grid mode), GPS on, the asker held as a contact and allowed, and the request flooded. The answer can be a stored position.
+6. **SR-06:** In radio range, there is a way to find a member that needs neither their phone nor a tap: their radio's own answer to a position request ([Ask their radio](#ask-their-radio-and-trip-setup-decision-15-preliminary-2026-11-16)), set up before the trip. It needs the radio on and in direct range (or relayed in TRAX mode), GPS on, the asker held as a contact and allowed, and the request flooded. The answer can be a stored position.
 7. **SR-07:** A call for help repeats until its sender cancels it. It alerts through MeshTrax's mute and, where the user allows, through Do Not Disturb, Focus and the silent switch. It also goes as DMs with receipts, sent once per member until their radio has it and again only after a real move, at most every 15 minutes, because repeated DMs can fill an away radio's queue.
 8. **SR-08:** Nothing waits forever for a repeater or an answer that may never come. Where no repeater has been heard, an unanswered DM ends as "Failed · tap to resend" and is resent when the person is heard (decision 20). Every request has an end.
 9. **SR-09:** A route never looks more certain than it is. The traxbook plan (#242) holds this rule; here, a route to a person carries the time of the position (CH-33).
@@ -93,15 +93,16 @@ Decisions from 2026-11-15 on are preliminary: Martin wants them kept fluid until
 | Group size | Designed for up to about 5 | 2026-10-31 |
 | Where positions show | The map, plus a sharing strip in the channel. Never chat rows: no unread count, Reply or React. | 2026-10-31 |
 | Consent | Ask every time, outside trip mode. Each member can turn on trip mode for one private channel: it answers and shares with no prompt until its end time (8; was: ask every time, no always-approve, 2026-10-31). Nothing is approved per sender, because any member can forge the sender ID in a packet. | 2026-11-16, preliminary |
-| Position in a DM | The existing Telemetry request. No new format. Offered on each person as **Ask their radio**, with Trip setup for the trip members (15). | 2026-10-31; Ask their radio 2026-11-16, preliminary |
+| Position in a DM | The existing Telemetry request. No new format. Offered on each person as **Ask their radio**, with Trip setup for the trip members (15), whose items live in TRAX settings (31). | 2026-10-31; Ask their radio 2026-11-16, preliminary |
 | Own track | The recorder, its own feature: start and stop, no cap, times kept, a list of tracks. This plan's trail and traxbook's "Save my track" read from it (1; was: opt-in, kept by distance, default 10 miles, never by age, 2026-10-31). | 2026-11-16, preliminary |
 | Reach of a one-time reply | The position may go through repeaters. A reply with a trail stays in direct range. | 2026-10-31 |
 | Sessions | Inside the approved time, sharing stops only at its end time or on Stop (9; was: pause after 12.5 minutes without the requester, end when the app is killed). The 240-minute cap stays for now, with a warning and Renew before the end (12). Out of touch at the end time, a phone keeps sending every 10 minutes until Stop (13). | 2026-11-16, preliminary |
 | Pins | A pin never ends on silence (10; was: ended after `1.2 × heartbeat + 1 interval`). | 2026-11-16, preliminary |
 | Others' positions and trails | Removed 30 days after they arrived (11; was: 7 days, decision 4, and before that kept by distance, never by age). | 2026-11-16, preliminary |
 | Where the data lives | One sharing database per phone, not per radio (14; was: one file per radio). Route here to a person is kept there, never in phone backups or Export database (6a). | 2026-11-16, preliminary |
-| Off-grid group mode | A minimal first version before relying on sharing in desert terrain; the full mode stays later (19; was: later, own PR, after field use, 2026-10-31). | 2026-11-16, preliminary |
+| TRAX mode | One button switches the radio and the app into the group's off-grid setup and back: the radio's settings are saved on the phone, then the off-grid frequency (918.000 MHz in the US) with the mesh's own bandwidth, spreading factor and coding rate, and Off-Grid Repeat on, plus the trip extras ticked in TRAX settings. The group switches together through Tell the group. Its radio part is its own PR, after the DM fix and the minimal SOS (31–34; was: a minimal off-grid mode with Step 4, decision 19, and before that the full mode later, own PR, after field use, 2026-10-31). | 2026-11-16, preliminary |
 | Automatic reports on the regular mesh | Sessions and trip mode stay zero-hop there and never go through repeaters; they flood only on an off-grid frequency. One-time requests and Ask their radio still go through repeaters (30). | 2026-11-16, preliminary |
+| Order across the two plans | Location sharing first, through Step 4 and its field tests; traxbook (#242) after, kept in mind meanwhile (35; was: interleaved with this plan's steps). | 2026-11-16, preliminary |
 | When a phone is dead | Trip members' adverts update their pins, and Trip setup offers position in adverts for the trip (18). A radio that beacons on its own is not taken for now (28), so a dead phone means a silent member unless someone asks their radio or the member presses its button. | 2026-11-16, preliminary |
 | SOS | A minimal SOS on today's SOS message, in its own master PR before Step 3, after the DM fix (16). Its dialog offers "Also send to Public", ticked, first send only (17). | 2026-11-16, preliminary |
 | Direct messages | A flood DM is parked only if a repeater was heard in the last 10 minutes, fixed on master first (20; was: parked until a repeater is heard). | 2026-11-16, preliminary |
@@ -117,7 +118,7 @@ Decisions from 2026-11-15 on are preliminary: Martin wants them kept fluid until
 | Delivery wording | Your own channel texts read "Sent · no sign of who got it" and DMs "Their radio got it", on master now; Who got it moves into Step 4 (24). | 2026-11-16, preliminary |
 | Firmware requests | None about the queue's drop order for now (27). | 2026-11-16, preliminary |
 | Not taken from other clients | Their formats (also not as a per-channel compatibility mode), always-on flooding beacons (trip mode sends on a timer only while it is on: until its end time, or until Stop when the phone is out of touch then (13); zero-hop unless on an off-grid frequency; 8), phone GPS in reports (21), per-send region scope ([looked at elsewhere](#looked-at-elsewhere-2026-11-15)) | 2026-11-15; trip mode 2026-11-16, preliminary |
-| Later, own PRs | Follow, and the full off-grid mode ([later](#later-after-sharing-works-own-prs)). Who got it moves into Step 4 (24) and SOS into a master PR (16). | 2026-11-16, preliminary |
+| Later, own PRs | Follow ([later](#later-after-sharing-works-own-prs)). The off-grid group mode became TRAX mode (31–34), Who got it moves into Step 4 (24) and SOS into a master PR (16). | 2026-11-16, preliminary |
 
 ### Preliminary decisions: alternatives and what decides them
 
@@ -125,7 +126,7 @@ Each row is the current choice, preliminary as of 2026-11-16, under Martin's dia
 
 | # | Current choice (preliminary, 2026-11-16) | Alternatives offered | What confirms or changes it |
 |---|---|---|---|
-| 1 | The recorder is its own feature, built after Step 2, alongside traxbook R1 | Keep recording inside location sharing | Field tests 8 (kill and restart) and 17 (battery) |
+| 1 | The recorder is its own feature, built after Step 2; traxbook comes later (35) | Keep recording inside location sharing | Field tests 8 (kill and restart) and 17 (battery) |
 | 6a | Route here to a person is kept with the sharing data, out of backups and Export database, and goes with that person's data | Keep it in traxbook's routes table | Field test 15 (a spare radio; Delete all) |
 | 7 | Move to MeshCore; a PLB or satellite messenger covers outside help; each feature's field test comes before relying on it | Keep APRS for good; switch only after a park field test | All field tests, 13 (range) first |
 | 8 | Trip mode, per member and per private channel | One tap covers a session of up to 72 h; ask every time (2026-10-31) | Field tests 5 (locked iPhone), 12 (what away radios lose) and 17 (a day of trip mode) |
@@ -135,11 +136,11 @@ Each row is the current choice, preliminary as of 2026-11-16, under Martin's dia
 | 12 | Keep 240 minutes; warn 15 minutes before the end with one-tap Renew; trip-mode members rejoin with no tap; v1 reserves longer durations | Up to 72 h now; 240 minutes as is | The Renew drill under [field tests](#field-tests-proposed-preliminary) |
 | 13 | Out of touch at the end time, keep sending one report every 10 minutes until Stop; offered as a box, ticked by default | Box unticked; stop at the end time | Let trip mode end with one phone out of range (drills) |
 | 14 | One sharing database per phone | Per radio, with the others read-only; per radio | Field test 15 (connect a second radio) |
-| 15 | Ask their radio plus Trip setup, members only | The button only, set up by hand; no | Field test 4, and the drills for three radios back to back and the button |
+| 15 | Ask their radio plus Trip setup, members only; Trip setup's items live in TRAX settings (31) | The button only, set up by hand; no | Field test 4, and the drills for three radios back to back and the button |
 | 16 | A minimal SOS now, in its own master PR before Step 3, after the DM fix | With Step 3; later, as planned | Field test 11, and the SOS drill under Do Not Disturb and Sleep Focus |
 | 17 | The SOS dialog offers "Also send to Public", ticked, first send only: an exception to "Never Public", for SOS only | Offered unticked; never | Field test 11 |
 | 18 | Trip members' adverts update their pins; Trip setup offers position in adverts for the trip, with warnings | Adverts update pins only; neither | Field test 18, and the restarted-radio advert drill |
-| 19 | A minimal off-grid mode before relying on sharing in desert terrain | Only the per-session "also through repeaters" choice; zero-hop only, with the full mode later | Field test 10, and the trailhead check on the off-grid frequency |
+| 19 | A minimal off-grid mode before relying on sharing in desert terrain; it became TRAX mode (31–34) | Only the per-session "also through repeaters" choice; zero-hop only, with the full mode later | Field test 10, and the trailhead check on the off-grid frequency |
 | 20 | Fix stuck DMs now, in a master PR: park a flood DM only if a repeater was heard in the last 10 minutes | Give up after 2 minutes; keep as is | Field test 2 |
 | 21 (changed 2) | The phone's GPS as an opt-in local fallback, never sent | Only if the iPhone test fails; radio only (decision 2) | Field tests 5 and 17 (locked iPhone; battery and heat) |
 | 22 | A one-tap status plus an optional "back by" time | Status only; neither | The back-by drill |
@@ -149,6 +150,11 @@ Each row is the current choice, preliminary as of 2026-11-16, under Martin's dia
 | 28 | Not taken for now: a radio that beacons its position on its own (a timed advert in firmware, upstream or in a custom ESP32 companion) | Ask upstream and build it in an ESP32 companion; only one of the two | Field tests 4 and 18: what Ask their radio and the button give |
 | 29 | Own small master PRs, merged only on "ship it": springs and drinking water, line of sight's "needs an internet connection", route caveat and start gap, your dot after a lost fix. The old-texts fix waits for a review of the earlier message-time fixes. | — | Field tests 1, 3 and 14, and the altitude bench test |
 | 30 | On the regular mesh, sessions and trip mode stay zero-hop and never go through repeaters; they flood only on an off-grid frequency, where the group's radios and any repeater the group brings relay them | No automatic reporting at all on the regular mesh; through repeaters with a 10-minute minimum and a warning; as written (any frequency, any interval) | The bench check that F857's RX log shows no retransmission of a session packet, and field tests 10 (line test) and 13 (range day) |
+| 31 | One tap switches the radio (settings saved, the off-grid frequency, Off-Grid Repeat on) plus the extras ticked in TRAX settings: trip mode, the recorder, members can ask my radio, position in adverts, SOS through Do Not Disturb; all ticked by default except position in adverts | Radio only; everything always, with no choices | The TRAX drills: start, the group check, Leave |
+| 32 | The TRAX preset is the off-grid frequency with the mesh's own bandwidth, spreading factor and coding rate (62.5 kHz / SF7 / CR5 in the US) | Long range (250 kHz / SF11, the firmware's off-grid preset: about 4–5 dB more link margin, 2.5–3 times the airtime); pick per trip | Field test 13 (range day), with long range tried by hand |
+| 33 | Tell the group: a TRAX message on the trip channel, and one tap each to follow; never automatic | A trip QR at the trailhead; both; each by hand | The TRAX drills |
+| 34 | TRAX mode's radio part is its own PR soon, after the DM fix and the minimal SOS | With Step 4; after sharing's field tests | Field tests 10 (line test) and 13 (range day) |
+| 35 | Location sharing first, through Step 4 and its field tests, then traxbook, kept in mind meanwhile | Interleave as planned; traxbook alongside in another session; traxbook first | — |
 
 ## Steps
 
@@ -157,13 +163,14 @@ Items tagged CH-nn are proposed (safety review, preliminary); a decision number 
 ### Order of work (preliminary, 2026-11-16)
 
 1. **Master safety fixes,** each its own PR, merged only on "ship it" ([below](#master-safety-fixes-own-prs-before-step-3-preliminary-2026-11-16)): the DM fix (20), then the minimal SOS (16), then 29's items. The old-texts fix waits for a review of the earlier message-time fixes.
-2. **Ask their radio and Trip setup** (15): no new format, so it can go in its own PR before Step 3 (CH-03); where it lands is [open question 11](#open-questions-for-martin).
-3. **The v1 rules** marked [to settle before Step 2 freezes v1](#to-settle-before-step-2-freezes-v1-proposed-preliminary). Then Step 2 as its own PR, which freezes v1 and unblocks traxbook's R4.
-4. **The recorder** (1), with per-phone storage (14) and the phone fallback (21), alongside traxbook's R1, after the cross-plan rule (audit R-01, decision 6a) and traxbook's saved-route mode (R-02).
-5. **Step 3,** 3a then 3b, with TSX-02 to TSX-06 in 3a.
-6. **traxbook's R2, R3 and R4.**
-7. **Step 4,** with trip mode (8), the minimal off-grid mode (19) and the iPhone gate (CH-08).
+2. **TRAX mode's radio part** (31–34), its own PR after the DM fix and the minimal SOS ([below](#trax-mode-decisions-3134-preliminary-2026-11-16)): the button, the saved settings, the retune, Tell the group, the group check, Leave and the reminders.
+3. **Ask their radio,** with Trip setup's items in TRAX settings (15, 31): no new format, so it can go in its own PR before Step 3 (CH-03); where it lands is [open question 11](#open-questions-for-martin).
+4. **The v1 rules** marked [to settle before Step 2 freezes v1](#to-settle-before-step-2-freezes-v1-proposed-preliminary). Then Step 2 as its own PR, which freezes v1 and unblocks traxbook's R4.
+5. **The recorder** (1), with per-phone storage (14) and the phone fallback (21), after the cross-plan rule (audit R-01, decision 6a).
+6. **Step 3,** 3a then 3b, with TSX-02 to TSX-06 in 3a.
+7. **Step 4,** with trip mode (8) plugged into TRAX mode's extras, and the iPhone gate (CH-08).
 8. **The field tests** (CH-24) before anyone relies on these features.
+9. **Then traxbook** (#242), kept in mind meanwhile (35): packet subtypes 4 and 5 stay reserved, the extension tags are one list, the recorder keeps times, gaps and each point's source, and other people's positions never go into routes.
 
 Request the `data_type` allocation once Step 3 works on air; one allocation covers both plans.
 
@@ -203,7 +210,33 @@ Proposed (safety review, preliminary) and chosen by Martin as decisions 20, 16, 
 4. **Delivery wording (24, CH-21):** your own channel text with no repeat heard reads "Sent · no sign of who got it", and a DM's "Delivered" reads "Their radio got it", which doesn't mean their phone has it.
 5. **The old-texts fix (TSX-03, CH-10 parts 1 and 4): pending.** A first queue drain that gives up still sets `_completedFirstQueueDrain` (connector, about line 5857, against its own comment at 810-816). The rest of the queue then arrives as live, and `sanitizeSenderTimestamp` re-dates hours-old channel texts to "now". Proposed: only the first drain's NO_MORE_MESSAGES ends the backlog; part 4 is then needed only for frames a later drain left behind, compared with the channel floor snapshotted before this connection's sync, not with the channel's newest message. It waits for a look over the earlier message-time fixes, which Martin asked for first: "People send messages with a companion that doesn't have the time set properly. I am worried we will break something we fixed." Field test 3.
 
+### TRAX mode (decisions 31–34, preliminary 2026-11-16)
+
+One button switches the radio and the app into the group's off-grid setup, where every radio relays for the others, and back. It replaces the minimal off-grid mode (19) and the earlier off-grid group mode notes, under a name that doesn't clash with the existing **Off-Grid Repeat** setting. Its radio part is its own PR, after the DM fix and the minimal SOS (34). It needs none of this feature's code, so texts, DMs, SOS and Ask their radio hop through the group's radios before location sharing exists. Trip mode and the recorder plug in when they're built.
+
+- **The button:** the boot print from the app's notification icon (`ic_notification`), in the Chats and Map app bars before GPS and Who can see my location. Gray when off, the logo's orange when on. While it is on, the Android foreground notification says so, with the same boot print and **Leave**. Tapping the button opens the TRAX sheet: what will change, or what is on now, with the group check and TRAX settings. Render it in light and dark and show Martin before an APK.
+- **One tap (31):**
+  1. Save the radio's settings (frequency, bandwidth, spreading factor, coding rate, TX power, repeat) on the phone, durably and per radio key. Today the app keeps them only in memory (`rememberedNonRepeatRadioState`, cleared on disconnect).
+  2. With Tell the group, post the TRAX message on the trip channel and wait until the radio has sent it.
+  3. One radio-settings write (CMD 11, with its repeat byte): the off-grid frequency nearest the regular one from the radio's allowed list (CMD 60; 918.000 MHz in the US), with the mesh's own bandwidth, spreading factor and coding rate (32), and Off-Grid Repeat on. The radio applies it at once, with no reboot, and saves it together with its current position as its fallback (`savePrefs`; `MyMesh.cpp:1424-1459` at the tag), so start TRAX mode at the trailhead, after a fix.
+  4. Turn on the extras ticked in TRAX settings: trip mode on the trip channel until the trip's end (Step 4), the recorder, members can ask my radio (Trip setup's grants, GPS on, `gps_interval:0`, favourites), position in adverts, and SOS through Do Not Disturb. All are ticked by default except position in adverts, which anyone in range can read.
+  5. **The group check:** send one flood advert on the TRAX frequency, list who has been heard there since the switch, and ask the radios of members not heard within a couple of minutes, one at a time: "4 of 5 on TRAX · Ana not heard".
+- **Tell the group (33):** the TRAX message names the end time and the preset, as short readable text, MeshTrax only for now, like `Route:`. A member's phone shows "Ana switched to TRAX mode until Sunday 18:00. Switch too?" Never automatic: one tap each, so a forged message can't take radios off the mesh. Private channels only. Leaving works the same way, sent before the radio moves back: "Ana is leaving TRAX mode. Leave too?"
+- **Leave:** write the saved settings back with repeat off, and turn off what TRAX mode turned on (trip mode, the trip grants, position in adverts), asking first. The recorder runs until it is stopped. A radio with no saved settings on this phone, because another phone switched it, asks which regular preset to return to.
+- **Reminders:** at the trip's end, a notification. On every connect to a radio still in TRAX mode after that: "Your radio is still in TRAX mode: the regular mesh can't hear you. Leave?"
+- **On connect:** a radio found on a TRAX preset shows the button on, whichever phone switched it.
+- **Out there:** if a phone dies, its radio stays in TRAX mode and keeps relaying for the others. Radios in vehicles, such as the RAK 1 W boards, become the group's strongest relays. Nobody outside the group hears anything, Public included, so an SOS's Public copy (17) reaches only the group. A member left on the regular frequency is cut off from everyone; the group check and the Last heard list show it.
+- **TRAX settings:** the preset (32; a long-range preset, 250 kHz / SF11, can be tried by hand on the range day), the trip channel and its members, the trip's end, and the extras. It holds Trip setup's items ([below](#ask-their-radio-and-trip-setup-decision-15-preliminary-2026-11-16)).
+- **Known needs,** from the earlier off-grid group mode notes:
+  - Any later radio-settings write while in TRAX mode carries the repeat byte: CMD 11 without it turns repeat off.
+  - The health check's `radio_client_repeat` and `radio_frequency` rules show TRAX mode, not a problem.
+  - Retune side effects: clear `_directRepeaters`; expect a full contact download; routes carry over between meshes, because each contact has one; parked DMs; `syncPathGraph` restarts Pathfinder on any settings change, and Pathfinder keeps one graph per mesh (frequency, bandwidth, spreading factor, coding rate), so TRAX gets its own.
+  - Airtime grows with the square of the group size. Test on hardware whether a retune takes effect during receive, and battery life with repeat on.
+- **Tests:** the saved settings survive an app restart and a radio change; Leave restores them exactly; a TRAX message prompts and never retunes by itself; the group check lists who is on TRAX; a radio found on a TRAX preset at connect shows the button on; the health check stays quiet.
+
 ### Ask their radio and Trip setup (decision 15, preliminary 2026-11-16)
+
+Trip setup's items now live in [TRAX settings](#trax-mode-decisions-3134-preliminary-2026-11-16) (decision 31): the TRAX button applies them and Leave undoes them. In TRAX mode, Trip setup's Test is the group check (33).
 
 Proposed (safety review, preliminary; CH-03 and D-07 with their corrections). Companion firmware answers a telemetry request by itself with its GPS position (`MyMesh.cpp:639-683`), so this finds a member whose phone is dead, killed or locked, or who can't tap. It uses the existing request, so it needs no new format and can go in its own PR before Step 3 ([open question 11](#open-questions-for-martin)). Radios ship with telemetry denied, and answer only when base telemetry is allowed too ([firmware facts](#firmware-facts-companion-v1180)).
 
@@ -224,7 +257,7 @@ Proposed (safety review, preliminary; CH-03 and D-07 with their corrections). Co
   - It asks Android members to let the SOS notification channel override Do Not Disturb (decision 16).
   - It says that **Share my location** off undoes its grants: that switch writes location deny and no position in adverts.
   - It shows the button warnings from the help text.
-  - **Test** asks each member's radio once, one at a time. Once Step 3 is in, it also sends **Where is everyone?** to list who answered, so a member whose MeshTrax can't share yet shows up. On an off-grid frequency, Test must reach every member before anyone leaves the trailhead (decision 19).
+  - **Test** asks each member's radio once, one at a time. Once Step 3 is in, it also sends **Where is everyone?** to list who answered, so a member whose MeshTrax can't share yet shows up. In TRAX mode, Test is the group check, and it must reach every member before anyone leaves the trailhead (decisions 19, 33).
   - A spare radio gets the same setup, and the others hold it as a contact (decision 14).
 - Privacy cost: during the trip, those members can read your radio's position whenever they ask, and you aren't told.
 
@@ -245,7 +278,7 @@ Proposed (safety review, preliminary; CH-03 and D-07 with their corrections). Co
 
 ### The recorder (decision 1, preliminary 2026-11-16)
 
-Its own feature: start and stop, no cap, times kept, and a list of tracks. This plan's trail and traxbook's "Save my track" read from it. Built after Step 2, alongside traxbook's R1. Its rules are CH-13 with its correction.
+Its own feature: start and stop, no cap, times kept, and a list of tracks. This plan's trail and traxbook's "Save my track" read from it. Built after Step 2; traxbook comes after this plan (35). Its rules are CH-13 with its correction.
 
 - **Points:** while recording, hold a position viewer (`addSelfPositionViewer` / `removeSelfPositionViewer`), so the radio is read every 10 s; reading the radio is a serial command and sends nothing over the air. A point is kept after 25 m ([movement gate](#position-and-movement)).
 - **Write each point to the database as soon as it is kept.** Keep "recording" and the track id in the database: after a crash, heat shutdown or reboot, recording resumes when MeshTrax starts and says "Recording resumed at 14:40 (stopped 14:02–14:40)".
@@ -314,7 +347,7 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
       - `coordFormatOf(settings)` and `positionLines(lat, lon, format)` for the coordinates, with `CopyPositionButton`
       - `_routeHere(name, point, selfPosition)` for Route here, shown when `RoutingService.available` and `offeredAt(point)` (map_screen.dart, about lines 1745–1748; audit C5); elsewhere it is hidden
     - `_showPointSheet` drops a red pin (`sheet-pin`) on the point, which would sit on top of the person's own marker (D4): give it a way to leave the pin out.
-  - **Route here** (decision 6a, CH-33): it opens the route sheet (`route_sheet.dart`, since #271) with the person's name, position and report time as the destination: "To Ana's position at 14:02 (35 min ago)". When a newer report puts her more than 100 m from the route's end, it offers "Ana has moved 1.2 km since (14:40). Route to her new position": one tap, never automatic. The route is kept with the sharing data: it survives closing the app, is never in phone backups or Export database, and goes with that person's data (30 days, or Delete all sharing data). traxbook's fixed start (R-02) applies.
+  - **Route here** (decision 6a, CH-33): it opens the route sheet (`route_sheet.dart`, since #271) with the person's name, position and report time as the destination: "To Ana's position at 14:02 (35 min ago)". When a newer report puts her more than 100 m from the route's end, it offers "Ana has moved 1.2 km since (14:40). Route to her new position": one tap, never automatic. The route is kept with the sharing data: it survives closing the app, is never in phone backups or Export database, and goes with that person's data (30 days, or Delete all sharing data). Its start stays fixed: once you are more than 100 m from it, it reads "From where you were at 14:02", as the master route fix does (29, CH-18).
   - **Details for a search** (decision 23, CH-16): the last position in decimal degrees and in UTM/MGRS, WGS84; the fix time as date, clock time and time zone (receive time minus fix age, or `sent_at` minus fix age for backlog); heading and speed when moving, otherwise "not moving since"; radio battery, status, direct or relayed, and the source; the trail and later positions with their receive times, and optionally my own recorded track, radio points only. **Share** sends this as text plus a GPX file through the share sheet, after a warning.
     - **Send to this channel** posts the existing `Location:` message, labelled "<name>, heard 14:02", to the same private channel only. Its dialog says that this copies the position into every receiving phone's message database, which goes into phone backups and Export database. traxbook still has no "Save a shared trail" (6b).
 - **Telemetry:** unchanged on the wire. A reply that carries a GPS position also updates that person's pin, labelled as from their radio.
@@ -341,7 +374,7 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
 | One-time request | flood |
 | Reply without a trail | flood |
 | Reply with a trail | zero-hop if the request was heard directly (`path_len` 0xFF, or `path_len & 63 == 0`), otherwise a position-only flood |
-| Timed session and trip mode: request, keepalive, reports, STOP | zero-hop; flood only when this radio is on an off-grid repeat frequency (CMD 60's list), where the group's radios, and any repeater the group brings on that frequency, relay them (decision 19, CH-15). On the regular mesh they never go through repeaters, so there is no "also through repeaters" choice (decision 30). |
+| Timed session and trip mode: request, keepalive, reports, STOP | zero-hop; flood only when this radio is on an off-grid repeat frequency (CMD 60's list), as in TRAX mode, where the group's radios, and any repeater the group brings on that frequency, relay them (decision 19, CH-15). On the regular mesh they never go through repeaters, so there is no "also through repeaters" choice (decision 30). |
 
 ### Step 4: timed sharing and trip mode
 
@@ -382,10 +415,10 @@ Its own feature: start and stop, no cap, times kept, and a list of tracks. This 
   - Until the test passes, an iPhone says when sharing, trip mode or recording starts: "On iPhone, the group may not see you while the screen is locked. Your radio can still answer Ask radio." Reports sent from the background set mask bit 13 ("this phone may go quiet").
   - With the phone GPS fallback on, a background location session keeps MeshTrax running while sharing or recording ([the recorder](#the-recorder-decision-1-preliminary-2026-11-16)).
 - **macOS, Windows and Linux:** in-app only (audit A8 added macOS).
-- **Minimal off-grid mode (decision 19, CH-15 with its corrections):** the existing Off-Grid Repeat turned on in every radio (918.000 MHz in the US), the routing rule above, and a strip line "positions are relayed by the group's radios".
+- **TRAX mode (decisions 19, 31–34, CH-15 with its corrections):** its radio part ships earlier, in its own PR ([TRAX mode](#trax-mode-decisions-3134-preliminary-2026-11-16)). In Step 4, sessions and trip mode flood while it is on (routing table above), the strip says "positions are relayed by the group's radios", and trip mode joins TRAX settings' extras.
   - Load: about 4.8 % airtime for five people at 2 minutes, and about 6.3 % with flooded trails, against about 1 % zero-hop.
-  - One radio left on the old frequency is silent to everyone, so Trip setup's Test must reach every member on the new frequency before anyone leaves the trailhead.
-  - On 918 MHz nobody outside the group hears anything, Public included. The radios stay retuned and repeating until set back by hand, since the minimal mode takes no snapshot, and the retune side effects listed for the [full mode](#later-off-grid-group-mode-own-pr-after-field-use) still apply.
+  - One radio left on the regular frequency is silent to everyone, so the group check must reach every member before anyone leaves the trailhead.
+  - On the off-grid frequency nobody outside the group hears anything, Public included.
 - **Help text,** in plain words (proposed, preliminary):
   - These packets share the radio's message queue with channel messages while a phone is away. Five members at 2 minutes is about 2 frames a minute on each away radio. That fills 256 slots in about 2 hours, 128 in about 1 hour and 16 in about 7 minutes, and then the oldest channel messages are lost first.
   - "To reach someone whose phone may be off, send a direct message: their radio keeps it until it restarts or its queue fills with direct messages. Channel messages can be deleted from an away radio's queue, leaving no trace." (CH-32; decision 27 sends no queue request upstream for now.)
@@ -402,27 +435,6 @@ Ideas from [looking at other clients](#looked-at-elsewhere-2026-11-15) and the s
 - **The SOS alarm:** a full-screen alarm on the receivers, on top of the minimal SOS, which moved to a [master PR](#master-safety-fixes-own-prs-before-step-3-preliminary-2026-11-16) (decision 16).
 - **Beep their radio** (an idea, not decided): on the original UI, a DM to a radio with no phone connected plays a tone, so searchers close by can follow it and a conscious member learns someone is near. A short DM, at most one every 15 s for 2 minutes, since each DM stays in that radio's queue. Members would leave the buzzer on (a triple press silences it).
 - **Who got it** moved into Step 4 (decision 24).
-
-### Later: off-grid group mode (own PR, after field use)
-
-Its minimal first version comes with Step 4 (decision 19). The full mode stays here: the group retunes to an allowed off-grid frequency with Off-Grid Repeat on, so every radio repeats for the others. Known needs:
-- **Radio settings:**
-  - the allowed list from CMD 60
-  - a durable snapshot of the radio's settings taken before the session, kept by radio key and checked on every connect, since the radio stays retuned and repeating if the phone dies
-  - the repeat byte on every radio-settings write
-  - one shared preset for the group
-- **Health check:** the `radio_client_repeat` and `radio_frequency` rules must know about an active session.
-- **Retune side effects:**
-  - clear `_directRepeaters`
-  - expect a full contact download on each retune
-  - routes carry over between meshes, because each contact has one
-  - parked DMs
-  - `syncPathGraph` restarting Pathfinder on any settings change (Pathfinder is on for new installs since #221)
-- **Airtime and hardware:**
-  - airtime grows with the square of the group size
-  - test on hardware whether a retune takes effect during receive
-  - check battery life with repeat on
-- **Naming:** must not clash with the existing **Off-Grid Repeat** setting.
 
 ## Firmware facts (companion-v1.18.0)
 
@@ -729,7 +741,7 @@ From the safety review (CH-24), with its checkers' corrections. They are the gat
 7. **Requester loss:** in a 60-minute session, switch the requester's phone off for 20 minutes. The others keep seeing each other at the chosen interval, and when the phone comes back every pin returns with no taps.
 8. **Kill and restart:** kill MeshTrax 30 minutes into a session and reopen it, then restart the phone and reopen it. Sharing and recording resume with no prompt, the strip says what wasn't shared, and the track shows two marked gaps.
 9. **Walk out of range:** one member walks out of range for 45 minutes and comes back, with a third radio left along the route logging reports. Slow reports keep coming about every 10 minutes, the walker's phone warns once at about 13 minutes, the grey pin and Last heard row keep the last position and time through the session's end and an app restart, and the group sees the walker within one interval of their return.
-10. **Line test:** three radios in a line, the ends out of each other's range; start a session at one end. The far end keeps sharing to the middle, and the middle uses "Send to this channel". Repeat with all three on 918.000 MHz with Off-Grid Repeat on (the ends then see each other), and with a repeater on a vehicle roof on the same frequency. Log radio battery over the day.
+10. **Line test:** three radios in a line, the ends out of each other's range; start a session at one end. The far end keeps sharing to the middle, and the middle uses "Send to this channel". Repeat with all three in TRAX mode (the ends then see each other), and with a repeater on a vehicle roof on the TRAX frequency. Log radio battery over the day.
 11. **SOS:** send an SOS from the edge of range to phones with the channel muted and the screens locked, Android and iPhone, in airplane mode with Bluetooth on. Every phone alerts, the sender sees which radios got the DM copies, and a member who walks into range gets the next repeat. The card's main button opens MeshTrax's offline map, and one more tap gives Route here.
 12. **Queue:** with a 16-slot radio's phone off, send it 20 positions, 5 channel texts and 1 DM. On reconnect the DM is there and most of the texts are gone, as the help text says. Note each radio model's queue size.
 13. **Range day:** at the same spots (valley floor, a canyon, a ridge), 1–10 km apart, with radios carried as in real use, log who hears whom, with and without Off-Grid Repeat, and with a vehicle repeater if the group has one. Where the group still carries APRS, log both. Include an afternoon of normal summer use; never heat a phone on purpose.
@@ -746,7 +758,7 @@ From the safety review (CH-24), with its checkers' corrections. They are the gat
 - **SOS under Do Not Disturb and Sleep Focus:** an Android phone in Do Not Disturb, and an iPhone in Sleep Focus with the silent switch on, each alert for an SOS.
 - **Three radios back to back:** ask three members' radios in quick succession; all three answers show.
 - **A restarted radio's advert:** before its first fix, radios that heard it before drop the advert as a replay, and others see its stored position; after the fix, everyone sees the live one.
-- **Trailhead check on the off-grid frequency:** after retuning, Trip setup's Test reaches every member before anyone leaves.
+- **TRAX drills:** start TRAX mode with Tell the group: every member's phone prompts, no radio moves without a tap, and the group check lists everyone on TRAX before anyone leaves the trailhead. Restart one phone, and move another to a spare radio, mid-trip: the button still shows on. Leave with Tell the group: every radio returns to its saved settings, and a radio with no saved settings on that phone asks which preset to return to.
 - **Single decisions:** let trip mode end with one phone out of range: it keeps reporting every 10 minutes until Stop (13). Run a session to 15 minutes before its end: the Renew warning comes, and trip-mode members rejoin with no tap (12). Set "back by" 10 minutes ahead and stay silent: the others see "overdue" (22). Send a channel text with one member out of range: the sender sees who got it (24).
 
 ## Track compression review (2026-11-12)
@@ -925,7 +937,7 @@ Nothing was copied. Their licences run from MIT to GPL and non-commercial.
 
 ## Audit and safety review (2026-11-15/16)
 
-On 2026-11-15 Martin asked for an audit of this plan and the traxbook plan. A safety review for life-safety use followed the same day, and he answered both in the question dialog as decisions 1–30, all preliminary. Both were read-only, against master `d774d052` and MeshCore tag companion-v1.18.0: nothing was changed in either repo or on GitHub, and the app was not run. The notes, with their evidence and scripts, are kept locally in the gitignored `build/trax-audit/` (`verification-2026-11-15.md`, `safety-review-2026-11-15.md`); a `flutter clean` deletes that folder. The review's lens findings (LM, SW, REACH, DEV, APRS) are merged into its CH items there.
+On 2026-11-15 Martin asked for an audit of this plan and the traxbook plan. A safety review for life-safety use followed the same day, and he answered them in the question dialog as decisions 1–30. Decisions 31–35 (TRAX mode, and the order of the two plans) followed the same day. All are preliminary. Both were read-only, against master `d774d052` and MeshCore tag companion-v1.18.0: nothing was changed in either repo or on GitHub, and the app was not run. The notes, with their evidence and scripts, are kept locally in the gitignored `build/trax-audit/` (`verification-2026-11-15.md`, `safety-review-2026-11-15.md`); a `flutter clean` deletes that folder. The review's lens findings (LM, SW, REACH, DEV, APRS) are merged into its CH items there.
 
 Where each ID went:
 
@@ -981,7 +993,7 @@ Where each ID went:
 | CH-12 | One database per phone: storage (decision 14) |
 | CH-13 | The recorder (decision 1) |
 | CH-14 | The phone GPS fallback: the recorder (decision 21) |
-| CH-15 | Relays: Step 4 minimal off-grid mode and the routing table (decisions 19 and 30) |
+| CH-15 | Relays: TRAX mode, Step 4 and the routing table (decisions 19, 30 and 31–34) |
 | CH-16 | Details for a search, Send to this channel: Step 3b (decision 23) |
 | CH-17, CH-18 | Route caveat, data date, start gap: master safety fixes (decision 29) and the traxbook plan (decision 26) |
 | CH-19, CH-20, CH-34, CH-37, CH-39 | The traxbook plan (#242) |
