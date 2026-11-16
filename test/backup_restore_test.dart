@@ -133,10 +133,11 @@ void main() {
       expect(bc.lastAdvertTimestamp, 1700000123);
     });
 
-    test('a contact keeps the real name and note given it', () async {
+    test('a contact keeps the names and note given it', () async {
       final noted = BackupContact(
         contact: Contact.fromJson(_contactJson('cc' * 32, 'Ridge Walker')),
         note: const ContactNote(
+          nickname: 'Annie',
           realName: 'Ann Smith',
           note: 'Lives up the hill',
         ),
@@ -150,6 +151,7 @@ void main() {
       final json = await BackupService.createBackupJson(withNote);
       final d = (BackupService.parseBackup(json) as FullBackup).device;
       expect(d.contacts.first.note, isNull, reason: 'none was given');
+      expect(d.contacts.last.note?.nickname, 'Annie');
       expect(d.contacts.last.note?.realName, 'Ann Smith');
       expect(d.contacts.last.note?.note, 'Lives up the hill');
       expect(d.contacts.first.toJson().containsKey('realName'), isFalse);

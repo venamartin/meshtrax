@@ -28,7 +28,7 @@ import '../widgets/pathfinder_help_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_name.dart';
-import '../widgets/contact_note_dialog.dart';
+import '../widgets/contact_info_dialog.dart';
 import '../widgets/gps_status_button.dart';
 import '../widgets/location_sharing_button.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
@@ -487,6 +487,14 @@ class _ChatsScreenState extends State<ChatsScreen>
             shrinkWrap: true,
             children: [
               ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text(context.l10n.contact_info),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ContactInfoDialog.show(context, contact);
+                },
+              ),
+              ListTile(
                 leading: Icon(
                   contact.isFavorite ? Icons.star : Icons.star_border,
                   color: Colors.amber[700],
@@ -502,14 +510,6 @@ class _ChatsScreenState extends State<ChatsScreen>
                     contact,
                     isFavorite: !contact.isFavorite,
                   );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.badge_outlined),
-                title: Text(context.l10n.contact_nameAndNote),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ContactNoteDialog.show(context, contact);
                 },
               ),
               if (contact.type == advTypeRoom)

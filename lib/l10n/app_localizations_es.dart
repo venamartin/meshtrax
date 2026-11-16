@@ -1196,10 +1196,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get contact_telemetry => 'Telemetría';
 
   @override
-  String get contact_nameAndNote => 'Nombre y nota';
+  String get contact_nickname => 'Apodo';
 
   @override
-  String get contact_realName => 'Nombre real';
+  String get contact_fullName => 'Nombre completo';
 
   @override
   String get contact_note => 'Nota';

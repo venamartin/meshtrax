@@ -1205,10 +1205,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get contact_telemetry => 'Telemetryka';
 
   @override
-  String get contact_nameAndNote => 'Imię i notatka';
+  String get contact_nickname => 'Pseudonim';
 
   @override
-  String get contact_realName => 'Prawdziwe imię';
+  String get contact_fullName => 'Imię i nazwisko';
 
   @override
   String get contact_note => 'Notatka';

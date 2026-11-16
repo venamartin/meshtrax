@@ -862,6 +862,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final ContactNoteStore _contactNoteStore = ContactNoteStore();
   Map<String, ContactNote> _contactNotes = const {};
   StreamSubscription<Map<String, ContactNote>>? _contactNotesSub;
+  Map<String, ({String name, bool guess})>? _nicknamesByHandle;
+  Object? _nicknamesByHandleStamp;
   final ChannelStore _channelStore = ChannelStore();
   List<Channel> _cachedChannels = [];
   final Map<String, bool> _channelSmazEnabled = {}; // keyed by Channel.idKey
@@ -1535,19 +1537,68 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// The real name and note the user gave a contact, if any.
+  /// The names and note the user gave a contact, if any.
   ContactNote? contactNote(String publicKeyHex) =>
       _contactNotes[publicKeyHex.toLowerCase()];
 
-  /// The real name the user gave a contact, or null.
-  String? realNameFor(String publicKeyHex) {
-    final name = contactNote(publicKeyHex)?.realName ?? '';
-    return name.isEmpty ? null : name;
-  }
+  /// The name the user gave a contact, for lists: its full name, else its
+  /// nickname, or null.
+  String? realNameFor(String publicKeyHex) =>
+      contactNote(publicKeyHex)?.listName;
 
   /// Saves what the user wrote about a contact; an empty note removes it.
   Future<void> setContactNote(String publicKeyHex, ContactNote note) =>
       _contactNoteStore.save(publicKeyHex, note);
+
+  /// The name the user gave whoever sent a channel message as [senderName],
+  /// for the pill beside the handle. Channel messages carry only that
+  /// handle, no key, so this matches contacts by it (see
+  /// [nicknamesByHandle]).
+  ({String name, bool guess})? nicknameForSender(String senderName) {
+    final stamp = (contactsStamp, _contactNotes);
+    if (_nicknamesByHandleStamp != stamp) {
+      _nicknamesByHandle = nicknamesByHandle(
+        allContacts,
+        (key) => contactNote(key)?.pillName,
+        selfPublicKeyHex,
+      );
+      _nicknamesByHandleStamp = stamp;
+    }
+    return _nicknamesByHandle![senderName.trim().toLowerCase()];
+  }
+
+  /// [nameOf] each chat contact the user named, by handle (trimmed, lower
+  /// case). A handle more than one contact uses is a [guess], named after
+  /// the one heard most recently.
+  @visibleForTesting
+  static Map<String, ({String name, bool guess})> nicknamesByHandle(
+    Iterable<Contact> contacts,
+    String? Function(String publicKeyHex) nameOf,
+    String? selfPublicKeyHex,
+  ) {
+    final seen = <String>{};
+    final users = <String, int>{};
+    final named = <String, (Contact, String)>{};
+    for (final contact in contacts) {
+      if (contact.type != advTypeChat ||
+          contact.publicKeyHex == selfPublicKeyHex ||
+          !seen.add(contact.publicKeyHex)) {
+        continue;
+      }
+      final handle = contact.name.trim().toLowerCase();
+      users[handle] = (users[handle] ?? 0) + 1;
+      final name = nameOf(contact.publicKeyHex);
+      if (name == null) continue;
+      final kept = named[handle];
+      if (kept == null || contact.lastSeen.isAfter(kept.$1.lastSeen)) {
+        named[handle] = (contact, name);
+      }
+    }
+    return {
+      for (final MapEntry(:key, :value) in named.entries)
+        key: (name: value.$2, guess: users[key]! > 1),
+    };
+  }
 
   int getUnreadCountForContact(Contact contact) {
     if (contact.type == advTypeRepeater) return 0;

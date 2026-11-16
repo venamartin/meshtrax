@@ -1180,10 +1180,10 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrija';
 
   @override
-  String get contact_nameAndNote => 'Ime in opomba';
+  String get contact_nickname => 'Vzdevek';
 
   @override
-  String get contact_realName => 'Pravo ime';
+  String get contact_fullName => 'Polno ime';
 
   @override
   String get contact_note => 'Opomba';

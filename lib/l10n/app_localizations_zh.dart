@@ -1124,10 +1124,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contact_telemetry => '遥测数据';
 
   @override
-  String get contact_nameAndNote => '姓名和备注';
+  String get contact_nickname => '昵称';
 
   @override
-  String get contact_realName => '真实姓名';
+  String get contact_fullName => '全名';
 
   @override
   String get contact_note => '备注';

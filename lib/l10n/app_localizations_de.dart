@@ -1194,10 +1194,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
-  String get contact_nameAndNote => 'Name und Notiz';
+  String get contact_nickname => 'Spitzname';
 
   @override
-  String get contact_realName => 'Echter Name';
+  String get contact_fullName => 'Vollständiger Name';
 
   @override
   String get contact_note => 'Notiz';

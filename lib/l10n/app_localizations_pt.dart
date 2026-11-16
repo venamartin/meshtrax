@@ -1198,10 +1198,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
-  String get contact_nameAndNote => 'Nome e nota';
+  String get contact_nickname => 'Alcunha';
 
   @override
-  String get contact_realName => 'Nome real';
+  String get contact_fullName => 'Nome completo';
 
   @override
   String get contact_note => 'Nota';

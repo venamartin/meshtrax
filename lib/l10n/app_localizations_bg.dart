@@ -1198,10 +1198,10 @@ class AppLocalizationsBg extends AppLocalizations {
   String get contact_telemetry => 'Телеметрия';
 
   @override
-  String get contact_nameAndNote => 'Име и бележка';
+  String get contact_nickname => 'Прякор';
 
   @override
-  String get contact_realName => 'Истинско име';
+  String get contact_fullName => 'Пълно име';
 
   @override
   String get contact_note => 'Бележка';

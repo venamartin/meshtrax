@@ -228,7 +228,7 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
           }
           if (searchQueryLower.isEmpty) return true;
           return c.name.toLowerCase().contains(searchQueryLower) ||
-                 (connector.realNameFor(c.publicKeyHex)?.toLowerCase().contains(searchQueryLower) ?? false) ||
+                 (connector.contactNote(c.publicKeyHex)?.namesContain(searchQueryLower) ?? false) ||
                  c.publicKeyHex.toLowerCase().contains(searchQueryLower);
         }).toList();
         

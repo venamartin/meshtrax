@@ -11,7 +11,7 @@ class BackupContact {
   final Uint8List? rawAdvert;
   final int? lastAdvertTimestamp;
 
-  /// The real name and note the user gave the contact, if any.
+  /// The names and note the user gave the contact, if any.
   final ContactNote? note;
 
   BackupContact({
@@ -26,6 +26,7 @@ class BackupContact {
     'rawAdvert': rawAdvert != null ? pubKeyToHex(rawAdvert!) : null,
     'lastAdvertTimestamp': lastAdvertTimestamp,
     if (note case final note? when !note.isEmpty) ...{
+      'nickname': note.nickname,
       'realName': note.realName,
       'note': note.note,
     },
@@ -45,6 +46,7 @@ class BackupContact {
 
   static ContactNote? _note(Map<String, dynamic> json) {
     final note = ContactNote(
+      nickname: json['nickname'] as String? ?? '',
       realName: json['realName'] as String? ?? '',
       note: json['note'] as String? ?? '',
     );

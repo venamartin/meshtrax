@@ -3,8 +3,8 @@ import 'package:drift/drift.dart';
 import '../models/contact_note.dart';
 import 'app_database.dart';
 
-/// The real names and notes the user gives contacts, by public key. Not
-/// scoped to a radio: a person keeps the name whichever radio is connected.
+/// The names and notes the user gives contacts, by public key. Not scoped
+/// to a radio: a person keeps the names whichever radio is connected.
 class ContactNoteStore {
   AppDatabase get _db => AppDatabase.instance;
 
@@ -13,6 +13,7 @@ class ContactNoteStore {
             (rows) => {
               for (final row in rows)
                 row.publicKeyHex: ContactNote(
+                  nickname: row.nickname,
                   realName: row.realName,
                   note: row.note,
                 ),
@@ -31,6 +32,7 @@ class ContactNoteStore {
     await _db.into(_db.contactNoteRows).insertOnConflictUpdate(
           ContactNoteRowsCompanion.insert(
             publicKeyHex: key,
+            nickname: Value(note.nickname),
             realName: Value(note.realName),
             note: Value(note.note),
           ),

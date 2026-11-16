@@ -1140,10 +1140,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact_telemetry => '텔레메트리';
 
   @override
-  String get contact_nameAndNote => '이름과 메모';
+  String get contact_nickname => '닉네임';
 
   @override
-  String get contact_realName => '실명';
+  String get contact_fullName => '전체 이름';
 
   @override
   String get contact_note => '메모';

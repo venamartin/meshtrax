@@ -1143,10 +1143,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contact_telemetry => 'テレメトリー';
 
   @override
-  String get contact_nameAndNote => '名前とメモ';
+  String get contact_nickname => 'ニックネーム';
 
   @override
-  String get contact_realName => '本名';
+  String get contact_fullName => 'フルネーム';
 
   @override
   String get contact_note => 'メモ';

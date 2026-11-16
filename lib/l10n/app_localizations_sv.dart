@@ -1177,10 +1177,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contact_telemetry => 'Telemetri';
 
   @override
-  String get contact_nameAndNote => 'Namn och anteckning';
+  String get contact_nickname => 'Smeknamn';
 
   @override
-  String get contact_realName => 'Riktigt namn';
+  String get contact_fullName => 'Fullständigt namn';
 
   @override
   String get contact_note => 'Anteckning';

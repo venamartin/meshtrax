@@ -13,17 +13,23 @@ void main() {
     final store = ContactNoteStore();
     await store.save(
       key,
-      const ContactNote(realName: 'Ann Smith', note: 'Lives up the hill'),
+      const ContactNote(
+        nickname: 'Annie',
+        realName: 'Ann Smith',
+        note: 'Lives up the hill',
+      ),
     );
     var all = await store.watchAll().first;
     expect(all.keys, [key]);
+    expect(all[key]!.nickname, 'Annie');
     expect(all[key]!.realName, 'Ann Smith');
     expect(all[key]!.note, 'Lives up the hill');
 
     await store.save(key, const ContactNote(realName: 'Ann Jones'));
     all = await store.watchAll().first;
     expect(all[key]!.realName, 'Ann Jones');
-    expect(all[key]!.note, '', reason: 'a save replaces both fields');
+    expect(all[key]!.nickname, '', reason: 'a save replaces every field');
+    expect(all[key]!.note, '');
 
     await store.save(key, const ContactNote());
     expect(await store.watchAll().first, isEmpty);

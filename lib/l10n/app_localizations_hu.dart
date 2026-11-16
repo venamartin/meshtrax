@@ -1200,10 +1200,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get contact_telemetry => 'Adatvisszaadás';
 
   @override
-  String get contact_nameAndNote => 'Név és jegyzet';
+  String get contact_nickname => 'Becenév';
 
   @override
-  String get contact_realName => 'Valódi név';
+  String get contact_fullName => 'Teljes név';
 
   @override
   String get contact_note => 'Jegyzet';

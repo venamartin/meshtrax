@@ -2770,8 +2770,25 @@ class $ContactNoteRowsTable extends ContactNoteRows
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _nicknameMeta = const VerificationMeta(
+    'nickname',
+  );
   @override
-  List<GeneratedColumn> get $columns => [publicKeyHex, realName, note];
+  late final GeneratedColumn<String> nickname = GeneratedColumn<String>(
+    'nickname',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    publicKeyHex,
+    realName,
+    note,
+    nickname,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2807,6 +2824,12 @@ class $ContactNoteRowsTable extends ContactNoteRows
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('nickname')) {
+      context.handle(
+        _nicknameMeta,
+        nickname.isAcceptableOrUnknown(data['nickname']!, _nicknameMeta),
+      );
+    }
     return context;
   }
 
@@ -2828,6 +2851,10 @@ class $ContactNoteRowsTable extends ContactNoteRows
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      nickname: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nickname'],
+      )!,
     );
   }
 
@@ -2841,10 +2868,12 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
   final String publicKeyHex;
   final String realName;
   final String note;
+  final String nickname;
   const ContactNoteRow({
     required this.publicKeyHex,
     required this.realName,
     required this.note,
+    required this.nickname,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2852,6 +2881,7 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
     map['public_key_hex'] = Variable<String>(publicKeyHex);
     map['real_name'] = Variable<String>(realName);
     map['note'] = Variable<String>(note);
+    map['nickname'] = Variable<String>(nickname);
     return map;
   }
 
@@ -2860,6 +2890,7 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
       publicKeyHex: Value(publicKeyHex),
       realName: Value(realName),
       note: Value(note),
+      nickname: Value(nickname),
     );
   }
 
@@ -2872,6 +2903,7 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
       publicKeyHex: serializer.fromJson<String>(json['publicKeyHex']),
       realName: serializer.fromJson<String>(json['realName']),
       note: serializer.fromJson<String>(json['note']),
+      nickname: serializer.fromJson<String>(json['nickname']),
     );
   }
   @override
@@ -2881,6 +2913,7 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
       'publicKeyHex': serializer.toJson<String>(publicKeyHex),
       'realName': serializer.toJson<String>(realName),
       'note': serializer.toJson<String>(note),
+      'nickname': serializer.toJson<String>(nickname),
     };
   }
 
@@ -2888,10 +2921,12 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
     String? publicKeyHex,
     String? realName,
     String? note,
+    String? nickname,
   }) => ContactNoteRow(
     publicKeyHex: publicKeyHex ?? this.publicKeyHex,
     realName: realName ?? this.realName,
     note: note ?? this.note,
+    nickname: nickname ?? this.nickname,
   );
   ContactNoteRow copyWithCompanion(ContactNoteRowsCompanion data) {
     return ContactNoteRow(
@@ -2900,6 +2935,7 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
           : this.publicKeyHex,
       realName: data.realName.present ? data.realName.value : this.realName,
       note: data.note.present ? data.note.value : this.note,
+      nickname: data.nickname.present ? data.nickname.value : this.nickname,
     );
   }
 
@@ -2908,49 +2944,56 @@ class ContactNoteRow extends DataClass implements Insertable<ContactNoteRow> {
     return (StringBuffer('ContactNoteRow(')
           ..write('publicKeyHex: $publicKeyHex, ')
           ..write('realName: $realName, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('nickname: $nickname')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(publicKeyHex, realName, note);
+  int get hashCode => Object.hash(publicKeyHex, realName, note, nickname);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ContactNoteRow &&
           other.publicKeyHex == this.publicKeyHex &&
           other.realName == this.realName &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.nickname == this.nickname);
 }
 
 class ContactNoteRowsCompanion extends UpdateCompanion<ContactNoteRow> {
   final Value<String> publicKeyHex;
   final Value<String> realName;
   final Value<String> note;
+  final Value<String> nickname;
   final Value<int> rowid;
   const ContactNoteRowsCompanion({
     this.publicKeyHex = const Value.absent(),
     this.realName = const Value.absent(),
     this.note = const Value.absent(),
+    this.nickname = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContactNoteRowsCompanion.insert({
     required String publicKeyHex,
     this.realName = const Value.absent(),
     this.note = const Value.absent(),
+    this.nickname = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : publicKeyHex = Value(publicKeyHex);
   static Insertable<ContactNoteRow> custom({
     Expression<String>? publicKeyHex,
     Expression<String>? realName,
     Expression<String>? note,
+    Expression<String>? nickname,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (publicKeyHex != null) 'public_key_hex': publicKeyHex,
       if (realName != null) 'real_name': realName,
       if (note != null) 'note': note,
+      if (nickname != null) 'nickname': nickname,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2959,12 +3002,14 @@ class ContactNoteRowsCompanion extends UpdateCompanion<ContactNoteRow> {
     Value<String>? publicKeyHex,
     Value<String>? realName,
     Value<String>? note,
+    Value<String>? nickname,
     Value<int>? rowid,
   }) {
     return ContactNoteRowsCompanion(
       publicKeyHex: publicKeyHex ?? this.publicKeyHex,
       realName: realName ?? this.realName,
       note: note ?? this.note,
+      nickname: nickname ?? this.nickname,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2981,6 +3026,9 @@ class ContactNoteRowsCompanion extends UpdateCompanion<ContactNoteRow> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (nickname.present) {
+      map['nickname'] = Variable<String>(nickname.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2993,6 +3041,7 @@ class ContactNoteRowsCompanion extends UpdateCompanion<ContactNoteRow> {
           ..write('publicKeyHex: $publicKeyHex, ')
           ..write('realName: $realName, ')
           ..write('note: $note, ')
+          ..write('nickname: $nickname, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4644,6 +4693,7 @@ typedef $$ContactNoteRowsTableCreateCompanionBuilder =
       required String publicKeyHex,
       Value<String> realName,
       Value<String> note,
+      Value<String> nickname,
       Value<int> rowid,
     });
 typedef $$ContactNoteRowsTableUpdateCompanionBuilder =
@@ -4651,6 +4701,7 @@ typedef $$ContactNoteRowsTableUpdateCompanionBuilder =
       Value<String> publicKeyHex,
       Value<String> realName,
       Value<String> note,
+      Value<String> nickname,
       Value<int> rowid,
     });
 
@@ -4675,6 +4726,11 @@ class $$ContactNoteRowsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nickname => $composableBuilder(
+    column: $table.nickname,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4702,6 +4758,11 @@ class $$ContactNoteRowsTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get nickname => $composableBuilder(
+    column: $table.nickname,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ContactNoteRowsTableAnnotationComposer
@@ -4723,6 +4784,9 @@ class $$ContactNoteRowsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get nickname =>
+      $composableBuilder(column: $table.nickname, builder: (column) => column);
 }
 
 class $$ContactNoteRowsTableTableManager
@@ -4765,11 +4829,13 @@ class $$ContactNoteRowsTableTableManager
                 Value<String> publicKeyHex = const Value.absent(),
                 Value<String> realName = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String> nickname = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContactNoteRowsCompanion(
                 publicKeyHex: publicKeyHex,
                 realName: realName,
                 note: note,
+                nickname: nickname,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4777,11 +4843,13 @@ class $$ContactNoteRowsTableTableManager
                 required String publicKeyHex,
                 Value<String> realName = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String> nickname = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContactNoteRowsCompanion.insert(
                 publicKeyHex: publicKeyHex,
                 realName: realName,
                 note: note,
+                nickname: nickname,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

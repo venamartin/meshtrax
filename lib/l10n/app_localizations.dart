@@ -2207,17 +2207,17 @@ abstract class AppLocalizations {
   /// **'Telemetry'**
   String get contact_telemetry;
 
-  /// No description provided for @contact_nameAndNote.
+  /// No description provided for @contact_nickname.
   ///
   /// In en, this message translates to:
-  /// **'Name and note'**
-  String get contact_nameAndNote;
+  /// **'Nickname'**
+  String get contact_nickname;
 
-  /// No description provided for @contact_realName.
+  /// No description provided for @contact_fullName.
   ///
   /// In en, this message translates to:
-  /// **'Real name'**
-  String get contact_realName;
+  /// **'Full name'**
+  String get contact_fullName;
 
   /// No description provided for @contact_note.
   ///

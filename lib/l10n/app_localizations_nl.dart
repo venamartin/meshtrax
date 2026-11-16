@@ -1189,10 +1189,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
-  String get contact_nameAndNote => 'Naam en notitie';
+  String get contact_nickname => 'Bijnaam';
 
   @override
-  String get contact_realName => 'Echte naam';
+  String get contact_fullName => 'Volledige naam';
 
   @override
   String get contact_note => 'Notitie';
