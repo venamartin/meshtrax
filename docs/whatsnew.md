@@ -2,6 +2,22 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.11.0
+
+- Line of sight and radio reach, offline: see whether two points can hear each other, or how far your radio reaches and who is in range, from the downloaded contours. It works below sea level too, from Death Valley to the Salton Sea.
+- Navigate a route inside MeshTrax, or hand it to another app from the route sheet.
+- Check sends with observers (optional, off by default): MeshTrax asks an observer server you pick whether your channel messages were heard, and doesn't send them again for nothing.
+- Contacts get a nickname, a full name and a note. Share a contact from the + tray; a contact posted in a chat shows as a card. A deleted contact stays deleted, and adverts with a bad signature are ignored.
+- A direct message is never stuck: with no repeater near, it fails within minutes so your next messages go, and "No repeater heard you" shows while it waits for one.
+- A message your radio held for hours says when it was sent ("sent 2:00 PM by its clock").
+- With the radio's GPS on, your dot turns grey ("Last known · 2:02 PM") once the GPS stops giving new positions.
+- The Chats tab counts unread messages. A chat you are reading further up stays put when messages arrive. Day headings and the NEW MESSAGES line are drawn as a wave.
+- The @ list offers the people in the chat first, with their nicknames, and typing @ no longer closes the keyboard. Replies and reactions to posts from days ago land on them.
+- The map: search is a map button, full screen fades the buttons, a layers sheet, and the map keeps its view and opens on your GPS position. Search lists the nearest places of a kind and which way each one is.
+- Install maps from a drive. Offline maps opens on Maps; Manage repeaters gets a Heard window and sorts by hops.
+- Settings show the radio's firmware, and About shows the build number. Short map links no longer go online to find their position.
+- On Linux the app no longer crashes on close.
+
 ## 1.10.2
 
 - QR scanning works again on Android, with the camera and from a photo.
