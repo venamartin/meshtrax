@@ -6863,4 +6863,13 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Radio samo zapisuje ten rodzaj kontaktu, więc wróci, gdy następnym razem zostanie usłyszany.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Udostępnij kontakt';
+
+  @override
+  String get shareContact_myContact => 'Mój kontakt';
 }

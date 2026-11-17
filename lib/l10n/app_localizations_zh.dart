@@ -6407,4 +6407,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contacts_deleteComesBack => '电台会自动保存此类联系人，因此下次收到它时它会重新出现。';
+
+  @override
+  String get tray_contact => '联系人';
+
+  @override
+  String get shareContact_title => '分享联系人';
+
+  @override
+  String get shareContact_myContact => '我的联系人';
 }

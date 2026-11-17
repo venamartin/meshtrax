@@ -6855,4 +6855,13 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'La radio salva da sola questo tipo di contatto, quindi tornerà la prossima volta che verrà sentito.';
+
+  @override
+  String get tray_contact => 'Contatto';
+
+  @override
+  String get shareContact_title => 'Condividi un contatto';
+
+  @override
+  String get shareContact_myContact => 'Il mio contatto';
 }

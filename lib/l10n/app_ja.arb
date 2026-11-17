@@ -2794,5 +2794,8 @@
   "los_nobodyWithin": "{distance}以内に位置のわかる人はいません。",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "見通し用の等高線",
-  "contacts_deleteComesBack": "無線機はこの種類の連絡先を自動で保存するため、次に受信したときに戻ってきます。"
+  "contacts_deleteComesBack": "無線機はこの種類の連絡先を自動で保存するため、次に受信したときに戻ってきます。",
+  "tray_contact": "連絡先",
+  "shareContact_title": "連絡先を共有",
+  "shareContact_myContact": "自分の連絡先"
 }

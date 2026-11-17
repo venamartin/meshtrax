@@ -19,6 +19,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/message_facts.dart';
 import '../helpers/mention_helper.dart';
+import '../widgets/share_contact_dialog.dart';
 import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
@@ -2224,6 +2225,12 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           label: l10n.tray_pointOnMap,
           onTap: () =>
               _runTile(() => StructuredMessageDialogs.pointOnMap(context)),
+        ),
+        AttachTile(
+          icon: Icons.contact_page,
+          label: l10n.tray_contact,
+          onTap: () =>
+              _runTile(() => showShareContactDialog(context, connector)),
         ),
         AttachTile(
           icon: Icons.warning_rounded,

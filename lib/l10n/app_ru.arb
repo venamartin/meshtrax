@@ -2124,5 +2124,8 @@
   "los_nobodyWithin": "Никого с местоположением в пределах {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "Горизонтали для прямой видимости",
-  "contacts_deleteComesBack": "Радио само сохраняет такие контакты, поэтому он вернётся, когда его услышат в следующий раз."
+  "contacts_deleteComesBack": "Радио само сохраняет такие контакты, поэтому он вернётся, когда его услышат в следующий раз.",
+  "tray_contact": "Контакт",
+  "shareContact_title": "Поделиться контактом",
+  "shareContact_myContact": "Мой контакт"
 }

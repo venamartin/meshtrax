@@ -2756,5 +2756,8 @@
   "los_nobodyWithin": "Nikto s polohou do {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "Vrstevnice pre priamu viditeľnosť",
-  "contacts_deleteComesBack": "Rádio si tento druh kontaktu ukladá samo, takže sa vráti, keď ho nabudúce začuje."
+  "contacts_deleteComesBack": "Rádio si tento druh kontaktu ukladá samo, takže sa vráti, keď ho nabudúce začuje.",
+  "tray_contact": "Kontakt",
+  "shareContact_title": "Zdieľať kontakt",
+  "shareContact_myContact": "Môj kontakt"
 }

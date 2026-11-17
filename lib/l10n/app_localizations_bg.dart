@@ -6830,4 +6830,13 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Радиото запазва този вид контакт само, така че той ще се върне следващия път, когато бъде чут.';
+
+  @override
+  String get tray_contact => 'Контакт';
+
+  @override
+  String get shareContact_title => 'Споделяне на контакт';
+
+  @override
+  String get shareContact_myContact => 'Моят контакт';
 }

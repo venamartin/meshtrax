@@ -6862,4 +6862,13 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Радіо саме зберігає такі контакти, тому він повернеться, коли його почують наступного разу.';
+
+  @override
+  String get tray_contact => 'Контакт';
+
+  @override
+  String get shareContact_title => 'Поділитися контактом';
+
+  @override
+  String get shareContact_myContact => 'Мій контакт';
 }

@@ -6853,4 +6853,13 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'A rádió magától elmenti az ilyen típusú névjegyet, ezért visszakerül, amikor legközelebb hallja.';
+
+  @override
+  String get tray_contact => 'Névjegy';
+
+  @override
+  String get shareContact_title => 'Névjegy megosztása';
+
+  @override
+  String get shareContact_myContact => 'Saját névjegy';
 }

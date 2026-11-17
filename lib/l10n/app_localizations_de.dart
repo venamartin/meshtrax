@@ -6856,4 +6856,13 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Dein Funkgerät speichert diese Art Kontakt von selbst, daher kommt er zurück, sobald er wieder gehört wird.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Kontakt teilen';
+
+  @override
+  String get shareContact_myContact => 'Mein Kontakt';
 }

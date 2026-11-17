@@ -2756,5 +2756,8 @@
   "los_nobodyWithin": "Nikogar s položajem znotraj {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "Plastnice za neposredno vidljivost",
-  "contacts_deleteComesBack": "Radio to vrsto stika shrani samodejno, zato se bo vrnil, ko ga bo naslednjič slišal."
+  "contacts_deleteComesBack": "Radio to vrsto stika shrani samodejno, zato se bo vrnil, ko ga bo naslednjič slišal.",
+  "tray_contact": "Stik",
+  "shareContact_title": "Deli stik",
+  "shareContact_myContact": "Moj stik"
 }

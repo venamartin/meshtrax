@@ -6783,4 +6783,13 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Din radio sparar den här typen av kontakt själv, så den kommer tillbaka nästa gång den hörs.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Dela en kontakt';
+
+  @override
+  String get shareContact_myContact => 'Min kontakt';
 }

@@ -3276,5 +3276,8 @@
   "los_nobodyWithin": "No one with a position within {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "Contours for line of sight",
-  "contacts_deleteComesBack": "Your radio saves this kind of contact by itself, so it comes back the next time it is heard."
+  "contacts_deleteComesBack": "Your radio saves this kind of contact by itself, so it comes back the next time it is heard.",
+  "tray_contact": "Contact",
+  "shareContact_title": "Share a contact",
+  "shareContact_myContact": "My contact"
 }

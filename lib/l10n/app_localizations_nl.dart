@@ -6816,4 +6816,13 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       'Je radio slaat dit soort contact zelf op, dus het komt terug zodra het weer wordt gehoord.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Contact delen';
+
+  @override
+  String get shareContact_myContact => 'Mijn contact';
 }

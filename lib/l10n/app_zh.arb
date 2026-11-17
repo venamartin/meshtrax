@@ -2761,5 +2761,8 @@
   "los_nobodyWithin": "{distance} 以内没有已知位置的人。",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
   "offlineMaps_losContours": "用于视线的等高线",
-  "contacts_deleteComesBack": "电台会自动保存此类联系人，因此下次收到它时它会重新出现。"
+  "contacts_deleteComesBack": "电台会自动保存此类联系人，因此下次收到它时它会重新出现。",
+  "tray_contact": "联系人",
+  "shareContact_title": "分享联系人",
+  "shareContact_myContact": "我的联系人"
 }

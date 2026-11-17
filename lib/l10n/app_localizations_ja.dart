@@ -6525,4 +6525,13 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get contacts_deleteComesBack =>
       '無線機はこの種類の連絡先を自動で保存するため、次に受信したときに戻ってきます。';
+
+  @override
+  String get tray_contact => '連絡先';
+
+  @override
+  String get shareContact_title => '連絡先を共有';
+
+  @override
+  String get shareContact_myContact => '自分の連絡先';
 }
