@@ -6328,6 +6328,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get los_reachUnknownPart => '此处部分地形无法计算（例如低于海平面的地方），因此未着色。';
 
   @override
+  String get los_positionGuessed => '推测位置';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return '推测位置（经 $names 收到）';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return '查看更远（$distance）';
   }

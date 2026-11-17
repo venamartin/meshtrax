@@ -6742,6 +6742,14 @@ class AppLocalizationsSk extends AppLocalizations {
       'Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.';
 
   @override
+  String get los_positionGuessed => 'Odhadnutá poloha';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Odhadnutá poloha (cez $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Pozrieť ďalej ($distance)';
   }

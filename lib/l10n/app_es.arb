@@ -2762,6 +2762,8 @@
   "los_helpBody": "La respuesta sale solo del terreno, leído de las curvas de nivel que descargaste. No sabe nada de árboles, edificios, personas, tendidos eléctricos ni otras antenas, y una cima puede ser hasta una curva de nivel más alta de lo dibujado.\n\n«Despejado» significa que el terreno no se interpone. No garantiza que un mensaje llegue. «Al límite» significa que el terreno se acerca a la línea. «Bloqueado» significa que el terreno se interpone: un mensaje aún puede pasar por encima de una loma baja, pero no cuentes con ello.\n\nPruébalo en el campo con tus propias radios antes de fiarte de ello.",
   "los_reachShaded": "Sombreado: el terreno no bloquea a una radio de mano situada allí, hasta {distance}.",
   "los_reachUnknownPart": "Parte del terreno aquí no se puede calcular, como el que está bajo el nivel del mar, así que no aparece sombreado.",
+  "los_positionGuessed": "Ubicación estimada",
+  "los_positionGuessedVia": "Ubicación estimada (vía {names})",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "Ver más lejos ({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

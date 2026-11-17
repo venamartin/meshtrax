@@ -6732,6 +6732,14 @@ class AppLocalizationsNl extends AppLocalizations {
       'Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.';
 
   @override
+  String get los_positionGuessed => 'Positie geschat';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Positie geschat, gehoord via $names';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Verder kijken ($distance)';
   }

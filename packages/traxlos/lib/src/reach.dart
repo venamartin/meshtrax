@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'geo.dart';
 import 'line_of_sight.dart';
 import 'profile.dart';
+import 'reach_areas.dart';
 import 'terrain.dart';
 
 /// A stretch of one ray with one answer.
@@ -74,44 +75,29 @@ class Reach {
     return area / (rays * radiusM * radiusM);
   }
 
-  /// The parts of each ray with one of [verdicts] as closed rings: slices
-  /// of the ray's wedge, ready to draw. Neighbouring runs that both have
-  /// one of them make one slice.
-  List<List<Geo>> areas(Set<Verdict> verdicts) {
-    final half = 180.0 / rays;
-    final out = <List<Geo>>[];
-    void add(double b, double start, double end) {
-      final far = [
-        destination(center, b - half, end),
-        destination(center, b + half, end),
-      ];
-      out.add(
-        start <= 0
-            ? [center, ...far, center]
-            : [
-                destination(center, b - half, start),
-                ...far,
-                destination(center, b + half, start),
-                destination(center, b - half, start),
-              ],
-      );
-    }
+  /// The ground with one of [verdicts], as areas to draw: neighbouring
+  /// runs and rays join into one outline per patch of ground.
+  List<ReachArea> areas(Set<Verdict> verdicts) =>
+      reachAreas(center, [for (final ray in runs) _stretches(ray, verdicts)]);
 
-    for (var k = 0; k < runs.length; k++) {
-      final b = bearingOf(k);
-      double? start;
-      var end = 0.0;
-      for (final r in runs[k]) {
-        if (verdicts.contains(r.verdict)) {
-          start ??= r.startM;
-          end = r.endM;
-        } else if (start != null) {
-          add(b, start, end);
-          start = null;
-        }
+  /// [ray]'s stretches with one of [verdicts], neighbouring runs joined.
+  static List<(double, double)> _stretches(
+    List<ReachRun> ray,
+    Set<Verdict> verdicts,
+  ) {
+    final out = <(double, double)>[];
+    double? start;
+    var end = 0.0;
+    for (final r in ray) {
+      if (verdicts.contains(r.verdict)) {
+        start ??= r.startM;
+        end = r.endM;
+      } else if (start != null) {
+        out.add((start, end));
+        start = null;
       }
-      if (start != null) add(b, start, end);
     }
+    if (start != null) out.add((start, end));
     return out;
   }
 }

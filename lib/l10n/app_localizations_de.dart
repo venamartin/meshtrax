@@ -6772,6 +6772,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Manches Gelände hier lässt sich nicht berechnen, etwa unter dem Meeresspiegel, und ist darum nicht schattiert.';
 
   @override
+  String get los_positionGuessed => 'Position geschätzt';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Position geschätzt, gehört über $names';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Weiter schauen ($distance)';
   }

@@ -6770,6 +6770,14 @@ class AppLocalizationsHu extends AppLocalizations {
       'Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.';
 
   @override
+  String get los_positionGuessed => 'Becsült pozíció';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Becsült pozíció ($names közvetítésével)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Messzebbre ($distance)';
   }

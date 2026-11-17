@@ -6444,6 +6444,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get los_reachUnknownPart => '海面下など、ここには計算できない地形があり、その部分は色付けされていません。';
 
   @override
+  String get los_positionGuessed => '推定位置';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return '推定位置（$names 経由で受信）';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'さらに遠くまで（$distance）';
   }

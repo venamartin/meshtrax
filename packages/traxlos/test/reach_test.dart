@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:test/test.dart';
 import 'package:traxlos/traxlos.dart';
@@ -60,33 +61,22 @@ void main() {
     for (var i = 1; i < progress.length; i++) {
       expect(progress[i], greaterThanOrEqualTo(progress[i - 1]));
     }
-    // Rings to draw: closed, four or five corners each.
-    final areas = r.areas({Verdict.clear});
-    expect(areas, isNotEmpty);
-    for (final ring in areas) {
-      expect(ring.first, ring.last);
-      expect(ring.length, anyOf(4, 5));
-    }
-    // Neighbouring clear and marginal runs make one slice each.
+    // To draw: one outline per patch of ground, not a slice per run, with
+    // the same area as the runs.
     const open = {Verdict.clear, Verdict.marginal};
-    var slices = 0;
-    for (final ray in r.runs) {
-      for (var i = 0; i < ray.length; i++) {
-        if (open.contains(ray[i].verdict) &&
-            (i == 0 || !open.contains(ray[i - 1].verdict))) {
-          slices++;
-        }
-      }
+    final areas = r.areas(open);
+    expect(areas, isNotEmpty);
+    final runsOpen = r.runs
+        .expand((ray) => ray)
+        .where((x) => open.contains(x.verdict))
+        .length;
+    expect(areas.length, lessThan(runsOpen / 4));
+    for (final a in areas) {
+      expect(a.outline.first, a.outline.last);
     }
-    expect(r.areas(open), hasLength(slices));
     expect(
-      slices,
-      lessThan(
-        r.runs
-            .expand((ray) => ray)
-            .where((x) => open.contains(x.verdict))
-            .length,
-      ),
+      areas.fold(0.0, (sum, a) => sum + areaM2(a)),
+      closeTo(r.share(open) * math.pi * 3000 * 3000, 0.02 * 3000 * 3000 * 3),
     );
   });
 
@@ -182,4 +172,166 @@ void main() {
       expect(ray.last.startM, closeTo(10100, 100));
     }
   });
+
+  group('areas to draw', () {
+    const blocked = Verdict.blocked, clear = Verdict.clear;
+
+    /// A reach of [rays] rays, each clear on the stretches [clearOn] gives
+    /// it and blocked elsewhere, out to 10 km.
+    Reach reachOf(int rays, List<(double, double)> Function(int ray) clearOn) {
+      const radius = 10000.0;
+      return Reach(
+        center: dantesView,
+        centerGround: const EndHeight(1600, HeightSource.contours),
+        antennaM: 1.5,
+        targetAntennaM: 1.5,
+        radiusM: radius,
+        stepM: 100,
+        frequencyMHz: 915,
+        rays: rays,
+        runs: [
+          for (var k = 0; k < rays; k++)
+            () {
+              final out = <ReachRun>[];
+              var at = 0.0;
+              for (final (s, e) in clearOn(k)) {
+                if (s > at) out.add(ReachRun(at, s, blocked));
+                out.add(ReachRun(s, e, clear));
+                at = e;
+              }
+              if (at < radius) out.add(ReachRun(at, radius, blocked));
+              return out;
+            }(),
+        ],
+        targets: const [],
+        credits: const [],
+        skippedPacks: const [],
+      );
+    }
+
+    /// The area the runs cover, as the areas should draw it (their edges
+    /// are chords of the rays' arcs).
+    double expected(Reach r) {
+      final wedge = 2 * math.pi / r.rays;
+      final chord = math.sin(wedge) / wedge;
+      var sum = 0.0;
+      for (final ray in r.runs) {
+        for (final x in ray) {
+          if (x.verdict == clear) {
+            sum += (x.endM * x.endM - x.startM * x.startM) * wedge / 2;
+          }
+        }
+      }
+      return sum * chord;
+    }
+
+    void expectArea(Reach r, List<ReachArea> areas) {
+      final want = expected(r);
+      expect(
+        areas.fold(0.0, (sum, a) => sum + areaM2(a)),
+        closeTo(want, want * 0.002 + 1),
+      );
+    }
+
+    test('one patch over several rays is one area', () {
+      final r = reachOf(36, (k) => k >= 3 && k <= 8 ? [(1000, 5000)] : []);
+      final areas = r.areas({clear});
+      expect(areas, hasLength(1));
+      expect(areas.single.holes, isEmpty);
+      expectArea(r, areas);
+    });
+
+    test('ground all round: one area; a band all round leaves a hole', () {
+      final disc = reachOf(36, (_) => [(0, 8000)]);
+      expect(disc.areas({clear}), hasLength(1));
+      expect(disc.areas({clear}).single.holes, isEmpty);
+      expectArea(disc, disc.areas({clear}));
+      final band = reachOf(36, (_) => [(2000, 8000)]);
+      expect(band.areas({clear}), hasLength(1));
+      expect(band.areas({clear}).single.holes, hasLength(1));
+      expectArea(band, band.areas({clear}));
+    });
+
+    test('a patch across north is one area', () {
+      final r = reachOf(36, (k) => k >= 34 || k <= 1 ? [(0, 4000)] : []);
+      expect(r.areas({clear}), hasLength(1));
+      expectArea(r, r.areas({clear}));
+    });
+
+    test('patches apart, or meeting only at a corner, stay apart', () {
+      final apart = reachOf(
+        36,
+        (k) => k <= 2 || (k >= 10 && k <= 12) ? [(0, 3000)] : [],
+      );
+      expect(apart.areas({clear}), hasLength(2));
+      expectArea(apart, apart.areas({clear}));
+      final corner = reachOf(
+        36,
+        (k) => switch (k) {
+          5 => [(1000, 2000)],
+          6 => [(2000, 3000)],
+          _ => [],
+        },
+      );
+      expect(corner.areas({clear}), hasLength(2));
+      expectArea(corner, corner.areas({clear}));
+    });
+
+    test('an island in a hole is an area of its own', () {
+      final r = reachOf(
+        36,
+        (k) => k < 10
+            ? [(0, 3000), if (k >= 3 && k <= 5) (4000, 5000), (6000, 10000)]
+            : [(0, 10000)],
+      );
+      final areas = r.areas({clear});
+      expect(areas, hasLength(2));
+      expect(areas.map((a) => a.holes.length).toList()..sort(), [0, 1]);
+      expectArea(r, areas);
+    });
+
+    test('any pattern: the areas cover just the runs', () {
+      for (var seed = 0; seed < 20; seed++) {
+        final random = math.Random(seed);
+        final r = reachOf(72, (_) {
+          final out = <(double, double)>[];
+          var at = 0.0;
+          while (true) {
+            final s = at + random.nextInt(4) * 500.0;
+            final e = s + (1 + random.nextInt(4)) * 500.0;
+            if (e > 10000) break;
+            out.add((s, e));
+            at = e + 500;
+          }
+          return out;
+        });
+        final areas = r.areas({clear});
+        for (final a in areas) {
+          expect(a.outline.first, a.outline.last);
+          for (final h in a.holes) {
+            expect(h.first, h.last);
+          }
+        }
+        expectArea(r, areas);
+      }
+    });
+  });
+}
+
+/// [a]'s area in square metres: its outline less its holes.
+double areaM2(ReachArea a) {
+  double ring(List<Geo> points) {
+    final lat0 = points.first.lat * math.pi / 180;
+    const m = 6371008.8 * math.pi / 180;
+    var sum = 0.0;
+    for (var i = 0; i + 1 < points.length; i++) {
+      final p = points[i], q = points[i + 1];
+      sum +=
+          (p.lon * m * math.cos(lat0)) * (q.lat * m) -
+          (q.lon * m * math.cos(lat0)) * (p.lat * m);
+    }
+    return sum.abs() / 2;
+  }
+
+  return ring(a.outline) - a.holes.fold(0.0, (sum, h) => sum + ring(h));
 }

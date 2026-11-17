@@ -6770,6 +6770,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Часть рельефа здесь не удаётся рассчитать, например ниже уровня моря, поэтому она не закрашена.';
 
   @override
+  String get los_positionGuessed => 'Предполагаемая позиция';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Предполагаемая позиция (через $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Смотреть дальше ($distance)';
   }

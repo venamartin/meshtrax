@@ -6796,6 +6796,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Une partie du terrain ici ne peut pas être calculée, par exemple sous le niveau de la mer : elle n\'est donc pas ombrée.';
 
   @override
+  String get los_positionGuessed => 'Position estimée';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Position estimée (via $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Voir plus loin ($distance)';
   }

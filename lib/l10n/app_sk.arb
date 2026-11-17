@@ -2734,6 +2734,8 @@
   "los_helpBody": "Odpoveď vychádza len z terénu, prečítaného zo stiahnutých vrstevníc. Nevie nič o stromoch, budovách, ľuďoch, elektrických vedeniach ani iných anténach a vrchol kopca môže byť až o jednu vrstevnicu vyšší, než je nakreslené.\n\n„Voľno“ znamená, že terén neprekáža. Nezaručuje to, že správa prejde. „Na hrane“ znamená, že sa terén priblíži k čiare. „Zakryté“ znamená, že terén prekáža: správa sa ešte môže dostať cez jeden nízky hrebeň, ale nespoliehajte sa na to.\n\nVyskúšajte to v teréne s vlastnými rádiami, skôr než sa na to budete spoliehať.",
   "los_reachShaded": "Vyfarbené: tam terén neprekáža spojeniu s ručným rádiom, do {distance}.",
   "los_reachUnknownPart": "Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.",
+  "los_positionGuessed": "Odhadnutá poloha",
+  "los_positionGuessedVia": "Odhadnutá poloha (cez {names})",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "Pozrieť ďalej ({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

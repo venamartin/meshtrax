@@ -706,7 +706,8 @@ class _MapScreenState extends State<MapScreen> {
           // Back leaves full screen, then lowers a raised route sheet, then
           // closes the route, before anything else. A map opened to route
           // somewhere goes straight back to where you came from.
-          canPop: allowBack &&
+          canPop:
+              allowBack &&
               !_fullScreen &&
               _los == null &&
               (_routeTo == null || widget.routeToHighlight),
@@ -1452,15 +1453,15 @@ class _MapScreenState extends State<MapScreen> {
     final parsed = StructuredMessage.parse(text);
     final (LatLng position, String label, String flags) = switch (parsed) {
       LocationMessage m when m.isSendersOwn => (
-          m.position,
-          StructuredMessageCard.locationTitle(
-            context.l10n,
-            m,
-            isOutgoing: outgoing,
-            senderName: fromName,
-          ),
-          'poi',
+        m.position,
+        StructuredMessageCard.locationTitle(
+          context.l10n,
+          m,
+          isOutgoing: outgoing,
+          senderName: fromName,
         ),
+        'poi',
+      ),
       LocationMessage m => (m.position, m.label ?? '', 'poi'),
       SosMessage m => (m.position, m.text, 'sos'),
       _ => (const LatLng(0, 0), '', ''),
@@ -2030,13 +2031,26 @@ class _MapScreenState extends State<MapScreen> {
     seenAt: contact.lastSeen,
   );
 
-  /// Everyone with a known position, you too: the radio reach's list.
+  /// Everyone with a known position, you too, and those the map shows at
+  /// a guessed position: the radio reach's list.
   List<LosPlace> _losPeople() {
     final connector = _connector;
     return [
       ?_me(connector, _selfPosition(connector)),
       for (final c in connector.allContacts)
         if (c.hasLocation) _contactPlace(c),
+      for (final g in GuessedLocationHelper.withCurrentContacts(
+        _cachedGuessedLocations,
+        connector.allContacts,
+      ))
+        LosPlace.contact(
+          g.position,
+          name: g.contact.name,
+          key: g.contact.publicKeyHex,
+          repeater: g.contact.type == advTypeRepeater,
+          seenAt: g.contact.lastSeen,
+          guessedVia: g.heardVia,
+        ),
     ];
   }
 
@@ -2170,16 +2184,20 @@ class _MapScreenState extends State<MapScreen> {
           _losShade = (
             r,
             [
-              for (final (i, ring) in r.areas({
+              for (final (i, area) in r.areas({
                 Verdict.clear,
                 Verdict.marginal,
               }).indexed)
                 MapPolygon(
                   id: 'los-reach-$i',
-                  points: [for (final g in ring) latLngOf(g).toOvm()],
-                  fillColor: losReachColor(context).withValues(alpha: 0.4),
-                  strokeColor: Colors.transparent,
-                  strokeWidth: 0,
+                  points: [for (final g in area.outline) latLngOf(g).toOvm()],
+                  holes: [
+                    for (final hole in area.holes)
+                      [for (final g in hole) latLngOf(g).toOvm()],
+                  ],
+                  fillColor: losReachColor(context).withValues(alpha: 0.45),
+                  strokeColor: losReachColor(context),
+                  strokeWidth: 1.5,
                 ),
             ],
           );
@@ -2772,29 +2790,29 @@ class _MapScreenState extends State<MapScreen> {
               }
 
               Widget header(String text) => Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      text,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  );
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text(
+                  text,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              );
               Widget tile(_ShareTarget target) => ListTile(
-                    leading: Icon(target.icon, color: target.color),
-                    title: Text(
-                      target.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: target.channel?.isPublicChannel ?? false
-                        ? Text(context.l10n.channels_publicChannel)
-                        : null,
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      unawaited(
-                        _sendMarker(context, liveConnector, target, markerText),
-                      );
-                    },
+                leading: Icon(target.icon, color: target.color),
+                title: Text(
+                  target.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: target.channel?.isPublicChannel ?? false
+                    ? Text(context.l10n.channels_publicChannel)
+                    : null,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(
+                    _sendMarker(context, liveConnector, target, markerText),
                   );
+                },
+              );
               final shownChats = chats.where(shown).toList();
               final shownFavorites = favorites.where(shown).toList();
               return SafeArea(
@@ -2864,8 +2882,7 @@ class _MapScreenState extends State<MapScreen> {
     MeshCoreConnector connector,
     Map<String, String> drafts,
   ) {
-    bool takesText(Contact c) =>
-        c.type == advTypeChat || c.type == advTypeRoom;
+    bool takesText(Contact c) => c.type == advTypeChat || c.type == advTypeRoom;
     final now = DateTime.now().microsecondsSinceEpoch;
     final chats = <(int, _ShareTarget)>[];
     final listed = <String>{};
@@ -2876,7 +2893,9 @@ class _MapScreenState extends State<MapScreen> {
       if (!hasMessage && !hasDraft) continue;
       listed.add(contact.publicKeyHex);
       // A chat with only a draft sits on top, as on the Chats screen.
-      final sortKey = hasMessage ? connector.latestContactArrivalUs(contact) : now;
+      final sortKey = hasMessage
+          ? connector.latestContactArrivalUs(contact)
+          : now;
       chats.add((sortKey, _ShareTarget.contact(contact)));
     }
     for (final channel in connector.channels) {

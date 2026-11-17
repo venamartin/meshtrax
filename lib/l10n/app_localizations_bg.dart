@@ -6746,6 +6746,14 @@ class AppLocalizationsBg extends AppLocalizations {
       'Част от терена тук не може да се изчисли, например под морското равнище, затова не е оцветена.';
 
   @override
+  String get los_positionGuessed => 'Предполагаема позиция';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Предполагаема позиция (чрез $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Виж по-далеч ($distance)';
   }

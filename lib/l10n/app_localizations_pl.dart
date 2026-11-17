@@ -6776,6 +6776,14 @@ class AppLocalizationsPl extends AppLocalizations {
       'Części terenu tutaj nie da się obliczyć, np. poniżej poziomu morza, więc nie jest zacieniowana.';
 
   @override
+  String get los_positionGuessed => 'Przypuszczalna pozycja';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Przypuszczalna pozycja (przez $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Sprawdź dalej ($distance)';
   }

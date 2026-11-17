@@ -6655,6 +6655,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.';
 
   @override
+  String get los_positionGuessed => 'Position guessed';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Position guessed, heard via $names';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Look further ($distance)';
   }

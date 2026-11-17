@@ -11632,6 +11632,18 @@ abstract class AppLocalizations {
   /// **'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.'**
   String get los_reachUnknownPart;
 
+  /// No description provided for @los_positionGuessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Position guessed'**
+  String get los_positionGuessed;
+
+  /// No description provided for @los_positionGuessedVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Position guessed, heard via {names}'**
+  String los_positionGuessedVia(String names);
+
   /// No description provided for @los_lookFurther.
   ///
   /// In en, this message translates to:

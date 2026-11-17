@@ -6698,6 +6698,14 @@ class AppLocalizationsSv extends AppLocalizations {
       'En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.';
 
   @override
+  String get los_positionGuessed => 'Gissad position';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Gissad position, hörd via $names';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Titta längre ($distance)';
   }

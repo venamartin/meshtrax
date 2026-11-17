@@ -6760,6 +6760,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Parte del terreno aquí no se puede calcular, como el que está bajo el nivel del mar, así que no aparece sombreado.';
 
   @override
+  String get los_positionGuessed => 'Ubicación estimada';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Ubicación estimada (vía $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Ver más lejos ($distance)';
   }

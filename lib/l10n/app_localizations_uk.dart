@@ -6775,6 +6775,14 @@ class AppLocalizationsUk extends AppLocalizations {
       'Частину рельєфу тут не вдається розрахувати, наприклад нижче рівня моря, тому її не зафарбовано.';
 
   @override
+  String get los_positionGuessed => 'Імовірна позиція';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Імовірна позиція (через $names)';
+  }
+
+  @override
   String los_lookFurther(String distance) {
     return 'Дивитися далі ($distance)';
   }

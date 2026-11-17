@@ -62,6 +62,10 @@ class LosPlace {
   final String? key;
   final bool repeater;
 
+  /// Set for a contact whose position is only a guess, from the repeaters
+  /// it was heard through (their names): line of sight leaves it out.
+  final List<String>? guessedVia;
+
   /// When the position was last heard (a contact) or read from the GPS
   /// (you).
   final DateTime? seenAt;
@@ -78,7 +82,8 @@ class LosPlace {
   }) : kind = LosPlaceKind.me,
        name = null,
        key = null,
-       repeater = false;
+       repeater = false,
+       guessedVia = null;
 
   const LosPlace.contact(
     this.position, {
@@ -86,6 +91,7 @@ class LosPlace {
     required String this.key,
     this.repeater = false,
     this.seenAt,
+    this.guessedVia,
   }) : kind = LosPlaceKind.contact,
        source = null,
        groundM = null;
@@ -96,9 +102,11 @@ class LosPlace {
       repeater = false,
       seenAt = null,
       source = null,
-      groundM = null;
+      groundM = null,
+      guessedVia = null;
 
   bool get isMe => kind == LosPlaceKind.me;
+  bool get guessed => guessedVia != null;
 
   LinkEnd end(Antenna antenna) =>
       LinkEnd(geoOf(position), antennaM: antenna.metres, groundM: groundM);
@@ -178,6 +186,17 @@ class LineOfSightSession extends ChangeNotifier {
   List<LosPlace> get reachPeople => _reachPeople;
   List<LosPlace> _reachPeople = const [];
 
+  /// The places in [listRadiusM] with only a guessed position: listed, with
+  /// no answer.
+  List<LosPlace> get reachGuessed => _reachGuessed;
+  List<LosPlace> _reachGuessed = const [];
+
+  /// How far out the reach lists people: 60 mi, or 100 km. Past the shaded
+  /// circle each gets the answer for its own line.
+  double get listRadiusM => _settings.settings.unitSystem == UnitSystem.imperial
+      ? 60 * 1609.344
+      : 100000;
+
   /// The sweep's radius: 20 km, then 30 km after [lookFurther].
   double get reachRadiusM => _radiusM;
   double _radiusM = nearRadiusM;
@@ -198,7 +217,13 @@ class LineOfSightSession extends ChangeNotifier {
 
   /// A line opened from the reach list: [backToReach] goes back.
   bool get canGoBack => _savedReach != null;
-  ({LosPlace from, Antenna antenna, Reach? reach, List<LosPlace> people})?
+  ({
+    LosPlace from,
+    Antenna antenna,
+    Reach? reach,
+    List<LosPlace> people,
+    List<LosPlace> guessed,
+  })?
   _savedReach;
 
   /// Bumps when the ends move, so the map can show them.
@@ -259,6 +284,7 @@ class LineOfSightSession extends ChangeNotifier {
       antenna: _fromAntenna,
       reach: _reach,
       people: _reachPeople,
+      guessed: _reachGuessed,
     );
     _mode = LosMode.line;
     _to = place;
@@ -278,6 +304,7 @@ class LineOfSightSession extends ChangeNotifier {
     _to = null;
     _reach = saved.reach;
     _reachPeople = saved.people;
+    _reachGuessed = saved.guessed;
     _endsVersion++;
     if (_reach == null) {
       _run();
@@ -372,12 +399,21 @@ class LineOfSightSession extends ChangeNotifier {
     final sweep = ++_sweeps;
     final radius = _radiusM;
     final c = geoOf(center.position);
-    final people = [
+    final listRadius = listRadiusM;
+    final near = [
       for (final p in _people())
         if (!(p.isMe && center.isMe) &&
             (p.key == null || p.key != center.key) &&
-            distanceM(c, geoOf(p.position)) <= radius)
+            distanceM(c, geoOf(p.position)) <= listRadius)
           p,
+    ];
+    final people = [
+      for (final p in near)
+        if (!p.guessed) p,
+    ];
+    final guessed = [
+      for (final p in near)
+        if (p.guessed) p,
     ];
     _sweepBusy = true;
     _progress = 0;
@@ -400,6 +436,7 @@ class LineOfSightSession extends ChangeNotifier {
       if (_closed || sweep != _sweeps) return;
       _reach = r;
       _reachPeople = people;
+      _reachGuessed = guessed;
     } on Object catch (e) {
       if (_closed || sweep != _sweeps) return;
       appLogger.warn('Radio reach failed: $e', tag: 'LOS');

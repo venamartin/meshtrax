@@ -32,4 +32,5 @@ export 'src/line_of_sight.dart'
         lineOfSightOver;
 export 'src/profile.dart' show PointKind;
 export 'src/reach.dart' show Reach, ReachRun;
+export 'src/reach_areas.dart' show ReachArea;
 export 'src/terrain.dart' show ContourPack, ContourTerrain;

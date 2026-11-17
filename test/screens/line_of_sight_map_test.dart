@@ -440,11 +440,27 @@ void main() {
     );
   });
 
-  testWidgets('radio reach: a shade on the map and who can be reached; a row '
-      'opens that line', (tester) async {
+  testWidgets('radio reach: a shade on the map and who can be reached, '
+      'nearest first; a row opens that line', (tester) async {
+    // Heard through Peak, with no position of its own: the map guesses.
+    final heard = Contact(
+      publicKey: Uint8List.fromList(List.filled(32, 7)),
+      name: 'AD77',
+      type: advTypeChat,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 1,
+      lastSeen: DateTime.now().subtract(const Duration(minutes: 5)),
+      inboundPath: Uint8List.fromList([3]),
+      inboundHopCount: 1,
+      inboundPathHashSize: 1,
+    );
+    await settings.setMapShowGuessedLocations(true);
+    // Past the shaded circle, inside 60 mi.
+    final far = _node('Far', advTypeChat, 4, const ll.LatLng(36.65, -116.73));
     await pumpMap(
       tester,
-      _Radio(self: dantes, nodes: [ana, peak], altitude: 1670.1),
+      _Radio(self: dantes, nodes: [far, heard, peak, ana], altitude: 1670.1),
     );
     await menu(tester, 'Radio reach from me');
     await answer(tester);
@@ -467,6 +483,25 @@ void main() {
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Peak'), findsOneWidget);
     expect(find.text('Look further (19 mi)'), findsOneWidget);
+    // Everyone out to 60 mi, nearest first; a guessed position is listed
+    // with what it was heard through, and no answer.
+    expect(
+      s.reachPeople.map((p) => p.name),
+      containsAll(['Ana', 'Peak', 'Far']),
+    );
+    expect(s.reachGuessed.single.name, 'AD77');
+    double y(String text) => tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byType(LineOfSightSheet),
+            matching: find.text(text),
+          ),
+        )
+        .dy;
+    expect(y('Ana'), lessThan(y('Peak')));
+    expect(y('Peak'), lessThan(y('Far')));
+    expect(y('AD77'), lessThan(y('Far')));
+    expect(find.text('Position guessed, heard via Peak'), findsOneWidget);
     await tapInSheet(tester, find.text('Ana'));
     await answer(tester);
     expect(session(tester)!.mode, LosMode.line);

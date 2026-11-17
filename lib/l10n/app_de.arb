@@ -2762,6 +2762,8 @@
   "los_helpBody": "Die Antwort beruht allein auf dem Gelände, gelesen aus den heruntergeladenen Höhenlinien. Bäume, Gebäude, Menschen, Stromleitungen oder andere Antennen kennt sie nicht, und ein Gipfel kann um bis zu eine Höhenlinie höher liegen als eingezeichnet.\n\n„Frei“ heißt, das Gelände ist nicht im Weg. Das ist keine Garantie, dass eine Nachricht durchkommt. „Knapp“ heißt, das Gelände kommt der Linie nahe. „Blockiert“ heißt, das Gelände ist im Weg: Eine Nachricht kommt vielleicht noch über einen niedrigen Kamm, aber verlassen Sie sich nicht darauf.\n\nTesten Sie es vor Ort mit Ihren eigenen Funkgeräten, bevor Sie sich darauf verlassen.",
   "los_reachShaded": "Schattiert: Dort ist kein Gelände im Weg zu einem Handgerät, bis {distance}.",
   "los_reachUnknownPart": "Manches Gelände hier lässt sich nicht berechnen, etwa unter dem Meeresspiegel, und ist darum nicht schattiert.",
+  "los_positionGuessed": "Position geschätzt",
+  "los_positionGuessedVia": "Position geschätzt, gehört über {names}",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "Weiter schauen ({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

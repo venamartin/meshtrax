@@ -23,8 +23,8 @@ import 'route_sheet.dart';
 /// The radio reach's shade: not green, which the map uses for parks.
 Color losReachColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF9FA8DA)
-    : const Color(0xFF3949AB);
+    ? const Color(0xFFE040FB)
+    : const Color(0xFFD500F9);
 
 /// Each answer's colour, on the map and in the sheet. The word always goes
 /// with it.
@@ -662,16 +662,16 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
     final s = _s;
     final r = s.reach;
     final units = _units;
-    final radius = GeoFormat.distanceText(s.reachRadiusM, units);
-    final rows = <(LosPlace, LineOfSight)>[
-      if (r != null)
+    final radius = GeoFormat.distanceText(s.listRadiusM, units);
+    // Nearest first; a guessed position has no answer.
+    final rows = <(LosPlace, LineOfSight?, double)>[
+      if (r != null) ...[
         for (var i = 0; i < s.reachPeople.length; i++)
-          (s.reachPeople[i], r.targets[i]),
-    ];
-    rows.sort((a, b) {
-      final v = a.$2.verdict.index.compareTo(b.$2.verdict.index);
-      return v != 0 ? v : a.$2.distanceM.compareTo(b.$2.distanceM);
-    });
+          (s.reachPeople[i], r.targets[i], r.targets[i].distanceM),
+        for (final p in s.reachGuessed)
+          (p, null, distanceM(r.center, geoOf(p.position))),
+      ],
+    ]..sort((a, b) => a.$3.compareTo(b.$3));
     final now = widget.clock();
     return [
       if (r != null && s.reachRadiusM < LineOfSightSession.farRadiusM)
@@ -692,7 +692,7 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(l10n.los_nobodyWithin(radius)),
         ),
-      for (final (place, answer) in rows)
+      for (final (place, answer, distance) in rows)
         ListTile(
           contentPadding: EdgeInsets.zero,
           dense: true,
@@ -701,25 +701,34 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: place.seenAt == null
-              ? null
-              : Text(losAge(l10n, place.seenAt!, now)),
+          subtitle: switch (place.guessedVia) {
+            final via? => Text(
+              via.isEmpty
+                  ? l10n.los_positionGuessed
+                  : l10n.los_positionGuessedVia(via.join(', ')),
+            ),
+            null when place.seenAt != null => Text(
+              losAge(l10n, place.seenAt!, now),
+            ),
+            null => null,
+          },
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _VerdictWord(answer.verdict, small: true),
+              if (answer != null) _VerdictWord(answer.verdict, small: true),
               const SizedBox(width: 12),
               SizedBox(
-                width: 56,
+                width: 64,
                 child: Text(
-                  GeoFormat.distanceText(answer.distanceM, units),
+                  '${answer == null ? '~' : ''}'
+                  '${GeoFormat.distanceText(distance, units)}',
                   textAlign: TextAlign.end,
                   style: theme.textTheme.bodyMedium,
                 ),
               ),
             ],
           ),
-          onTap: () => s.openLine(place),
+          onTap: answer == null ? null : () => s.openLine(place),
         ),
     ];
   }
