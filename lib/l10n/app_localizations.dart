@@ -11745,6 +11745,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contours for line of sight'**
   String get offlineMaps_losContours;
+
+  /// No description provided for @contacts_deleteComesBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio saves this kind of contact by itself, so it comes back the next time it is heard.'**
+  String get contacts_deleteComesBack;
 }
 
 class _AppLocalizationsDelegate

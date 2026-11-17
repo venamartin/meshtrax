@@ -6858,4 +6858,8 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Горизонталі для прямої видимості';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Радіо саме зберігає такі контакти, тому він повернеться, коли його почують наступного разу.';
 }

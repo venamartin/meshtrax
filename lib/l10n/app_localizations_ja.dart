@@ -6521,4 +6521,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '見通し用の等高線';
+
+  @override
+  String get contacts_deleteComesBack =>
+      '無線機はこの種類の連絡先を自動で保存するため、次に受信したときに戻ってきます。';
 }

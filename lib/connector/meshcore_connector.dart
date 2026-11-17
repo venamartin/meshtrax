@@ -4301,15 +4301,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     Uint8List data, {
     Duration timeout = const Duration(seconds: 2),
     bool expectsGenericAck = false,
+  }) async =>
+      (await _sendAndWaitForReply(
+        data,
+        timeout: timeout,
+        expectsGenericAck: expectsGenericAck,
+      ))?[0] ==
+      respCodeOk;
+
+  /// The radio's OK or ERR frame for [data]; null when none came in time.
+  Future<Uint8List?> _sendAndWaitForReply(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 2),
+    bool expectsGenericAck = false,
   }) async {
-    if (!isConnected) return false;
-    final completer = Completer<bool>();
+    if (!isConnected) return null;
+    final completer = Completer<Uint8List?>();
     final subscription = receivedFrames.listen((rxFrame) {
       if (rxFrame.isEmpty) return;
-      if (rxFrame[0] == respCodeOk) {
-        if (!completer.isCompleted) completer.complete(true);
-      } else if (rxFrame[0] == respCodeErr) {
-        if (!completer.isCompleted) completer.complete(false);
+      if (rxFrame[0] == respCodeOk || rxFrame[0] == respCodeErr) {
+        if (!completer.isCompleted) completer.complete(rxFrame);
       }
     });
 
@@ -4326,9 +4337,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       if (expectsGenericAck && index >= 0) {
         _pendingGenericAckQueue[index].givenUpAt = DateTime.now();
       }
-      return false;
+      return null;
     } catch (_) {
-      return false;
+      return null;
     } finally {
       await subscription.cancel();
     }
@@ -4856,7 +4867,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) async {
     final width = hashSize ?? _pathHashByteWidth;
     await withPathLock(() async {
-      if (!isConnected) return;
+      if (!isConnected || !_isSavedContact(contact)) return;
 
       // Marked before the write: a PATH_UPDATED snapshot fetched while the
       // write is in flight must already read as the app's route.
@@ -4994,6 +5005,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         graphRoutes: routes);
   }
 
+  /// The radio's add-or-update command adds a key it doesn't hold, so a path
+  /// or flag write for a deleted contact (a screen still open on it) would
+  /// put it back on the radio.
+  bool _isSavedContact(Contact contact) =>
+      contacts.any((c) => c.publicKeyHex == contact.publicKeyHex);
+
   Future<void> setContactFlags(
     Contact contact, {
     bool? isFavorite,
@@ -5002,7 +5019,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool? teleEnv,
     bool? remoteCli,
   }) async {
-    if (!isConnected) return;
+    if (!isConnected || !_isSavedContact(contact)) return;
     final latestContact =
         await _fetchContactSnapshotFromDevice(contact.publicKey) ?? contact;
     int updatedFlags = isFavorite != null
@@ -5538,10 +5555,27 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await _recordSentWireSecs(live.idKey, messageId, wireSecs);
   }
 
-  Future<void> removeContact(Contact contact) async {
-    if (!isConnected) return;
+  /// Whether the radio saves a contact of [type] by itself when it hears an
+  /// advert (MyMesh::shouldAutoAddContactType), so a deleted one comes back.
+  bool radioAutoAdds(int type) {
+    if (_manualAddRaw & 0x01 == 0) return true;
+    return switch (type) {
+      advTypeChat => _autoAddUsers == true,
+      advTypeRepeater => _autoAddRepeaters == true,
+      advTypeRoom => _autoAddRoomServers == true,
+      advTypeSensor => _autoAddSensors == true,
+      _ => false,
+    };
+  }
 
-    await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
+  /// False when the radio did not answer: the contact is kept, as the next
+  /// download would bring it back. ERR means the radio doesn't hold it.
+  Future<bool> removeContact(Contact contact) async {
+    if (!isConnected) return false;
+
+    final reply =
+        await _sendAndWaitForReply(buildRemoveContactFrame(contact.publicKey));
+    if (reply == null) return false;
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
@@ -5550,6 +5584,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
     unawaited(_persistContacts());
     unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
+    return true;
   }
 
   /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).

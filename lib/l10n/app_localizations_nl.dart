@@ -6812,4 +6812,8 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Hoogtelijnen voor zichtlijn';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Je radio slaat dit soort contact zelf op, dus het komt terug zodra het weer wordt gehoord.';
 }

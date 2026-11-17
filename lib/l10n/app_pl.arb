@@ -2793,5 +2793,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Nikogo z pozycją w promieniu {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Poziomice do linii widoczności"
+  "offlineMaps_losContours": "Poziomice do linii widoczności",
+  "contacts_deleteComesBack": "Radio samo zapisuje ten rodzaj kontaktu, więc wróci, gdy następnym razem zostanie usłyszany."
 }

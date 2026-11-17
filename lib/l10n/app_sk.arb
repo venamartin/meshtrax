@@ -2755,5 +2755,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Nikto s polohou do {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Vrstevnice pre priamu viditeľnosť"
+  "offlineMaps_losContours": "Vrstevnice pre priamu viditeľnosť",
+  "contacts_deleteComesBack": "Rádio si tento druh kontaktu ukladá samo, takže sa vráti, keď ho nabudúce začuje."
 }

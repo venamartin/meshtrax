@@ -6859,4 +6859,8 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Poziomice do linii widoczności';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Radio samo zapisuje ten rodzaj kontaktu, więc wróci, gdy następnym razem zostanie usłyszany.';
 }

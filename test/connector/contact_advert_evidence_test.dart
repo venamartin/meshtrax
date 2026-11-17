@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
@@ -12,6 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
 
+  /// What the radio answers a remove with; null for no answer.
+  int? removeReply = respCodeOk;
+
   @override
   bool get isConnected => true;
 
@@ -22,6 +27,12 @@ class _Connector extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data);
+    final reply = removeReply;
+    if (data[0] == cmdRemoveContact && reply != null) {
+      scheduleMicrotask(
+        () => handleFrameForTest(reply == respCodeErr ? [reply, 2] : [reply]),
+      );
+    }
   }
 }
 
@@ -299,8 +310,7 @@ void main() {
         timestamp: _secondsAgo(const Duration(hours: 1)),
       ),
     );
-    final store = ContactStore()
-      ..setPublicKeyHex = pubKeyToHex(_selfKey);
+    final store = ContactStore()..setPublicKeyHex = pubKeyToHex(_selfKey);
     await store.saveContacts([
       Contact(
         publicKey: _key,
@@ -1138,8 +1148,7 @@ void main() {
 
   group('an advert on a saved contact', () {
     Future<Contact?> cached() async {
-      final store = ContactStore()
-        ..setPublicKeyHex = pubKeyToHex(_selfKey);
+      final store = ContactStore()..setPublicKeyHex = pubKeyToHex(_selfKey);
       final rows = await store.loadContacts();
       return rows.where((x) => x.publicKeyHex == _hex).firstOrNull;
     }
@@ -1222,5 +1231,53 @@ void main() {
     expect(saved()!.inboundHopCount, 0);
     expect(saved()!.inboundPath, isEmpty);
     expect(saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000, at);
+  });
+
+  group('deleting a contact', () {
+    int writes() => c.sent.where((f) => f[0] == cmdAddUpdateContact).length;
+
+    setUp(() async {
+      autoAdd();
+      await fullDownload(_record());
+    });
+
+    test('with no answer from the radio keeps it and says so', () async {
+      c.removeReply = null;
+      expect(await c.removeContact(saved()!), isFalse);
+      expect(saved(), isNotNull);
+    });
+
+    test('the radio not having it still removes it', () async {
+      c.removeReply = respCodeErr;
+      expect(await c.removeContact(saved()!), isTrue);
+      expect(saved(), isNull);
+    });
+
+    test(
+      'a screen still open on it does not put it back on the radio',
+      () async {
+        final contact = saved()!;
+        expect(await c.removeContact(contact), isTrue);
+        final before = writes();
+        await c.setContactPath(contact, Uint8List.fromList([0xAA]), 1);
+        await c.setContactFlags(contact, isFavorite: true);
+        expect(writes(), before);
+      },
+    );
+
+    test('a saved contact still takes path and flag writes', () async {
+      final before = writes();
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1);
+      expect(writes(), before + 1);
+    });
+
+    test('says when the radio would save it again by itself', () {
+      c.handleFrameForTest(_selfInfo()); // per-type auto-add
+      autoAdd(chat: true);
+      expect(c.radioAutoAdds(advTypeChat), isTrue);
+      expect(c.radioAutoAdds(advTypeRepeater), isFalse);
+      autoAdd();
+      expect(c.radioAutoAdds(advTypeChat), isFalse);
+    });
   });
 }

@@ -2123,5 +2123,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Никого с местоположением в пределах {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Горизонтали для прямой видимости"
+  "offlineMaps_losContours": "Горизонтали для прямой видимости",
+  "contacts_deleteComesBack": "Радио само сохраняет такие контакты, поэтому он вернётся, когда его услышат в следующий раз."
 }

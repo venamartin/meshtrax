@@ -2755,5 +2755,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Niemand met een positie binnen {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Hoogtelijnen voor zichtlijn"
+  "offlineMaps_losContours": "Hoogtelijnen voor zichtlijn",
+  "contacts_deleteComesBack": "Je radio slaat dit soort contact zelf op, dus het komt terug zodra het weer wordt gehoord."
 }

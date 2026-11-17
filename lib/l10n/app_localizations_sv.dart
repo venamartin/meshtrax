@@ -6779,4 +6779,8 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Höjdkurvor för siktlinje';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Din radio sparar den här typen av kontakt själv, så den kommer tillbaka nästa gång den hörs.';
 }

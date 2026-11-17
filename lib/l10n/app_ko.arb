@@ -2793,5 +2793,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "{distance} 이내에 위치가 알려진 사람이 없습니다.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "가시선용 등고선"
+  "offlineMaps_losContours": "가시선용 등고선",
+  "contacts_deleteComesBack": "라디오가 이 종류의 연락처를 자동으로 저장하므로, 다음에 수신될 때 다시 나타납니다."
 }

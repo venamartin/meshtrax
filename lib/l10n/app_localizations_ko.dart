@@ -6535,4 +6535,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '가시선용 등고선';
+
+  @override
+  String get contacts_deleteComesBack =>
+      '라디오가 이 종류의 연락처를 자동으로 저장하므로, 다음에 수신될 때 다시 나타납니다.';
 }

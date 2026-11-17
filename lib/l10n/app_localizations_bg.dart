@@ -6826,4 +6826,8 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Хоризонтали за пряка видимост';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Радиото запазва този вид контакт само, така че той ще се върне следващия път, когато бъде чут.';
 }

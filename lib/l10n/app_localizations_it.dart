@@ -6851,4 +6851,8 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get offlineMaps_losContours =>
       'Curve di livello per la linea di vista';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'La radio salva da sola questo tipo di contatto, quindi tornerà la prossima volta che verrà sentito.';
 }

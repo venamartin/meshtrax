@@ -6852,4 +6852,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Höhenlinien für die Sichtlinie';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Dein Funkgerät speichert diese Art Kontakt von selbst, daher kommt er zurück, sobald er wieder gehört wird.';
 }

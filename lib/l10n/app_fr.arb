@@ -2755,5 +2755,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Personne avec une position dans un rayon de {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Courbes de niveau pour la ligne de vue"
+  "offlineMaps_losContours": "Courbes de niveau pour la ligne de vue",
+  "contacts_deleteComesBack": "Votre radio enregistre ce type de contact d'elle-même : il reviendra la prochaine fois qu'il sera entendu."
 }

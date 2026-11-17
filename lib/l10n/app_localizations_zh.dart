@@ -6404,4 +6404,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '用于视线的等高线';
+
+  @override
+  String get contacts_deleteComesBack => '电台会自动保存此类联系人，因此下次收到它时它会重新出现。';
 }

@@ -249,16 +249,27 @@ class _NewChatScreenState extends State<NewChatScreen> {
                   context: context,
                   builder: (dialogContext) => AlertDialog(
                     title: Text(context.l10n.contacts_deleteContact),
-                    content: Text(context.l10n.contacts_removeConfirm(contact.name)),
+                    content: Text([
+                      context.l10n.contacts_removeConfirm(contact.name),
+                      if (connector.radioAutoAdds(contact.type))
+                        context.l10n.contacts_deleteComesBack,
+                    ].join('\n\n')),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext),
                         child: Text(context.l10n.common_cancel),
                       ),
                       TextButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(dialogContext);
-                          connector.removeContact(contact);
+                          if (!await connector.removeContact(contact) &&
+                              context.mounted) {
+                            showDismissibleSnackBar(
+                              context,
+                              content: Text(context.l10n
+                                  .contacts_contactDeleteFailed(contact.name)),
+                            );
+                          }
                         },
                         child: Text(
                           context.l10n.common_delete,

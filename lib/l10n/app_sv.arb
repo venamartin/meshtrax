@@ -2755,5 +2755,6 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Ingen med position inom {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Höjdkurvor för siktlinje"
+  "offlineMaps_losContours": "Höjdkurvor för siktlinje",
+  "contacts_deleteComesBack": "Din radio sparar den här typen av kontakt själv, så den kommer tillbaka nästa gång den hörs."
 }

@@ -6849,4 +6849,8 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Szintvonalak a rálátáshoz';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'A rádió magától elmenti az ilyen típusú névjegyet, ezért visszakerül, amikor legközelebb hallja.';
 }
