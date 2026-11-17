@@ -458,6 +458,12 @@ void main() {
       find.textContaining('Shaded: the ground isn\'t in the way'),
       findsOneWidget,
     );
+    // The valley floor is below sea level: not shaded, and it says why.
+    expect(s.reach!.share(const {Verdict.unknown}), greaterThan(0.1));
+    expect(
+      find.textContaining('Some ground here can\'t be worked out'),
+      findsOneWidget,
+    );
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Peak'), findsOneWidget);
     expect(find.text('Look further (19 mi)'), findsOneWidget);

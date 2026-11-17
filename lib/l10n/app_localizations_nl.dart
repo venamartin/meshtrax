@@ -6728,6 +6728,10 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Verder kijken ($distance)';
   }

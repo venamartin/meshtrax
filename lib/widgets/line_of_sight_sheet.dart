@@ -511,6 +511,18 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
         : l10n.los_noContoursIn(length, names);
   }
 
+  /// A good part of the reach can't be worked out (below sea level, say)
+  /// and isn't shaded, for some reason other than contours not downloaded.
+  bool _unknownUnexplained(MissingContours? missing) {
+    final s = _s;
+    final r = s.reach;
+    if (s.mode != LosMode.reach || r == null || !r.centerGround.isKnown) {
+      return false;
+    }
+    return (missing == null || missing.isEmpty) &&
+        r.share(const {Verdict.unknown}) >= 0.1;
+  }
+
   /// Where contours are missing for the answer shown, if anywhere.
   MissingContours? _missingNow() {
     final s = _s;
@@ -557,6 +569,14 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_unknownUnexplained(missing))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  l10n.los_reachUnknownPart,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
             if (missing != null && !missing.isEmpty) ...[
               if (reach)
                 Padding(

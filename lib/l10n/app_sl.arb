@@ -2733,6 +2733,7 @@
   "los_aboutTitle": "O neposredni vidljivosti",
   "los_helpBody": "Odgovor temelji samo na terenu, prebranem iz plastnic, ki ste jih prenesli. Ne ve ničesar o drevesih, stavbah, ljudeh, daljnovodih ali drugih antenah, vrh hriba pa je lahko do ene plastnice višji, kot je narisano.\n\n»Prosto« pomeni, da teren ne ovira. To ne zagotavlja, da sporočilo pride. »Na meji« pomeni, da se teren približa črti. »Zakrito« pomeni, da teren ovira: sporočilo lahko še vedno pride čez en nizek greben, a ne računajte na to.\n\nPreden se zanesete nanj, ga preizkusite na terenu s svojimi radijskimi postajami.",
   "los_reachShaded": "Osenčeno: tam teren ne ovira povezave z ročnim radiem, do {distance}.",
+  "los_reachUnknownPart": "Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "Poglej dlje ({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

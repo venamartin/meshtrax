@@ -6441,6 +6441,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart => '海面下など、ここには計算できない地形があり、その部分は色付けされていません。';
+
+  @override
   String los_lookFurther(String distance) {
     return 'さらに遠くまで（$distance）';
   }

@@ -6741,6 +6741,10 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Poglej dlje ($distance)';
   }

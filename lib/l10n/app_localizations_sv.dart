@@ -6694,6 +6694,10 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Titta längre ($distance)';
   }

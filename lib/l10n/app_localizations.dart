@@ -11626,6 +11626,12 @@ abstract class AppLocalizations {
   /// **'Shaded: the ground isn\'t in the way to a hand-held there, up to {distance}.'**
   String los_reachShaded(String distance);
 
+  /// No description provided for @los_reachUnknownPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.'**
+  String get los_reachUnknownPart;
+
   /// No description provided for @los_lookFurther.
   ///
   /// In en, this message translates to:

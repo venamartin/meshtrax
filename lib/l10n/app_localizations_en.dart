@@ -6651,6 +6651,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Look further ($distance)';
   }

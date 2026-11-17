@@ -2733,6 +2733,7 @@
   "los_aboutTitle": "À propos de la ligne de vue",
   "los_helpBody": "La réponse vient uniquement du terrain, lu dans les courbes de niveau que vous avez téléchargées. Elle ignore les arbres, les bâtiments, les personnes, les lignes électriques et les autres antennes, et un sommet peut être plus haut que dessiné, jusqu'à une courbe de niveau de plus.\n\n« Dégagé » signifie que le terrain ne gêne pas. Cela ne garantit pas qu'un message passe. « Limite » signifie que le terrain s'approche de la ligne. « Bloqué » signifie que le terrain est sur le trajet : un message peut encore franchir une crête basse, mais n'y comptez pas.\n\nTestez avec vos propres radios sur le terrain avant de vous y fier.",
   "los_reachShaded": "Zone ombrée : à cet endroit, le terrain ne gêne pas la liaison avec une radio portative, jusqu'à {distance}.",
+  "los_reachUnknownPart": "Une partie du terrain ici ne peut pas être calculée, par exemple sous le niveau de la mer : elle n'est donc pas ombrée.",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "Voir plus loin ({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

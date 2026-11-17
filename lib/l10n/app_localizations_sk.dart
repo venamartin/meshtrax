@@ -6738,6 +6738,10 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Pozrieť ďalej ($distance)';
   }

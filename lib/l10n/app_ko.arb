@@ -2771,6 +2771,7 @@
   "los_aboutTitle": "가시선 정보",
   "los_helpBody": "결과는 다운로드한 등고선에서 읽은 지형만으로 계산합니다. 나무, 건물, 사람, 전선, 다른 안테나는 고려하지 않으며, 산꼭대기는 그려진 것보다 최대 등고선 한 칸만큼 더 높을 수 있습니다.\n\n'양호'는 지형이 가로막지 않는다는 뜻입니다. 메시지가 전달된다는 보장은 아닙니다. '아슬아슬'은 지형이 선에 가깝게 다가온다는 뜻입니다. '막힘'은 지형이 가로막는다는 뜻입니다. 낮은 능선 하나 정도는 메시지가 넘어갈 수도 있지만 기대하지 마세요.\n\n믿고 쓰기 전에 내 무전기로 현장에서 직접 시험해 보세요.",
   "los_reachShaded": "색칠된 곳: 그곳의 휴대용 무전기까지 지형이 가로막지 않습니다(최대 {distance}).",
+  "los_reachUnknownPart": "해수면 아래처럼 계산할 수 없는 지형이 있어 그 부분은 색칠되지 않습니다.",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
   "los_lookFurther": "더 멀리 보기({distance})",
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},

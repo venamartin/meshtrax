@@ -6325,6 +6325,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart => '此处部分地形无法计算（例如低于海平面的地方），因此未着色。';
+
+  @override
   String los_lookFurther(String distance) {
     return '查看更远（$distance）';
   }

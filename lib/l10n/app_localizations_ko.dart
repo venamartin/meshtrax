@@ -6454,6 +6454,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      '해수면 아래처럼 계산할 수 없는 지형이 있어 그 부분은 색칠되지 않습니다.';
+
+  @override
   String los_lookFurther(String distance) {
     return '더 멀리 보기($distance)';
   }

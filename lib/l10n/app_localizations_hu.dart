@@ -6766,6 +6766,10 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Messzebbre ($distance)';
   }

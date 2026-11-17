@@ -6766,6 +6766,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Часть рельефа здесь не удаётся рассчитать, например ниже уровня моря, поэтому она не закрашена.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Смотреть дальше ($distance)';
   }

@@ -6756,6 +6756,10 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Parte del terreno aquí no se puede calcular, como el que está bajo el nivel del mar, así que no aparece sombreado.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Ver más lejos ($distance)';
   }

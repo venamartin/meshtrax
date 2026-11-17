@@ -6768,6 +6768,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get los_reachUnknownPart =>
+      'Manches Gelände hier lässt sich nicht berechnen, etwa unter dem Meeresspiegel, und ist darum nicht schattiert.';
+
+  @override
   String los_lookFurther(String distance) {
     return 'Weiter schauen ($distance)';
   }
