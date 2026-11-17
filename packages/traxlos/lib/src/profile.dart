@@ -189,6 +189,9 @@ class ProfileData {
 /// by the pack index the crossings carry; [packSeaGuardInterval] the
 /// interval for the guard near sea level, 0 for a pack with lines below
 /// sea level (it defaults to [packInterval]: no lines at or below 0 m).
+/// [startSeaGuard] and [endSeaGuard] are that interval at the path's
+/// ends, for the ground next to a known end where no lines cross (see
+/// ContourTerrain.seaGuardAt); each defaults to the largest of them.
 ProfileData buildProfile({
   required Crossings crossings,
   required double length,
@@ -197,6 +200,8 @@ ProfileData buildProfile({
   required List<double> covered,
   required List<double> packInterval,
   List<double>? packSeaGuardInterval,
+  double? startSeaGuard,
+  double? endSeaGuard,
   double fillStepM = 50,
   List<PathPeak> peaks = const [],
   double peakMaxAboveIntervals = 3,
@@ -219,15 +224,16 @@ ProfileData buildProfile({
     while (ci < crossings.length && crossings.d(ci) <= e) {
       run.add(ci++);
     }
+    final hs = s <= 1e-6 ? startM : null;
     b.run(
       crossings,
       run,
       s,
       e,
-      s <= 1e-6 ? startM : null,
+      hs,
       e >= length - 1e-6 ? endM : null,
       maxInterval,
-      maxGuard,
+      hs != null ? startSeaGuard ?? maxGuard : endSeaGuard ?? maxGuard,
       peaks,
       peakMaxAboveIntervals,
     );
@@ -288,7 +294,7 @@ class _Builder {
     double? hs,
     double? he,
     double maxInterval,
-    double maxGuard,
+    double knownEndGuard,
     List<PathPeak> peaks,
     double peakMaxAbove,
   ) {
@@ -321,7 +327,9 @@ class _Builder {
       final h0 = hs ?? he ?? double.nan, h1 = he ?? hs ?? double.nan;
       final known = hs ?? he;
       final below =
-          known != null && maxGuard > 0 && known <= 3 * maxGuard + 1e-6;
+          known != null &&
+          knownEndGuard > 0 &&
+          known <= 3 * knownEndGuard + 1e-6;
       _add(s, h0, PointKind.end, 0, maxInterval);
       _seg(below ? PointKind.belowLowest : 0, 0);
       _add(e, h1, PointKind.end, 0, maxInterval);
