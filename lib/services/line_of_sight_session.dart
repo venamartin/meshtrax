@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:traxlos/traxlos.dart';
@@ -138,6 +140,7 @@ class LineOfSightSession extends ChangeNotifier {
     required this._mode,
     required this.frequencyMHz,
     required this._people,
+    this._peopleChanged,
     LosPlace? from,
     LosPlace? to,
   }) : _from = from,
@@ -148,8 +151,13 @@ class LineOfSightSession extends ChangeNotifier {
     _toAntenna = to == null ? _handHeld : _defaultAntenna(to);
     _packsKey = _packs.key;
     _maps.addListener(_onMaps);
+    _peopleChanged?.addListener(_onPeople);
     _run();
   }
+
+  /// Fires when someone may have been heard or moved: the reach's list
+  /// then follows, without sweeping again.
+  final Listenable? _peopleChanged;
 
   LosMode _mode;
   LosPlace? _from, _to;
@@ -182,9 +190,12 @@ class LineOfSightSession extends ChangeNotifier {
   Reach? get reach => _reach;
   Reach? _reach;
 
-  /// The places [reach] answered for, in its order.
+  /// The places in [listRadiusM] with a position of their own, and the
+  /// answer for each, in the same order.
   List<LosPlace> get reachPeople => _reachPeople;
   List<LosPlace> _reachPeople = const [];
+  List<LineOfSight> get reachAnswers => _reachAnswers;
+  List<LineOfSight> _reachAnswers = const [];
 
   /// The places in [listRadiusM] with only a guessed position: listed, with
   /// no answer.
@@ -222,6 +233,7 @@ class LineOfSightSession extends ChangeNotifier {
     Antenna antenna,
     Reach? reach,
     List<LosPlace> people,
+    List<LineOfSight> answers,
     List<LosPlace> guessed,
   })?
   _savedReach;
@@ -284,6 +296,7 @@ class LineOfSightSession extends ChangeNotifier {
       antenna: _fromAntenna,
       reach: _reach,
       people: _reachPeople,
+      answers: _reachAnswers,
       guessed: _reachGuessed,
     );
     _mode = LosMode.line;
@@ -304,12 +317,14 @@ class LineOfSightSession extends ChangeNotifier {
     _to = null;
     _reach = saved.reach;
     _reachPeople = saved.people;
+    _reachAnswers = saved.answers;
     _reachGuessed = saved.guessed;
     _endsVersion++;
     if (_reach == null) {
       _run();
     } else {
       notifyListeners();
+      _onPeople();
     }
   }
 
@@ -399,22 +414,7 @@ class LineOfSightSession extends ChangeNotifier {
     final sweep = ++_sweeps;
     final radius = _radiusM;
     final c = geoOf(center.position);
-    final listRadius = listRadiusM;
-    final near = [
-      for (final p in _people())
-        if (!(p.isMe && center.isMe) &&
-            (p.key == null || p.key != center.key) &&
-            distanceM(c, geoOf(p.position)) <= listRadius)
-          p,
-    ];
-    final people = [
-      for (final p in near)
-        if (!p.guessed) p,
-    ];
-    final guessed = [
-      for (final p in near)
-        if (p.guessed) p,
-    ];
+    final (:people, :guessed, :key) = _nearby(center);
     _sweepBusy = true;
     _progress = 0;
     // Swept again from the same place: the last shade stays meanwhile.
@@ -436,7 +436,9 @@ class LineOfSightSession extends ChangeNotifier {
       if (_closed || sweep != _sweeps) return;
       _reach = r;
       _reachPeople = people;
+      _reachAnswers = r?.targets ?? const [];
       _reachGuessed = guessed;
+      _nearbyKey = key;
     } on Object catch (e) {
       if (_closed || sweep != _sweeps) return;
       appLogger.warn('Radio reach failed: $e', tag: 'LOS');
@@ -445,12 +447,99 @@ class LineOfSightSession extends ChangeNotifier {
     _sweepBusy = false;
     _progress = null;
     notifyListeners();
+    // Heard while it swept.
+    _onPeople();
+  }
+
+  /// Everyone in [listRadiusM] of [center]: with a position of their own,
+  /// and guessed; [key] changes when anyone comes, goes, moves or is heard.
+  ({List<LosPlace> people, List<LosPlace> guessed, String key}) _nearby(
+    LosPlace center,
+  ) {
+    final c = geoOf(center.position);
+    final listRadius = listRadiusM;
+    final people = <LosPlace>[], guessed = <LosPlace>[];
+    final key = StringBuffer();
+    for (final p in _people()) {
+      if ((p.isMe && center.isMe) ||
+          (p.key != null && p.key == center.key) ||
+          distanceM(c, geoOf(p.position)) > listRadius) {
+        continue;
+      }
+      (p.guessed ? guessed : people).add(p);
+      key
+        ..write(p.key ?? 'me')
+        ..write(p.position.latitude)
+        ..write(p.position.longitude)
+        ..write(p.seenAt?.millisecondsSinceEpoch)
+        ..write(p.guessed)
+        ..write('|');
+    }
+    return (people: people, guessed: guessed, key: key.toString());
+  }
+
+  /// The [_nearby] key the list was last worked out for.
+  String _nearbyKey = '';
+  var _refreshing = false;
+
+  void _onPeople() {
+    if (_closed || _mode != LosMode.reach || _reach == null || _sweepBusy) {
+      return;
+    }
+    unawaited(_refreshPeople());
+  }
+
+  /// Brings the list up to date: an answer only for whoever is new or has
+  /// moved; the shade stays.
+  Future<void> _refreshPeople() async {
+    if (_refreshing) return;
+    _refreshing = true;
+    var again = false;
+    try {
+      // Never inside the notification that asked for it.
+      await Future<void>.delayed(Duration.zero);
+      final center = _from;
+      if (center == null || _closed || _mode != LosMode.reach) return;
+      final (:people, :guessed, :key) = _nearby(center);
+      if (key == _nearbyKey) return;
+      final known = <(String?, LatLng), LineOfSight>{
+        for (var i = 0; i < _reachPeople.length; i++)
+          (_reachPeople[i].key, _reachPeople[i].position): _reachAnswers[i],
+      };
+      final answers = <LineOfSight>[];
+      for (final p in people) {
+        answers.add(
+          known[(p.key, p.position)] ??
+              await _worker.line(
+                _packs,
+                center.end(_fromAntenna),
+                p.end(_defaultAntenna(p)),
+                frequencyMHz: frequencyMHz,
+              ),
+        );
+      }
+      // Swept again, or gone to a line, meanwhile: these answers are old.
+      if (_closed || _mode != LosMode.reach || _sweepBusy) return;
+      _reachPeople = people;
+      _reachAnswers = answers;
+      _reachGuessed = guessed;
+      _nearbyKey = key;
+      again = true;
+      notifyListeners();
+    } on Object catch (e) {
+      if (!_closed) appLogger.warn('Radio reach list failed: $e', tag: 'LOS');
+    } finally {
+      _refreshing = false;
+    }
+    // Heard again while it worked.
+    if (again) _onPeople();
   }
 
   @override
   void dispose() {
     _closed = true;
     _maps.removeListener(_onMaps);
+    _peopleChanged?.removeListener(_onPeople);
     _worker.stop();
     super.dispose();
   }

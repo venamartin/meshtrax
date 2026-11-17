@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -182,6 +183,7 @@ void main() {
       LosPlace? from,
       LosPlace? to,
       List<LosPlace> people = const [],
+      Listenable? peopleChanged,
     }) {
       final s = LineOfSightSession(
         worker: worker,
@@ -190,6 +192,7 @@ void main() {
         mode: mode,
         frequencyMHz: 910.525,
         people: () => people,
+        peopleChanged: peopleChanged,
         from: from,
         to: to,
       );
@@ -309,6 +312,46 @@ void main() {
       s.openLine(ana);
       await idle(s);
       expect(s.currentLine!.to, geoOf(ana.position));
+    });
+
+    test('someone heard after the sweep joins the list, with an answer; '
+        'no new sweep', () async {
+      final heard = ChangeNotifier();
+      addTearDown(heard.dispose);
+      final ana = LosPlace.contact(
+        const LatLng(36.21, -116.71),
+        name: 'Ana',
+        key: 'a',
+      );
+      final people = <LosPlace>[ana];
+      final s = session(
+        mode: LosMode.reach,
+        from: LosPlace.me(dantes, source: MyPosition.byHand),
+        people: people,
+        peopleChanged: heard,
+      );
+      await idle(s);
+      final reach = s.reach;
+      expect(s.reachPeople.map((p) => p.name), ['Ana']);
+      // An advert from Bo, and Ana moves.
+      people
+        ..[0] = LosPlace.contact(
+          const LatLng(36.215, -116.715),
+          name: 'Ana',
+          key: 'a',
+        )
+        ..add(
+          LosPlace.contact(const LatLng(36.24, -116.75), name: 'Bo', key: 'b'),
+        );
+      heard.notifyListeners();
+      for (var i = 0; i < 200 && s.reachPeople.length < 2; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(s.reachPeople.map((p) => p.name), ['Ana', 'Bo']);
+      expect(s.reachAnswers, hasLength(2));
+      expect(s.reachAnswers[0].to, geoOf(const LatLng(36.215, -116.715)));
+      expect(s.reachAnswers[1].to, geoOf(const LatLng(36.24, -116.75)));
+      expect(s.reach, same(reach));
     });
   });
 }

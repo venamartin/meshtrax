@@ -667,7 +667,7 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
     final rows = <(LosPlace, LineOfSight?, double)>[
       if (r != null) ...[
         for (var i = 0; i < s.reachPeople.length; i++)
-          (s.reachPeople[i], r.targets[i], r.targets[i].distanceM),
+          (s.reachPeople[i], s.reachAnswers[i], s.reachAnswers[i].distanceM),
         for (final p in s.reachGuessed)
           (p, null, distanceM(r.center, geoOf(p.position))),
       ],

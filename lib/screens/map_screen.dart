@@ -2069,6 +2069,7 @@ class _MapScreenState extends State<MapScreen> {
       // The radio's frequency (currentFreqHz holds kHz).
       frequencyMHz: khz != null && khz > 0 ? khz / 1000 : defaultFrequencyMHz,
       people: _losPeople,
+      peopleChanged: _connector,
       from: from,
       to: to,
     )..addListener(_onLos);
