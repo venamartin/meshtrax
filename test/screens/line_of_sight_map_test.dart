@@ -361,7 +361,9 @@ void main() {
     final s = session(tester)!;
     expect(s.to!.name, 'Ana');
     expect(s.currentLine, isNotNull);
-    expect(find.text('Ana, 12m ago'), findsOneWidget);
+    // Ana was heard 12 minutes before the file loaded; a slow run takes a
+    // minute or two to get here.
+    expect(find.textContaining(RegExp(r'^Ana, 1\dm ago$')), findsOneWidget);
     // While the sheet is open a person's marker moves To.
     overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
     await answer(tester);
