@@ -20,6 +20,7 @@ import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
+import '../helpers/advert_signature.dart';
 import '../helpers/cayenne_lpp.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
@@ -12142,8 +12143,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           .join();
 
       timestamp = advert.readInt32LE();
-      //TODO add signature verification
-      advert.skipBytes(64); // Skip signature for now
+      advert.skipBytes(64); // Signature, checked below.
       final flags = advert.readByte();
       type = flags & 0x0F;
       hasLocation = (flags & 0x10) != 0;
@@ -12163,6 +12163,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     } catch (e) {
       appLogger.warn('Malformed advert frame: $e', tag: 'Connector');
+      return;
+    }
+
+    if (!advertSignatureValid(payload)) {
+      appLogger.warn('Advert with a bad signature dropped: $contactKeyHex',
+          tag: 'Connector');
       return;
     }
 

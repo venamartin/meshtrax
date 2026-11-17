@@ -106,6 +106,7 @@ dependencies:
   traxroute_ios:
     path: packages/traxroute_ios
   emoji_picker_flutter: ^4.4.0
+  pinenacl: 0.6.0
 
 
 dev_dependencies:
