@@ -10650,23 +10650,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     } else if (replyInfo != null) {
       // Incoming reply — locate the quoted message by sender + snippet prefix,
-      // among recent arrivals. If we don't have it, still show a quote bubble
-      // using the snippet text.
-      final originalMessage = _findMessageBySenderAndSnippet(
-        await _channelMessageStore.loadChannelMessagesArrivedSince(
-          idKey,
-          _reactionWindowStart(),
-        ),
-        replyInfo.mentionedNode,
-        replyInfo.snippet,
-      );
-      processedMessage = _withReplyMetadata(
+      // among recent arrivals, else in the whole channel the way a tap on
+      // the quote does: an original from days ago is linked too. If we don't
+      // have it, still show a quote bubble using the snippet text.
+      final unlinked = _withReplyMetadata(
         sanitizedMessage,
         text: replyInfo.actualMessage,
-        replyToMessageId: originalMessage?.messageId,
-        replyToSenderName: originalMessage?.senderName ?? replyInfo.mentionedNode,
-        replyToText: originalMessage?.text ?? replyInfo.snippet,
+        replyToSenderName: replyInfo.mentionedNode,
+        replyToText: replyInfo.snippet,
       );
+      final originalMessage = _findMessageBySenderAndSnippet(
+            await _channelMessageStore.loadChannelMessagesArrivedSince(
+              idKey,
+              _reactionWindowStart(),
+            ),
+            replyInfo.mentionedNode,
+            replyInfo.snippet,
+          ) ??
+          (await _channelMessageStore.findReplyTarget(idKey, unlinked))
+              ?.message;
+      processedMessage = originalMessage == null
+          ? unlinked
+          : _withReplyMetadata(
+              sanitizedMessage,
+              text: replyInfo.actualMessage,
+              replyToMessageId: originalMessage.messageId,
+              replyToSenderName: originalMessage.senderName,
+              replyToText: originalMessage.text,
+            );
     }
 
     // Heuristic echo match (no packet hash on our original, second-truncated

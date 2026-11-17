@@ -119,4 +119,35 @@ void main() {
     expect(second.replyToMessageId, first.messageId);
     expect(second.replyToText, 'I got mine at the store');
   });
+
+  // Field 2026-11-17: a reply to a three-day-old post kept the sender's short
+  // quote, because only the last 48 hours of arrivals were searched. A tap
+  // on the quote found the post, so the reply now links the same way.
+  test('a reply to a message that arrived days ago links to it', () async {
+    await hear(120, 'Bob', 'Pine cones are free');
+    await AppDatabase.instance.customStatement(
+      'UPDATE channel_message_rows SET received_at_us = ?',
+      [
+        DateTime.now()
+            .subtract(const Duration(days: 3))
+            .microsecondsSinceEpoch,
+      ],
+    );
+    await hear(60, 'Ann', '@[Bob]\n>Pine cones..\nNot yet');
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    final original = rows.singleWhere((m) => m.text == 'Pine cones are free');
+    final reply = rows.singleWhere((m) => m.text == 'Not yet');
+    expect(reply.replyToMessageId, original.messageId);
+    expect(reply.replyToText, 'Pine cones are free');
+  });
+
+  test('a reply to a message never heard keeps its quote', () async {
+    await hear(60, 'Ann', '@[Bob]\n>Pine cones..\nNot yet');
+
+    final reply = (await c.loadChannelMessagesFor(channel)).single;
+    expect(reply.replyToMessageId, isNull);
+    expect(reply.replyToSenderName, 'Bob');
+    expect(reply.replyToText, 'Pine cones');
+  });
 }
