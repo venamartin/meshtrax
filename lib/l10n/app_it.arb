@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Strada",
   "roadLegend_track": "Strada sterrata o carrareccia",
   "roadLegend_trail": "Sentiero",
+  "roadLegend_walkway": "Percorso pedonale o pista ciclabile",
   "roadLegend_interstate": "Autostrada interstatale",
   "roadLegend_usRoute": "Strada federale USA",
   "roadLegend_stateRoute": "Strada statale",

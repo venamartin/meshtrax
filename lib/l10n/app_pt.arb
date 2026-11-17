@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Estrada",
   "roadLegend_track": "Estrada de terra ou caminho rural",
   "roadLegend_trail": "Trilha",
+  "roadLegend_walkway": "Caminho de pedestres ou ciclovia",
   "roadLegend_interstate": "Rodovia interestadual",
   "roadLegend_usRoute": "Rodovia federal dos EUA",
   "roadLegend_stateRoute": "Rodovia estadual",

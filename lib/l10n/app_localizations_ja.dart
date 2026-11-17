@@ -5396,6 +5396,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get roadLegend_trail => 'トレイル';
 
   @override
+  String get roadLegend_walkway => '歩道・自転車道';
+
+  @override
   String get roadLegend_interstate => '州間高速道路';
 
   @override

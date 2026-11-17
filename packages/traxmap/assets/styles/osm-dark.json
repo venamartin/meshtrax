@@ -1020,6 +1020,74 @@
       }
     },
     {
+      "id": "walkway",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "class"
+          ],
+          "path"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "LineString"
+        ],
+        [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          [
+            "footway",
+            "steps",
+            "pedestrian",
+            "cycleway"
+          ],
+          true,
+          false
+        ],
+        [
+          "!=",
+          [
+            "get",
+            "surface"
+          ],
+          "unpaved"
+        ]
+      ],
+      "paint": {
+        "line-color": "#70685e",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.6,
+          17,
+          1.4
+        ],
+        "line-dasharray": [
+          2,
+          1.5
+        ]
+      }
+    },
+    {
       "id": "trail-halo",
       "type": "line",
       "source": "osm",

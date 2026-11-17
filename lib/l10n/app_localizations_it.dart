@@ -5679,6 +5679,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get roadLegend_trail => 'Sentiero';
 
   @override
+  String get roadLegend_walkway => 'Percorso pedonale o pista ciclabile';
+
+  @override
   String get roadLegend_interstate => 'Autostrada interstatale';
 
   @override

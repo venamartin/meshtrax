@@ -5654,6 +5654,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get roadLegend_trail => 'Pot';
 
   @override
+  String get roadLegend_walkway => 'Pešpot ali kolesarska steza';
+
+  @override
   String get roadLegend_interstate => 'Avtocesta Interstate';
 
   @override

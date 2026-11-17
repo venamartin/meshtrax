@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Дорога",
   "roadLegend_track": "Ґрунтова або польова дорога",
   "roadLegend_trail": "Стежка",
+  "roadLegend_walkway": "Пішохідна або велосипедна доріжка",
   "roadLegend_interstate": "Міжштатна автомагістраль",
   "roadLegend_usRoute": "Шосе США",
   "roadLegend_stateRoute": "Шосе штату",

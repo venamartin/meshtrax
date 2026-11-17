@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Väg",
   "roadLegend_track": "Grusväg eller traktorväg",
   "roadLegend_trail": "Led",
+  "roadLegend_walkway": "Gångväg eller cykelväg",
   "roadLegend_interstate": "Interstate",
   "roadLegend_usRoute": "US Highway",
   "roadLegend_stateRoute": "Delstatsväg",

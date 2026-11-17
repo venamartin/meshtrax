@@ -5679,6 +5679,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get roadLegend_trail => 'Тропа';
 
   @override
+  String get roadLegend_walkway => 'Пешеходная или велосипедная дорожка';
+
+  @override
   String get roadLegend_interstate => 'Межштатная автомагистраль';
 
   @override

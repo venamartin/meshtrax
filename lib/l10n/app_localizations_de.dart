@@ -5678,6 +5678,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get roadLegend_trail => 'Wanderweg';
 
   @override
+  String get roadLegend_walkway => 'Fußweg oder Radweg';
+
+  @override
   String get roadLegend_interstate => 'Interstate-Highway';
 
   @override

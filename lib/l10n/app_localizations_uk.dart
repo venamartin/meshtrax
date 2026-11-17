@@ -5685,6 +5685,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get roadLegend_trail => 'Стежка';
 
   @override
+  String get roadLegend_walkway => 'Пішохідна або велосипедна доріжка';
+
+  @override
   String get roadLegend_interstate => 'Міжштатна автомагістраль';
 
   @override

@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Weg",
   "roadLegend_track": "Onverharde weg of veldweg",
   "roadLegend_trail": "Wandelpad",
+  "roadLegend_walkway": "Voetpad of fietspad",
   "roadLegend_interstate": "Interstate-snelweg",
   "roadLegend_usRoute": "US-highway",
   "roadLegend_stateRoute": "Staatsweg",

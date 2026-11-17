@@ -2503,6 +2503,7 @@
   "roadLegend_road": "Droga",
   "roadLegend_track": "Droga gruntowa lub polna",
   "roadLegend_trail": "Szlak",
+  "roadLegend_walkway": "Chodnik lub ścieżka rowerowa",
   "roadLegend_interstate": "Autostrada międzystanowa",
   "roadLegend_usRoute": "Droga federalna (US)",
   "roadLegend_stateRoute": "Droga stanowa",

@@ -2503,6 +2503,7 @@
   "roadLegend_road": "Út",
   "roadLegend_track": "Földút vagy dűlőút",
   "roadLegend_trail": "Ösvény",
+  "roadLegend_walkway": "Gyalogút vagy kerékpárút",
   "roadLegend_interstate": "Interstate autópálya",
   "roadLegend_usRoute": "US-főút",
   "roadLegend_stateRoute": "Állami út",

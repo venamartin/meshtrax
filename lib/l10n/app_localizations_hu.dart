@@ -5676,6 +5676,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get roadLegend_trail => 'Ösvény';
 
   @override
+  String get roadLegend_walkway => 'Gyalogút vagy kerékpárút';
+
+  @override
   String get roadLegend_interstate => 'Interstate autópálya';
 
   @override
