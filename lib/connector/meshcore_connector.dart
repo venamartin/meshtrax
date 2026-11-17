@@ -10570,12 +10570,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         idKey,
         _reactionWindowStart(),
       );
-      final applied = await _processReaction(
+      var applied = await _processReaction(
         idKey,
         rows,
         reactionInfo,
         reactorName,
       );
+      // A reaction to an older message (field 2026-11-17: a 🍻 to a post
+      // from 86 hours before). It names the target's sender, so that
+      // sender's messages are searched over the whole channel.
+      final named = reactionInfo.targetSender;
+      if (!applied && named != null) {
+        final older = [
+          for (final found in await _channelMessageStore.searchChannelMessages(
+            idKey,
+            named,
+          ))
+            if (found.message.senderName == named) found.message,
+        ];
+        applied = await _processReaction(
+          idKey,
+          older,
+          reactionInfo,
+          reactorName,
+        );
+      }
       appLogger.perf('channel reaction over ${rows.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
@@ -10650,23 +10669,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     } else if (replyInfo != null) {
       // Incoming reply — locate the quoted message by sender + snippet prefix,
-      // among recent arrivals. If we don't have it, still show a quote bubble
-      // using the snippet text.
-      final originalMessage = _findMessageBySenderAndSnippet(
-        await _channelMessageStore.loadChannelMessagesArrivedSince(
-          idKey,
-          _reactionWindowStart(),
-        ),
-        replyInfo.mentionedNode,
-        replyInfo.snippet,
-      );
-      processedMessage = _withReplyMetadata(
+      // among recent arrivals, else in the whole channel the way a tap on
+      // the quote does: an original from days ago is linked too. If we don't
+      // have it, still show a quote bubble using the snippet text.
+      final unlinked = _withReplyMetadata(
         sanitizedMessage,
         text: replyInfo.actualMessage,
-        replyToMessageId: originalMessage?.messageId,
-        replyToSenderName: originalMessage?.senderName ?? replyInfo.mentionedNode,
-        replyToText: originalMessage?.text ?? replyInfo.snippet,
+        replyToSenderName: replyInfo.mentionedNode,
+        replyToText: replyInfo.snippet,
       );
+      final originalMessage = _findMessageBySenderAndSnippet(
+            await _channelMessageStore.loadChannelMessagesArrivedSince(
+              idKey,
+              _reactionWindowStart(),
+            ),
+            replyInfo.mentionedNode,
+            replyInfo.snippet,
+          ) ??
+          (await _channelMessageStore.findReplyTarget(idKey, unlinked))
+              ?.message;
+      processedMessage = originalMessage == null
+          ? unlinked
+          : _withReplyMetadata(
+              sanitizedMessage,
+              text: replyInfo.actualMessage,
+              replyToMessageId: originalMessage.messageId,
+              replyToSenderName: originalMessage.senderName,
+              replyToText: originalMessage.text,
+            );
     }
 
     // Heuristic echo match (no packet hash on our original, second-truncated
