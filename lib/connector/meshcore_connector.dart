@@ -2091,6 +2091,55 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (channel: channel, secs: secs, text: text, messageId: messageId),
     );
     if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
+    final key = _findChannelByIndex(channel)?.psk;
+    final name = _selfName;
+    if (messageId != null && key != null && name != null) {
+      onChannelSendStamped?.call((
+        messageId: messageId,
+        channelKey: key,
+        senderName: name,
+        text: text,
+        secs: secs,
+      ));
+    }
+  }
+
+  /// A channel message of mine went on air, first send or resend, with all
+  /// that decides its packet's hash: the radio sends `name: text` under
+  /// this timestamp, sealed with the channel key (the observer-server hook).
+  void Function(
+    ({
+      String messageId,
+      Uint8List channelKey,
+      String senderName,
+      String text,
+      int secs,
+    }) send,
+  )? onChannelSendStamped;
+
+  /// A copy of a channel message of mine was heard back, with the hash of
+  /// the packet it came in.
+  void Function(String messageId, String packetHash)? onOwnChannelEcho;
+
+  /// Someone else heard this channel message of mine (an observer server
+  /// said so). It is on air, so it isn't sent again. Only a repeat my own
+  /// radio hears marks it delivered.
+  void confirmChannelSendHeard(String messageId) {
+    _pendingChannelSentQueue.remove(messageId);
+    _channelRepeatTimers.remove(messageId)?.cancel();
+    _channelMessageTimers.remove(messageId)?.cancel();
+    unawaited(() async {
+      final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
+        messageId,
+        (m) => m.isOutgoing &&
+                (m.status == ChannelMessageStatus.pending ||
+                    m.status == ChannelMessageStatus.failed)
+            ? m.copyWith(status: ChannelMessageStatus.sent)
+            : m,
+      );
+      if (updated) notifyListeners();
+    }());
+    notifyListeners();
   }
 
   /// A key for the send this echo repeats, or null when it is not mine.
@@ -10805,6 +10854,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ),
     );
     _pendingChannelSentQueue.remove(existing.messageId);
+    if (existing.isOutgoing && incoming.packetHash != null) {
+      onOwnChannelEcho?.call(existing.messageId, incoming.packetHash!);
+    }
     appLogger.info(
       'Matched repeat for ${existing.messageId}, cancelling timer',
       tag: 'Connector',

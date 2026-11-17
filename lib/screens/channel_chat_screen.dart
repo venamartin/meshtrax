@@ -40,6 +40,7 @@ import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
 import '../widgets/mention_composer.dart';
+import '../widgets/heard_ear.dart';
 import '../widgets/message_status_icon.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/swipe_reply_bubble.dart';
@@ -1935,28 +1936,40 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       );
 
   Widget _statusIcon(ChannelMessage message, String displayPathString) =>
-      MessageStatusIcon(
-        isAcked: (message.status == ChannelMessageStatus.sent ||
-                message.status == ChannelMessageStatus.delivered) &&
-            displayPathString.isNotEmpty,
-        isDelivered: message.status == ChannelMessageStatus.delivered,
-        isFailed: message.status == ChannelMessageStatus.failed,
-        isChannelMessage: true,
+      _withHeardEar(
+        message,
+        MessageStatusIcon(
+          isAcked: (message.status == ChannelMessageStatus.sent ||
+                  message.status == ChannelMessageStatus.delivered) &&
+              displayPathString.isNotEmpty,
+          isDelivered: message.status == ChannelMessageStatus.delivered,
+          isFailed: message.status == ChannelMessageStatus.failed,
+          isChannelMessage: true,
+        ),
       );
 
-  Widget _tracingStatusIcon(ChannelMessage message) => Icon(
-        message.status == ChannelMessageStatus.delivered
-            ? Icons.done_all
-            : (message.status == ChannelMessageStatus.sent ||
-                    message.status == ChannelMessageStatus.failed)
-                ? Icons.check
-                : message.status == ChannelMessageStatus.pending
-                    ? Icons.schedule
-                    : Icons.error_outline,
-        size: 14,
-        color: message.status == ChannelMessageStatus.failed
-            ? Colors.amber[700]
-            : Colors.grey[600],
+  Widget _tracingStatusIcon(ChannelMessage message) => _withHeardEar(
+        message,
+        Icon(
+          message.status == ChannelMessageStatus.delivered
+              ? Icons.done_all
+              : (message.status == ChannelMessageStatus.sent ||
+                      message.status == ChannelMessageStatus.failed)
+                  ? Icons.check
+                  : message.status == ChannelMessageStatus.pending
+                      ? Icons.schedule
+                      : Icons.error_outline,
+          size: 14,
+          color: message.status == ChannelMessageStatus.failed
+              ? Colors.amber[700]
+              : Colors.grey[600],
+        ),
+      );
+
+  /// The status, then the grey ear when observers heard the message.
+  Widget _withHeardEar(ChannelMessage message, Widget status) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [status, HeardEar(message.messageId)],
       );
 
   Widget _buildReplyPreview(

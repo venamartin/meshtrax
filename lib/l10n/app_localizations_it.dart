@@ -911,6 +911,67 @@ class AppLocalizationsIt extends AppLocalizations {
       'Riproverà fino a questo numero di volte finché non sente almeno una ripetizione';
 
   @override
+  String get appSettings_heardCheck => 'Verifica gli invii con gli osservatori';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Prima di reinviare un messaggio di canale, chiedi a un server di osservatori se è stato sentito';
+
+  @override
+  String get appSettings_heardServer => 'Server degli osservatori';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Non impostato';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Gli osservatori sono radio che riferiscono a un server ciò che sentono. MeshTrax invia a quel server un\'impronta di ogni messaggio di canale che invii, mai il testo. Il server vede il tuo indirizzo internet e quando hai inviato.';
+
+  @override
+  String get appSettings_heardServerOther => 'Altro indirizzo';
+
+  @override
+  String get appSettings_heardServerAddress => 'Indirizzo del server';
+
+  @override
+  String get appSettings_heardServerChecking => 'Verifica del server…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Nessuna risposta da questo indirizzo';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Salva comunque';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Il server ha risposto';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sentito da $count osservatori',
+      one: 'Sentito da 1 osservatore',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'diretto';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'tramite $count ripetitori',
+      one: 'tramite 1 ripetitore',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batteria';
 
   @override

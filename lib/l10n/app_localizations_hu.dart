@@ -912,6 +912,66 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ennyiszer próbálja újra, amíg legalább egy ismétlést nem hall';
 
   @override
+  String get appSettings_heardCheck => 'Küldések ellenőrzése megfigyelőknél';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Csatornaüzenet újraküldése előtt megkérdez egy megfigyelő szervert, hogy hallották-e';
+
+  @override
+  String get appSettings_heardServer => 'Megfigyelő szerver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nincs beállítva';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'A megfigyelők olyan rádiók, amelyek jelentik egy szervernek, amit hallanak. A MeshTrax minden elküldött csatornaüzenetből egy ujjlenyomatot küld ennek a szervernek, a szövegét soha. A szerver látja az internetcímedet és azt, hogy mikor küldtél.';
+
+  @override
+  String get appSettings_heardServerOther => 'Más cím';
+
+  @override
+  String get appSettings_heardServerAddress => 'Szerver címe';
+
+  @override
+  String get appSettings_heardServerChecking => 'Szerver ellenőrzése…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Nincs válasz erről a címről';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Mentés mégis';
+
+  @override
+  String get appSettings_heardServerAnswered => 'A szerver válaszolt';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count megfigyelő hallotta',
+      one: '1 megfigyelő hallotta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'közvetlenül';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count átjátszón át',
+      one: '1 átjátszón át',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Akku';
 
   @override

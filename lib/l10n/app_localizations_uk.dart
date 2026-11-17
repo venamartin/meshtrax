@@ -905,6 +905,70 @@ class AppLocalizationsUk extends AppLocalizations {
       'Стільки разів повторюватиме надсилання, доки не почує хоча б один повтор';
 
   @override
+  String get appSettings_heardCheck => 'Перевіряти надсилання у спостерігачів';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Перед повторним надсиланням повідомлення в канал запитати сервер спостерігачів, чи його почули';
+
+  @override
+  String get appSettings_heardServer => 'Сервер спостерігачів';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Не задано';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Спостерігачі — це радіостанції, які повідомляють серверу, що вони чують. MeshTrax надсилає цьому серверу відбиток кожного вашого повідомлення в каналі, але ніколи не його текст. Сервер бачить вашу інтернет-адресу та час надсилання.';
+
+  @override
+  String get appSettings_heardServerOther => 'Інша адреса';
+
+  @override
+  String get appSettings_heardServerAddress => 'Адреса сервера';
+
+  @override
+  String get appSettings_heardServerChecking => 'Перевірка сервера…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Немає відповіді з цієї адреси';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Усе одно зберегти';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Сервер відповів';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Почули $count спостерігача',
+      many: 'Почули $count спостерігачів',
+      few: 'Почули $count спостерігачі',
+      one: 'Почув $count спостерігач',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'напряму';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'через $count ретранслятора',
+      many: 'через $count ретрансляторів',
+      few: 'через $count ретранслятори',
+      one: 'через $count ретранслятор',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Батарея';
 
   @override

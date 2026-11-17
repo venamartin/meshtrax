@@ -99,6 +99,9 @@ dependencies:
   # Line of sight and radio reach, offline from the contours packs
   traxlos:
     path: packages/traxlos
+  # Asks an observer server whether a channel message was heard
+  traxheard:
+    path: packages/traxheard
   # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
   traxroute_ios:
     path: packages/traxroute_ios

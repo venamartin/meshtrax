@@ -1397,6 +1397,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  traxheard:
+    dependency: "direct main"
+    description:
+      path: "packages/traxheard"
+      relative: true
+    source: path
+    version: "0.1.0"
   traxlos:
     dependency: "direct main"
     description:

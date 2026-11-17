@@ -914,6 +914,68 @@ class AppLocalizationsFr extends AppLocalizations {
       'Renvoie jusqu\'à ce nombre de fois tant qu\'aucune répétition n\'est entendue';
 
   @override
+  String get appSettings_heardCheck =>
+      'Vérifier les envois auprès d\'observateurs';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Avant de renvoyer un message de canal, demander à un serveur d\'observateurs s\'il a été entendu';
+
+  @override
+  String get appSettings_heardServer => 'Serveur d\'observateurs';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Non défini';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Les observateurs sont des radios qui signalent à un serveur ce qu\'elles entendent. MeshTrax envoie à ce serveur une empreinte de chaque message de canal que vous envoyez, jamais son texte. Le serveur voit votre adresse internet et l\'heure de l\'envoi.';
+
+  @override
+  String get appSettings_heardServerOther => 'Autre adresse';
+
+  @override
+  String get appSettings_heardServerAddress => 'Adresse du serveur';
+
+  @override
+  String get appSettings_heardServerChecking => 'Vérification du serveur…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Aucune réponse de cette adresse';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Enregistrer quand même';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Le serveur a répondu';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entendu par $count observateurs',
+      one: 'Entendu par 1 observateur',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count répéteurs',
+      one: 'via 1 répéteur',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batterie';
 
   @override

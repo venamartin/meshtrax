@@ -905,6 +905,67 @@ class AppLocalizationsNl extends AppLocalizations {
       'Zo vaak wordt het opnieuw geprobeerd tot er minstens één herhaling gehoord wordt';
 
   @override
+  String get appSettings_heardCheck =>
+      'Verzendingen controleren bij waarnemers';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Vraag een waarnemersserver of een kanaalbericht is gehoord voordat het opnieuw wordt verzonden';
+
+  @override
+  String get appSettings_heardServer => 'Waarnemersserver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Niet ingesteld';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Waarnemers zijn radio\'s die aan een server melden wat ze horen. MeshTrax stuurt die server een vingerafdruk van elk kanaalbericht dat je verstuurt, nooit de tekst. De server ziet je internetadres en wanneer je verstuurde.';
+
+  @override
+  String get appSettings_heardServerOther => 'Ander adres';
+
+  @override
+  String get appSettings_heardServerAddress => 'Serveradres';
+
+  @override
+  String get appSettings_heardServerChecking => 'Server controleren…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Geen antwoord van dit adres';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Toch opslaan';
+
+  @override
+  String get appSettings_heardServerAnswered => 'De server antwoordde';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Gehoord door $count waarnemers',
+      one: 'Gehoord door 1 waarnemer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeaters',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batterij';
 
   @override

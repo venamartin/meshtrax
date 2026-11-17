@@ -140,7 +140,7 @@ flutter run -d linux
 - [Privacy Policy](docs/privacy.md)
 - [Terms of Use](docs/terms.md)
 
-MeshTrax has no accounts and no analytics. Its only server is a download server for maps, routing data, and places, which receives none of your data. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. The app reaches the internet only for that map server and Giphy (GIFs), plus links you tap; line of sight, routing, and place search run on your device. See the Privacy Policy for the full details.
+MeshTrax has no accounts and no analytics. Its only server is a download server for maps, routing data, and places, which receives none of your data. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. The app reaches the internet only for that map server and Giphy (GIFs), plus links you tap, and, if you turn on "Check sends with observers", the observer server you choose, which gets a fingerprint of each channel message you send, never its text. Line of sight, routing, and place search run on your device. See the Privacy Policy for the full details.
 
 ---
 

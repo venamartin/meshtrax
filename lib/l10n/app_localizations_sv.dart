@@ -895,6 +895,68 @@ class AppLocalizationsSv extends AppLocalizations {
       'Försöker igen så här många gånger tills minst en upprepning hörs';
 
   @override
+  String get appSettings_heardCheck =>
+      'Kontrollera sändningar med observatörer';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Fråga en observatörsserver om ett kanalmeddelande hördes innan det skickas igen';
+
+  @override
+  String get appSettings_heardServer => 'Observatörsserver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Inte angiven';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Observatörer är radioapparater som rapporterar vad de hör till en server. MeshTrax skickar ett fingeravtryck av varje kanalmeddelande du skickar till den servern, aldrig texten. Servern ser din internetadress och när du skickade.';
+
+  @override
+  String get appSettings_heardServerOther => 'Annan adress';
+
+  @override
+  String get appSettings_heardServerAddress => 'Serveradress';
+
+  @override
+  String get appSettings_heardServerChecking => 'Kontrollerar servern…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Inget svar från den här adressen';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Spara ändå';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Servern svarade';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hört av $count observatörer',
+      one: 'Hört av 1 observatör',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direkt';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeatrar',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batteri';
 
   @override
