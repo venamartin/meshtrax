@@ -3636,6 +3636,11 @@ class AppLocalizationsKo extends AppLocalizations {
       '내 신호를 들은 리피터가 없습니다. 범위 안에 리피터가 들어오면 다시 시도합니다.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '보낸 쪽 시계 기준 $time에 보냄';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name님의 무전기는 짧은 리피터 코드(1바이트)를 보냅니다. 상대 무전기가 2바이트 코드를 사용하기 전까지 Pathfinder는 상대에게 가는 경로를 학습할 수 없습니다.';
   }

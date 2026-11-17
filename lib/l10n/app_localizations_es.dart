@@ -3822,6 +3822,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ningún repetidor te oyó. Se volverá a intentar cuando haya uno al alcance.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'enviado $time según el reloj del remitente';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'La radio de $name envía códigos de repetidor cortos (1 byte). Pathfinder no puede aprender rutas hacia este contacto hasta que su radio use códigos de 2 bytes.';
   }

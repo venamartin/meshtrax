@@ -1912,6 +1912,7 @@
   "chat_kindRoute": "percorso ({count} {count, plural, =1{salto} other{salti}})",
   "chat_statusQueued": "In coda",
   "chat_statusNoRepeaterHeard": "Nessun ripetitore ti ha sentito. Riproverà quando uno sarà in portata.",
+  "chat_sentByItsClock": "inviato {time} secondo l'orologio del mittente",
   "chat_narrowHashNotice": "La radio di {name} invia codici ripetitore corti (1 byte). Pathfinder non può apprendere percorsi verso questo contatto finché la sua radio non usa codici da 2 byte.",
   "chat_statusSending": "Invio · {kind}",
   "chat_statusRetrying": "Nuovo tentativo · {kind} · tentativo {attempt} di {max}",

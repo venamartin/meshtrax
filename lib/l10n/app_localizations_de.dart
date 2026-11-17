@@ -3823,6 +3823,11 @@ class AppLocalizationsDe extends AppLocalizations {
       'Kein Repeater hat Sie gehört. Neuer Versuch, sobald einer in Reichweite ist.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'gesendet $time laut Uhr des Absenders';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Das Funkgerät von $name sendet kurze Repeater-Codes (1 Byte). Pathfinder kann keine Routen dorthin lernen, bis dieses Funkgerät 2-Byte-Codes verwendet.';
   }

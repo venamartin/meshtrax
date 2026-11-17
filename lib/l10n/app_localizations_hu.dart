@@ -3827,6 +3827,11 @@ class AppLocalizationsHu extends AppLocalizations {
       'Egy repeater sem hallotta. Újra próbálja, amikor lesz egy hatótávon belül.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'elküldve $time, a küldő órája szerint';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name rádiója rövid repeaterkódokat küld (1 bájt). A Pathfinder addig nem tud útvonalat tanulni hozzá, amíg a rádiója nem használ 2 bájtos kódokat.';
   }

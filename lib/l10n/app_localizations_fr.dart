@@ -3842,6 +3842,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun répéteur ne vous a entendu. Nouvel essai dès qu\'un répéteur sera à portée.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'envoyé $time selon l\'horloge de l\'expéditeur';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'La radio de $name envoie des codes de répéteur courts (1 octet). Pathfinder ne peut pas apprendre d\'itinéraires vers ce contact tant que sa radio n\'utilise pas des codes de 2 octets.';
   }

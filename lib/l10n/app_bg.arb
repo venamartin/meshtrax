@@ -1912,6 +1912,7 @@
   "chat_kindRoute": "маршрут ({count} {count, plural, one{скок} other{скока}})",
   "chat_statusQueued": "На опашка",
   "chat_statusNoRepeaterHeard": "Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.",
+  "chat_sentByItsClock": "изпратено {time} по часовника на подателя",
   "chat_narrowHashNotice": "Радиото на {name} изпраща кратки кодове на повторители (1 байт). Pathfinder не може да научи маршрути до този контакт, докато радиото му не започне да използва 2-байтови кодове.",
   "chat_statusSending": "Изпращане · {kind}",
   "chat_statusRetrying": "Нов опит · {kind} · опит {attempt} от {max}",

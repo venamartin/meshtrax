@@ -3818,6 +3818,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Ни один репитер вас не услышал. Попробуем снова, когда какой-нибудь окажется в зоне.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'отправлено $time по часам отправителя';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Радио $name отправляет короткие коды репитеров (1 байт). Pathfinder не сможет изучить маршруты к этому контакту, пока его радио не перейдёт на 2-байтовые коды.';
   }
