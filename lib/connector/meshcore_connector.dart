@@ -10570,12 +10570,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         idKey,
         _reactionWindowStart(),
       );
-      final applied = await _processReaction(
+      var applied = await _processReaction(
         idKey,
         rows,
         reactionInfo,
         reactorName,
       );
+      // A reaction to an older message (field 2026-11-17: a 🍻 to a post
+      // from 86 hours before). It names the target's sender, so that
+      // sender's messages are searched over the whole channel.
+      final named = reactionInfo.targetSender;
+      if (!applied && named != null) {
+        final older = [
+          for (final found in await _channelMessageStore.searchChannelMessages(
+            idKey,
+            named,
+          ))
+            if (found.message.senderName == named) found.message,
+        ];
+        applied = await _processReaction(
+          idKey,
+          older,
+          reactionInfo,
+          reactorName,
+        );
+      }
       appLogger.perf('channel reaction over ${rows.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
