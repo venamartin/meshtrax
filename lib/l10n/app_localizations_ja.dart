@@ -3716,6 +3716,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'どのリピーターにも届きませんでした。範囲内にリピーターが入ったら再試行します。';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '送信元の時計で $time に送信';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$nameの無線機は短いリピーターコード（1バイト）を送っています。相手の無線機が2バイトのコードを使うまで、Pathfinderは相手へのルートを学習できません。';
   }

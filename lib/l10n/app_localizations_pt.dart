@@ -3907,6 +3907,11 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhum repetidor ouviu você. Vai tentar de novo quando houver um ao alcance.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'enviado $time pelo relógio do remetente';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'O rádio de $name envia códigos de repetidor curtos (1 byte). O Pathfinder não consegue aprender rotas até esse contato enquanto o rádio dele não usar códigos de 2 bytes.';
   }

@@ -1511,6 +1511,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     if (enableTracing) {
       _rebuildAt(message.timestamp.add(const Duration(days: 1)));
     }
+    final claimedAt = isOutgoing ? null : message.claimedAt;
+    if (claimedAt != null) _rebuildAt(DateTimeHelper.nextDay(claimedAt));
     final gifId = facts.gifId;
     final structured = facts.structured;
     // A card hides the text around it: the mentions it was sent with go
@@ -1814,6 +1816,25 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                           ),
                         ],
                       ],
+                      // Held by the radio past a failed read: shown when
+                      // it got here, with the time its sender claimed.
+                      if (claimedAt != null)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: 4,
+                            left: gifId != null ? 8 : 0,
+                            right: gifId != null ? 8 : 0,
+                          ),
+                          child: Text(
+                            context.l10n.chat_sentByItsClock(
+                              DateTimeHelper.timeWithDay(context, claimedAt),
+                            ),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
                       if (enableTracing && structured == null) ...[
                         if (displayPathString.isNotEmpty) ...[
                           const SizedBox(height: 4),

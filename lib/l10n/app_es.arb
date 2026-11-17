@@ -1960,6 +1960,7 @@
   "chat_kindRoute": "ruta ({count} {count, plural, =1{salto} other{saltos}})",
   "chat_statusQueued": "En cola",
   "chat_statusNoRepeaterHeard": "Ningún repetidor te oyó. Se volverá a intentar cuando haya uno al alcance.",
+  "chat_sentByItsClock": "enviado {time} según el reloj del remitente",
   "chat_narrowHashNotice": "La radio de {name} envía códigos de repetidor cortos (1 byte). Pathfinder no puede aprender rutas hacia este contacto hasta que su radio use códigos de 2 bytes.",
   "chat_statusSending": "Enviando · {kind}",
   "chat_statusRetrying": "Reintentando · {kind} · intento {attempt} de {max}",

@@ -3914,6 +3914,11 @@ class AppLocalizationsUk extends AppLocalizations {
       'Жоден ретранслятор вас не почув. Спробуємо знову, коли якийсь буде поруч.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'надіслано $time за годинником відправника';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Радіо $name надсилає короткі коди ретрансляторів (1 байт). Pathfinder не зможе вивчити маршрути до цього контакту, доки його радіо не перейде на 2-байтові коди.';
   }

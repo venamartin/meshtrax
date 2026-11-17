@@ -2073,6 +2073,15 @@
   },
   "chat_statusQueued": "Queued",
   "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
+  "chat_sentByItsClock": "sent {time} by its clock",
+  "@chat_sentByItsClock": {
+    "description": "Under a message the radio held after a failed read: the time its sender's own clock gave it.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "chat_narrowHashNotice": "{name}'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.",
   "@chat_narrowHashNotice": {
     "placeholders": {

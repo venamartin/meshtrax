@@ -3897,6 +3897,11 @@ class AppLocalizationsBg extends AppLocalizations {
       'Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'изпратено $time по часовника на подателя';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Радиото на $name изпраща кратки кодове на повторители (1 байт). Pathfinder не може да научи маршрути до този контакт, докато радиото му не започне да използва 2-байтови кодове.';
   }

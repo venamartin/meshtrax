@@ -3888,6 +3888,11 @@ class AppLocalizationsSk extends AppLocalizations {
       'Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'odoslané $time podľa hodín odosielateľa';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Rádio $name posiela krátke kódy opakovačov (1 bajt). Pathfinder sa nemôže naučiť trasy k tomuto kontaktu, kým jeho rádio nebude používať 2-bajtové kódy.';
   }

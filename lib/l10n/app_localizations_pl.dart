@@ -3914,6 +3914,11 @@ class AppLocalizationsPl extends AppLocalizations {
       'Żaden przekaźnik Cię nie usłyszał. Ponowna próba, gdy któryś będzie w zasięgu.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'wysłano $time wg zegara nadawcy';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Radio $name wysyła krótkie kody przekaźników (1 bajt). Pathfinder nie pozna tras do tego kontaktu, dopóki jego radio nie przejdzie na kody 2-bajtowe.';
   }

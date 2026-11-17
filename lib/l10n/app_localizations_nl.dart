@@ -3884,6 +3884,11 @@ class AppLocalizationsNl extends AppLocalizations {
       'Geen repeater heeft je gehoord. Er wordt opnieuw geprobeerd zodra er een binnen bereik is.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'verzonden $time volgens de klok van de afzender';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'De radio van $name stuurt korte repeatercodes (1 byte). Pathfinder kan geen routes naar hen leren tot hun radio 2-byte-codes gebruikt.';
   }

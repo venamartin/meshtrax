@@ -42,6 +42,7 @@ import '../services/background_service.dart';
 import '../services/notification_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
+import '../storage/arrival_clock.dart';
 import '../storage/channel_message_store.dart';
 import '../storage/channel_order_store.dart';
 import '../storage/channel_settings_store.dart';
@@ -843,9 +844,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // them while we were away — old sender timestamps are legitimate).
   // Everything after is LIVE: the packet was heard seconds ago, so a
   // sender timestamp far in the past is a broken clock, never a real date.
-  // An ABORTED first drain deliberately does not latch: the queue still
-  // holds pre-connection content, so its later pops are still backlog (the
-  // per-channel floor keeps broken clocks out either way).
+  // A first drain that gives up latches it too, or the sync banner would
+  // stay up all session; what the queue still holds then reads as live
+  // (see [_readingQueueLeftovers]).
   bool _completedFirstQueueDrain = false;
   // Per-channel causality floor, SNAPSHOTTED at first backlog use in this
   // drain: the newest message stored BEFORE sync. Live-reading the watched
@@ -853,6 +854,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // rewritten to "now" would drag the floor to "now" and collapse the rest
   // of a week-away backlog onto the sync date.
   final Map<String, DateTime?> _drainFloorByIdKey = {};
+  // From a drain's give-up until a drain reaches NO_MORE_MESSAGES. What the
+  // radio hands over meanwhile can have waited there for hours, and the live
+  // rule shows it as new: such a message keeps its claimed time for a "sent
+  // 14:00 by its clock" line ([heldClaimToShow]).
+  bool _readingQueueLeftovers = false;
+  // An arrival stamp taken as this connection's first drain starts: the
+  // rows below it are what each chat held before the sync, a leftover's floor.
+  int? _queueSyncStartUs;
   bool _pendingQueueSync = false;
   bool _pendingChannelSyncAfterQueueSync = false;
   Timer? _queueSyncTimeout;
@@ -1536,8 +1545,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
   // identity — never stored under a bare index.
-  final Map<int,
-          List<({ChannelMessage message, bool fromBacklog, DateTime receivedAt})>>
+  final Map<
+          int,
+          List<
+              ({
+                ChannelMessage message,
+                bool fromBacklog,
+                bool leftover,
+                DateTime receivedAt,
+              })>>
       _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
   bool _pendingQueueSyncAfterChannelSync = false;
@@ -4195,6 +4211,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _didInitialQueueSync = false;
     _completedFirstQueueDrain = false;
     _drainFloorByIdKey.clear();
+    _readingQueueLeftovers = false;
+    _queueSyncStartUs = null;
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
@@ -5979,6 +5997,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// failure path unverified filing is safe — unknown slots buffer.
   Future<void> _startQueueSyncNow() async {
     if (!isConnected) return;
+    _queueSyncStartUs ??= ArrivalClock.next();
     _isSyncingQueuedMessages = true;
     _queuedMessagesRead = 0;
     notifyListeners();
@@ -6036,6 +6055,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // A radio that never answers the first drain must not leave the sync
       // banner armed for the whole session.
       _completedFirstQueueDrain = true;
+      _readingQueueLeftovers = true;
       notifyListeners();
       _queueSyncRetries = 0;
       _scheduleQueueDrainRetry();
@@ -7400,6 +7420,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _stopQueueDrainRetries();
     _completedFirstQueueDrain = true;
+    _readingQueueLeftovers = false;
     // The drain is over; the next one snapshots fresh floors.
     _drainFloorByIdKey.clear();
     _isSyncingQueuedMessages = false;
@@ -8012,10 +8033,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // decided inside the ingest. Captured non-null: promotion of the
       // outer nullable doesn't survive into the closure.
       final incoming = message;
+      final leftover = _readingQueueLeftovers;
       unawaited(() async {
         final isNew = await _ingestContactMessage(
           incoming.senderKeyHex,
           incoming,
+          leftover: leftover,
         );
         // A sender that missed our ACK retries the SAME message; the DB
         // dedups the row, and the notification must dedup with it — one
@@ -8487,6 +8510,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // after is live, where old sender stamps are broken clocks.
       final fromBacklog =
           _isSyncingQueuedMessages && !_completedFirstQueueDrain;
+      final leftover = _readingQueueLeftovers;
       final contentHash = _computeContentHash(
         parsed.channelIndex!,
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -8528,6 +8552,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             .add((
           message: message,
           fromBacklog: fromBacklog,
+          leftover: leftover,
           receivedAt: DateTime.now(),
         ));
         _queryUntrackedChannel(channelIndex);
@@ -8540,6 +8565,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           channelIndex,
           message,
           fromBacklog: fromBacklog,
+          leftover: leftover,
         );
         if (isNew) {
           _maybeNotifyChannelMessage(message);
@@ -9304,6 +9330,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           channel.index,
           message,
           fromBacklog: entry.fromBacklog,
+          leftover: entry.leftover,
           receivedAt: entry.receivedAt,
         );
         if (isNew) {
@@ -9506,7 +9533,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// an already-stored message (a sender that missed our ACK re-sends the
   /// same message) and for repeats of an already-applied reaction. Callers
   /// gate user-facing side effects — notifications — on it.
-  Future<bool> _ingestContactMessage(String pubKeyHex, Message message) async {
+  Future<bool> _ingestContactMessage(
+    String pubKeyHex,
+    Message message, {
+    bool leftover = false,
+  }) async {
     // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
     // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
@@ -9514,13 +9545,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // DMs keep the lenient window unconditionally: room servers push old
       // messages while LIVE (legitimate), so the channel-side live/backlog
       // split does not transfer. Follow-up: strict clamp for non-room DMs.
+      final now = DateTime.now();
       final sane = sanitizeSenderTimestamp(
         message.timestamp,
-        DateTime.now(),
+        now,
         fromBacklog: true,
       );
       if (sane != message.timestamp) {
         processedMessage = message.copyWith(timestamp: sane);
+      }
+      // Its place is its arrival, under what came before: the line tells a
+      // leftover's age. No floor, as above: the 30-day cap decides.
+      final claimedAt =
+          leftover ? heldClaimToShow(message.timestamp, now) : null;
+      if (claimedAt != null) {
+        processedMessage = processedMessage.copyWith(claimedAt: claimedAt);
       }
     }
 
@@ -10605,6 +10644,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage? replyTarget,
     Channel? identity,
     bool fromBacklog = false,
+    bool leftover = false,
     DateTime? receivedAt,
   }) async {
     final sw = Stopwatch()..start();
@@ -10614,6 +10654,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       replyTarget: replyTarget,
       identity: identity,
       fromBacklog: fromBacklog,
+      leftover: leftover,
       receivedAt: receivedAt,
     );
     appLogger.perf(
@@ -10633,6 +10674,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage? replyTarget,
     Channel? identity,
     bool fromBacklog = false,
+    bool leftover = false,
     DateTime? receivedAt,
   }) async {
     // [identity] bypasses the slot lookup for sends queued while the map is
@@ -10651,12 +10693,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Rewrite only BROKEN sender clocks. An old-but-plausible time is display
     // truth, and since #247 it is also where the message stands in the chat.
     ChannelMessage sanitizedMessage = message;
+    DateTime? claimedAt;
     if (!message.isOutgoing) {
+      // Buffered messages are judged against the moment the radio handed
+      // them over, not the (possibly much later) flush time.
+      final now = receivedAt ?? DateTime.now();
       final sane = sanitizeSenderTimestamp(
         message.timestamp,
-        // Buffered messages are judged against the moment the radio handed
-        // them over, not the (possibly much later) flush time.
-        receivedAt ?? DateTime.now(),
+        now,
         fromBacklog: fromBacklog,
         channelFloor: fromBacklog
             ? _drainFloorByIdKey.putIfAbsent(
@@ -10667,6 +10711,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
       if (sane != message.timestamp) {
         sanitizedMessage = message.copyWith(timestamp: sane);
+        final syncStart = _queueSyncStartUs;
+        if (leftover && !fromBacklog && syncStart != null) {
+          claimedAt = heldClaimToShow(
+            message.timestamp,
+            now,
+            floor: await _channelMessageStore.newestShownTimeArrivedBefore(
+              idKey,
+              syncStart,
+            ),
+          );
+        }
       }
     }
 
@@ -10814,6 +10869,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               replyToSenderName: originalMessage.senderName,
               replyToText: originalMessage.text,
             );
+    }
+
+    if (claimedAt != null) {
+      processedMessage = processedMessage.copyWith(claimedAt: claimedAt);
     }
 
     // Heuristic echo match (no packet hash on our original, second-truncated
@@ -11097,6 +11156,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return timestamp.isBefore(oldestBelievable) ? now : timestamp;
   }
 
+  /// The claimed send time a message read after a drain gave up shows as
+  /// "sent 14:00 by its clock", or null.
+  ///
+  /// The radio held such a message past the give-up, so its old claim may
+  /// be real, but it is read as LIVE and stands where it arrives: a channel
+  /// shows it at [now], a DM at its arrival. Its place and time stay so; only
+  /// the line is added. Fresh claims need no line, and a claim the BACKLOG
+  /// rule would not believe ([floor] minus 10 minutes, the 30-day cap
+  /// without one, more than a minute ahead) gets none.
+  @visibleForTesting
+  static DateTime? heldClaimToShow(
+    DateTime claim,
+    DateTime now, {
+    DateTime? floor,
+  }) {
+    if (sanitizeSenderTimestamp(claim, now, fromBacklog: false) == claim) {
+      return null;
+    }
+    final believed = sanitizeSenderTimestamp(
+      claim,
+      now,
+      fromBacklog: true,
+      channelFloor: floor,
+    );
+    return believed == claim ? claim : null;
+  }
+
   /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
   /// clamp has rewritten the stored [ChannelMessage.timestamp].
   ///
@@ -11307,6 +11393,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _didInitialQueueSync = false;
     _completedFirstQueueDrain = false;
     _drainFloorByIdKey.clear();
+    _readingQueueLeftovers = false;
+    _queueSyncStartUs = null;
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _stopQueueDrainRetries();

@@ -1970,6 +1970,7 @@
   "chat_kindRoute": "ルート（{count}{count, plural, =1{ホップ} other{ホップ}}）",
   "chat_statusQueued": "送信待ち",
   "chat_statusNoRepeaterHeard": "どのリピーターにも届きませんでした。範囲内にリピーターが入ったら再試行します。",
+  "chat_sentByItsClock": "送信元の時計で {time} に送信",
   "chat_narrowHashNotice": "{name}の無線機は短いリピーターコード（1バイト）を送っています。相手の無線機が2バイトのコードを使うまで、Pathfinderは相手へのルートを学習できません。",
   "chat_statusSending": "送信中 · {kind}",
   "chat_statusRetrying": "再試行中 · {kind} · {max}回中{attempt}回目",

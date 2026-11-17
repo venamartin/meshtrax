@@ -3863,6 +3863,11 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'skickat $time enligt avsändarens klocka';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '${name}s radio skickar korta repeaterkoder (1 byte). Pathfinder kan inte lära sig rutter till dem förrän deras radio använder 2-byte-koder.';
   }

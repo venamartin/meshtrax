@@ -3887,6 +3887,11 @@ class AppLocalizationsSl extends AppLocalizations {
       'Noben ponovitelj vas ni slišal. Ponovni poskus, ko bo kateri v dosegu.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'poslano $time po uri pošiljatelja';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Radio $name pošilja kratke kode ponoviteljev (1 bajt). Pathfinder se ne more naučiti poti do tega stika, dokler njegov radio ne uporablja 2-bajtnih kod.';
   }

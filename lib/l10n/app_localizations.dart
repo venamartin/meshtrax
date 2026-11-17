@@ -6730,6 +6730,12 @@ abstract class AppLocalizations {
   /// **'No repeater heard you. Will try again when one is in range.'**
   String get chat_statusNoRepeaterHeard;
 
+  /// Under a message the radio held after a failed read: the time its sender's own clock gave it.
+  ///
+  /// In en, this message translates to:
+  /// **'sent {time} by its clock'**
+  String chat_sentByItsClock(String time);
+
   /// No description provided for @chat_narrowHashNotice.
   ///
   /// In en, this message translates to:

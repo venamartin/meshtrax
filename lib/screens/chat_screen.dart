@@ -1334,6 +1334,10 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 announcement: isAnnouncement,
               );
               _rebuildAt(facts.changesAt);
+              final claimedAt = message.claimedAt;
+              if (claimedAt != null) {
+                _rebuildAt(DateTimeHelper.nextDay(claimedAt));
+              }
               final replyTargetIndex = replyInfo == null
                   ? -1
                   : _findReplyTargetIndex(
@@ -3006,6 +3010,29 @@ class _MessageBubble extends StatelessWidget {
                                 ),
                               ],
                             ],
+                          ),
+                        // Held by the radio past a failed read: it stands
+                        // where it got here, with the time its sender claimed.
+                        if (!isOutgoing && message.claimedAt != null)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 4,
+                              left: gifId != null ? 8 : 0,
+                              right: gifId != null ? 8 : 0,
+                            ),
+                            child: Text(
+                              context.l10n.chat_sentByItsClock(
+                                DateTimeHelper.timeWithDay(
+                                  context,
+                                  message.claimedAt!,
+                                ),
+                              ),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: displayMetaColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         if (enableTracing &&
                             viaLabel != null &&

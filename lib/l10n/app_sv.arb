@@ -1932,6 +1932,7 @@
   "chat_kindRoute": "rutt ({count} {count, plural, =1{hopp} other{hopp}})",
   "chat_statusQueued": "I kö",
   "chat_statusNoRepeaterHeard": "Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.",
+  "chat_sentByItsClock": "skickat {time} enligt avsändarens klocka",
   "chat_narrowHashNotice": "{name}s radio skickar korta repeaterkoder (1 byte). Pathfinder kan inte lära sig rutter till dem förrän deras radio använder 2-byte-koder.",
   "chat_statusSending": "Skickar · {kind}",
   "chat_statusRetrying": "Försöker igen · {kind} · försök {attempt} av {max}",

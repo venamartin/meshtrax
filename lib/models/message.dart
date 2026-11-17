@@ -51,6 +51,10 @@ class Message {
   final Map<String, List<String>> reactionSenders;
   final Map<String, MessageStatus> reactionStatuses;
   final Uint8List fourByteRoomContactKey;
+  // The sender's own send time, for a message the radio still held when a
+  // queue read gave up, when believable: it stands at its arrival, so a
+  // "sent 14:00 by its clock" line tells its age. Null otherwise.
+  final DateTime? claimedAt;
 
   Message({
     required this.senderKey,
@@ -79,6 +83,7 @@ class Message {
     this.guessedHops = 0,
     this.deliveredLate = false,
     this.waitingForRepeater = false,
+    this.claimedAt,
   }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
        pathBytes = pathBytes ?? Uint8List(0),
@@ -112,6 +117,7 @@ class Message {
     Map<String, List<String>>? reactionSenders,
     Map<String, MessageStatus>? reactionStatuses,
     Uint8List? fourByteRoomContactKey,
+    DateTime? claimedAt,
   }) {
     return Message(
       senderKey: senderKey,
@@ -141,6 +147,7 @@ class Message {
       reactionStatuses: reactionStatuses ?? this.reactionStatuses,
       fourByteRoomContactKey:
           fourByteRoomContactKey ?? this.fourByteRoomContactKey,
+      claimedAt: claimedAt ?? this.claimedAt,
     );
   }
 

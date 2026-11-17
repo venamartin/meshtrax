@@ -1010,6 +1010,16 @@ On connect, the app syncs queued messages:
 
 **Give-up**: A request with no answer in 5 s is sent again, up to 3 times; then the drain gives up. The firmware pushes `PUSH_CODE_MSG_WAITING` only when it queues a new message, so the app starts another drain 30 s later, then after 60 s, 120 s and 240 s, then every 5 minutes, until one ends in `RESP_CODE_NO_MORE_MESSAGES`. A disconnect stops the retries.
 
+**Message times**: A message shows its sender's time. The app rewrites a time it cannot believe to the moment it reads the message (`sanitizeSenderTimestamp`):
+- *Backlog*, the first drain of a connection: the radio heard these while the app was away. A time after the chat's newest stored message, less 10 minutes, is kept; a chat with no history keeps the last 30 days.
+- *Live*, everything after: a time more than 2 minutes old is a wrong clock.
+- Either way, a time more than a minute ahead is rewritten.
+- DMs keep any time from the last 30 days, live or not.
+
+A channel stands in the order of the times shown, a DM in the order its messages arrived. Your own messages are never rewritten.
+
+**Held past a give-up**: After a drain gives up, what the radio still holds comes in on a later drain, read as live, so a text sent at 14:00 and read at 16:30 shows at 16:30. It keeps that place and time. Until a drain reaches `RESP_CODE_NO_MORE_MESSAGES`, a received message whose time the live rule rewrites, or a DM's older than 2 minutes, also keeps the time its sender claimed (`claimedAt`), when the backlog rule would believe it. It is checked against the chat's newest message from before this connection's first drain; a DM has only the 30-day cap. The chat shows "sent 14:00 by its clock" under the text; the day is added when it is not today. A reconnect starts over.
+
 ## Error Handling
 
 ### Frame Validation

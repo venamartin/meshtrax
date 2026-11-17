@@ -3621,6 +3621,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_statusNoRepeaterHeard => '没有转发节点听到您。有转发节点进入范围时会再试。';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '按发送方时钟 $time 发送';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name 的电台发送的是短转发节点代码（1 字节）。在对方电台改用 2 字节代码之前，Pathfinder 无法学习到对方的路由。';
   }
