@@ -9130,15 +9130,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _retryService!.handleAckReceived(ackHash, tripTimeMs);
       }
     } catch (e) {
+      // Nothing is marked delivered: the newest sent DM may be anyone's,
+      // and a false "Delivered" is worse than a late one. The ladder goes
+      // on, and a real ACK still finds its message.
       appLogger.warn('Error handling send confirmed frame: $e');
-      // Fallback to old behavior
-      unawaited(() async {
-        final (updated, _) = await _messageStore.promoteLatestOutgoing(
-          from: MessageStatus.sent,
-          to: MessageStatus.delivered,
-        );
-        if (updated) notifyListeners();
-      }());
     }
   }
 

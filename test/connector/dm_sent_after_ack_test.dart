@@ -143,6 +143,24 @@ void main() {
 
   tearDown(() => retry.dispose());
 
+  test('a garbled delivery receipt marks no DM delivered', () async {
+    await c.sendMessage(bob, 'one');
+    await settle();
+    final bobAck = ackOf(c.dms.last);
+    c.handleFrameForTest(_sent(bobAck));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.sent);
+
+    // Too short to hold an ACK hash: whose it was can't be told.
+    c.handleFrameForTest(Uint8List.fromList([pushCodeSendConfirmed, 1, 2]));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.sent);
+
+    c.handleFrameForTest(_confirmed(bobAck));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.delivered);
+  });
+
   test(
     'a SENT for Bob\'s copy after his ACK leaves Carol\'s SOS waiting',
     () async {
