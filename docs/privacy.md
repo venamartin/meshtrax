@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** November 7, 2026
+**Last updated:** November 16, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -13,9 +13,9 @@ The App is developed by an independent, open-source developer. You can review th
 
 - The App has **no user accounts** and requires **no sign-up**.
 - There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files, trail routing data, points of interest (place names, Wikipedia text and photos) and addresses, and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
-- The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind.
+- The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind. (On Android, the QR code scanner's Google library may send Google its own usage statistics; see "Camera and photos".)
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
-- The only data ever sent over the internet is to the MeshTrax map server and two third-party services that power optional terrain and GIF features: **Open-Meteo** and **Giphy**. What each receives is described below. The base map that comes with the App needs no connection.
+- Apart from the Android QR scanner's statistics noted above, the only data the App sends over the internet goes to the MeshTrax map server and to **Giphy**, which powers the optional GIF features. What each receives is described below. The base map that comes with the App, line of sight, radio reach, trail routing and place search need no connection.
 
 ## Data the App collects and stores on your device
 
@@ -44,7 +44,7 @@ All of the following is stored locally in the App's private storage on your devi
 
 ## Data shared with third parties
 
-The App contacts the MeshTrax map server and two third-party services, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
+The App contacts the MeshTrax map server and one third-party service, Giphy, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
 
 ### 1. MeshTrax map server (offline maps)
 - **When:** You open the Offline maps screen, download or update a map, trail routing data, points of interest or addresses, and, while offline maps are installed, about once a day to check for updates.
@@ -52,15 +52,17 @@ The App contacts the MeshTrax map server and two third-party services, and only 
 - **Hosting:** The files are served by Cloudflare R2 at `maps.meshtrax.io`. Cloudflare sees your IP address and may keep standard request logs; the developer does not use them to identify you.
 - **Their policy:** https://www.cloudflare.com/privacypolicy/
 
-### 2. Open-Meteo (elevation / line-of-sight)
-- **When:** You use the line-of-sight terrain feature.
-- **What is sent:** Latitude/longitude coordinates of the map/node points involved in the calculation, so terrain elevation can be returned. These are the points you are analyzing on the map, not your phone's GPS position.
-- **Their policy:** https://open-meteo.com/en/terms
-
-### 3. Giphy (optional GIFs)
+### 2. Giphy (optional GIFs)
 - **When:** You open the GIF picker to send a GIF, or a GIF shared in a chat is displayed. GIF display can be turned off in Settings ("Inline GIFs").
 - **What is sent:** When you open the picker, a request for trending GIFs. When you search in the picker, the **search words you type**. When a GIF is displayed, only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. No message text, contacts, or location is sent.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
+
+### Earlier versions
+MeshTrax 1.10.2 and earlier also contacted two other services:
+- **Open-Meteo**, for line of sight: the latitude/longitude of the points being checked (not your phone's GPS position) were sent so that terrain heights could be returned. Their policy: https://open-meteo.com/en/terms
+- **Google**, for Google Maps short links (`maps.app.goo.gl`) in messages: the App asked Google where the link pointed, to show its position.
+
+Newer versions do neither: line of sight works from the contours you downloaded, and a short link shows no position.
 
 The App also uses the operating system's share sheet (for exporting GPX track files that you explicitly choose to share), the system browser (to open a web link contained in a received message, after you confirm, or a place's full Wikipedia article when you tap **Read on Wikipedia**), your maps app (when you tap **Directions** on a shared location, the App opens Apple Maps or Google Maps with that destination), and your calendar (when you tap **Add to calendar** on an event message, the event's details are passed to the calendar app, where you choose to save it). In each case it happens only when you tap, and you choose what to do with it; the App does not upload anything on its own.
 
@@ -77,7 +79,7 @@ You can also **block** a sender from any message; blocked senders and their mess
 - No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App). Your operating system's own device backup is separate; see "Device backups" above.
 - The App does not read your calendar or your contacts list.
 - The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it.
-- Trail routing and place search run entirely on your device. The points you plan a route between and the words you search for are never sent anywhere.
+- Trail routing, place search, line of sight and radio reach run entirely on your device. The points you plan a route between, the words you search for and the places you check line of sight between are never sent anywhere. Line of sight reads the heights from the contours you downloaded.
 - No data is sold or shared for advertising.
 
 ## Permissions
@@ -104,7 +106,7 @@ iOS does not require location permission for BLE scanning; the App never request
 |---|---|
 | App Sandbox | Required for Mac App Store apps. The App's data stays in its own container, and the App can reach only what is listed below |
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
+| Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
 | USB and serial ports | Connect to a companion device over a USB serial cable, through the serial port of the radio you plug in |
 | Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, an image to scan a QR code from, or a folder of offline maps on a drive to install from. The App reaches no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
@@ -119,7 +121,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | `BLUETOOTH`, `BLUETOOTH_ADMIN` (Android 11 and below) | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | `BLUETOOTH_SCAN` (with `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE` (Android 12+) | Scan for and communicate with your companion device. The scan is flagged so it is **not** used to derive location |
 | `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Required by the Android operating system to permit BLE scanning on Android 11 and below. The App does not read, store, or transmit your device location through these permissions |
-| `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features |
 | `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
@@ -131,7 +133,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | Capability | Why it is needed |
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Internet | Download offline maps, points of interest and addresses (MeshTrax map server), terrain data (Open-Meteo), and GIFs (Giphy) for the optional map and GIF features |
+| Internet | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features |
 | Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
 
 The Windows app does not use the camera, location, or notifications.
@@ -140,7 +142,7 @@ The App can also connect to a companion device over your **local network (TCP)**
 
 ## Camera and photos
 
-The camera is used **only** to scan QR codes (for importing contacts and configuration). You may alternatively pick an existing image from your gallery (on macOS, an image file) to scan a QR code from it. Any such image is analyzed **on your device** and is never uploaded.
+The camera is used **only** to scan QR codes (for importing contacts and configuration). You may alternatively pick an existing image from your gallery (on macOS, an image file) to scan a QR code from it. Any such image is analyzed **on your device** and is never uploaded. On Android, QR codes are read with Google's ML Kit barcode scanner, which runs on your device; when your phone is online, ML Kit may send Google usage statistics about the scanner (not the images or the codes in them), under Google's terms: https://developers.google.com/ml-kit/terms
 
 ## Mesh network communications
 
