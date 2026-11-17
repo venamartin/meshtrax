@@ -16,6 +16,10 @@ Words you will meet in MeshTrax and in these docs, in plain language.
 
 **Repeater**: A radio, usually on a roof or hill, that passes messages on. Repeaters are what let a message travel further than one radio can reach.
 
+**Off-Grid Repeat**: A setting that lets your own radio pass messages on for others, like a small repeater. Radios allow it only on a few off-grid frequencies (918 MHz in the US), away from the regular mesh, so it's for groups out where there are no repeaters. Turn it on in Radio Settings, or with TRAX mode.
+
+**TRAX mode**: One tap that moves your radio, and with Tell the group your whole group, to the off-grid frequency with Off-Grid Repeat on, so every radio relays for the others. The boot print at the top of Chats and Map turns orange while it's on. Nobody on the regular mesh hears you until you leave; Leave puts your radio's settings back.
+
 **Room server**: A radio that stores posts for a group, like a small bulletin board. Members log in to read and post, and it keeps recent posts for people who were away.
 
 **Node**: Any radio on the mesh: a companion radio, a repeater or a room server.
