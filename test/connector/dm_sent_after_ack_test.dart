@@ -184,6 +184,24 @@ void main() {
     },
   );
 
+  test('a garbled delivery receipt marks no DM delivered', () async {
+    await c.sendMessage(bob, 'one');
+    await settle();
+    final bobAck = ackOf(c.dms.last);
+    c.handleFrameForTest(_sent(bobAck));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.sent);
+
+    // Too short to hold an ACK hash: whose it was can't be told.
+    c.handleFrameForTest(Uint8List.fromList([pushCodeSendConfirmed, 1, 2]));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.sent);
+
+    c.handleFrameForTest(_confirmed(bobAck));
+    await settle();
+    expect(await status(bob, 'one'), MessageStatus.delivered);
+  });
+
   // Bob's flood is parked (no repeater echoed it), and a DM from Carol has
   // just come in, so the resend a repeater wakes first sits out the 5 s
   // backoff. The test wakes it itself: a relayed packet would also start
