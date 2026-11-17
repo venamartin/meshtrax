@@ -922,7 +922,11 @@ class _MapScreenState extends State<MapScreen> {
                               id: 'highlight',
                               position: highlightPosition.toOvm(),
                               size: const Size(40, 40),
-                              anchor: Alignment.bottomCenter,
+                              // An SOS looks as its pin from the message
+                              // does, which lies on it.
+                              anchor: widget.highlightSos
+                                  ? Alignment.center
+                                  : Alignment.bottomCenter,
                               interactive: widget.highlightSos,
                               onTap: widget.highlightSos
                                   ? () => _showSosSheet(
@@ -933,11 +937,17 @@ class _MapScreenState extends State<MapScreen> {
                                     )
                                   : null,
                               label: widget.highlightLabel,
-                              child: Icon(
-                                Icons.location_on_outlined,
-                                color: Colors.red[600],
-                                size: 34,
-                              ),
+                              child: widget.highlightSos
+                                  ? _nodeDot(
+                                      Colors.red,
+                                      Icons.warning_rounded,
+                                      padding: 6,
+                                    )
+                                  : Icon(
+                                      Icons.location_on_outlined,
+                                      color: Colors.red[600],
+                                      size: 34,
+                                    ),
                             ),
                           ..._buildGuessedMarkers(guessedLocations),
                           ..._buildMarkers(
