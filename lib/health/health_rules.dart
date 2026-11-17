@@ -5,6 +5,7 @@ import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
+import '../services/heard_service.dart';
 import '../services/notification_service.dart';
 import '../utils/platform_info.dart';
 
@@ -719,6 +720,22 @@ final List<HealthRule> healthRules = [
     fix: HealthFix.apply,
     fixDescription: 'Set channel message retries to 1.',
     apply: (ctx) => ctx.settingsService.setMaxChannelMessageRetries(1),
+  ),
+  HealthRule(
+    id: 'app_channel_retries_observers',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Channel messages are resent at most once',
+    why:
+        'Check sends with observers stops resending as soon as an observer '
+        'heard the message, so a resend goes out only when nobody did. With '
+        '2 or 3 retries, a message nobody heard gets more chances.',
+    check: (ctx) async =>
+        HeardService.instance.enabled && ctx.app.maxChannelMessageRetries < 2,
+    fix: HealthFix.apply,
+    fixDescription: 'Set channel message retries to 2.',
+    apply: (ctx) => ctx.settingsService.setMaxChannelMessageRetries(2),
+    notes: 'Owner, 2026-11-17: 2 or 3 with traxheard on; the slider goes to 3.',
   ),
   HealthRule(
     id: 'app_auto_favorite',

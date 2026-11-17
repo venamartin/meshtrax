@@ -50,14 +50,12 @@ class HeardCheckSettings extends StatelessWidget {
       );
 }
 
-/// A known server by its name and area, any other by its address.
+/// A known server by its area and host, any other by its address.
 String serverLabel(String address, AppLocalizations l10n) {
   if (address.isEmpty) return l10n.appSettings_heardServerNotSet;
   final uri = observerServerUri(address);
   for (final known in knownServers) {
-    if (observerServerUri(known.address) == uri) {
-      return '${known.name} · ${known.area}';
-    }
+    if (observerServerUri(known.address) == uri) return known.label;
   }
   return address;
 }
@@ -149,7 +147,7 @@ class _HeardServerDialogState extends State<HeardServerDialog> {
                 for (final (i, known) in knownServers.indexed)
                   DropdownMenuItem(
                     value: i,
-                    child: Text('${known.name} · ${known.area}'),
+                    child: Text(known.label, overflow: TextOverflow.ellipsis),
                   ),
                 DropdownMenuItem(
                   value: -1,

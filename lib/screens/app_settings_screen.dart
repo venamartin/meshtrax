@@ -625,8 +625,8 @@ class AppSettingsScreen extends StatelessWidget {
                   value: settingsService.settings.maxChannelMessageRetries
                       .toDouble(),
                   min: 0,
-                  max: 2,
-                  divisions: 2,
+                  max: 3,
+                  divisions: 3,
                   label: settingsService.settings.maxChannelMessageRetries
                       .toString(),
                   onChanged: (value) => settingsService

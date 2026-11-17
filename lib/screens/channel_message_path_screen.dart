@@ -105,8 +105,6 @@ class ChannelMessagePathScreen extends StatelessWidget {
               children: [
                 _buildSummaryCard(context),
                 const SizedBox(height: 16),
-                if (channelMessage && message.isOutgoing)
-                  HeardBySection(message.messageId),
                 if (extraPaths.isNotEmpty) ...[
                   Text(
                     l10n.channelPath_otherObservedPaths,
@@ -128,6 +126,8 @@ class ChannelMessagePathScreen extends StatelessWidget {
                   )
                 else
                   ..._buildHopTiles(context, hops),
+                if (channelMessage && message.isOutgoing)
+                  HeardBySection(message.messageId),
               ],
             ),
           ),

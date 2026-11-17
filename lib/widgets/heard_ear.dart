@@ -30,9 +30,9 @@ class HeardEar extends StatelessWidget {
       );
 }
 
-/// The packet path screen's list of the observers that heard a message:
-/// name, direct or through how many repeaters, and signal. Nothing at all
-/// when none did.
+/// The packet path screen's list of the observers that heard a message,
+/// below the path: name, direct or through how many repeaters, and
+/// signal. Nothing at all when none did.
 class HeardBySection extends StatelessWidget {
   const HeardBySection(this.messageId, {super.key});
 
@@ -48,6 +48,7 @@ class HeardBySection extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
               Text(
                 l10n.chat_heardBy(heard.length),
                 style: Theme.of(context).textTheme.titleSmall,
@@ -70,7 +71,6 @@ class HeardBySection extends StatelessWidget {
                         : Text('${sighting.snr!.toStringAsFixed(1)} dB'),
                   ),
                 ),
-              const SizedBox(height: 16),
             ],
           );
         },

@@ -26,7 +26,8 @@ class HeardChecker {
   /// The server to ask, or null to ask nothing.
   final ObserverServer? Function() server;
 
-  /// [id] was heard: one sighting per observer, over all its sends.
+  /// [id] was heard: one sighting per observer over all its sends, the
+  /// closest copy it heard, and the closest observers first.
   final void Function(String id, List<Sighting> sightings) onHeard;
 
   /// A request failed. Its messages are asked again at their next turn.
@@ -107,16 +108,30 @@ class HeardChecker {
       if (id == null) continue;
       final byObserver = heard[id] ??= {};
       for (final sighting in sightings) {
-        byObserver.putIfAbsent(sighting.observer, () => sighting);
+        final kept = byObserver[sighting.observer];
+        // An observer often hears several copies, one per path.
+        if (kept == null || _closestFirst(sighting, kept) < 0) {
+          byObserver[sighting.observer] = sighting;
+        }
       }
     }
     for (final MapEntry(key: id, value: byObserver) in heard.entries) {
       // Forgotten while the request was out: the app moved on.
       if (byObserver.isEmpty || !_tracked.containsKey(id)) continue;
       forget(id);
-      onHeard(id, byObserver.values.toList());
+      onHeard(id, byObserver.values.toList()..sort(_closestFirst));
     }
   }
+}
+
+/// Fewer repeaters first, direct at the top and unknown at the bottom,
+/// then the stronger signal.
+int _closestFirst(Sighting a, Sighting b) {
+  const unknown = 1 << 30;
+  final hops = (a.hops ?? unknown).compareTo(b.hops ?? unknown);
+  if (hops != 0) return hops;
+  return (b.snr ?? double.negativeInfinity)
+      .compareTo(a.snr ?? double.negativeInfinity);
 }
 
 class _Tracked {

@@ -3,26 +3,27 @@ import 'observer_server.dart';
 /// An observer server to pick from a list instead of typing its address.
 class KnownServer {
   const KnownServer({
-    required this.name,
     required this.area,
     required this.address,
     this.kind = ObserverServerKind.coreScope,
   });
-
-  final String name;
 
   /// Where its observers listen. A server only knows what they hear.
   final String area;
 
   final String address;
   final ObserverServerKind kind;
+
+  /// How the list shows it: its area and host,
+  /// "Northern California · corescope.stonekitty.net".
+  String get label => '$area · ${observerServerUri(address)?.host ?? address}';
 }
 
 /// Observer servers whose read API is open to anyone.
 const knownServers = [
   KnownServer(
-    name: 'ON8AR',
-    area: 'Belgium',
-    address: 'https://analyzer.on8ar.eu',
+    area: 'Northern California',
+    address: 'https://corescope.stonekitty.net',
   ),
+  KnownServer(area: 'Belgium', address: 'https://analyzer.on8ar.eu'),
 ];

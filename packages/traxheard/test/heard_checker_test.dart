@@ -75,6 +75,23 @@ void main() {
     });
   });
 
+  test("each observer's closest copy, the closest observers first", () {
+    fakeAsync((time) {
+      server.heard['aaaa'] = const [
+        Sighting(observer: 'Pine', snr: 1, hops: 3),
+        Sighting(observer: 'Elm', snr: 9),
+        Sighting(observer: 'Pine', snr: -5, hops: 1),
+        Sighting(observer: 'Oak', snr: 2, hops: 1),
+        Sighting(observer: 'Ash', snr: -12, hops: 0),
+      ];
+      checker().track('m1', 'aaaa');
+      time.elapse(const Duration(seconds: 11));
+      final heard = heardCalls.single.$2;
+      expect(heard.map((s) => s.observer), ['Ash', 'Oak', 'Pine', 'Elm']);
+      expect(heard[2].hops, 1, reason: "Pine's copy through 1 repeater");
+    });
+  });
+
   test('a resend is asked about with the first send, in one request', () {
     fakeAsync((time) {
       final c = checker()..track('m1', 'aaaa');
