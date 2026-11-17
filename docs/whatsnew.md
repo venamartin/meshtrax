@@ -16,7 +16,7 @@ Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 - The map: search is a map button, full screen fades the buttons, a layers sheet, and the map keeps its view and opens on your GPS position. Search lists the nearest places of a kind and which way each one is.
 - Install maps from a drive. Offline maps opens on Maps; Manage repeaters gets a Heard window and sorts by hops.
 - Settings show the radio's firmware, and About shows the build number. Short map links no longer go online to find their position.
-- On Linux the app no longer crashes on close; on the Mac it has its own icon.
+- On Linux the app no longer crashes on close.
 
 ## 1.10.2
 
