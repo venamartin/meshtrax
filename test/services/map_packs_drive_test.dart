@@ -116,11 +116,16 @@ void main() {
     File('${stick.path}/picker.geojson').writeAsStringSync(_picker);
   }
 
+  /// Waits for [id] to be installed and its download to be over: the
+  /// pack is in a moment before its download says so.
   Future<void> installed(String id) async {
-    for (var i = 0; i < 500 && maps.installedPack(id) == null; i++) {
+    bool done() =>
+        maps.installedPack(id) != null && maps.downloadStatus(id) == null;
+    for (var i = 0; i < 500 && !done(); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
     expect(maps.installedPack(id), isNotNull);
+    expect(maps.downloadStatus(id), isNull);
   }
 
   test("only what's on the drive shows, and the server's catalogue comes "
