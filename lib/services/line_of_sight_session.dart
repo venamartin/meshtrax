@@ -184,8 +184,9 @@ class LineOfSightSession extends ChangeNotifier {
   static const nearRadiusM = 20000.0;
   static const farRadiusM = 30000.0;
 
-  bool get busy => _busy;
-  bool _busy = false;
+  bool get busy => _lineBusy || _sweepBusy;
+  bool _lineBusy = false;
+  bool _sweepBusy = false;
 
   /// How much of the sweep is done, 0 to 1, while it runs.
   double? get progress => _progress;
@@ -335,11 +336,11 @@ class LineOfSightSession extends ChangeNotifier {
   Future<void> _runLine() async {
     final from = _from, to = _to;
     if (from == null || to == null) return;
-    if (_busy) {
+    if (_lineBusy) {
       _again = true;
       return;
     }
-    _busy = true;
+    _lineBusy = true;
     try {
       final r = await _worker.line(
         _packs,
@@ -354,7 +355,7 @@ class LineOfSightSession extends ChangeNotifier {
       appLogger.warn('Line of sight failed: $e', tag: 'LOS');
       if (!_again) _failed = true;
     }
-    _busy = false;
+    _lineBusy = false;
     if (_again) {
       _again = false;
       return _runLine();
@@ -378,7 +379,7 @@ class LineOfSightSession extends ChangeNotifier {
             distanceM(c, geoOf(p.position)) <= radius)
           p,
     ];
-    _busy = true;
+    _sweepBusy = true;
     _progress = 0;
     // Swept again from the same place: the last shade stays meanwhile.
     if (_reach?.center != c) _reach = null;
@@ -404,7 +405,7 @@ class LineOfSightSession extends ChangeNotifier {
       appLogger.warn('Radio reach failed: $e', tag: 'LOS');
       _failed = true;
     }
-    _busy = false;
+    _sweepBusy = false;
     _progress = null;
     notifyListeners();
   }

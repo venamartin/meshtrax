@@ -293,5 +293,22 @@ void main() {
       await idle(s);
       expect(s.reach!.radiusM, LineOfSightSession.farRadiusM);
     });
+
+    test('a row tapped while the sweep runs still gets its answer', () async {
+      final ana = LosPlace.contact(
+        const LatLng(36.21, -116.71),
+        name: 'Ana',
+        key: 'a',
+      );
+      final s = session(
+        mode: LosMode.reach,
+        from: LosPlace.me(dantes, source: MyPosition.byHand),
+        people: [ana],
+      );
+      expect(s.busy, isTrue);
+      s.openLine(ana);
+      await idle(s);
+      expect(s.currentLine!.to, geoOf(ana.position));
+    });
   });
 }
