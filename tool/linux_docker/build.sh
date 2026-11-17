@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the MeshTrax Linux desktop bundle in Docker, from the committed tree
-# at HEAD; uncommitted changes are not built. Flutter can't cross-compile
+# at HEAD, or at the tag or commit given (tool/linux_docker/build.sh v1.10.2);
+# uncommitted changes are not built. Flutter can't cross-compile
 # Linux, so the host decides the bundle: x86-64 gives linux-x64, arm64 gives
 # linux-arm64. Writes dist/meshtrax-linux-<arch>-v<version>.zip and its .sha1,
 # the names release.sh uses, after the same release-engine check.
@@ -18,7 +19,8 @@ case "$(uname -m)" in
     *) echo "ERROR: unsupported architecture '$(uname -m)'." >&2; exit 1 ;;
 esac
 
-VERSION=$(git show HEAD:pubspec.yaml | sed -n 's/^version: *\([^+]*\).*/\1/p' | tr -d '\r ')
+REF="${1:-HEAD}"
+VERSION=$(git show "$REF:pubspec.yaml" | sed -n 's/^version: *\([^+]*\).*/\1/p' | tr -d '\r ')
 NAME="meshtrax-linux-$ARCH-v$VERSION.zip"
 IMAGE="meshtrax-linux-build"
 
@@ -30,7 +32,7 @@ docker build -t "$IMAGE" tool/linux_docker
 mkdir -p dist
 rm -f "dist/$NAME" "dist/$NAME.sha1"
 
-git -c core.autocrlf=false archive --format=tar HEAD | docker run -i --rm \
+git -c core.autocrlf=false archive --format=tar "$REF" | docker run -i --rm \
     -e ARCH="$ARCH" -e NAME="$NAME" -e GIPHY_API_KEY \
     -e HOST_IDS="$(id -u):$(id -g)" \
     -v "$PWD/dist:/out" \
