@@ -29,13 +29,14 @@ MAJOR_ROADS = ["motorway", "trunk", "primary", "secondary"]
 TRAIL = ["all", ["==", ["get", "class"], "path"],
          ["any", ["match", ["get", "subclass"], ["path", "bridleway"], True, False],
           ["all", ["==", ["get", "subclass"], "footway"], ["==", ["get", "surface"], "unpaved"]]]]
-# Paved paths: sidewalks and other footways, steps, pedestrian streets and
-# cycleways, anything not tagged unpaved, untagged included (Martin,
-# 2026-11-17, after Fort Mason showed almost none of its paths). Lines only:
-# a pedestrian area (a plaza) is a polygon, and its outline no path.
+# Walkways: steps, pedestrian streets and cycleways, and footways not tagged
+# unpaved (sidewalks and park paths, untagged included); an unpaved footway
+# is a trail (Martin, 2026-11-17, after Fort Mason showed almost none of its
+# paths). Lines only: a pedestrian area (a plaza) is a polygon, and its
+# outline no path.
 WALKWAY = ["all", ["==", ["get", "class"], "path"], ["==", ["geometry-type"], "LineString"],
-           ["match", ["get", "subclass"], ["footway", "steps", "pedestrian", "cycleway"], True, False],
-           ["!=", ["get", "surface"], "unpaved"]]
+           ["any", ["match", ["get", "subclass"], ["steps", "pedestrian", "cycleway"], True, False],
+            ["all", ["==", ["get", "subclass"], "footway"], ["!=", ["get", "surface"], "unpaved"]]]]
 # The trail names. transportation_name carries no surface, so every named
 # footway takes the trail label; road-label leaves these to it.
 TRAIL_NAME = ["all", ["==", ["get", "class"], "path"],

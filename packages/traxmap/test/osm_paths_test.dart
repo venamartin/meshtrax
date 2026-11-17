@@ -51,6 +51,13 @@ void main() {
           }
         }
         expect(lines('footway', zoom, surface: 'unpaved'), trail);
+        // Unpaved steps, cycleways and pedestrian ways are no trails, but
+        // walkways all the same.
+        for (final subclass in ['steps', 'pedestrian', 'cycleway']) {
+          expect(lines(subclass, zoom, surface: 'unpaved'), [
+            'walkway',
+          ], reason: '$subclass unpaved z$zoom');
+        }
         for (final subclass in ['path', 'bridleway']) {
           for (final surface in [null, 'paved', 'unpaved']) {
             expect(

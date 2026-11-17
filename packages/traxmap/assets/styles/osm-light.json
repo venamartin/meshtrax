@@ -1042,27 +1042,40 @@
           "LineString"
         ],
         [
-          "match",
+          "any",
           [
-            "get",
-            "subclass"
+            "match",
+            [
+              "get",
+              "subclass"
+            ],
+            [
+              "steps",
+              "pedestrian",
+              "cycleway"
+            ],
+            true,
+            false
           ],
           [
-            "footway",
-            "steps",
-            "pedestrian",
-            "cycleway"
-          ],
-          true,
-          false
-        ],
-        [
-          "!=",
-          [
-            "get",
-            "surface"
-          ],
-          "unpaved"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "subclass"
+              ],
+              "footway"
+            ],
+            [
+              "!=",
+              [
+                "get",
+                "surface"
+              ],
+              "unpaved"
+            ]
+          ]
         ]
       ],
       "paint": {
