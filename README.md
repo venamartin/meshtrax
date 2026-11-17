@@ -117,6 +117,9 @@ flutter run -d windows
 
 # Run on Linux
 flutter run -d linux
+
+# Build the Linux release zip in Docker (x64 on an x86-64 host, arm64 on arm64)
+tool/linux_docker/build.sh
 ```
 
 ---
