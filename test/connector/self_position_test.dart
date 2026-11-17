@@ -183,4 +183,54 @@ void main() {
       reason: 'the GPS dialog still sees the new reading',
     );
   });
+
+  // After a restart with no fix, a radio reports the position it stored at
+  // its last settings save, with altitude 0 (firmware MyMesh.cpp), and the
+  // same SELF_INFO gave at connect. Pathfinder must not take it for a fix.
+  test("a restarted radio's stored position is never live", () {
+    for (var i = 0; i < 3; i++) {
+      c.handleFrameForTest(_telemetry(selfKey, 41.8123, -71.4123));
+    }
+    expect(c.selfPositionIsLive, isFalse);
+  });
+
+  test('a reading that moved off the position at connect is live', () {
+    c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.3));
+    expect(c.selfPositionIsLive, isTrue);
+  });
+
+  group('every way off a radio forgets its fix', () {
+    void liveFix() {
+      radio(verCode: 9, gps: '1');
+      c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.3));
+      expect(c.selfPositionIsLive, isTrue);
+      expect(c.selfGps.value, isNotNull);
+    }
+
+    test('a disconnect, and its poll stops', () {
+      fakeAsync((async) {
+        liveFix();
+        unawaited(c.disconnect());
+        async.flushMicrotasks();
+        expect(c.selfPositionIsLive, isFalse);
+        expect(c.selfGps.value, isNull);
+
+        // The next radio answers DEVICE_INFO before its GPS setting comes:
+        // the old poll must not ask it.
+        final asked = c.sentOf(cmdSendTelemetryReq);
+        c.handleFrameForTest([respCodeDeviceInfo, 9, 50, 8]);
+        async.elapse(const Duration(minutes: 2));
+        expect(c.sentOf(cmdSendTelemetryReq), asked);
+      });
+    });
+
+    test('a Bluetooth drop', () {
+      fakeAsync((async) {
+        liveFix();
+        c.handleBleDropForTest();
+        expect(c.selfPositionIsLive, isFalse);
+        expect(c.selfGps.value, isNull);
+      });
+    });
+  });
 }
