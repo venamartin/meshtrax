@@ -6763,4 +6763,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Contours for line of sight';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Your radio saves this kind of contact by itself, so it comes back the next time it is heard.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Share a contact';
+
+  @override
+  String get shareContact_myContact => 'My contact';
 }

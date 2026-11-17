@@ -2800,5 +2800,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Nincs senki pozícióval {distance} távolságon belül.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Szintvonalak a rálátáshoz"
+  "offlineMaps_losContours": "Szintvonalak a rálátáshoz",
+  "contacts_deleteComesBack": "A rádió magától elmenti az ilyen típusú névjegyet, ezért visszakerül, amikor legközelebb hallja.",
+  "tray_contact": "Névjegy",
+  "shareContact_title": "Névjegy megosztása",
+  "shareContact_myContact": "Saját névjegy"
 }

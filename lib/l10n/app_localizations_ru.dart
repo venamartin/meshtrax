@@ -6884,4 +6884,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Горизонтали для прямой видимости';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Радио само сохраняет такие контакты, поэтому он вернётся, когда его услышат в следующий раз.';
+
+  @override
+  String get tray_contact => 'Контакт';
+
+  @override
+  String get shareContact_title => 'Поделиться контактом';
+
+  @override
+  String get shareContact_myContact => 'Мой контакт';
 }

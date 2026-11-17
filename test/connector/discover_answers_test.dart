@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +6,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:pinenacl/ed25519.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Nearby-repeaters dialog (owner, 2026-10-14): with traffic on the mesh, a
@@ -29,8 +29,17 @@ class _Connector extends MeshCoreConnector {
   }
 }
 
-Uint8List _key(int seed) =>
-    Uint8List.fromList(List.generate(32, (i) => seed + i));
+// Real Ed25519 keys, so the adverts below carry valid signatures.
+final _signers = <String, SigningKey>{};
+
+Uint8List _key(int seed) {
+  final signer = SigningKey(
+    seed: Uint8List.fromList(List.generate(32, (i) => (seed + i) & 0xFF)),
+  );
+  final key = signer.verifyKey.asTypedList;
+  _signers[pubKeyToHex(key)] = signer;
+  return key;
+}
 
 /// A repeater's answer as the companion pushes it: how I heard it, then
 /// the repeater's payload — type, how it heard me, my tag, its key.
@@ -53,13 +62,17 @@ Uint8List _advert(Uint8List key, String name, {int snrQ = 40}) {
   final w = BytesBuilder();
   w.add([pushCodeLogRxData, snrQ, 0xA0]);
   w.add([(payloadTypeADVERT << 2) | 0x01, 0]);
-  w.add(key);
-  w.add(
-    (ByteData(4)..setUint32(0, 1752854400, Endian.little)).buffer.asUint8List(),
+  final time = (ByteData(
+    4,
+  )..setUint32(0, 1752854400, Endian.little)).buffer.asUint8List();
+  final appData = [advTypeRepeater | 0x80, ...utf8.encode(name)];
+  final signed = _signers[pubKeyToHex(key)]!.sign(
+    Uint8List.fromList([...key, ...time, ...appData]),
   );
-  w.add(Uint8List(64));
-  w.addByte(advTypeRepeater | 0x80);
-  w.add(utf8.encode(name));
+  w.add(key);
+  w.add(time);
+  w.add(signed.signature.asTypedList);
+  w.add(appData);
   return w.toBytes();
 }
 
@@ -126,16 +139,18 @@ void main() {
     expect(c.sent, isNot(contains(cmdGetContactByKey)));
   });
 
-  test('with auto-add on, an answer lists a heard row, not a saved one',
-      () async {
-    await c.sendRepeaterDiscovery();
-    c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
-    c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
+  test(
+    'with auto-add on, an answer lists a heard row, not a saved one',
+    () async {
+      await c.sendRepeaterDiscovery();
+      c.handleFrameForTest([respCodeAutoAddConfig, autoAddRepeaterFlag, 0]);
+      c.handleFrameForTest(_answer(_key(0x40), c.pendingDiscoverTag!));
 
-    expect(c.contacts, isEmpty);
-    expect(c.discoveredContacts.single.isActive, isFalse);
-    expect(c.sent, isNot(contains(cmdGetContactByKey)));
-  });
+      expect(c.contacts, isEmpty);
+      expect(c.discoveredContacts.single.isActive, isFalse);
+      expect(c.sent, isNot(contains(cmdGetContactByKey)));
+    },
+  );
 
   test('an advert heard during the scan is not an answer', () async {
     await c.sendRepeaterDiscovery();

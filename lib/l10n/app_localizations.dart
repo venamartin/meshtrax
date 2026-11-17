@@ -11787,6 +11787,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contours for line of sight'**
   String get offlineMaps_losContours;
+
+  /// No description provided for @contacts_deleteComesBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio saves this kind of contact by itself, so it comes back the next time it is heard.'**
+  String get contacts_deleteComesBack;
+
+  /// No description provided for @tray_contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get tray_contact;
+
+  /// No description provided for @shareContact_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a contact'**
+  String get shareContact_title;
+
+  /// No description provided for @shareContact_myContact.
+  ///
+  /// In en, this message translates to:
+  /// **'My contact'**
+  String get shareContact_myContact;
 }
 
 class _AppLocalizationsDelegate

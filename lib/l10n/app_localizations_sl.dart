@@ -6858,4 +6858,17 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Plastnice za neposredno vidljivost';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Radio to vrsto stika shrani samodejno, zato se bo vrnil, ko ga bo naslednjič slišal.';
+
+  @override
+  String get tray_contact => 'Stik';
+
+  @override
+  String get shareContact_title => 'Deli stik';
+
+  @override
+  String get shareContact_myContact => 'Moj stik';
 }

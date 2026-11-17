@@ -2790,5 +2790,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Niemand mit Position im Umkreis von {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Höhenlinien für die Sichtlinie"
+  "offlineMaps_losContours": "Höhenlinien für die Sichtlinie",
+  "contacts_deleteComesBack": "Dein Funkgerät speichert diese Art Kontakt von selbst, daher kommt er zurück, sobald er wieder gehört wird.",
+  "tray_contact": "Kontakt",
+  "shareContact_title": "Kontakt teilen",
+  "shareContact_myContact": "Mein Kontakt"
 }

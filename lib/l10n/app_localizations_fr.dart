@@ -6909,4 +6909,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get offlineMaps_losContours =>
       'Courbes de niveau pour la ligne de vue';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Votre radio enregistre ce type de contact d\'elle-même : il reviendra la prochaine fois qu\'il sera entendu.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Partager un contact';
+
+  @override
+  String get shareContact_myContact => 'Mon contact';
 }

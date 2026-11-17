@@ -2762,5 +2762,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Нікого з розташуванням у межах {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Горизонталі для прямої видимості"
+  "offlineMaps_losContours": "Горизонталі для прямої видимості",
+  "contacts_deleteComesBack": "Радіо саме зберігає такі контакти, тому він повернеться, коли його почують наступного разу.",
+  "tray_contact": "Контакт",
+  "shareContact_title": "Поділитися контактом",
+  "shareContact_myContact": "Мій контакт"
 }

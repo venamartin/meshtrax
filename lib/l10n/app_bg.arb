@@ -2762,5 +2762,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Няма никого с местоположение в радиус {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Хоризонтали за пряка видимост"
+  "offlineMaps_losContours": "Хоризонтали за пряка видимост",
+  "contacts_deleteComesBack": "Радиото запазва този вид контакт само, така че той ще се върне следващия път, когато бъде чут.",
+  "tray_contact": "Контакт",
+  "shareContact_title": "Споделяне на контакт",
+  "shareContact_myContact": "Моят контакт"
 }

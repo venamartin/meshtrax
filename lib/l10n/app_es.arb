@@ -2790,5 +2790,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "Nadie con posición a menos de {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Curvas de nivel para la línea de visión"
+  "offlineMaps_losContours": "Curvas de nivel para la línea de visión",
+  "contacts_deleteComesBack": "Tu radio guarda este tipo de contacto por sí sola, así que volverá la próxima vez que se oiga.",
+  "tray_contact": "Contacto",
+  "shareContact_title": "Compartir un contacto",
+  "shareContact_myContact": "Mi contacto"
 }

@@ -6853,4 +6853,17 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Vrstevnice pre priamu viditeľnosť';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Rádio si tento druh kontaktu ukladá samo, takže sa vráti, keď ho nabudúce začuje.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Zdieľať kontakt';
+
+  @override
+  String get shareContact_myContact => 'Môj kontakt';
 }

@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,10 +8,14 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/contact_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:pinenacl/ed25519.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
+
+  /// What the radio answers a remove with; null for no answer.
+  int? removeReply = respCodeOk;
 
   @override
   bool get isConnected => true;
@@ -23,6 +27,12 @@ class _Connector extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data);
+    final reply = removeReply;
+    if (data[0] == cmdRemoveContact && reply != null) {
+      scheduleMicrotask(
+        () => handleFrameForTest(reply == respCodeErr ? [reply, 2] : [reply]),
+      );
+    }
   }
 }
 
@@ -31,7 +41,13 @@ const _routeFlood = 0x01;
 const _routeDirect = 0x02;
 const _routeTransportDirect = 0x03;
 
-final _key = Uint8List.fromList(List.generate(32, (i) => (0x40 + i) & 0xFF));
+// Real Ed25519 keys, so the heard adverts carry valid signatures.
+final _signer = SigningKey(
+  seed: Uint8List.fromList(List.generate(32, (i) => (0x40 + i) & 0xFF)),
+);
+final _key = _signer.verifyKey.asTypedList;
+final _selfSigner = SigningKey(seed: Uint8List.fromList(List.filled(32, 0x77)));
+final _selfKey = _selfSigner.verifyKey.asTypedList;
 final _hex = pubKeyToHex(_key);
 
 int _secondsAgo(Duration age) =>
@@ -40,7 +56,7 @@ int _secondsAgo(Duration age) =>
 Uint8List _selfInfo() =>
     (BytesBuilder()
           ..add([respCodeSelfInfo, advTypeChat, 22, 22])
-          ..add(Uint8List.fromList(List.filled(32, 0x77)))
+          ..add(_selfKey)
           ..add(Uint8List(8))
           ..add(const [0, 0, 0, 1])
           ..add(
@@ -99,16 +115,16 @@ Uint8List _heard({
   int type = advTypeChat,
   double? lat,
   double? lon,
+  SigningKey? signer,
 }) {
-  final payload = BytesBuilder()
-    ..add(_key)
-    ..add(
-      (ByteData(4)..setInt32(0, timestamp, Endian.little)).buffer.asUint8List(),
-    )
-    ..add(Uint8List(64))
+  final key = (signer ?? _signer).verifyKey.asTypedList;
+  final time = (ByteData(
+    4,
+  )..setInt32(0, timestamp, Endian.little)).buffer.asUint8List();
+  final appData = BytesBuilder()
     ..addByte(type | 0x80 | (lat != null ? 0x10 : 0));
   if (lat != null) {
-    payload.add(
+    appData.add(
       (ByteData(8)
             ..setInt32(0, (lat * 1e6).round(), Endian.little)
             ..setInt32(4, (lon! * 1e6).round(), Endian.little))
@@ -116,7 +132,16 @@ Uint8List _heard({
           .asUint8List(),
     );
   }
-  payload.add('NODE'.codeUnits);
+  appData.add('NODE'.codeUnits);
+  final app = appData.toBytes();
+  final signed = (signer ?? _signer).sign(
+    Uint8List.fromList([...key, ...time, ...app]),
+  );
+  final payload = BytesBuilder()
+    ..add(key)
+    ..add(time)
+    ..add(signed.signature.asTypedList)
+    ..add(app);
   final hasTransport =
       route == _routeTransportFlood || route == _routeTransportDirect;
   return (BytesBuilder()
@@ -285,10 +310,7 @@ void main() {
         timestamp: _secondsAgo(const Duration(hours: 1)),
       ),
     );
-    final store = ContactStore()
-      ..setPublicKeyHex = pubKeyToHex(
-        Uint8List.fromList(List.filled(32, 0x77)),
-      );
+    final store = ContactStore()..setPublicKeyHex = pubKeyToHex(_selfKey);
     await store.saveContacts([
       Contact(
         publicKey: _key,
@@ -411,10 +433,10 @@ void main() {
 
   group('a new node with auto-add on', () {
     Uint8List heard() => _heard(
-          route: _routeFlood,
-          path: const [0xAA],
-          timestamp: _secondsAgo(const Duration(minutes: 1)),
-        );
+      route: _routeFlood,
+      path: const [0xAA],
+      timestamp: _secondsAgo(const Duration(minutes: 1)),
+    );
     bool asked() => c.sent.any((f) => f[0] == cmdGetContactByKey);
 
     setUp(() => autoAdd(chat: true));
@@ -447,7 +469,9 @@ void main() {
 
     test('first met through a share is dated by its advert', () {
       final node = _secondsAgo(const Duration(days: 2));
-      c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: node));
+      c.handleFrameForTest(
+        _heard(route: _routeTransportDirect, timestamp: node),
+      );
       c.handleFrameForTest([pushCodeAdvert, ..._key]);
       c.handleFrameForTest(
         _record(advertSecs: node, lastmod: _secondsAgo(Duration.zero)),
@@ -474,15 +498,18 @@ void main() {
       expect(listed().length, 1);
     });
 
-    test('saved during a download and streamed anyway is not fetched', () async {
-      c.handleFrameForTest(heard());
-      await c.getContacts();
-      c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
-      c.handleFrameForTest([pushCodeAdvert, ..._key]);
-      c.handleFrameForTest(_record());
-      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
-      expect(asked(), isFalse);
-    });
+    test(
+      'saved during a download and streamed anyway is not fetched',
+      () async {
+        c.handleFrameForTest(heard());
+        await c.getContacts();
+        c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+        c.handleFrameForTest([pushCodeAdvert, ..._key]);
+        c.handleFrameForTest(_record());
+        c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+        expect(asked(), isFalse);
+      },
+    );
   });
 
   group('during a full download', () {
@@ -508,16 +535,19 @@ void main() {
       expect(saved(), isNotNull);
     });
 
-    test('one still on trial that the radio just re-saved is fetched', () async {
-      await downloading();
-      c.handleFrameForTest([pushCodeAdvert, ..._key]);
-      expect(c.sent, isEmpty);
+    test(
+      'one still on trial that the radio just re-saved is fetched',
+      () async {
+        await downloading();
+        c.handleFrameForTest([pushCodeAdvert, ..._key]);
+        expect(c.sent, isEmpty);
 
-      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+        c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
 
-      expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
-      expect(saved(), isNotNull, reason: 'its record is on the way');
-    });
+        expect(c.sent.map((f) => f[0]), contains(cmdGetContactByKey));
+        expect(saved(), isNotNull, reason: 'its record is on the way');
+      },
+    );
 
     test('the trial starts with the stream, not the request', () async {
       autoAdd();
@@ -532,14 +562,14 @@ void main() {
 
   group('wasDroppedByRadio', () {
     Contact asSaved() => Contact(
-          publicKey: _key,
-          name: 'NODE',
-          type: advTypeChat,
-          pathLength: -1,
-          path: Uint8List(0),
-          pathHashSize: 1,
-          lastSeen: DateTime.now(),
-        );
+      publicKey: _key,
+      name: 'NODE',
+      type: advTypeChat,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 1,
+      lastSeen: DateTime.now(),
+    );
 
     test('not while the list is empty, with no row to go by', () {
       expect(c.contacts, isEmpty);
@@ -560,26 +590,34 @@ void main() {
     });
   });
 
-  test('a stored row of a saved contact does not list it twice on connect',
-      () async {
-    c.handleFrameForTest(_selfInfo());
-    await pumpEventQueue(times: 200);
-    c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
-    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
-    await savedWithFrozenRow();
-    await pumpEventQueue(times: 200);
+  test(
+    'a stored row of a saved contact does not list it twice on connect',
+    () async {
+      c.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 200);
+      c.handleFrameForTest([respCodeContactsStart, 0, 0, 0, 0]);
+      c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+      await savedWithFrozenRow();
+      await pumpEventQueue(times: 200);
 
-    final next = _Connector();
-    next.handleFrameForTest(_selfInfo());
-    await pumpEventQueue(times: 400);
+      final next = _Connector();
+      next.handleFrameForTest(_selfInfo());
+      await pumpEventQueue(times: 400);
 
-    expect(next.isLoadingContacts, isTrue);
-    expect(next.allContacts.where((x) => x.publicKeyHex == _hex), hasLength(1));
-    expect(
-      next.discoveredContacts.where((x) => x.publicKeyHex == _hex).single.isActive,
-      isTrue,
-    );
-  });
+      expect(next.isLoadingContacts, isTrue);
+      expect(
+        next.allContacts.where((x) => x.publicKeyHex == _hex),
+        hasLength(1),
+      );
+      expect(
+        next.discoveredContacts
+            .where((x) => x.publicKeyHex == _hex)
+            .single
+            .isActive,
+        isTrue,
+      );
+    },
+  );
 
   group('the lastmod on a contact', () {
     final heardAt = _secondsAgo(const Duration(hours: 5));
@@ -601,12 +639,22 @@ void main() {
     });
 
     test('a route write dates the contact now on the radio', () async {
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
       expect(sentLastmod(), closeTo(_secondsAgo(Duration.zero), 5));
     });
 
     test('the next sync does not read that write as hearing it', () async {
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
 
       await fullDownload(_record(lastmod: sentLastmod()));
 
@@ -620,7 +668,12 @@ void main() {
       c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
       c.handleFrameForTest(_record(lastmod: heardAt));
       c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
       await pumpEventQueue(times: 200);
       final stamp = sentLastmod();
 
@@ -630,7 +683,12 @@ void main() {
 
     test('the write does not move the time last heard from either', () async {
       final before = saved()!.lastMessageAt;
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
 
       await fullDownload(_record(lastmod: sentLastmod()));
 
@@ -638,7 +696,12 @@ void main() {
     });
 
     test('a frame sent before the write is not a hearing either', () async {
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
 
       c.handleFrameForTest(_record(lastmod: sentLastmod() - 3600));
 
@@ -646,7 +709,12 @@ void main() {
     });
 
     test('a later lastmod is the radio hearing it', () async {
-      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1, hashSize: 1);
+      await c.setContactPath(
+        saved()!,
+        Uint8List.fromList([0xAA]),
+        1,
+        hashSize: 1,
+      );
       final later = sentLastmod() + 60;
 
       await fullDownload(_record(lastmod: later));
@@ -665,7 +733,9 @@ void main() {
       final advert = _secondsAgo(const Duration(hours: 2));
 
       void radioTakesShare() {
-        c.handleFrameForTest(_heard(route: _routeTransportDirect, timestamp: advert));
+        c.handleFrameForTest(
+          _heard(route: _routeTransportDirect, timestamp: advert),
+        );
         c.handleFrameForTest([pushCodeAdvert, ..._key]);
       }
 
@@ -695,7 +765,6 @@ void main() {
         expect(seen(), at);
       });
     });
-
   });
 
   group('a contact shared by a neighbour', () {
@@ -1055,15 +1124,13 @@ void main() {
 
   group('a shared copy of my own advert', () {
     Uint8List selfAdvert({required int route, required double lat}) {
-      final frame = _heard(
+      return _heard(
         route: route,
         timestamp: _secondsAgo(const Duration(days: 30)),
         lat: lat,
         lon: 2,
+        signer: _selfSigner,
       );
-      final keyAt = frame.length - 4 - 8 - 1 - 64 - 4 - 32;
-      frame.fillRange(keyAt, keyAt + 32, 0x77);
-      return frame;
     }
 
     setUp(() => c.handleFrameForTest(_selfInfo()));
@@ -1083,10 +1150,7 @@ void main() {
 
   group('an advert on a saved contact', () {
     Future<Contact?> cached() async {
-      final store = ContactStore()
-        ..setPublicKeyHex = pubKeyToHex(
-          Uint8List.fromList(List.filled(32, 0x77)),
-        );
+      final store = ContactStore()..setPublicKeyHex = pubKeyToHex(_selfKey);
       final rows = await store.loadContacts();
       return rows.where((x) => x.publicKeyHex == _hex).firstOrNull;
     }
@@ -1131,9 +1195,7 @@ void main() {
 
     test('a room history reload saves its not-a-hearing mark', () async {
       Future<void> answer(int command, List<int> reply) async {
-        for (var i = 0;
-            i < 500 && !c.sent.any((f) => f[0] == command);
-            i++) {
+        for (var i = 0; i < 500 && !c.sent.any((f) => f[0] == command); i++) {
           await Future<void>.delayed(Duration.zero);
         }
         expect(c.sent.map((f) => f[0]), contains(command));
@@ -1171,5 +1233,53 @@ void main() {
     expect(saved()!.inboundHopCount, 0);
     expect(saved()!.inboundPath, isEmpty);
     expect(saved()!.lastSeen.millisecondsSinceEpoch ~/ 1000, at);
+  });
+
+  group('deleting a contact', () {
+    int writes() => c.sent.where((f) => f[0] == cmdAddUpdateContact).length;
+
+    setUp(() async {
+      autoAdd();
+      await fullDownload(_record());
+    });
+
+    test('with no answer from the radio keeps it and says so', () async {
+      c.removeReply = null;
+      expect(await c.removeContact(saved()!), isFalse);
+      expect(saved(), isNotNull);
+    });
+
+    test('the radio not having it still removes it', () async {
+      c.removeReply = respCodeErr;
+      expect(await c.removeContact(saved()!), isTrue);
+      expect(saved(), isNull);
+    });
+
+    test(
+      'a screen still open on it does not put it back on the radio',
+      () async {
+        final contact = saved()!;
+        expect(await c.removeContact(contact), isTrue);
+        final before = writes();
+        await c.setContactPath(contact, Uint8List.fromList([0xAA]), 1);
+        await c.setContactFlags(contact, isFavorite: true);
+        expect(writes(), before);
+      },
+    );
+
+    test('a saved contact still takes path and flag writes', () async {
+      final before = writes();
+      await c.setContactPath(saved()!, Uint8List.fromList([0xAA]), 1);
+      expect(writes(), before + 1);
+    });
+
+    test('says when the radio would save it again by itself', () {
+      c.handleFrameForTest(_selfInfo()); // per-type auto-add
+      autoAdd(chat: true);
+      expect(c.radioAutoAdds(advTypeChat), isTrue);
+      expect(c.radioAutoAdds(advTypeRepeater), isFalse);
+      autoAdd();
+      expect(c.radioAutoAdds(advTypeChat), isFalse);
+    });
   });
 }
