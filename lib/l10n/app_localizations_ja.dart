@@ -443,6 +443,219 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_title => '設定';
 
   @override
+  String get trax_title => 'TRAXモード';
+
+  @override
+  String get trax_isOn => 'TRAXモードはオンです';
+
+  @override
+  String get trax_isOff => 'TRAXモードはオフです';
+
+  @override
+  String get trax_intro =>
+      '無線機をグループのオフグリッド周波数に切り替えます。そこではすべての無線機がほかの無線機のために中継します。モードを終了するまで、通常のメッシュでは誰にも聞こえません。';
+
+  @override
+  String get trax_now => '現在';
+
+  @override
+  String get trax_inTrax => 'TRAXモード';
+
+  @override
+  String get trax_repeatOn => '「オフグリッド（電力網から孤立した状態）の繰り返し」オン';
+
+  @override
+  String get trax_savedNote => '無線機の設定はこの電話に保存され、「TRAXを終了」で元に戻ります。';
+
+  @override
+  String trax_until(String time) {
+    return '$timeまで';
+  }
+
+  @override
+  String get trax_noEnd => 'TRAX設定で旅の終了日時を設定してください。';
+
+  @override
+  String trax_tells(String channel) {
+    return '先に$channelで知らせるので、ほかのメンバーはワンタップで切り替えられます。';
+  }
+
+  @override
+  String get trax_tellsNot => 'グループには知らせません。';
+
+  @override
+  String get trax_noChannel => 'TRAX設定で旅のチャンネルを選ぶか、「グループに知らせる」をオフにしてください。';
+
+  @override
+  String get trax_trailhead =>
+      '登山口など出発地点で、無線機がGPSで位置を取得してから切り替えてください。無線機は新しい設定と一緒に現在地を保存します。';
+
+  @override
+  String get trax_settings => 'TRAX設定';
+
+  @override
+  String get trax_switch => 'TRAXに切り替え';
+
+  @override
+  String get trax_onNote => '通常のメッシュでは誰にも聞こえません。あなたの無線機がグループのために中継します。';
+
+  @override
+  String get trax_groupCheck => 'グループ確認';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'TRAXで聞こえた人（$count）：$names',
+      zero: 'TRAXでまだ誰も聞こえていません',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'もう一度確認';
+
+  @override
+  String get trax_checkHint =>
+      'TRAX周波数でアドバートを1回送信します。メンバーの無線機が聞こえると、ここに表示されます。';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '「TRAXを終了」で$settingsに戻ります。';
+  }
+
+  @override
+  String get trax_noSaved => 'この電話に保存された設定がありません。「TRAXを終了」で戻るプリセットを尋ねます。';
+
+  @override
+  String get trax_leave => 'TRAXを終了';
+
+  @override
+  String get trax_unsupported =>
+      'この無線機のファームウェアはほかの無線機のために中継できません。TRAXモードを使うには更新してください。';
+
+  @override
+  String get trax_stepTelling => 'グループに知らせています…';
+
+  @override
+  String get trax_stepSwitching => '切り替えています…';
+
+  @override
+  String get trax_stepChecking => 'グループ確認を送信しています…';
+
+  @override
+  String get trax_stepLeaving => '終了しています…';
+
+  @override
+  String get trax_errorBusy => '無線機はまだ処理中です。少ししてからもう一度お試しください。';
+
+  @override
+  String get trax_errorRefused => '無線機が設定を受け付けませんでした。何も変わっていません。';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'この無線機は$mhz MHzで中継できません。';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      '無線機がTRAXメッセージの送信を確認できませんでした。別の方法でグループに知らせてください。';
+
+  @override
+  String get trax_preset => 'プリセット';
+
+  @override
+  String get trax_presetMesh => 'メッシュと同じ';
+
+  @override
+  String get trax_presetLongRange => '長距離';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      '少し遠くまで届きますが、メッセージの送信に2.5〜3倍の時間がかかります。';
+
+  @override
+  String get trax_tripChannel => '旅のチャンネル';
+
+  @override
+  String get trax_tripChannelHint => 'プライベートチャンネルのみ';
+
+  @override
+  String get trax_none => 'なし';
+
+  @override
+  String get trax_tripEnds => '旅の終了';
+
+  @override
+  String get trax_notSet => '未設定';
+
+  @override
+  String get trax_tellGroup => 'グループに知らせる';
+
+  @override
+  String get trax_tellGroupHint =>
+      '切り替えや終了の前に、旅のチャンネルにTRAXメッセージを投稿します。各メンバーはワンタップで続きます。勝手に切り替わることはありません。';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$nameさんが$timeまでTRAXモードに切り替えました。あなたも切り替えますか？';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return '無線機は$settingsに切り替わり、「オフグリッド（電力網から孤立した状態）の繰り返し」がオンになります。モードを終了するまで、通常のメッシュでは誰にも聞こえません。';
+  }
+
+  @override
+  String get trax_switchToo => '切り替える';
+
+  @override
+  String get trax_notNow => '今はしない';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$nameさんがTRAXモードを終了します。あなたも終了しますか？';
+  }
+
+  @override
+  String get trax_leaveToo => '終了する';
+
+  @override
+  String get trax_stillOn => '無線機はまだTRAXモードです。通常のメッシュでは聞こえません。終了しますか？';
+
+  @override
+  String get trax_pickPreset => 'どのプリセットに戻しますか？';
+
+  @override
+  String get trax_pickPresetHint => 'この電話にはこの無線機の設定が保存されていません。別の電話で切り替えられました。';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$nameさんがTRAXモードに切り替えました';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$nameさんがTRAXモードを終了します';
+  }
+
+  @override
+  String get trax_cardYouOn => 'TRAXモードに切り替えました';
+
+  @override
+  String get trax_cardYouOff => 'TRAXモードを終了しました';
+
+  @override
+  String get trax_youreOn => 'TRAX中';
+
+  @override
+  String get trax_ended => '終了';
+
+  @override
+  String get trax_notificationText => '通常のメッシュでは聞こえません。終了するにはMeshTraxを開いてください。';
+
+  @override
   String get settings_deviceInfo => 'デバイス情報';
 
   @override

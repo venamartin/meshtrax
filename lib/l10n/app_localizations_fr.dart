@@ -464,6 +464,229 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settings_title => 'Paramètres';
 
   @override
+  String get trax_title => 'Mode TRAX';
+
+  @override
+  String get trax_isOn => 'Le mode TRAX est activé';
+
+  @override
+  String get trax_isOff => 'Le mode TRAX est désactivé';
+
+  @override
+  String get trax_intro =>
+      'Passe votre radio sur la fréquence hors réseau du groupe, où chaque radio relaie pour les autres. Personne sur le maillage habituel ne vous entend jusqu\'à ce que vous en sortiez.';
+
+  @override
+  String get trax_now => 'Maintenant';
+
+  @override
+  String get trax_inTrax => 'En mode TRAX';
+
+  @override
+  String get trax_repeatOn => '« Répétition hors réseau » activée';
+
+  @override
+  String get trax_savedNote =>
+      'Les paramètres de votre radio sont enregistrés sur ce téléphone, et « Quitter TRAX » les rétablit.';
+
+  @override
+  String trax_until(String time) {
+    return 'Jusqu\'à $time';
+  }
+
+  @override
+  String get trax_noEnd =>
+      'Indiquez la fin de la sortie dans les paramètres TRAX.';
+
+  @override
+  String trax_tells(String channel) {
+    return 'Prévient d\'abord $channel, pour que les autres puissent basculer d\'un toucher.';
+  }
+
+  @override
+  String get trax_tellsNot => 'Ne prévient pas le groupe.';
+
+  @override
+  String get trax_noChannel =>
+      'Choisissez un canal de sortie dans les paramètres TRAX, ou désactivez « Prévenir le groupe ».';
+
+  @override
+  String get trax_trailhead =>
+      'Basculez au point de départ, une fois que la radio a une position GPS : la radio enregistre où elle se trouve avec ses nouveaux paramètres.';
+
+  @override
+  String get trax_settings => 'Paramètres TRAX';
+
+  @override
+  String get trax_switch => 'Passer en TRAX';
+
+  @override
+  String get trax_onNote =>
+      'Personne sur le maillage habituel ne vous entend. Votre radio relaie pour le groupe.';
+
+  @override
+  String get trax_groupCheck => 'Vérification du groupe';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entendus sur TRAX ($count) : $names',
+      zero: 'Personne entendu sur TRAX pour l\'instant',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Vérifier à nouveau';
+
+  @override
+  String get trax_checkHint =>
+      'Envoie une annonce sur la fréquence TRAX. Les membres apparaissent ici quand leurs radios sont entendues.';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '« Quitter TRAX » revient à $settings.';
+  }
+
+  @override
+  String get trax_noSaved =>
+      'Aucun paramètre enregistré sur ce téléphone : « Quitter TRAX » demande vers quel préréglage revenir.';
+
+  @override
+  String get trax_leave => 'Quitter TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Le firmware de cette radio ne peut pas relayer pour les autres. Mettez-le à jour pour utiliser le mode TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Message au groupe…';
+
+  @override
+  String get trax_stepSwitching => 'Bascule…';
+
+  @override
+  String get trax_stepChecking => 'Envoi de la vérification du groupe…';
+
+  @override
+  String get trax_stepLeaving => 'Sortie…';
+
+  @override
+  String get trax_errorBusy =>
+      'La radio est encore occupée. Réessayez dans un instant.';
+
+  @override
+  String get trax_errorRefused =>
+      'La radio n\'a pas accepté les paramètres. Rien n\'a changé.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Cette radio ne peut pas relayer sur $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'La radio n\'a pas confirmé l\'envoi du message TRAX : prévenez le groupe autrement.';
+
+  @override
+  String get trax_preset => 'Préréglage';
+
+  @override
+  String get trax_presetMesh => 'Celui du maillage';
+
+  @override
+  String get trax_presetLongRange => 'Longue portée';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Porte un peu plus loin, mais chaque message met 2,5 à 3 fois plus de temps à partir.';
+
+  @override
+  String get trax_tripChannel => 'Canal de la sortie';
+
+  @override
+  String get trax_tripChannelHint => 'Canaux privés uniquement';
+
+  @override
+  String get trax_none => 'Aucun';
+
+  @override
+  String get trax_tripEnds => 'Fin de la sortie';
+
+  @override
+  String get trax_notSet => 'Non défini';
+
+  @override
+  String get trax_tellGroup => 'Prévenir le groupe';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Publie un message TRAX sur le canal de la sortie avant de basculer ou de quitter. Chaque membre suit d\'un toucher ; rien ne bascule tout seul.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name est passé en mode TRAX jusqu\'à $time. Basculer aussi ?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Votre radio passe sur $settings avec « Répétition hors réseau » activée. Personne sur le maillage habituel ne vous entend jusqu\'à ce que vous en sortiez.';
+  }
+
+  @override
+  String get trax_switchToo => 'Basculer aussi';
+
+  @override
+  String get trax_notNow => 'Pas maintenant';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name quitte le mode TRAX. Quitter aussi ?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Quitter aussi';
+
+  @override
+  String get trax_stillOn =>
+      'Votre radio est toujours en mode TRAX : le maillage habituel ne vous entend pas. Quitter ?';
+
+  @override
+  String get trax_pickPreset => 'Revenir à quel préréglage ?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Ce téléphone n\'a aucun paramètre enregistré pour cette radio : un autre téléphone l\'a basculée.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name est passé en mode TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name quitte le mode TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Vous êtes passé en mode TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Vous avez quitté le mode TRAX';
+
+  @override
+  String get trax_youreOn => 'Vous êtes sur TRAX';
+
+  @override
+  String get trax_ended => 'Terminé';
+
+  @override
+  String get trax_notificationText =>
+      'Le maillage habituel ne vous entend pas. Ouvrez MeshTrax pour en sortir.';
+
+  @override
   String get settings_deviceInfo => 'Informations du périphérique';
 
   @override

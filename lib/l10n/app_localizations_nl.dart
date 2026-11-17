@@ -460,6 +460,228 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_title => 'Instellingen';
 
   @override
+  String get trax_title => 'TRAX-modus';
+
+  @override
+  String get trax_isOn => 'TRAX-modus staat aan';
+
+  @override
+  String get trax_isOff => 'TRAX-modus staat uit';
+
+  @override
+  String get trax_intro =>
+      'Zet je radio op de off-grid frequentie van de groep, waar elke radio voor de anderen doorgeeft. Niemand op het gewone mesh hoort je tot je de modus verlaat.';
+
+  @override
+  String get trax_now => 'Nu';
+
+  @override
+  String get trax_inTrax => 'In TRAX-modus';
+
+  @override
+  String get trax_repeatOn => 'Off-Grid Herhalen aan';
+
+  @override
+  String get trax_savedNote =>
+      'De instellingen van je radio worden op deze telefoon bewaard, en ‘TRAX verlaten’ zet ze terug.';
+
+  @override
+  String trax_until(String time) {
+    return 'Tot $time';
+  }
+
+  @override
+  String get trax_noEnd =>
+      'Stel het einde van de tocht in bij TRAX-instellingen.';
+
+  @override
+  String trax_tells(String channel) {
+    return 'Laat het eerst weten in $channel, zodat de anderen met één tik kunnen meewisselen.';
+  }
+
+  @override
+  String get trax_tellsNot => 'Laat het de groep niet weten.';
+
+  @override
+  String get trax_noChannel =>
+      'Kies een tochtkanaal bij TRAX-instellingen, of zet ‘De groep laten weten’ uit.';
+
+  @override
+  String get trax_trailhead =>
+      'Wissel bij het startpunt, als de radio een GPS-positie heeft: de radio bewaart met de nieuwe instellingen waar hij is.';
+
+  @override
+  String get trax_settings => 'TRAX-instellingen';
+
+  @override
+  String get trax_switch => 'Naar TRAX wisselen';
+
+  @override
+  String get trax_onNote =>
+      'Niemand op het gewone mesh hoort je. Je radio geeft door voor de groep.';
+
+  @override
+  String get trax_groupCheck => 'Groepscheck';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Gehoord op TRAX ($count): $names',
+      zero: 'Nog niemand gehoord op TRAX',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Opnieuw controleren';
+
+  @override
+  String get trax_checkHint =>
+      'Stuurt één aankondiging op de TRAX-frequentie. Leden verschijnen hier zodra hun radio\'s gehoord worden.';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '‘TRAX verlaten’ gaat terug naar $settings.';
+  }
+
+  @override
+  String get trax_noSaved =>
+      'Geen bewaarde instellingen op deze telefoon: ‘TRAX verlaten’ vraagt naar welke voorinstelling.';
+
+  @override
+  String get trax_leave => 'TRAX verlaten';
+
+  @override
+  String get trax_unsupported =>
+      'De firmware van deze radio kan niet voor anderen doorgeven. Werk hem bij om de TRAX-modus te gebruiken.';
+
+  @override
+  String get trax_stepTelling => 'De groep laten weten…';
+
+  @override
+  String get trax_stepSwitching => 'Wisselen…';
+
+  @override
+  String get trax_stepChecking => 'Groepscheck versturen…';
+
+  @override
+  String get trax_stepLeaving => 'Verlaten…';
+
+  @override
+  String get trax_errorBusy => 'De radio is nog bezig. Probeer het zo opnieuw.';
+
+  @override
+  String get trax_errorRefused =>
+      'De radio nam de instellingen niet over. Er is niets veranderd.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Deze radio kan niet doorgeven op $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'De radio bevestigde niet dat hij het TRAX-bericht verstuurde: laat het de groep op een andere manier weten.';
+
+  @override
+  String get trax_preset => 'Voorinstelling';
+
+  @override
+  String get trax_presetMesh => 'Die van het mesh';
+
+  @override
+  String get trax_presetLongRange => 'Groot bereik';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Reikt iets verder, maar elk bericht doet er 2,5 tot 3 keer zo lang over om te versturen.';
+
+  @override
+  String get trax_tripChannel => 'Tochtkanaal';
+
+  @override
+  String get trax_tripChannelHint => 'Alleen privékanalen';
+
+  @override
+  String get trax_none => 'Geen';
+
+  @override
+  String get trax_tripEnds => 'Einde van de tocht';
+
+  @override
+  String get trax_notSet => 'Niet ingesteld';
+
+  @override
+  String get trax_tellGroup => 'De groep laten weten';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Plaatst een TRAX-bericht in het tochtkanaal voor het wisselen of verlaten. Elk lid volgt met één tik; niets wisselt vanzelf.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name is tot $time naar TRAX-modus gewisseld. Ook wisselen?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Je radio gaat naar $settings met Off-Grid Herhalen aan. Niemand op het gewone mesh hoort je tot je de modus verlaat.';
+  }
+
+  @override
+  String get trax_switchToo => 'Ook wisselen';
+
+  @override
+  String get trax_notNow => 'Niet nu';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name verlaat de TRAX-modus. Ook verlaten?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Ook verlaten';
+
+  @override
+  String get trax_stillOn =>
+      'Je radio staat nog in TRAX-modus: het gewone mesh hoort je niet. Verlaten?';
+
+  @override
+  String get trax_pickPreset => 'Terug naar welke voorinstelling?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Deze telefoon heeft geen bewaarde instellingen voor deze radio: een andere telefoon heeft hem omgezet.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name is naar TRAX-modus gewisseld';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name verlaat de TRAX-modus';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Je bent naar TRAX-modus gewisseld';
+
+  @override
+  String get trax_cardYouOff => 'Je hebt de TRAX-modus verlaten';
+
+  @override
+  String get trax_youreOn => 'Je zit op TRAX';
+
+  @override
+  String get trax_ended => 'Afgelopen';
+
+  @override
+  String get trax_notificationText =>
+      'Het gewone mesh hoort je niet. Open MeshTrax om de modus te verlaten.';
+
+  @override
   String get settings_deviceInfo => 'Apparateninformatie';
 
   @override

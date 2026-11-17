@@ -3,6 +3,7 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
+import '../models/trax.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/notification_service.dart';
@@ -162,6 +163,11 @@ bool _publicChannelNotifies(HealthContext ctx) {
   return false;
 }
 
+/// TRAX mode: off the regular mesh on purpose, with repeat on. The TRAX
+/// button shows it; the radio rules don't call it a problem.
+bool _inTraxMode(MeshCoreConnector c) =>
+    Trax.isOn(clientRepeat: c.clientRepeat, freqKhz: c.currentFreqHz);
+
 bool _onAnyPreset(MeshCoreConnector c) {
   final freq = c.currentFreqHz;
   if (freq == null) return true; // unknown yet; don't flag
@@ -228,13 +234,14 @@ final List<HealthRule> healthRules = [
         "The radio's settings do not match any regional preset in the app. If "
         'your local mesh uses a preset, you may not hear it or be heard by it.',
     needsRadio: true,
-    check: (ctx) async => !_onAnyPreset(ctx.connector),
+    check: (ctx) async =>
+        !_onAnyPreset(ctx.connector) && !_inTraxMode(ctx.connector),
     fix: HealthFix.ask,
     dialog: HealthDialog.radioSettings,
     notes:
         'Opens the radio settings dialog so the user picks a preset. '
         'The factory settings match a preset, so radio_factory_settings '
-        'covers those.',
+        'covers those. Quiet in TRAX mode, which the TRAX button shows.',
   ),
   HealthRule(
     id: 'radio_factory_settings',
@@ -387,12 +394,14 @@ final List<HealthRule> healthRules = [
         'Client repeat is on. A phone-connected radio that repeats adds '
         'noise to the mesh and drains its battery faster.',
     needsRadio: true,
-    check: (ctx) async => ctx.connector.clientRepeat == true,
+    check: (ctx) async =>
+        ctx.connector.clientRepeat == true && !_inTraxMode(ctx.connector),
     fix: HealthFix.ask,
     dialog: HealthDialog.radioSettings,
     notes:
         'Turning it off goes through the radio settings dialog, which '
-        'knows the off-grid presets.',
+        'knows the off-grid presets. Quiet in TRAX mode: repeat on an '
+        'off-grid frequency is what TRAX mode is, and its button shows it.',
   ),
   HealthRule(
     id: 'radio_path_hash_width',

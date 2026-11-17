@@ -462,6 +462,229 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_title => 'Impostazioni';
 
   @override
+  String get trax_title => 'Modalità TRAX';
+
+  @override
+  String get trax_isOn => 'La modalità TRAX è attiva';
+
+  @override
+  String get trax_isOff => 'La modalità TRAX è disattivata';
+
+  @override
+  String get trax_intro =>
+      'Porta la tua radio sulla frequenza fuori rete del gruppo, dove ogni radio ritrasmette per gli altri. Nessuno sulla mesh abituale ti sente finché non esci.';
+
+  @override
+  String get trax_now => 'Ora';
+
+  @override
+  String get trax_inTrax => 'In modalità TRAX';
+
+  @override
+  String get trax_repeatOn => '«Ripetizione \"fuori dalla rete\"» attiva';
+
+  @override
+  String get trax_savedNote =>
+      'Le impostazioni della radio vengono salvate su questo telefono, ed «Esci da TRAX» le ripristina.';
+
+  @override
+  String trax_until(String time) {
+    return 'Fino a $time';
+  }
+
+  @override
+  String get trax_noEnd =>
+      'Imposta la fine dell\'uscita nelle impostazioni TRAX.';
+
+  @override
+  String trax_tells(String channel) {
+    return 'Avvisa prima $channel, così gli altri possono passare con un tocco.';
+  }
+
+  @override
+  String get trax_tellsNot => 'Non avvisa il gruppo.';
+
+  @override
+  String get trax_noChannel =>
+      'Scegli un canale dell\'uscita nelle impostazioni TRAX, oppure disattiva «Avvisa il gruppo».';
+
+  @override
+  String get trax_trailhead =>
+      'Passa al punto di partenza, quando la radio ha una posizione GPS: la radio salva dove si trova con le nuove impostazioni.';
+
+  @override
+  String get trax_settings => 'Impostazioni TRAX';
+
+  @override
+  String get trax_switch => 'Passa a TRAX';
+
+  @override
+  String get trax_onNote =>
+      'Nessuno sulla mesh abituale ti sente. La tua radio ritrasmette per il gruppo.';
+
+  @override
+  String get trax_groupCheck => 'Controllo del gruppo';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sentiti su TRAX ($count): $names',
+      zero: 'Ancora nessuno sentito su TRAX',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Controlla di nuovo';
+
+  @override
+  String get trax_checkHint =>
+      'Invia un annuncio sulla frequenza TRAX. I membri compaiono qui quando le loro radio vengono sentite.';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '«Esci da TRAX» torna a $settings.';
+  }
+
+  @override
+  String get trax_noSaved =>
+      'Nessuna impostazione salvata su questo telefono: «Esci da TRAX» chiede a quale preimpostazione tornare.';
+
+  @override
+  String get trax_leave => 'Esci da TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Il firmware di questa radio non può ritrasmettere per gli altri. Aggiornalo per usare la modalità TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Avviso al gruppo…';
+
+  @override
+  String get trax_stepSwitching => 'Passaggio in corso…';
+
+  @override
+  String get trax_stepChecking => 'Invio del controllo del gruppo…';
+
+  @override
+  String get trax_stepLeaving => 'Uscita in corso…';
+
+  @override
+  String get trax_errorBusy =>
+      'La radio è ancora occupata. Riprova tra un momento.';
+
+  @override
+  String get trax_errorRefused =>
+      'La radio non ha accettato le impostazioni. Non è cambiato nulla.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Questa radio non può ritrasmettere su $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'La radio non ha confermato di aver inviato il messaggio TRAX: avvisa il gruppo in un altro modo.';
+
+  @override
+  String get trax_preset => 'Preimpostazione';
+
+  @override
+  String get trax_presetMesh => 'Quella della mesh';
+
+  @override
+  String get trax_presetLongRange => 'Lungo raggio';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Arriva un po\' più lontano, ma ogni messaggio impiega da 2,5 a 3 volte di più a partire.';
+
+  @override
+  String get trax_tripChannel => 'Canale dell\'uscita';
+
+  @override
+  String get trax_tripChannelHint => 'Solo canali privati';
+
+  @override
+  String get trax_none => 'Nessuno';
+
+  @override
+  String get trax_tripEnds => 'Fine dell\'uscita';
+
+  @override
+  String get trax_notSet => 'Non impostata';
+
+  @override
+  String get trax_tellGroup => 'Avvisa il gruppo';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Pubblica un messaggio TRAX nel canale dell\'uscita prima di passare o uscire. Ogni membro segue con un tocco; niente cambia da solo.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name è passato alla modalità TRAX fino a $time. Passi anche tu?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'La tua radio passa a $settings con «Ripetizione \"fuori dalla rete\"» attiva. Nessuno sulla mesh abituale ti sente finché non esci.';
+  }
+
+  @override
+  String get trax_switchToo => 'Passa anche tu';
+
+  @override
+  String get trax_notNow => 'Non ora';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name esce dalla modalità TRAX. Esci anche tu?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Esci anche tu';
+
+  @override
+  String get trax_stillOn =>
+      'La tua radio è ancora in modalità TRAX: la mesh abituale non ti sente. Uscire?';
+
+  @override
+  String get trax_pickPreset => 'Tornare a quale preimpostazione?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Questo telefono non ha impostazioni salvate per questa radio: l\'ha cambiata un altro telefono.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name è passato alla modalità TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name esce dalla modalità TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Sei passato alla modalità TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Sei uscito dalla modalità TRAX';
+
+  @override
+  String get trax_youreOn => 'Sei su TRAX';
+
+  @override
+  String get trax_ended => 'Terminata';
+
+  @override
+  String get trax_notificationText =>
+      'La mesh abituale non ti sente. Apri MeshTrax per uscire.';
+
+  @override
   String get settings_deviceInfo => 'Informazioni Dispositivo';
 
   @override

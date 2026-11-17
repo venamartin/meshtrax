@@ -459,6 +459,227 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settings_title => 'Налаштування';
 
   @override
+  String get trax_title => 'Режим TRAX';
+
+  @override
+  String get trax_isOn => 'Режим TRAX увімкнено';
+
+  @override
+  String get trax_isOff => 'Режим TRAX вимкнено';
+
+  @override
+  String get trax_intro =>
+      'Переводить радіо на автономну частоту групи, де кожне радіо ретранслює для інших. У звичайній мережі mesh вас ніхто не чує, доки ви не вийдете з режиму.';
+
+  @override
+  String get trax_now => 'Зараз';
+
+  @override
+  String get trax_inTrax => 'У режимі TRAX';
+
+  @override
+  String get trax_repeatOn => '«Автономна система» увімкнено';
+
+  @override
+  String get trax_savedNote =>
+      'Налаштування радіо зберігаються на цьому телефоні, а «Вийти з TRAX» повертає їх.';
+
+  @override
+  String trax_until(String time) {
+    return 'До $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Вкажіть кінець поїздки в налаштуваннях TRAX.';
+
+  @override
+  String trax_tells(String channel) {
+    return 'Спершу повідомляє в $channel, щоб інші могли перемкнутися одним дотиком.';
+  }
+
+  @override
+  String get trax_tellsNot => 'Не повідомляє групу.';
+
+  @override
+  String get trax_noChannel =>
+      'Виберіть канал поїздки в налаштуваннях TRAX або вимкніть «Повідомити групу».';
+
+  @override
+  String get trax_trailhead =>
+      'Перемикайтеся на початку маршруту, коли радіо має GPS-позицію: радіо зберігає своє місце разом із новими налаштуваннями.';
+
+  @override
+  String get trax_settings => 'Налаштування TRAX';
+
+  @override
+  String get trax_switch => 'Перейти на TRAX';
+
+  @override
+  String get trax_onNote =>
+      'У звичайній мережі mesh вас ніхто не чує. Ваше радіо ретранслює для групи.';
+
+  @override
+  String get trax_groupCheck => 'Перевірка групи';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Чути на TRAX ($count): $names',
+      zero: 'На TRAX поки нікого не чути',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Перевірити знову';
+
+  @override
+  String get trax_checkHint =>
+      'Надсилає один анонс на частоті TRAX. Учасники з\'являються тут, коли їхнє радіо чути.';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '«Вийти з TRAX» поверне до $settings.';
+  }
+
+  @override
+  String get trax_noSaved =>
+      'На цьому телефоні немає збережених налаштувань: «Вийти з TRAX» спитає, до якого пресету повернутися.';
+
+  @override
+  String get trax_leave => 'Вийти з TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Прошивка цього радіо не вміє ретранслювати для інших. Оновіть її, щоб користуватися режимом TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Повідомляємо групу…';
+
+  @override
+  String get trax_stepSwitching => 'Перемикаємо…';
+
+  @override
+  String get trax_stepChecking => 'Надсилаємо перевірку групи…';
+
+  @override
+  String get trax_stepLeaving => 'Виходимо…';
+
+  @override
+  String get trax_errorBusy => 'Радіо ще зайняте. Спробуйте трохи згодом.';
+
+  @override
+  String get trax_errorRefused =>
+      'Радіо не прийняло налаштування. Нічого не змінилося.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Це радіо не може ретранслювати на $mhz МГц.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Радіо не підтвердило надсилання повідомлення TRAX: повідомте групу іншим способом.';
+
+  @override
+  String get trax_preset => 'Пресет';
+
+  @override
+  String get trax_presetMesh => 'Як у мережі mesh';
+
+  @override
+  String get trax_presetLongRange => 'Далекий';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Сягає трохи далі, але кожне повідомлення надсилається у 2,5–3 рази довше.';
+
+  @override
+  String get trax_tripChannel => 'Канал поїздки';
+
+  @override
+  String get trax_tripChannelHint => 'Лише приватні канали';
+
+  @override
+  String get trax_none => 'Немає';
+
+  @override
+  String get trax_tripEnds => 'Кінець поїздки';
+
+  @override
+  String get trax_notSet => 'Не задано';
+
+  @override
+  String get trax_tellGroup => 'Повідомити групу';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Публікує повідомлення TRAX у каналі поїздки перед перемиканням або виходом. Кожен учасник приєднується одним дотиком; саме нічого не перемикається.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name перейшов у режим TRAX до $time. Теж перейти?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Ваше радіо перейде на $settings з увімкненим «Автономна система». У звичайній мережі mesh вас ніхто не чує, доки ви не вийдете з режиму.';
+  }
+
+  @override
+  String get trax_switchToo => 'Теж перейти';
+
+  @override
+  String get trax_notNow => 'Не зараз';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name виходить з режиму TRAX. Теж вийти?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Теж вийти';
+
+  @override
+  String get trax_stillOn =>
+      'Ваше радіо досі в режимі TRAX: звичайна мережа mesh вас не чує. Вийти?';
+
+  @override
+  String get trax_pickPreset => 'До якого пресету повернутися?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'На цьому телефоні немає збережених налаштувань цього радіо: його перемкнув інший телефон.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name перейшов у режим TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name виходить з режиму TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Ви перейшли в режим TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Ви вийшли з режиму TRAX';
+
+  @override
+  String get trax_youreOn => 'Ви на TRAX';
+
+  @override
+  String get trax_ended => 'Завершено';
+
+  @override
+  String get trax_notificationText =>
+      'Звичайна мережа mesh вас не чує. Відкрийте MeshTrax, щоб вийти.';
+
+  @override
   String get settings_deviceInfo => 'Інформація про пристрій';
 
   @override

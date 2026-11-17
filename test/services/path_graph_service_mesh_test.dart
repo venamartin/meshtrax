@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -104,6 +105,52 @@ void main() {
     await settle();
     await service.start(c, database: NativeDatabase.memory());
     expect(service.graph, same(graph), reason: 'the bench retunes mid-run');
+    await service.stop();
+  });
+
+  // TRAX mode moves the radio to the off-grid frequency with the mesh's own
+  // bandwidth, SF and CR: a mesh of its own, with a graph of its own. What
+  // the radio hears between the retune and the reopen is TRAX traffic and
+  // must not land in the regular graph.
+  test('TRAX mode gets its own graph, and the regular one hears nothing '
+      'after the retune', () async {
+    final c = _Connector()..tune(910525, 62500, 7, 5);
+    final service = PathGraphService();
+    final opened = <String>[];
+    QueryExecutor open(String name) {
+      opened.add(name);
+      return NativeDatabase.memory();
+    }
+
+    // [0x88][snr][rssi][raw]: the adapter counts every one it reads.
+    final heard = [pushCodeLogRxData, 0, 0, 0];
+    await service.start(c, openDatabase: open);
+    expect(opened.last, 'path_graph_m910525_62500_7_5');
+    final regular = service.adapter!;
+    c.handleFrameForTest(heard);
+    await pumpEventQueue();
+    expect(regular.framesSeen, 1);
+
+    // The radio took the TRAX settings; the change notice is still on its
+    // way (noteRadioSettingsSaved sets the values at once).
+    c.freq = 918000;
+    c.handleFrameForTest(heard);
+    await pumpEventQueue();
+    expect(regular.framesSeen, 1, reason: 'TRAX traffic, not this mesh');
+
+    c.tune(918000, 62500, 7, 5);
+    await settle();
+    await service.start(c, openDatabase: open);
+    expect(opened.last, 'path_graph_m918000_62500_7_5');
+    c.handleFrameForTest(heard);
+    await pumpEventQueue();
+    expect(service.adapter!.framesSeen, 1);
+
+    // Leave: back to the regular graph's file.
+    c.tune(910525, 62500, 7, 5);
+    await settle();
+    await service.start(c, openDatabase: open);
+    expect(opened.last, 'path_graph_m910525_62500_7_5');
     await service.stop();
   });
 

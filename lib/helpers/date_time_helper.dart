@@ -99,4 +99,15 @@ class DateTimeHelper {
   /// "Tue".
   static String weekday(BuildContext context, DateTime t) =>
       _format(context, 'E').format(t);
+
+  /// "Sunday 18:00" within a week of now, else "Sun, Nov 29 18:00": when a
+  /// trip ends, in this phone's time zone.
+  static String dayAndTime(BuildContext context, DateTime t, {DateTime? now}) {
+    final local = t.toLocal();
+    final days = local.difference(now ?? DateTime.now()).inDays.abs();
+    final day = days < 6
+        ? _format(context, 'EEEE').format(local)
+        : dayHeading(context, local);
+    return '$day ${time(context, local)}';
+  }
 }

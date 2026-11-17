@@ -442,6 +442,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<BlockedCliCommand> get blockedCliCommands =>
       _blockedCliCommandsController.stream;
 
+  final StreamController<({ChannelMessage message, bool fromBacklog})>
+  _channelMessagesInController = StreamController.broadcast();
+
+  /// Every new channel message from someone else, before the notification
+  /// settings are looked at. [fromBacklog]: the radio heard it while this
+  /// app was away.
+  Stream<({ChannelMessage message, bool fromBacklog})> get channelMessagesIn =>
+      _channelMessagesInController.stream;
+
   final StreamController<SensorPush> _sensorPushController =
       StreamController<SensorPush>.broadcast();
 
@@ -4517,6 +4526,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     required int txPower,
     bool? clientRepeat,
   }) {
+    // Repeaters heard on the old settings can't hear this radio now.
+    if (freqKhz != _currentFreqHz ||
+        bwHz != _currentBwHz ||
+        sf != _currentSf ||
+        cr != _currentCr) {
+      _directRepeaters.clear();
+      _discoverStartedAt = null;
+    }
     _currentFreqHz = freqKhz;
     _currentBwHz = bwHz;
     _currentSf = sf;
@@ -4528,7 +4545,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Writes frequency, bandwidth, SF and CR, and says whether the radio took
   /// them. With repeat on, firmware refuses the whole frame unless the
-  /// frequency is one it allows (MyMesh.cpp CMD_SET_RADIO_PARAMS).
+  /// frequency is one it allows (MyMesh.cpp CMD_SET_RADIO_PARAMS). A frame
+  /// without the repeat byte turns repeat off, so a radio known to repeat
+  /// (TRAX mode) keeps it unless [clientRepeat] says otherwise.
   Future<bool> setRadioParams(
     int freqKhz,
     int bwHz,
@@ -4536,10 +4555,35 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     int cr, {
     bool? clientRepeat,
   }) => _sendAndWaitForAck(
-    buildSetRadioParamsFrame(freqKhz, bwHz, sf, cr, clientRepeat: clientRepeat),
+    buildSetRadioParamsFrame(
+      freqKhz,
+      bwHz,
+      sf,
+      cr,
+      clientRepeat: clientRepeat ?? (_clientRepeat == true ? true : null),
+    ),
     timeout: const Duration(seconds: 10),
     expectsGenericAck: true,
   );
+
+  /// Packets waiting in the radio's send queue, and the floods it has
+  /// finished sending since it started (CMD_GET_STATS core and packets,
+  /// firmware ver code 8+). Null when it does not answer.
+  Future<({int queued, int floodsSent})?> readSendCounters() async {
+    final core = await _sendAndWaitForFrame(
+      buildGetStatsFrame(statsTypeCore),
+      (f) => f.length >= 11 && f[0] == respCodeStats && f[1] == statsTypeCore,
+    );
+    if (core == null) return null;
+    final packets = await _sendAndWaitForFrame(
+      buildGetStatsFrame(statsTypePackets),
+      (f) =>
+          f.length >= 14 && f[0] == respCodeStats && f[1] == statsTypePackets,
+    );
+    if (packets == null) return null;
+    final floods = ByteData.sublistView(packets, 10, 14).getUint32(0, Endian.little);
+    return (queued: core[10], floodsSent: floods);
+  }
 
   /// The frequency ranges, in kHz, this radio allows repeat on; null when it
   /// does not answer (CMD_GET_ALLOWED_REPEAT_FREQ, firmware ver code 9+).
@@ -8273,11 +8317,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   void _maybeNotifyChannelMessage(
     ChannelMessage message, {
     String? channelName,
+    bool fromBacklog = false,
   }) {
-    if (message.isOutgoing || _appSettingsService == null) return;
-    if (_isFromSelf(message)) return;
+    if (message.isOutgoing || _isFromSelf(message)) return;
     final channelIndex = message.channelIndex;
     if (channelIndex == null) return;
+    _channelMessagesInController.add(
+      (message: message, fromBacklog: fromBacklog),
+    );
+    if (_appSettingsService == null) return;
 
     // A reaction we could not place is still a reaction. Notifying here would
     // make the SAME event behave two different ways: a reaction whose target
@@ -8425,7 +8473,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           fromBacklog: fromBacklog,
         );
         if (isNew) {
-          _maybeNotifyChannelMessage(message);
+          _maybeNotifyChannelMessage(message, fromBacklog: fromBacklog);
         }
         _handleQueuedMessageReceived();
       }());
@@ -9194,6 +9242,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _maybeNotifyChannelMessage(
             message,
             channelName: channel.displayName,
+            fromBacklog: entry.fromBacklog,
           );
         }
       }
@@ -11403,6 +11452,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _receivedFramesController.close();
     _roomLoginEventsController.close();
     _blockedCliCommandsController.close();
+    _channelMessagesInController.close();
     _sensorPushController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();

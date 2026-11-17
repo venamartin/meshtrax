@@ -449,4 +449,35 @@ void main() {
     expect(sentFrame(cmdSetOtherParams), isNull);
     expect(c.autoAddRepeaters, isTrue);
   });
+
+  // TRAX mode: Off-Grid Repeat on an off-grid frequency, on purpose. The
+  // TRAX button shows it; the check doesn't call it a problem.
+  group('TRAX mode', () {
+    final frequency = healthRules.firstWhere((r) => r.id == 'radio_frequency');
+    final repeat = healthRules.firstWhere((r) => r.id == 'radio_client_repeat');
+
+    void radio({required bool repeatOn, required int freq}) {
+      final info = _deviceInfo();
+      info[80] = repeatOn ? 1 : 0;
+      c.handleFrameForTest(info);
+      c.handleFrameForTest(_selfInfo(manualAdd: 1, freq: freq));
+    }
+
+    test('the check stays quiet in TRAX mode', () async {
+      radio(repeatOn: true, freq: 918000);
+      expect(await frequency.check(ctx), isFalse);
+      expect(await repeat.check(ctx), isFalse);
+    });
+
+    test('off TRAX mode the rules still look', () async {
+      radio(repeatOn: false, freq: 918000);
+      expect(await frequency.check(ctx), isTrue, reason: 'no preset has it');
+      radio(repeatOn: true, freq: 910525);
+      expect(
+        await repeat.check(ctx),
+        isTrue,
+        reason: 'repeating on the regular mesh is no TRAX mode',
+      );
+    });
+  });
 }

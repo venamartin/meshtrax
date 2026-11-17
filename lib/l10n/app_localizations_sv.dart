@@ -458,6 +458,228 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings_title => 'Inställningar';
 
   @override
+  String get trax_title => 'TRAX-läge';
+
+  @override
+  String get trax_isOn => 'TRAX-läget är på';
+
+  @override
+  String get trax_isOff => 'TRAX-läget är av';
+
+  @override
+  String get trax_intro =>
+      'Flyttar din radio till gruppens frekvens utanför nätet, där varje radio vidarebefordrar åt de andra. Ingen på det vanliga meshet hör dig förrän du lämnar läget.';
+
+  @override
+  String get trax_now => 'Nu';
+
+  @override
+  String get trax_inTrax => 'I TRAX-läge';
+
+  @override
+  String get trax_repeatOn => '”Upprepa utan elnät” på';
+
+  @override
+  String get trax_savedNote =>
+      'Radions inställningar sparas på den här telefonen, och ”Lämna TRAX” återställer dem.';
+
+  @override
+  String trax_until(String time) {
+    return 'Till $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Ange när turen slutar i TRAX-inställningar.';
+
+  @override
+  String trax_tells(String channel) {
+    return 'Säger först till i $channel, så att de andra kan byta med ett tryck.';
+  }
+
+  @override
+  String get trax_tellsNot => 'Säger inte till gruppen.';
+
+  @override
+  String get trax_noChannel =>
+      'Välj en turkanal i TRAX-inställningar, eller stäng av ”Säg till gruppen”.';
+
+  @override
+  String get trax_trailhead =>
+      'Byt vid startpunkten, när radion har GPS-position: radion sparar var den är med sina nya inställningar.';
+
+  @override
+  String get trax_settings => 'TRAX-inställningar';
+
+  @override
+  String get trax_switch => 'Byt till TRAX';
+
+  @override
+  String get trax_onNote =>
+      'Ingen på det vanliga meshet hör dig. Din radio vidarebefordrar åt gruppen.';
+
+  @override
+  String get trax_groupCheck => 'Gruppkontroll';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hörda på TRAX ($count): $names',
+      zero: 'Ingen hörd på TRAX än',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Kontrollera igen';
+
+  @override
+  String get trax_checkHint =>
+      'Skickar en annons på TRAX-frekvensen. Medlemmar visas här när deras radior hörs.';
+
+  @override
+  String trax_returnsTo(String settings) {
+    return '”Lämna TRAX” går tillbaka till $settings.';
+  }
+
+  @override
+  String get trax_noSaved =>
+      'Inga sparade inställningar på den här telefonen: ”Lämna TRAX” frågar vilken förinställning den ska gå tillbaka till.';
+
+  @override
+  String get trax_leave => 'Lämna TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Radions firmware kan inte vidarebefordra åt andra. Uppdatera den för att använda TRAX-läget.';
+
+  @override
+  String get trax_stepTelling => 'Säger till gruppen…';
+
+  @override
+  String get trax_stepSwitching => 'Byter…';
+
+  @override
+  String get trax_stepChecking => 'Skickar gruppkontrollen…';
+
+  @override
+  String get trax_stepLeaving => 'Lämnar…';
+
+  @override
+  String get trax_errorBusy =>
+      'Radion är fortfarande upptagen. Försök igen om en stund.';
+
+  @override
+  String get trax_errorRefused =>
+      'Radion tog inte emot inställningarna. Inget har ändrats.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Den här radion kan inte vidarebefordra på $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Radion bekräftade inte att den skickade TRAX-meddelandet: säg till gruppen på annat sätt.';
+
+  @override
+  String get trax_preset => 'Förinställning';
+
+  @override
+  String get trax_presetMesh => 'Meshets egen';
+
+  @override
+  String get trax_presetLongRange => 'Lång räckvidd';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Når lite längre, men varje meddelande tar 2,5 till 3 gånger så lång tid att skicka.';
+
+  @override
+  String get trax_tripChannel => 'Turkanal';
+
+  @override
+  String get trax_tripChannelHint => 'Endast privata kanaler';
+
+  @override
+  String get trax_none => 'Ingen';
+
+  @override
+  String get trax_tripEnds => 'Turen slutar';
+
+  @override
+  String get trax_notSet => 'Inte angivet';
+
+  @override
+  String get trax_tellGroup => 'Säg till gruppen';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Postar ett TRAX-meddelande i turkanalen innan du byter eller lämnar. Varje medlem följer med ett tryck; inget byter av sig självt.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name har bytt till TRAX-läge till $time. Byta du också?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Din radio flyttar till $settings med ”Upprepa utan elnät” på. Ingen på det vanliga meshet hör dig förrän du lämnar läget.';
+  }
+
+  @override
+  String get trax_switchToo => 'Byt också';
+
+  @override
+  String get trax_notNow => 'Inte nu';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name lämnar TRAX-läget. Lämna du också?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Lämna också';
+
+  @override
+  String get trax_stillOn =>
+      'Din radio är fortfarande i TRAX-läge: det vanliga meshet hör dig inte. Lämna?';
+
+  @override
+  String get trax_pickPreset => 'Tillbaka till vilken förinställning?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Den här telefonen har inga sparade inställningar för radion: en annan telefon bytte den.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name har bytt till TRAX-läge';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name lämnar TRAX-läget';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Du bytte till TRAX-läge';
+
+  @override
+  String get trax_cardYouOff => 'Du lämnade TRAX-läget';
+
+  @override
+  String get trax_youreOn => 'Du är på TRAX';
+
+  @override
+  String get trax_ended => 'Avslutad';
+
+  @override
+  String get trax_notificationText =>
+      'Det vanliga meshet hör dig inte. Öppna MeshTrax för att lämna.';
+
+  @override
   String get settings_deviceInfo => 'Enhetens information';
 
   @override

@@ -1763,6 +1763,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                           textScale: textScale,
                           isOutgoing: isOutgoing,
                           senderName: message.senderName,
+                          traxChannel: structured is TraxMessage &&
+                                  widget.channel.isPrivate
+                              ? widget.channel
+                              : null,
                         ),
                         if (enableTracing || isOutgoing)
                           StructuredCardFooter(

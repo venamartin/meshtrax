@@ -16,15 +16,19 @@ import '../helpers/structured_message.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../models/channel.dart';
+import '../models/trax.dart';
 import '../screens/channel_chat_screen.dart';
 import '../screens/chat_screen.dart';
 import '../services/app_settings_service.dart';
+import '../services/trax_service.dart';
 import '../utils/calendar_export.dart';
 import 'drawing_canvas.dart';
 import 'drawing_map_view.dart';
 import 'message_text.dart';
 import 'mini_map.dart';
 import 'structured_message_dialogs.dart';
+import 'trax_dialogs.dart';
 
 /// Colours of one card kind. Each kind has one accent per brightness; every
 /// other colour is the accent's hue at a fixed saturation and lightness, so
@@ -90,6 +94,7 @@ class StructuredPalette {
           (const Color(0xFFFFB74D), const Color(0xFFEF6C00)),
         ShareMessage() => (const Color(0xFF81C784), const Color(0xFF2E7D32)),
         SvgMessage() => (const Color(0xFF7BE08A), const Color(0xFF2E7D32)),
+        TraxMessage() => (const Color(0xFFFF8A65), const Color(Trax.orange)),
       };
 
   static StructuredPalette forAccents(
@@ -171,6 +176,10 @@ class StructuredMessageCard extends StatelessWidget {
   final bool isOutgoing;
   final String? senderName;
 
+  /// The private channel a TRAX message came on: only there does its card
+  /// offer to switch or leave too.
+  final Channel? traxChannel;
+
   const StructuredMessageCard({
     super.key,
     required this.message,
@@ -178,6 +187,7 @@ class StructuredMessageCard extends StatelessWidget {
     this.now,
     this.isOutgoing = false,
     this.senderName,
+    this.traxChannel,
   });
 
   /// What a location is called on screen: the sender's own position by
@@ -212,6 +222,7 @@ class StructuredMessageCard extends StatelessWidget {
             ShareKind.sensor => Icons.sensors,
           },
         SvgMessage() => Icons.draw,
+        TraxMessage() => Icons.hiking,
       };
 
   /// Cards need room for a map and a row of buttons, more than a text
@@ -271,7 +282,67 @@ class StructuredMessageCard extends StatelessWidget {
       NoticeMessage m => _notice(context, p, m),
       ShareMessage m => _share(context, p, m),
       SvgMessage m => _drawing(context, p, m),
+      TraxMessage m => _trax(context, p, m),
     };
+  }
+
+  /// A member switched to TRAX mode or is leaving it. On a private channel
+  /// the card offers the same: one tap, never by itself.
+  Widget _trax(BuildContext context, StructuredPalette p, TraxMessage m) {
+    final l10n = context.l10n;
+    final name = senderName ?? '';
+    final trax = context.watch<TraxService?>();
+    final channel = traxChannel;
+    final until = m.until;
+    final ended = until != null && !until.isAfter(now ?? DateTime.now());
+    final on = trax?.isOn ?? false;
+    return _scaffold(
+      context,
+      p,
+      lead: Container(
+        width: 40 * textScale,
+        height: 40 * textScale,
+        decoration: BoxDecoration(color: p.accent, shape: BoxShape.circle),
+        child: Center(child: TraxIcon(size: 24 * textScale, color: p.onAccent)),
+      ),
+      overline: l10n.trax_title,
+      title: m.on
+          ? (isOutgoing ? l10n.trax_cardYouOn : l10n.trax_cardOn(name))
+          : (isOutgoing ? l10n.trax_cardYouOff : l10n.trax_cardOff(name)),
+      titleSize: 18,
+      chips: [
+        if (m.on && ended)
+          _chip(p, l10n.trax_ended)
+        else if (m.on && on && !isOutgoing)
+          _chip(p, l10n.trax_youreOn, highlight: true),
+      ],
+      lines: [
+        if (until != null) l10n.trax_until(traxTimeText(context, until)),
+        if (m.preset case final preset?)
+          '${preset.label}\n${l10n.trax_repeatOn}',
+      ],
+      actions: [
+        if (trax != null && channel != null && !isOutgoing)
+          if (m.on && !ended && !on)
+            _Action(
+              Icons.login,
+              l10n.trax_switchToo,
+              () => showTraxFollowDialog(
+                context,
+                trax,
+                sender: name,
+                message: m,
+                channel: channel,
+              ),
+            )
+          else if (!m.on && on)
+            _Action(
+              Icons.logout,
+              l10n.trax_leaveToo,
+              () => showTraxPrompt(context, trax, TraxLeavePrompt(name)),
+            ),
+      ],
+    );
   }
 
   Widget _drawing(BuildContext context, StructuredPalette p, SvgMessage m) {
