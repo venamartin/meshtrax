@@ -1821,6 +1821,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get map_shareMarkerHere => 'この場所でシェア';
 
   @override
+  String get map_lastKnown => '最後の位置';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '最後の位置 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '最後にわかった現在地から（古い可能性があります）';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '最後にわかった現在地（$time）から（古い可能性があります）';
+  }
+
+  @override
+  String get gps_lastKnown => '最後にわかった位置です。古い可能性があります';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '最後にわかった位置（$time）です。古い可能性があります';
+  }
+
+  @override
   String get map_setAsMyLocation => '現在地として設定';
 
   @override

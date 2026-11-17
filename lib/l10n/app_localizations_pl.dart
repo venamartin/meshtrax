@@ -1903,6 +1903,32 @@ class AppLocalizationsPl extends AppLocalizations {
   String get map_shareMarkerHere => 'Udostępnij znacznik tutaj';
 
   @override
+  String get map_lastKnown => 'Ostatnia pozycja';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Ostatnia pozycja · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Start: Twoja ostatnia znana pozycja, może być nieaktualna';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Start: Twoja ostatnia znana pozycja ($time), może być nieaktualna';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Twoja ostatnia znana pozycja, może być nieaktualna';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Twoja ostatnia znana pozycja ($time), może być nieaktualna';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Ustaw jako moją lokalizację';
 
   @override

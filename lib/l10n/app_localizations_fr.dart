@@ -1901,6 +1901,32 @@ class AppLocalizationsFr extends AppLocalizations {
   String get map_shareMarkerHere => 'Partager le marqueur ici';
 
   @override
+  String get map_lastKnown => 'Dernière position';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Dernière position · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Depuis votre dernière position connue, peut-être ancienne';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Depuis votre dernière position connue ($time), peut-être ancienne';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Votre dernière position connue, peut-être ancienne';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Votre dernière position connue ($time), peut-être ancienne';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Définir comme ma localisation';
 
   @override

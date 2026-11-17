@@ -1872,6 +1872,31 @@ class AppLocalizationsSv extends AppLocalizations {
   String get map_shareMarkerHere => 'Dela markeringen här';
 
   @override
+  String get map_lastKnown => 'Senast känd';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Senast känd · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Från din senast kända position, kan vara gammal';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Från din senast kända position ($time), kan vara gammal';
+  }
+
+  @override
+  String get gps_lastKnown => 'Din senast kända position, kan vara gammal';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Din senast kända position ($time), kan vara gammal';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Ange som min plats';
 
   @override

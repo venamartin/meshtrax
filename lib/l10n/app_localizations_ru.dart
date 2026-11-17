@@ -1891,6 +1891,32 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_shareMarkerHere => 'Поделиться меткой здесь';
 
   @override
+  String get map_lastKnown => 'Последнее известное';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Последнее известное · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Откуда: ваше последнее известное местоположение, может быть устаревшим';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Откуда: ваше последнее известное местоположение ($time), может быть устаревшим';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Ваше последнее известное местоположение, может быть устаревшим';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Ваше последнее известное местоположение ($time), может быть устаревшим';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Установить мое местоположение';
 
   @override

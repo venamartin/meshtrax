@@ -41,6 +41,16 @@ class StructuredMessageDialogs {
     return LatLng(lat, lon);
   }
 
+  /// Under the radio's position when it may be old: the dialog still takes
+  /// it, but says so.
+  static String? _mayBeOld(BuildContext context, MeshCoreConnector connector) {
+    if (!connector.selfPositionMayBeOld) return null;
+    final at = connector.selfGpsChangedAt;
+    return at == null
+        ? context.l10n.gps_lastKnown
+        : context.l10n.gps_lastKnownAt(DateTimeHelper.time(context, at));
+  }
+
   /// A position as people paste it: `lat, lon` with any number of
   /// decimals, a maps link that carries coordinates, or a geo: URI.
   static LatLng? readPosition(String text) {
@@ -65,11 +75,13 @@ class StructuredMessageDialogs {
     BuildContext context,
     MeshCoreConnector connector,
   ) async {
+    final note = _mayBeOld(context, connector);
     final message = await showDialog<LocationMessage>(
       context: context,
       builder: (_) => _LocationDialog(
         mine: true,
         initialPosition: _radioPosition(connector),
+        initialNote: note,
       ),
     );
     return message?.toWire();
@@ -102,9 +114,13 @@ class StructuredMessageDialogs {
     BuildContext context,
     MeshCoreConnector connector,
   ) {
+    final note = _mayBeOld(context, connector);
     return showDialog<String>(
       context: context,
-      builder: (_) => _SosDialog(initialPosition: _radioPosition(connector)),
+      builder: (_) => _SosDialog(
+        initialPosition: _radioPosition(connector),
+        initialNote: note,
+      ),
     );
   }
 
@@ -308,12 +324,16 @@ const _rowDensity = VisualDensity(vertical: -3);
 class _LocationDialog extends StatefulWidget {
   final bool mine;
   final LatLng? initialPosition;
+
+  /// Under [initialPosition] while the field holds it.
+  final String? initialNote;
   final String? initialTitle;
   final String? action;
 
   const _LocationDialog({
     required this.mine,
     this.initialPosition,
+    this.initialNote,
     this.initialTitle,
     this.action,
   });
@@ -359,6 +379,7 @@ class _LocationDialogState extends State<_LocationDialog> {
       children: [
         _PositionField(
           initial: widget.initialPosition,
+          initialHelper: widget.initialNote,
           // Pasting a position is what this dialog is for.
           autofocus: !widget.mine && widget.initialPosition == null,
           emptyHelper: widget.mine ? l10n.tray_noRadioPosition : null,
@@ -406,11 +427,15 @@ class _PositionField extends StatefulWidget {
   /// Under the field while it is empty.
   final String? emptyHelper;
 
+  /// Under the field while it holds [initial].
+  final String? initialHelper;
+
   const _PositionField({
     required this.initial,
     required this.onChanged,
     this.autofocus = false,
     this.emptyHelper,
+    this.initialHelper,
   });
 
   @override
@@ -471,6 +496,8 @@ class _PositionFieldState extends State<_PositionField> {
       helper = sent;
     } else if (text.isEmpty) {
       helper = widget.emptyHelper;
+    } else if (position != null && position == widget.initial) {
+      helper = widget.initialHelper;
     } else {
       helper = null;
     }
@@ -515,7 +542,10 @@ class _PositionFieldState extends State<_PositionField> {
 
 class _SosDialog extends StatefulWidget {
   final LatLng? initialPosition;
-  const _SosDialog({this.initialPosition});
+
+  /// Under [initialPosition] while the field holds it.
+  final String? initialNote;
+  const _SosDialog({this.initialPosition, this.initialNote});
 
   @override
   State<_SosDialog> createState() => _SosDialogState();
@@ -552,6 +582,7 @@ class _SosDialogState extends State<_SosDialog> {
         _gap,
         _PositionField(
           initial: widget.initialPosition,
+          initialHelper: widget.initialNote,
           emptyHelper: l10n.tray_noRadioPosition,
           onChanged: (position, _) => setState(() => _position = position),
         ),

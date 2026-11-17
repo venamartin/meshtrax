@@ -1885,6 +1885,31 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_shareMarkerHere => 'Deel marker hier';
 
   @override
+  String get map_lastKnown => 'Laatst bekend';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Laatst bekend · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Vanaf je laatst bekende positie, mogelijk verouderd';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Vanaf je laatst bekende positie ($time), mogelijk verouderd';
+  }
+
+  @override
+  String get gps_lastKnown => 'Je laatst bekende positie, mogelijk verouderd';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Je laatst bekende positie ($time), mogelijk verouderd';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Stel dit in als mijn locatie';
 
   @override

@@ -660,6 +660,31 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// current (seen 2026-10-22), so nothing treats it as where the radio is.
   bool _selfPositionLive = false;
   bool get selfPositionIsLive => _selfPositionLive;
+
+  /// How long the GPS position counts as fresh after its reading last
+  /// changed. A radio with a fix reports a slightly different reading
+  /// almost every time, while one that lost its fix repeats its last one
+  /// exactly. 3 min is three reads at the 60 s poll; a bench test with a
+  /// real radio (standing still with a fix, then losing it) decides it.
+  static const selfGpsFreshFor = Duration(minutes: 3);
+
+  /// The last GPS reading this connection, to tell a change from a repeat.
+  ({double latitude, double longitude, double altitude})? _selfGpsLast;
+  DateTime? _selfGpsChangedAt;
+  Timer? _selfGpsFreshTimer;
+
+  /// When the GPS reading last changed this connection: "Last known 14:02".
+  DateTime? get selfGpsChangedAt => _selfGpsChangedAt;
+
+  /// Whether the GPS reading changed in the last [selfGpsFreshFor]. For the
+  /// screen only: Pathfinder goes by [selfPositionIsLive], which must never
+  /// expire (#206).
+  bool get selfGpsIsFresh => _selfGpsFreshTimer?.isActive ?? false;
+
+  /// The radio's GPS is on but its position isn't fresh: the map shows it
+  /// grey, as last known, and the dialogs and cards that use it say so. A
+  /// position typed into the radio (GPS off) is shown as it is.
+  bool get selfPositionMayBeOld => gpsOn && !selfGpsIsFresh;
   int _reconnectAttempts = 0;
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
@@ -1246,6 +1271,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   @visibleForTesting
   void markSelfPositionLiveForTest() => _selfPositionLive = true;
+
+  /// Moves the last GPS change [by] into the past, as a phone that slept
+  /// through the freshness timer finds it on waking.
+  @visibleForTesting
+  void backdateSelfGpsChangeForTest(Duration by) =>
+      _selfGpsChangedAt = _selfGpsChangedAt?.subtract(by);
 
   @visibleForTesting
   void markChannelsVerifiedForTest() => _channelsVerified = true;
@@ -4082,6 +4113,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
     selfGps.value = null;
+    _forgetSelfGpsChanges();
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
@@ -6030,6 +6062,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _selfLatitude = lat;
     _selfLongitude = lon;
     _selfPositionLive = false;
+    // A typed position is no fix, and the radio may report it next: that
+    // change must not count as one either.
+    _forgetSelfGpsChanges();
     notifyListeners();
   }
 
@@ -6062,12 +6097,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       final gps = reading['value'] as Map;
       final lat = gps['latitude'] as double;
       final lon = gps['longitude'] as double;
+      final alt = gps['altitude'] as double;
       selfGps.value = (
         latitude: lat,
         longitude: lon,
-        altitude: gps['altitude'] as double,
+        altitude: alt,
         at: DateTime.now(),
       );
+      _noteSelfGpsReading(lat, lon, alt);
       // LPP carries 0.0001° (about 11 m), coarser than SELF_INFO: a radio
       // standing still keeps SELF_INFO's figure.
       if (!hasValidLocation(lat, lon) ||
@@ -6081,6 +6118,35 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       return;
     }
+  }
+
+  /// A GPS reading that differs at all from the one before it this
+  /// connection is a fix; a repeat only ages the last one.
+  void _noteSelfGpsReading(double lat, double lon, double alt) {
+    final last = _selfGpsLast;
+    final reading = (latitude: lat, longitude: lon, altitude: alt);
+    _selfGpsLast = reading;
+    final now = DateTime.now();
+    if (last != null && last != reading && hasValidLocation(lat, lon)) {
+      final wasFresh = selfGpsIsFresh;
+      _selfGpsChangedAt = now;
+      _selfGpsFreshTimer?.cancel();
+      _selfGpsFreshTimer = Timer(selfGpsFreshFor, notifyListeners);
+      if (!wasFresh) notifyListeners();
+    } else if (selfGpsIsFresh &&
+        now.difference(_selfGpsChangedAt!) >= selfGpsFreshFor) {
+      // A sleeping phone's clock for timers stops, so the timer can be
+      // late: a repeat that comes after the time ends it.
+      _selfGpsFreshTimer!.cancel();
+      notifyListeners();
+    }
+  }
+
+  void _forgetSelfGpsChanges() {
+    _selfGpsLast = null;
+    _selfGpsChangedAt = null;
+    _selfGpsFreshTimer?.cancel();
+    _selfGpsFreshTimer = null;
   }
 
   Future<void> setCustomVar(String value) async {
@@ -7113,11 +7179,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _lastLoadedNodeKey == selfPublicKeyHex;
     if (_unansweredSettingsReads > 0) _unansweredSettingsReads--;
     if (settingsOnly) {
-      // The radio has not restarted, so a position that was live still is.
+      // The radio has not restarted, so a position that was live still is,
+      // and its freshness goes on as it was.
       _selfPositionLive = wasPositionLive;
       notifyListeners();
       return;
     }
+    _forgetSelfGpsChanges();
 
     // Armed for the radio before: it must not fire into this radio's scope.
     if (_lastLoadedNodeKey != selfPublicKeyHex) {
@@ -11112,6 +11180,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _gpsPollTimer = null;
     selfGps.value = null;
     _selfPositionLive = false;
+    _forgetSelfGpsChanges();
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;
@@ -11392,6 +11461,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _reconnectTimer?.cancel();
     _batteryPollTimer?.cancel();
     _gpsPollTimer?.cancel();
+    _selfGpsFreshTimer?.cancel();
     _radioStatsPollTimer?.cancel();
     _queueDrainRetryTimer?.cancel();
     for (final timer in _channelMessageTimers.values) {

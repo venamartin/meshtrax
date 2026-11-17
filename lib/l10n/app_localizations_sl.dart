@@ -1874,6 +1874,31 @@ class AppLocalizationsSl extends AppLocalizations {
   String get map_shareMarkerHere => 'Delite točke tukaj.';
 
   @override
+  String get map_lastKnown => 'Zadnji znani';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Zadnji znani · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Začetek: vaš zadnji znani položaj, morda je star';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Začetek: vaš zadnji znani položaj ($time), morda je star';
+  }
+
+  @override
+  String get gps_lastKnown => 'Vaš zadnji znani položaj, morda je star';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Vaš zadnji znani položaj ($time), morda je star';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Nastavite to kot mojo lokacijo';
 
   @override

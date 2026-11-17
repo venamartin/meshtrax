@@ -187,11 +187,12 @@ void main() {
   // After a restart with no fix, a radio reports the position it stored at
   // its last settings save, with altitude 0 (firmware MyMesh.cpp), and the
   // same SELF_INFO gave at connect. Pathfinder must not take it for a fix.
-  test("a restarted radio's stored position is never live", () {
+  test("a restarted radio's stored position is never live or fresh", () {
     for (var i = 0; i < 3; i++) {
       c.handleFrameForTest(_telemetry(selfKey, 41.8123, -71.4123));
     }
     expect(c.selfPositionIsLive, isFalse);
+    expect(c.selfGpsIsFresh, isFalse);
   });
 
   test('a reading that moved off the position at connect is live', () {
@@ -203,8 +204,17 @@ void main() {
     void liveFix() {
       radio(verCode: 9, gps: '1');
       c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.3));
+      c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.5));
       expect(c.selfPositionIsLive, isTrue);
       expect(c.selfGps.value, isNotNull);
+      expect(c.selfGpsIsFresh, isTrue);
+    }
+
+    void forgotten() {
+      expect(c.selfPositionIsLive, isFalse);
+      expect(c.selfGps.value, isNull);
+      expect(c.selfGpsIsFresh, isFalse);
+      expect(c.selfGpsChangedAt, isNull);
     }
 
     test('a disconnect, and its poll stops', () {
@@ -212,8 +222,7 @@ void main() {
         liveFix();
         unawaited(c.disconnect());
         async.flushMicrotasks();
-        expect(c.selfPositionIsLive, isFalse);
-        expect(c.selfGps.value, isNull);
+        forgotten();
 
         // The next radio answers DEVICE_INFO before its GPS setting comes:
         // the old poll must not ask it.
@@ -228,8 +237,124 @@ void main() {
       fakeAsync((async) {
         liveFix();
         c.handleBleDropForTest();
-        expect(c.selfPositionIsLive, isFalse);
-        expect(c.selfGps.value, isNull);
+        forgotten();
+      });
+    });
+
+    test('back on the radio, its first reading is not fresh', () {
+      fakeAsync((async) {
+        liveFix();
+        c.handleBleDropForTest();
+        c.handleFrameForTest(_selfInfo(selfKey, 41.812345, -71.412345));
+        radio(verCode: 9, gps: '1');
+        c.handleFrameForTest(_telemetry(selfKey, 41.8301, -71.4012, alt: 34.9));
+        expect(c.selfGpsIsFresh, isFalse, reason: 'grey for one poll');
+        expect(c.selfPositionMayBeOld, isTrue);
+      });
+    });
+  });
+
+  // The map's blue dot (safety review CH-07): a radio that lost its fix
+  // keeps reporting the last one, exactly. For the screen only: Pathfinder
+  // keeps selfPositionIsLive, which never expires (#206).
+  group('a fresh GPS position', () {
+    // A radio with a fix standing still: its altitude moves in centimetres.
+    void reading(double alt, {double lat = 41.8301, double lon = -71.4012}) =>
+        c.handleFrameForTest(_telemetry(selfKey, lat, lon, alt: alt));
+
+    test('takes two readings that differ', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '1');
+        reading(34.3);
+        expect(c.selfGpsIsFresh, isFalse, reason: 'nothing to compare it with');
+        expect(c.selfPositionMayBeOld, isTrue);
+        reading(34.5);
+        expect(c.selfGpsIsFresh, isTrue);
+        expect(c.selfPositionMayBeOld, isFalse);
+        expect(c.selfGpsChangedAt, isNotNull);
+      });
+    });
+
+    test('ends 3 min after the last change, and says so', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '1');
+        reading(34.3);
+        reading(34.5);
+        final changedAt = c.selfGpsChangedAt;
+        async.elapse(const Duration(milliseconds: 100));
+        var notified = 0;
+        c.addListener(() => notified++);
+
+        // The fix is lost: every poll gets the last reading again.
+        for (var i = 0; i < 2; i++) {
+          async.elapse(const Duration(seconds: 60));
+          reading(34.5);
+          expect(c.selfGpsIsFresh, isTrue);
+        }
+        async.elapse(const Duration(seconds: 59));
+        expect(c.selfGpsIsFresh, isTrue);
+        async.elapse(const Duration(seconds: 1));
+        expect(c.selfGpsIsFresh, isFalse);
+        expect(c.selfPositionMayBeOld, isTrue);
+        async.elapse(const Duration(milliseconds: 100));
+        expect(notified, 1, reason: 'the dot turns grey with no new reading');
+        expect(c.selfGpsChangedAt, changedAt, reason: '"Last known" time');
+        expect(
+          c.selfPositionIsLive,
+          isTrue,
+          reason: "Pathfinder's flag never expires",
+        );
+
+        reading(34.6);
+        expect(c.selfGpsIsFresh, isTrue, reason: 'a fix again');
+        async.elapse(const Duration(milliseconds: 100));
+        expect(notified, 2);
+      });
+    });
+
+    test('a phone that slept past the 3 min: the next repeat ends it', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '1');
+        reading(34.3);
+        reading(34.5);
+        c.backdateSelfGpsChangeForTest(const Duration(hours: 1));
+        expect(c.selfGpsIsFresh, isTrue, reason: 'its timer has not run');
+        reading(34.5);
+        expect(c.selfGpsIsFresh, isFalse);
+      });
+    });
+
+    test('a reading of no position is no fix', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '1');
+        reading(34.3);
+        reading(0, lat: 0, lon: 0);
+        expect(c.selfGpsIsFresh, isFalse);
+      });
+    });
+
+    test('a typed position ends it, and the radio reporting it is no fix', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '1');
+        reading(34.3);
+        reading(34.5);
+        unawaited(c.setNodeLocation(lat: 40, lon: 2));
+        async.flushMicrotasks();
+        expect(c.selfGpsIsFresh, isFalse);
+        expect(c.selfGpsChangedAt, isNull);
+
+        // A radio with no fix reports the typed spot from then on.
+        reading(34.5, lat: 40, lon: 2);
+        reading(34.5, lat: 40, lon: 2);
+        expect(c.selfGpsIsFresh, isFalse);
+      });
+    });
+
+    test('GPS off: a typed position is never "may be old"', () {
+      fakeAsync((async) {
+        radio(verCode: 9, gps: '0');
+        expect(c.selfGpsIsFresh, isFalse);
+        expect(c.selfPositionMayBeOld, isFalse);
       });
     });
   });

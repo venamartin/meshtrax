@@ -1902,6 +1902,31 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_shareMarkerHere => 'Osztja ezt a tartalmat itt';
 
   @override
+  String get map_lastKnown => 'Utolsó ismert';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Utolsó ismert · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Kiindulópont: az Ön utolsó ismert helyzete, lehet, hogy régi';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Kiindulópont: az Ön utolsó ismert helyzete ($time), lehet, hogy régi';
+  }
+
+  @override
+  String get gps_lastKnown => 'Az Ön utolsó ismert helyzete, lehet, hogy régi';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Az Ön utolsó ismert helyzete ($time), lehet, hogy régi';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Állítsa be a jelenlegi helyzetemként';
 
   @override

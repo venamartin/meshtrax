@@ -194,6 +194,24 @@ void main() {
     expect(find.text('Node A'), findsOneWidget);
   });
 
+  testWidgets('a label is cut at the style width unless it may be wider', (
+    tester,
+  ) async {
+    const label = 'Last known · 2:02 PM';
+    MapMarker marker(double? maxWidth) => MapMarker(
+      id: 'self',
+      position: _center,
+      label: label,
+      labelMaxWidth: maxWidth,
+    );
+    await pumpMap(tester, overlays: [marker(null)]);
+    final cut = tester.getSize(find.text(label)).width;
+    expect(cut, lessThanOrEqualTo(const MapLabelStyle().maxWidth));
+
+    await pumpMap(tester, overlays: [marker(400)]);
+    expect(tester.getSize(find.text(label)).width, greaterThan(cut));
+  });
+
   testWidgets('controller moves and fits in package zoom', (tester) async {
     // A command issued before the map is ready is applied once it is.
     controller.move(const LatLng(36.6, -121.9), zoom: 12);

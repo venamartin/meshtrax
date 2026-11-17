@@ -1897,6 +1897,32 @@ class AppLocalizationsPt extends AppLocalizations {
   String get map_shareMarkerHere => 'Compartilhar marcador aqui';
 
   @override
+  String get map_lastKnown => 'Última posição';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Última posição · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'A partir da sua última posição conhecida, pode estar desatualizada';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'A partir da sua última posição conhecida ($time), pode estar desatualizada';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Sua última posição conhecida, pode estar desatualizada';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Sua última posição conhecida ($time), pode estar desatualizada';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Defina minha localização';
 
   @override

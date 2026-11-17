@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:traxroute/traxroute.dart';
 
+import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
@@ -49,6 +50,11 @@ class RouteSheet extends StatefulWidget {
 
   /// A start picked on the map; null starts from your position.
   final String? start;
+
+  /// Your position may be old (the radio's GPS reading stopped changing),
+  /// last known at [positionKnownAt] when that is known.
+  final bool positionMayBeOld;
+  final DateTime? positionKnownAt;
   final VoidCallback onUseMyPosition;
   final PathType pathType;
   final ValueChanged<PathType> onPathType;
@@ -78,6 +84,8 @@ class RouteSheet extends StatefulWidget {
     super.key,
     required this.destination,
     required this.start,
+    this.positionMayBeOld = false,
+    this.positionKnownAt,
     required this.onUseMyPosition,
     required this.pathType,
     required this.onPathType,
@@ -282,6 +290,8 @@ class RouteSheetState extends State<RouteSheet> {
     final RouteSheet(
       :destination,
       :start,
+      :positionMayBeOld,
+      :positionKnownAt,
       :pathType,
       :options,
       :result,
@@ -565,9 +575,18 @@ class RouteSheetState extends State<RouteSheet> {
                           ),
                           minLeadingWidth: 14,
                           title: Text(
-                            start == null
+                            start != null
+                                ? l10n.route_from(start)
+                                : !positionMayBeOld
                                 ? l10n.route_fromYou
-                                : l10n.route_from(start),
+                                : positionKnownAt == null
+                                ? l10n.route_fromLastKnown
+                                : l10n.route_fromLastKnownAt(
+                                    DateTimeHelper.time(
+                                      context,
+                                      positionKnownAt,
+                                    ),
+                                  ),
                           ),
                           trailing: start == null
                               ? null
