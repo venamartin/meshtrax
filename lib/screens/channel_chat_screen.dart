@@ -1374,7 +1374,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                 builder: (context, connector, _) => MentionsOverlay(
                   contacts: _filteredMentionContacts,
                   onSelect: _insertMention,
-                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
+                  nicknameOf: (c) =>
+                      connector.contactNote(c.publicKeyHex)?.pillName,
                 ),
               ),
             // Keyed: the @ list above is a Consumer too, and without the key

@@ -29,6 +29,7 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/contact_info_dialog.dart';
 import 'package:meshtrax/widgets/contact_tile.dart';
 import 'package:meshtrax/widgets/mention_composer.dart';
+import 'package:meshtrax/widgets/nickname_pill.dart';
 import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 
 // The owner wanted to note who is behind a radio: a name beside the radio
@@ -51,6 +52,9 @@ class _Radio extends MeshCoreConnector {
 
   @override
   List<Contact> get allContacts => everyone;
+
+  @override
+  List<Contact> get allContactsUnfiltered => everyone;
 
   @override
   List<Channel> get channels => const [];
@@ -347,13 +351,71 @@ void main() {
               MentionsOverlay(
                 contacts: [_walker],
                 onSelect: (_) {},
-                realNameOf: (_) => 'Ann Smith',
+                nicknameOf: (_) => 'Ann Smith',
               ),
             ],
           ),
         ),
       ),
     );
-    expect(find.text('Ridge Walker  Ann Smith'), findsNWidgets(2));
+    expect(find.text('Ridge Walker  Ann Smith'), findsOneWidget,
+        reason: 'the contact row');
+    expect(
+      find.descendant(
+        of: find.byType(MentionsOverlay),
+        matching: find.widgetWithText(NicknamePill, 'Ann Smith'),
+      ),
+      findsOneWidget,
+      reason: 'the @ list, in a pill as in the Chats list',
+    );
+  });
+
+  // The owner, 2026-11-17: searching the @ list by a nickname should show
+  // the nickname in a pill.
+  testWidgets('a channel @ list found by nickname shows it in a pill',
+      (tester) async {
+    final radio = _Radio()
+      ..everyone = [_walker]
+      ..posts = [
+        ChannelMessage(
+          senderName: 'Ridge Walker',
+          text: 'Is the ridge repeater back up?',
+          timestamp: DateTime(2026, 11, 16, 9),
+          isOutgoing: false,
+          status: ChannelMessageStatus.sent,
+          channelIndex: 1,
+          messageId: 'p0',
+        ),
+      ];
+    radio.notes[_walker.publicKeyHex] =
+        const ContactNote(nickname: 'Annie', realName: 'Ann Smith');
+    await pump(
+      tester,
+      ChannelChatScreen(
+        channel: Channel(index: 1, name: '#test', psk: Uint8List(16)),
+      ),
+      radio: radio,
+    );
+
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.hintText == 'Type a message...',
+      ),
+      '@ann',
+    );
+    await tester.pump();
+    final list = find.byType(MentionsOverlay);
+    expect(
+      find.descendant(of: list, matching: find.text('Ridge Walker')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: list,
+        matching: find.widgetWithText(NicknamePill, 'Annie'),
+      ),
+      findsOneWidget,
+    );
+    await _settle(tester);
   });
 }

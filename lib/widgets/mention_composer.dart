@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../connector/meshcore_protocol.dart';
 import '../models/contact.dart';
 import '../utils/emoji_utils.dart';
-import 'contact_name.dart';
+import 'nickname_pill.dart';
 
 /// Composer controller that renders `@[Name]` mention tokens in the accent
 /// color while keeping the IME composing region visible.
@@ -144,14 +144,15 @@ class MentionsOverlay extends StatelessWidget {
   final List<Contact> contacts;
   final ValueChanged<Contact> onSelect;
 
-  /// The real name the user gave a contact, shown beside its radio name.
-  final String? Function(Contact contact)? realNameOf;
+  /// The name the user gave a contact, in a pill beside its radio name as
+  /// in the Chats list.
+  final String? Function(Contact contact)? nicknameOf;
 
   const MentionsOverlay({
     super.key,
     required this.contacts,
     required this.onSelect,
-    this.realNameOf,
+    this.nicknameOf,
   });
 
   @override
@@ -161,12 +162,24 @@ class MentionsOverlay extends StatelessWidget {
       itemCount: contacts.length,
       itemBuilder: (context, index) {
         final contact = contacts[index];
+        final nickname = nicknameOf?.call(contact);
         return ListTile(
           leading: mentionAvatar(contact, colorScheme),
-          title: ContactName(
-            contact.name,
-            realName: realNameOf?.call(contact),
-            style: const TextStyle(fontWeight: FontWeight.w500),
+          title: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  contact.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+              if (nickname != null) ...[
+                const SizedBox(width: 6),
+                NicknamePill(nickname),
+              ],
+            ],
           ),
           onTap: () => onSelect(contact),
         );
