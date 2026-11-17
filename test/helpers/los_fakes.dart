@@ -60,11 +60,12 @@ Map<String, Object?> _entry(
 /// A map catalogue and region outlines (no network: every request is a
 /// 404), with the real NorCal 20 ft contours tiles around Death Valley
 /// installed when [contours] is set. Nevada's contours can be downloaded;
-/// Mexico has none.
+/// Mexico has none. [picker] replaces the region outlines.
 Future<MapPacksService> losMaps(
   Directory tmp, {
   bool contours = true,
   bool catalogue = true,
+  String? picker,
   PackDownloader? downloader,
   http.Client? client,
 }) async {
@@ -97,8 +98,12 @@ Future<MapPacksService> losMaps(
         ],
       }),
     );
-    File('packages/traxmap/test/support/picker.geojson')
-        .copySync('${tmp.path}/picker.geojson');
+    if (picker != null) {
+      File('${tmp.path}/picker.geojson').writeAsStringSync(picker);
+    } else {
+      File('packages/traxmap/test/support/picker.geojson')
+          .copySync('${tmp.path}/picker.geojson');
+    }
   }
   final packs = Directory('${tmp.path}/packs')..createSync(recursive: true);
   if (contours) installDeathValleyContours(packs);

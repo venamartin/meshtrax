@@ -152,6 +152,8 @@ Future<Reach?> sweep({
     bucketCrossings(tiles, cx, cy, rUnits, radiusM, perRay);
     if (await pacer.tick(0.55)) return null;
     final intervals = terrain.packIntervals;
+    final guards = terrain.packSeaGuardIntervals;
+    final centerGuard = terrain.seaGuardAt(center.position);
     final lambda = 299792458.0 / (frequencyMHz * 1e6);
     for (var k = 0; k < rays; k++) {
       final theta = 2 * math.pi * k / rays;
@@ -179,6 +181,8 @@ Future<Reach?> sweep({
         endM: null,
         covered: covered,
         packInterval: intervals,
+        packSeaGuardInterval: guards,
+        startSeaGuard: centerGuard,
         fillStepM: 50,
       );
       final reachable = covered.isEmpty || covered[0] > 0 ? 0.0 : covered[1];

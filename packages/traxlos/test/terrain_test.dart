@@ -30,8 +30,11 @@ void main() {
     List<Line> lines, {
     List<List<List<Geo>>>? coverage,
     List<String> peakPacks = const [],
+    bool belowSeaLevel = false,
   }) {
-    final path = syntheticPack(dir, 'c', {(tx, ty): contourTile(lines)});
+    final path = syntheticPack(dir, 'c', {
+      (tx, ty): contourTile(lines),
+    }, belowSeaLevel: belowSeaLevel);
     return ContourTerrain(
       contours: [ContourPack(path, coverage: coverage ?? tileSquare())],
       peakPacks: peakPacks,
@@ -140,6 +143,28 @@ void main() {
       expect(r.verdict, Verdict.clear);
     });
 
+    test('down to the floor through lines below sea level: nothing is '
+        '"below the lowest line" in a pack that has them', () {
+      final lines = [
+        vertical(60, 500),
+        vertical(40, 1000),
+        vertical(20, 1500),
+        vertical(0, 2000),
+        vertical(-20, 2500),
+        vertical(-40, 3000),
+      ];
+      LineOfSight down(ContourTerrain t) => t.lineOfSight(
+        LinkEnd(at(300, 2048), groundM: 70 * ft),
+        LinkEnd(at(3500, 2048), groundM: -50 * ft),
+      );
+      final marked = down(terrainOf(lines, belowSeaLevel: true));
+      expect(points(marked, PointKind.belowLowest), isEmpty);
+      expect(marked.verdict, isNot(Verdict.unknown));
+      // An older pack with the same lines still guards its lowest three.
+      final old = down(terrainOf(lines));
+      expect(points(old, PointKind.belowLowest), isNotEmpty);
+    });
+
     test('a step of more than one interval may hide lines', () {
       final t = terrainOf([vertical(100, 1000), vertical(140, 1500)]);
       final r = across(t, 500, 2000);
@@ -213,6 +238,29 @@ void main() {
         t.groundAt(at(2048, 2048)).groundM,
         closeTo(80 * ft - interval, 1e-6),
       );
+    });
+
+    test('a pack with lines below sea level: the lowest lines above it are '
+        'ordinary, and a pit below it has a height', () {
+      for (final level in [20, 40, 60]) {
+        final t = terrainOf([
+          ring(level, 300),
+          ring(level + 20, 600),
+        ], belowSeaLevel: true);
+        expect(
+          t.groundAt(at(2048, 2048)).groundM,
+          closeTo(level * ft - interval, 1e-6),
+          reason: '$level ft',
+        );
+      }
+      // Badwater: inside the lowest line, 260 ft below sea level.
+      final t = terrainOf([
+        ring(-260, 300),
+        ring(-240, 600),
+      ], belowSeaLevel: true);
+      final g = t.groundAt(at(2048, 2048));
+      expect(g.source, HeightSource.contours);
+      expect(g.groundM, closeTo(-260 * ft - interval, 1e-6));
     });
 
     test('a given height wins; a fallback only where the contours can\'t '
@@ -375,6 +423,101 @@ void main() {
       expect(r.verdict, Verdict.unknown);
       expect(r.skippedPacks, [path]);
       expect(r.unknownReasons, {UnknownReason.notDownloaded});
+    });
+  });
+
+  group('packs with and without lines below sea level', () {
+    // Tile tx is the new pack's; tile tx + 2 an older pack's.
+    final here = tileSquare(), east = tileSquare(8192, 12288);
+
+    ContourTerrain twoPacks(
+      Map<(int, int), List<Line>> oldTiles,
+      List<Line> newLines, {
+      bool newFlagged = true,
+    }) {
+      final old = syntheticPack(dir, 'old', {
+        for (final e in oldTiles.entries) e.key: contourTile(e.value),
+      });
+      final fresh = syntheticPack(dir, 'new', {
+        (tx, ty): contourTile(newLines),
+      }, belowSeaLevel: newFlagged);
+      // The older pack first, as the app may list them.
+      return ContourTerrain(
+        contours: [
+          ContourPack(old, coverage: east),
+          ContourPack(fresh, coverage: here),
+        ],
+      );
+    }
+
+    test('an older pack elsewhere leaves a flat below sea level alone', () {
+      // A salt pan: no line between the ends, 80 m below sea level.
+      LineOfSight pan(ContourTerrain t) => t.lineOfSight(
+        LinkEnd(at(500, 2048), groundM: -80),
+        LinkEnd(at(2000, 2048), groundM: -80),
+      );
+      final eastLines = {(tx + 2, ty): [vertical(500, 2048)]};
+      final flat = [vertical(-260, 3500)];
+      final r = pan(twoPacks(eastLines, flat));
+      expect(r.profile.kinds.where((k) => k & PointKind.crossing != 0), isEmpty);
+      expect(points(r, PointKind.belowLowest), isEmpty);
+      // Without the flag the flat may be lower than its end, as before.
+      final old = pan(twoPacks(eastLines, flat, newFlagged: false));
+      expect(points(old, PointKind.belowLowest), isNotEmpty);
+    });
+
+    test('an older pack elsewhere leaves end heights alone', () {
+      final t = twoPacks(
+        {(tx + 2, ty): [vertical(500, 2048)]},
+        [ring(20, 300), ring(40, 600)],
+      );
+      expect(
+        t.groundAt(at(2048, 2048)).groundM,
+        closeTo(20 * ft - interval, 1e-6),
+      );
+    });
+
+    test('a tile both packs have comes from the one with lines below sea '
+        'level', () {
+      final lines = [
+        vertical(60, 500),
+        vertical(40, 1000),
+        vertical(20, 1500),
+        vertical(0, 2000),
+        vertical(-20, 2500),
+        vertical(-40, 3000),
+      ];
+      // The older pack has the same tile: its outline ends at the edge,
+      // but its tiles go past it, as at a state line.
+      final t = twoPacks({(tx, ty): lines, (tx + 2, ty): lines}, lines);
+      final r = t.lineOfSight(
+        LinkEnd(at(300, 2048), groundM: 70 * ft),
+        LinkEnd(at(3500, 2048), groundM: -50 * ft),
+      );
+      expect(points(r, PointKind.belowLowest), isEmpty);
+      expect(r.verdict, isNot(Verdict.unknown));
+    });
+
+    test('an older pack still guards the ground it covers', () {
+      final old = syntheticPack(dir, 'old', {
+        (tx, ty): contourTile([ring(20, 300), ring(40, 600)]),
+      });
+      final fresh = syntheticPack(dir, 'new', {
+        (tx + 2, ty): contourTile([vertical(-260, 2048)]),
+      }, belowSeaLevel: true);
+      final t = ContourTerrain(
+        contours: [
+          ContourPack(fresh, coverage: east),
+          ContourPack(old, coverage: here),
+        ],
+      );
+      final g = t.groundAt(at(2048, 2048));
+      expect(g.issue, HeightIssue.belowLowestContour);
+      final r = t.lineOfSight(
+        LinkEnd(at(1800, 2048), groundM: 3),
+        LinkEnd(at(2300, 2048), groundM: 3),
+      );
+      expect(points(r, PointKind.belowLowest), isNotEmpty);
     });
   });
 }

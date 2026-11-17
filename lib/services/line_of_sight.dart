@@ -53,15 +53,15 @@ LosPacks losPacksFrom(MapPacksService maps, UnitSystem units) {
 }
 
 /// The outline [pack] was cut for, or its bounds when the region list
-/// doesn't have it.
+/// doesn't have it. Outer rings only: the list cuts big lakes out of a
+/// region for drawing, but the packs were cut with them.
 List<List<List<Geo>>> _outline(MapPacksService maps, Pack pack) {
   final region = pack.region == null ? null : maps.regions?[pack.region!];
   if (region != null) {
     return [
       for (final polygon in region.polygons)
         [
-          for (final ring in polygon)
-            [for (final p in ring) Geo(p.latitude, p.longitude)],
+          [for (final p in polygon.first) Geo(p.latitude, p.longitude)],
         ],
     ];
   }
