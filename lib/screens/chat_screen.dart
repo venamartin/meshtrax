@@ -1207,7 +1207,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                 MentionsOverlay(
                   contacts: _filteredMentionContacts,
                   onSelect: _insertMention,
-                  realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
+                  nicknameOf: (c) =>
+                      connector.contactNote(c.publicKeyHex)?.pillName,
                 ),
               if (_isRoom && _roomRole(connector) == 0)
                 _buildReadOnlyBanner(),

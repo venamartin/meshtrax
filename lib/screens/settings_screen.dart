@@ -82,8 +82,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadVersionInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
+    var build = packageInfo.buildNumber;
+    final code = int.tryParse(build);
+    // A split APK's versionCode is the build plus 1000 times its ABI
+    // (Flutter's --split-per-abi): arm64's 2217 is build 217.
+    if (PlatformInfo.isAndroid && code != null) build = '${code % 1000}';
     setState(() {
-      _appVersion = packageInfo.version;
+      _appVersion = build.isEmpty
+          ? packageInfo.version
+          : '${packageInfo.version} ($build)';
     });
   }
 
