@@ -4652,6 +4652,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sos_repeats => '在您取消之前，每 2 分钟用电台的最新位置重发一次；收到第一个“收到”后改为每 5 分钟一次。';
 
   @override
+  String get sos_publicOnce => '在 Public 中 SOS 只发送一次。在其他频道中会重复发送，直到您取消。';
+
+  @override
   String sos_replacesOther(String chat) {
     return '这会取消您在 $chat 中的 SOS。';
   }

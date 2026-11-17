@@ -2226,6 +2226,7 @@
   "sos_positionAgeUnknown": "Utolsó ismert pozíció. A rádió nem közölte, milyen régi.",
   "sos_positionTyped": "Saját pozíció: minden ismétlés ezt küldi.",
   "sos_repeats": "2 percenként újra elküldi a rádió legfrissebb pozíciójával, amíg vissza nem vonja, az első „Megkaptam” után 5 percenként.",
+  "sos_publicOnce": "A Public csatornán az SOS egyszer megy el. Más csatornán újra elküldi, amíg vissza nem vonja.",
   "sos_replacesOther": "Ez visszavonja az SOS-t itt: {chat}.",
   "sos_active": "Az SOS aktív",
   "sos_lastSent": "Utoljára elküldve: {time}",

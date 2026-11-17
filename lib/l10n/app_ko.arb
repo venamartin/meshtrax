@@ -2226,6 +2226,7 @@
   "sos_positionAgeUnknown": "마지막으로 알려진 위치입니다. 무전기가 언제 위치인지 알려 주지 않았습니다.",
   "sos_positionTyped": "직접 입력한 위치: 반복할 때마다 이 위치를 보냅니다.",
   "sos_repeats": "취소할 때까지 2분마다 무전기의 최신 위치로 다시 보냅니다. 첫 \"확인\" 이후에는 5분마다 보냅니다.",
+  "sos_publicOnce": "Public에서는 SOS를 한 번만 보냅니다. 다른 채널에서는 취소할 때까지 다시 보냅니다.",
   "sos_replacesOther": "{chat}의 SOS가 취소됩니다.",
   "sos_active": "SOS 활성화됨",
   "sos_lastSent": "마지막 전송 {time}",

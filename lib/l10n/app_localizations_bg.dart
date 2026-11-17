@@ -4982,6 +4982,10 @@ class AppLocalizationsBg extends AppLocalizations {
       'Изпраща се отново на всеки 2 минути с последната позиция на радиото, докато не го отмените, а след първото „Разбрах“ – на всеки 5 минути.';
 
   @override
+  String get sos_publicOnce =>
+      'В Public SOS се изпраща веднъж. В друг канал се изпраща отново, докато не го отмените.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Това отменя вашия SOS в $chat.';
   }

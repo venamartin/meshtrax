@@ -4769,6 +4769,10 @@ class AppLocalizationsKo extends AppLocalizations {
       '취소할 때까지 2분마다 무전기의 최신 위치로 다시 보냅니다. 첫 \"확인\" 이후에는 5분마다 보냅니다.';
 
   @override
+  String get sos_publicOnce =>
+      'Public에서는 SOS를 한 번만 보냅니다. 다른 채널에서는 취소할 때까지 다시 보냅니다.';
+
+  @override
   String sos_replacesOther(String chat) {
     return '$chat의 SOS가 취소됩니다.';
   }

@@ -2188,6 +2188,7 @@
   "sos_positionAgeUnknown": "Zadnji znani položaj. Radio ni povedal, kako star je.",
   "sos_positionTyped": "Vaš lastni položaj: vsaka ponovitev ga pošlje.",
   "sos_repeats": "Pošlje se znova vsaki 2 minuti z najnovejšim položajem radia, dokler ga ne prekličete, po prvem »Razumem« vsakih 5 minut.",
+  "sos_publicOnce": "V Public gre SOS enkrat. V drugem kanalu se pošilja znova, dokler ga ne prekličete.",
   "sos_replacesOther": "S tem se prekliče vaš SOS v {chat}.",
   "sos_active": "Vaš SOS je aktiven",
   "sos_lastSent": "Nazadnje poslano {time}",

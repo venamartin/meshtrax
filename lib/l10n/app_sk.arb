@@ -2188,6 +2188,7 @@
   "sos_positionAgeUnknown": "Posledná známa poloha. Rádio neuviedlo, aká je stará.",
   "sos_positionTyped": "Vaša vlastná poloha: každé opakovanie ju posiela.",
   "sos_repeats": "Posiela sa znova každé 2 minúty s najnovšou polohou rádia, kým ho nezrušíte, po prvom „Rozumiem“ každých 5 minút.",
+  "sos_publicOnce": "V Public ide SOS raz. V inom kanáli sa posiela znova, kým ho nezrušíte.",
   "sos_replacesOther": "Týmto sa zruší vaše SOS v {chat}.",
   "sos_active": "Vaše SOS je aktívne",
   "sos_lastSent": "Naposledy odoslané {time}",

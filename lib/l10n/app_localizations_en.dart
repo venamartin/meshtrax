@@ -4909,6 +4909,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.';
 
   @override
+  String get sos_publicOnce =>
+      'In Public an SOS goes once. In another channel it is sent again until you cancel it.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'This cancels your SOS in $chat.';
   }

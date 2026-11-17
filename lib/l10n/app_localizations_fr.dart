@@ -5021,6 +5021,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Renvoyé toutes les 2 minutes avec la dernière position de la radio jusqu’à ce que vous l’annuliez, toutes les 5 minutes après le premier « Reçu ».';
 
   @override
+  String get sos_publicOnce =>
+      'Dans Public, un SOS part une seule fois. Dans un autre canal, il est renvoyé jusqu’à ce que vous l’annuliez.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Cela annule votre SOS dans $chat.';
   }

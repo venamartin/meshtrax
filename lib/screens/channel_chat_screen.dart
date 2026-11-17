@@ -2299,9 +2299,27 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   }
 
   /// An SOS here goes out from its dialog, and on from [SosService] until
-  /// cancelled, whichever screen is open.
+  /// cancelled, whichever screen is open. In Public it goes once, and an
+  /// SOS active elsewhere carries on.
   Future<void> _startSos(MeshCoreConnector connector) async {
     final sos = context.read<SosService>();
+    if (widget.channel.isPublicChannel) {
+      final request = await StructuredMessageDialogs.sosInChannel(
+        context,
+        connector,
+        offerPublic: false,
+        repeats: false,
+      );
+      if (!mounted || request == null) return;
+      // Not lost with the radio away: it waits in the box, as typed text does.
+      if (!_warnIfDisconnected(connector)) {
+        _insertComposerText(request.message.toWire());
+        return;
+      }
+      setState(() => _trayOpen = false);
+      await sos.sendOnce(widget.channel, request);
+      return;
+    }
     final active = sos.current;
     final elsewhere = active != null &&
             active.phase != SosPhase.cancelling &&
@@ -2311,8 +2329,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     final request = await StructuredMessageDialogs.sosInChannel(
       context,
       connector,
-      offerPublic: !widget.channel.isPublicChannel &&
-          !sos.activeIn(widget.channel.idKey) &&
+      offerPublic: !sos.activeIn(widget.channel.idKey) &&
           connector.channels.any((c) => c.isPublicChannel),
       replaces: elsewhere,
     );

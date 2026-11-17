@@ -5003,6 +5003,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Отправляется повторно каждые 2 минуты с последней позицией рации, пока вы не отмените, а после первого «Принято» — каждые 5 минут.';
 
   @override
+  String get sos_publicOnce =>
+      'В Public SOS уходит один раз. В другом канале он отправляется повторно, пока вы его не отмените.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Это отменит ваш SOS в $chat.';
   }

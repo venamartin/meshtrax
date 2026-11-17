@@ -4982,6 +4982,10 @@ class AppLocalizationsSk extends AppLocalizations {
       'Posiela sa znova každé 2 minúty s najnovšou polohou rádia, kým ho nezrušíte, po prvom „Rozumiem“ každých 5 minút.';
 
   @override
+  String get sos_publicOnce =>
+      'V Public ide SOS raz. V inom kanáli sa posiela znova, kým ho nezrušíte.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Týmto sa zruší vaše SOS v $chat.';
   }

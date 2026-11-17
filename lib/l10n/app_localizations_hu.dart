@@ -5002,6 +5002,10 @@ class AppLocalizationsHu extends AppLocalizations {
       '2 percenként újra elküldi a rádió legfrissebb pozíciójával, amíg vissza nem vonja, az első „Megkaptam” után 5 percenként.';
 
   @override
+  String get sos_publicOnce =>
+      'A Public csatornán az SOS egyszer megy el. Más csatornán újra elküldi, amíg vissza nem vonja.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Ez visszavonja az SOS-t itt: $chat.';
   }

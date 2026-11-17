@@ -4759,6 +4759,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sos_repeats => '取り消すまで2分ごとに無線機の最新位置で再送します。最初の「了解」の後は5分ごとです。';
 
   @override
+  String get sos_publicOnce => 'PublicではSOSは1回だけ送信されます。他のチャンネルでは取り消すまで再送されます。';
+
+  @override
   String sos_replacesOther(String chat) {
     return '$chat のSOSは取り消されます。';
   }

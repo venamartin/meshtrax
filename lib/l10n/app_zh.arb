@@ -2193,6 +2193,7 @@
   "sos_positionAgeUnknown": "最后已知位置。电台没有说明它有多旧。",
   "sos_positionTyped": "您自己输入的位置：每次重发都会发送它。",
   "sos_repeats": "在您取消之前，每 2 分钟用电台的最新位置重发一次；收到第一个“收到”后改为每 5 分钟一次。",
+  "sos_publicOnce": "在 Public 中 SOS 只发送一次。在其他频道中会重复发送，直到您取消。",
   "sos_replacesOther": "这会取消您在 {chat} 中的 SOS。",
   "sos_active": "您的 SOS 正在发送",
   "sos_lastSent": "上次发送 {time}",

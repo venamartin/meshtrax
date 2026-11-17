@@ -366,7 +366,8 @@ the cancel are ordinary messages, so every other app shows them as text.
 
 ### What MeshTrax sends
 
-In a channel, the SOS dialog sends the SOS itself and keeps sending it:
+In a channel other than Public, the SOS dialog sends the SOS itself and
+keeps sending it:
 
 | Message | Wire text | When |
 |---|---|---|
@@ -410,9 +411,14 @@ SOS cancelled
   that could not go out waits for the radio, even across a restart.
 - While the radio is not connected nothing goes out; the first message,
   a repeat that is due or a cancel goes as soon as it is back.
-- One SOS at a time. An SOS sent again in the same channel takes the new
-  words and goes out at once as a repeat; one in another channel cancels
-  the one before.
+- In Public itself an SOS goes once, with no repeats, no Cancel and
+  nothing kept for a restart: the whole regional mesh can hear Public.
+  The dialog says so, and still shows how old the position is. With the
+  radio away it waits in the message box, as typed text does.
+- One SOS at a time, Public aside. An SOS sent again in the same channel
+  takes the new words and goes out at once as a repeat; one in another
+  channel cancels the one before. One sent in Public is a message of its
+  own: an SOS active in another channel goes on repeating there.
 - In a direct message or a room, the SOS goes once, like any message
   there, with that chat's own delivery receipt.
 

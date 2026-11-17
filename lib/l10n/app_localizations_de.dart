@@ -4999,6 +4999,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wird alle 2 Minuten mit der neuesten Position des Funkgeräts erneut gesendet, bis Sie es abbrechen, nach dem ersten „Verstanden“ alle 5 Minuten.';
 
   @override
+  String get sos_publicOnce =>
+      'In Public geht ein SOS einmal raus. In einem anderen Kanal wird es erneut gesendet, bis Sie es abbrechen.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Damit wird Ihr SOS in $chat abgebrochen.';
   }

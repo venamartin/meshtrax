@@ -2226,6 +2226,7 @@
   "sos_positionAgeUnknown": "Ostatnia znana pozycja. Radio nie podało, jak jest stara.",
   "sos_positionTyped": "Twoja własna pozycja: każde powtórzenie ją wysyła.",
   "sos_repeats": "Wysyłane ponownie co 2 minuty z najnowszą pozycją radia, aż je anulujesz, co 5 minut po pierwszym „Przyjęte”.",
+  "sos_publicOnce": "Na Public SOS idzie raz. Na innym kanale jest wysyłany ponownie, aż go anulujesz.",
   "sos_replacesOther": "To anuluje twój SOS w {chat}.",
   "sos_active": "Twój SOS jest aktywny",
   "sos_lastSent": "Ostatnio wysłano {time}",

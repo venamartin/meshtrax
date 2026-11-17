@@ -114,7 +114,8 @@ class StructuredMessageDialogs {
     return request?.message.toWire();
   }
 
-  /// SOS in a channel, sent from the dialog and repeated until cancelled.
+  /// SOS in a channel, sent from the dialog and repeated until cancelled;
+  /// with [repeats] off (Public), sent once.
   /// [offerPublic]: the radio has Public and this chat is another one.
   /// [replaces]: the chat the user's SOS is active in now, which this one
   /// cancels.
@@ -123,6 +124,7 @@ class StructuredMessageDialogs {
     MeshCoreConnector connector, {
     required bool offerPublic,
     String? replaces,
+    bool repeats = true,
   }) {
     return showDialog<SosRequest>(
       context: context,
@@ -131,6 +133,7 @@ class StructuredMessageDialogs {
         inChannel: true,
         offerPublic: offerPublic,
         replaces: replaces,
+        repeats: repeats,
       ),
     );
   }
@@ -541,19 +544,22 @@ class _PositionFieldState extends State<_PositionField> {
   }
 }
 
-/// [inChannel]: sent from here and repeated, with the Public copy on
-/// offer; otherwise inserted into the composer.
+/// [inChannel]: sent from here, and repeated unless [repeats] is off
+/// (Public), with the Public copy on offer; otherwise inserted into the
+/// composer.
 class _SosDialog extends StatefulWidget {
   final MeshCoreConnector connector;
   final bool inChannel;
   final bool offerPublic;
   final String? replaces;
+  final bool repeats;
 
   const _SosDialog({
     required this.connector,
     this.inChannel = false,
     this.offerPublic = false,
     this.replaces,
+    this.repeats = true,
   });
 
   @override
@@ -752,7 +758,10 @@ class _SosDialogState extends State<_SosDialog> {
           ),
         if (widget.inChannel) ...[
           const SizedBox(height: 6),
-          Text(l10n.sos_repeats, style: muted),
+          Text(
+            widget.repeats ? l10n.sos_repeats : l10n.sos_publicOnce,
+            style: muted,
+          ),
           if (widget.replaces case final chat?) ...[
             const SizedBox(height: 6),
             Text(

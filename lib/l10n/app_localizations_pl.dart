@@ -5013,6 +5013,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wysyłane ponownie co 2 minuty z najnowszą pozycją radia, aż je anulujesz, co 5 minut po pierwszym „Przyjęte”.';
 
   @override
+  String get sos_publicOnce =>
+      'Na Public SOS idzie raz. Na innym kanale jest wysyłany ponownie, aż go anulujesz.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'To anuluje twój SOS w $chat.';
   }

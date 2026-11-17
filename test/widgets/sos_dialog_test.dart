@@ -60,6 +60,7 @@ void main() {
     _Radio radio, {
     bool offerPublic = true,
     String? replaces,
+    bool repeats = true,
   }) async {
     SosRequest? result;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -85,6 +86,7 @@ void main() {
                       radio,
                       offerPublic: offerPublic,
                       replaces: replaces,
+                      repeats: repeats,
                     );
                   },
                   child: const Text('open'),
@@ -240,6 +242,34 @@ void main() {
     final request = result()!;
     expect(request.followRadio, isFalse);
     expect(request.message.position.latitude, 36.5);
+  });
+
+  testWidgets('in Public: no Public box, and it says it goes once', (
+    tester,
+  ) async {
+    final result = await open(
+      tester,
+      _Radio(lat: 36.46, lon: -116.87, asks: false),
+      offerPublic: false,
+      repeats: false,
+    );
+    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(
+      find.text(
+        'In Public an SOS goes once. In another channel it is sent '
+        'again until you cancel it.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Sent again every 2 minutes'), findsNothing);
+    expect(
+      find.text("Last known position. The radio didn't say how old it is."),
+      findsOneWidget,
+      reason: 'the position age stays',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Send SOS'));
+    await tester.pumpAndSettle();
+    expect(result()!.alsoPublic, isFalse);
   });
 
   testWidgets('says when it cancels an SOS in another chat', (tester) async {

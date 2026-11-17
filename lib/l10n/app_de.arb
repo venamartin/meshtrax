@@ -2216,6 +2216,7 @@
   "sos_positionAgeUnknown": "Letzte bekannte Position. Das Funkgerät sagt nicht, wie alt sie ist.",
   "sos_positionTyped": "Ihre eigene Position: Jede Wiederholung sendet sie.",
   "sos_repeats": "Wird alle 2 Minuten mit der neuesten Position des Funkgeräts erneut gesendet, bis Sie es abbrechen, nach dem ersten „Verstanden“ alle 5 Minuten.",
+  "sos_publicOnce": "In Public geht ein SOS einmal raus. In einem anderen Kanal wird es erneut gesendet, bis Sie es abbrechen.",
   "sos_replacesOther": "Damit wird Ihr SOS in {chat} abgebrochen.",
   "sos_active": "Ihr SOS ist aktiv",
   "sos_lastSent": "Zuletzt gesendet {time}",

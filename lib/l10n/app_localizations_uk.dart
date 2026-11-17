@@ -5007,6 +5007,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Надсилається повторно кожні 2 хвилини з останньою позицією рації, доки ви не скасуєте, а після першого «Прийнято» — кожні 5 хвилин.';
 
   @override
+  String get sos_publicOnce =>
+      'У Public SOS надсилається один раз. В іншому каналі він надсилається повторно, доки ви його не скасуєте.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Це скасує ваш SOS у $chat.';
   }

@@ -237,7 +237,12 @@ class SosService extends ChangeNotifier {
 
   /// Starts an SOS in [channel]. An SOS already active there takes the new
   /// words and goes out again now; one in another chat is cancelled first.
+  /// In Public it only goes once ([sendOnce]).
   Future<void> start(Channel channel, SosRequest request) async {
+    if (channel.isPublicChannel) {
+      await sendOnce(channel, request);
+      return;
+    }
     final old = _sos;
     if (old != null &&
         old.channelIdKey == channel.idKey &&
@@ -272,6 +277,14 @@ class SosService extends ChangeNotifier {
     notifyListeners();
     await _sendFirst();
   }
+
+  /// An SOS in Public goes once, like any message there (Martin,
+  /// 2026-11-17): it is not repeated, saved or cancelled, and an SOS active
+  /// in another channel carries on untouched. False when it was not sent
+  /// (the radio not connected).
+  Future<bool> sendOnce(Channel channel, SosRequest request) async =>
+      await _connector.sendChannelMessage(channel, request.message.toWire()) !=
+      null;
 
   /// Sends a stopped SOS again, and keeps sending it.
   Future<void> resume() async {

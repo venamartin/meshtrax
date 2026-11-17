@@ -2188,6 +2188,7 @@
   "sos_positionAgeUnknown": "Senast kända position. Radion sa inte hur gammal den är.",
   "sos_positionTyped": "Din egen position: varje upprepning skickar den.",
   "sos_repeats": "Skickas igen varannan minut med radions senaste position tills du avbryter, var femte minut efter första ”Uppfattat”.",
+  "sos_publicOnce": "I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.",
   "sos_replacesOther": "Detta avbryter ditt SOS i {chat}.",
   "sos_active": "Ditt SOS är aktivt",
   "sos_lastSent": "Senast skickat {time}",

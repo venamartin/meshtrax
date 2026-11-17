@@ -4946,6 +4946,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'Skickas igen varannan minut med radions senaste position tills du avbryter, var femte minut efter första ”Uppfattat”.';
 
   @override
+  String get sos_publicOnce =>
+      'I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Detta avbryter ditt SOS i $chat.';
   }

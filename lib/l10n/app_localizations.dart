@@ -8506,6 +8506,12 @@ abstract class AppLocalizations {
   /// **'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.'**
   String get sos_repeats;
 
+  /// No description provided for @sos_publicOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'In Public an SOS goes once. In another channel it is sent again until you cancel it.'**
+  String get sos_publicOnce;
+
   /// No description provided for @sos_replacesOther.
   ///
   /// In en, this message translates to:

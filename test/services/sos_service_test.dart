@@ -184,6 +184,68 @@ void main() {
     });
   });
 
+  // Martin, 2026-11-17: an SOS in Public goes once, like a message there.
+  test('an SOS in Public goes once: no repeat, nothing kept or saved', () {
+    onClock((async, sos, radio) {
+      sos.start(_public, _request());
+      async.flushMicrotasks();
+      expect(radio.sent, [
+        (_public.idKey, 'SOS: Broken leg\n36.460000, -116.870000'),
+      ]);
+      expect(sos.current, isNull, reason: 'no active SOS, no bar, no Cancel');
+      expect(radio.viewers, 0);
+      expect(
+        PrefsManager.instance.getString('active_sos'),
+        isNull,
+        reason: 'nothing to pick up after a restart',
+      );
+
+      async.elapse(const Duration(minutes: 12));
+      expect(radio.sent, hasLength(1));
+      expect(radio.repeats, isEmpty);
+    });
+  });
+
+  test('an SOS in Public leaves the one active in another channel going', () {
+    onClock((async, sos, radio) {
+      sos.start(_trip, _request(alsoPublic: false));
+      async.flushMicrotasks();
+      async.elapse(const Duration(minutes: 1));
+      sos.start(_public, _request());
+      async.flushMicrotasks();
+      expect(radio.sent.map((s) => s.$1), [_trip.idKey, _public.idKey]);
+      expect(sos.current!.channelIdKey, _trip.idKey);
+      expect(sos.current!.phase, SosPhase.active);
+
+      async.elapse(const Duration(minutes: 1, seconds: 5));
+      expect(
+        radio.repeats.single.$1,
+        _trip.idKey,
+        reason: 'still every 2 minutes in its own channel',
+      );
+      async.elapse(const Duration(minutes: 2));
+      expect(radio.repeats, hasLength(2));
+      expect(radio.repeats.every((r) => r.$1 == _trip.idKey), isTrue);
+      expect(
+        radio.sent.where((s) => s.$2 == SosMessage.cancelText),
+        isEmpty,
+        reason: 'nothing cancelled it',
+      );
+    });
+  });
+
+  test('an SOS in Public with the radio away says it was not sent', () {
+    onClock((async, sos, radio) {
+      radio.connected = false;
+      bool? sent;
+      sos.sendOnce(_public, _request()).then((v) => sent = v);
+      async.flushMicrotasks();
+      expect(sent, isFalse);
+      expect(radio.sent, isEmpty);
+      expect(sos.current, isNull);
+    });
+  });
+
   test('Public unticked: nothing goes there', () {
     onClock((async, sos, radio) {
       sos.start(_trip, _request(alsoPublic: false));

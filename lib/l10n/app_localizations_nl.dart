@@ -4970,6 +4970,10 @@ class AppLocalizationsNl extends AppLocalizations {
       'Wordt elke 2 minuten opnieuw verstuurd met de nieuwste positie van de radio tot je het annuleert, elke 5 minuten na het eerste ‘Begrepen’.';
 
   @override
+  String get sos_publicOnce =>
+      'In Public gaat een SOS één keer weg. In een ander kanaal wordt het opnieuw verstuurd tot je het annuleert.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Dit annuleert je SOS in $chat.';
   }
