@@ -10,6 +10,7 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
+import 'package:meshtrax/storage/message_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -184,13 +185,15 @@ void main() {
     },
   );
 
-  // Bob's flood is parked (no repeater echoed it), and a DM from Carol has
-  // just come in, so the resend a repeater wakes first sits out the 5 s
-  // backoff. The test wakes it itself: a relayed packet would also start
-  // the 3 s quiet wait, which runs on the wall clock.
+  // Bob's flood is parked (a repeater was heard lately, but none echoed
+  // it), and a DM from Carol has just come in, so the resend a repeater
+  // wakes first sits out the 5 s backoff. The test wakes it itself: a
+  // relayed packet would also start the 3 s quiet wait, which runs on the
+  // wall clock.
   List<int> resendAttempts({required bool ackDuringWait}) {
     late List<int> attempts;
     fakeAsync((async) {
+      retry.noteRepeaterHeard();
       c.sendMessage(bob, 'one');
       async.flushMicrotasks();
       final bobAck = ackOf(c.dms.single);
@@ -224,5 +227,85 @@ void main() {
 
   test('a resend with no ACK during the wait goes out', () {
     expect(resendAttempts(ackDuringWait: false), [0, 4]);
+  });
+
+  // The chat reads only stored rows: the "No repeater heard you" line
+  // shows only if the parked state is stored with the message.
+  group('a parked DM in the chat', () {
+    Message? row(FakeAsync async) {
+      Message? found;
+      c
+          .loadMessagesFor(bob)
+          .then((all) => found = all.singleWhere((m) => m.isOutgoing));
+      async.flushMicrotasks();
+      return found;
+    }
+
+    void park(FakeAsync async) {
+      // A database opened outside fake time never answers inside it.
+      AppDatabase.useInMemoryForTesting();
+      retry.noteRepeaterHeard();
+      c.sendMessage(bob, 'one');
+      async.flushMicrotasks();
+      c.handleFrameForTest(_sent(ackOf(c.dms.single)));
+      // The echo wait, a minute at most.
+      async.elapse(const Duration(milliseconds: TimeoutHelper.maxMs + 1));
+    }
+
+    test('says so while parked, and not once a repeater wakes it', () {
+      fakeAsync((async) {
+        park(async);
+        expect(row(async)!.status, MessageStatus.sent);
+        expect(row(async)!.waitingForRepeater, isTrue);
+
+        async.elapse(
+          const Duration(milliseconds: MessageRetryService.repeaterCooldownMs),
+        );
+        retry.noteRepeaterHeard();
+        async.flushMicrotasks();
+        expect(c.dms.map((f) => f[2]), [0, 4], reason: 'sent again');
+        expect(row(async)!.waitingForRepeater, isFalse);
+      });
+    });
+
+    test('fails with the line gone after the park limit', () {
+      fakeAsync((async) {
+        park(async);
+        expect(row(async)!.waitingForRepeater, isTrue);
+        async.elapse(MessageRetryService.parkLimit);
+        final failed = row(async)!;
+        expect(failed.status, MessageStatus.failed);
+        expect(failed.waitingForRepeater, isFalse);
+      });
+    });
+
+    test('after a restart it is failed like any send left in flight, the '
+        'line gone', () async {
+      // The earlier run parked it, then the app was closed.
+      final earlier = MessageStore()..setPublicKeyHex = pubKeyToHex(selfKey);
+      await earlier.upsertMessage(
+        bob.publicKeyHex,
+        Message(
+          senderKey: bob.publicKey,
+          text: 'one',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 1)),
+          isOutgoing: true,
+          status: MessageStatus.sent,
+          messageId: 'parked',
+          waitingForRepeater: true,
+        ),
+      );
+      expect((await c.loadMessagesFor(bob)).single.waitingForRepeater, isTrue);
+
+      // This run's retry service never heard of it.
+      final next = MessageRetryService();
+      final c2 = _Connector()..initialize(retryService: next);
+      c2.handleFrameForTest(_selfInfo(selfKey));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final stored = (await c2.loadMessagesFor(bob)).single;
+      expect(stored.status, MessageStatus.failed);
+      expect(stored.waitingForRepeater, isFalse);
+      next.dispose();
+    });
   });
 }
