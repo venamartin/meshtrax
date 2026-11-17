@@ -85,7 +85,7 @@ curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.
 
 This installs MeshTrax under `~/.local/share/meshtrax`, adds it to your applications menu, and puts a `meshtrax` command on your `PATH`. No root required. Re-run the same command any time to upgrade — it checks the latest release and does nothing if you are already up to date.
 
-Requires a **64-bit** OS: `uname -m` should print `aarch64` or `x86_64`. 32-bit Raspberry Pi OS is not supported — reflash with the 64-bit image. For USB-serial radios, add yourself to the `dialout` group:
+Requires a **64-bit** OS: `uname -m` should print `aarch64` (Raspberry Pi and other 64-bit ARM) or `x86_64` (a 64-bit Intel or AMD PC). 32-bit Raspberry Pi OS is not supported — reflash with the 64-bit image. For USB-serial radios, add yourself to the `dialout` group:
 
 ```bash
 sudo usermod -aG dialout $USER   # then log out and back in
@@ -96,6 +96,22 @@ To pin a specific version, or to remove MeshTrax:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --version v1.7.22
 curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --uninstall
+```
+
+#### Ubuntu and other desktop Linux on a 64-bit PC
+
+MeshTrax runs on Ubuntu 22.04 or newer, Debian 12, Linux Mint 21 or newer, and Fedora 36 or newer. A normal desktop install already has what the app needs. The installer itself needs `curl` and `unzip`, which Ubuntu doesn't always include:
+
+```bash
+sudo apt install curl unzip
+```
+
+After installing, open MeshTrax from the applications menu. The `meshtrax` command works from your next login, when Ubuntu adds `~/.local/bin` to your `PATH`.
+
+On a minimal Ubuntu or Debian install without a full desktop, add the libraries the app loads:
+
+```bash
+sudo apt install libgtk-3-0 libegl1 libgles2 xdg-user-dirs
 ```
 
 ### Build from source
@@ -117,6 +133,9 @@ flutter run -d windows
 
 # Run on Linux
 flutter run -d linux
+
+# Build the Linux release zip in Docker (x64 on an x86-64 host, arm64 on arm64)
+tool/linux_docker/build.sh
 ```
 
 ---
