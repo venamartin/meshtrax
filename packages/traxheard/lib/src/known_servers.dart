@@ -19,11 +19,11 @@ class KnownServer {
   String get label => '$area · ${observerServerUri(address)?.host ?? address}';
 }
 
-/// Observer servers whose read API is open to anyone.
+/// Observer servers whose read API is open to anyone, in places where the
+/// app is offered.
 const knownServers = [
   KnownServer(
     area: 'Northern California',
     address: 'https://corescope.stonekitty.net',
   ),
-  KnownServer(area: 'Belgium', address: 'https://analyzer.on8ar.eu'),
 ];
