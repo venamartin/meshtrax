@@ -869,6 +869,64 @@ class AppLocalizationsJa extends AppLocalizations {
       '中継が1つ以上聞こえるまで、この回数だけ再試行します';
 
   @override
+  String get appSettings_heardCheck => 'オブザーバーで送信を確認';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'チャンネルメッセージを再送する前に、オブザーバーサーバーに届いたかを問い合わせます';
+
+  @override
+  String get appSettings_heardServer => 'オブザーバーサーバー';
+
+  @override
+  String get appSettings_heardServerNotSet => '未設定';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'オブザーバーとは、受信した内容をサーバーに報告する無線機です。MeshTrax は送信した各チャンネルメッセージの指紋をそのサーバーに送ります。本文は送りません。サーバーにはあなたのインターネットアドレスと送信時刻が見えます。';
+
+  @override
+  String get appSettings_heardServerOther => 'その他のアドレス';
+
+  @override
+  String get appSettings_heardServerAddress => 'サーバーアドレス';
+
+  @override
+  String get appSettings_heardServerChecking => 'サーバーを確認中…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'このアドレスから応答がありません';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'それでも保存';
+
+  @override
+  String get appSettings_heardServerAnswered => 'サーバーが応答しました';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count台のオブザーバーが受信',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '直接';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'リピーター$count台経由',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'バッテリー';
 
   @override

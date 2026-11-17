@@ -894,6 +894,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'It will retry this many times until it hears at least one repeat';
 
   @override
+  String get appSettings_heardCheck => 'Check sends with observers';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Before sending a channel message again, ask an observer server whether it was heard';
+
+  @override
+  String get appSettings_heardServer => 'Observer server';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Not set';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.';
+
+  @override
+  String get appSettings_heardServerOther => 'Other address';
+
+  @override
+  String get appSettings_heardServerAddress => 'Server address';
+
+  @override
+  String get appSettings_heardServerChecking => 'Checking the server…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'No answer from this address';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Save anyway';
+
+  @override
+  String get appSettings_heardServerAnswered => 'The server answered';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Heard by $count observers',
+      one: 'Heard by 1 observer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeaters',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Battery';
 
   @override

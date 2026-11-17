@@ -1733,6 +1733,90 @@ abstract class AppLocalizations {
   /// **'It will retry this many times until it hears at least one repeat'**
   String get appSettings_maxChannelMessageRetriesSubtitle;
 
+  /// No description provided for @appSettings_heardCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check sends with observers'**
+  String get appSettings_heardCheck;
+
+  /// No description provided for @appSettings_heardCheckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before sending a channel message again, ask an observer server whether it was heard'**
+  String get appSettings_heardCheckSubtitle;
+
+  /// No description provided for @appSettings_heardServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Observer server'**
+  String get appSettings_heardServer;
+
+  /// No description provided for @appSettings_heardServerNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get appSettings_heardServerNotSet;
+
+  /// No description provided for @appSettings_heardServerAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.'**
+  String get appSettings_heardServerAbout;
+
+  /// No description provided for @appSettings_heardServerOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other address'**
+  String get appSettings_heardServerOther;
+
+  /// No description provided for @appSettings_heardServerAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get appSettings_heardServerAddress;
+
+  /// No description provided for @appSettings_heardServerChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the server…'**
+  String get appSettings_heardServerChecking;
+
+  /// No description provided for @appSettings_heardServerNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer from this address'**
+  String get appSettings_heardServerNoAnswer;
+
+  /// No description provided for @appSettings_heardServerSaveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get appSettings_heardServerSaveAnyway;
+
+  /// No description provided for @appSettings_heardServerAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'The server answered'**
+  String get appSettings_heardServerAnswered;
+
+  /// No description provided for @chat_heardBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Heard by 1 observer} other{Heard by {count} observers}}'**
+  String chat_heardBy(int count);
+
+  /// No description provided for @chat_heardDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'direct'**
+  String get chat_heardDirect;
+
+  /// No description provided for @chat_heardVia.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{via 1 repeater} other{via {count} repeaters}}'**
+  String chat_heardVia(int count);
+
   /// No description provided for @appSettings_battery.
   ///
   /// In en, this message translates to:

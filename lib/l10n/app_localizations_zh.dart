@@ -853,6 +853,63 @@ class AppLocalizationsZh extends AppLocalizations {
       '在听到至少一次转发之前，最多重试这么多次';
 
   @override
+  String get appSettings_heardCheck => '通过观测站确认发送';
+
+  @override
+  String get appSettings_heardCheckSubtitle => '重新发送频道消息前，先询问观测服务器是否已收到';
+
+  @override
+  String get appSettings_heardServer => '观测服务器';
+
+  @override
+  String get appSettings_heardServerNotSet => '未设置';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      '观测站是把收到的内容报告给服务器的电台。MeshTrax 会把你发送的每条频道消息的指纹发给该服务器，绝不发送正文。服务器能看到你的网络地址和发送时间。';
+
+  @override
+  String get appSettings_heardServerOther => '其他地址';
+
+  @override
+  String get appSettings_heardServerAddress => '服务器地址';
+
+  @override
+  String get appSettings_heardServerChecking => '正在检查服务器…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => '此地址没有回应';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => '仍然保存';
+
+  @override
+  String get appSettings_heardServerAnswered => '服务器已回应';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个观测站收到',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '直接';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '经 $count 个转发节点',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => '电池';
 
   @override

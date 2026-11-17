@@ -23,6 +23,7 @@ import 'services/storage_service.dart';
 import 'services/message_retry_service.dart';
 import 'services/path_graph/path_graph_service.dart';
 import 'services/app_settings_service.dart';
+import 'services/heard_service.dart';
 import 'services/notification_service.dart';
 import 'services/companion_cli_service.dart';
 import 'services/ble_debug_log_service.dart';
@@ -113,6 +114,9 @@ void main() async {
     appDebugLogService: appDebugLogService,
     backgroundService: backgroundService,
   );
+
+  // "Check sends with observers" (opt-in) hears about every channel send.
+  HeardService.instance.attach(connector);
 
   // The path graph is an observe-only hook on the raw frame stream; it
   // runs only while its debug setting is on.

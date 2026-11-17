@@ -898,6 +898,70 @@ class AppLocalizationsSl extends AppLocalizations {
       'Ponavlja tolikokrat, dokler ne sliši vsaj ene ponovitve';
 
   @override
+  String get appSettings_heardCheck => 'Preverjaj pošiljanje pri opazovalcih';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Pred ponovnim pošiljanjem sporočila v kanal vpraša strežnik opazovalcev, ali je bilo slišano';
+
+  @override
+  String get appSettings_heardServer => 'Strežnik opazovalcev';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Ni nastavljeno';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Opazovalci so radijske postaje, ki strežniku sporočajo, kaj slišijo. MeshTrax temu strežniku pošlje prstni odtis vsakega sporočila, ki ga pošljete v kanal, nikoli njegovega besedila. Strežnik vidi vaš internetni naslov in čas pošiljanja.';
+
+  @override
+  String get appSettings_heardServerOther => 'Drug naslov';
+
+  @override
+  String get appSettings_heardServerAddress => 'Naslov strežnika';
+
+  @override
+  String get appSettings_heardServerChecking => 'Preverjanje strežnika…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Ni odgovora s tega naslova';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Vseeno shrani';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Strežnik je odgovoril';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Slišalo $count opazovalcev',
+      few: 'Slišali $count opazovalci',
+      two: 'Slišala $count opazovalca',
+      one: 'Slišal $count opazovalec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'neposredno';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prek $count repetitorjev',
+      few: 'prek $count repetitorjev',
+      two: 'prek $count repetitorjev',
+      one: 'prek $count repetitorja',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Baterija';
 
   @override

@@ -913,6 +913,66 @@ class AppLocalizationsPt extends AppLocalizations {
       'Tenta de novo esse número de vezes até ouvir pelo menos uma repetição';
 
   @override
+  String get appSettings_heardCheck => 'Verificar envios com observadores';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Antes de reenviar uma mensagem de canal, perguntar a um servidor de observadores se foi ouvida';
+
+  @override
+  String get appSettings_heardServer => 'Servidor de observadores';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Não definido';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Observadores são rádios que informam a um servidor o que ouvem. O MeshTrax envia a esse servidor uma impressão digital de cada mensagem de canal que você envia, nunca o texto. O servidor vê seu endereço de internet e quando você enviou.';
+
+  @override
+  String get appSettings_heardServerOther => 'Outro endereço';
+
+  @override
+  String get appSettings_heardServerAddress => 'Endereço do servidor';
+
+  @override
+  String get appSettings_heardServerChecking => 'Verificando o servidor…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Sem resposta deste endereço';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Salvar mesmo assim';
+
+  @override
+  String get appSettings_heardServerAnswered => 'O servidor respondeu';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ouvida por $count observadores',
+      one: 'Ouvida por 1 observador',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direto';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repetidores',
+      one: 'via 1 repetidor',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Bateria';
 
   @override

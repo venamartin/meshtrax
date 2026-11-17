@@ -901,6 +901,68 @@ class AppLocalizationsSk extends AppLocalizations {
       'Opakuje toľkokrát, kým nezachytí aspoň jedno zopakovanie';
 
   @override
+  String get appSettings_heardCheck => 'Kontrolovať odoslanie u pozorovateľov';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Pred opätovným odoslaním správy v kanáli sa opýtať servera pozorovateľov, či bola počutá';
+
+  @override
+  String get appSettings_heardServer => 'Server pozorovateľov';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nenastavené';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Pozorovatelia sú rádiostanice, ktoré hlásia serveru, čo počujú. MeshTrax posiela tomuto serveru odtlačok každej správy, ktorú pošlete do kanála, nikdy jej text. Server vidí vašu internetovú adresu a čas odoslania.';
+
+  @override
+  String get appSettings_heardServerOther => 'Iná adresa';
+
+  @override
+  String get appSettings_heardServerAddress => 'Adresa servera';
+
+  @override
+  String get appSettings_heardServerChecking => 'Kontrola servera…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Žiadna odpoveď z tejto adresy';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Aj tak uložiť';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Server odpovedal';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Počulo $count pozorovateľov',
+      few: 'Počuli $count pozorovatelia',
+      one: 'Počul 1 pozorovateľ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'priamo';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'cez $count opakovačov',
+      few: 'cez $count opakovače',
+      one: 'cez 1 opakovač',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batéria';
 
   @override

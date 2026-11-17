@@ -909,6 +909,67 @@ class AppLocalizationsDe extends AppLocalizations {
       'Sendet so oft erneut, bis mindestens eine Wiederholung zu hören ist';
 
   @override
+  String get appSettings_heardCheck => 'Sendungen bei Beobachtern prüfen';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Vor dem erneuten Senden einer Kanalnachricht einen Beobachter-Server fragen, ob sie gehört wurde';
+
+  @override
+  String get appSettings_heardServer => 'Beobachter-Server';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nicht festgelegt';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Beobachter sind Funkgeräte, die einem Server melden, was sie hören. MeshTrax schickt diesem Server einen Fingerabdruck jeder Kanalnachricht, die Sie senden, nie ihren Text. Der Server sieht Ihre Internetadresse und wann Sie gesendet haben.';
+
+  @override
+  String get appSettings_heardServerOther => 'Andere Adresse';
+
+  @override
+  String get appSettings_heardServerAddress => 'Serveradresse';
+
+  @override
+  String get appSettings_heardServerChecking => 'Server wird geprüft…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Keine Antwort von dieser Adresse';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Trotzdem speichern';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Der Server hat geantwortet';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Von $count Beobachtern gehört',
+      one: 'Von 1 Beobachter gehört',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direkt';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'über $count Repeater',
+      one: 'über 1 Repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Akku';
 
   @override

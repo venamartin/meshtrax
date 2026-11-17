@@ -913,6 +913,67 @@ class AppLocalizationsBg extends AppLocalizations {
       'Толкова пъти ще опитва отново, докато не чуе поне едно повторение';
 
   @override
+  String get appSettings_heardCheck =>
+      'Проверка на изпращанията при наблюдатели';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Преди повторно изпращане на съобщение в канал да се пита сървър на наблюдатели дали е било чуто';
+
+  @override
+  String get appSettings_heardServer => 'Сървър на наблюдатели';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Не е зададен';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Наблюдателите са радиостанции, които съобщават на сървър какво чуват. MeshTrax изпраща на този сървър отпечатък на всяко съобщение в канал, което изпращате, но никога текста му. Сървърът вижда интернет адреса ви и кога сте изпратили.';
+
+  @override
+  String get appSettings_heardServerOther => 'Друг адрес';
+
+  @override
+  String get appSettings_heardServerAddress => 'Адрес на сървъра';
+
+  @override
+  String get appSettings_heardServerChecking => 'Проверка на сървъра…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Няма отговор от този адрес';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Запази въпреки това';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Сървърът отговори';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Чуто от $count наблюдатели',
+      one: 'Чуто от 1 наблюдател',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'директно';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'през $count ретранслатора',
+      one: 'през 1 ретранслатор',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Батерия';
 
   @override

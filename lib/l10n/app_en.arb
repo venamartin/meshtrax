@@ -372,6 +372,34 @@
   "appSettings_maxMessageRetriesSubtitle": "Send attempts before a message is marked failed. Known routes get the first tries; the rest flood.",
   "appSettings_maxChannelMessageRetries": "Max Channel Message Retries",
   "appSettings_maxChannelMessageRetriesSubtitle": "It will retry this many times until it hears at least one repeat",
+  "appSettings_heardCheck": "Check sends with observers",
+  "appSettings_heardCheckSubtitle": "Before sending a channel message again, ask an observer server whether it was heard",
+  "appSettings_heardServer": "Observer server",
+  "appSettings_heardServerNotSet": "Not set",
+  "appSettings_heardServerAbout": "Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.",
+  "appSettings_heardServerOther": "Other address",
+  "appSettings_heardServerAddress": "Server address",
+  "appSettings_heardServerChecking": "Checking the server…",
+  "appSettings_heardServerNoAnswer": "No answer from this address",
+  "appSettings_heardServerSaveAnyway": "Save anyway",
+  "appSettings_heardServerAnswered": "The server answered",
+  "chat_heardBy": "{count, plural, =1{Heard by 1 observer} other{Heard by {count} observers}}",
+  "@chat_heardBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_heardDirect": "direct",
+  "chat_heardVia": "{count, plural, =1{via 1 repeater} other{via {count} repeaters}}",
+  "@chat_heardVia": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "appSettings_battery": "Battery",
   "appSettings_batteryChemistry": "Battery Chemistry",
   "appSettings_batteryChemistryPerDevice": "Set per device ({deviceName})",

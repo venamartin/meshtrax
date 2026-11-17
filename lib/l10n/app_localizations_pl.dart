@@ -913,6 +913,70 @@ class AppLocalizationsPl extends AppLocalizations {
       'Ponawia tyle razy, aż usłyszy co najmniej jedno powtórzenie';
 
   @override
+  String get appSettings_heardCheck => 'Sprawdzaj wysyłki u obserwatorów';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Przed ponownym wysłaniem wiadomości na kanale zapytaj serwer obserwatorów, czy została usłyszana';
+
+  @override
+  String get appSettings_heardServer => 'Serwer obserwatorów';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nie ustawiono';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Obserwatorzy to radiostacje, które zgłaszają serwerowi to, co słyszą. MeshTrax wysyła temu serwerowi odcisk każdej wiadomości wysłanej na kanale, nigdy jej tekst. Serwer widzi Twój adres internetowy i czas wysłania.';
+
+  @override
+  String get appSettings_heardServerOther => 'Inny adres';
+
+  @override
+  String get appSettings_heardServerAddress => 'Adres serwera';
+
+  @override
+  String get appSettings_heardServerChecking => 'Sprawdzanie serwera…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Brak odpowiedzi z tego adresu';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Zapisz mimo to';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Serwer odpowiedział';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Usłyszało $count obserwatora',
+      many: 'Usłyszało $count obserwatorów',
+      few: 'Usłyszało $count obserwatorów',
+      one: 'Usłyszał 1 obserwator',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'bezpośrednio';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'przez $count przekaźnika',
+      many: 'przez $count przekaźników',
+      few: 'przez $count przekaźniki',
+      one: 'przez 1 przekaźnik',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Bateria';
 
   @override

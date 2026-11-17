@@ -869,6 +869,64 @@ class AppLocalizationsKo extends AppLocalizations {
       '중계가 한 번 이상 들릴 때까지 이 횟수만큼 다시 시도합니다';
 
   @override
+  String get appSettings_heardCheck => '옵저버로 전송 확인';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      '채널 메시지를 다시 보내기 전에 옵저버 서버에 수신 여부를 묻습니다';
+
+  @override
+  String get appSettings_heardServer => '옵저버 서버';
+
+  @override
+  String get appSettings_heardServerNotSet => '설정 안 됨';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      '옵저버는 들은 내용을 서버에 보고하는 무선기입니다. MeshTrax는 보내는 각 채널 메시지의 지문을 그 서버로 보내며, 본문은 보내지 않습니다. 서버는 사용자의 인터넷 주소와 보낸 시각을 볼 수 있습니다.';
+
+  @override
+  String get appSettings_heardServerOther => '다른 주소';
+
+  @override
+  String get appSettings_heardServerAddress => '서버 주소';
+
+  @override
+  String get appSettings_heardServerChecking => '서버 확인 중…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => '이 주소에서 응답이 없습니다';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => '그래도 저장';
+
+  @override
+  String get appSettings_heardServerAnswered => '서버가 응답했습니다';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '옵저버 $count대가 수신',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '직접';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '리피터 $count대 경유',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => '배터리';
 
   @override
