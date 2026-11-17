@@ -19,7 +19,7 @@ formats from other apps that it reads but never sends.
 | Reaction | MeshCore One reaction | meshcore-open `r:HASH:INDEX`, older MeshCore One emoji-first order |
 | GIF | Giphy link (default) or `g:ID` | `media.giphy.com` links |
 | Markdown | whatever the user types | |
-| Cards | `Location:`, `SOS:`, `Event:`, `Notice:` | `m:` marker, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
+| Cards | `Location:`, `SOS:` and its repeats, Got it and `SOS cancelled`, `Event:`, `Notice:` | `m:` marker, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
 | Drawings | `SVG:` and path data | |
 | Compression | `s:` SMAZ, only when switched on | `s:` SMAZ, always |
 
@@ -357,6 +357,99 @@ The same event typed by hand on one line:
 ```
 Event: Mesh meetup | 2026-10-18 14:00-16:00 | Hauptplatz
 ```
+
+## SOS
+
+An SOS is the one card that keeps going until its sender stops it. It
+needs nothing beyond the `SOS:` text above: the repeats, the answers and
+the cancel are ordinary messages, so every other app shows them as text.
+
+### What MeshTrax sends
+
+In a channel, the SOS dialog sends the SOS itself and keeps sending it:
+
+| Message | Wire text | When |
+|---|---|---|
+| SOS | `SOS: {what happened}` + newline + `{lat, lon}` | When you tap Send SOS |
+| Copy to Public | The same text | With the first message only, when **Also send to Public** is ticked (the default) and the SOS is in another channel |
+| Repeat | The same text with the radio's latest position | Every 2 minutes in the same channel, every 5 minutes once anyone has replied, until you cancel. Never to Public |
+| Got it | A reply to the SOS (see [Replies](#replies)) whose text is `Got it` | When a reader taps **Got it** on the card |
+| Cancel | `SOS cancelled` | When you cancel: in the channel, and in Public too if the copy went there |
+
+For example, an SOS, a repeat two minutes later, a reader's Got it and the
+cancel:
+
+```
+SOS: Broken leg
+36.460000, -116.870000
+
+SOS: Broken leg
+36.461234, -116.870000
+
+@[GWQ]
+>SOS: Broke..
+Got it
+
+SOS cancelled
+```
+
+- The dialog asks the radio for its position as it opens and waits up to
+  5 seconds for the answer, showing when the radio gave it ("Radio position
+  from 2:02 PM (Just now)"). When the radio gives nothing new, the dialog
+  says the position is the last one known, and how old it is if the radio
+  said. Sending never waits for the answer.
+- A repeat carries the radio's newest position, which MeshTrax asks for
+  every 10 seconds while the SOS lasts. A position you typed or picked
+  over the radio's goes out with every repeat instead. When the radio had
+  none, the repeats switch to the radio's position once it has one.
+- The repeats run in MeshTrax, not on the radio, so they stop if the app
+  stops. MeshTrax keeps the SOS on the phone: when the app starts again
+  within 30 minutes of the last repeat, the repeats carry on by themselves.
+  After a longer break the SOS waits for you to tap **Send again** or
+  **Cancel SOS**, because it may be a test left on or long over. A cancel
+  that could not go out waits for the radio, even across a restart.
+- While the radio is not connected nothing goes out; the first message,
+  a repeat that is due or a cancel goes as soon as it is back.
+- One SOS at a time. An SOS sent again in the same channel takes the new
+  words and goes out at once as a repeat; one in another channel cancels
+  the one before.
+- In a direct message or a room, the SOS goes once, like any message
+  there, with that chat's own delivery receipt.
+
+### What MeshTrax reads
+
+- **Repeats.** An `SOS:` from the same sender in the same channel, sent no
+  more than 30 minutes after that sender's last one (by the sender's
+  clock), with no cancel in between, is a repeat. MeshTrax shows one card:
+  it takes the newest position and time ("Updated 2:06 PM") and stays where
+  the first one stood in the chat. A copy with a time already seen is a
+  relayed copy and only counts as heard. A repeat older than the one shown
+  changes nothing. After 30 minutes of silence, or sent after a cancel,
+  an `SOS:` is a new SOS with a card of its own. Repeats and cancels are
+  put in order by the sender's clock, the one clock all of them carry,
+  never by the times the chat shows, which MeshTrax corrects where a
+  clock looks wrong.
+- **Answers.** Any reply to an SOS, `Got it` or anything else, tells its
+  sender that one more person got it. The sender's chat shows who.
+- **Cancel.** A message whose first line is `SOS cancelled` (any case,
+  `canceled` too, a full stop or `!` after it allowed) closes every open
+  SOS card of its sender in that channel sent before it. The message
+  itself shows as it is. A closed card is greyed out, says when it was
+  cancelled, and leaves the pinned bar.
+- **Alerts.** A received SOS always alerts: in a muted channel, and with
+  channel or direct message notifications switched off. It comes on a
+  notification category of its own, **SOS alerts**, with the alarm sound.
+  A repeat alerts again, unless the chat is open in front of you, you
+  dismissed its pin, or you replied to it. A cancel replaces the alert,
+  silently. In MeshTrax, only switching off all its notifications, or
+  blocking the sender, silences an SOS. On the phone, Android's Do Not
+  Disturb still does until you let SOS alerts override it (MeshTrax's
+  settings, under Notifications, open the place), and on an iPhone Focus
+  and silent mode still can.
+- **Pinned.** The card stays pinned in the chat, newest repeat first, with
+  its time, until you dismiss it or its sender cancels it. On the map, an
+  SOS is a red pin that moves with the repeats until you remove it; a
+  cancelled one turns grey.
 
 ## What MeshTrax also reads without the keyword
 
