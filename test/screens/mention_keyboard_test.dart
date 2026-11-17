@@ -102,7 +102,7 @@ void main() {
       find.descendant(of: composer, matching: find.byType(EditableText)),
     );
 
-    for (final typed in ['@', '@Ri']) {
+    for (final typed in ['@', '@Ri', '@Ridge W']) {
       tester.testTextInput.updateEditingValue(TextEditingValue(
         text: typed,
         selection: TextSelection.collapsed(offset: typed.length),
