@@ -4975,6 +4975,147 @@ class AppLocalizationsUk extends AppLocalizations {
   String get dialog_sosText => 'Що сталося?';
 
   @override
+  String get sos_alsoPublic => 'Надіслати також у Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Будь-хто в зоні досяжності зможе його прочитати, і вашу позицію теж. Туди йде лише перше повідомлення.';
+
+  @override
+  String get sos_askingRadio => 'Запитуємо позицію в рації…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Позиція рації від $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'Рація не дала нової позиції. Остання відома позиція від $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Остання відома позиція. Рація не повідомила, наскільки вона стара.';
+
+  @override
+  String get sos_positionTyped =>
+      'Ваша власна позиція: кожен повтор надсилає її.';
+
+  @override
+  String get sos_repeats =>
+      'Надсилається повторно кожні 2 хвилини з останньою позицією рації, доки ви не скасуєте, а після першого «Прийнято» — кожні 5 хвилин.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Це скасує ваш SOS у $chat.';
+  }
+
+  @override
+  String get sos_active => 'Ваш SOS активний';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Останнє надсилання $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Чекаємо на рацію, щоб надіслати';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Прийнято ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Ще ніхто не відповів «Прийнято»';
+
+  @override
+  String get sos_cancel => 'Скасувати SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Усі в $chat отримають «SOS cancelled».';
+  }
+
+  @override
+  String get sos_keep => 'Залишити SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS скасовано. Повідомлення піде, коли рація під’єднається.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Ваш SOS зупинився, коли MeshTrax закрився. Останнє надсилання $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Надіслати знову';
+
+  @override
+  String get sos_gotIt => 'Прийнято';
+
+  @override
+  String sos_updated(String time) {
+    return 'Оновлено $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Скасовано $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Надіслано $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'SOS-сповіщення';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'SOS, надісланий вам або в чат, де ви є';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS від $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name скасував(ла) SOS';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'SOS-сповіщення';
+
+  @override
+  String get appSettings_sosAlways =>
+      'SOS завжди сповіщає, навіть у чаті без звуку або з вимкненими сповіщеннями про повідомлення.';
+
+  @override
+  String get appSettings_sosThroughDnd =>
+      'Звучить навіть у режимі «Не турбувати».';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Режим «Не турбувати» глушить його. Натисніть і дозвольте ігнорувати «Не турбувати».';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'На телефоні SOS-сповіщення вимкнено. Натисніть, щоб увімкнути.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Режими фокусування й безшумний режим усе ще можуть заглушити його на цьому пристрої.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Сповіщення вимкнено, тож SOS-сповіщення теж.';
+
+  @override
   String get dialog_noticeTitle => 'Оповіщення';
 
   @override

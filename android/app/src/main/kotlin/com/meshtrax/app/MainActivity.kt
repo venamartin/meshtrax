@@ -39,6 +39,10 @@ class MainActivity : FlutterActivity() {
                         openNotificationSettings()
                         result.success(null)
                     }
+                    "openNotificationChannelSettings" -> {
+                        openNotificationChannelSettings(call.argument<String>("channelId"))
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -62,6 +66,25 @@ class MainActivity : FlutterActivity() {
             )
         } catch (e: ActivityNotFoundException) {
             startActivity(appDetails)
+        }
+    }
+
+    // One category's page, where its sound and "Override Do Not Disturb"
+    // are set. The category must exist already; without the page, the
+    // app's notification settings.
+    private fun openNotificationChannelSettings(channelId: String?) {
+        if (channelId == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            openNotificationSettings()
+            return
+        }
+        try {
+            startActivity(
+                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    .putExtra(Settings.EXTRA_CHANNEL_ID, channelId),
+            )
+        } catch (e: ActivityNotFoundException) {
+            openNotificationSettings()
         }
     }
 

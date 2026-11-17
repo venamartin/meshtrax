@@ -46,6 +46,46 @@ void main() {
     expect(compute(both, dismissed: {'new'}).map((p) => p.id), ['old']);
   });
 
+  test('an SOS pins by its latest repeat, with that time, until cancelled',
+      () {
+    final repeated = PinCandidate(
+      id: 'repeated',
+      text: 'SOS: first\n$pos',
+      timestamp: now.subtract(const Duration(minutes: 30)),
+      index: 3,
+      sosUpdatedAt: now.subtract(const Duration(minutes: 1)),
+    );
+    final pins = compute([
+      repeated,
+      c('newer', 'SOS: second\n$pos', minutesAgo: 5),
+    ]);
+    expect(pins.map((p) => p.id), ['repeated', 'newer'],
+        reason: 'the one still repeating is the live one');
+    expect(pins.first.at, now.subtract(const Duration(minutes: 1)));
+    expect(pins.last.at, now.subtract(const Duration(minutes: 5)));
+
+    final cancelled = PinCandidate(
+      id: 'cancelled',
+      text: 'SOS: first\n$pos',
+      timestamp: now,
+      index: 0,
+      sosCancelled: true,
+    );
+    expect(compute([cancelled]), isEmpty);
+  });
+
+  test('an SOS pins days on: it never runs out by itself', () {
+    final sos = PinnedMessagesBar.compute(
+      candidates: [c('sos', 'SOS: help\n$pos')],
+      dismissed: const {},
+      isRoom: false,
+      now: now.add(const Duration(days: 3)),
+    ).single;
+    expect(PinnedMessagesBar.stillPinned(sos, now.add(const Duration(days: 3))),
+        isTrue);
+    expect(PinnedMessagesBar.nextChange([sos]), isNull);
+  });
+
   test('every upcoming event pins, soonest first; past events do not', () {
     final pins = compute([
       c('past', 'Event: Done\n2026-10-19 10:00-11:00'),

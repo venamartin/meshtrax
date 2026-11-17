@@ -4963,6 +4963,147 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dialog_sosText => '¿Qué ha pasado?';
 
   @override
+  String get sos_alsoPublic => 'Enviar también a Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Cualquiera al alcance puede leerlo, también tu posición. Solo el primer mensaje va allí.';
+
+  @override
+  String get sos_askingRadio => 'Pidiendo a la radio su posición…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Posición de la radio de las $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'La radio no dio una posición nueva. Última posición conocida de las $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Última posición conocida. La radio no dijo su antigüedad.';
+
+  @override
+  String get sos_positionTyped =>
+      'Tu propia posición: cada repetición la envía.';
+
+  @override
+  String get sos_repeats =>
+      'Se envía de nuevo cada 2 minutos con la última posición de la radio hasta que lo canceles; cada 5 minutos tras el primer «Recibido».';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Esto cancela tu SOS en $chat.';
+  }
+
+  @override
+  String get sos_active => 'Tu SOS está activo';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Último envío $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Esperando a la radio para enviarlo';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Recibido ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Aún nadie dijo «Recibido»';
+
+  @override
+  String get sos_cancel => 'Cancelar SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Todos en $chat recibirán «SOS cancelled».';
+  }
+
+  @override
+  String get sos_keep => 'Mantener SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS cancelado. Saldrá cuando la radio esté conectada.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Tu SOS se detuvo cuando MeshTrax se cerró. Último envío $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Enviar de nuevo';
+
+  @override
+  String get sos_gotIt => 'Recibido';
+
+  @override
+  String sos_updated(String time) {
+    return 'Actualizado $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Cancelado $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Enviado $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'Alertas SOS';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'Un SOS enviado a ti o a un chat en el que estás';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS de $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return 'SOS cancelado por $name';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'Alertas SOS';
+
+  @override
+  String get appSettings_sosAlways =>
+      'Un SOS siempre avisa, incluso en un chat silenciado o con las notificaciones de mensajes desactivadas.';
+
+  @override
+  String get appSettings_sosThroughDnd =>
+      'Suena aunque esté activado No molestar.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'No molestar lo silencia. Toca y permite Ignorar No molestar.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'El teléfono tiene las alertas SOS desactivadas. Toca para activarlas.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Los modos de concentración y el modo silencio aún pueden silenciarlo en este dispositivo.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Las notificaciones están desactivadas, así que las alertas SOS también.';
+
+  @override
   String get dialog_noticeTitle => 'Aviso';
 
   @override

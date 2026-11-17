@@ -4731,6 +4731,136 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dialog_sosText => '何がありましたか？';
 
   @override
+  String get sos_alsoPublic => 'Publicにも送信';
+
+  @override
+  String get sos_alsoPublicHint => '範囲内の誰でも読めます。位置も含まれます。そこへ送るのは最初のメッセージだけです。';
+
+  @override
+  String get sos_askingRadio => '無線機に位置を問い合わせています…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return '無線機の位置（$time、$age）';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return '無線機から新しい位置が届きませんでした。最後にわかった位置（$time、$age）です。';
+  }
+
+  @override
+  String get sos_positionAgeUnknown => '最後にわかった位置です。無線機はいつの位置か伝えていません。';
+
+  @override
+  String get sos_positionTyped => '自分で入力した位置：毎回の再送でこの位置を送ります。';
+
+  @override
+  String get sos_repeats => '取り消すまで2分ごとに無線機の最新位置で再送します。最初の「了解」の後は5分ごとです。';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return '$chat のSOSは取り消されます。';
+  }
+
+  @override
+  String get sos_active => 'SOSを送信中';
+
+  @override
+  String sos_lastSent(String time) {
+    return '最終送信 $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => '送信のため無線機を待っています';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return '了解（$count）：$names';
+  }
+
+  @override
+  String get sos_noGotIt => 'まだ「了解」はありません';
+
+  @override
+  String get sos_cancel => 'SOSを取り消す';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return '$chat の全員に「SOS cancelled」が届きます。';
+  }
+
+  @override
+  String get sos_keep => 'SOSを続ける';
+
+  @override
+  String get sos_cancelPending => 'SOSを取り消しました。無線機が接続されると送信されます。';
+
+  @override
+  String sos_stopped(String time) {
+    return 'MeshTraxが閉じたためSOSが止まりました。最終送信 $time。';
+  }
+
+  @override
+  String get sos_sendAgain => 'もう一度送信';
+
+  @override
+  String get sos_gotIt => '了解';
+
+  @override
+  String sos_updated(String time) {
+    return '更新 $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return '取り消し $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return '送信 $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'SOSアラート';
+
+  @override
+  String get notification_sosChannelDescription => 'あなた宛て、または参加中のチャットへのSOS';
+
+  @override
+  String notification_sosFrom(String name) {
+    return '$name からのSOS';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name がSOSを取り消しました';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'SOSアラート';
+
+  @override
+  String get appSettings_sosAlways => 'SOSは、ミュートしたチャットやメッセージ通知がオフでも必ず通知します。';
+
+  @override
+  String get appSettings_sosThroughDnd => 'サイレントモード中も鳴ります。';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'サイレントモードで消音されます。タップして「サイレントモードを無視」を許可してください。';
+
+  @override
+  String get appSettings_sosBlocked => '電話でSOSアラートがオフになっています。タップしてオンにしてください。';
+
+  @override
+  String get appSettings_sosApple => 'このデバイスでは集中モードと消音モードでまだ消音される場合があります。';
+
+  @override
+  String get appSettings_sosOff => '通知がオフのため、SOSアラートもオフです。';
+
+  @override
   String get dialog_noticeTitle => 'お知らせ';
 
   @override

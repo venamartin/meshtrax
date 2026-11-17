@@ -412,6 +412,12 @@ class AppSettingsScreen extends StatelessWidget {
                   }
                 : null,
           ),
+          if (PlatformInfo.isMobile || PlatformInfo.isMacOS) ...[
+            const Divider(height: 1),
+            SosAlertsTile(
+              enabled: settingsService.settings.notificationsEnabled,
+            ),
+          ],
           const Divider(height: 1),
           SwitchListTile(
             secondary: Icon(
@@ -1261,6 +1267,87 @@ class AppSettingsScreen extends StatelessWidget {
 }
 
 /// "Offline maps" row: what's downloaded, or how many updates wait.
+/// What an SOS does on this phone, and the way to its own notification
+/// settings: on Android, where it is let through Do Not Disturb.
+class SosAlertsTile extends StatefulWidget {
+  /// The app's notifications are on.
+  final bool enabled;
+
+  /// Tests: what the phone allows, instead of asking it.
+  final SosAlertState? state;
+
+  const SosAlertsTile({super.key, required this.enabled, this.state});
+
+  @override
+  State<SosAlertsTile> createState() => _SosAlertsTileState();
+}
+
+class _SosAlertsTileState extends State<SosAlertsTile> {
+  late SosAlertState _state = widget.state ?? SosAlertState.unknown;
+
+  // Back from the phone's settings, it may say something else.
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onResume: _load,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.state != null) return;
+    _lifecycle;
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(SosAlertsTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state case final state?) _state = state;
+  }
+
+  @override
+  void dispose() {
+    if (widget.state == null) _lifecycle.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final state = await NotificationService().sosAlertState();
+    if (mounted) setState(() => _state = state);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final enabled = widget.enabled;
+    final phone = switch (_state) {
+      SosAlertState.blocked => l10n.appSettings_sosBlocked,
+      SosAlertState.silencedByDnd => l10n.appSettings_sosSilencedByDnd,
+      SosAlertState.throughDnd => l10n.appSettings_sosThroughDnd,
+      SosAlertState.unknown =>
+        PlatformInfo.isAndroid ? null : l10n.appSettings_sosApple,
+    };
+    final lines = [
+      enabled ? l10n.appSettings_sosAlways : l10n.appSettings_sosOff,
+      if (enabled) ?phone,
+    ];
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      enabled: enabled,
+      leading: Icon(
+        Icons.warning_rounded,
+        color: enabled ? scheme.error : null,
+      ),
+      title: Text(l10n.appSettings_sosAlerts),
+      subtitle: Text(lines.join(' ')),
+      trailing: const Icon(Icons.open_in_new),
+      onTap: () async {
+        await NotificationService().openSosSettings();
+        await _load();
+      },
+    );
+  }
+}
+
 class _OfflineMapsTile extends StatelessWidget {
   const _OfflineMapsTile();
 

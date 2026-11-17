@@ -5214,12 +5214,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _unverifiedSendTimers.remove(messageId)?.cancel();
   }
 
-  Future<void> sendChannelMessage(
+  /// The id of the row the message is filed under, or null when nothing
+  /// was filed (not connected, a reaction, no such channel on the radio).
+  Future<String?> sendChannelMessage(
     Channel channel,
     String text, {
     ChannelMessage? replyTarget,
   }) async {
-    if (!isConnected || text.isEmpty) return;
+    if (!isConnected || text.isEmpty) return null;
 
     // The caller's Channel may be stale (screen opened before a resync).
     // Resolve the LIVE slot for this identity — sending by a stale index
@@ -5232,7 +5234,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         'Refusing channel send: ${channel.displayName} not on radio',
         tag: 'Connector',
       );
-      return;
+      return null;
     }
     if (!_channelsVerified) {
       // Same rule as the receive path: after a reconnect the slot map is
@@ -5243,7 +5245,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         _pendingUnverifiedSends.add(
           (idKey: channel.idKey, messageId: null, text: text),
         );
-        return;
+        return null;
       }
       final message = ChannelMessage.outgoing(
         text,
@@ -5266,7 +5268,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         tag: 'Connector',
       );
       notifyListeners();
-      return;
+      return message.messageId;
     }
     channel = live!;
 
@@ -5285,7 +5287,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         reactionIdentifier,
       )) {
         // Already processed, don't process again
-        return;
+        return null;
       }
 
       // Apply to the target row; watched queries update the UI. The user
@@ -5330,7 +5332,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         channelSendQueueId: reactionQueueId,
         expectsGenericAck: true,
       );
-      return;
+      return null;
     }
 
     final message = ChannelMessage.outgoing(
@@ -5357,7 +5359,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
     // A link drop during the wait already failed this row and cleared its
     // timer; transmitting now would use a slot map nobody has re-verified.
-    if (!_channelMessageTimers.containsKey(message.messageId)) return;
+    if (!_channelMessageTimers.containsKey(message.messageId)) {
+      return message.messageId;
+    }
     // Stamp here (the same instant the builder used to) and remember it:
     // radio-quiet waits can push the wire clock seconds past the row's
     // construction clock, and MeshCore One reaction hashes are computed
@@ -5379,6 +5383,77 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       expectsGenericAck: true,
     );
     await _recordSentWireSecs(channel.idKey, message.messageId, wireSecs);
+    return message.messageId;
+  }
+
+  /// Sends the row [messageId] again with [text] (an SOS with its latest
+  /// position), stamped anew, from the same row: the sender's chat keeps
+  /// one card, and receivers fold the copy into theirs. No retry of its
+  /// own: the next repeat follows anyway. False when it could not go out
+  /// now (not connected, the channel map not verified yet, no such row).
+  Future<bool> repeatChannelMessage(
+    Channel channel,
+    String messageId,
+    String text,
+  ) async {
+    if (!isConnected || !_channelsVerified || _isSyncingChannels) {
+      return false;
+    }
+    final live = _liveChannelByIdKey(channel.idKey);
+    if (live == null) return false;
+    final updated = await _channelMessageStore.updatePayload(
+      live.idKey,
+      messageId,
+      (m) => m.copyWith(text: text, status: ChannelMessageStatus.pending),
+    );
+    if (!updated) return false;
+    notifyListeners();
+    _channelMessageRetries[messageId] =
+        _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
+    _pendingChannelSentQueue.remove(messageId);
+    _pendingChannelSentQueue.add(messageId);
+    _channelRepeatTimers.remove(messageId)?.cancel();
+    _channelMessageTimers.remove(messageId)?.cancel();
+    _channelMessageTimers[messageId] = Timer(const Duration(seconds: 30), () {
+      _handleChannelMessageTimeout(live.index, messageId);
+    });
+    final outboundText = prepareChannelOutboundText(live.index, text);
+    await _waitForRadioQuiet(
+      lastInboundRxTime: _lastChannelMsgRxTime,
+      maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
+    );
+    if (!_channelMessageTimers.containsKey(messageId)) return false;
+    final wireSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _rememberOwnChannelSend(
+      live.index,
+      wireSecs,
+      outboundText,
+      messageId: messageId,
+    );
+    await sendFrame(
+      buildSendChannelTextMsgFrame(
+        live.index,
+        outboundText,
+        timestampSecs: wireSecs,
+      ),
+      channelSendQueueId: messageId,
+      expectsGenericAck: true,
+    );
+    await _recordSentWireSecs(live.idKey, messageId, wireSecs);
+    return true;
+  }
+
+  /// Marks my own SOS row [messageId] in [channel] cancelled, as the
+  /// cancel is sent.
+  Future<void> markSosCancelled(Channel channel, String messageId) async {
+    await _channelMessageStore.updatePayload(
+      channel.idKey,
+      messageId,
+      (m) => m.sosCancelledAt != null
+          ? null
+          : m.copyWith(sosCancelledAt: DateTime.now()),
+    );
+    notifyListeners();
   }
 
   /// Appends a transmitted wire timestamp to the row's [sentWireSecs] so
@@ -6040,13 +6115,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// Self telemetry came in companion v1.7.0, still firmware ver code 5, so
   /// ver code 6 is the first that surely has it.
   Future<void> requestSelfPosition() async {
-    if (!isConnected ||
-        !gpsOn ||
-        (_firmwareVerCode ?? 0) < 6) {
-      return;
-    }
+    if (!canAskSelfPosition) return;
     await sendFrame(buildSendTelemetryReq(null));
   }
+
+  /// Whether [requestSelfPosition] can be answered: a radio with its GPS on
+  /// and firmware that answers it.
+  bool get canAskSelfPosition =>
+      isConnected && gpsOn && (_firmwareVerCode ?? 0) >= 6;
 
   /// The radio's own telemetry carries its key prefix; a contact's is
   /// matched by its awaiting request instead.
@@ -7908,8 +7984,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             !incoming.isCli &&
             _appSettingsService != null) {
           final settings = _appSettingsService!.settings;
+          final sos = StructuredMessage.parse(incoming.text);
           if (settings.notificationsEnabled) {
-            if (contact?.type == advTypeChat &&
+            // An SOS always alerts, whatever the message switch says.
+            if (contact?.type == advTypeChat && sos is SosMessage) {
+              _notificationService.showSosNotification(
+                chatKey: incoming.senderKeyHex,
+                senderName: contact?.name ?? 'Unknown',
+                where: '',
+                text: sos.text,
+                payload: incoming.senderKeyHex,
+              );
+            } else if (contact?.type == advTypeChat &&
                 settings.notifyOnNewMessage) {
               _notificationService.showMessageNotification(
                 contactName: contact?.name ?? 'Unknown',
@@ -8292,15 +8378,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final settings = _appSettingsService!.settings;
     if (!settings.notificationsEnabled) return;
 
+    // message.text is the raw on-wire form; a reply carries quote markup
+    // ("@[Name]\n><snippet>..\n<body>", or "re:" from older senders) that the
+    // chat screen parses away. Show only the body so the notification doesn't
+    // leak the mention, the quote prefix, or the snippet's trailing dots.
+    final replyInfo = ChannelMessage.parseReply(message.text);
+    final replyBody = replyInfo?.actualMessage ?? message.text;
+    final structured = StructuredMessage.parse(replyBody);
+
     // A mention or reply-to-me outranks the channel-message toggle and the
     // channel's mute — cutting through a muted channel is the entire point.
     // One notification per message: when both would apply, mention wins.
     // Mentioning MYSELF is not a mention (nor is a same-named sender —
     // names aren't unique on the mesh, and the two are indistinguishable).
+    // An SOS outranks both: it always alerts, on its own category.
+    final isSos = structured is SosMessage;
     final isMention = settings.notifyOnMention &&
         message.senderName != _selfName &&
         ChannelMessage.mentionsUser(message.text, _selfName);
-    if (!isMention && !settings.notifyOnNewChannelMessage) return;
+    if (!isSos && !isMention && !settings.notifyOnNewChannelMessage) return;
 
     // Blocked senders previously only had their rows hidden in the open
     // channel screen — notifications still fired. Blocked stays absolute:
@@ -8331,16 +8427,19 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               settingsService.isChannelMuted(channel.name) ||
               settingsService.isChannelMuted(channel.displayName))
         : settingsService.isChannelMuted(label);
-    if (isMuted && !isMention) return;
+    if (isMuted && !isMention && !isSos) return;
 
-    // message.text is the raw on-wire form; a reply carries quote markup
-    // ("@[Name]\n><snippet>..\n<body>", or "re:" from older senders) that the
-    // chat screen parses away. Show only the body so the notification doesn't
-    // leak the mention, the quote prefix, or the snippet's trailing dots.
-    final replyInfo = ChannelMessage.parseReply(message.text);
-    final replyBody = replyInfo?.actualMessage ?? message.text;
-    final notificationText =
-        StructuredMessage.parse(replyBody)?.summary ?? replyBody;
+    if (structured is SosMessage) {
+      _notifySos(
+        channelIndex: channelIndex,
+        chatKey: channel?.idKey ?? label,
+        where: label,
+        sos: message,
+        text: structured.text,
+      );
+      return;
+    }
+    final notificationText = structured?.summary ?? replyBody;
 
     _notificationService.showChannelMessageNotification(
       channelName: label,
@@ -8349,6 +8448,63 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       channelIndex: channelIndex,
       badgeCount: getTotalUnreadCount(),
       mentionMessageId: isMention ? message.messageId : null,
+    );
+  }
+
+  /// Asked before a repeat of an SOS alerts again: whether the user
+  /// dismissed its pin in that chat (keyed as the pinned bar keys it).
+  /// Wired by the app to its view state.
+  bool Function(String chatId, String messageId)? isPinDismissed;
+
+  void _notifySos({
+    required int channelIndex,
+    required String chatKey,
+    required String where,
+    required ChannelMessage sos,
+    required String text,
+    bool cancelled = false,
+  }) {
+    _notificationService.showSosNotification(
+      chatKey: chatKey,
+      senderName: sos.senderName,
+      where: where,
+      text: text,
+      payload: 'mention:$channelIndex:${sos.messageId}',
+      cancelled: cancelled,
+    );
+  }
+
+  /// A repeat or a cancel of an SOS card already here: it alerts again
+  /// until the user has seen to the card (the chat open in front, its pin
+  /// dismissed, or a reply sent to it). A cancel never sounds.
+  void _maybeNotifySosUpdate(
+    Channel channel,
+    ChannelMessage card,
+    List<ChannelMessage> rows, {
+    required String text,
+    bool cancelled = false,
+  }) {
+    final settingsService = _appSettingsService;
+    if (settingsService == null ||
+        !settingsService.settings.notificationsEnabled ||
+        settingsService.isSenderBlocked(card.senderName)) {
+      return;
+    }
+    if (isPinDismissed?.call(channel.idKey, card.messageId) ?? false) return;
+    if (!cancelled) {
+      final viewing = !_appAway && _activeChannelIndex == channel.index;
+      final answered = rows.any(
+        (m) => m.isOutgoing && m.replyToMessageId == card.messageId,
+      );
+      if (viewing || answered) return;
+    }
+    _notifySos(
+      channelIndex: channel.index,
+      chatKey: channel.idKey,
+      where: channel.displayName,
+      sos: card,
+      text: text,
+      cancelled: cancelled,
     );
   }
 
@@ -10277,6 +10433,24 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     if (ReactionHelper.parseMeshCoreOneReaction(message.text) != null) return;
 
+    // Show the post's author and body, not the raw reply wire text.
+    final replyBody =
+        ChannelMessage.parseReply(message.text)?.actualMessage ?? message.text;
+    final structured = StructuredMessage.parse(replyBody);
+    final author = _resolveContactSenderName(message, room, true);
+
+    // An SOS always alerts, through the room's mute and the switch.
+    if (structured is SosMessage) {
+      _notificationService.showSosNotification(
+        chatKey: room.publicKeyHex,
+        senderName: author != null && author.isNotEmpty ? author : room.name,
+        where: room.name,
+        text: structured.text,
+        payload: message.senderKeyHex,
+      );
+      return;
+    }
+
     final isMention = settings.notifyOnMention &&
         ChannelMessage.mentionsUser(message.text, _selfName);
     if (!isMention && !settings.notifyOnNewMessage) return;
@@ -10284,11 +10458,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return;
     }
 
-    // Show the post's author and body, not the raw reply wire text.
-    final replyBody =
-        ChannelMessage.parseReply(message.text)?.actualMessage ?? message.text;
-    final body = StructuredMessage.parse(replyBody)?.summary ?? replyBody;
-    final author = _resolveContactSenderName(message, room, true);
+    final body = structured?.summary ?? replyBody;
     _notificationService.showMessageNotification(
       contactName: room.name,
       message: author != null && author.isNotEmpty ? '$author: $body' : body,
@@ -10669,16 +10839,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     }
 
+    // An SOS its sender keeps repeating is one card that updates in place.
+    // Its copies are told apart there, by wire time: the guess by text
+    // below would fold a new SOS, sent soon after a cancel with the same
+    // words, into the cancelled card, and a second "SOS cancelled" into the
+    // first, leaving the new card open. A copy of the very same message
+    // still lands on it, by its id below. One under my own name may still
+    // be my own, echoed after its send was forgotten, which the guess finds.
+    final incomingSos = !processedMessage.isOutgoing &&
+        StructuredMessage.parse(processedMessage.text) is SosMessage;
+    if (incomingSos && await _mergeSosRepeat(channel, processedMessage)) {
+      return false;
+    }
+    final sosTraffic = incomingSos ||
+        (!processedMessage.isOutgoing &&
+            SosMessage.isCancel(processedMessage.text));
+
     // Heuristic echo match (no packet hash on our original, second-truncated
     // ids on the wire): compare against the newest rows exactly like the old
     // in-memory pass did — else our own send comes back as a new message.
-    final recent = await _channelMessageStore
-        .watchChannelMessages(idKey, limit: 80)
-        .first;
-    for (final existing in recent.reversed) {
-      if (_isChannelRepeat(existing, processedMessage)) {
-        await _mergeChannelRepeat(idKey, existing, processedMessage);
-        return false;
+    if (!sosTraffic || processedMessage.senderName == _selfName) {
+      final recent = await _channelMessageStore
+          .watchChannelMessages(idKey, limit: 80)
+          .first;
+      for (final existing in recent.reversed) {
+        if (_isChannelRepeat(existing, processedMessage)) {
+          await _mergeChannelRepeat(idKey, existing, processedMessage);
+          return false;
+        }
       }
     }
 
@@ -10719,8 +10907,143 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     } else {
       await _resolveChannelOrphansFor(idKey, processedMessage);
     }
+    if (!processedMessage.isOutgoing &&
+        SosMessage.isCancel(processedMessage.text)) {
+      await _closeSosCards(channel, processedMessage);
+    }
     notifyListeners();
     return true;
+  }
+
+  /// How long an SOS card waits for its sender's next repeat (every 2 or 5
+  /// minutes). One heard after a longer silence is a new SOS, with a card
+  /// of its own at the bottom of the chat.
+  static const _sosMergeWindow = Duration(minutes: 30);
+
+  /// The newest SOS from [sender] among [rows], by the time it shows.
+  static ChannelMessage? _newestSosFrom(
+    List<ChannelMessage> rows,
+    String sender,
+  ) {
+    ChannelMessage? newest;
+    for (final m in rows) {
+      if (m.isOutgoing || m.senderName != sender) continue;
+      if (StructuredMessage.parse(m.text) is! SosMessage) continue;
+      if (newest == null || !m.timestamp.isBefore(newest.timestamp)) {
+        newest = m;
+      }
+    }
+    return newest;
+  }
+
+  /// What [incoming], an SOS from [card]'s sender, is to that card. By the
+  /// sender's own clock, which is the same clock for all of its messages:
+  /// the times the chat shows are re-stamped where a clock looks broken,
+  /// one message and not the next, and so cannot order them. [cancelSecs]:
+  /// the wire time of that sender's latest cancel, when [card] is closed.
+  @visibleForTesting
+  static SosCopy sosCopyOf(
+    ChannelMessage card,
+    ChannelMessage incoming, {
+    int? cancelSecs,
+  }) {
+    final secs = wireTimestampMs(incoming) ~/ 1000;
+    final first = wireTimestampMs(card) ~/ 1000;
+    if (secs == first || card.sentWireSecs.contains(secs)) {
+      return SosCopy.relayed;
+    }
+    final window = _sosMergeWindow.inSeconds;
+    if (secs < first - window) return SosCopy.apart;
+    if (card.sosCancelledAt != null) {
+      // Sent before the cancel: a late copy. After it, a new SOS; with no
+      // cancel to compare, it is shown rather than lost.
+      return cancelSecs != null && secs <= cancelSecs
+          ? SosCopy.older
+          : SosCopy.apart;
+    }
+    final latest = card.sentWireSecs.fold(first, math.max);
+    if (secs - latest > window) return SosCopy.apart;
+    return secs > latest ? SosCopy.newer : SosCopy.older;
+  }
+
+  /// [incoming] repeats the SOS its sender has open here: the card takes
+  /// its text (the latest position) and time, and stays where it stands in
+  /// the chat. A relayed copy of one already held counts as heard; an older
+  /// repeat arriving late changes nothing shown. False for anything else,
+  /// which is stored as usual: a first SOS, or one after a cancel or a long
+  /// silence.
+  Future<bool> _mergeSosRepeat(Channel channel, ChannelMessage incoming) async {
+    final idKey = channel.idKey;
+    final rows = await _channelMessageStore.loadChannelMessagesArrivedSince(
+      idKey,
+      _reactionWindowStart(),
+    );
+    final card = _newestSosFrom(rows, incoming.senderName);
+    if (card == null) return false;
+    int? cancelSecs;
+    for (final m in rows) {
+      if (m.isOutgoing ||
+          m.senderName != incoming.senderName ||
+          !SosMessage.isCancel(m.text)) {
+        continue;
+      }
+      final secs = wireTimestampMs(m) ~/ 1000;
+      if (cancelSecs == null || secs > cancelSecs) cancelSecs = secs;
+    }
+    final kind = sosCopyOf(card, incoming, cancelSecs: cancelSecs);
+    if (kind == SosCopy.apart) return false;
+    if (kind == SosCopy.relayed) {
+      await _mergeChannelRepeat(idKey, card, incoming);
+      return true;
+    }
+    final secs = wireTimestampMs(incoming) ~/ 1000;
+    final newer = kind == SosCopy.newer;
+    await _channelMessageStore.updatePayload(
+      idKey,
+      card.messageId,
+      (m) => m.copyWith(
+        text: newer ? incoming.text : null,
+        sosUpdatedAt: newer ? incoming.timestamp : null,
+        heardDirect: m.heardDirect || incoming.heardDirect,
+        sentWireSecs: m.sentWireSecs.contains(secs)
+            ? null
+            : [...m.sentWireSecs, secs],
+      ),
+    );
+    notifyListeners();
+    if (newer) {
+      final sos = StructuredMessage.parse(incoming.text) as SosMessage;
+      _maybeNotifySosUpdate(channel, card, rows, text: sos.text);
+    }
+    return true;
+  }
+
+  /// [cancel] ("SOS cancelled") closes every open SOS card of its sender
+  /// here sent before it (by the sender's clock), as of the cancel's time.
+  Future<void> _closeSosCards(Channel channel, ChannelMessage cancel) async {
+    final rows = await _channelMessageStore.loadChannelMessagesArrivedSince(
+      channel.idKey,
+      _reactionWindowStart(),
+    );
+    final cancelSecs = wireTimestampMs(cancel) ~/ 1000;
+    for (final m in rows) {
+      if (m.isOutgoing ||
+          m.senderName != cancel.senderName ||
+          m.sosCancelledAt != null ||
+          wireTimestampMs(m) ~/ 1000 > cancelSecs) {
+        continue;
+      }
+      final sos = StructuredMessage.parse(m.text);
+      if (sos is! SosMessage) continue;
+      await _channelMessageStore.updatePayload(
+        channel.idKey,
+        m.messageId,
+        (row) => row.sosCancelledAt != null
+            ? null
+            : row.copyWith(sosCancelledAt: cancel.timestamp),
+      );
+      _maybeNotifySosUpdate(channel, m, rows, text: sos.text, cancelled: true);
+    }
   }
 
   /// Repeat/echo bookkeeping: merge paths, bump the repeat count, flip our
@@ -12623,4 +12946,20 @@ class _PendingCommandAck {
   DateTime? givenUpAt;
 
   _PendingCommandAck({required this.commandCode, this.channelSendQueueId});
+}
+
+/// What an SOS heard again is to the card its sender has open
+/// ([MeshCoreConnector.sosCopyOf]).
+enum SosCopy {
+  /// A copy of one already held, through another repeater.
+  relayed,
+
+  /// A repeat newer than the card: the card takes it.
+  newer,
+
+  /// A repeat older than the card, arriving late: nothing shown changes.
+  older,
+
+  /// Not this card's: a new SOS, after a cancel or a long silence.
+  apart,
 }

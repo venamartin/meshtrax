@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
@@ -11,9 +12,11 @@ import '../helpers/date_time_helper.dart';
 import '../helpers/maps_link.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
 import '../services/app_settings_service.dart';
+import '../services/sos_service.dart';
 import 'drawing_canvas.dart';
 import 'drawing_map_view.dart';
 
@@ -98,13 +101,37 @@ class StructuredMessageDialogs {
     );
   }
 
+  /// SOS in a direct message or a room: the wire text to insert, sent once
+  /// like any message there.
   static Future<String?> sos(
     BuildContext context,
     MeshCoreConnector connector,
-  ) {
-    return showDialog<String>(
+  ) async {
+    final request = await showDialog<SosRequest>(
       context: context,
-      builder: (_) => _SosDialog(initialPosition: _radioPosition(connector)),
+      builder: (_) => _SosDialog(connector: connector),
+    );
+    return request?.message.toWire();
+  }
+
+  /// SOS in a channel, sent from the dialog and repeated until cancelled.
+  /// [offerPublic]: the radio has Public and this chat is another one.
+  /// [replaces]: the chat the user's SOS is active in now, which this one
+  /// cancels.
+  static Future<SosRequest?> sosInChannel(
+    BuildContext context,
+    MeshCoreConnector connector, {
+    required bool offerPublic,
+    String? replaces,
+  }) {
+    return showDialog<SosRequest>(
+      context: context,
+      builder: (_) => _SosDialog(
+        connector: connector,
+        inChannel: true,
+        offerPublic: offerPublic,
+        replaces: replaces,
+      ),
     );
   }
 
@@ -407,6 +434,7 @@ class _PositionField extends StatefulWidget {
   final String? emptyHelper;
 
   const _PositionField({
+    super.key,
     required this.initial,
     required this.onChanged,
     this.autofocus = false,
@@ -513,28 +541,180 @@ class _PositionFieldState extends State<_PositionField> {
   }
 }
 
+/// [inChannel]: sent from here and repeated, with the Public copy on
+/// offer; otherwise inserted into the composer.
 class _SosDialog extends StatefulWidget {
-  final LatLng? initialPosition;
-  const _SosDialog({this.initialPosition});
+  final MeshCoreConnector connector;
+  final bool inChannel;
+  final bool offerPublic;
+  final String? replaces;
+
+  const _SosDialog({
+    required this.connector,
+    this.inChannel = false,
+    this.offerPublic = false,
+    this.replaces,
+  });
 
   @override
   State<_SosDialog> createState() => _SosDialogState();
 }
 
 class _SosDialogState extends State<_SosDialog> {
+  /// How long the dialog waits for the radio's answer before it says it
+  /// gave none. Sending never waits for it.
+  static const _askFor = Duration(seconds: 5);
+
   final _text = TextEditingController();
-  late LatLng? _position = widget.initialPosition;
+  final _opened = DateTime.now();
+  late LatLng? _position = StructuredMessageDialogs._radioPosition(
+    widget.connector,
+  );
+  late final bool _radioHadPosition = _position != null;
+
+  /// The position was typed, picked or cleared by hand.
+  bool _edited = false;
+  bool _asking = false;
+
+  /// When the radio answered while the dialog was open.
+  DateTime? _readAt;
+
+  /// A new key for the position field when the radio's answer refills it.
+  int _filled = 0;
+  bool _alsoPublic = true;
+  bool _viewing = false;
+  Timer? _giveUp;
+
+  @override
+  void initState() {
+    super.initState();
+    final radio = widget.connector;
+    if (!radio.canAskSelfPosition) return;
+    _asking = true;
+    radio.selfGps.addListener(_onReading);
+    radio.addSelfPositionViewer();
+    _viewing = true;
+    _giveUp = Timer(_askFor, () {
+      if (mounted) setState(() => _asking = false);
+    });
+  }
 
   @override
   void dispose() {
+    _giveUp?.cancel();
+    widget.connector.selfGps.removeListener(_onReading);
+    if (_viewing) widget.connector.removeSelfPositionViewer();
     _text.dispose();
     super.dispose();
   }
+
+  void _onReading() {
+    final reading = widget.connector.selfGps.value;
+    if (reading == null ||
+        reading.at.isBefore(_opened) ||
+        !widget.connector.hasValidLocation(
+          reading.latitude,
+          reading.longitude,
+        )) {
+      return;
+    }
+    _giveUp?.cancel();
+    setState(() {
+      _asking = false;
+      _readAt = reading.at;
+      if (_edited) return;
+      final radio = StructuredMessageDialogs._radioPosition(widget.connector);
+      if (radio != null && radio != _position) {
+        _position = radio;
+        _filled++;
+      }
+    });
+  }
+
+  String _age(AppLocalizations l10n, DateTime at) {
+    final d = DateTime.now().difference(at);
+    if (d.inMinutes < 1) return l10n.time_justNow;
+    if (d.inHours < 1) return l10n.time_minutesAgo(d.inMinutes);
+    if (d.inDays < 1) return l10n.time_hoursAgo(d.inHours);
+    return l10n.time_daysAgo(d.inDays);
+  }
+
+  /// Where the position came from and how old it is, as far as the radio
+  /// says: never more.
+  Widget? _source(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    Widget line(IconData? icon, String text, {Color? color}) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (icon == null)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(icon, size: 16, color: color ?? scheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: color ?? scheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        );
+    if (_edited) {
+      return _position != null && _radioHadPosition
+          ? line(Icons.edit_location_alt_outlined, l10n.sos_positionTyped)
+          : null;
+    }
+    if (_asking) return line(null, l10n.sos_askingRadio);
+    if (_position == null) return null;
+    final read = _readAt;
+    if (read != null) {
+      return line(
+        Icons.gps_fixed,
+        l10n.sos_positionFrom(
+          DateTimeHelper.time(context, read),
+          _age(l10n, read),
+        ),
+      );
+    }
+    final last = widget.connector.selfGps.value;
+    final warn = scheme.error;
+    if (last != null &&
+        widget.connector.hasValidLocation(last.latitude, last.longitude)) {
+      return line(
+        Icons.history,
+        l10n.sos_positionNotNew(
+          DateTimeHelper.time(context, last.at),
+          _age(l10n, last.at),
+        ),
+        color: warn,
+      );
+    }
+    return line(Icons.history, l10n.sos_positionAgeUnknown, color: warn);
+  }
+
+  SosRequest _request() => SosRequest(
+        message: SosMessage(position: _position!, text: _text.text.trim()),
+        alsoPublic: widget.offerPublic && _alsoPublic,
+        followRadio: !(_edited && _radioHadPosition),
+      );
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final muted = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+        );
     return _trayDialog(
       context,
       icon: Icons.warning_rounded,
@@ -551,10 +731,36 @@ class _SosDialogState extends State<_SosDialog> {
         ),
         _gap,
         _PositionField(
-          initial: widget.initialPosition,
-          emptyHelper: l10n.tray_noRadioPosition,
-          onChanged: (position, _) => setState(() => _position = position),
+          key: ValueKey(_filled),
+          initial: _position,
+          emptyHelper: _asking ? null : l10n.tray_noRadioPosition,
+          onChanged: (position, _) => setState(() {
+            _position = position;
+            _edited = true;
+          }),
         ),
+        ?_source(context),
+        if (widget.offerPublic)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            controlAffinity: ListTileControlAffinity.leading,
+            value: _alsoPublic,
+            onChanged: (v) => setState(() => _alsoPublic = v ?? false),
+            title: Text(l10n.sos_alsoPublic),
+            subtitle: Text(l10n.sos_alsoPublicHint),
+          ),
+        if (widget.inChannel) ...[
+          const SizedBox(height: 6),
+          Text(l10n.sos_repeats, style: muted),
+          if (widget.replaces case final chat?) ...[
+            const SizedBox(height: 6),
+            Text(
+              l10n.sos_replacesOther(chat),
+              style: muted?.copyWith(color: scheme.error),
+            ),
+          ],
+        ],
       ],
       actions: [
         TextButton(
@@ -568,12 +774,10 @@ class _SosDialogState extends State<_SosDialog> {
           ),
           onPressed: _position == null
               ? null
-              : () => Navigator.pop(
-                    context,
-                    SosMessage(position: _position!, text: _text.text.trim())
-                        .toWire(),
-                  ),
-          child: Text(l10n.dialog_insert),
+              : () => Navigator.pop(context, _request()),
+          child: Text(
+            widget.inChannel ? l10n.dialog_sosTitle : l10n.dialog_insert,
+          ),
         ),
       ],
     );

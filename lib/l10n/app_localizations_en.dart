@@ -4878,6 +4878,145 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dialog_sosText => 'What happened?';
 
   @override
+  String get sos_alsoPublic => 'Also send to Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Anyone in range can read it, your position too. Only the first message goes there.';
+
+  @override
+  String get sos_askingRadio => 'Asking the radio for its position…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Radio position from $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'The radio gave no new position. Last known position from $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Last known position. The radio didn\'t say how old it is.';
+
+  @override
+  String get sos_positionTyped => 'Your own position: every repeat sends it.';
+
+  @override
+  String get sos_repeats =>
+      'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'This cancels your SOS in $chat.';
+  }
+
+  @override
+  String get sos_active => 'Your SOS is active';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Last sent $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Waiting for the radio to send it';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Got it ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'No Got it yet';
+
+  @override
+  String get sos_cancel => 'Cancel SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Everyone in $chat gets \"SOS cancelled\".';
+  }
+
+  @override
+  String get sos_keep => 'Keep SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS cancelled. It goes out when the radio is connected.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Your SOS stopped when MeshTrax closed. Last sent $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Send again';
+
+  @override
+  String get sos_gotIt => 'Got it';
+
+  @override
+  String sos_updated(String time) {
+    return 'Updated $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Cancelled $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Sent $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'SOS alerts';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'An SOS sent to you or to a chat you are in';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS from $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return 'SOS cancelled by $name';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'SOS alerts';
+
+  @override
+  String get appSettings_sosAlways =>
+      'An SOS always alerts, even in a muted chat or with message notifications off.';
+
+  @override
+  String get appSettings_sosThroughDnd => 'It sounds through Do Not Disturb.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Do Not Disturb silences it. Tap and allow Override Do Not Disturb.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'The phone has SOS alerts turned off. Tap to turn them on.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Focus and silent mode can still silence it on this device.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Notifications are off, so SOS alerts are off too.';
+
+  @override
   String get dialog_noticeTitle => 'Notice';
 
   @override

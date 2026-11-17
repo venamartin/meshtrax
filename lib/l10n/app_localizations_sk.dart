@@ -4950,6 +4950,146 @@ class AppLocalizationsSk extends AppLocalizations {
   String get dialog_sosText => 'Čo sa stalo?';
 
   @override
+  String get sos_alsoPublic => 'Poslať aj do Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Ktokoľvek v dosahu si ho môže prečítať, aj vašu polohu. Ide tam len prvá správa.';
+
+  @override
+  String get sos_askingRadio => 'Zisťuje sa poloha z rádia…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Poloha rádia z $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'Rádio neposlalo novú polohu. Posledná známa poloha z $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Posledná známa poloha. Rádio neuviedlo, aká je stará.';
+
+  @override
+  String get sos_positionTyped =>
+      'Vaša vlastná poloha: každé opakovanie ju posiela.';
+
+  @override
+  String get sos_repeats =>
+      'Posiela sa znova každé 2 minúty s najnovšou polohou rádia, kým ho nezrušíte, po prvom „Rozumiem“ každých 5 minút.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Týmto sa zruší vaše SOS v $chat.';
+  }
+
+  @override
+  String get sos_active => 'Vaše SOS je aktívne';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Naposledy odoslané $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Čaká sa na rádio, aby ho odoslalo';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Rozumiem ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Zatiaľ žiadne „Rozumiem“';
+
+  @override
+  String get sos_cancel => 'Zrušiť SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Všetci v $chat dostanú „SOS cancelled“.';
+  }
+
+  @override
+  String get sos_keep => 'Ponechať SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS zrušené. Správa odíde, keď bude rádio pripojené.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Vaše SOS sa zastavilo, keď sa MeshTrax zatvoril. Naposledy odoslané $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Poslať znova';
+
+  @override
+  String get sos_gotIt => 'Rozumiem';
+
+  @override
+  String sos_updated(String time) {
+    return 'Aktualizované $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Zrušené $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Odoslané $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'Upozornenia SOS';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'SOS poslané vám alebo do chatu, v ktorom ste';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS od $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name zrušil(a) SOS';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'Upozornenia SOS';
+
+  @override
+  String get appSettings_sosAlways =>
+      'SOS vždy upozorní, aj v stlmenom chate alebo pri vypnutých upozorneniach na správy.';
+
+  @override
+  String get appSettings_sosThroughDnd => 'Zaznie aj v režime Nerušiť.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Režim Nerušiť ho stlmí. Ťuknite a povoľte prepísanie režimu Nerušiť.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'Telefón má upozornenia SOS vypnuté. Ťuknutím ich zapnete.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Režimy sústredenia a tichý režim ho na tomto zariadení stále môžu stlmiť.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Upozornenia sú vypnuté, takže aj upozornenia SOS.';
+
+  @override
   String get dialog_noticeTitle => 'Oznam';
 
   @override

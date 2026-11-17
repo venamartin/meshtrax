@@ -1,4 +1,6 @@
 import 'dart:io' show Platform;
+import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart' show MaterialPageRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -252,6 +254,177 @@ class NotificationService {
     }
   }
 
+  /// The category SOS alerts go out on, and nothing else (Android). Its
+  /// sound, vibration and importance are fixed when it is first made, so
+  /// they live in [sosChannel] and [sosAndroidDetails] alike.
+  static const sosChannelId = 'meshtrax_sos';
+
+  static final _sosVibration =
+      Int64List.fromList([0, 1200, 400, 1200, 400, 1200]);
+
+  /// The alarm sound the phone has set, not the message sound.
+  static const _sosSound =
+      UriAndroidNotificationSound('content://settings/system/alarm_alert');
+
+  /// Android lets a category through Do Not Disturb only when the user says
+  /// so in its settings ([openSosSettings]); asking for it here takes
+  /// effect only for an app holding notification policy access.
+  static AndroidNotificationChannel sosChannel(AppLocalizations l10n) =>
+      AndroidNotificationChannel(
+        sosChannelId,
+        l10n.notification_sosChannel,
+        description: l10n.notification_sosChannelDescription,
+        importance: Importance.max,
+        bypassDnd: true,
+        sound: _sosSound,
+        vibrationPattern: _sosVibration,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      );
+
+  /// [silent]: an update that must not sound again (a cancel).
+  @visibleForTesting
+  static AndroidNotificationDetails sosAndroidDetails(
+    AppLocalizations l10n, {
+    bool silent = false,
+  }) {
+    final channel = sosChannel(l10n);
+    return AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      channelDescription: channel.description,
+      importance: channel.importance,
+      priority: Priority.max,
+      channelBypassDnd: channel.bypassDnd,
+      sound: channel.sound,
+      enableVibration: true,
+      vibrationPattern: channel.vibrationPattern,
+      audioAttributesUsage: channel.audioAttributesUsage,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      silent: silent,
+    );
+  }
+
+  /// The category plain channel messages go out on.
+  @visibleForTesting
+  static AndroidNotificationDetails channelAndroidDetails(
+    AppLocalizations l10n,
+  ) =>
+      AndroidNotificationDetails(
+        'meshtrax_channels',
+        l10n.appSettings_channelMessageNotifications,
+        importance: Importance.max,
+        priority: Priority.high,
+        groupKey: _groupKey,
+      );
+
+  /// What the SOS category may do on this phone, for the settings row.
+  Future<SosAlertState> sosAlertState() async {
+    if (!Platform.isAndroid) return SosAlertState.unknown;
+    if (!await _ensureInitialized()) return SosAlertState.unknown;
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (await android?.areNotificationsEnabled() == false) {
+      return SosAlertState.blocked;
+    }
+    final categories = await android?.getNotificationChannels() ?? const [];
+    final sos = categories.where((c) => c.id == sosChannelId).firstOrNull;
+    if (sos == null) return SosAlertState.silencedByDnd;
+    if (sos.importance == Importance.none) return SosAlertState.blocked;
+    return sos.bypassDnd
+        ? SosAlertState.throughDnd
+        : SosAlertState.silencedByDnd;
+  }
+
+  /// The SOS category's own settings page (Android), made first so the
+  /// page exists, where "Override Do Not Disturb" is switched on; the app's
+  /// settings elsewhere.
+  Future<void> openSosSettings() async {
+    if (Platform.isAndroid) {
+      await _ensureInitialized();
+      await _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(sosChannel(_l10n));
+      await const MethodChannel('meshtrax/system').invokeMethod<void>(
+        'openNotificationChannelSettings',
+        {'channelId': sosChannelId},
+      );
+    } else if (Platform.isIOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+    } else if (Platform.isMacOS) {
+      await launchUrl(
+        Uri.parse(
+          'x-apple.systempreferences:com.apple.preference.notifications',
+        ),
+      );
+    }
+  }
+
+  /// Every notification the app asks for, before the platform shows it.
+  @visibleForTesting
+  static void Function(ShownNotification shown)? debugOnShow;
+
+  /// An SOS, its repeat or its cancel: on its own category, shown at once
+  /// (never batched behind other messages), one notification per sender
+  /// and chat, replaced as the SOS updates. [where] names the chat, empty
+  /// for a direct message. [payload] opens it, as a message's would:
+  /// `mention:{channel}:{messageId}` lands on the card.
+  Future<void> showSosNotification({
+    required String chatKey,
+    required String senderName,
+    required String where,
+    required String text,
+    required String payload,
+    bool cancelled = false,
+  }) async {
+    final l10n = _l10n;
+    final title = cancelled
+        ? l10n.notification_sosCancelledBy(senderName)
+        : l10n.notification_sosFrom(senderName);
+    final body = [
+      MarkdownHelper.toPlainText(text),
+      where,
+    ].where((part) => part.isNotEmpty).join(' · ');
+    final id = sosNotificationId(chatKey, senderName);
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: sosChannelId,
+        id: id,
+        title: title,
+        body: body,
+        payload: payload,
+        silent: cancelled,
+      ),
+    );
+    if (!await _ensureInitialized()) return;
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      await _notifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: sosAndroidDetails(l10n, silent: cancelled),
+          iOS: DarwinNotificationDetails(presentSound: !cancelled),
+          macOS: DarwinNotificationDetails(presentSound: !cancelled),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show SOS notification: $e');
+    }
+  }
+
+  /// One per sender and chat, clear of the message ids (small numbers and
+  /// contact key hashes).
+  @visibleForTesting
+  static int sosNotificationId(String chatKey, String senderName) =>
+      (('sos|$chatKey|$senderName').hashCode & 0x3FFFFFFF) | 0x40000000;
+
   /// Format special message types for human-readable notifications.
   /// Markdown is stripped unless [formatting] is off; notifications always
   /// strip it so a spoiler never shows on the lock screen.
@@ -354,13 +527,7 @@ class NotificationService {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows || Platform.isLinux) return;
 
-    final androidDetails = AndroidNotificationDetails(
-      'meshtrax_channels',
-      _l10n.appSettings_channelMessageNotifications,
-      importance: Importance.max,
-      priority: Priority.high,
-      groupKey: _groupKey,
-    );
+    final androidDetails = channelAndroidDetails(_l10n);
     const darwinDetails = DarwinNotificationDetails();
     final details = NotificationDetails(
       android: androidDetails,
@@ -496,6 +663,14 @@ class NotificationService {
     String? contactId,
     int? badgeCount,
   }) async {
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: 'meshtrax_messages',
+        title: contactName,
+        body: message,
+        payload: contactId,
+      ),
+    );
     if (_suppressNotifications) return;
 
     _queueNotification(
@@ -546,6 +721,16 @@ class NotificationService {
     int? badgeCount,
     String? mentionMessageId,
   }) async {
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: 'meshtrax_channels',
+        title: channelName,
+        body: '$senderName: $message',
+        payload: mentionMessageId != null
+            ? 'mention:$channelIndex:$mentionMessageId'
+            : 'channel:$channelIndex',
+      ),
+    );
     if (_suppressNotifications) return;
 
     _queueNotification(
@@ -638,6 +823,28 @@ class NotificationService {
       debugPrint('Failed to show immediate notification: $e');
     }
   }
+}
+
+/// What the SOS category may do on this phone ([NotificationService.sosAlertState]).
+enum SosAlertState { unknown, blocked, silencedByDnd, throughDnd }
+
+/// A notification the app asked for ([NotificationService.debugOnShow]).
+class ShownNotification {
+  final String channelId;
+  final int? id;
+  final String title;
+  final String body;
+  final String? payload;
+  final bool silent;
+
+  const ShownNotification({
+    required this.channelId,
+    this.id,
+    required this.title,
+    required this.body,
+    this.payload,
+    this.silent = false,
+  });
 }
 
 // Helper class for pending notifications

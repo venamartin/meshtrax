@@ -4967,6 +4967,147 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dialog_sosText => 'Was ist passiert?';
 
   @override
+  String get sos_alsoPublic => 'Auch an Public senden';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Jeder in Reichweite kann es lesen, auch Ihre Position. Nur die erste Nachricht geht dorthin.';
+
+  @override
+  String get sos_askingRadio => 'Funkgerät wird nach seiner Position gefragt …';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Position des Funkgeräts von $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'Das Funkgerät hat keine neue Position geliefert. Letzte bekannte Position von $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Letzte bekannte Position. Das Funkgerät sagt nicht, wie alt sie ist.';
+
+  @override
+  String get sos_positionTyped =>
+      'Ihre eigene Position: Jede Wiederholung sendet sie.';
+
+  @override
+  String get sos_repeats =>
+      'Wird alle 2 Minuten mit der neuesten Position des Funkgeräts erneut gesendet, bis Sie es abbrechen, nach dem ersten „Verstanden“ alle 5 Minuten.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Damit wird Ihr SOS in $chat abgebrochen.';
+  }
+
+  @override
+  String get sos_active => 'Ihr SOS ist aktiv';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Zuletzt gesendet $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Wartet auf das Funkgerät zum Senden';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Verstanden ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Noch kein „Verstanden“';
+
+  @override
+  String get sos_cancel => 'SOS abbrechen';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Alle in $chat erhalten „SOS cancelled“.';
+  }
+
+  @override
+  String get sos_keep => 'SOS behalten';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS abgebrochen. Die Nachricht geht raus, sobald das Funkgerät verbunden ist.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Ihr SOS wurde beendet, als MeshTrax geschlossen wurde. Zuletzt gesendet $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Erneut senden';
+
+  @override
+  String get sos_gotIt => 'Verstanden';
+
+  @override
+  String sos_updated(String time) {
+    return 'Aktualisiert $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Abgebrochen $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Gesendet $time';
+  }
+
+  @override
+  String get notification_sosChannel => 'SOS-Alarme';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'Ein SOS an Sie oder in einem Ihrer Chats';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS von $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return 'SOS von $name abgebrochen';
+  }
+
+  @override
+  String get appSettings_sosAlerts => 'SOS-Alarme';
+
+  @override
+  String get appSettings_sosAlways =>
+      'Ein SOS alarmiert immer, auch in einem stummgeschalteten Chat oder bei ausgeschalteten Nachrichtenbenachrichtigungen.';
+
+  @override
+  String get appSettings_sosThroughDnd =>
+      'Er ertönt auch bei „Bitte nicht stören“.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      '„Bitte nicht stören“ schaltet ihn stumm. Tippen und „Bitte nicht stören“ ignorieren erlauben.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'Das Telefon hat SOS-Alarme ausgeschaltet. Tippen, um sie einzuschalten.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Fokus und Stummmodus können ihn auf diesem Gerät weiterhin stummschalten.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Benachrichtigungen sind aus, daher auch SOS-Alarme.';
+
+  @override
   String get dialog_noticeTitle => 'Hinweis';
 
   @override

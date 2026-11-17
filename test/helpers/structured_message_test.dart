@@ -204,6 +204,46 @@ void main() {
     test('needs a position', () {
       expect(StructuredMessage.parse('SOS: help'), isNull);
     });
+
+    // The cancel and the Got it are plain English text on the air, so any
+    // app shows them and anyone can type them.
+    test('"SOS cancelled" as anyone may type it is a cancel', () {
+      expect(SosMessage.cancelText, 'SOS cancelled');
+      expect(SosMessage.gotItText, 'Got it');
+      for (final text in [
+        'SOS cancelled',
+        'sos cancelled.',
+        'SOS canceled!',
+        'SOS CANCELLED\nall good, back at the car',
+        '@[GWQ]\n>SOS: Broke..\nSOS cancelled',
+      ]) {
+        expect(SosMessage.isCancel(text), isTrue, reason: text);
+      }
+      for (final text in [
+        'SOS cancelled? are you ok',
+        'Is the SOS cancelled',
+        'SOS: cancelled',
+        'cancelled',
+        'SOS',
+      ]) {
+        expect(SosMessage.isCancel(text), isFalse, reason: text);
+      }
+      expect(StructuredMessage.parse('SOS cancelled'), isNull,
+          reason: 'a cancel is no SOS card');
+    });
+
+    test('a repeat is the same SOS with the latest position', () {
+      const first = SosMessage(
+        position: LatLng(36.460000, -116.870000),
+        text: 'Broken leg',
+      );
+      const repeat = SosMessage(
+        position: LatLng(36.461234, -116.870000),
+        text: 'Broken leg',
+      );
+      expect(first.toWire(), 'SOS: Broken leg\n36.460000, -116.870000');
+      expect(repeat.toWire(), 'SOS: Broken leg\n36.461234, -116.870000');
+    });
   });
 
   group('Event', () {
