@@ -688,10 +688,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'Otwartoźródłowy klient Flutter dla urządzeń MeshCore LoRa do sieci mesh.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Dane wysokościowe LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Zgłoś błąd';
 
   @override
@@ -1848,12 +1844,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Nieprawidłowy format linku';
-
-  @override
-  String get map_lineOfSight => 'Linia wzroku';
-
-  @override
-  String get map_losScreenTitle => 'Linia wzroku';
 
   @override
   String get map_noNodesWithLocation => 'Brak węzłów z danymi lokalizacyjnymi';
@@ -3241,144 +3231,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Wyczyść ścieżkę';
 
   @override
-  String get losSelectStartEnd => 'Wybierz węzły początkowe i końcowe dla LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Sprawdzenie pola widzenia nie powiodło się: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Wyczyść wszystkie punkty';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Uruchom LOS, aby wyświetlić profil wysokości';
-
-  @override
-  String get losMenuTitle => 'Menu LOS';
-
-  @override
-  String get losMenuSubtitle =>
-      'Stuknij węzły lub naciśnij i przytrzymaj mapę, aby uzyskać niestandardowe punkty';
-
-  @override
-  String get losShowDisplayNodes => 'Pokaż węzły wyświetlające';
-
-  @override
-  String get losCustomPoints => 'Punkty niestandardowe';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Niestandardowe $index';
-  }
-
-  @override
-  String get losPointA => 'Punkt A';
-
-  @override
-  String get losPointB => 'Punkt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antena A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antena B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Uruchom LOS-a';
-
-  @override
-  String get losNoElevationData => 'Brak danych o wysokości';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, czysty LOS, minimalny prześwit $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, zablokowane przez $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: sprawdzam...';
-
-  @override
-  String get losStatusNoData => 'LOS: brak danych';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total jasne, $blocked zablokowane, $unknown nieznane';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Dane dotyczące wysokości są niedostępne dla jednej lub większej liczby próbek.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Nieprawidłowe dane punktów/wysokości do obliczenia LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Zmień nazwę punktu niestandardowego';
-
-  @override
-  String get losPointName => 'Nazwa punktu';
-
-  @override
-  String get losShowPanelTooltip => 'Pokaż panel LOS';
-
-  @override
-  String get losHidePanelTooltip => 'Ukryj panel LOS';
-
-  @override
-  String get losElevationAttribution =>
-      'Dane dotyczące wysokości: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Horyzont radiowy';
-
-  @override
-  String get losLegendLosBeam => 'Linia widoczności';
-
-  @override
-  String get losLegendTerrain => 'Teren';
-
-  @override
-  String get losFrequencyLabel => 'Częstotliwość';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Zobacz szczegóły obliczenia';
-
-  @override
-  String get losFrequencyDialogTitle => 'Obliczanie horyzontu radiowego';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Zaczynając od k=$baselineK przy $baselineFreq MHz, obliczenia korygują współczynnik k dla bieżącego pasma $frequencyMHz MHz, które definiuje zakrzywiony limit horyzontu radiowego.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Śledzenie Ścieżek';
 
   @override
@@ -4702,7 +4554,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get offlineMaps_kindContours => 'Poziomice';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Linie wysokości';
+  String get offlineMaps_kindContoursDetail =>
+      'Linie wysokości, używane też do linii widoczności';
 
   @override
   String get offlineMaps_kindUsgs => 'Mapa topograficzna USGS';
@@ -6735,4 +6588,211 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Linia widoczności';
+
+  @override
+  String get los_reachFromMe => 'Zasięg radia z mojej pozycji';
+
+  @override
+  String get los_lineFromMe => 'Linia widoczności z mojej pozycji';
+
+  @override
+  String get los_reachFromHere => 'Zasięg radia stąd';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Zasięg radia: $name';
+  }
+
+  @override
+  String get los_clear => 'Czysto';
+
+  @override
+  String get los_marginal => 'Na granicy';
+
+  @override
+  String get los_blocked => 'Zasłonięte';
+
+  @override
+  String get los_cantTell => 'Nie wiadomo';
+
+  @override
+  String get los_checking => 'Sprawdzanie…';
+
+  @override
+  String get los_failed => 'Nie udało się tu wyznaczyć linii widoczności.';
+
+  @override
+  String get los_pickTarget => 'Stuknij osobę lub miejsce na mapie.';
+
+  @override
+  String get los_noPosition =>
+      'Twoja pozycja nie jest jeszcze znana. Stuknij mapę, aby zacząć stamtąd.';
+
+  @override
+  String get los_nothingInWay => 'Brak przeszkód.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Teren w odległości $distance od ciebie jest $height nad linią.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Teren w odległości $distance od startu jest $height nad linią.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Teren w odległości $distance od ciebie zbliża się do linii na $height.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Teren w odległości $distance od startu zbliża się do linii na $height.';
+  }
+
+  @override
+  String get los_higherHelps => 'Pomoże wyższe miejsce lub wyższa antena.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Brak poziomic na $length tej linii.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Brak poziomic na $length tej linii ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'Brak poziomic dla części tego obszaru.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Brak poziomic dla części tego obszaru ($regions).';
+  }
+
+  @override
+  String get los_noHeightData =>
+      'Brak jeszcze danych o wysokości dla tego obszaru.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Pobierz poziomice: $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Pobierz poziomice dla tego obszaru przed wyjazdem. Potrzebne jest połączenie z internetem.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'To miejsce leży poniżej najniższej poziomicy (poniżej poziomu morza), więc jego wysokość nie jest znana.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name jest poniżej najniższej poziomicy (poniżej poziomu morza), więc wysokość w tym miejscu nie jest znana.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Jesteś poniżej najniższej poziomicy (poniżej poziomu morza), więc wysokość w tym miejscu nie jest znana. Gdy GPS radia jest włączony, używana jest jego wysokość.';
+
+  @override
+  String get los_noLinesNear =>
+      'W pobliżu tego końca linii nie ma poziomic, więc wysokość w tym miejscu nie jest znana.';
+
+  @override
+  String get los_from => 'Od';
+
+  @override
+  String get los_to => 'Do';
+
+  @override
+  String get los_thisRadio => 'To radio';
+
+  @override
+  String get los_me => 'Ja';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Ja, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Ja, pozycja ustawiona ręcznie';
+
+  @override
+  String get los_meNotYetGps => 'Ja, pozycja jeszcze bez aktualizacji z GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antena';
+
+  @override
+  String get los_handHeld => 'Ręczna';
+
+  @override
+  String get los_vehicle => 'Pojazd';
+
+  @override
+  String get los_raised => 'Podwyższona';
+
+  @override
+  String get los_raisedTitle => 'Podwyższona antena';
+
+  @override
+  String get los_raisedLabel => 'Wysokość nad ziemią';
+
+  @override
+  String get los_terrainOnly => 'Tylko teren, z pobranych poziomic.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Wysokości: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'O linii widoczności';
+
+  @override
+  String get los_helpBody =>
+      'Odpowiedź opiera się wyłącznie na terenie odczytanym z pobranych poziomic. Nie uwzględnia drzew, budynków, ludzi, linii energetycznych ani innych anten, a szczyt wzgórza może być wyższy, niż pokazano, nawet o jedną poziomicę.\n\n„Czysto” oznacza, że teren nie przeszkadza. Nie gwarantuje to, że wiadomość dotrze. „Na granicy” oznacza, że teren zbliża się do linii. „Zasłonięte” oznacza, że teren przeszkadza: wiadomość może jeszcze przejść nad jednym niskim grzbietem, ale nie licz na to.\n\nPrzetestuj to w terenie z własnymi radiami, zanim zaczniesz na tym polegać.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Zacieniowane: tam teren nie zasłania radia ręcznego, do $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Części terenu tutaj nie da się obliczyć, np. poniżej poziomu morza, więc nie jest zacieniowana.';
+
+  @override
+  String get los_positionGuessed => 'Przypuszczalna pozycja';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Przypuszczalna pozycja (przez $names)';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Sprawdź dalej ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Nikogo z pozycją w promieniu $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Poziomice do linii widoczności';
 }

@@ -682,10 +682,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Een open-source Flutter client voor MeshCore LoRa mesh netwerkapparaten.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS-hoogtegegevens: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Bug melden';
 
   @override
@@ -1830,12 +1826,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Ongeldig linkformaat';
-
-  @override
-  String get map_lineOfSight => 'Zichtlijn';
-
-  @override
-  String get map_losScreenTitle => 'Zichtlijn';
 
   @override
   String get map_noNodesWithLocation => 'Geen nodes met locatiegegevens';
@@ -3225,145 +3215,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Weg wissen';
 
   @override
-  String get losSelectStartEnd =>
-      'Selecteer begin- en eindknooppunten voor LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Zichtlijncontrole mislukt: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Wis alle punten';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Voer LOS uit om het hoogteprofiel te bekijken';
-
-  @override
-  String get losMenuTitle => 'LOS-menu';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tik op knooppunten of druk lang op de kaart voor aangepaste punten';
-
-  @override
-  String get losShowDisplayNodes => 'Toon weergaveknooppunten';
-
-  @override
-  String get losCustomPoints => 'Aangepaste punten';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Aangepast $index';
-  }
-
-  @override
-  String get losPointA => 'Punt A';
-
-  @override
-  String get losPointB => 'Punt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenne A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenne B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Voer LOS uit';
-
-  @override
-  String get losNoElevationData => 'Geen hoogtegegevens';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, vrije LOS, min. vrije ruimte $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, geblokkeerd door $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: controleren...';
-
-  @override
-  String get losStatusNoData => 'LOS: geen gegevens';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total gewist, $blocked geblokkeerd, $unknown onbekend';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Hoogtegegevens niet beschikbaar voor een of meer monsters.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Ongeldige punten/hoogtegegevens voor LOS-berekening.';
-
-  @override
-  String get losRenameCustomPoint => 'Hernoem aangepast punt';
-
-  @override
-  String get losPointName => 'Puntnaam';
-
-  @override
-  String get losShowPanelTooltip => 'Toon LOS-paneel';
-
-  @override
-  String get losHidePanelTooltip => 'LOS-paneel verbergen';
-
-  @override
-  String get losElevationAttribution =>
-      'Hoogtegegevens: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radiohorizon';
-
-  @override
-  String get losLegendLosBeam => 'Zichtlijn';
-
-  @override
-  String get losLegendTerrain => 'Terrein';
-
-  @override
-  String get losFrequencyLabel => 'Frequentie';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Bekijk details van de berekening';
-
-  @override
-  String get losFrequencyDialogTitle => 'Berekening van de radiohorizon';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Beginnend met k=$baselineK bij $baselineFreq MHz, wordt bij de berekening de k-factor aangepast voor de huidige $frequencyMHz MHz-band, die de gebogen radiohorizonkap definieert.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Pad Traceren';
 
   @override
@@ -4665,7 +4516,8 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineMaps_kindContours => 'Hoogtelijnen';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Lijnen van gelijke hoogte';
+  String get offlineMaps_kindContoursDetail =>
+      'Lijnen van gelijke hoogte, ook gebruikt voor zichtlijn';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS-topokaart';
@@ -6691,4 +6543,212 @@ class AppLocalizationsNl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Zichtlijn';
+
+  @override
+  String get los_reachFromMe => 'Radiobereik vanaf mijn positie';
+
+  @override
+  String get los_lineFromMe => 'Zichtlijn vanaf mijn positie';
+
+  @override
+  String get los_reachFromHere => 'Radiobereik vanaf hier';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Radiobereik vanaf $name';
+  }
+
+  @override
+  String get los_clear => 'Vrij';
+
+  @override
+  String get los_marginal => 'Krap';
+
+  @override
+  String get los_blocked => 'Geblokkeerd';
+
+  @override
+  String get los_cantTell => 'Onbekend';
+
+  @override
+  String get los_checking => 'Controleren…';
+
+  @override
+  String get los_failed => 'De zichtlijn kon hier niet worden berekend.';
+
+  @override
+  String get los_pickTarget => 'Tik op een persoon of een plek op de kaart.';
+
+  @override
+  String get los_noPosition =>
+      'Je positie is nog niet bekend. Tik op de kaart om daar te beginnen.';
+
+  @override
+  String get los_nothingInWay => 'Niets in de weg.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Het terrein op $distance van je ligt $height boven de lijn.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Het terrein op $distance van het begin ligt $height boven de lijn.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Het terrein op $distance van je komt tot $height van de lijn.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Het terrein op $distance van het begin komt tot $height van de lijn.';
+  }
+
+  @override
+  String get los_higherHelps => 'Een hogere plek of een hogere antenne helpt.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Geen hoogtelijnen voor $length van deze lijn.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Geen hoogtelijnen voor $length van deze lijn ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea =>
+      'Geen hoogtelijnen voor een deel van dit gebied.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Geen hoogtelijnen voor een deel van dit gebied ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'Nog geen hoogtegegevens voor dit gebied.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Hoogtelijnen voor $regions downloaden ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Download de hoogtelijnen voor dit gebied vóór je reis. Daarvoor is een internetverbinding nodig.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Deze plek ligt onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte is niet bekend.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name bevindt zich onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte daar is niet bekend.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Je bevindt je onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte daar is niet bekend. Als de GPS van de radio aan staat, wordt de hoogte daarvan gebruikt.';
+
+  @override
+  String get los_noLinesNear =>
+      'Er zijn geen hoogtelijnen bij dit uiteinde van de lijn, dus de hoogte daar is niet bekend.';
+
+  @override
+  String get los_from => 'Van';
+
+  @override
+  String get los_to => 'Naar';
+
+  @override
+  String get los_thisRadio => 'Deze radio';
+
+  @override
+  String get los_me => 'Ik';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Ik, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Ik, positie met de hand ingesteld';
+
+  @override
+  String get los_meNotYetGps => 'Ik, positie nog niet bijgewerkt door GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antenne';
+
+  @override
+  String get los_handHeld => 'Portofoon';
+
+  @override
+  String get los_vehicle => 'Voertuig';
+
+  @override
+  String get los_raised => 'Verhoogd';
+
+  @override
+  String get los_raisedTitle => 'Verhoogde antenne';
+
+  @override
+  String get los_raisedLabel => 'Hoogte boven de grond';
+
+  @override
+  String get los_terrainOnly =>
+      'Alleen terrein, uit de hoogtelijnen die je hebt gedownload.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Hoogtes: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'Over zichtlijn';
+
+  @override
+  String get los_helpBody =>
+      'Het antwoord komt alleen van het terrein, gelezen uit de hoogtelijnen die je hebt gedownload. Het weet niets van bomen, gebouwen, mensen, hoogspanningslijnen of andere antennes, en een heuveltop kan tot één hoogtelijn hoger zijn dan getekend.\n\n“Vrij” betekent dat het terrein niet in de weg zit. Dat belooft niet dat een bericht aankomt. “Krap” betekent dat het terrein dicht bij de lijn komt. “Geblokkeerd” betekent dat het terrein in de weg zit: een bericht kan nog over één lage rug komen, maar reken er niet op.\n\nTest het in het veld met je eigen radio\'s voordat je erop vertrouwt.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Ingekleurd: daar zit het terrein niet in de weg naar een portofoon, tot $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.';
+
+  @override
+  String get los_positionGuessed => 'Positie geschat';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Positie geschat, gehoord via $names';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Verder kijken ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Niemand met een positie binnen $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Hoogtelijnen voor zichtlijn';
 }

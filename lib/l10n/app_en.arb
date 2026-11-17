@@ -297,7 +297,6 @@
   },
   "settings_aboutLegalese": "© 2026 MeshTrax Contributors",
   "settings_aboutDescription": "An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.",
-  "settings_aboutOpenMeteoAttribution": "LOS elevation data: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Report a bug",
   "settings_reportBugSubtitle": "Opens a bug report on GitHub",
   "settings_infoName": "Name",
@@ -956,8 +955,6 @@
     }
   },
   "chat_invalidLink": "Invalid link format",
-  "map_lineOfSight": "Line of Sight",
-  "map_losScreenTitle": "Line of Sight",
   "map_noNodesWithLocation": "No nodes with location data",
   "map_nodesNeedGps": "Nodes need to share their GPS coordinates\nto appear on the map",
   "map_nodesCount": "Nodes: {count}",
@@ -1756,139 +1753,6 @@
   "pathTrace_refreshTooltip": "Refresh Path Trace.",
   "pathTrace_someHopsNoLocation": "One or more of the hops is missing a location!",
   "pathTrace_clearTooltip": "Clear path.",
-  "losSelectStartEnd": "Select start and end nodes for LOS.",
-  "losRunFailed": "Line-of-sight check failed: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Clear all points",
-  "losRunToViewElevationProfile": "Run LOS to view elevation profile",
-  "losMenuTitle": "LOS Menu",
-  "losMenuSubtitle": "Tap nodes or long-press map for custom points",
-  "losShowDisplayNodes": "Show display nodes",
-  "losCustomPoints": "Custom points",
-  "losCustomPointLabel": "Custom {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Point A",
-  "losPointB": "Point B",
-  "losAntennaA": "Antenna A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenna B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Run LOS",
-  "losNoElevationData": "No elevation data",
-  "losProfileClear": "{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blocked by {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: checking...",
-  "losStatusNoData": "LOS: no data",
-  "losStatusSummary": "LOS: {clear}/{total} clear, {blocked} blocked, {unknown} unknown",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Elevation data unavailable for one or more samples.",
-  "losErrorInvalidInput": "Invalid points/elevation data for LOS calculation.",
-  "losRenameCustomPoint": "Rename custom point",
-  "losPointName": "Point name",
-  "losShowPanelTooltip": "Show LOS panel",
-  "losHidePanelTooltip": "Hide LOS panel",
-  "losElevationAttribution": "Elevation data: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Radio horizon",
-  "losLegendLosBeam": "LOS beam",
-  "losLegendTerrain": "Terrain",
-  "losFrequencyLabel": "Frequency",
-  "losFrequencyInfoTooltip": "View calculation details",
-  "losFrequencyDialogTitle": "Radio horizon calculation",
-  "losFrequencyDialogDescription": "Starting from k={baselineK} at {baselineFreq} MHz, the calculation adjusts the k-factor for the current {frequencyMHz} MHz band, which defines the curved radio horizon cap.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "contacts_pathTrace": "Path Trace",
   "contacts_ping": "Ping",
   "contacts_repeaterPathTrace": "Path trace to repeater",
@@ -2513,7 +2377,7 @@
   "offlineMaps_kindMap": "Map",
   "offlineMaps_kindMapDetail": "OpenStreetMap streets, trails, places",
   "offlineMaps_kindContours": "Contours",
-  "offlineMaps_kindContoursDetail": "Elevation lines",
+  "offlineMaps_kindContoursDetail": "Elevation lines, also used for line of sight",
   "offlineMaps_kindUsgs": "USGS topo map",
   "offlineMaps_kindUsgsDetail": "Trails, streams, reserves",
   "offlineMaps_kindTerrain": "Hill shading",
@@ -3311,5 +3175,77 @@
         "type": "int"
       }
     }
-  }
+  },
+  "los_lineOfSight": "Line of sight",
+  "los_reachFromMe": "Radio reach from me",
+  "los_lineFromMe": "Line of sight from me",
+  "los_reachFromHere": "Radio reach from here",
+  "los_reachFrom": "Radio reach from {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Clear",
+  "los_marginal": "Marginal",
+  "los_blocked": "Blocked",
+  "los_cantTell": "Can't tell",
+  "los_checking": "Checking…",
+  "los_failed": "Line of sight couldn't be worked out here.",
+  "los_pickTarget": "Tap a person or a place on the map.",
+  "los_noPosition": "Your position isn't known yet. Tap the map to start from there.",
+  "los_nothingInWay": "Nothing in the way.",
+  "los_groundAbove": "The ground {distance} from you is {height} above the line.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "The ground {distance} from the start is {height} above the line.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "The ground {distance} from you comes within {height} of the line.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "The ground {distance} from the start comes within {height} of the line.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Higher ground or a higher antenna helps.",
+  "los_noContours": "No contour lines for {length} of this line.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "No contour lines for {length} of this line ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "No contour lines for part of this area.",
+  "los_noContoursAreaIn": "No contour lines for part of this area ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "No height data for this area yet.",
+  "los_downloadContours": "Download {regions} contours ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Download the contours for this area before your trip. It needs an internet connection.",
+  "los_spotBelowLowest": "This spot is below the lowest contour line (below sea level), so its height isn't known.",
+  "los_nameBelowLowest": "{name} is below the lowest contour line (below sea level), so the height there isn't known.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "You are below the lowest contour line (below sea level), so the height there isn't known. With the radio's GPS on, its altitude is used.",
+  "los_noLinesNear": "There are no contour lines near this end of the line, so its height isn't known.",
+  "los_from": "From",
+  "los_to": "To",
+  "los_thisRadio": "This radio",
+  "los_me": "Me",
+  "los_meAgo": "Me, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Me, position set by hand",
+  "los_meNotYetGps": "Me, not yet updated by GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Antenna",
+  "los_handHeld": "Hand-held",
+  "los_vehicle": "Vehicle",
+  "los_raised": "Raised",
+  "los_raisedTitle": "Raised antenna",
+  "los_raisedLabel": "Height above the ground",
+  "los_terrainOnly": "Terrain only, from the contour lines you downloaded.",
+  "los_credits": "Heights: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "About line of sight",
+  "los_helpBody": "The answer comes from the ground alone, read from the contour lines you downloaded. It knows nothing of trees, buildings, people, power lines or other antennas, and a hilltop can be up to one contour line higher than drawn.\n\nClear means the ground isn't in the way. It doesn't promise that a message gets through. Marginal means the ground comes close to the line. Blocked means the ground is in the way: a message may still get over one low ridge, but don't count on it.\n\nTest it with your own radios in the field before you rely on it.",
+  "los_reachShaded": "Shaded: the ground isn't in the way to a hand-held there, up to {distance}.",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_reachUnknownPart": "Some ground here can't be worked out, such as ground below sea level, so it isn't shaded.",
+  "los_positionGuessed": "Position guessed",
+  "los_positionGuessedVia": "Position guessed, heard via {names}",
+  "@los_positionGuessedVia": {"placeholders": {"names": {"type": "String"}}},
+  "los_lookFurther": "Look further ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "No one with a position within {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Contours for line of sight"
 }

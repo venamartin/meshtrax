@@ -643,10 +643,6 @@ class AppLocalizationsZh extends AppLocalizations {
       '一个开源的 Flutter 客户端，用于 MeshCore LoRa 无线网络设备。';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS 高程数据:Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => '报告问题';
 
   @override
@@ -1740,12 +1736,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chat_invalidLink => '无效的链接格式';
-
-  @override
-  String get map_lineOfSight => '视线';
-
-  @override
-  String get map_losScreenTitle => '视线';
 
   @override
   String get map_noNodesWithLocation => '没有包含位置信息的节点';
@@ -3035,139 +3025,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pathTrace_clearTooltip => '清除路径';
 
   @override
-  String get losSelectStartEnd => '选择 LOS 的起始节点和结束节点。';
-
-  @override
-  String losRunFailed(String error) {
-    return '视线检查失败：$error';
-  }
-
-  @override
-  String get losClearAllPoints => '清除所有点';
-
-  @override
-  String get losRunToViewElevationProfile => '运行 LOS 查看高程剖面';
-
-  @override
-  String get losMenuTitle => '服务水平菜单';
-
-  @override
-  String get losMenuSubtitle => '点击节点或长按地图以获取自定义点';
-
-  @override
-  String get losShowDisplayNodes => '显示显示节点';
-
-  @override
-  String get losCustomPoints => '自定义积分';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return '自定义 $index';
-  }
-
-  @override
-  String get losPointA => 'A点';
-
-  @override
-  String get losPointB => 'B点';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return '天线 A： $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return '天线 B：$value $unit';
-  }
-
-  @override
-  String get losRun => '运行视距';
-
-  @override
-  String get losNoElevationData => '无海拔数据';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit，清除 LOS，最小间隙 $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit，被 $obstruction $heightUnit 阻止';
-  }
-
-  @override
-  String get losStatusChecking => '洛斯：正在检查...';
-
-  @override
-  String get losStatusNoData => 'LOS：无数据';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS：$clear/$total 清除，$blocked 阻塞，$unknown 未知';
-  }
-
-  @override
-  String get losErrorElevationUnavailable => '一个或多个样本的海拔数据不可用。';
-
-  @override
-  String get losErrorInvalidInput => '用于 LOS 计算的点/高程数据无效。';
-
-  @override
-  String get losRenameCustomPoint => '重命名自定义点';
-
-  @override
-  String get losPointName => '点名称';
-
-  @override
-  String get losShowPanelTooltip => '显示 LOS 面板';
-
-  @override
-  String get losHidePanelTooltip => '隐藏 LOS 面板';
-
-  @override
-  String get losElevationAttribution => '高程数据：Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => '无线电地平线';
-
-  @override
-  String get losLegendLosBeam => '视距波束';
-
-  @override
-  String get losLegendTerrain => '地形';
-
-  @override
-  String get losFrequencyLabel => '频率';
-
-  @override
-  String get losFrequencyInfoTooltip => '查看计算详情';
-
-  @override
-  String get losFrequencyDialogTitle => '无线电地平线计算';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return '从 $baselineFreq MHz 处的 k=$baselineK 开始，计算调整当前 $frequencyMHz MHz 频段的 k 因子，该因子定义了弯曲的无线电范围上限。';
-  }
-
-  @override
   String get contacts_pathTrace => '路径追踪';
 
   @override
@@ -4355,7 +4212,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_kindContours => '等高线';
 
   @override
-  String get offlineMaps_kindContoursDetail => '表示海拔高度的线';
+  String get offlineMaps_kindContoursDetail => '表示海拔高度的线，也用于视线';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS 地形图';
@@ -6289,4 +6146,205 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => '视线';
+
+  @override
+  String get los_reachFromMe => '我的信号覆盖范围';
+
+  @override
+  String get los_lineFromMe => '从我到这里的视线';
+
+  @override
+  String get los_reachFromHere => '此处的信号覆盖范围';
+
+  @override
+  String los_reachFrom(String name) {
+    return '$name 的信号覆盖范围';
+  }
+
+  @override
+  String get los_clear => '无遮挡';
+
+  @override
+  String get los_marginal => '临界';
+
+  @override
+  String get los_blocked => '被遮挡';
+
+  @override
+  String get los_cantTell => '无法判断';
+
+  @override
+  String get los_checking => '正在检查…';
+
+  @override
+  String get los_failed => '无法在此处计算视线。';
+
+  @override
+  String get los_pickTarget => '点按地图上的人或地点。';
+
+  @override
+  String get los_noPosition => '尚不知道您的位置。点按地图，从那里开始。';
+
+  @override
+  String get los_nothingInWay => '没有遮挡。';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return '距您 $distance 处的地面高出视线 $height。';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return '距起点 $distance 处的地面高出视线 $height。';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return '距您 $distance 处的地面与视线只差 $height。';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return '距起点 $distance 处的地面与视线只差 $height。';
+  }
+
+  @override
+  String get los_higherHelps => '换到更高的地方或架高天线会有帮助。';
+
+  @override
+  String los_noContours(String length) {
+    return '这条线有 $length 没有等高线。';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return '这条线有 $length 没有等高线（$regions）。';
+  }
+
+  @override
+  String get los_noContoursArea => '此区域有一部分没有等高线。';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return '此区域有一部分没有等高线（$regions）。';
+  }
+
+  @override
+  String get los_noHeightData => '此区域还没有高度数据。';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return '下载 $regions 等高线（$size）';
+  }
+
+  @override
+  String get los_downloadBeforeTrip => '请在出行前下载此区域的等高线。下载需要联网。';
+
+  @override
+  String get los_spotBelowLowest => '此地点低于最低的等高线（低于海平面），因此高度未知。';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name 所在位置低于最低的等高线（低于海平面），因此那里的高度未知。';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      '您所在位置低于最低的等高线（低于海平面），因此那里的高度未知。如果电台的 GPS 已开启，将使用它测得的海拔。';
+
+  @override
+  String get los_noLinesNear => '这条线的这一端附近没有等高线，因此那里的高度未知。';
+
+  @override
+  String get los_from => '起点';
+
+  @override
+  String get los_to => '终点';
+
+  @override
+  String get los_thisRadio => '本电台';
+
+  @override
+  String get los_me => '我';
+
+  @override
+  String los_meAgo(String age) {
+    return '我，$age';
+  }
+
+  @override
+  String get los_meByHand => '我，位置为手动设置';
+
+  @override
+  String get los_meNotYetGps => '我，位置尚未由 GPS 更新';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name，$age';
+  }
+
+  @override
+  String get los_antenna => '天线';
+
+  @override
+  String get los_handHeld => '手持';
+
+  @override
+  String get los_vehicle => '车载';
+
+  @override
+  String get los_raised => '架高';
+
+  @override
+  String get los_raisedTitle => '架高天线';
+
+  @override
+  String get los_raisedLabel => '离地高度';
+
+  @override
+  String get los_terrainOnly => '仅考虑地形，依据您下载的等高线。';
+
+  @override
+  String los_credits(String credits) {
+    return '高度数据：$credits';
+  }
+
+  @override
+  String get los_aboutTitle => '关于视线';
+
+  @override
+  String get los_helpBody =>
+      '结果只依据地形，读取自您下载的等高线。它不考虑树木、建筑、人、电线或其他天线，而且山顶可能比图上画的高出最多一条等高线。\n\n“无遮挡”表示地形没有挡住。这不保证消息一定能送达。“临界”表示地形接近视线。“被遮挡”表示地形挡住了：消息仍可能越过一道低矮的山脊，但不要指望。\n\n在依赖它之前，请先在野外用您自己的电台测试。';
+
+  @override
+  String los_reachShaded(String distance) {
+    return '着色区域：在 $distance 以内，地形不会挡住与该处手持电台之间的视线。';
+  }
+
+  @override
+  String get los_reachUnknownPart => '此处部分地形无法计算（例如低于海平面的地方），因此未着色。';
+
+  @override
+  String get los_positionGuessed => '推测位置';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return '推测位置（经 $names 收到）';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return '查看更远（$distance）';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return '$distance 以内没有已知位置的人。';
+  }
+
+  @override
+  String get offlineMaps_losContours => '用于视线的等高线';
 }

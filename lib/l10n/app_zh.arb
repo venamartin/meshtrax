@@ -1465,147 +1465,11 @@
   "settings_clientRepeat": "离网重复",
   "settings_clientRepeatSubtitle": "允许此设备重复发送网状数据包给其他设备",
   "settings_clientRepeatFreqWarning": "离网重复通信需要使用 433、869 或 918 兆赫兹的频率。",
-  "settings_aboutOpenMeteoAttribution": "LOS 高程数据:Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "报告问题",
   "settings_reportBugSubtitle": "在 GitHub 上打开问题报告",
   "appSettings_unitsTitle": "单位",
   "appSettings_unitsMetric": "公制（米/公里）",
   "appSettings_unitsImperial": "英制 (ft / mi)",
-  "map_lineOfSight": "视线",
-  "map_losScreenTitle": "视线",
-  "losSelectStartEnd": "选择 LOS 的起始节点和结束节点。",
-  "losRunFailed": "视线检查失败：{error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "清除所有点",
-  "losRunToViewElevationProfile": "运行 LOS 查看高程剖面",
-  "losMenuTitle": "服务水平菜单",
-  "losMenuSubtitle": "点击节点或长按地图以获取自定义点",
-  "losShowDisplayNodes": "显示显示节点",
-  "losCustomPoints": "自定义积分",
-  "losCustomPointLabel": "自定义 {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "A点",
-  "losPointB": "B点",
-  "losAntennaA": "天线 A： {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "天线 B：{value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "运行视距",
-  "losNoElevationData": "无海拔数据",
-  "losProfileClear": "{distance} {distanceUnit}，清除 LOS，最小间隙 {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}，被 {obstruction} {heightUnit} 阻止",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "洛斯：正在检查...",
-  "losStatusNoData": "LOS：无数据",
-  "losStatusSummary": "LOS：{clear}/{total} 清除，{blocked} 阻塞，{unknown} 未知",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "一个或多个样本的海拔数据不可用。",
-  "losErrorInvalidInput": "用于 LOS 计算的点/高程数据无效。",
-  "losRenameCustomPoint": "重命名自定义点",
-  "losPointName": "点名称",
-  "losShowPanelTooltip": "显示 LOS 面板",
-  "losHidePanelTooltip": "隐藏 LOS 面板",
-  "losElevationAttribution": "高程数据：Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "无线电地平线",
-  "losLegendLosBeam": "视距波束",
-  "losLegendTerrain": "地形",
-  "losFrequencyLabel": "频率",
-  "losFrequencyInfoTooltip": "查看计算详情",
-  "losFrequencyDialogTitle": "无线电地平线计算",
-  "losFrequencyDialogDescription": "从 {baselineFreq} MHz 处的 k={baselineK} 开始，计算调整当前 {frequencyMHz} MHz 频段的 k 因子，该因子定义了弯曲的无线电范围上限。",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_favorites": "收藏",
   "listFilter_addToFavorites": "添加到收藏",
   "listFilter_removeFromFavorites": "从收藏中移除",
@@ -2198,7 +2062,7 @@
   "offlineMaps_kindMap": "地图",
   "offlineMaps_kindMapDetail": "OpenStreetMap 街道、步道、地名",
   "offlineMaps_kindContours": "等高线",
-  "offlineMaps_kindContoursDetail": "表示海拔高度的线",
+  "offlineMaps_kindContoursDetail": "表示海拔高度的线，也用于视线",
   "offlineMaps_kindUsgs": "USGS 地形图",
   "offlineMaps_kindUsgsDetail": "步道、溪流、保护区",
   "offlineMaps_kindTerrain": "山体阴影",
@@ -2811,5 +2675,76 @@
   "channels_pasteLinkDesc": "你复制的 meshcore:// 频道链接。",
   "channels_pasteLinkNone": "剪贴板中没有频道链接。",
   "settings_locationGpsNote": "GPS 开启时，一旦定位成功，电台就会替换此位置。",
-  "contacts_hopsAway": "{count, plural, =0{直连} other{{count} 跳}}"
+  "contacts_hopsAway": "{count, plural, =0{直连} other{{count} 跳}}",
+  "los_lineOfSight": "视线",
+  "los_reachFromMe": "我的信号覆盖范围",
+  "los_lineFromMe": "从我到这里的视线",
+  "los_reachFromHere": "此处的信号覆盖范围",
+  "los_reachFrom": "{name} 的信号覆盖范围",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "无遮挡",
+  "los_marginal": "临界",
+  "los_blocked": "被遮挡",
+  "los_cantTell": "无法判断",
+  "los_checking": "正在检查…",
+  "los_failed": "无法在此处计算视线。",
+  "los_pickTarget": "点按地图上的人或地点。",
+  "los_noPosition": "尚不知道您的位置。点按地图，从那里开始。",
+  "los_nothingInWay": "没有遮挡。",
+  "los_groundAbove": "距您 {distance} 处的地面高出视线 {height}。",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "距起点 {distance} 处的地面高出视线 {height}。",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "距您 {distance} 处的地面与视线只差 {height}。",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "距起点 {distance} 处的地面与视线只差 {height}。",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "换到更高的地方或架高天线会有帮助。",
+  "los_noContours": "这条线有 {length} 没有等高线。",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "这条线有 {length} 没有等高线（{regions}）。",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "此区域有一部分没有等高线。",
+  "los_noContoursAreaIn": "此区域有一部分没有等高线（{regions}）。",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "此区域还没有高度数据。",
+  "los_downloadContours": "下载 {regions} 等高线（{size}）",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "请在出行前下载此区域的等高线。下载需要联网。",
+  "los_spotBelowLowest": "此地点低于最低的等高线（低于海平面），因此高度未知。",
+  "los_nameBelowLowest": "{name} 所在位置低于最低的等高线（低于海平面），因此那里的高度未知。",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "您所在位置低于最低的等高线（低于海平面），因此那里的高度未知。如果电台的 GPS 已开启，将使用它测得的海拔。",
+  "los_noLinesNear": "这条线的这一端附近没有等高线，因此那里的高度未知。",
+  "los_from": "起点",
+  "los_to": "终点",
+  "los_thisRadio": "本电台",
+  "los_me": "我",
+  "los_meAgo": "我，{age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "我，位置为手动设置",
+  "los_meNotYetGps": "我，位置尚未由 GPS 更新",
+  "los_nameAgo": "{name}，{age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "天线",
+  "los_handHeld": "手持",
+  "los_vehicle": "车载",
+  "los_raised": "架高",
+  "los_raisedTitle": "架高天线",
+  "los_raisedLabel": "离地高度",
+  "los_terrainOnly": "仅考虑地形，依据您下载的等高线。",
+  "los_credits": "高度数据：{credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "关于视线",
+  "los_helpBody": "结果只依据地形，读取自您下载的等高线。它不考虑树木、建筑、人、电线或其他天线，而且山顶可能比图上画的高出最多一条等高线。\n\n“无遮挡”表示地形没有挡住。这不保证消息一定能送达。“临界”表示地形接近视线。“被遮挡”表示地形挡住了：消息仍可能越过一道低矮的山脊，但不要指望。\n\n在依赖它之前，请先在野外用您自己的电台测试。",
+  "los_reachShaded": "着色区域：在 {distance} 以内，地形不会挡住与该处手持电台之间的视线。",
+  "los_reachUnknownPart": "此处部分地形无法计算（例如低于海平面的地方），因此未着色。",
+  "los_positionGuessed": "推测位置",
+  "los_positionGuessedVia": "推测位置（经 {names} 收到）",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "查看更远（{distance}）",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "{distance} 以内没有已知位置的人。",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "用于视线的等高线"
 }

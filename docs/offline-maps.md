@@ -9,7 +9,7 @@ You download maps one region at a time. Each region can have several kinds of **
 | Kind | What it shows |
 |---|---|
 | Map | Streets, trails and places, from OpenStreetMap |
-| Contours | Elevation lines |
+| Contours | Elevation lines, also used for line of sight |
 | Hill shading | Hills and mountains, shaded under the map |
 | USGS topo map | Trails, streams and reserves (United States only). USGS is the US Geological Survey; a topo map shows the shape of the land. |
 | NOAA charts | Nautical charts for US coasts, picked by coast in the Charts tab. NOAA is the US ocean and weather agency. |

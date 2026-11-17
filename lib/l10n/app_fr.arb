@@ -1460,147 +1460,11 @@
   "settings_clientRepeatFreqWarning": "Pour les transmissions hors réseau, il est nécessaire d'utiliser les fréquences de 433, 869 ou 918 MHz.",
   "settings_clientRepeatSubtitle": "Permettez à cet appareil de répéter les paquets de données pour les autres.",
   "settings_clientRepeat": "Répétition hors réseau",
-  "settings_aboutOpenMeteoAttribution": "Données d'élévation LOS : Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Signaler un bug",
   "settings_reportBugSubtitle": "Ouvre un rapport de bug sur GitHub",
   "appSettings_unitsTitle": "Unités",
   "appSettings_unitsMetric": "Métrique (m/km)",
   "appSettings_unitsImperial": "Impérial (ft / mi)",
-  "map_lineOfSight": "Ligne de vue",
-  "map_losScreenTitle": "Ligne de vue",
-  "losSelectStartEnd": "Sélectionnez les nœuds de début et de fin pour LOS.",
-  "losRunFailed": "Échec de la vérification de la ligne de vue : {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Effacer tous les points",
-  "losRunToViewElevationProfile": "Exécutez LOS pour afficher le profil d'altitude",
-  "losMenuTitle": "Menu LOS",
-  "losMenuSubtitle": "Appuyez sur les nœuds ou appuyez longuement sur la carte pour des points personnalisés",
-  "losShowDisplayNodes": "Afficher les nœuds d'affichage",
-  "losCustomPoints": "Points personnalisés",
-  "losCustomPointLabel": "Personnalisé {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Point A",
-  "losPointB": "Point B",
-  "losAntennaA": "Antenne A : {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenne B : {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Exécuter la LOS",
-  "losNoElevationData": "Aucune donnée d'altitude",
-  "losProfileClear": "{distance} {distanceUnit}, LOS clair, clairance minimale {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, bloqué par {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS : vérification...",
-  "losStatusNoData": "LOS : aucune donnée",
-  "losStatusSummary": "LOS : {clear}/{total} clair, {blocked} bloqué, {unknown} inconnu",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Données d'altitude indisponibles pour un ou plusieurs échantillons.",
-  "losErrorInvalidInput": "Données de points/d'altitude non valides pour le calcul de la LOS.",
-  "losRenameCustomPoint": "Renommer le point personnalisé",
-  "losPointName": "Nom du point",
-  "losShowPanelTooltip": "Afficher le panneau LOS",
-  "losHidePanelTooltip": "Masquer le panneau LOS",
-  "losElevationAttribution": "Données d’altitude : Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Horizon radio",
-  "losLegendLosBeam": "Ligne de visée",
-  "losLegendTerrain": "Terrain",
-  "losFrequencyLabel": "Fréquence",
-  "losFrequencyInfoTooltip": "Voir les détails du calcul",
-  "losFrequencyDialogTitle": "Calcul de l’horizon radio",
-  "losFrequencyDialogDescription": "À partir de k={baselineK} à {baselineFreq} MHz, le calcul ajuste le facteur k pour la bande actuelle de {frequencyMHz} MHz, ce qui définit la limite incurvée de l'horizon radio.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_addToFavorites": "Ajouter à mes favoris",
   "listFilter_removeFromFavorites": "Supprimer des favoris",
   "listFilter_favorites": "Préférences",
@@ -2193,7 +2057,7 @@
   "offlineMaps_kindMap": "Carte",
   "offlineMaps_kindMapDetail": "Rues, sentiers et lieux OpenStreetMap",
   "offlineMaps_kindContours": "Courbes de niveau",
-  "offlineMaps_kindContoursDetail": "Lignes d'altitude",
+  "offlineMaps_kindContoursDetail": "Lignes d'altitude, aussi utilisées pour la ligne de vue",
   "offlineMaps_kindUsgs": "Carte topo USGS",
   "offlineMaps_kindUsgsDetail": "Sentiers, cours d'eau, réserves",
   "offlineMaps_kindTerrain": "Ombrage du relief",
@@ -2806,5 +2670,76 @@
   "channels_pasteLinkDesc": "Un lien de canal meshcore:// que vous avez copié.",
   "channels_pasteLinkNone": "Le presse-papiers ne contient aucun lien de canal.",
   "settings_locationGpsNote": "Avec le GPS activé, la radio remplace cette position dès que son GPS a un fix.",
-  "contacts_hopsAway": "{count, plural, =0{Direct} =1{1 saut} other{{count} sauts}}"
+  "contacts_hopsAway": "{count, plural, =0{Direct} =1{1 saut} other{{count} sauts}}",
+  "los_lineOfSight": "Ligne de vue",
+  "los_reachFromMe": "Portée radio depuis ma position",
+  "los_lineFromMe": "Ligne de vue depuis ma position",
+  "los_reachFromHere": "Portée radio depuis ici",
+  "los_reachFrom": "Portée radio depuis {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Dégagé",
+  "los_marginal": "Limite",
+  "los_blocked": "Bloqué",
+  "los_cantTell": "Indéterminé",
+  "los_checking": "Vérification…",
+  "los_failed": "Impossible de calculer la ligne de vue ici.",
+  "los_pickTarget": "Appuyez sur une personne ou un lieu sur la carte.",
+  "los_noPosition": "Votre position n'est pas encore connue. Appuyez sur la carte pour partir de là.",
+  "los_nothingInWay": "Aucun obstacle.",
+  "los_groundAbove": "À {distance} de vous, le terrain dépasse la ligne de {height}.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "À {distance} du départ, le terrain dépasse la ligne de {height}.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "À {distance} de vous, le terrain arrive à {height} de la ligne.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "À {distance} du départ, le terrain arrive à {height} de la ligne.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Un point plus élevé ou une antenne plus haute aide.",
+  "los_noContours": "Pas de courbes de niveau sur {length} de cette ligne.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "Pas de courbes de niveau sur {length} de cette ligne ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Pas de courbes de niveau pour une partie de cette zone.",
+  "los_noContoursAreaIn": "Pas de courbes de niveau pour une partie de cette zone ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Pas encore de données d'altitude pour cette zone.",
+  "los_downloadContours": "Télécharger les courbes de niveau : {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Téléchargez les courbes de niveau de cette zone avant de partir. Il faut une connexion internet.",
+  "los_spotBelowLowest": "Ce point est sous la courbe de niveau la plus basse (sous le niveau de la mer), son altitude n'est donc pas connue.",
+  "los_nameBelowLowest": "{name} est sous la courbe de niveau la plus basse (sous le niveau de la mer), l'altitude à cet endroit n'est donc pas connue.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Vous êtes sous la courbe de niveau la plus basse (sous le niveau de la mer), l'altitude à cet endroit n'est donc pas connue. Si le GPS de la radio est activé, son altitude est utilisée.",
+  "los_noLinesNear": "Il n'y a pas de courbes de niveau près de cette extrémité de la ligne, son altitude n'est donc pas connue.",
+  "los_from": "Depuis",
+  "los_to": "Vers",
+  "los_thisRadio": "Cette radio",
+  "los_me": "Moi",
+  "los_meAgo": "Moi, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Moi, position saisie à la main",
+  "los_meNotYetGps": "Moi, position pas encore mise à jour par le GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Antenne",
+  "los_handHeld": "Portative",
+  "los_vehicle": "Véhicule",
+  "los_raised": "Surélevée",
+  "los_raisedTitle": "Antenne surélevée",
+  "los_raisedLabel": "Hauteur au-dessus du sol",
+  "los_terrainOnly": "Terrain seul, d'après les courbes de niveau téléchargées.",
+  "los_credits": "Altitudes : {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "À propos de la ligne de vue",
+  "los_helpBody": "La réponse vient uniquement du terrain, lu dans les courbes de niveau que vous avez téléchargées. Elle ignore les arbres, les bâtiments, les personnes, les lignes électriques et les autres antennes, et un sommet peut être plus haut que dessiné, jusqu'à une courbe de niveau de plus.\n\n« Dégagé » signifie que le terrain ne gêne pas. Cela ne garantit pas qu'un message passe. « Limite » signifie que le terrain s'approche de la ligne. « Bloqué » signifie que le terrain est sur le trajet : un message peut encore franchir une crête basse, mais n'y comptez pas.\n\nTestez avec vos propres radios sur le terrain avant de vous y fier.",
+  "los_reachShaded": "Zone ombrée : à cet endroit, le terrain ne gêne pas la liaison avec une radio portative, jusqu'à {distance}.",
+  "los_reachUnknownPart": "Une partie du terrain ici ne peut pas être calculée, par exemple sous le niveau de la mer : elle n'est donc pas ombrée.",
+  "los_positionGuessed": "Position estimée",
+  "los_positionGuessedVia": "Position estimée (via {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Voir plus loin ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Personne avec une position dans un rayon de {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Courbes de niveau pour la ligne de vue"
 }

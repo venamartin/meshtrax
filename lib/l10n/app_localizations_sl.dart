@@ -677,10 +677,6 @@ class AppLocalizationsSl extends AppLocalizations {
       'Odprtokodni Flutter klient za naprave za LoRa omrežje MeshCore.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Podatki o višini LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Prijavi napako';
 
   @override
@@ -1818,12 +1814,6 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Neveljavna oblika povezave';
-
-  @override
-  String get map_lineOfSight => 'Linija vida';
-
-  @override
-  String get map_losScreenTitle => 'Linija vida';
 
   @override
   String get map_noNodesWithLocation =>
@@ -3212,144 +3202,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Počisti pot';
 
   @override
-  String get losSelectStartEnd => 'Izberite začetno in končno vozlišče za LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Preverjanje vidnega polja ni uspelo: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Počisti vse točke';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Zaženite LOS za ogled višinskega profila';
-
-  @override
-  String get losMenuTitle => 'LOS meni';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tapnite vozlišča ali dolgo pritisnite na zemljevid za točke po meri';
-
-  @override
-  String get losShowDisplayNodes => 'Pokaži prikazna vozlišča';
-
-  @override
-  String get losCustomPoints => 'Točke po meri';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Po meri $index';
-  }
-
-  @override
-  String get losPointA => 'Točka A';
-
-  @override
-  String get losPointB => 'Točka B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antena A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antena B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Zaženi LOS';
-
-  @override
-  String get losNoElevationData => 'Ni podatkov o višini';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, čisti LOS, najmanjša razdalja $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blokiral $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: preverjam ...';
-
-  @override
-  String get losStatusNoData => 'LOS: ni podatkov';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total jasno, $blocked blokirano, $unknown neznano';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Podatki o nadmorski višini niso na voljo za enega ali več vzorcev.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Neveljavni podatki o točkah/višini za izračun LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Preimenujte točko po meri';
-
-  @override
-  String get losPointName => 'Ime točke';
-
-  @override
-  String get losShowPanelTooltip => 'Pokaži ploščo LOS';
-
-  @override
-  String get losHidePanelTooltip => 'Skrij ploščo LOS';
-
-  @override
-  String get losElevationAttribution =>
-      'Podatki o višini: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radijski horizont';
-
-  @override
-  String get losLegendLosBeam => 'Linija vidnosti';
-
-  @override
-  String get losLegendTerrain => 'Teren';
-
-  @override
-  String get losFrequencyLabel => 'Frekvenca';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Prikaži podrobnosti izračuna';
-
-  @override
-  String get losFrequencyDialogTitle => 'Izračun radijskega horizonta';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Začenši od k=$baselineK pri $baselineFreq MHz, izračun prilagodi k-faktor za trenutni pas $frequencyMHz MHz, ki določa ukrivljeno zgornjo mejo radijskega horizonta.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Sledenje poti';
 
   @override
@@ -4670,7 +4522,8 @@ class AppLocalizationsSl extends AppLocalizations {
   String get offlineMaps_kindContours => 'Plastnice';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Višinske črte';
+  String get offlineMaps_kindContoursDetail =>
+      'Višinske črte, uporabljajo se tudi za neposredno vidljivost';
 
   @override
   String get offlineMaps_kindUsgs => 'Topografski zemljevid USGS';
@@ -6704,4 +6557,211 @@ class AppLocalizationsSl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Neposredna vidljivost';
+
+  @override
+  String get los_reachFromMe => 'Doseg radia z mojega položaja';
+
+  @override
+  String get los_lineFromMe => 'Neposredna vidljivost z mojega položaja';
+
+  @override
+  String get los_reachFromHere => 'Doseg radia od tod';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Doseg radia: $name';
+  }
+
+  @override
+  String get los_clear => 'Prosto';
+
+  @override
+  String get los_marginal => 'Na meji';
+
+  @override
+  String get los_blocked => 'Zakrito';
+
+  @override
+  String get los_cantTell => 'Neznano';
+
+  @override
+  String get los_checking => 'Preverjanje…';
+
+  @override
+  String get los_failed =>
+      'Neposredne vidljivosti tukaj ni bilo mogoče izračunati.';
+
+  @override
+  String get los_pickTarget => 'Tapnite osebo ali kraj na zemljevidu.';
+
+  @override
+  String get los_noPosition =>
+      'Vaš položaj še ni znan. Tapnite zemljevid, da začnete od tam.';
+
+  @override
+  String get los_nothingInWay => 'Nič ne ovira.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Teren na razdalji $distance od vas je $height nad črto.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Teren na razdalji $distance od začetka je $height nad črto.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Teren na razdalji $distance od vas se črti približa na $height.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Teren na razdalji $distance od začetka se črti približa na $height.';
+  }
+
+  @override
+  String get los_higherHelps => 'Pomaga višja točka ali višja antena.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Za $length te črte ni plastnic.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Za $length te črte ni plastnic ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'Za del tega območja ni plastnic.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Za del tega območja ni plastnic ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'Za to območje še ni podatkov o višini.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Prenesi plastnice: $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Pred potovanjem prenesite plastnice za to območje. Za to potrebujete internetno povezavo.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Ta točka je pod najnižjo plastnico (pod morsko gladino), zato njena višina ni znana.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name je pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Ste pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana. Če je GPS radia vklopljen, se uporabi njegova višina.';
+
+  @override
+  String get los_noLinesNear =>
+      'Blizu tega konca črte ni plastnic, zato višina tam ni znana.';
+
+  @override
+  String get los_from => 'Od';
+
+  @override
+  String get los_to => 'Do';
+
+  @override
+  String get los_thisRadio => 'Ta radio';
+
+  @override
+  String get los_me => 'Jaz';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Jaz, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Jaz, položaj nastavljen ročno';
+
+  @override
+  String get los_meNotYetGps => 'Jaz, GPS položaja še ni posodobil';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antena';
+
+  @override
+  String get los_handHeld => 'Ročna';
+
+  @override
+  String get los_vehicle => 'Vozilo';
+
+  @override
+  String get los_raised => 'Dvignjena';
+
+  @override
+  String get los_raisedTitle => 'Dvignjena antena';
+
+  @override
+  String get los_raisedLabel => 'Višina nad tlemi';
+
+  @override
+  String get los_terrainOnly => 'Samo teren, iz prenesenih plastnic.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Višine: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'O neposredni vidljivosti';
+
+  @override
+  String get los_helpBody =>
+      'Odgovor temelji samo na terenu, prebranem iz plastnic, ki ste jih prenesli. Ne ve ničesar o drevesih, stavbah, ljudeh, daljnovodih ali drugih antenah, vrh hriba pa je lahko do ene plastnice višji, kot je narisano.\n\n»Prosto« pomeni, da teren ne ovira. To ne zagotavlja, da sporočilo pride. »Na meji« pomeni, da se teren približa črti. »Zakrito« pomeni, da teren ovira: sporočilo lahko še vedno pride čez en nizek greben, a ne računajte na to.\n\nPreden se zanesete nanj, ga preizkusite na terenu s svojimi radijskimi postajami.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Osenčeno: tam teren ne ovira povezave z ročnim radiem, do $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.';
+
+  @override
+  String get los_positionGuessed => 'Predpostavljen položaj';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Predpostavljen položaj (prek $names)';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Poglej dlje ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Nikogar s položajem znotraj $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Plastnice za neposredno vidljivost';
 }

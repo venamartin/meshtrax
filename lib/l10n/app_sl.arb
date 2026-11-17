@@ -1460,147 +1460,11 @@
   "settings_clientRepeatFreqWarning": "Za ponovni prenos na brezžični način so potrebne frekvence 433, 869 ali 918 MHz.",
   "settings_clientRepeatSubtitle": "Omogočite temu naprave, da ponavlja paketne sporočila za druge.",
   "settings_clientRepeat": "Neovadno ponavljanje",
-  "settings_aboutOpenMeteoAttribution": "Podatki o višini LOS: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Prijavi napako",
   "settings_reportBugSubtitle": "Odpre prijavo napake na GitHubu",
   "appSettings_unitsTitle": "Enote",
   "appSettings_unitsMetric": "Metrična (m/km)",
   "appSettings_unitsImperial": "Imperialno (ft / mi)",
-  "map_lineOfSight": "Linija vida",
-  "map_losScreenTitle": "Linija vida",
-  "losSelectStartEnd": "Izberite začetno in končno vozlišče za LOS.",
-  "losRunFailed": "Preverjanje vidnega polja ni uspelo: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Počisti vse točke",
-  "losRunToViewElevationProfile": "Zaženite LOS za ogled višinskega profila",
-  "losMenuTitle": "LOS meni",
-  "losMenuSubtitle": "Tapnite vozlišča ali dolgo pritisnite na zemljevid za točke po meri",
-  "losShowDisplayNodes": "Pokaži prikazna vozlišča",
-  "losCustomPoints": "Točke po meri",
-  "losCustomPointLabel": "Po meri {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Točka A",
-  "losPointB": "Točka B",
-  "losAntennaA": "Antena A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antena B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Zaženi LOS",
-  "losNoElevationData": "Ni podatkov o višini",
-  "losProfileClear": "{distance} {distanceUnit}, čisti LOS, najmanjša razdalja {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blokiral {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: preverjam ...",
-  "losStatusNoData": "LOS: ni podatkov",
-  "losStatusSummary": "LOS: {clear}/{total} jasno, {blocked} blokirano, {unknown} neznano",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Podatki o nadmorski višini niso na voljo za enega ali več vzorcev.",
-  "losErrorInvalidInput": "Neveljavni podatki o točkah/višini za izračun LOS.",
-  "losRenameCustomPoint": "Preimenujte točko po meri",
-  "losPointName": "Ime točke",
-  "losShowPanelTooltip": "Pokaži ploščo LOS",
-  "losHidePanelTooltip": "Skrij ploščo LOS",
-  "losElevationAttribution": "Podatki o višini: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Radijski horizont",
-  "losLegendLosBeam": "Linija vidnosti",
-  "losLegendTerrain": "Teren",
-  "losFrequencyLabel": "Frekvenca",
-  "losFrequencyInfoTooltip": "Prikaži podrobnosti izračuna",
-  "losFrequencyDialogTitle": "Izračun radijskega horizonta",
-  "losFrequencyDialogDescription": "Začenši od k={baselineK} pri {baselineFreq} MHz, izračun prilagodi k-faktor za trenutni pas {frequencyMHz} MHz, ki določa ukrivljeno zgornjo mejo radijskega horizonta.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_favorites": "Priljubljene",
   "listFilter_removeFromFavorites": "Odstrani iz priljubljenih",
   "listFilter_addToFavorites": "Dodaj v priljubljene",
@@ -2193,7 +2057,7 @@
   "offlineMaps_kindMap": "Zemljevid",
   "offlineMaps_kindMapDetail": "Ulice, poti in kraji iz OpenStreetMap",
   "offlineMaps_kindContours": "Plastnice",
-  "offlineMaps_kindContoursDetail": "Višinske črte",
+  "offlineMaps_kindContoursDetail": "Višinske črte, uporabljajo se tudi za neposredno vidljivost",
   "offlineMaps_kindUsgs": "Topografski zemljevid USGS",
   "offlineMaps_kindUsgsDetail": "Poti, potoki, rezervati",
   "offlineMaps_kindTerrain": "Senčenje reliefa",
@@ -2806,5 +2670,76 @@
   "channels_pasteLinkDesc": "Kopirana povezava meshcore:// do kanala.",
   "channels_pasteLinkNone": "V odložišču ni povezave do kanala.",
   "settings_locationGpsNote": "Ko je GPS vklopljen, radio zamenja ta položaj, takoj ko GPS določi lokacijo.",
-  "contacts_hopsAway": "{count, plural, =0{Neposredno} one{{count} skok} two{{count} skoka} few{{count} skoki} other{{count} skokov}}"
+  "contacts_hopsAway": "{count, plural, =0{Neposredno} one{{count} skok} two{{count} skoka} few{{count} skoki} other{{count} skokov}}",
+  "los_lineOfSight": "Neposredna vidljivost",
+  "los_reachFromMe": "Doseg radia z mojega položaja",
+  "los_lineFromMe": "Neposredna vidljivost z mojega položaja",
+  "los_reachFromHere": "Doseg radia od tod",
+  "los_reachFrom": "Doseg radia: {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Prosto",
+  "los_marginal": "Na meji",
+  "los_blocked": "Zakrito",
+  "los_cantTell": "Neznano",
+  "los_checking": "Preverjanje…",
+  "los_failed": "Neposredne vidljivosti tukaj ni bilo mogoče izračunati.",
+  "los_pickTarget": "Tapnite osebo ali kraj na zemljevidu.",
+  "los_noPosition": "Vaš položaj še ni znan. Tapnite zemljevid, da začnete od tam.",
+  "los_nothingInWay": "Nič ne ovira.",
+  "los_groundAbove": "Teren na razdalji {distance} od vas je {height} nad črto.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Teren na razdalji {distance} od začetka je {height} nad črto.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Teren na razdalji {distance} od vas se črti približa na {height}.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Teren na razdalji {distance} od začetka se črti približa na {height}.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Pomaga višja točka ali višja antena.",
+  "los_noContours": "Za {length} te črte ni plastnic.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "Za {length} te črte ni plastnic ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Za del tega območja ni plastnic.",
+  "los_noContoursAreaIn": "Za del tega območja ni plastnic ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Za to območje še ni podatkov o višini.",
+  "los_downloadContours": "Prenesi plastnice: {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Pred potovanjem prenesite plastnice za to območje. Za to potrebujete internetno povezavo.",
+  "los_spotBelowLowest": "Ta točka je pod najnižjo plastnico (pod morsko gladino), zato njena višina ni znana.",
+  "los_nameBelowLowest": "{name} je pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Ste pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana. Če je GPS radia vklopljen, se uporabi njegova višina.",
+  "los_noLinesNear": "Blizu tega konca črte ni plastnic, zato višina tam ni znana.",
+  "los_from": "Od",
+  "los_to": "Do",
+  "los_thisRadio": "Ta radio",
+  "los_me": "Jaz",
+  "los_meAgo": "Jaz, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Jaz, položaj nastavljen ročno",
+  "los_meNotYetGps": "Jaz, GPS položaja še ni posodobil",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Antena",
+  "los_handHeld": "Ročna",
+  "los_vehicle": "Vozilo",
+  "los_raised": "Dvignjena",
+  "los_raisedTitle": "Dvignjena antena",
+  "los_raisedLabel": "Višina nad tlemi",
+  "los_terrainOnly": "Samo teren, iz prenesenih plastnic.",
+  "los_credits": "Višine: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "O neposredni vidljivosti",
+  "los_helpBody": "Odgovor temelji samo na terenu, prebranem iz plastnic, ki ste jih prenesli. Ne ve ničesar o drevesih, stavbah, ljudeh, daljnovodih ali drugih antenah, vrh hriba pa je lahko do ene plastnice višji, kot je narisano.\n\n»Prosto« pomeni, da teren ne ovira. To ne zagotavlja, da sporočilo pride. »Na meji« pomeni, da se teren približa črti. »Zakrito« pomeni, da teren ovira: sporočilo lahko še vedno pride čez en nizek greben, a ne računajte na to.\n\nPreden se zanesete nanj, ga preizkusite na terenu s svojimi radijskimi postajami.",
+  "los_reachShaded": "Osenčeno: tam teren ne ovira povezave z ročnim radiem, do {distance}.",
+  "los_reachUnknownPart": "Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.",
+  "los_positionGuessed": "Predpostavljen položaj",
+  "los_positionGuessedVia": "Predpostavljen položaj (prek {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Poglej dlje ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Nikogar s položajem znotraj {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Plastnice za neposredno vidljivost"
 }

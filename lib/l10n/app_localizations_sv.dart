@@ -676,10 +676,6 @@ class AppLocalizationsSv extends AppLocalizations {
       'En öppen källkods Flutter-klient för MeshCore LoRa meshnätverksenheter.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS-höjddata: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Rapportera ett fel';
 
   @override
@@ -1817,12 +1813,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Ogiltigt länkformat';
-
-  @override
-  String get map_lineOfSight => 'Synlinje';
-
-  @override
-  String get map_losScreenTitle => 'Synlinje';
 
   @override
   String get map_noNodesWithLocation => 'Inga noder med platsinformation';
@@ -3205,142 +3195,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Rensa väg';
 
   @override
-  String get losSelectStartEnd => 'Välj start- och slutnoder för LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Synlinjekontroll misslyckades: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Rensa alla punkter';
-
-  @override
-  String get losRunToViewElevationProfile => 'Kör LOS för att se höjdprofil';
-
-  @override
-  String get losMenuTitle => 'LOS-menyn';
-
-  @override
-  String get losMenuSubtitle =>
-      'Tryck på noder eller tryck länge på kartan för anpassade punkter';
-
-  @override
-  String get losShowDisplayNodes => 'Visa displaynoder';
-
-  @override
-  String get losCustomPoints => 'Anpassade poäng';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Anpassad $index';
-  }
-
-  @override
-  String get losPointA => 'Punkt A';
-
-  @override
-  String get losPointB => 'Punkt B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenn A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenn B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Kör LOS';
-
-  @override
-  String get losNoElevationData => 'Inga höjddata';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, rensa LOS, min clearance $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blockerad av $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: kollar...';
-
-  @override
-  String get losStatusNoData => 'LOS: inga data';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total rensa, $blocked blockerad, $unknown okänd';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Höjddata är inte tillgänglig för ett eller flera prover.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Ogiltiga poäng/höjddata för LOS-beräkning.';
-
-  @override
-  String get losRenameCustomPoint => 'Byt namn på anpassad punkt';
-
-  @override
-  String get losPointName => 'Punktnamn';
-
-  @override
-  String get losShowPanelTooltip => 'Visa LOS-panelen';
-
-  @override
-  String get losHidePanelTooltip => 'Dölj LOS-panelen';
-
-  @override
-  String get losElevationAttribution => 'Höjddata: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radiohorisont';
-
-  @override
-  String get losLegendLosBeam => 'Siktlinje';
-
-  @override
-  String get losLegendTerrain => 'Terräng';
-
-  @override
-  String get losFrequencyLabel => 'Frekvens';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Visa detaljer om beräkningen';
-
-  @override
-  String get losFrequencyDialogTitle => 'Beräkning av radiohorisonten';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Med start från k=$baselineK vid $baselineFreq MHz, justerar beräkningen k-faktorn för det aktuella $frequencyMHz MHz-bandet, som definierar den böjda radiohorisonten.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Path Trace';
 
   @override
@@ -4637,7 +4491,8 @@ class AppLocalizationsSv extends AppLocalizations {
   String get offlineMaps_kindContours => 'Höjdkurvor';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Linjer som visar höjd';
+  String get offlineMaps_kindContoursDetail =>
+      'Linjer som visar höjd, används även för siktlinje';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS-topokarta';
@@ -6654,4 +6509,212 @@ class AppLocalizationsSv extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Siktlinje';
+
+  @override
+  String get los_reachFromMe => 'Radioräckvidd från mig';
+
+  @override
+  String get los_lineFromMe => 'Siktlinje från mig';
+
+  @override
+  String get los_reachFromHere => 'Radioräckvidd härifrån';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Radioräckvidd från $name';
+  }
+
+  @override
+  String get los_clear => 'Fritt';
+
+  @override
+  String get los_marginal => 'Knappt';
+
+  @override
+  String get los_blocked => 'Blockerat';
+
+  @override
+  String get los_cantTell => 'Oklart';
+
+  @override
+  String get los_checking => 'Kontrollerar…';
+
+  @override
+  String get los_failed => 'Siktlinjen kunde inte beräknas här.';
+
+  @override
+  String get los_pickTarget => 'Tryck på en person eller en plats på kartan.';
+
+  @override
+  String get los_noPosition =>
+      'Din position är inte känd än. Tryck på kartan för att börja där.';
+
+  @override
+  String get los_nothingInWay => 'Inget i vägen.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Marken $distance från dig ligger $height över linjen.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Marken $distance från starten ligger $height över linjen.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Marken $distance från dig kommer inom $height från linjen.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Marken $distance från starten kommer inom $height från linjen.';
+  }
+
+  @override
+  String get los_higherHelps => 'Högre mark eller en högre antenn hjälper.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Inga höjdkurvor för $length av den här linjen.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Inga höjdkurvor för $length av den här linjen ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea =>
+      'Inga höjdkurvor för en del av det här området.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Inga höjdkurvor för en del av det här området ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'Inga höjddata för det här området än.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Ladda ner höjdkurvor för $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Ladda ner höjdkurvorna för det här området före resan. Det kräver en internetanslutning.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Den här platsen ligger under den lägsta höjdkurvan (under havsnivån), så dess höjd är okänd.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Du är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd. Med radions GPS påslagen används dess höjd.';
+
+  @override
+  String get los_noLinesNear =>
+      'Det finns inga höjdkurvor nära den här änden av linjen, så höjden där är okänd.';
+
+  @override
+  String get los_from => 'Från';
+
+  @override
+  String get los_to => 'Till';
+
+  @override
+  String get los_thisRadio => 'Den här radion';
+
+  @override
+  String get los_me => 'Jag';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Jag, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Jag, position angiven för hand';
+
+  @override
+  String get los_meNotYetGps => 'Jag, positionen inte uppdaterad av GPS än';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antenn';
+
+  @override
+  String get los_handHeld => 'Handburen';
+
+  @override
+  String get los_vehicle => 'Fordon';
+
+  @override
+  String get los_raised => 'Upphöjd';
+
+  @override
+  String get los_raisedTitle => 'Upphöjd antenn';
+
+  @override
+  String get los_raisedLabel => 'Höjd över marken';
+
+  @override
+  String get los_terrainOnly =>
+      'Bara terrängen, från höjdkurvorna du har laddat ner.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Höjder: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'Om siktlinje';
+
+  @override
+  String get los_helpBody =>
+      'Svaret bygger bara på marken, avläst från höjdkurvorna du har laddat ner. Det vet inget om träd, byggnader, människor, kraftledningar eller andra antenner, och en kulle kan vara upp till en höjdkurva högre än det som ritats.\n\n”Fritt” betyder att marken inte är i vägen. Det lovar inte att ett meddelande kommer fram. ”Knappt” betyder att marken kommer nära linjen. ”Blockerat” betyder att marken är i vägen: ett meddelande kan ändå ta sig över en låg ås, men räkna inte med det.\n\nTesta i fält med dina egna radioapparater innan du litar på det.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Skuggat: där är marken inte i vägen till en handburen radio, upp till $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.';
+
+  @override
+  String get los_positionGuessed => 'Gissad position';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Gissad position, hörd via $names';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Titta längre ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Ingen med position inom $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Höjdkurvor för siktlinje';
 }

@@ -681,10 +681,6 @@ class AppLocalizationsSk extends AppLocalizations {
       'Otvorený zdrojový Flutter klient pre MeshCore LoRa sieťové zariadenia.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Údaje o nadmorskej výške LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Nahlásiť chybu';
 
   @override
@@ -1828,12 +1824,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Neplatný formát odkazu';
-
-  @override
-  String get map_lineOfSight => 'Line of Sight';
-
-  @override
-  String get map_losScreenTitle => 'Line of Sight';
 
   @override
   String get map_noNodesWithLocation => 'Žiadne uzly s údajmi o polohe';
@@ -3217,144 +3207,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Zmazať cestu';
 
   @override
-  String get losSelectStartEnd => 'Vyberte počiatočný a koncový uzol pre LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Kontrola priamej viditeľnosti zlyhala: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Vymazať všetky body';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Ak chcete zobraziť výškový profil, spustite LOS';
-
-  @override
-  String get losMenuTitle => 'Menu LOS';
-
-  @override
-  String get losMenuSubtitle =>
-      'Klepnutím na uzly alebo dlhým stlačením mapy získate vlastné body';
-
-  @override
-  String get losShowDisplayNodes => 'Zobraziť uzly zobrazenia';
-
-  @override
-  String get losCustomPoints => 'Vlastné body';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Vlastné $index';
-  }
-
-  @override
-  String get losPointA => 'Bod A';
-
-  @override
-  String get losPointB => 'Bod B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Anténa A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Anténa B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Spustite LOS';
-
-  @override
-  String get losNoElevationData => 'Žiadne údaje o nadmorskej výške';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, vymazať LOS, min. vôľa $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, blokovaný $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: kontrolujem...';
-
-  @override
-  String get losStatusNoData => 'LOS: žiadne údaje';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total vymazané, $blocked blokované, $unknown neznáme';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Údaje o nadmorskej výške nie sú k dispozícii pre jednu alebo viacero vzoriek.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Neplatné body/údaje o nadmorskej výške pre výpočet LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Premenovať vlastný bod';
-
-  @override
-  String get losPointName => 'Názov bodu';
-
-  @override
-  String get losShowPanelTooltip => 'Zobraziť panel LOS';
-
-  @override
-  String get losHidePanelTooltip => 'Skryť panel LOS';
-
-  @override
-  String get losElevationAttribution =>
-      'Údaje o nadmorskej výške: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Rádiový horizont';
-
-  @override
-  String get losLegendLosBeam => 'Priama viditeľnosť';
-
-  @override
-  String get losLegendTerrain => 'Terén';
-
-  @override
-  String get losFrequencyLabel => 'Frekvencia';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Zobraziť podrobnosti výpočtu';
-
-  @override
-  String get losFrequencyDialogTitle => 'Výpočet rádiového horizontu';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Počnúc od k=$baselineK pri $baselineFreq MHz výpočet upraví k-faktor pre aktuálne pásmo $frequencyMHz MHz, ktorý definuje zakrivený strop rádiového horizontu.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Sledovanie lúčov';
 
   @override
@@ -4672,7 +4524,8 @@ class AppLocalizationsSk extends AppLocalizations {
   String get offlineMaps_kindContours => 'Vrstevnice';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Výškové čiary';
+  String get offlineMaps_kindContoursDetail =>
+      'Výškové čiary, používajú sa aj pre priamu viditeľnosť';
 
   @override
   String get offlineMaps_kindUsgs => 'Topografická mapa USGS';
@@ -6702,4 +6555,210 @@ class AppLocalizationsSk extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Priama viditeľnosť';
+
+  @override
+  String get los_reachFromMe => 'Dosah rádia z mojej polohy';
+
+  @override
+  String get los_lineFromMe => 'Priama viditeľnosť z mojej polohy';
+
+  @override
+  String get los_reachFromHere => 'Dosah rádia odtiaľto';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Dosah rádia: $name';
+  }
+
+  @override
+  String get los_clear => 'Voľno';
+
+  @override
+  String get los_marginal => 'Na hrane';
+
+  @override
+  String get los_blocked => 'Zakryté';
+
+  @override
+  String get los_cantTell => 'Neznáme';
+
+  @override
+  String get los_checking => 'Kontroluje sa…';
+
+  @override
+  String get los_failed => 'Priamu viditeľnosť sa tu nepodarilo vypočítať.';
+
+  @override
+  String get los_pickTarget => 'Klepnite na osobu alebo miesto na mape.';
+
+  @override
+  String get los_noPosition =>
+      'Vaša poloha zatiaľ nie je známa. Klepnite na mapu a začnite odtiaľ.';
+
+  @override
+  String get los_nothingInWay => 'Nič neprekáža.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Terén vo vzdialenosti $distance od vás je $height nad čiarou.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Terén vo vzdialenosti $distance od začiatku je $height nad čiarou.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Terén vo vzdialenosti $distance od vás sa priblíži k čiare na $height.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Terén vo vzdialenosti $distance od začiatku sa priblíži k čiare na $height.';
+  }
+
+  @override
+  String get los_higherHelps => 'Pomôže vyššie miesto alebo vyššia anténa.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Na $length tejto čiary chýbajú vrstevnice.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Na $length tejto čiary chýbajú vrstevnice ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'Pre časť tejto oblasti chýbajú vrstevnice.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Pre časť tejto oblasti chýbajú vrstevnice ($regions).';
+  }
+
+  @override
+  String get los_noHeightData => 'Pre túto oblasť zatiaľ nie sú údaje o výške.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Stiahnuť vrstevnice: $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Stiahnite si vrstevnice pre túto oblasť pred cestou. Potrebujete na to pripojenie k internetu.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Toto miesto je pod najnižšou vrstevnicou (pod hladinou mora), preto jeho výška nie je známa.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name je pod najnižšou vrstevnicou (pod hladinou mora), preto výška na tom mieste nie je známa.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Ste pod najnižšou vrstevnicou (pod hladinou mora), preto výška na tom mieste nie je známa. Keď má rádio zapnuté GPS, použije sa jeho nadmorská výška.';
+
+  @override
+  String get los_noLinesNear =>
+      'Pri tomto konci čiary nie sú žiadne vrstevnice, preto výška na tom mieste nie je známa.';
+
+  @override
+  String get los_from => 'Od';
+
+  @override
+  String get los_to => 'Do';
+
+  @override
+  String get los_thisRadio => 'Toto rádio';
+
+  @override
+  String get los_me => 'Ja';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Ja, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Ja, poloha zadaná ručne';
+
+  @override
+  String get los_meNotYetGps => 'Ja, poloha zatiaľ neaktualizovaná z GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Anténa';
+
+  @override
+  String get los_handHeld => 'Ručná';
+
+  @override
+  String get los_vehicle => 'Vozidlo';
+
+  @override
+  String get los_raised => 'Vyvýšená';
+
+  @override
+  String get los_raisedTitle => 'Vyvýšená anténa';
+
+  @override
+  String get los_raisedLabel => 'Výška nad zemou';
+
+  @override
+  String get los_terrainOnly => 'Len terén, podľa stiahnutých vrstevníc.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Výšky: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'O priamej viditeľnosti';
+
+  @override
+  String get los_helpBody =>
+      'Odpoveď vychádza len z terénu, prečítaného zo stiahnutých vrstevníc. Nevie nič o stromoch, budovách, ľuďoch, elektrických vedeniach ani iných anténach a vrchol kopca môže byť až o jednu vrstevnicu vyšší, než je nakreslené.\n\n„Voľno“ znamená, že terén neprekáža. Nezaručuje to, že správa prejde. „Na hrane“ znamená, že sa terén priblíži k čiare. „Zakryté“ znamená, že terén prekáža: správa sa ešte môže dostať cez jeden nízky hrebeň, ale nespoliehajte sa na to.\n\nVyskúšajte to v teréne s vlastnými rádiami, skôr než sa na to budete spoliehať.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Vyfarbené: tam terén neprekáža spojeniu s ručným rádiom, do $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.';
+
+  @override
+  String get los_positionGuessed => 'Odhadnutá poloha';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Odhadnutá poloha (cez $names)';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Pozrieť ďalej ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Nikto s polohou do $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Vrstevnice pre priamu viditeľnosť';
 }

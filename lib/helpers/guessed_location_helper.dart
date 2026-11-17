@@ -12,10 +12,15 @@ class GuessedLocation {
   final LatLng position;
   final bool highConfidence;
 
+  /// The names of the repeaters the guess is anchored on: the ones the
+  /// contact was heard through.
+  final List<String> heardVia;
+
   const GuessedLocation({
     required this.contact,
     required this.position,
     required this.highConfidence,
+    this.heardVia = const [],
   });
 }
 
@@ -158,6 +163,7 @@ class GuessedLocationHelper {
           contact: current[guess.contact.publicKeyHex] ?? guess.contact,
           position: guess.position,
           highConfidence: guess.highConfidence,
+          heardVia: guess.heardVia,
         ),
     ];
   }
@@ -208,6 +214,7 @@ class GuessedLocationHelper {
       if (contact.lastSeen.isBefore(staleBefore)) continue;
 
       final anchorSet = <LatLng>{};
+      final heardVia = <String>{};
 
       // Anchor on the repeater nearest the contact: the first hop of its
       // inbound advert path, or the last hop of its stored route.
@@ -227,7 +234,9 @@ class GuessedLocationHelper {
         if (routeHops.isNotEmpty) (routeHops.last, contact.pathHashSize),
       ]) {
         final r = getRepeaterMapForStride(width)[PathHelper.hopHex(hop)];
-        if (r != null) anchorSet.add(LatLng(r.latitude!, r.longitude!));
+        if (r != null && anchorSet.add(LatLng(r.latitude!, r.longitude!))) {
+          heardVia.add(r.name);
+        }
       }
 
       if (anchorSet.isEmpty) continue;
@@ -263,6 +272,7 @@ class GuessedLocationHelper {
           contact: contact,
           position: position,
           highConfidence: highConfidence,
+          heardVia: heardVia.toList(),
         ),
       );
     }

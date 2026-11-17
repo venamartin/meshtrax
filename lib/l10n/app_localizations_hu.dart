@@ -687,10 +687,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Egy nyílt forráskódú Flutter kliens a MeshCore LoRa hálózati eszközök számára.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'LOS magassági adatok: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Hiba bejelentése';
 
   @override
@@ -1846,12 +1842,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Érvénytelen hivatkozás formátum';
-
-  @override
-  String get map_lineOfSight => 'Látási vonal';
-
-  @override
-  String get map_losScreenTitle => 'Látási vonal';
 
   @override
   String get map_noNodesWithLocation =>
@@ -3247,146 +3237,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Egyértelmű út.';
 
   @override
-  String get losSelectStartEnd =>
-      'Válassza ki a kezdő és a végpontokat a LOS-hoz.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'A látószög ellenőrzése sikertelen: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Teljesen tisztázzuk az összes pontot';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Használja a LOS-t, hogy megtekinthesse a magasságkülönbségek diagramját.';
-
-  @override
-  String get losMenuTitle => 'LOS menü';
-
-  @override
-  String get losMenuSubtitle =>
-      'A térképen található pontok kiválasztására vagy a térképen hosszúra nyomva, hogy egyedi pontokat definiálhassunk.';
-
-  @override
-  String get losShowDisplayNodes => 'Megjelenítsen a megjelenítési egységeket';
-
-  @override
-  String get losCustomPoints => 'Egyedi pontok';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Egyedi $index';
-  }
-
-  @override
-  String get losPointA => 'A pont A';
-
-  @override
-  String get losPointB => 'Pont B';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Antenna A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Antenna B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Futtass a LOS-on';
-
-  @override
-  String get losNoElevationData => 'Nincsenek emelkedési adatok.';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, clear LOS, min clearance $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, amelyet $obstruction akadályoz meg $heightUnit-ban';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: ellenőrzés...';
-
-  @override
-  String get losStatusNoData => 'LOS: nincs adat';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total tisztított, $blocked blokkolt, $unknown ismeretlen';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Az alábbi minták esetében nem áll rendelkezésre magasságadat.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Hibás vagy hiányos táblázatok a LOS (Loss of Signal) számításához.';
-
-  @override
-  String get losRenameCustomPoint => 'Állítsa meg a saját pont nevét';
-
-  @override
-  String get losPointName => 'Pont neve';
-
-  @override
-  String get losShowPanelTooltip => 'Megjelenítse a LOS paneelt';
-
-  @override
-  String get losHidePanelTooltip => 'Rejtse el a LOS paneelt';
-
-  @override
-  String get losElevationAttribution =>
-      'Magasságadatok: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Radio Horizont';
-
-  @override
-  String get losLegendLosBeam => 'LOS jelzés';
-
-  @override
-  String get losLegendTerrain => 'Terület';
-
-  @override
-  String get losFrequencyLabel => 'Hatósság';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Lásd a számítás részleteit';
-
-  @override
-  String get losFrequencyDialogTitle =>
-      'A rádióhullámok hatótávolságának kiszámítása';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'A $baselineK értékből kezdve, $baselineFreq MHz-os frekvencián, a számítás az aktuális $frequencyMHz MHz-os sávhoz igazítja a k-tényezőt, amely meghatározza a görbös rádióhatótávolság határát.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Útvonal követése';
 
   @override
@@ -4697,7 +4547,8 @@ class AppLocalizationsHu extends AppLocalizations {
   String get offlineMaps_kindContours => 'Szintvonalak';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Magassági vonalak';
+  String get offlineMaps_kindContoursDetail =>
+      'Magassági vonalak, a rálátás számításához is';
 
   @override
   String get offlineMaps_kindUsgs => 'USGS topográfiai térkép';
@@ -6728,4 +6579,214 @@ class AppLocalizationsHu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Rálátás';
+
+  @override
+  String get los_reachFromMe => 'Rádiós hatótáv a pozíciómból';
+
+  @override
+  String get los_lineFromMe => 'Rálátás a pozíciómból';
+
+  @override
+  String get los_reachFromHere => 'Rádiós hatótáv innen';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Rádiós hatótáv: $name';
+  }
+
+  @override
+  String get los_clear => 'Szabad';
+
+  @override
+  String get los_marginal => 'Határeset';
+
+  @override
+  String get los_blocked => 'Takarva';
+
+  @override
+  String get los_cantTell => 'Nincs adat';
+
+  @override
+  String get los_checking => 'Ellenőrzés…';
+
+  @override
+  String get los_failed => 'A rálátást itt nem sikerült kiszámítani.';
+
+  @override
+  String get los_pickTarget =>
+      'Koppintson egy személyre vagy egy helyre a térképen.';
+
+  @override
+  String get los_noPosition =>
+      'A pozíciója még nem ismert. Koppintson a térképre, hogy onnan induljon.';
+
+  @override
+  String get los_nothingInWay => 'Nincs akadály.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Öntől $distance távolságra a terep $height magasan a vonal felett van.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'A kezdőponttól $distance távolságra a terep $height magasan a vonal felett van.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Öntől $distance távolságra a terep mindössze $height mélyen van a vonal alatt.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'A kezdőponttól $distance távolságra a terep mindössze $height mélyen van a vonal alatt.';
+  }
+
+  @override
+  String get los_higherHelps => 'Magasabb hely vagy magasabb antenna segít.';
+
+  @override
+  String los_noContours(String length) {
+    return 'A vonal $length hosszú szakaszán nincsenek szintvonalak.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'A vonal $length hosszú szakaszán nincsenek szintvonalak ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea =>
+      'A terület egy részén nincsenek szintvonalak.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'A terület egy részén nincsenek szintvonalak ($regions).';
+  }
+
+  @override
+  String get los_noHeightData =>
+      'Ehhez a területhez még nincsenek magassági adatok.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Szintvonalak letöltése: $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Töltse le a terület szintvonalait az út előtt. Ehhez internetkapcsolat kell.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Ez a pont a legalsó szintvonal alatt van (tengerszint alatt), ezért a magassága nem ismert.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name a legalsó szintvonal alatt van (tengerszint alatt), ezért az ottani magasság nem ismert.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Ön a legalsó szintvonal alatt van (tengerszint alatt), ezért az ottani magasság nem ismert. Ha a rádió GPS-e be van kapcsolva, az alkalmazás az általa mért magasságot használja.';
+
+  @override
+  String get los_noLinesNear =>
+      'A vonal ezen végének közelében nincsenek szintvonalak, ezért az ottani magasság nem ismert.';
+
+  @override
+  String get los_from => 'Honnan';
+
+  @override
+  String get los_to => 'Hová';
+
+  @override
+  String get los_thisRadio => 'Ez a rádió';
+
+  @override
+  String get los_me => 'Én';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Én, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Én, kézzel megadott pozíció';
+
+  @override
+  String get los_meNotYetGps => 'Én, a pozíciót a GPS még nem frissítette';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Antenna';
+
+  @override
+  String get los_handHeld => 'Kézi';
+
+  @override
+  String get los_vehicle => 'Jármű';
+
+  @override
+  String get los_raised => 'Magasított';
+
+  @override
+  String get los_raisedTitle => 'Magasított antenna';
+
+  @override
+  String get los_raisedLabel => 'Magasság a talaj felett';
+
+  @override
+  String get los_terrainOnly =>
+      'Csak a terep, a letöltött szintvonalak alapján.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Magasságok: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'A rálátásról';
+
+  @override
+  String get los_helpBody =>
+      'A válasz csak a terepen alapul, amelyet a letöltött szintvonalakból olvas ki. Nem tud fákról, épületekről, emberekről, villanyvezetékekről vagy más antennákról, és egy dombtető akár egy szintvonallal magasabb is lehet, mint ami ki van rajzolva.\n\nA „Szabad” azt jelenti, hogy a terep nincs útban. Ez nem garantálja, hogy egy üzenet átjut. A „Határeset” azt jelenti, hogy a terep közel kerül a vonalhoz. A „Takarva” azt jelenti, hogy a terep útban van: egy üzenet még átjuthat egy alacsony gerincen, de ne számítson rá.\n\nPróbálja ki terepen a saját rádióival, mielőtt megbízna benne.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Színezett: ott a terep nem takarja el a kézi rádiót, legfeljebb $distance távolságig.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.';
+
+  @override
+  String get los_positionGuessed => 'Becsült pozíció';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Becsült pozíció ($names közvetítésével)';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Messzebbre ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Nincs senki pozícióval $distance távolságon belül.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Szintvonalak a rálátáshoz';
 }

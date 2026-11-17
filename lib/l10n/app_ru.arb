@@ -828,147 +828,11 @@
   "settings_clientRepeatFreqWarning": "Для работы в режиме \"без подключения к сети\" требуется частота 433, 869 или 918 МГц.",
   "settings_clientRepeatSubtitle": "Позвольте этому устройству повторять пакеты данных для других устройств.",
   "settings_clientRepeat": "Повторение \"вне сети\"",
-  "settings_aboutOpenMeteoAttribution": "Данные о высоте LOS: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Сообщить об ошибке",
   "settings_reportBugSubtitle": "Открывает отчёт об ошибке на GitHub",
   "appSettings_unitsTitle": "Единицы",
   "appSettings_unitsMetric": "Метрическая (м/км)",
   "appSettings_unitsImperial": "Имперская (ft / mi)",
-  "map_lineOfSight": "Линия видимости",
-  "map_losScreenTitle": "Линия видимости",
-  "losSelectStartEnd": "Выберите начальный и конечный узлы для LOS.",
-  "losRunFailed": "Проверка прямой видимости не удалась: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Очистить все точки",
-  "losRunToViewElevationProfile": "Запустите LOS, чтобы просмотреть профиль высот.",
-  "losMenuTitle": "ЛОС Меню",
-  "losMenuSubtitle": "Коснитесь узлов или нажмите и удерживайте карту для выбора пользовательских точек.",
-  "losShowDisplayNodes": "Показать узлы отображения",
-  "losCustomPoints": "Пользовательские точки",
-  "losCustomPointLabel": "Пользовательский {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Точка А",
-  "losPointB": "Точка Б",
-  "losAntennaA": "Антенна А: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Антенна Б: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Запустить ЛОС",
-  "losNoElevationData": "Нет данных о высоте",
-  "losProfileClear": "{distance} {distanceUnit}, свободная зона видимости, минимальный зазор {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, заблокирован {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "ЛОС: проверяю...",
-  "losStatusNoData": "ЛОС: нет данных",
-  "losStatusSummary": "LOS: {clear}/{total} очищено, {blocked} заблокировано, {unknown} неизвестно.",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Данные о высоте недоступны для одного или нескольких образцов.",
-  "losErrorInvalidInput": "Неверные данные о точках/высоте для расчета LOS.",
-  "losRenameCustomPoint": "Переименовать пользовательскую точку",
-  "losPointName": "Имя точки",
-  "losShowPanelTooltip": "Показать панель LOS",
-  "losHidePanelTooltip": "Скрыть панель LOS",
-  "losElevationAttribution": "Данные о высоте: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Радиогоризонт",
-  "losLegendLosBeam": "Линия прямой видимости",
-  "losLegendTerrain": "Рельеф",
-  "losFrequencyLabel": "Частота",
-  "losFrequencyInfoTooltip": "Просмотреть детали расчёта",
-  "losFrequencyDialogTitle": "Расчёт радиогоризонта",
-  "losFrequencyDialogDescription": "Начиная с k={baselineK} на частоте {baselineFreq} МГц, расчет корректирует коэффициент k для текущего диапазона {frequencyMHz} МГц, который определяет изогнутую границу радиогоризонта.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_addToFavorites": "Добавить в избранное",
   "listFilter_favorites": "Избранное",
   "listFilter_removeFromFavorites": "Удалить из избранного",
@@ -1561,7 +1425,7 @@
   "offlineMaps_kindMap": "Карта",
   "offlineMaps_kindMapDetail": "OpenStreetMap: улицы, тропы, места",
   "offlineMaps_kindContours": "Горизонтали",
-  "offlineMaps_kindContoursDetail": "Линии высот",
+  "offlineMaps_kindContoursDetail": "Линии высот, также используются для прямой видимости",
   "offlineMaps_kindUsgs": "Топокарта USGS",
   "offlineMaps_kindUsgsDetail": "Тропы, ручьи, заповедники",
   "offlineMaps_kindTerrain": "Отмывка рельефа",
@@ -2174,5 +2038,76 @@
   "channels_pasteLinkDesc": "Скопированная ссылка meshcore:// на канал.",
   "channels_pasteLinkNone": "В буфере обмена нет ссылки на канал.",
   "settings_locationGpsNote": "При включённом GPS радио заменяет эту позицию, как только GPS определит местоположение.",
-  "contacts_hopsAway": "{count, plural, =0{Напрямую} =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}"
+  "contacts_hopsAway": "{count, plural, =0{Напрямую} =1{1 переход} few{{count} перехода} many{{count} переходов} other{{count} перехода}}",
+  "los_lineOfSight": "Прямая видимость",
+  "los_reachFromMe": "Радиопокрытие от меня",
+  "los_lineFromMe": "Прямая видимость от меня",
+  "los_reachFromHere": "Радиопокрытие отсюда",
+  "los_reachFrom": "Радиопокрытие: {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Свободно",
+  "los_marginal": "На грани",
+  "los_blocked": "Закрыто",
+  "los_cantTell": "Неизвестно",
+  "los_checking": "Проверка…",
+  "los_failed": "Здесь не удалось рассчитать прямую видимость.",
+  "los_pickTarget": "Нажмите на человека или место на карте.",
+  "los_noPosition": "Ваше местоположение пока неизвестно. Нажмите на карту, чтобы начать оттуда.",
+  "los_nothingInWay": "Препятствий нет.",
+  "los_groundAbove": "Рельеф в {distance} от вас на {height} выше линии.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Рельеф в {distance} от начала на {height} выше линии.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Рельеф в {distance} от вас подходит к линии на {height}.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Рельеф в {distance} от начала подходит к линии на {height}.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Поможет более высокое место или более высокая антенна.",
+  "los_noContours": "На {length} этой линии нет горизонталей.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "На {length} этой линии нет горизонталей ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Для части этой области нет горизонталей.",
+  "los_noContoursAreaIn": "Для части этой области нет горизонталей ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Для этой области пока нет данных о высоте.",
+  "los_downloadContours": "Скачать горизонтали: {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Скачайте горизонтали для этой области до поездки. Для этого нужно подключение к интернету.",
+  "los_spotBelowLowest": "Эта точка ниже самой нижней горизонтали (ниже уровня моря), поэтому её высота неизвестна.",
+  "los_nameBelowLowest": "{name} находится ниже самой нижней горизонтали (ниже уровня моря), поэтому высота там неизвестна.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Вы находитесь ниже самой нижней горизонтали (ниже уровня моря), поэтому высота там неизвестна. Если GPS рации включён, используется её высота.",
+  "los_noLinesNear": "Рядом с этим концом линии нет горизонталей, поэтому высота там неизвестна.",
+  "los_from": "Откуда",
+  "los_to": "Куда",
+  "los_thisRadio": "Эта рация",
+  "los_me": "Я",
+  "los_meAgo": "Я, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Я, местоположение задано вручную",
+  "los_meNotYetGps": "Я, местоположение ещё не обновлено по GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Антенна",
+  "los_handHeld": "В руке",
+  "los_vehicle": "На машине",
+  "los_raised": "Поднятая",
+  "los_raisedTitle": "Поднятая антенна",
+  "los_raisedLabel": "Высота над землёй",
+  "los_terrainOnly": "Только рельеф, по скачанным горизонталям.",
+  "los_credits": "Высоты: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "О прямой видимости",
+  "los_helpBody": "Ответ основан только на рельефе, взятом из скачанных горизонталей. Он ничего не знает о деревьях, зданиях, людях, линиях электропередачи или других антеннах, а вершина холма может быть до одной горизонтали выше, чем нарисовано.\n\n«Свободно» значит, что рельеф не мешает. Это не гарантирует, что сообщение дойдёт. «На грани» значит, что рельеф подходит близко к линии. «Закрыто» значит, что рельеф мешает: сообщение ещё может пройти через один невысокий хребет, но не рассчитывайте на это.\n\nПроверьте это на местности со своими рациями, прежде чем полагаться на результат.",
+  "los_reachShaded": "Закрашено: там рельеф не мешает связи с рацией в руке, до {distance}.",
+  "los_reachUnknownPart": "Часть рельефа здесь не удаётся рассчитать, например ниже уровня моря, поэтому она не закрашена.",
+  "los_positionGuessed": "Предполагаемая позиция",
+  "los_positionGuessedVia": "Предполагаемая позиция (через {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Смотреть дальше ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Никого с местоположением в пределах {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Горизонтали для прямой видимости"
 }

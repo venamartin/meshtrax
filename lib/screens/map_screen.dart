@@ -17,6 +17,8 @@ import 'package:meshtrax/widgets/location_sharing_button.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
+import 'package:traxlos/traxlos.dart'
+    show Verdict, defaultFrequencyMHz, destination;
 import 'package:traxpoi/traxpoi.dart'
     show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
 import 'package:traxroute/traxroute.dart' as trax show RouteResult;
@@ -28,6 +30,8 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../services/line_of_sight.dart';
+import '../services/line_of_sight_session.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/map_places.dart';
 import '../helpers/poi_kinds.dart';
@@ -43,6 +47,7 @@ import '../utils/contact_search.dart';
 import '../utils/platform_info.dart';
 import '../utils/route_transitions.dart';
 import '../widgets/app_map.dart';
+import '../widgets/line_of_sight_sheet.dart';
 import '../widgets/map_controls.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
@@ -50,7 +55,6 @@ import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
 import '../widgets/route_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
-import '../icons/los_icon.dart';
 import 'chat_screen.dart';
 import 'chats_screen.dart';
 import '../widgets/path_selection_dialog.dart';
@@ -64,7 +68,6 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
-import 'line_of_sight_map_screen.dart';
 import 'map_search_screen.dart';
 import 'offline_maps_screen.dart';
 
@@ -138,6 +141,27 @@ class _MapScreenState extends State<MapScreen> {
   String? _routeError;
   int _routeGeneration = 0;
   final _sheetKey = GlobalKey<RouteSheetState>();
+
+  // Line of sight or radio reach: one question at a time, in a sheet that
+  // takes the route sheet's place while it is open. The worker isolate
+  // stays for the next question.
+  LineOfSightSession? _los;
+  LosWorker? _losWorker;
+  final _losKey = GlobalKey<LineOfSightSheetState>();
+
+  /// How much of the map's bottom the line of sight sheet covers: the
+  /// map's credits stay above it.
+  final _losCovered = ValueNotifier<double>(0);
+
+  /// The ends (or reach) the map last moved to show.
+  Object? _losShown;
+
+  /// The reach's shade, drawn once per sweep.
+  (Object?, List<MapOverlay>) _losShade = (null, const []);
+
+  /// What the map last drew of line of sight: the map is rebuilt only
+  /// when it changes, not for every step of a sweep's progress.
+  Object? _losDrawn;
 
   /// The map's area on screen, to see how much of it a sheet covers.
   final _mapKey = GlobalKey();
@@ -232,6 +256,9 @@ class _MapScreenState extends State<MapScreen> {
     HardwareKeyboard.instance.removeHandler(_onKey);
     _fadeTimer?.cancel();
     if (_fullScreen && _phone) unawaited(_showSystemBars());
+    _los?.dispose();
+    _losWorker?.dispose();
+    _losCovered.dispose();
     super.dispose();
   }
 
@@ -679,12 +706,19 @@ class _MapScreenState extends State<MapScreen> {
           // Back leaves full screen, then lowers a raised route sheet, then
           // closes the route, before anything else. A map opened to route
           // somewhere goes straight back to where you came from.
-          canPop: allowBack &&
+          canPop:
+              allowBack &&
               !_fullScreen &&
+              _los == null &&
               (_routeTo == null || widget.routeToHighlight),
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
             if (_fullScreen) return _setFullScreen(false);
+            // Line of sight first: its sheet is the one showing.
+            if (_los != null) {
+              if (!(_losKey.currentState?.lower() ?? false)) _closeLos();
+              return;
+            }
             if (_routeTo == null) return;
             if (!(_sheetKey.currentState?.lower() ?? false)) _clearRoute();
           },
@@ -713,51 +747,41 @@ class _MapScreenState extends State<MapScreen> {
                           onPressed: () => _startPath(selfPosition),
                           tooltip: context.l10n.contacts_pathTrace,
                         ),
-                      if (!_isBuildingPathTrace)
-                        IconButton(
-                          icon: const LosIcon(),
-                          onPressed: () {
-                            final candidates = <LineOfSightEndpoint>[];
-                            if (selfPosition != null) {
-                              candidates.add(
-                                LineOfSightEndpoint(
-                                  label: context.l10n.pathTrace_you,
-                                  point: selfPosition,
-                                  color: Colors.teal,
-                                  icon: Icons.person_pin_circle,
-                                ),
-                              );
-                            }
-                            final sortedContacts = List.of(contactsWithLocation)
-                              ..sort(
-                                (a, b) => a.name.toLowerCase().compareTo(
-                                  b.name.toLowerCase(),
-                                ),
-                              );
-                            for (final c in sortedContacts) {
-                              candidates.add(
-                                LineOfSightEndpoint(
-                                  label: c.name,
-                                  point: LatLng(c.latitude!, c.longitude!),
-                                  color: _getNodeColor(c.type),
-                                  icon: _getNodeIcon(c.type),
-                                ),
-                              );
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LineOfSightMapScreen(
-                                  title: context.l10n.map_losScreenTitle,
-                                  candidates: candidates,
-                                ),
-                              ),
-                            );
-                          },
-                          tooltip: context.l10n.map_lineOfSight,
-                        ),
                       PopupMenuButton(
                         itemBuilder: (context) => [
+                          if (_losOffered) ...<PopupMenuEntry<Object?>>[
+                            PopupMenuItem(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.visibility_outlined),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(context.l10n.los_lineOfSight),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => _openLos(
+                                LosMode.line,
+                                from: _me(connector, selfPosition),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.wifi_tethering),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(context.l10n.los_reachFromMe),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => _openLos(
+                                LosMode.reach,
+                                from: _me(connector, selfPosition),
+                              ),
+                            ),
+                            const PopupMenuDivider(),
+                          ],
                           if (!PlatformInfo.isWeb)
                             PopupMenuItem(
                               child: Row(
@@ -812,14 +836,16 @@ class _MapScreenState extends State<MapScreen> {
             body: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (routeAtSide && _routeTo != null) ...[
+                if (routeAtSide && (_los != null || _routeTo != null)) ...[
                   SizedBox(
                     width: RouteSheet.sideWidth,
-                    child: _buildRouteSheet(
-                      settingsService,
-                      selfPosition,
-                      side: true,
-                    ),
+                    child: _los != null
+                        ? _buildLosSheet(side: true)
+                        : _buildRouteSheet(
+                            settingsService,
+                            selfPosition,
+                            side: true,
+                          ),
                   ),
                   const VerticalDivider(width: 1),
                 ],
@@ -831,9 +857,14 @@ class _MapScreenState extends State<MapScreen> {
                         controller: _mapController,
                         initialCamera: startCamera,
                         controlsWidth: MapControls.width,
+                        coveredBottom: _losCovered,
                         onTap: widget.pickPosition
                             ? (position) =>
                                   Navigator.pop(context, position.toLatLong2())
+                            : _los != null
+                            ? (position) => _los!.tap(
+                                LosPlace.point(position.toLatLong2()),
+                              )
                             : null,
                         onLongPress: (position) {
                           if (widget.pickPosition) {
@@ -856,14 +887,24 @@ class _MapScreenState extends State<MapScreen> {
                                 p,
                                 named: _namedPlaces.contains(p),
                                 dark: mapDark,
-                                onTap: () => _openPlace(
-                                  p,
-                                  connector,
-                                  selfPosition,
-                                  settings.unitSystem,
-                                ),
+                                onTap: () => _los != null
+                                    ? _los!.tap(
+                                        LosPlace.point(
+                                          LatLng(p.place.lat, p.place.lon),
+                                          name: p.place.name.isEmpty
+                                              ? null
+                                              : p.place.name,
+                                        ),
+                                      )
+                                    : _openPlace(
+                                        p,
+                                        connector,
+                                        selfPosition,
+                                        settings.unitSystem,
+                                      ),
                               ),
                           ..._routeOverlays(),
+                          ..._losOverlays(),
                           if (_isBuildingPathTrace && _points.length > 1)
                             MapLine(
                               id: 'path-trace',
@@ -961,7 +1002,11 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
-            bottomSheet: _routeTo == null || routeAtSide
+            bottomSheet: routeAtSide
+                ? null
+                : _los != null
+                ? _buildLosSheet(side: false)
+                : _routeTo == null
                 ? null
                 : _buildRouteSheet(settingsService, selfPosition, side: false),
             bottomNavigationBar: isPoiLink || _fullScreen
@@ -1154,6 +1199,8 @@ class _MapScreenState extends State<MapScreen> {
           labelMinZoom: _labelMinZoom,
           onTap: () => _isBuildingPathTrace
               ? _addToPath(context, contact)
+              : _los != null
+              ? _los!.tap(_contactPlace(contact))
               : _showNodeInfo(context, contact),
           onLongPress: () {
             if (_isBuildingPathTrace) _showNodeInfo(context, contact);
@@ -1406,15 +1453,15 @@ class _MapScreenState extends State<MapScreen> {
     final parsed = StructuredMessage.parse(text);
     final (LatLng position, String label, String flags) = switch (parsed) {
       LocationMessage m when m.isSendersOwn => (
-          m.position,
-          StructuredMessageCard.locationTitle(
-            context.l10n,
-            m,
-            isOutgoing: outgoing,
-            senderName: fromName,
-          ),
-          'poi',
+        m.position,
+        StructuredMessageCard.locationTitle(
+          context.l10n,
+          m,
+          isOutgoing: outgoing,
+          senderName: fromName,
         ),
+        'poi',
+      ),
       LocationMessage m => (m.position, m.label ?? '', 'poi'),
       SosMessage m => (m.position, m.text, 'sos'),
       _ => (const LatLng(0, 0), '', ''),
@@ -1439,7 +1486,9 @@ class _MapScreenState extends State<MapScreen> {
     id: 'pin:${marker.id}',
     position: marker.position.toOvm(),
     size: const Size(40, 40),
-    onTap: () => _showMarkerInfo(marker),
+    onTap: () => _los != null
+        ? _los!.tap(LosPlace.point(marker.position, name: marker.label))
+        : _showMarkerInfo(marker),
     child: _nodeDot(
       marker.flags == 'sos'
           ? Colors.red
@@ -1535,6 +1584,35 @@ class _MapScreenState extends State<MapScreen> {
                 _formatLastSeen(contact.lastSeen),
               ),
               _buildInfoRow('Public Key', contact.publicKeyHex),
+              // Not from a guessed position: it can be tens of km out.
+              if (_losOffered &&
+                  guessedPosition == null &&
+                  contact.hasLocation &&
+                  !_isBuildingPathTrace) ...[
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.visibility_outlined),
+                  title: Text(context.l10n.los_lineOfSight),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    _openLos(
+                      LosMode.line,
+                      from: _me(connector, _selfPosition(connector)),
+                      to: _contactPlace(contact),
+                    );
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.wifi_tethering),
+                  title: Text(context.l10n.los_reachFrom(contact.name)),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    _openLos(LosMode.reach, from: _contactPlace(contact));
+                  },
+                ),
+              ],
               if (graph != null) ...[
                 const Divider(),
                 ListTile(
@@ -1832,6 +1910,31 @@ class _MapScreenState extends State<MapScreen> {
                   },
                 ),
               ],
+              if (_losOffered) ...[
+                ListTile(
+                  leading: const Icon(Icons.visibility_outlined),
+                  title: Text(l10n.los_lineFromMe),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _openLos(
+                      LosMode.line,
+                      from: _me(connector, selfPosition),
+                      to: LosPlace.point(position, name: title),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.wifi_tethering),
+                  title: Text(l10n.los_reachFromHere),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _openLos(
+                      LosMode.reach,
+                      from: LosPlace.point(position, name: title),
+                    );
+                  },
+                ),
+              ],
               ListTile(
                 leading: const Icon(Icons.place),
                 title: Text(context.l10n.map_shareMarkerHere),
@@ -1876,6 +1979,297 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// Line of sight is on offer: on a map of your own (not one pushed to
+  /// pick a position) with offline maps.
+  bool get _losOffered =>
+      !widget.pickPosition &&
+      !_isBuildingPathTrace &&
+      context.read<MapPacksService?>() != null;
+
+  /// A radio with no position reports 0, 0.
+  LatLng? _selfPosition(MeshCoreConnector connector) =>
+      connector.hasValidLocation(
+        connector.selfLatitude,
+        connector.selfLongitude,
+      )
+      ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+      : null;
+
+  /// You, at the radio's position: with the GPS's age and, from its
+  /// altitude, the ground under you (the radio in a hand or a car, 1.5 m
+  /// up). A position the GPS hasn't confirmed this connection may be the
+  /// one stored before a restart; without GPS it was set by hand.
+  LosPlace? _me(MeshCoreConnector connector, LatLng? position) {
+    if (position == null) return null;
+    final gps = connector.selfGps.value;
+    final live = connector.gpsOn && connector.selfPositionIsLive && gps != null;
+    final here =
+        live &&
+        const Distance().as(
+              LengthUnit.Meter,
+              position,
+              LatLng(gps.latitude, gps.longitude),
+            ) <
+            100;
+    return LosPlace.me(
+      position,
+      source: !connector.gpsOn
+          ? MyPosition.byHand
+          : live
+          ? MyPosition.gps
+          : MyPosition.notYetGps,
+      seenAt: live ? gps.at : null,
+      groundM: here && gps.altitude != 0 ? gps.altitude - 1.5 : null,
+    );
+  }
+
+  LosPlace _contactPlace(Contact contact) => LosPlace.contact(
+    LatLng(contact.latitude!, contact.longitude!),
+    name: contact.name,
+    key: contact.publicKeyHex,
+    repeater: contact.type == advTypeRepeater,
+    seenAt: contact.lastSeen,
+  );
+
+  /// Everyone with a known position, you too, and those the map shows at
+  /// a guessed position: the radio reach's list.
+  List<LosPlace> _losPeople() {
+    final connector = _connector;
+    return [
+      ?_me(connector, _selfPosition(connector)),
+      for (final c in connector.allContacts)
+        if (c.hasLocation) _contactPlace(c),
+      for (final g in GuessedLocationHelper.withCurrentContacts(
+        _cachedGuessedLocations,
+        connector.allContacts,
+      ))
+        LosPlace.contact(
+          g.position,
+          name: g.contact.name,
+          key: g.contact.publicKeyHex,
+          repeater: g.contact.type == advTypeRepeater,
+          seenAt: g.contact.lastSeen,
+          guessedVia: g.heardVia,
+        ),
+    ];
+  }
+
+  /// Opens the line of sight sheet in place of the route sheet; nothing
+  /// is worked out until there is somewhere to look.
+  void _openLos(LosMode mode, {LosPlace? from, LosPlace? to}) {
+    final maps = context.read<MapPacksService?>();
+    if (maps == null) return;
+    final khz = _connector.currentFreqHz;
+    _los?.dispose();
+    final session = LineOfSightSession(
+      worker: _losWorker ??= LosWorker(),
+      maps: maps,
+      settings: context.read<AppSettingsService>(),
+      mode: mode,
+      // The radio's frequency (currentFreqHz holds kHz).
+      frequencyMHz: khz != null && khz > 0 ? khz / 1000 : defaultFrequencyMHz,
+      people: _losPeople,
+      peopleChanged: _connector,
+      from: from,
+      to: to,
+    )..addListener(_onLos);
+    _losCovered.value = 0;
+    setState(() {
+      _los = session;
+      _losShown = null;
+    });
+    _onLos();
+  }
+
+  void _closeLos() {
+    _los?.dispose();
+    _losCovered.value = 0;
+    setState(() => _los = null);
+  }
+
+  void _onLos() {
+    if (!mounted) return;
+    final s = _los;
+    if (s == null) return;
+    final drawn = (s.endsVersion, s.mode, s.line, s.reach, s.busy);
+    if (drawn != _losDrawn) {
+      _losDrawn = drawn;
+      setState(() {});
+    }
+    // Again once the answer is in: the sheet then has its height.
+    final key = (
+      s.endsVersion,
+      s.mode,
+      s.reachRadiusM,
+      s.mode == LosMode.line ? s.currentLine != null : s.reach != null,
+    );
+    if (key == _losShown) return;
+    _losShown = key;
+    // Once the sheet is laid out, to fit clear of it.
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) {
+        if (mounted && _los == s) _showLos(s);
+      })
+      ..ensureVisualUpdate();
+  }
+
+  /// Moves the map to show the line's ends or the whole reach, clear of
+  /// the map's buttons and the sheet, unless it shows them already.
+  void _showLos(LineOfSightSession s) {
+    final from = s.from;
+    if (from == null) return;
+    final points = s.mode == LosMode.reach
+        ? [
+            for (final b in [0.0, 90.0, 180.0, 270.0])
+              latLngOf(destination(geoOf(from.position), b, s.reachRadiusM)),
+          ]
+        : [from.position, ?s.to?.position];
+    if (points.length < 2) return;
+    final sheet = _losKey.currentState?.restHeight() ?? 0;
+    final box = _mapKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final onScreen = [
+      for (final p in points) _mapController.toScreen(p.toOvm()),
+    ];
+    final inView = onScreen.every(
+      (at) =>
+          at != null &&
+          at.dx >= 16 &&
+          at.dx <= box.size.width - MapControls.width &&
+          at.dy >= 16 &&
+          at.dy <= box.size.height - sheet - 16,
+    );
+    // A line in view stays where it is, unless it is too small to see.
+    if (s.mode == LosMode.line &&
+        inView &&
+        (onScreen[0]! - onScreen[1]!).distance > box.size.width / 4) {
+      return;
+    }
+    _mapController.fitPoints(
+      points.toOvm(),
+      padding: EdgeInsets.fromLTRB(
+        48,
+        48,
+        48 + MapControls.width,
+        max(48, min(sheet + 48, box.size.height - 120)),
+      ),
+      maxZoom: 15,
+    );
+  }
+
+  Widget _buildLosSheet({required bool side}) => LineOfSightSheet(
+    key: side ? null : _losKey,
+    session: _los!,
+    side: side,
+    onClose: _closeLos,
+    onDownload: (ids) => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => OfflineMapsScreen(initialPacks: ids)),
+    ),
+    onHeight: side ? null : (height) => _losCovered.value = height,
+    bottomInset: side || _isMainMap ? 0 : MediaQuery.paddingOf(context).bottom,
+  );
+
+  /// The line in its answer's colour (grey while it is worked out), the
+  /// spot that decides it, and a reach's shade where the ground isn't in
+  /// the way.
+  List<MapOverlay> _losOverlays() {
+    final s = _los;
+    final from = s?.from;
+    if (s == null || from == null) return const [];
+    final out = <MapOverlay>[];
+    if (s.mode == LosMode.reach) {
+      final r = s.reach;
+      if (r != null) {
+        if (_losShade.$1 != r) {
+          _losShade = (
+            r,
+            [
+              for (final (i, area) in r.areas({
+                Verdict.clear,
+                Verdict.marginal,
+              }).indexed)
+                MapPolygon(
+                  id: 'los-reach-$i',
+                  points: [for (final g in area.outline) latLngOf(g).toOvm()],
+                  holes: [
+                    for (final hole in area.holes)
+                      [for (final g in hole) latLngOf(g).toOvm()],
+                  ],
+                  fillColor: losReachColor(context).withValues(alpha: 0.45),
+                  strokeColor: losReachColor(context),
+                  strokeWidth: 1.5,
+                ),
+            ],
+          );
+        }
+        out.addAll(_losShade.$2);
+      }
+      out.add(
+        MapLine(
+          id: 'los-reach-edge',
+          points: [
+            for (var b = 0; b <= 360; b += 5)
+              latLngOf(
+                destination(geoOf(from.position), b.toDouble(), s.reachRadiusM),
+              ).toOvm(),
+          ],
+          color: losReachColor(context),
+          width: 2,
+          pattern: MapLinePattern.dashed,
+        ),
+      );
+    } else if (s.to case final to?) {
+      final r = s.currentLine;
+      final color = losVerdictColor(context, r?.verdict ?? Verdict.unknown);
+      out.add(
+        MapLine(
+          id: 'los-line',
+          points: [from.position.toOvm(), to.position.toOvm()],
+          color: color,
+          width: 4,
+        ),
+      );
+      final deciding = r?.deciding;
+      if (deciding != null &&
+          (r!.verdict == Verdict.blocked || r.verdict == Verdict.marginal)) {
+        out.add(
+          MapMarker(
+            id: 'los-deciding',
+            position: latLngOf(deciding.position).toOvm(),
+            color: color,
+            radius: 7,
+            interactive: false,
+          ),
+        );
+      }
+      if (to.kind == LosPlaceKind.point) {
+        out.add(
+          MapMarker(
+            id: 'los-to',
+            position: to.position.toOvm(),
+            size: const Size(40, 40),
+            anchor: Alignment.bottomCenter,
+            interactive: false,
+            child: Icon(Icons.location_on, color: Colors.red[600], size: 38),
+          ),
+        );
+      }
+    }
+    if (from.kind == LosPlaceKind.point) {
+      out.add(
+        MapMarker(
+          id: 'los-from',
+          position: from.position.toOvm(),
+          color: routeStartColor,
+          radius: 7,
+          interactive: false,
+        ),
+      );
+    }
+    return out;
+  }
+
   void _routeHere(String name, LatLng to, LatLng? selfPosition) {
     final routing = context.read<RoutingService?>();
     if (routing == null || !routing.hasRoutingData) {
@@ -1885,6 +2279,8 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
+    // One sheet at a time: the route's takes over.
+    if (_los != null) _closeLos();
     setState(() => _routeTo = (name: name, point: to));
     unawaited(_findRoute(selfPosition));
   }
@@ -2395,29 +2791,29 @@ class _MapScreenState extends State<MapScreen> {
               }
 
               Widget header(String text) => Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      text,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  );
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text(
+                  text,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              );
               Widget tile(_ShareTarget target) => ListTile(
-                    leading: Icon(target.icon, color: target.color),
-                    title: Text(
-                      target.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: target.channel?.isPublicChannel ?? false
-                        ? Text(context.l10n.channels_publicChannel)
-                        : null,
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      unawaited(
-                        _sendMarker(context, liveConnector, target, markerText),
-                      );
-                    },
+                leading: Icon(target.icon, color: target.color),
+                title: Text(
+                  target.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: target.channel?.isPublicChannel ?? false
+                    ? Text(context.l10n.channels_publicChannel)
+                    : null,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(
+                    _sendMarker(context, liveConnector, target, markerText),
                   );
+                },
+              );
               final shownChats = chats.where(shown).toList();
               final shownFavorites = favorites.where(shown).toList();
               return SafeArea(
@@ -2487,8 +2883,7 @@ class _MapScreenState extends State<MapScreen> {
     MeshCoreConnector connector,
     Map<String, String> drafts,
   ) {
-    bool takesText(Contact c) =>
-        c.type == advTypeChat || c.type == advTypeRoom;
+    bool takesText(Contact c) => c.type == advTypeChat || c.type == advTypeRoom;
     final now = DateTime.now().microsecondsSinceEpoch;
     final chats = <(int, _ShareTarget)>[];
     final listed = <String>{};
@@ -2499,7 +2894,9 @@ class _MapScreenState extends State<MapScreen> {
       if (!hasMessage && !hasDraft) continue;
       listed.add(contact.publicKeyHex);
       // A chat with only a draft sits on top, as on the Chats screen.
-      final sortKey = hasMessage ? connector.latestContactArrivalUs(contact) : now;
+      final sortKey = hasMessage
+          ? connector.latestContactArrivalUs(contact)
+          : now;
       chats.add((sortKey, _ShareTarget.contact(contact)));
     }
     for (final channel in connector.channels) {
@@ -2891,6 +3288,7 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Starts a trace from [position], the radio's own, when it has one.
   void _startPath(LatLng? position) {
+    if (_los != null) _closeLos();
     setState(() {
       _isBuildingPathTrace = true;
       _pathTrace.clear();

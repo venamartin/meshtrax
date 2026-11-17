@@ -690,10 +690,6 @@ class AppLocalizationsBg extends AppLocalizations {
       'Отворен софтуер за Flutter клиент за MeshCore LoRa мрежови устройства.';
 
   @override
-  String get settings_aboutOpenMeteoAttribution =>
-      'Данни за надморска височина на LOS: Open-Meteo (CC BY 4.0)';
-
-  @override
   String get settings_reportBug => 'Съобщете за грешка';
 
   @override
@@ -1841,12 +1837,6 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get chat_invalidLink => 'Невалиден формат на връзката';
-
-  @override
-  String get map_lineOfSight => 'Линия на видимост';
-
-  @override
-  String get map_losScreenTitle => 'Линия на видимост';
 
   @override
   String get map_noNodesWithLocation => 'Няма възли с данни за местоположение.';
@@ -3238,144 +3228,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get pathTrace_clearTooltip => 'Изчисти пътя';
 
   @override
-  String get losSelectStartEnd => 'Изберете начални и крайни възли за LOS.';
-
-  @override
-  String losRunFailed(String error) {
-    return 'Проверката на пряката видимост е неуспешна: $error';
-  }
-
-  @override
-  String get losClearAllPoints => 'Изчистете всички точки';
-
-  @override
-  String get losRunToViewElevationProfile =>
-      'Стартирайте LOS, за да видите профила на надморската височина';
-
-  @override
-  String get losMenuTitle => 'LOS меню';
-
-  @override
-  String get losMenuSubtitle =>
-      'Докоснете възли или натиснете продължително карта за персонализирани точки';
-
-  @override
-  String get losShowDisplayNodes => 'Показване на възли на дисплея';
-
-  @override
-  String get losCustomPoints => 'Персонализирани точки';
-
-  @override
-  String losCustomPointLabel(int index) {
-    return 'Персонализирано $index';
-  }
-
-  @override
-  String get losPointA => 'Точка А';
-
-  @override
-  String get losPointB => 'Точка Б';
-
-  @override
-  String losAntennaA(String value, String unit) {
-    return 'Антена A: $value $unit';
-  }
-
-  @override
-  String losAntennaB(String value, String unit) {
-    return 'Антена B: $value $unit';
-  }
-
-  @override
-  String get losRun => 'Стартирайте LOS';
-
-  @override
-  String get losNoElevationData => 'Няма данни за надморска височина';
-
-  @override
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, чист LOS, минимално разстояние $clearance $heightUnit';
-  }
-
-  @override
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  ) {
-    return '$distance $distanceUnit, блокиран от $obstruction $heightUnit';
-  }
-
-  @override
-  String get losStatusChecking => 'LOS: проверка...';
-
-  @override
-  String get losStatusNoData => 'LOS: няма данни';
-
-  @override
-  String losStatusSummary(int clear, int total, int blocked, int unknown) {
-    return 'LOS: $clear/$total ясно, $blocked блокирано, $unknown неизвестно';
-  }
-
-  @override
-  String get losErrorElevationUnavailable =>
-      'Няма налични данни за надморска височина за една или повече проби.';
-
-  @override
-  String get losErrorInvalidInput =>
-      'Невалидни данни за точки/надморска височина за изчисляване на LOS.';
-
-  @override
-  String get losRenameCustomPoint => 'Преименувайте персонализирана точка';
-
-  @override
-  String get losPointName => 'Име на точката';
-
-  @override
-  String get losShowPanelTooltip => 'Показване на LOS панел';
-
-  @override
-  String get losHidePanelTooltip => 'Скриване на LOS панела';
-
-  @override
-  String get losElevationAttribution =>
-      'Данни за надморска височина: Open-Meteo (CC BY 4.0)';
-
-  @override
-  String get losLegendRadioHorizon => 'Радиохоризонт';
-
-  @override
-  String get losLegendLosBeam => 'Линия на видимост';
-
-  @override
-  String get losLegendTerrain => 'Терен';
-
-  @override
-  String get losFrequencyLabel => 'Честота';
-
-  @override
-  String get losFrequencyInfoTooltip => 'Преглед на детайли за изчислението';
-
-  @override
-  String get losFrequencyDialogTitle => 'Изчисляване на радиохоризонта';
-
-  @override
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  ) {
-    return 'Започвайки от k=$baselineK при $baselineFreq MHz, изчислението коригира k-фактора за текущата $frequencyMHz MHz лента, която определя границата на извития радиохоризонт.';
-  }
-
-  @override
   String get contacts_pathTrace => 'Пътен проследяване';
 
   @override
@@ -4676,7 +4528,8 @@ class AppLocalizationsBg extends AppLocalizations {
   String get offlineMaps_kindContours => 'Хоризонтали';
 
   @override
-  String get offlineMaps_kindContoursDetail => 'Линии на надморската височина';
+  String get offlineMaps_kindContoursDetail =>
+      'Линии на надморската височина, използват се и за пряка видимост';
 
   @override
   String get offlineMaps_kindUsgs => 'Топографска карта USGS';
@@ -6705,4 +6558,211 @@ class AppLocalizationsBg extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get los_lineOfSight => 'Пряка видимост';
+
+  @override
+  String get los_reachFromMe => 'Радиообхват от мен';
+
+  @override
+  String get los_lineFromMe => 'Пряка видимост от мен';
+
+  @override
+  String get los_reachFromHere => 'Радиообхват оттук';
+
+  @override
+  String los_reachFrom(String name) {
+    return 'Радиообхват от $name';
+  }
+
+  @override
+  String get los_clear => 'Свободно';
+
+  @override
+  String get los_marginal => 'На ръба';
+
+  @override
+  String get los_blocked => 'Блокирано';
+
+  @override
+  String get los_cantTell => 'Неясно';
+
+  @override
+  String get los_checking => 'Проверка…';
+
+  @override
+  String get los_failed => 'Пряката видимост не можа да бъде изчислена тук.';
+
+  @override
+  String get los_pickTarget => 'Докоснете човек или място на картата.';
+
+  @override
+  String get los_noPosition =>
+      'Местоположението ви още не е известно. Докоснете картата, за да започнете оттам.';
+
+  @override
+  String get los_nothingInWay => 'Нищо не пречи.';
+
+  @override
+  String los_groundAbove(String distance, String height) {
+    return 'Теренът на $distance от вас е $height над линията.';
+  }
+
+  @override
+  String los_groundAboveStart(String distance, String height) {
+    return 'Теренът на $distance от началото е $height над линията.';
+  }
+
+  @override
+  String los_groundWithin(String distance, String height) {
+    return 'Теренът на $distance от вас стига на $height от линията.';
+  }
+
+  @override
+  String los_groundWithinStart(String distance, String height) {
+    return 'Теренът на $distance от началото стига на $height от линията.';
+  }
+
+  @override
+  String get los_higherHelps => 'Помага по-високо място или по-висока антена.';
+
+  @override
+  String los_noContours(String length) {
+    return 'Няма хоризонтали за $length от тази линия.';
+  }
+
+  @override
+  String los_noContoursIn(String length, String regions) {
+    return 'Няма хоризонтали за $length от тази линия ($regions).';
+  }
+
+  @override
+  String get los_noContoursArea => 'Няма хоризонтали за част от тази област.';
+
+  @override
+  String los_noContoursAreaIn(String regions) {
+    return 'Няма хоризонтали за част от тази област ($regions).';
+  }
+
+  @override
+  String get los_noHeightData =>
+      'Все още няма данни за височината в тази област.';
+
+  @override
+  String los_downloadContours(String regions, String size) {
+    return 'Изтегли хоризонтали за $regions ($size)';
+  }
+
+  @override
+  String get los_downloadBeforeTrip =>
+      'Изтеглете хоризонталите за тази област преди пътуването. Нужна е интернет връзка.';
+
+  @override
+  String get los_spotBelowLowest =>
+      'Това място е под най-ниската хоризонтала (под морското равнище), затова височината му не е известна.';
+
+  @override
+  String los_nameBelowLowest(String name) {
+    return '$name е под най-ниската хоризонтала (под морското равнище), затова височината там не е известна.';
+  }
+
+  @override
+  String get los_youBelowLowest =>
+      'Вие сте под най-ниската хоризонтала (под морското равнище), затова височината там не е известна. Ако GPS на радиото е включен, се използва неговата височина.';
+
+  @override
+  String get los_noLinesNear =>
+      'Близо до този край на линията няма хоризонтали, затова височината там не е известна.';
+
+  @override
+  String get los_from => 'От';
+
+  @override
+  String get los_to => 'До';
+
+  @override
+  String get los_thisRadio => 'Това радио';
+
+  @override
+  String get los_me => 'Аз';
+
+  @override
+  String los_meAgo(String age) {
+    return 'Аз, $age';
+  }
+
+  @override
+  String get los_meByHand => 'Аз, местоположение зададено ръчно';
+
+  @override
+  String get los_meNotYetGps => 'Аз, местоположението още не е обновено от GPS';
+
+  @override
+  String los_nameAgo(String name, String age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get los_antenna => 'Антена';
+
+  @override
+  String get los_handHeld => 'Ръчна';
+
+  @override
+  String get los_vehicle => 'На автомобил';
+
+  @override
+  String get los_raised => 'Издигната';
+
+  @override
+  String get los_raisedTitle => 'Издигната антена';
+
+  @override
+  String get los_raisedLabel => 'Височина над земята';
+
+  @override
+  String get los_terrainOnly => 'Само терен, по изтеглените хоризонтали.';
+
+  @override
+  String los_credits(String credits) {
+    return 'Височини: $credits';
+  }
+
+  @override
+  String get los_aboutTitle => 'За пряката видимост';
+
+  @override
+  String get los_helpBody =>
+      'Отговорът се базира само на терена, прочетен от изтеглените от вас хоризонтали. Той не знае нищо за дървета, сгради, хора, електропроводи или други антени, а един връх може да е до една хоризонтала по-висок от начертаното.\n\n„Свободно“ означава, че теренът не пречи. Това не гарантира, че съобщението ще стигне. „На ръба“ означава, че теренът се доближава до линията. „Блокирано“ означава, че теренът пречи: съобщението все пак може да мине над един нисък хребет, но не разчитайте на това.\n\nИзпробвайте го на място със своите радиостанции, преди да разчитате на него.';
+
+  @override
+  String los_reachShaded(String distance) {
+    return 'Оцветено: там теренът не пречи на връзка с ръчно радио, до $distance.';
+  }
+
+  @override
+  String get los_reachUnknownPart =>
+      'Част от терена тук не може да се изчисли, например под морското равнище, затова не е оцветена.';
+
+  @override
+  String get los_positionGuessed => 'Предполагаема позиция';
+
+  @override
+  String los_positionGuessedVia(String names) {
+    return 'Предполагаема позиция (чрез $names)';
+  }
+
+  @override
+  String los_lookFurther(String distance) {
+    return 'Виж по-далеч ($distance)';
+  }
+
+  @override
+  String los_nobodyWithin(String distance) {
+    return 'Няма никого с местоположение в радиус $distance.';
+  }
+
+  @override
+  String get offlineMaps_losContours => 'Хоризонтали за пряка видимост';
 }

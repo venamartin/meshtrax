@@ -1325,12 +1325,6 @@ abstract class AppLocalizations {
   /// **'An open-source Flutter client for MeshCore LoRa mesh networking devices, based on meshcore-open.'**
   String get settings_aboutDescription;
 
-  /// No description provided for @settings_aboutOpenMeteoAttribution.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS elevation data: Open-Meteo (CC BY 4.0)'**
-  String get settings_aboutOpenMeteoAttribution;
-
   /// No description provided for @settings_reportBug.
   ///
   /// In en, this message translates to:
@@ -3322,18 +3316,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid link format'**
   String get chat_invalidLink;
-
-  /// No description provided for @map_lineOfSight.
-  ///
-  /// In en, this message translates to:
-  /// **'Line of Sight'**
-  String get map_lineOfSight;
-
-  /// No description provided for @map_losScreenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Line of Sight'**
-  String get map_losScreenTitle;
 
   /// No description provided for @map_noNodesWithLocation.
   ///
@@ -5698,225 +5680,6 @@ abstract class AppLocalizations {
   /// **'Clear path.'**
   String get pathTrace_clearTooltip;
 
-  /// No description provided for @losSelectStartEnd.
-  ///
-  /// In en, this message translates to:
-  /// **'Select start and end nodes for LOS.'**
-  String get losSelectStartEnd;
-
-  /// No description provided for @losRunFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Line-of-sight check failed: {error}'**
-  String losRunFailed(String error);
-
-  /// No description provided for @losClearAllPoints.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear all points'**
-  String get losClearAllPoints;
-
-  /// No description provided for @losRunToViewElevationProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Run LOS to view elevation profile'**
-  String get losRunToViewElevationProfile;
-
-  /// No description provided for @losMenuTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS Menu'**
-  String get losMenuTitle;
-
-  /// No description provided for @losMenuSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap nodes or long-press map for custom points'**
-  String get losMenuSubtitle;
-
-  /// No description provided for @losShowDisplayNodes.
-  ///
-  /// In en, this message translates to:
-  /// **'Show display nodes'**
-  String get losShowDisplayNodes;
-
-  /// No description provided for @losCustomPoints.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom points'**
-  String get losCustomPoints;
-
-  /// No description provided for @losCustomPointLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom {index}'**
-  String losCustomPointLabel(int index);
-
-  /// No description provided for @losPointA.
-  ///
-  /// In en, this message translates to:
-  /// **'Point A'**
-  String get losPointA;
-
-  /// No description provided for @losPointB.
-  ///
-  /// In en, this message translates to:
-  /// **'Point B'**
-  String get losPointB;
-
-  /// No description provided for @losAntennaA.
-  ///
-  /// In en, this message translates to:
-  /// **'Antenna A: {value} {unit}'**
-  String losAntennaA(String value, String unit);
-
-  /// No description provided for @losAntennaB.
-  ///
-  /// In en, this message translates to:
-  /// **'Antenna B: {value} {unit}'**
-  String losAntennaB(String value, String unit);
-
-  /// No description provided for @losRun.
-  ///
-  /// In en, this message translates to:
-  /// **'Run LOS'**
-  String get losRun;
-
-  /// No description provided for @losNoElevationData.
-  ///
-  /// In en, this message translates to:
-  /// **'No elevation data'**
-  String get losNoElevationData;
-
-  /// No description provided for @losProfileClear.
-  ///
-  /// In en, this message translates to:
-  /// **'{distance} {distanceUnit}, clear LOS, min clearance {clearance} {heightUnit}'**
-  String losProfileClear(
-    String distance,
-    String distanceUnit,
-    String clearance,
-    String heightUnit,
-  );
-
-  /// No description provided for @losProfileBlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'{distance} {distanceUnit}, blocked by {obstruction} {heightUnit}'**
-  String losProfileBlocked(
-    String distance,
-    String distanceUnit,
-    String obstruction,
-    String heightUnit,
-  );
-
-  /// No description provided for @losStatusChecking.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS: checking...'**
-  String get losStatusChecking;
-
-  /// No description provided for @losStatusNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS: no data'**
-  String get losStatusNoData;
-
-  /// No description provided for @losStatusSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS: {clear}/{total} clear, {blocked} blocked, {unknown} unknown'**
-  String losStatusSummary(int clear, int total, int blocked, int unknown);
-
-  /// No description provided for @losErrorElevationUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Elevation data unavailable for one or more samples.'**
-  String get losErrorElevationUnavailable;
-
-  /// No description provided for @losErrorInvalidInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid points/elevation data for LOS calculation.'**
-  String get losErrorInvalidInput;
-
-  /// No description provided for @losRenameCustomPoint.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename custom point'**
-  String get losRenameCustomPoint;
-
-  /// No description provided for @losPointName.
-  ///
-  /// In en, this message translates to:
-  /// **'Point name'**
-  String get losPointName;
-
-  /// No description provided for @losShowPanelTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Show LOS panel'**
-  String get losShowPanelTooltip;
-
-  /// No description provided for @losHidePanelTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide LOS panel'**
-  String get losHidePanelTooltip;
-
-  /// No description provided for @losElevationAttribution.
-  ///
-  /// In en, this message translates to:
-  /// **'Elevation data: Open-Meteo (CC BY 4.0)'**
-  String get losElevationAttribution;
-
-  /// No description provided for @losLegendRadioHorizon.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio horizon'**
-  String get losLegendRadioHorizon;
-
-  /// No description provided for @losLegendLosBeam.
-  ///
-  /// In en, this message translates to:
-  /// **'LOS beam'**
-  String get losLegendLosBeam;
-
-  /// No description provided for @losLegendTerrain.
-  ///
-  /// In en, this message translates to:
-  /// **'Terrain'**
-  String get losLegendTerrain;
-
-  /// No description provided for @losFrequencyLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Frequency'**
-  String get losFrequencyLabel;
-
-  /// No description provided for @losFrequencyInfoTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'View calculation details'**
-  String get losFrequencyInfoTooltip;
-
-  /// No description provided for @losFrequencyDialogTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio horizon calculation'**
-  String get losFrequencyDialogTitle;
-
-  /// Explain how the calculation uses the baseline frequency and derived k-factor.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting from k={baselineK} at {baselineFreq} MHz, the calculation adjusts the k-factor for the current {frequencyMHz} MHz band, which defines the curved radio horizon cap.'**
-  String losFrequencyDialogDescription(
-    double baselineK,
-    double baselineFreq,
-    double frequencyMHz,
-    double kFactor,
-  );
-
   /// No description provided for @contacts_pathTrace.
   ///
   /// In en, this message translates to:
@@ -7948,7 +7711,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_kindContoursDetail.
   ///
   /// In en, this message translates to:
-  /// **'Elevation lines'**
+  /// **'Elevation lines, also used for line of sight'**
   String get offlineMaps_kindContoursDetail;
 
   /// No description provided for @offlineMaps_kindUsgs.
@@ -11568,6 +11331,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =0{Direct} =1{1 hop} other{{count} hops}}'**
   String contacts_hopsAway(int count);
+
+  /// No description provided for @los_lineOfSight.
+  ///
+  /// In en, this message translates to:
+  /// **'Line of sight'**
+  String get los_lineOfSight;
+
+  /// No description provided for @los_reachFromMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio reach from me'**
+  String get los_reachFromMe;
+
+  /// No description provided for @los_lineFromMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Line of sight from me'**
+  String get los_lineFromMe;
+
+  /// No description provided for @los_reachFromHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio reach from here'**
+  String get los_reachFromHere;
+
+  /// No description provided for @los_reachFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio reach from {name}'**
+  String los_reachFrom(String name);
+
+  /// No description provided for @los_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get los_clear;
+
+  /// No description provided for @los_marginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Marginal'**
+  String get los_marginal;
+
+  /// No description provided for @los_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get los_blocked;
+
+  /// No description provided for @los_cantTell.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t tell'**
+  String get los_cantTell;
+
+  /// No description provided for @los_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get los_checking;
+
+  /// No description provided for @los_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Line of sight couldn\'t be worked out here.'**
+  String get los_failed;
+
+  /// No description provided for @los_pickTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a person or a place on the map.'**
+  String get los_pickTarget;
+
+  /// No description provided for @los_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your position isn\'t known yet. Tap the map to start from there.'**
+  String get los_noPosition;
+
+  /// No description provided for @los_nothingInWay.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing in the way.'**
+  String get los_nothingInWay;
+
+  /// No description provided for @los_groundAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'The ground {distance} from you is {height} above the line.'**
+  String los_groundAbove(String distance, String height);
+
+  /// No description provided for @los_groundAboveStart.
+  ///
+  /// In en, this message translates to:
+  /// **'The ground {distance} from the start is {height} above the line.'**
+  String los_groundAboveStart(String distance, String height);
+
+  /// No description provided for @los_groundWithin.
+  ///
+  /// In en, this message translates to:
+  /// **'The ground {distance} from you comes within {height} of the line.'**
+  String los_groundWithin(String distance, String height);
+
+  /// No description provided for @los_groundWithinStart.
+  ///
+  /// In en, this message translates to:
+  /// **'The ground {distance} from the start comes within {height} of the line.'**
+  String los_groundWithinStart(String distance, String height);
+
+  /// No description provided for @los_higherHelps.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher ground or a higher antenna helps.'**
+  String get los_higherHelps;
+
+  /// No description provided for @los_noContours.
+  ///
+  /// In en, this message translates to:
+  /// **'No contour lines for {length} of this line.'**
+  String los_noContours(String length);
+
+  /// No description provided for @los_noContoursIn.
+  ///
+  /// In en, this message translates to:
+  /// **'No contour lines for {length} of this line ({regions}).'**
+  String los_noContoursIn(String length, String regions);
+
+  /// No description provided for @los_noContoursArea.
+  ///
+  /// In en, this message translates to:
+  /// **'No contour lines for part of this area.'**
+  String get los_noContoursArea;
+
+  /// No description provided for @los_noContoursAreaIn.
+  ///
+  /// In en, this message translates to:
+  /// **'No contour lines for part of this area ({regions}).'**
+  String los_noContoursAreaIn(String regions);
+
+  /// No description provided for @los_noHeightData.
+  ///
+  /// In en, this message translates to:
+  /// **'No height data for this area yet.'**
+  String get los_noHeightData;
+
+  /// No description provided for @los_downloadContours.
+  ///
+  /// In en, this message translates to:
+  /// **'Download {regions} contours ({size})'**
+  String los_downloadContours(String regions, String size);
+
+  /// No description provided for @los_downloadBeforeTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the contours for this area before your trip. It needs an internet connection.'**
+  String get los_downloadBeforeTrip;
+
+  /// No description provided for @los_spotBelowLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'This spot is below the lowest contour line (below sea level), so its height isn\'t known.'**
+  String get los_spotBelowLowest;
+
+  /// No description provided for @los_nameBelowLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is below the lowest contour line (below sea level), so the height there isn\'t known.'**
+  String los_nameBelowLowest(String name);
+
+  /// No description provided for @los_youBelowLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'You are below the lowest contour line (below sea level), so the height there isn\'t known. With the radio\'s GPS on, its altitude is used.'**
+  String get los_youBelowLowest;
+
+  /// No description provided for @los_noLinesNear.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no contour lines near this end of the line, so its height isn\'t known.'**
+  String get los_noLinesNear;
+
+  /// No description provided for @los_from.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get los_from;
+
+  /// No description provided for @los_to.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get los_to;
+
+  /// No description provided for @los_thisRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio'**
+  String get los_thisRadio;
+
+  /// No description provided for @los_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get los_me;
+
+  /// No description provided for @los_meAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Me, {age}'**
+  String los_meAgo(String age);
+
+  /// No description provided for @los_meByHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Me, position set by hand'**
+  String get los_meByHand;
+
+  /// No description provided for @los_meNotYetGps.
+  ///
+  /// In en, this message translates to:
+  /// **'Me, not yet updated by GPS'**
+  String get los_meNotYetGps;
+
+  /// No description provided for @los_nameAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {age}'**
+  String los_nameAgo(String name, String age);
+
+  /// No description provided for @los_antenna.
+  ///
+  /// In en, this message translates to:
+  /// **'Antenna'**
+  String get los_antenna;
+
+  /// No description provided for @los_handHeld.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-held'**
+  String get los_handHeld;
+
+  /// No description provided for @los_vehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get los_vehicle;
+
+  /// No description provided for @los_raised.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised'**
+  String get los_raised;
+
+  /// No description provided for @los_raisedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised antenna'**
+  String get los_raisedTitle;
+
+  /// No description provided for @los_raisedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Height above the ground'**
+  String get los_raisedLabel;
+
+  /// No description provided for @los_terrainOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain only, from the contour lines you downloaded.'**
+  String get los_terrainOnly;
+
+  /// No description provided for @los_credits.
+  ///
+  /// In en, this message translates to:
+  /// **'Heights: {credits}'**
+  String los_credits(String credits);
+
+  /// No description provided for @los_aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About line of sight'**
+  String get los_aboutTitle;
+
+  /// No description provided for @los_helpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The answer comes from the ground alone, read from the contour lines you downloaded. It knows nothing of trees, buildings, people, power lines or other antennas, and a hilltop can be up to one contour line higher than drawn.\n\nClear means the ground isn\'t in the way. It doesn\'t promise that a message gets through. Marginal means the ground comes close to the line. Blocked means the ground is in the way: a message may still get over one low ridge, but don\'t count on it.\n\nTest it with your own radios in the field before you rely on it.'**
+  String get los_helpBody;
+
+  /// No description provided for @los_reachShaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Shaded: the ground isn\'t in the way to a hand-held there, up to {distance}.'**
+  String los_reachShaded(String distance);
+
+  /// No description provided for @los_reachUnknownPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.'**
+  String get los_reachUnknownPart;
+
+  /// No description provided for @los_positionGuessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Position guessed'**
+  String get los_positionGuessed;
+
+  /// No description provided for @los_positionGuessedVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Position guessed, heard via {names}'**
+  String los_positionGuessedVia(String names);
+
+  /// No description provided for @los_lookFurther.
+  ///
+  /// In en, this message translates to:
+  /// **'Look further ({distance})'**
+  String los_lookFurther(String distance);
+
+  /// No description provided for @los_nobodyWithin.
+  ///
+  /// In en, this message translates to:
+  /// **'No one with a position within {distance}.'**
+  String los_nobodyWithin(String distance);
+
+  /// No description provided for @offlineMaps_losContours.
+  ///
+  /// In en, this message translates to:
+  /// **'Contours for line of sight'**
+  String get offlineMaps_losContours;
 }
 
 class _AppLocalizationsDelegate

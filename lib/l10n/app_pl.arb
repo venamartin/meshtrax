@@ -1498,147 +1498,11 @@
   "settings_clientRepeatSubtitle": "Pozwól temu urządzeniu powtarzać pakiety danych dla innych urządzeń.",
   "settings_clientRepeat": "Powtórzenie: Niezależne od sieci",
   "settings_clientRepeatFreqWarning": "Powtórka poza siecią wymaga częstotliwości 433, 869 lub 918 MHz.",
-  "settings_aboutOpenMeteoAttribution": "Dane wysokościowe LOS: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Zgłoś błąd",
   "settings_reportBugSubtitle": "Otwiera zgłoszenie błędu na GitHubie",
   "appSettings_unitsTitle": "Jednostki",
   "appSettings_unitsMetric": "Metryczne (m / km)",
   "appSettings_unitsImperial": "Imperialne (ft / mi)",
-  "map_lineOfSight": "Linia wzroku",
-  "map_losScreenTitle": "Linia wzroku",
-  "losSelectStartEnd": "Wybierz węzły początkowe i końcowe dla LOS.",
-  "losRunFailed": "Sprawdzenie pola widzenia nie powiodło się: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Wyczyść wszystkie punkty",
-  "losRunToViewElevationProfile": "Uruchom LOS, aby wyświetlić profil wysokości",
-  "losMenuTitle": "Menu LOS",
-  "losMenuSubtitle": "Stuknij węzły lub naciśnij i przytrzymaj mapę, aby uzyskać niestandardowe punkty",
-  "losShowDisplayNodes": "Pokaż węzły wyświetlające",
-  "losCustomPoints": "Punkty niestandardowe",
-  "losCustomPointLabel": "Niestandardowe {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Punkt A",
-  "losPointB": "Punkt B",
-  "losAntennaA": "Antena A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antena B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Uruchom LOS-a",
-  "losNoElevationData": "Brak danych o wysokości",
-  "losProfileClear": "{distance} {distanceUnit}, czysty LOS, minimalny prześwit {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, zablokowane przez {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: sprawdzam...",
-  "losStatusNoData": "LOS: brak danych",
-  "losStatusSummary": "LOS: {clear}/{total} jasne, {blocked} zablokowane, {unknown} nieznane",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Dane dotyczące wysokości są niedostępne dla jednej lub większej liczby próbek.",
-  "losErrorInvalidInput": "Nieprawidłowe dane punktów/wysokości do obliczenia LOS.",
-  "losRenameCustomPoint": "Zmień nazwę punktu niestandardowego",
-  "losPointName": "Nazwa punktu",
-  "losShowPanelTooltip": "Pokaż panel LOS",
-  "losHidePanelTooltip": "Ukryj panel LOS",
-  "losElevationAttribution": "Dane dotyczące wysokości: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Horyzont radiowy",
-  "losLegendLosBeam": "Linia widoczności",
-  "losLegendTerrain": "Teren",
-  "losFrequencyLabel": "Częstotliwość",
-  "losFrequencyInfoTooltip": "Zobacz szczegóły obliczenia",
-  "losFrequencyDialogTitle": "Obliczanie horyzontu radiowego",
-  "losFrequencyDialogDescription": "Zaczynając od k={baselineK} przy {baselineFreq} MHz, obliczenia korygują współczynnik k dla bieżącego pasma {frequencyMHz} MHz, które definiuje zakrzywiony limit horyzontu radiowego.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_removeFromFavorites": "Usuń z ulubionych",
   "listFilter_addToFavorites": "Dodaj do ulubionych",
   "listFilter_favorites": "Ulubione",
@@ -2231,7 +2095,7 @@
   "offlineMaps_kindMap": "Mapa",
   "offlineMaps_kindMapDetail": "Ulice, szlaki i miejsca z OpenStreetMap",
   "offlineMaps_kindContours": "Poziomice",
-  "offlineMaps_kindContoursDetail": "Linie wysokości",
+  "offlineMaps_kindContoursDetail": "Linie wysokości, używane też do linii widoczności",
   "offlineMaps_kindUsgs": "Mapa topograficzna USGS",
   "offlineMaps_kindUsgsDetail": "Szlaki, cieki, rezerwaty",
   "offlineMaps_kindTerrain": "Cieniowanie rzeźby",
@@ -2844,5 +2708,76 @@
   "channels_pasteLinkDesc": "Skopiowany link do kanału meshcore://.",
   "channels_pasteLinkNone": "W schowku nie ma linku do kanału.",
   "settings_locationGpsNote": "Przy włączonym GPS radio zastępuje tę pozycję, gdy tylko GPS ustali położenie.",
-  "contacts_hopsAway": "{count, plural, =0{Bezpośrednio} =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}"
+  "contacts_hopsAway": "{count, plural, =0{Bezpośrednio} =1{1 skok} few{{count} skoki} many{{count} skoków} other{{count} skoku}}",
+  "los_lineOfSight": "Linia widoczności",
+  "los_reachFromMe": "Zasięg radia z mojej pozycji",
+  "los_lineFromMe": "Linia widoczności z mojej pozycji",
+  "los_reachFromHere": "Zasięg radia stąd",
+  "los_reachFrom": "Zasięg radia: {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Czysto",
+  "los_marginal": "Na granicy",
+  "los_blocked": "Zasłonięte",
+  "los_cantTell": "Nie wiadomo",
+  "los_checking": "Sprawdzanie…",
+  "los_failed": "Nie udało się tu wyznaczyć linii widoczności.",
+  "los_pickTarget": "Stuknij osobę lub miejsce na mapie.",
+  "los_noPosition": "Twoja pozycja nie jest jeszcze znana. Stuknij mapę, aby zacząć stamtąd.",
+  "los_nothingInWay": "Brak przeszkód.",
+  "los_groundAbove": "Teren w odległości {distance} od ciebie jest {height} nad linią.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Teren w odległości {distance} od startu jest {height} nad linią.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Teren w odległości {distance} od ciebie zbliża się do linii na {height}.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Teren w odległości {distance} od startu zbliża się do linii na {height}.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Pomoże wyższe miejsce lub wyższa antena.",
+  "los_noContours": "Brak poziomic na {length} tej linii.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "Brak poziomic na {length} tej linii ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Brak poziomic dla części tego obszaru.",
+  "los_noContoursAreaIn": "Brak poziomic dla części tego obszaru ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Brak jeszcze danych o wysokości dla tego obszaru.",
+  "los_downloadContours": "Pobierz poziomice: {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Pobierz poziomice dla tego obszaru przed wyjazdem. Potrzebne jest połączenie z internetem.",
+  "los_spotBelowLowest": "To miejsce leży poniżej najniższej poziomicy (poniżej poziomu morza), więc jego wysokość nie jest znana.",
+  "los_nameBelowLowest": "{name} jest poniżej najniższej poziomicy (poniżej poziomu morza), więc wysokość w tym miejscu nie jest znana.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Jesteś poniżej najniższej poziomicy (poniżej poziomu morza), więc wysokość w tym miejscu nie jest znana. Gdy GPS radia jest włączony, używana jest jego wysokość.",
+  "los_noLinesNear": "W pobliżu tego końca linii nie ma poziomic, więc wysokość w tym miejscu nie jest znana.",
+  "los_from": "Od",
+  "los_to": "Do",
+  "los_thisRadio": "To radio",
+  "los_me": "Ja",
+  "los_meAgo": "Ja, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Ja, pozycja ustawiona ręcznie",
+  "los_meNotYetGps": "Ja, pozycja jeszcze bez aktualizacji z GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Antena",
+  "los_handHeld": "Ręczna",
+  "los_vehicle": "Pojazd",
+  "los_raised": "Podwyższona",
+  "los_raisedTitle": "Podwyższona antena",
+  "los_raisedLabel": "Wysokość nad ziemią",
+  "los_terrainOnly": "Tylko teren, z pobranych poziomic.",
+  "los_credits": "Wysokości: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "O linii widoczności",
+  "los_helpBody": "Odpowiedź opiera się wyłącznie na terenie odczytanym z pobranych poziomic. Nie uwzględnia drzew, budynków, ludzi, linii energetycznych ani innych anten, a szczyt wzgórza może być wyższy, niż pokazano, nawet o jedną poziomicę.\n\n„Czysto” oznacza, że teren nie przeszkadza. Nie gwarantuje to, że wiadomość dotrze. „Na granicy” oznacza, że teren zbliża się do linii. „Zasłonięte” oznacza, że teren przeszkadza: wiadomość może jeszcze przejść nad jednym niskim grzbietem, ale nie licz na to.\n\nPrzetestuj to w terenie z własnymi radiami, zanim zaczniesz na tym polegać.",
+  "los_reachShaded": "Zacieniowane: tam teren nie zasłania radia ręcznego, do {distance}.",
+  "los_reachUnknownPart": "Części terenu tutaj nie da się obliczyć, np. poniżej poziomu morza, więc nie jest zacieniowana.",
+  "los_positionGuessed": "Przypuszczalna pozycja",
+  "los_positionGuessedVia": "Przypuszczalna pozycja (przez {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Sprawdź dalej ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Nikogo z pozycją w promieniu {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Poziomice do linii widoczności"
 }

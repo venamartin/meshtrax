@@ -1460,147 +1460,11 @@
   "settings_clientRepeatSubtitle": "Позволете на това устройство да предава пакети към мрежата за други устройства.",
   "settings_clientRepeatFreqWarning": "За повторение извън мрежата са необходими честоти от 433, 869 или 918 MHz.",
   "settings_clientRepeat": "Без електричество – повторение",
-  "settings_aboutOpenMeteoAttribution": "Данни за надморска височина на LOS: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Съобщете за грешка",
   "settings_reportBugSubtitle": "Отваря доклад за грешка в GitHub",
   "appSettings_unitsTitle": "единици",
   "appSettings_unitsMetric": "Метрика (m / km)",
   "appSettings_unitsImperial": "Имперска (ft / mi)",
-  "map_lineOfSight": "Линия на видимост",
-  "map_losScreenTitle": "Линия на видимост",
-  "losSelectStartEnd": "Изберете начални и крайни възли за LOS.",
-  "losRunFailed": "Проверката на пряката видимост е неуспешна: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Изчистете всички точки",
-  "losRunToViewElevationProfile": "Стартирайте LOS, за да видите профила на надморската височина",
-  "losMenuTitle": "LOS меню",
-  "losMenuSubtitle": "Докоснете възли или натиснете продължително карта за персонализирани точки",
-  "losShowDisplayNodes": "Показване на възли на дисплея",
-  "losCustomPoints": "Персонализирани точки",
-  "losCustomPointLabel": "Персонализирано {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Точка А",
-  "losPointB": "Точка Б",
-  "losAntennaA": "Антена A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Антена B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Стартирайте LOS",
-  "losNoElevationData": "Няма данни за надморска височина",
-  "losProfileClear": "{distance} {distanceUnit}, чист LOS, минимално разстояние {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, блокиран от {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: проверка...",
-  "losStatusNoData": "LOS: няма данни",
-  "losStatusSummary": "LOS: {clear}/{total} ясно, {blocked} блокирано, {unknown} неизвестно",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Няма налични данни за надморска височина за една или повече проби.",
-  "losErrorInvalidInput": "Невалидни данни за точки/надморска височина за изчисляване на LOS.",
-  "losRenameCustomPoint": "Преименувайте персонализирана точка",
-  "losPointName": "Име на точката",
-  "losShowPanelTooltip": "Показване на LOS панел",
-  "losHidePanelTooltip": "Скриване на LOS панела",
-  "losElevationAttribution": "Данни за надморска височина: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Радиохоризонт",
-  "losLegendLosBeam": "Линия на видимост",
-  "losLegendTerrain": "Терен",
-  "losFrequencyLabel": "Честота",
-  "losFrequencyInfoTooltip": "Преглед на детайли за изчислението",
-  "losFrequencyDialogTitle": "Изчисляване на радиохоризонта",
-  "losFrequencyDialogDescription": "Започвайки от k={baselineK} при {baselineFreq} MHz, изчислението коригира k-фактора за текущата {frequencyMHz} MHz лента, която определя границата на извития радиохоризонт.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_removeFromFavorites": "Премахване от списъка с любими",
   "listFilter_addToFavorites": "Добави към любими",
   "listFilter_favorites": "Любими",
@@ -2193,7 +2057,7 @@
   "offlineMaps_kindMap": "Карта",
   "offlineMaps_kindMapDetail": "OpenStreetMap: улици, пътеки, места",
   "offlineMaps_kindContours": "Хоризонтали",
-  "offlineMaps_kindContoursDetail": "Линии на надморската височина",
+  "offlineMaps_kindContoursDetail": "Линии на надморската височина, използват се и за пряка видимост",
   "offlineMaps_kindUsgs": "Топографска карта USGS",
   "offlineMaps_kindUsgsDetail": "Пътеки, потоци, резервати",
   "offlineMaps_kindTerrain": "Засенчване на релефа",
@@ -2806,5 +2670,76 @@
   "channels_pasteLinkDesc": "Копирана връзка meshcore:// към канал.",
   "channels_pasteLinkNone": "В клипборда няма връзка към канал.",
   "settings_locationGpsNote": "При включен GPS радиото заменя тази позиция, щом GPS определи местоположение.",
-  "contacts_hopsAway": "{count, plural, =0{Директно} =1{1 скок} other{{count} скока}}"
+  "contacts_hopsAway": "{count, plural, =0{Директно} =1{1 скок} other{{count} скока}}",
+  "los_lineOfSight": "Пряка видимост",
+  "los_reachFromMe": "Радиообхват от мен",
+  "los_lineFromMe": "Пряка видимост от мен",
+  "los_reachFromHere": "Радиообхват оттук",
+  "los_reachFrom": "Радиообхват от {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Свободно",
+  "los_marginal": "На ръба",
+  "los_blocked": "Блокирано",
+  "los_cantTell": "Неясно",
+  "los_checking": "Проверка…",
+  "los_failed": "Пряката видимост не можа да бъде изчислена тук.",
+  "los_pickTarget": "Докоснете човек или място на картата.",
+  "los_noPosition": "Местоположението ви още не е известно. Докоснете картата, за да започнете оттам.",
+  "los_nothingInWay": "Нищо не пречи.",
+  "los_groundAbove": "Теренът на {distance} от вас е {height} над линията.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Теренът на {distance} от началото е {height} над линията.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Теренът на {distance} от вас стига на {height} от линията.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Теренът на {distance} от началото стига на {height} от линията.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Помага по-високо място или по-висока антена.",
+  "los_noContours": "Няма хоризонтали за {length} от тази линия.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "Няма хоризонтали за {length} от тази линия ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Няма хоризонтали за част от тази област.",
+  "los_noContoursAreaIn": "Няма хоризонтали за част от тази област ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Все още няма данни за височината в тази област.",
+  "los_downloadContours": "Изтегли хоризонтали за {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Изтеглете хоризонталите за тази област преди пътуването. Нужна е интернет връзка.",
+  "los_spotBelowLowest": "Това място е под най-ниската хоризонтала (под морското равнище), затова височината му не е известна.",
+  "los_nameBelowLowest": "{name} е под най-ниската хоризонтала (под морското равнище), затова височината там не е известна.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Вие сте под най-ниската хоризонтала (под морското равнище), затова височината там не е известна. Ако GPS на радиото е включен, се използва неговата височина.",
+  "los_noLinesNear": "Близо до този край на линията няма хоризонтали, затова височината там не е известна.",
+  "los_from": "От",
+  "los_to": "До",
+  "los_thisRadio": "Това радио",
+  "los_me": "Аз",
+  "los_meAgo": "Аз, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Аз, местоположение зададено ръчно",
+  "los_meNotYetGps": "Аз, местоположението още не е обновено от GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Антена",
+  "los_handHeld": "Ръчна",
+  "los_vehicle": "На автомобил",
+  "los_raised": "Издигната",
+  "los_raisedTitle": "Издигната антена",
+  "los_raisedLabel": "Височина над земята",
+  "los_terrainOnly": "Само терен, по изтеглените хоризонтали.",
+  "los_credits": "Височини: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "За пряката видимост",
+  "los_helpBody": "Отговорът се базира само на терена, прочетен от изтеглените от вас хоризонтали. Той не знае нищо за дървета, сгради, хора, електропроводи или други антени, а един връх може да е до една хоризонтала по-висок от начертаното.\n\n„Свободно“ означава, че теренът не пречи. Това не гарантира, че съобщението ще стигне. „На ръба“ означава, че теренът се доближава до линията. „Блокирано“ означава, че теренът пречи: съобщението все пак може да мине над един нисък хребет, но не разчитайте на това.\n\nИзпробвайте го на място със своите радиостанции, преди да разчитате на него.",
+  "los_reachShaded": "Оцветено: там теренът не пречи на връзка с ръчно радио, до {distance}.",
+  "los_reachUnknownPart": "Част от терена тук не може да се изчисли, например под морското равнище, затова не е оцветена.",
+  "los_positionGuessed": "Предполагаема позиция",
+  "los_positionGuessedVia": "Предполагаема позиция (чрез {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Виж по-далеч ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Няма никого с местоположение в радиус {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Хоризонтали за пряка видимост"
 }

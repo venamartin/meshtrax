@@ -1460,147 +1460,11 @@
   "settings_clientRepeatFreqWarning": "Повтор без підключення до мережі вимагає частоти 433, 869 або 918 МГц.",
   "settings_clientRepeatSubtitle": "Дозвольте цьому пристрою повторювати пакети даних для інших пристроїв.",
   "settings_clientRepeat": "Автономна система",
-  "settings_aboutOpenMeteoAttribution": "Дані про висоту LOS: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Повідомити про помилку",
   "settings_reportBugSubtitle": "Відкриває звіт про помилку на GitHub",
   "appSettings_unitsTitle": "одиниці",
   "appSettings_unitsMetric": "Метричний (м / км)",
   "appSettings_unitsImperial": "Імперська (ft / mi)",
-  "map_lineOfSight": "Пряма видимість",
-  "map_losScreenTitle": "Пряма видимість",
-  "losSelectStartEnd": "Виберіть початковий і кінцевий вузли для LOS.",
-  "losRunFailed": "Помилка перевірки прямої видимості: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Очистити всі пункти",
-  "losRunToViewElevationProfile": "Запустіть LOS, щоб переглянути профіль висоти",
-  "losMenuTitle": "Меню LOS",
-  "losMenuSubtitle": "Торкніться вузлів або утримуйте карту, щоб отримати власні точки",
-  "losShowDisplayNodes": "Показати вузли відображення",
-  "losCustomPoints": "Користувальницькі точки",
-  "losCustomPointLabel": "Спеціальний {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Точка А",
-  "losPointB": "Точка Б",
-  "losAntennaA": "Антена A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Антена B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Запустіть LOS",
-  "losNoElevationData": "Немає даних про висоту",
-  "losProfileClear": "{distance} {distanceUnit}, чистий LOS, мінімальний зазор {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, заблоковано {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: перевірка...",
-  "losStatusNoData": "LOS: немає даних",
-  "losStatusSummary": "LOS: {clear}/{total} очищено, {blocked} заблоковано, {unknown} невідомо",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Дані про висоту недоступні для одного чи кількох зразків.",
-  "losErrorInvalidInput": "Недійсні дані про точки/висоту для розрахунку LOS.",
-  "losRenameCustomPoint": "Перейменуйте спеціальну точку",
-  "losPointName": "Назва точки",
-  "losShowPanelTooltip": "Показати панель LOS",
-  "losHidePanelTooltip": "Приховати панель LOS",
-  "losElevationAttribution": "Дані про висоту: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Радіогоризонт",
-  "losLegendLosBeam": "Лінія прямої видимості",
-  "losLegendTerrain": "Рельєф",
-  "losFrequencyLabel": "Частота",
-  "losFrequencyInfoTooltip": "Переглянути деталі розрахунку",
-  "losFrequencyDialogTitle": "Розрахунок радіогоризонту",
-  "losFrequencyDialogDescription": "Починаючи з k={baselineK} на {baselineFreq} МГц, обчислення коригує k-фактор для поточного діапазону {frequencyMHz} МГц, який визначає викривлену межу радіогоризонту.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_removeFromFavorites": "Видалити зі списку улюблених",
   "listFilter_addToFavorites": "Додати до улюблених",
   "listFilter_favorites": "Улюблені",
@@ -2193,7 +2057,7 @@
   "offlineMaps_kindMap": "Карта",
   "offlineMaps_kindMapDetail": "OpenStreetMap: вулиці, стежки, місця",
   "offlineMaps_kindContours": "Горизонталі",
-  "offlineMaps_kindContoursDetail": "Лінії висот",
+  "offlineMaps_kindContoursDetail": "Лінії висот, також використовуються для прямої видимості",
   "offlineMaps_kindUsgs": "Топокарта USGS",
   "offlineMaps_kindUsgsDetail": "Стежки, струмки, заповідники",
   "offlineMaps_kindTerrain": "Відмивка рельєфу",
@@ -2806,5 +2670,76 @@
   "channels_pasteLinkDesc": "Скопійоване посилання meshcore:// на канал.",
   "channels_pasteLinkNone": "У буфері обміну немає посилання на канал.",
   "settings_locationGpsNote": "Коли GPS увімкнено, радіо замінює цю позицію, щойно GPS визначить місцезнаходження.",
-  "contacts_hopsAway": "{count, plural, =0{Напряму} =1{1 перехід} few{{count} переходи} many{{count} переходів} other{{count} переходу}}"
+  "contacts_hopsAway": "{count, plural, =0{Напряму} =1{1 перехід} few{{count} переходи} many{{count} переходів} other{{count} переходу}}",
+  "los_lineOfSight": "Пряма видимість",
+  "los_reachFromMe": "Радіопокриття від мене",
+  "los_lineFromMe": "Пряма видимість від мене",
+  "los_reachFromHere": "Радіопокриття звідси",
+  "los_reachFrom": "Радіопокриття: {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Вільно",
+  "los_marginal": "На межі",
+  "los_blocked": "Закрито",
+  "los_cantTell": "Невідомо",
+  "los_checking": "Перевірка…",
+  "los_failed": "Тут не вдалося розрахувати пряму видимість.",
+  "los_pickTarget": "Торкніться людини або місця на карті.",
+  "los_noPosition": "Ваше розташування ще невідоме. Торкніться карти, щоб почати звідти.",
+  "los_nothingInWay": "Перешкод немає.",
+  "los_groundAbove": "Рельєф за {distance} від вас на {height} вище лінії.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Рельєф за {distance} від початку на {height} вище лінії.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Рельєф за {distance} від вас підходить до лінії на {height}.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Рельєф за {distance} від початку підходить до лінії на {height}.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Допоможе вище місце або вища антена.",
+  "los_noContours": "На {length} цієї лінії немає горизонталей.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "На {length} цієї лінії немає горизонталей ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Для частини цієї області немає горизонталей.",
+  "los_noContoursAreaIn": "Для частини цієї області немає горизонталей ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Для цієї області ще немає даних про висоту.",
+  "los_downloadContours": "Завантажити горизонталі: {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Завантажте горизонталі для цієї області до поїздки. Для цього потрібне з'єднання з інтернетом.",
+  "los_spotBelowLowest": "Ця точка нижче найнижчої горизонталі (нижче рівня моря), тому її висота невідома.",
+  "los_nameBelowLowest": "{name} перебуває нижче найнижчої горизонталі (нижче рівня моря), тому висота там невідома.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Ви перебуваєте нижче найнижчої горизонталі (нижче рівня моря), тому висота там невідома. Якщо GPS рації увімкнено, використовується її висота.",
+  "los_noLinesNear": "Біля цього кінця лінії немає горизонталей, тому висота там невідома.",
+  "los_from": "Від",
+  "los_to": "До",
+  "los_thisRadio": "Ця рація",
+  "los_me": "Я",
+  "los_meAgo": "Я, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Я, розташування задано вручну",
+  "los_meNotYetGps": "Я, розташування ще не оновлено за GPS",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Антена",
+  "los_handHeld": "У руці",
+  "los_vehicle": "На машині",
+  "los_raised": "Піднята",
+  "los_raisedTitle": "Піднята антена",
+  "los_raisedLabel": "Висота над землею",
+  "los_terrainOnly": "Лише рельєф, за завантаженими горизонталями.",
+  "los_credits": "Висоти: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "Про пряму видимість",
+  "los_helpBody": "Відповідь ґрунтується лише на рельєфі, взятому із завантажених горизонталей. Вона нічого не знає про дерева, будівлі, людей, лінії електропередачі чи інші антени, а вершина пагорба може бути до однієї горизонталі вищою, ніж намальовано.\n\n«Вільно» означає, що рельєф не заважає. Це не гарантує, що повідомлення дійде. «На межі» означає, що рельєф підходить близько до лінії. «Закрито» означає, що рельєф заважає: повідомлення ще може пройти через один невисокий хребет, але не розраховуйте на це.\n\nПеревірте це на місцевості зі своїми раціями, перш ніж покладатися на результат.",
+  "los_reachShaded": "Зафарбовано: там рельєф не заважає зв'язку з рацією в руці, до {distance}.",
+  "los_reachUnknownPart": "Частину рельєфу тут не вдається розрахувати, наприклад нижче рівня моря, тому її не зафарбовано.",
+  "los_positionGuessed": "Імовірна позиція",
+  "los_positionGuessedVia": "Імовірна позиція (через {names})",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Дивитися далі ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Нікого з розташуванням у межах {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Горизонталі для прямої видимості"
 }

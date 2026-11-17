@@ -1460,147 +1460,11 @@
   "settings_clientRepeatSubtitle": "Låt enheten repetera nätpaket för andra användare.",
   "settings_clientRepeat": "Upprepa utan elnät",
   "settings_clientRepeatFreqWarning": "För att kunna kommunicera utanför elnätet krävs frekvenserna 433, 869 eller 918 MHz.",
-  "settings_aboutOpenMeteoAttribution": "LOS-höjddata: Open-Meteo (CC BY 4.0)",
   "settings_reportBug": "Rapportera ett fel",
   "settings_reportBugSubtitle": "Öppnar en felrapport på GitHub",
   "appSettings_unitsTitle": "Enheter",
   "appSettings_unitsMetric": "Metriskt (m/km)",
   "appSettings_unitsImperial": "Imperialt (ft / mi)",
-  "map_lineOfSight": "Synlinje",
-  "map_losScreenTitle": "Synlinje",
-  "losSelectStartEnd": "Välj start- och slutnoder för LOS.",
-  "losRunFailed": "Synlinjekontroll misslyckades: {error}",
-  "@losRunFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "losClearAllPoints": "Rensa alla punkter",
-  "losRunToViewElevationProfile": "Kör LOS för att se höjdprofil",
-  "losMenuTitle": "LOS-menyn",
-  "losMenuSubtitle": "Tryck på noder eller tryck länge på kartan för anpassade punkter",
-  "losShowDisplayNodes": "Visa displaynoder",
-  "losCustomPoints": "Anpassade poäng",
-  "losCustomPointLabel": "Anpassad {index}",
-  "@losCustomPointLabel": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      }
-    }
-  },
-  "losPointA": "Punkt A",
-  "losPointB": "Punkt B",
-  "losAntennaA": "Antenn A: {value} {unit}",
-  "@losAntennaA": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losAntennaB": "Antenn B: {value} {unit}",
-  "@losAntennaB": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "losRun": "Kör LOS",
-  "losNoElevationData": "Inga höjddata",
-  "losProfileClear": "{distance} {distanceUnit}, rensa LOS, min clearance {clearance} {heightUnit}",
-  "@losProfileClear": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "clearance": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losProfileBlocked": "{distance} {distanceUnit}, blockerad av {obstruction} {heightUnit}",
-  "@losProfileBlocked": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      },
-      "distanceUnit": {
-        "type": "String"
-      },
-      "obstruction": {
-        "type": "String"
-      },
-      "heightUnit": {
-        "type": "String"
-      }
-    }
-  },
-  "losStatusChecking": "LOS: kollar...",
-  "losStatusNoData": "LOS: inga data",
-  "losStatusSummary": "LOS: {clear}/{total} rensa, {blocked} blockerad, {unknown} okänd",
-  "@losStatusSummary": {
-    "placeholders": {
-      "clear": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "blocked": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "losErrorElevationUnavailable": "Höjddata är inte tillgänglig för ett eller flera prover.",
-  "losErrorInvalidInput": "Ogiltiga poäng/höjddata för LOS-beräkning.",
-  "losRenameCustomPoint": "Byt namn på anpassad punkt",
-  "losPointName": "Punktnamn",
-  "losShowPanelTooltip": "Visa LOS-panelen",
-  "losHidePanelTooltip": "Dölj LOS-panelen",
-  "losElevationAttribution": "Höjddata: Open-Meteo (CC BY 4.0)",
-  "losLegendRadioHorizon": "Radiohorisont",
-  "losLegendLosBeam": "Siktlinje",
-  "losLegendTerrain": "Terräng",
-  "losFrequencyLabel": "Frekvens",
-  "losFrequencyInfoTooltip": "Visa detaljer om beräkningen",
-  "losFrequencyDialogTitle": "Beräkning av radiohorisonten",
-  "losFrequencyDialogDescription": "Med start från k={baselineK} vid {baselineFreq} MHz, justerar beräkningen k-faktorn för det aktuella {frequencyMHz} MHz-bandet, som definierar den böjda radiohorisonten.",
-  "@losFrequencyDialogDescription": {
-    "description": "Explain how the calculation uses the baseline frequency and derived k-factor.",
-    "placeholders": {
-      "baselineK": {
-        "type": "double"
-      },
-      "baselineFreq": {
-        "type": "double"
-      },
-      "frequencyMHz": {
-        "type": "double"
-      },
-      "kFactor": {
-        "type": "double"
-      }
-    }
-  },
   "listFilter_removeFromFavorites": "Ta bort från favoriter",
   "listFilter_addToFavorites": "Lägg till i favoriter",
   "listFilter_favorites": "Favoriter",
@@ -2193,7 +2057,7 @@
   "offlineMaps_kindMap": "Karta",
   "offlineMaps_kindMapDetail": "OpenStreetMap: gator, leder, platser",
   "offlineMaps_kindContours": "Höjdkurvor",
-  "offlineMaps_kindContoursDetail": "Linjer som visar höjd",
+  "offlineMaps_kindContoursDetail": "Linjer som visar höjd, används även för siktlinje",
   "offlineMaps_kindUsgs": "USGS-topokarta",
   "offlineMaps_kindUsgsDetail": "Leder, bäckar, reservat",
   "offlineMaps_kindTerrain": "Terrängskuggning",
@@ -2806,5 +2670,76 @@
   "channels_pasteLinkDesc": "En kopierad meshcore://-kanallänk.",
   "channels_pasteLinkNone": "Det finns ingen kanallänk i urklipp.",
   "settings_locationGpsNote": "Med GPS på ersätter radion den här positionen så snart dess GPS har en fix.",
-  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 hopp} other{{count} hopp}}"
+  "contacts_hopsAway": "{count, plural, =0{Direkt} =1{1 hopp} other{{count} hopp}}",
+  "los_lineOfSight": "Siktlinje",
+  "los_reachFromMe": "Radioräckvidd från mig",
+  "los_lineFromMe": "Siktlinje från mig",
+  "los_reachFromHere": "Radioräckvidd härifrån",
+  "los_reachFrom": "Radioräckvidd från {name}",
+  "@los_reachFrom": {"placeholders": {"name": {"type": "String"}}},
+  "los_clear": "Fritt",
+  "los_marginal": "Knappt",
+  "los_blocked": "Blockerat",
+  "los_cantTell": "Oklart",
+  "los_checking": "Kontrollerar…",
+  "los_failed": "Siktlinjen kunde inte beräknas här.",
+  "los_pickTarget": "Tryck på en person eller en plats på kartan.",
+  "los_noPosition": "Din position är inte känd än. Tryck på kartan för att börja där.",
+  "los_nothingInWay": "Inget i vägen.",
+  "los_groundAbove": "Marken {distance} från dig ligger {height} över linjen.",
+  "@los_groundAbove": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundAboveStart": "Marken {distance} från starten ligger {height} över linjen.",
+  "@los_groundAboveStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithin": "Marken {distance} från dig kommer inom {height} från linjen.",
+  "@los_groundWithin": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_groundWithinStart": "Marken {distance} från starten kommer inom {height} från linjen.",
+  "@los_groundWithinStart": {"placeholders": {"distance": {"type": "String"}, "height": {"type": "String"}}},
+  "los_higherHelps": "Högre mark eller en högre antenn hjälper.",
+  "los_noContours": "Inga höjdkurvor för {length} av den här linjen.",
+  "@los_noContours": {"placeholders": {"length": {"type": "String"}}},
+  "los_noContoursIn": "Inga höjdkurvor för {length} av den här linjen ({regions}).",
+  "@los_noContoursIn": {"placeholders": {"length": {"type": "String"}, "regions": {"type": "String"}}},
+  "los_noContoursArea": "Inga höjdkurvor för en del av det här området.",
+  "los_noContoursAreaIn": "Inga höjdkurvor för en del av det här området ({regions}).",
+  "@los_noContoursAreaIn": {"placeholders": {"regions": {"type": "String"}}},
+  "los_noHeightData": "Inga höjddata för det här området än.",
+  "los_downloadContours": "Ladda ner höjdkurvor för {regions} ({size})",
+  "@los_downloadContours": {"placeholders": {"regions": {"type": "String"}, "size": {"type": "String"}}},
+  "los_downloadBeforeTrip": "Ladda ner höjdkurvorna för det här området före resan. Det kräver en internetanslutning.",
+  "los_spotBelowLowest": "Den här platsen ligger under den lägsta höjdkurvan (under havsnivån), så dess höjd är okänd.",
+  "los_nameBelowLowest": "{name} är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd.",
+  "@los_nameBelowLowest": {"placeholders": {"name": {"type": "String"}}},
+  "los_youBelowLowest": "Du är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd. Med radions GPS påslagen används dess höjd.",
+  "los_noLinesNear": "Det finns inga höjdkurvor nära den här änden av linjen, så höjden där är okänd.",
+  "los_from": "Från",
+  "los_to": "Till",
+  "los_thisRadio": "Den här radion",
+  "los_me": "Jag",
+  "los_meAgo": "Jag, {age}",
+  "@los_meAgo": {"placeholders": {"age": {"type": "String"}}},
+  "los_meByHand": "Jag, position angiven för hand",
+  "los_meNotYetGps": "Jag, positionen inte uppdaterad av GPS än",
+  "los_nameAgo": "{name}, {age}",
+  "@los_nameAgo": {"placeholders": {"name": {"type": "String"}, "age": {"type": "String"}}},
+  "los_antenna": "Antenn",
+  "los_handHeld": "Handburen",
+  "los_vehicle": "Fordon",
+  "los_raised": "Upphöjd",
+  "los_raisedTitle": "Upphöjd antenn",
+  "los_raisedLabel": "Höjd över marken",
+  "los_terrainOnly": "Bara terrängen, från höjdkurvorna du har laddat ner.",
+  "los_credits": "Höjder: {credits}",
+  "@los_credits": {"placeholders": {"credits": {"type": "String"}}},
+  "los_aboutTitle": "Om siktlinje",
+  "los_helpBody": "Svaret bygger bara på marken, avläst från höjdkurvorna du har laddat ner. Det vet inget om träd, byggnader, människor, kraftledningar eller andra antenner, och en kulle kan vara upp till en höjdkurva högre än det som ritats.\n\n”Fritt” betyder att marken inte är i vägen. Det lovar inte att ett meddelande kommer fram. ”Knappt” betyder att marken kommer nära linjen. ”Blockerat” betyder att marken är i vägen: ett meddelande kan ändå ta sig över en låg ås, men räkna inte med det.\n\nTesta i fält med dina egna radioapparater innan du litar på det.",
+  "los_reachShaded": "Skuggat: där är marken inte i vägen till en handburen radio, upp till {distance}.",
+  "los_reachUnknownPart": "En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.",
+  "los_positionGuessed": "Gissad position",
+  "los_positionGuessedVia": "Gissad position, hörd via {names}",
+  "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},
+  "los_lookFurther": "Titta längre ({distance})",
+  "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
+  "los_nobodyWithin": "Ingen med position inom {distance}.",
+  "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
+  "offlineMaps_losContours": "Höjdkurvor för siktlinje"
 }
