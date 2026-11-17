@@ -14,6 +14,7 @@ import '../utils/platform_info.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/date_time_helper.dart';
+import '../helpers/mention_helper.dart';
 import '../helpers/message_facts.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
@@ -174,9 +175,9 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   bool _trayOpen = false;
   String? _mentionSearchText;
   List<Contact> _filteredMentionContacts = [];
-  // Memoized resolved-author list — rebuilt when the message list changes.
-  Map<String, Contact>? _cachedRoomAuthorMap;
-  int _cachedAuthorMapMessageCount = -1;
+  // The @ list's room authors, built again when the posts or contacts change.
+  List<Contact>? _roomAuthors;
+  Object? _roomAuthorsStamp;
 
   /// Reply row id → index of the quoted post in the displayed (reversed)
   /// list, -1 when it isn't loaded. Rebuilt when the message list, the
@@ -730,14 +731,14 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   }
 
   /// Room members who can be @-mentioned: authors seen in this conversation
-  /// whose adverts we hold. Unresolvable prefixes and the room itself are
-  /// excluded — there is no name to type.
+  /// whose adverts we hold, the latest author first. Unresolvable prefixes
+  /// and the room itself are excluded — there is no name to type.
   List<Contact> _roomMentionCandidates(MeshCoreConnector connector) {
-    if (_cachedRoomAuthorMap == null ||
-        _cachedAuthorMapMessageCount != _messages.length) {
+    final stamp = (_messages, connector.contactsStamp);
+    if (_roomAuthorsStamp != stamp) {
       final map = <String, Contact>{};
       final room = _resolveContact(connector);
-      for (final m in _messages) {
+      for (final m in _messages.reversed) {
         if (m.isOutgoing || m.fourByteRoomContactKey.length < 4) continue;
         final hex = pubKeyToHex(m.fourByteRoomContactKey);
         if (map.containsKey(hex)) continue;
@@ -747,100 +748,45 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         if (author.publicKeyHex == room.publicKeyHex) continue;
         map[hex] = author;
       }
-      _cachedRoomAuthorMap = map;
-      _cachedAuthorMapMessageCount = _messages.length;
+      _roomAuthors = map.values.toList();
+      _roomAuthorsStamp = stamp;
     }
-    return _cachedRoomAuthorMap!.values.toList();
+    return _roomAuthors!;
   }
 
   void _mentionsListener() {
     if (!mounted) return;
-    final text = _textController.text;
-    final selection = _textController.selection;
-
-    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+    final mention = MentionHelper.query(_textController.value);
+    if (mention == null) {
       if (_showMentions) setState(() => _showMentions = false);
       return;
     }
-
-    final cursorPosition = selection.baseOffset;
-    if (cursorPosition == 0) {
-      if (_showMentions) setState(() => _showMentions = false);
-      return;
-    }
-
-    final textBeforeCursor = text.substring(0, cursorPosition);
-    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtSignIndex != -1) {
-      final textAfterAt = textBeforeCursor.substring(lastAtSignIndex + 1);
-      final charBeforeAt =
-          lastAtSignIndex > 0 ? textBeforeCursor[lastAtSignIndex - 1] : ' ';
-
-      if (!textAfterAt.contains(' ') &&
-          (charBeforeAt == ' ' || charBeforeAt == '\n')) {
-        final search = textAfterAt.toLowerCase();
-        final connector = context.read<MeshCoreConnector>();
-
-        final filtered = _roomMentionCandidates(connector)
-            .where(
-              (c) =>
-                  c.name.toLowerCase().contains(search) ||
-                  (connector
-                          .contactNote(c.publicKeyHex)
-                          ?.namesContain(search) ??
-                      false),
-            )
-            .toList();
-        filtered.sort((a, b) {
-          final aStart = a.name.toLowerCase().startsWith(search);
-          final bStart = b.name.toLowerCase().startsWith(search);
-          if (aStart && !bStart) return -1;
-          if (!aStart && bStart) return 1;
-          return a.name.compareTo(b.name);
-        });
-
-        if (_showMentions != filtered.isNotEmpty ||
-            _mentionSearchText != search) {
-          setState(() {
-            _mentionSearchText = search;
-            _showMentions = filtered.isNotEmpty;
-            _filteredMentionContacts = filtered;
-          });
-        }
-        return;
-      }
-    }
-
-    if (_showMentions) {
-      setState(() => _showMentions = false);
+    final connector = context.read<MeshCoreConnector>();
+    final found = MentionHelper.filter(
+      _roomMentionCandidates(connector),
+      mention.query,
+      connector.contactNote,
+    );
+    if (_showMentions != found.isNotEmpty ||
+        _mentionSearchText != mention.query) {
+      setState(() {
+        _mentionSearchText = mention.query;
+        _showMentions = found.isNotEmpty;
+        _filteredMentionContacts = found;
+      });
     }
   }
 
   void _insertMention(Contact contact) {
-    final text = _textController.text;
-    final selection = _textController.selection;
-    final cursorPosition = selection.baseOffset;
-    final textBeforeCursor = text.substring(0, cursorPosition);
-    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtSignIndex != -1) {
-      final newText = text.replaceRange(
-        lastAtSignIndex,
-        cursorPosition,
-        '@[${contact.name}] ',
-      );
-
-      _textController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset: lastAtSignIndex + contact.name.length + 4,
-        ),
-      );
-
-      setState(() => _showMentions = false);
-      _textFieldFocusNode.requestFocus();
-    }
+    final mention = MentionHelper.query(_textController.value);
+    if (mention == null) return;
+    _textController.value = MentionHelper.insert(
+      _textController.value,
+      mention.at,
+      contact.name,
+    );
+    setState(() => _showMentions = false);
+    _textFieldFocusNode.requestFocus();
   }
 
   /// Inserts "@[name] " at the cursor (or the end) and focuses the composer.

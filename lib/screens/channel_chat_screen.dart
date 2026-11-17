@@ -18,6 +18,7 @@ import '../helpers/report_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/message_facts.dart';
+import '../helpers/mention_helper.dart';
 import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
@@ -134,9 +135,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   bool _trayOpen = false;
   List<Contact> _filteredMentionContacts = [];
 
-  // Memoized mention contact map — rebuilt when message list changes
-  Map<String, Contact>? _cachedMentionMap;
-  int _cachedMentionMessageCount = -1;
+  List<Contact>? _mentionCandidates;
+  Object? _mentionCandidatesStamp;
 
   ChannelMessage? _replyingToMessage;
 
@@ -504,156 +504,50 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     }
   }
 
+  /// Built again only when the posts or the contacts have changed.
+  List<Contact> _channelMentionCandidates(MeshCoreConnector connector) {
+    final stamp = (_messages, connector.contactsStamp);
+    if (_mentionCandidatesStamp != stamp) {
+      _mentionCandidates =
+          MentionHelper.channelCandidates(_messages, connector.allContacts);
+      _mentionCandidatesStamp = stamp;
+    }
+    return _mentionCandidates!;
+  }
+
   void _mentionsListener() {
     if (!mounted) return;
-    final text = _textController.text;
-    final selection = _textController.selection;
-
-    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+    final mention = MentionHelper.query(_textController.value);
+    if (mention == null) {
       if (_showMentions) setState(() => _showMentions = false);
       return;
     }
-
-    final cursorPosition = selection.baseOffset;
-    if (cursorPosition == 0) {
-      if (_showMentions) setState(() => _showMentions = false);
-      return;
-    }
-
-    // Look back from cursor to find the start of the current word
-    final textBeforeCursor = text.substring(0, cursorPosition);
-    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtSignIndex != -1) {
-      final textAfterAt = textBeforeCursor.substring(lastAtSignIndex + 1);
-      final charBeforeAt = lastAtSignIndex > 0 ? textBeforeCursor[lastAtSignIndex - 1] : ' ';
-      
-      if (!textAfterAt.contains(' ') && (charBeforeAt == ' ' || charBeforeAt == '\n')) {
-        final search = textAfterAt.toLowerCase();
-        final connector = Provider.of<MeshCoreConnector>(context, listen: false);
-
-        final messages = _messages;
-        final Set<String> recentSenderKeys = {};
-        
-        for (var m in messages) {
-          if (!m.isOutgoing && m.senderKeyHex != null && m.senderKeyHex!.isNotEmpty) {
-            recentSenderKeys.add(m.senderKeyHex!);
-          }
-        }
-
-        // Rebuild the mention map only when the message list has changed
-        if (_cachedMentionMap == null || _cachedMentionMessageCount != messages.length) {
-          final Map<String, Contact> mentionMap = {};
-          for (var c in connector.allContactsUnfiltered) {
-            mentionMap[c.publicKeyHex] = c;
-          }
-
-          // Scan messages for anyone not in the global contact list.
-          // This ensures people who have spoken but haven't been 'discovered' yet show up.
-          for (var m in messages) {
-            if (!m.isOutgoing) {
-              if (m.senderKeyHex != null && mentionMap.containsKey(m.senderKeyHex!)) {
-                continue;
-              }
-              // Also check by name to prevent duplicates where the same person
-              // is seen as both a contact and a raw sender.
-              final alreadyHasName = mentionMap.values.any((c) => c.name == m.senderName);
-              if (alreadyHasName) continue;
-
-              final key = m.senderKeyHex ?? 'name_${m.senderName}';
-              mentionMap[key] = Contact(
-                publicKey: m.senderKeyHex != null 
-                    ? hexToPubKey(m.senderKeyHex!) 
-                    : Uint8List(pubKeySize),
-                name: m.senderName,
-                type: advTypeChat,
-                pathLength: -1,
-                path: Uint8List(0),
-                pathHashSize: connector.pathHashByteWidth,
-                lastSeen: DateTime.now(),
-                isActive: true,
-              );
-            }
-          }
-          _cachedMentionMap = mentionMap;
-          _cachedMentionMessageCount = messages.length;
-        }
-
-        final filtered = _cachedMentionMap!.values.where((c) {
-          // Filter out repeaters as they are non-human nodes
-          if (c.type == advTypeRepeater) return false;
-          
-          return c.name.toLowerCase().contains(search) ||
-              (connector.contactNote(c.publicKeyHex)?.namesContain(search) ??
-                  false) ||
-              c.publicKeyHex.toLowerCase().startsWith(search);
-        }).toList();
-
-        filtered.sort((a, b) {
-          final aStart = a.name.toLowerCase().startsWith(search);
-          final bStart = b.name.toLowerCase().startsWith(search);
-          if (aStart && !bStart) return -1;
-          if (!aStart && bStart) return 1;
-
-          // Emoji-led names can't be reached by typing (and UTF-16 order
-          // sorts them after 'z') — surface them first. They drop out of
-          // the filter the moment a letter is typed anyway.
-          final aEmoji = _startsWithEmoji(a.name);
-          final bEmoji = _startsWithEmoji(b.name);
-          if (aEmoji && !bEmoji) return -1;
-          if (!aEmoji && bEmoji) return 1;
-
-          final aIsRecent = recentSenderKeys.contains(a.publicKeyHex);
-          final bIsRecent = recentSenderKeys.contains(b.publicKeyHex);
-          if (aIsRecent && !bIsRecent) return -1;
-          if (!aIsRecent && bIsRecent) return 1;
-
-          return a.name.compareTo(b.name);
-        });
-
-        if (_showMentions != filtered.isNotEmpty || _mentionSearchText != search) {
-          setState(() {
-            _mentionSearchText = search;
-            _showMentions = filtered.isNotEmpty;
-            // No cap: the overlay is a lazy, scrollable list. take(15) cut
-            // everyone past the first screen — and names sort by UTF-16, so
-            // emoji-only names landed after 'z' and could NEVER appear.
-            _filteredMentionContacts = filtered;
-          });
-        }
-        return;
-      }
-    }
-
-    if (_showMentions) {
-      setState(() => _showMentions = false);
+    final connector = context.read<MeshCoreConnector>();
+    final found = MentionHelper.filter(
+      _channelMentionCandidates(connector),
+      mention.query,
+      connector.contactNote,
+    );
+    if (_showMentions != found.isNotEmpty ||
+        _mentionSearchText != mention.query) {
+      setState(() {
+        _mentionSearchText = mention.query;
+        _showMentions = found.isNotEmpty;
+        _filteredMentionContacts = found;
+      });
     }
   }
 
   void _insertMention(Contact contact) {
-    final text = _textController.text;
-    final selection = _textController.selection;
-    final cursorPosition = selection.baseOffset;
-    final textBeforeCursor = text.substring(0, cursorPosition);
-    final lastAtSignIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtSignIndex != -1) {
-      final newText = text.replaceRange(
-        lastAtSignIndex,
-        cursorPosition,
-        '@[${contact.name}] ',
-      );
-      
-      _textController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset: lastAtSignIndex + contact.name.length + 4,
-        ),
-      );
-
-      setState(() => _showMentions = false);
-      _textFieldFocusNode.requestFocus();
-    }
+    final mention = MentionHelper.query(_textController.value);
+    if (mention == null) return;
+    _textController.value = MentionHelper.insert(
+      _textController.value,
+      mention.at,
+      contact.name,
+    );
+    setState(() => _showMentions = false);
+    _textFieldFocusNode.requestFocus();
   }
 
   /// Inserts "@[name] " at the cursor (or the end) and focuses the composer.
@@ -972,11 +866,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         ),
       ),
     );
-  }
-
-  bool _startsWithEmoji(String name) {
-    if (name.isEmpty) return false;
-    return firstEmoji(name.characters.first) != null;
   }
 
   /// Paging is a bigger LIMIT on the watched query — SQL does the rest.
