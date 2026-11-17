@@ -163,6 +163,14 @@ class ContourTerrain {
     for (final p in _packs) p.info?.intervalM ?? 0,
   ];
 
+  /// Each pack's interval for the guard near sea level (see
+  /// [isNearSeaLevel]), or 0 for a pack with lines below sea level, where
+  /// the lowest lines above it are ordinary ones.
+  List<double> get packSeaGuardIntervals => [
+    for (final p in _packs)
+      p.info == null || p.info!.belowSeaLevel ? 0 : p.info!.intervalM,
+  ];
+
   /// The z13 tile [x], [y] from the first pack that has it, or null.
   ContourTile? tileAt(int x, int y) {
     final key = x << tileZoom | y;
@@ -300,6 +308,7 @@ class ContourTerrain {
       endM: tg.groundM,
       covered: path.covered,
       packInterval: packIntervals,
+      packSeaGuardInterval: packSeaGuardIntervals,
       peaks: peaks,
       peakMaxAboveIntervals: peakMaxAboveIntervals,
     );
@@ -450,11 +459,12 @@ class ContourTerrain {
     }
     if (hits.isEmpty) return const EndHeight.unknown(HeightIssue.noLinesNearby);
     final intervals = packIntervals;
+    final guards = packSeaGuardIntervals;
     hits.sort((a, b) => a.d.compareTo(b.d));
     final nearest = hits.first;
     final iv = intervals[nearest.pack];
     bool nearSea(double level) =>
-        intervals.any((i) => i > 0 && isNearSeaLevel(level, i));
+        guards.any((i) => i > 0 && isNearSeaLevel(level, i));
     const unknownBelow = EndHeight.unknown(HeightIssue.belowLowestContour);
     double nearestOf(double level) =>
         hits.firstWhere((h) => h.level == level).d;
@@ -863,7 +873,12 @@ class _PackInfo {
   final double intervalM;
   final String? attribution;
 
-  _PackInfo(this.feet, this.intervalM, this.attribution);
+  /// The pack has lines at and below sea level too, wherever there is
+  /// land; only the sea is left blank. Older packs have none at or below
+  /// 0 m.
+  final bool belowSeaLevel;
+
+  _PackInfo(this.feet, this.intervalM, this.attribution, this.belowSeaLevel);
 
   static _PackInfo read(PmtilesFile f) {
     final m = f.metadata;
@@ -891,6 +906,7 @@ class _PackInfo {
       feet,
       interval * (feet ? 0.3048 : 1.0),
       a is String && a.isNotEmpty ? a : null,
+      m['below_sea_level'] == true,
     );
   }
 }

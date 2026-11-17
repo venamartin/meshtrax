@@ -30,8 +30,11 @@ void main() {
     List<Line> lines, {
     List<List<List<Geo>>>? coverage,
     List<String> peakPacks = const [],
+    bool belowSeaLevel = false,
   }) {
-    final path = syntheticPack(dir, 'c', {(tx, ty): contourTile(lines)});
+    final path = syntheticPack(dir, 'c', {
+      (tx, ty): contourTile(lines),
+    }, belowSeaLevel: belowSeaLevel);
     return ContourTerrain(
       contours: [ContourPack(path, coverage: coverage ?? tileSquare())],
       peakPacks: peakPacks,
@@ -140,6 +143,28 @@ void main() {
       expect(r.verdict, Verdict.clear);
     });
 
+    test('down to the floor through lines below sea level: nothing is '
+        '"below the lowest line" in a pack that has them', () {
+      final lines = [
+        vertical(60, 500),
+        vertical(40, 1000),
+        vertical(20, 1500),
+        vertical(0, 2000),
+        vertical(-20, 2500),
+        vertical(-40, 3000),
+      ];
+      LineOfSight down(ContourTerrain t) => t.lineOfSight(
+        LinkEnd(at(300, 2048), groundM: 70 * ft),
+        LinkEnd(at(3500, 2048), groundM: -50 * ft),
+      );
+      final marked = down(terrainOf(lines, belowSeaLevel: true));
+      expect(points(marked, PointKind.belowLowest), isEmpty);
+      expect(marked.verdict, isNot(Verdict.unknown));
+      // An older pack with the same lines still guards its lowest three.
+      final old = down(terrainOf(lines));
+      expect(points(old, PointKind.belowLowest), isNotEmpty);
+    });
+
     test('a step of more than one interval may hide lines', () {
       final t = terrainOf([vertical(100, 1000), vertical(140, 1500)]);
       final r = across(t, 500, 2000);
@@ -213,6 +238,29 @@ void main() {
         t.groundAt(at(2048, 2048)).groundM,
         closeTo(80 * ft - interval, 1e-6),
       );
+    });
+
+    test('a pack with lines below sea level: the lowest lines above it are '
+        'ordinary, and a pit below it has a height', () {
+      for (final level in [20, 40, 60]) {
+        final t = terrainOf([
+          ring(level, 300),
+          ring(level + 20, 600),
+        ], belowSeaLevel: true);
+        expect(
+          t.groundAt(at(2048, 2048)).groundM,
+          closeTo(level * ft - interval, 1e-6),
+          reason: '$level ft',
+        );
+      }
+      // Badwater: inside the lowest line, 260 ft below sea level.
+      final t = terrainOf([
+        ring(-260, 300),
+        ring(-240, 600),
+      ], belowSeaLevel: true);
+      final g = t.groundAt(at(2048, 2048));
+      expect(g.source, HeightSource.contours);
+      expect(g.groundM, closeTo(-260 * ft - interval, 1e-6));
     });
 
     test('a given height wins; a fallback only where the contours can\'t '
