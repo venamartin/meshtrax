@@ -30,6 +30,8 @@ Every delivery and every failure teaches it more. A failure counts against that 
 
 When it isn't sure which repeaters can hear you where you are, Pathfinder sends one short **Discover** call. It does this only after a send has failed, and at most once every 10 minutes.
 
+**When no repeater hears you.** After a flood, MeshTrax listens for a repeater passing your message on. If none does, but your radio heard a repeater in the last 10 minutes, the message waits with "No repeater heard you. Will try again when one is in range." and goes again when a repeater is next heard, up to three times. If no repeater is heard for 10 minutes while it waits, it shows Failed, so your later messages to the same person can go. With no repeater heard in the last 10 minutes it doesn't wait at all: it uses its remaining tries and shows Failed if no receipt comes. A receipt that arrives up to 5 minutes after Failed still marks it delivered. This works the same with Pathfinder on or off.
+
 ## Delivery receipts
 
 When your DM arrives, the other radio sends back a short receipt, the **ACK**, and MeshTrax marks your message delivered. The way home for that receipt is chosen by the *receiving* radio, not by you. If your message came in on a route, the radio answers along the route it has stored for you, or floods the receipt if it has none. It does this a fifth of a second after the message arrives, before any app on that side has seen it. A message that arrived by flood is answered by flood, whatever is stored.

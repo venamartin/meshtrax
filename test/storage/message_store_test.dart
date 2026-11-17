@@ -71,6 +71,43 @@ void main() {
     expect(byId['o1']!.pathHashSize, isNull);
   });
 
+  // A DM parked for lack of a repeater shows "No repeater heard you" in
+  // the chat, which reads only stored rows.
+  test('keeps a parked DM waiting for a repeater; a row without the key, '
+      'as every earlier row is, is not waiting', () async {
+    await store.saveMessages(contactA, [
+      msg('parked', id: 'p1', outgoing: true)
+          .copyWith(waitingForRepeater: true),
+      msg('plain', id: 'n1', outgoing: true),
+    ]);
+
+    final byId = {
+      for (final m in await store.loadMessages(contactA)) m.messageId: m,
+    };
+    expect(byId['p1']!.waitingForRepeater, isTrue);
+    expect(byId['n1']!.waitingForRepeater, isFalse);
+    final plain = await AppDatabase.instance
+        .customSelect(
+          "SELECT payload FROM contact_message_rows WHERE message_id = 'n1'",
+        )
+        .getSingle();
+    expect(plain.read<String>('payload'), isNot(contains('waitingForRepeater')));
+
+    // Sent again: the row stops saying so.
+    await store.updateMessage(
+      contactA,
+      'p1',
+      (m) => m.copyWith(
+        status: MessageStatus.pending,
+        waitingForRepeater: false,
+      ),
+    );
+    expect(
+      (await store.findByMessageId(contactA, 'p1'))!.waitingForRepeater,
+      isFalse,
+    );
+  });
+
   test('a legacy row holding the raw path_len byte decodes to hops', () async {
     await store.saveMessages(contactA, [msg('old', id: 'o1')]);
     await AppDatabase.instance.customStatement(
@@ -224,6 +261,8 @@ void main() {
     test('fails own pending and sent DMs from before the cutoff', () async {
       await store.upsertMessage(contactA, inFlight('p', MessageStatus.pending));
       await store.upsertMessage(contactB, inFlight('s', MessageStatus.sent));
+      expect((await rowOf(contactB, 's'))!.waitingForRepeater, isTrue,
+          reason: 'stored parked');
 
       expect(await store.failPendingSendsBefore(cutoff), 2);
       expect((await rowOf(contactA, 'p'))!.status, MessageStatus.failed);

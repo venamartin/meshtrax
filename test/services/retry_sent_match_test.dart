@@ -81,6 +81,8 @@ void main() {
         '(${carolFirst ? 'hers the older DM' : 'his parked first'})', () {
       fakeAsync((async) {
         final r = _Rig();
+        // A repeater was heard a moment ago: a flood nobody echoes parks.
+        r.svc.noteRepeaterHeard();
         for (final (contact, text)
             in carolFirst
                 ? [(_carol, _sos), (_bob, 'one')]
