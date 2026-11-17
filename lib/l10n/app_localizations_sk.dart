@@ -1945,6 +1945,31 @@ class AppLocalizationsSk extends AppLocalizations {
   String get map_shareMarkerHere => 'Zdieľte značku tu';
 
   @override
+  String get map_lastKnown => 'Naposledy známa';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Naposledy známa · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Začiatok: vaša naposledy známa poloha, môže byť stará';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Začiatok: vaša naposledy známa poloha ($time), môže byť stará';
+  }
+
+  @override
+  String get gps_lastKnown => 'Vaša naposledy známa poloha, môže byť stará';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Vaša naposledy známa poloha ($time), môže byť stará';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Nastavte ako moju polohu';
 
   @override

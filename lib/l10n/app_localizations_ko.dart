@@ -1876,6 +1876,30 @@ class AppLocalizationsKo extends AppLocalizations {
   String get map_shareMarkerHere => '여기에서 마커 공유';
 
   @override
+  String get map_lastKnown => '마지막 위치';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '마지막 위치 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '마지막으로 알려진 내 위치에서 (오래되었을 수 있음)';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '마지막으로 알려진 내 위치($time)에서 (오래되었을 수 있음)';
+  }
+
+  @override
+  String get gps_lastKnown => '마지막으로 알려진 내 위치입니다. 오래되었을 수 있습니다';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '마지막으로 알려진 내 위치($time)입니다. 오래되었을 수 있습니다';
+  }
+
+  @override
   String get map_setAsMyLocation => '내 위치로 설정';
 
   @override

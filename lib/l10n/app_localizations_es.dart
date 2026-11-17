@@ -1956,6 +1956,31 @@ class AppLocalizationsEs extends AppLocalizations {
   String get map_shareMarkerHere => 'Compartir marcador aquí';
 
   @override
+  String get map_lastKnown => 'Última posición';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Última posición · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Desde tu última posición conocida, puede ser antigua';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Desde tu última posición conocida ($time), puede ser antigua';
+  }
+
+  @override
+  String get gps_lastKnown => 'Tu última posición conocida, puede ser antigua';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Tu última posición conocida ($time), puede ser antigua';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Establecer mi ubicación';
 
   @override

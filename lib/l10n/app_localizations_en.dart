@@ -1922,6 +1922,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_shareMarkerHere => 'Share marker here';
 
   @override
+  String get map_lastKnown => 'Last known';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Last known · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => 'From your last known position, may be old';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'From your last known position ($time), may be old';
+  }
+
+  @override
+  String get gps_lastKnown => 'Your last known position, may be old';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Your last known position ($time), may be old';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Set as my location';
 
   @override

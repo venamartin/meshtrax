@@ -3503,6 +3503,42 @@ abstract class AppLocalizations {
   /// **'Share marker here'**
   String get map_shareMarkerHere;
 
+  /// No description provided for @map_lastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known'**
+  String get map_lastKnown;
+
+  /// No description provided for @map_lastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known · {time}'**
+  String map_lastKnownAt(String time);
+
+  /// No description provided for @route_fromLastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'From your last known position, may be old'**
+  String get route_fromLastKnown;
+
+  /// No description provided for @route_fromLastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'From your last known position ({time}), may be old'**
+  String route_fromLastKnownAt(String time);
+
+  /// No description provided for @gps_lastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last known position, may be old'**
+  String get gps_lastKnown;
+
+  /// No description provided for @gps_lastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last known position ({time}), may be old'**
+  String gps_lastKnownAt(String time);
+
   /// No description provided for @map_setAsMyLocation.
   ///
   /// In en, this message translates to:

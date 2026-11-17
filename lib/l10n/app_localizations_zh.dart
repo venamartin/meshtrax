@@ -1850,6 +1850,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get map_shareMarkerHere => '在此分享标记';
 
   @override
+  String get map_lastKnown => '最后位置';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '最后位置 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '从您最后已知的位置出发，可能已过时';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '从您最后已知的位置（$time）出发，可能已过时';
+  }
+
+  @override
+  String get gps_lastKnown => '您最后已知的位置，可能已过时';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '您最后已知的位置（$time），可能已过时';
+  }
+
+  @override
   String get map_setAsMyLocation => '设置为我的位置';
 
   @override

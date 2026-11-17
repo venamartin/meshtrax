@@ -1952,6 +1952,32 @@ class AppLocalizationsUk extends AppLocalizations {
   String get map_shareMarkerHere => 'Поділитися маркером тут';
 
   @override
+  String get map_lastKnown => 'Останнє відоме';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Останнє відоме · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Від вашого останнього відомого місцезнаходження, може бути застарілим';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Від вашого останнього відомого місцезнаходження ($time), може бути застарілим';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Ваше останнє відоме місцезнаходження, може бути застарілим';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Ваше останнє відоме місцезнаходження ($time), може бути застарілим';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Встановити моє місцезнаходження';
 
   @override

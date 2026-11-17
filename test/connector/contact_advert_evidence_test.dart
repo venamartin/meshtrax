@@ -1071,11 +1071,13 @@ void main() {
     test('leaves my position alone', () {
       c.handleFrameForTest(selfAdvert(route: _routeTransportDirect, lat: 40));
       expect(c.selfLatitude, 0);
+      expect(c.selfGpsIsFresh, isFalse);
     });
 
     test('while a real copy still updates it', () {
       c.handleFrameForTest(selfAdvert(route: _routeFlood, lat: 40));
       expect(c.selfLatitude, 40);
+      expect(c.selfGpsIsFresh, isFalse, reason: 'an advert is no GPS reading');
     });
   });
 

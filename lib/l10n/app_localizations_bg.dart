@@ -1957,6 +1957,32 @@ class AppLocalizationsBg extends AppLocalizations {
   String get map_shareMarkerHere => 'Споделете маркер тук';
 
   @override
+  String get map_lastKnown => 'Последно известно';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Последно известно · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'От последното ви известно местоположение, може да е старо';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'От последното ви известно местоположение ($time), може да е старо';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Последното ви известно местоположение, може да е старо';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Последното ви известно местоположение ($time), може да е старо';
+  }
+
+  @override
   String get map_setAsMyLocation => 'Задайте като моя местоположение';
 
   @override
