@@ -1377,7 +1377,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                   realNameOf: (c) => connector.realNameFor(c.publicKeyHex),
                 ),
               ),
+            // Keyed: the @ list above is a Consumer too, and without the key
+            // its arrival rebuilt the composer and the keyboard went away.
             Consumer<MeshCoreConnector>(
+              key: const ValueKey('composer'),
               builder: (context, connector, _) =>
                   _buildMessageComposer(connector),
             ),
