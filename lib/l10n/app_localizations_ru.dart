@@ -909,6 +909,70 @@ class AppLocalizationsRu extends AppLocalizations {
       'Столько раз будет повторять отправку, пока не услышит хотя бы один повтор';
 
   @override
+  String get appSettings_heardCheck => 'Проверять отправку у наблюдателей';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Перед повторной отправкой сообщения в канал спросить сервер наблюдателей, было ли оно услышано';
+
+  @override
+  String get appSettings_heardServer => 'Сервер наблюдателей';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Не задан';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Наблюдатели — это радиостанции, которые сообщают серверу, что они слышат. MeshTrax отправляет этому серверу отпечаток каждого вашего сообщения в канале, но никогда не его текст. Сервер видит ваш интернет-адрес и время отправки.';
+
+  @override
+  String get appSettings_heardServerOther => 'Другой адрес';
+
+  @override
+  String get appSettings_heardServerAddress => 'Адрес сервера';
+
+  @override
+  String get appSettings_heardServerChecking => 'Проверка сервера…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Нет ответа с этого адреса';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Всё равно сохранить';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Сервер ответил';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Услышали $count наблюдателя',
+      many: 'Услышали $count наблюдателей',
+      few: 'Услышали $count наблюдателя',
+      one: 'Услышал $count наблюдатель',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'напрямую';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'через $count репитера',
+      many: 'через $count репитеров',
+      few: 'через $count репитера',
+      one: 'через $count репитер',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Батарея';
 
   @override
@@ -1889,6 +1953,32 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Поделиться меткой здесь';
+
+  @override
+  String get map_lastKnown => 'Последнее известное';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Последнее известное · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Откуда: ваше последнее известное местоположение, может быть устаревшим';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Откуда: ваше последнее известное местоположение ($time), может быть устаревшим';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Ваше последнее известное местоположение, может быть устаревшим';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Ваше последнее известное местоположение ($time), может быть устаревшим';
+  }
 
   @override
   String get map_setAsMyLocation => 'Установить мое местоположение';
@@ -3818,6 +3908,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Ни один репитер вас не услышал. Попробуем снова, когда какой-нибудь окажется в зоне.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'отправлено $time по часам отправителя';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Радио $name отправляет короткие коды репитеров (1 байт). Pathfinder не сможет изучить маршруты к этому контакту, пока его радио не перейдёт на 2-байтовые коды.';
   }
@@ -5729,6 +5824,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get roadLegend_trail => 'Тропа';
 
   @override
+  String get roadLegend_walkway => 'Пешеходная или велосипедная дорожка';
+
+  @override
   String get roadLegend_interstate => 'Межштатная автомагистраль';
 
   @override
@@ -6934,4 +7032,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Горизонтали для прямой видимости';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Радио само сохраняет такие контакты, поэтому он вернётся, когда его услышат в следующий раз.';
+
+  @override
+  String get tray_contact => 'Контакт';
+
+  @override
+  String get shareContact_title => 'Поделиться контактом';
+
+  @override
+  String get shareContact_myContact => 'Мой контакт';
 }

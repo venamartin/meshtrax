@@ -804,6 +804,7 @@ class MessageStore {
       'tripTimeMs': msg.tripTimeMs,
       'pathLength': msg.pathLength,
       'deliveredLate': msg.deliveredLate,
+      if (msg.waitingForRepeater) 'waitingForRepeater': true,
       'pathBytes': msg.pathBytes.isNotEmpty
           ? base64Encode(msg.pathBytes)
           : null,
@@ -817,6 +818,8 @@ class MessageStore {
         (key, value) => MapEntry(key, value.index),
       ),
       'fourByteRoomContactKey': base64Encode(msg.fourByteRoomContactKey),
+      if (msg.claimedAt != null)
+        'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
     };
   }
 
@@ -846,6 +849,7 @@ class MessageStore {
           : null,
       tripTimeMs: json['tripTimeMs'] as int?,
       deliveredLate: json['deliveredLate'] as bool? ?? false,
+      waitingForRepeater: json['waitingForRepeater'] as bool? ?? false,
       // Early rows stored the raw path_len byte; decoding a plain hop count
       // through the same helper is a no-op.
       pathLength: json['pathLength'] == null
@@ -875,6 +879,9 @@ class MessageStore {
           ? Uint8List.fromList(
               base64Decode(json['fourByteRoomContactKey'] as String),
             )
+          : null,
+      claimedAt: json['claimedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
           : null,
     );
   }

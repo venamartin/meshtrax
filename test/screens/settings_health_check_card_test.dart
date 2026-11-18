@@ -117,4 +117,40 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('Node Name'), findsOneWidget);
   });
+
+  // The owner, 2026-11-17: testing builds needs the build number in About.
+  testWidgets('About shows the build number beside the version', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    PackageInfo.setMockInitialValues(
+      appName: 'MeshTrax',
+      packageName: 'test',
+      version: '1.10.2',
+      buildNumber: '217',
+      buildSignature: '',
+    );
+    final radio = _Radio();
+    addTearDown(radio.dispose);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
+          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.textContaining('MeshTrax v1.10.2 (217)'), findsOneWidget);
+  });
 }

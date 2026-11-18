@@ -20,6 +20,7 @@ import '../models/device_backup.dart';
 import '../models/message.dart';
 import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
+import '../helpers/advert_signature.dart';
 import '../helpers/cayenne_lpp.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
@@ -42,6 +43,7 @@ import '../services/background_service.dart';
 import '../services/notification_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
+import '../storage/arrival_clock.dart';
 import '../storage/channel_message_store.dart';
 import '../storage/channel_order_store.dart';
 import '../storage/channel_settings_store.dart';
@@ -660,6 +662,31 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// current (seen 2026-10-22), so nothing treats it as where the radio is.
   bool _selfPositionLive = false;
   bool get selfPositionIsLive => _selfPositionLive;
+
+  /// How long the GPS position counts as fresh after its reading last
+  /// changed. A radio with a fix reports a slightly different reading
+  /// almost every time, while one that lost its fix repeats its last one
+  /// exactly. 3 min is three reads at the 60 s poll; a bench test with a
+  /// real radio (standing still with a fix, then losing it) decides it.
+  static const selfGpsFreshFor = Duration(minutes: 3);
+
+  /// The last GPS reading this connection, to tell a change from a repeat.
+  ({double latitude, double longitude, double altitude})? _selfGpsLast;
+  DateTime? _selfGpsChangedAt;
+  Timer? _selfGpsFreshTimer;
+
+  /// When the GPS reading last changed this connection: "Last known 14:02".
+  DateTime? get selfGpsChangedAt => _selfGpsChangedAt;
+
+  /// Whether the GPS reading changed in the last [selfGpsFreshFor]. For the
+  /// screen only: Pathfinder goes by [selfPositionIsLive], which must never
+  /// expire (#206).
+  bool get selfGpsIsFresh => _selfGpsFreshTimer?.isActive ?? false;
+
+  /// The radio's GPS is on but its position isn't fresh: the map shows it
+  /// grey, as last known, and the dialogs and cards that use it say so. A
+  /// position typed into the radio (GPS off) is shown as it is.
+  bool get selfPositionMayBeOld => gpsOn && !selfGpsIsFresh;
   int _reconnectAttempts = 0;
   // Which transport the live _reconnectTimer belongs to: the resume hook
   // only brings a TCP retry forward and must leave a BLE one alone.
@@ -818,9 +845,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // them while we were away — old sender timestamps are legitimate).
   // Everything after is LIVE: the packet was heard seconds ago, so a
   // sender timestamp far in the past is a broken clock, never a real date.
-  // An ABORTED first drain deliberately does not latch: the queue still
-  // holds pre-connection content, so its later pops are still backlog (the
-  // per-channel floor keeps broken clocks out either way).
+  // A first drain that gives up latches it too, or the sync banner would
+  // stay up all session; what the queue still holds then reads as live
+  // (see [_readingQueueLeftovers]).
   bool _completedFirstQueueDrain = false;
   // Per-channel causality floor, SNAPSHOTTED at first backlog use in this
   // drain: the newest message stored BEFORE sync. Live-reading the watched
@@ -828,6 +855,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // rewritten to "now" would drag the floor to "now" and collapse the rest
   // of a week-away backlog onto the sync date.
   final Map<String, DateTime?> _drainFloorByIdKey = {};
+  // From a drain's give-up until a drain reaches NO_MORE_MESSAGES. What the
+  // radio hands over meanwhile can have waited there for hours, and the live
+  // rule shows it as new: such a message keeps its claimed time for a "sent
+  // 14:00 by its clock" line ([heldClaimToShow]).
+  bool _readingQueueLeftovers = false;
+  // An arrival stamp taken as this connection's first drain starts: the
+  // rows below it are what each chat held before the sync, a leftover's floor.
+  int? _queueSyncStartUs;
   bool _pendingQueueSync = false;
   bool _pendingChannelSyncAfterQueueSync = false;
   Timer? _queueSyncTimeout;
@@ -1247,6 +1282,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   @visibleForTesting
   void markSelfPositionLiveForTest() => _selfPositionLive = true;
 
+  /// Moves the last GPS change [by] into the past, as a phone that slept
+  /// through the freshness timer finds it on waking.
+  @visibleForTesting
+  void backdateSelfGpsChangeForTest(Duration by) =>
+      _selfGpsChangedAt = _selfGpsChangedAt?.subtract(by);
+
   @visibleForTesting
   void markChannelsVerifiedForTest() => _channelsVerified = true;
 
@@ -1505,8 +1546,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Messages received for a radio slot whose identity the app doesn't know
   // yet. Held until CHANNEL_INFO reveals the slot's channel, then filed by
   // identity — never stored under a bare index.
-  final Map<int,
-          List<({ChannelMessage message, bool fromBacklog, DateTime receivedAt})>>
+  final Map<
+          int,
+          List<
+              ({
+                ChannelMessage message,
+                bool fromBacklog,
+                bool leftover,
+                DateTime receivedAt,
+              })>>
       _pendingUntrackedChannelMessages = {};
   final Set<int> _slotsToRequery = {};
   bool _pendingQueueSyncAfterChannelSync = false;
@@ -2091,6 +2139,55 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (channel: channel, secs: secs, text: text, messageId: messageId),
     );
     if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
+    final key = _findChannelByIndex(channel)?.psk;
+    final name = _selfName;
+    if (messageId != null && key != null && name != null) {
+      onChannelSendStamped?.call((
+        messageId: messageId,
+        channelKey: key,
+        senderName: name,
+        text: text,
+        secs: secs,
+      ));
+    }
+  }
+
+  /// A channel message of mine went on air, first send or resend, with all
+  /// that decides its packet's hash: the radio sends `name: text` under
+  /// this timestamp, sealed with the channel key (the observer-server hook).
+  void Function(
+    ({
+      String messageId,
+      Uint8List channelKey,
+      String senderName,
+      String text,
+      int secs,
+    }) send,
+  )? onChannelSendStamped;
+
+  /// A copy of a channel message of mine was heard back, with the hash of
+  /// the packet it came in.
+  void Function(String messageId, String packetHash)? onOwnChannelEcho;
+
+  /// Someone else heard this channel message of mine (an observer server
+  /// said so). It is on air, so it isn't sent again. Only a repeat my own
+  /// radio hears marks it delivered.
+  void confirmChannelSendHeard(String messageId) {
+    _pendingChannelSentQueue.remove(messageId);
+    _channelRepeatTimers.remove(messageId)?.cancel();
+    _channelMessageTimers.remove(messageId)?.cancel();
+    unawaited(() async {
+      final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
+        messageId,
+        (m) => m.isOutgoing &&
+                (m.status == ChannelMessageStatus.pending ||
+                    m.status == ChannelMessageStatus.failed)
+            ? m.copyWith(status: ChannelMessageStatus.sent)
+            : m,
+      );
+      if (updated) notifyListeners();
+    }());
+    notifyListeners();
   }
 
   /// A key for the send this echo repeats, or null when it is not mine.
@@ -4082,6 +4179,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
     selfGps.value = null;
+    _forgetSelfGpsChanges();
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
@@ -4114,6 +4212,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _didInitialQueueSync = false;
     _completedFirstQueueDrain = false;
     _drainFloorByIdKey.clear();
+    _readingQueueLeftovers = false;
+    _queueSyncStartUs = null;
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _isSyncingChannels = false;
@@ -4251,15 +4351,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     Uint8List data, {
     Duration timeout = const Duration(seconds: 2),
     bool expectsGenericAck = false,
+  }) async =>
+      (await _sendAndWaitForReply(
+        data,
+        timeout: timeout,
+        expectsGenericAck: expectsGenericAck,
+      ))?[0] ==
+      respCodeOk;
+
+  /// The radio's OK or ERR frame for [data]; null when none came in time.
+  Future<Uint8List?> _sendAndWaitForReply(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 2),
+    bool expectsGenericAck = false,
   }) async {
-    if (!isConnected) return false;
-    final completer = Completer<bool>();
+    if (!isConnected) return null;
+    final completer = Completer<Uint8List?>();
     final subscription = receivedFrames.listen((rxFrame) {
       if (rxFrame.isEmpty) return;
-      if (rxFrame[0] == respCodeOk) {
-        if (!completer.isCompleted) completer.complete(true);
-      } else if (rxFrame[0] == respCodeErr) {
-        if (!completer.isCompleted) completer.complete(false);
+      if (rxFrame[0] == respCodeOk || rxFrame[0] == respCodeErr) {
+        if (!completer.isCompleted) completer.complete(rxFrame);
       }
     });
 
@@ -4276,9 +4387,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       if (expectsGenericAck && index >= 0) {
         _pendingGenericAckQueue[index].givenUpAt = DateTime.now();
       }
-      return false;
+      return null;
     } catch (_) {
-      return false;
+      return null;
     } finally {
       await subscription.cancel();
     }
@@ -4806,7 +4917,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) async {
     final width = hashSize ?? _pathHashByteWidth;
     await withPathLock(() async {
-      if (!isConnected) return;
+      if (!isConnected || !_isSavedContact(contact)) return;
 
       // Marked before the write: a PATH_UPDATED snapshot fetched while the
       // write is in flight must already read as the app's route.
@@ -4944,6 +5055,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         graphRoutes: routes);
   }
 
+  /// The radio's add-or-update command adds a key it doesn't hold, so a path
+  /// or flag write for a deleted contact (a screen still open on it) would
+  /// put it back on the radio.
+  bool _isSavedContact(Contact contact) =>
+      contacts.any((c) => c.publicKeyHex == contact.publicKeyHex);
+
   Future<void> setContactFlags(
     Contact contact, {
     bool? isFavorite,
@@ -4952,7 +5069,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool? teleEnv,
     bool? remoteCli,
   }) async {
-    if (!isConnected) return;
+    if (!isConnected || !_isSavedContact(contact)) return;
     final latestContact =
         await _fetchContactSnapshotFromDevice(contact.publicKey) ?? contact;
     int updatedFlags = isFavorite != null
@@ -5563,10 +5680,27 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await _recordSentWireSecs(live.idKey, messageId, wireSecs);
   }
 
-  Future<void> removeContact(Contact contact) async {
-    if (!isConnected) return;
+  /// Whether the radio saves a contact of [type] by itself when it hears an
+  /// advert (MyMesh::shouldAutoAddContactType), so a deleted one comes back.
+  bool radioAutoAdds(int type) {
+    if (_manualAddRaw & 0x01 == 0) return true;
+    return switch (type) {
+      advTypeChat => _autoAddUsers == true,
+      advTypeRepeater => _autoAddRepeaters == true,
+      advTypeRoom => _autoAddRoomServers == true,
+      advTypeSensor => _autoAddSensors == true,
+      _ => false,
+    };
+  }
 
-    await _sendAndWaitForAck(buildRemoveContactFrame(contact.publicKey));
+  /// False when the radio did not answer: the contact is kept, as the next
+  /// download would bring it back. ERR means the radio doesn't hold it.
+  Future<bool> removeContact(Contact contact) async {
+    if (!isConnected) return false;
+
+    final reply =
+        await _sendAndWaitForReply(buildRemoveContactFrame(contact.publicKey));
+    if (reply == null) return false;
     _contacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _discoveredContacts.removeWhere((c) => c.publicKeyHex == contact.publicKeyHex);
     _localDiscoveredTimes.remove(contact.publicKeyHex);
@@ -5575,6 +5709,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
     unawaited(_persistContacts());
     unawaited(_discoveryContactStore.removeContacts([contact.publicKeyHex]));
+    return true;
   }
 
   /// Removes all contacts that are not favorites (or all contacts if [includesFavorites] is true).
@@ -5973,6 +6108,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// failure path unverified filing is safe — unknown slots buffer.
   Future<void> _startQueueSyncNow() async {
     if (!isConnected) return;
+    _queueSyncStartUs ??= ArrivalClock.next();
     _isSyncingQueuedMessages = true;
     _queuedMessagesRead = 0;
     notifyListeners();
@@ -6030,6 +6166,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       // A radio that never answers the first drain must not leave the sync
       // banner armed for the whole session.
       _completedFirstQueueDrain = true;
+      _readingQueueLeftovers = true;
       notifyListeners();
       _queueSyncRetries = 0;
       _scheduleQueueDrainRetry();
@@ -6105,6 +6242,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _selfLatitude = lat;
     _selfLongitude = lon;
     _selfPositionLive = false;
+    // A typed position is no fix, and the radio may report it next: that
+    // change must not count as one either.
+    _forgetSelfGpsChanges();
     notifyListeners();
   }
 
@@ -6138,12 +6278,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       final gps = reading['value'] as Map;
       final lat = gps['latitude'] as double;
       final lon = gps['longitude'] as double;
+      final alt = gps['altitude'] as double;
       selfGps.value = (
         latitude: lat,
         longitude: lon,
-        altitude: gps['altitude'] as double,
+        altitude: alt,
         at: DateTime.now(),
       );
+      _noteSelfGpsReading(lat, lon, alt);
       // LPP carries 0.0001° (about 11 m), coarser than SELF_INFO: a radio
       // standing still keeps SELF_INFO's figure.
       if (!hasValidLocation(lat, lon) ||
@@ -6157,6 +6299,35 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       return;
     }
+  }
+
+  /// A GPS reading that differs at all from the one before it this
+  /// connection is a fix; a repeat only ages the last one.
+  void _noteSelfGpsReading(double lat, double lon, double alt) {
+    final last = _selfGpsLast;
+    final reading = (latitude: lat, longitude: lon, altitude: alt);
+    _selfGpsLast = reading;
+    final now = DateTime.now();
+    if (last != null && last != reading && hasValidLocation(lat, lon)) {
+      final wasFresh = selfGpsIsFresh;
+      _selfGpsChangedAt = now;
+      _selfGpsFreshTimer?.cancel();
+      _selfGpsFreshTimer = Timer(selfGpsFreshFor, notifyListeners);
+      if (!wasFresh) notifyListeners();
+    } else if (selfGpsIsFresh &&
+        now.difference(_selfGpsChangedAt!) >= selfGpsFreshFor) {
+      // A sleeping phone's clock for timers stops, so the timer can be
+      // late: a repeat that comes after the time ends it.
+      _selfGpsFreshTimer!.cancel();
+      notifyListeners();
+    }
+  }
+
+  void _forgetSelfGpsChanges() {
+    _selfGpsLast = null;
+    _selfGpsChangedAt = null;
+    _selfGpsFreshTimer?.cancel();
+    _selfGpsFreshTimer = null;
   }
 
   Future<void> setCustomVar(String value) async {
@@ -7189,11 +7360,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _lastLoadedNodeKey == selfPublicKeyHex;
     if (_unansweredSettingsReads > 0) _unansweredSettingsReads--;
     if (settingsOnly) {
-      // The radio has not restarted, so a position that was live still is.
+      // The radio has not restarted, so a position that was live still is,
+      // and its freshness goes on as it was.
       _selfPositionLive = wasPositionLive;
       notifyListeners();
       return;
     }
+    _forgetSelfGpsChanges();
 
     // Armed for the radio before: it must not fire into this radio's scope.
     if (_lastLoadedNodeKey != selfPublicKeyHex) {
@@ -7359,6 +7532,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     _stopQueueDrainRetries();
     _completedFirstQueueDrain = true;
+    _readingQueueLeftovers = false;
     // The drain is over; the next one snapshots fresh floors.
     _drainFloorByIdKey.clear();
     _isSyncingQueuedMessages = false;
@@ -7971,10 +8145,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // decided inside the ingest. Captured non-null: promotion of the
       // outer nullable doesn't survive into the closure.
       final incoming = message;
+      final leftover = _readingQueueLeftovers;
       unawaited(() async {
         final isNew = await _ingestContactMessage(
           incoming.senderKeyHex,
           incoming,
+          leftover: leftover,
         );
         // A sender that missed our ACK retries the SAME message; the DB
         // dedups the row, and the notification must dedup with it — one
@@ -8526,6 +8702,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // after is live, where old sender stamps are broken clocks.
       final fromBacklog =
           _isSyncingQueuedMessages && !_completedFirstQueueDrain;
+      final leftover = _readingQueueLeftovers;
       final contentHash = _computeContentHash(
         parsed.channelIndex!,
         parsed.timestamp.millisecondsSinceEpoch ~/ 1000,
@@ -8567,6 +8744,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             .add((
           message: message,
           fromBacklog: fromBacklog,
+          leftover: leftover,
           receivedAt: DateTime.now(),
         ));
         _queryUntrackedChannel(channelIndex);
@@ -8579,6 +8757,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           channelIndex,
           message,
           fromBacklog: fromBacklog,
+          leftover: leftover,
         );
         if (isNew) {
           _maybeNotifyChannelMessage(message);
@@ -9107,15 +9286,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _retryService!.handleAckReceived(ackHash, tripTimeMs);
       }
     } catch (e) {
+      // Nothing is marked delivered: the newest sent DM may be anyone's,
+      // and a false "Delivered" is worse than a late one. The ladder goes
+      // on, and a real ACK still finds its message.
       appLogger.warn('Error handling send confirmed frame: $e');
-      // Fallback to old behavior
-      unawaited(() async {
-        final (updated, _) = await _messageStore.promoteLatestOutgoing(
-          from: MessageStatus.sent,
-          to: MessageStatus.delivered,
-        );
-        if (updated) notifyListeners();
-      }());
     }
   }
 
@@ -9343,6 +9517,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           channel.index,
           message,
           fromBacklog: entry.fromBacklog,
+          leftover: entry.leftover,
           receivedAt: entry.receivedAt,
         );
         if (isNew) {
@@ -9545,7 +9720,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// an already-stored message (a sender that missed our ACK re-sends the
   /// same message) and for repeats of an already-applied reaction. Callers
   /// gate user-facing side effects — notifications — on it.
-  Future<bool> _ingestContactMessage(String pubKeyHex, Message message) async {
+  Future<bool> _ingestContactMessage(
+    String pubKeyHex,
+    Message message, {
+    bool leftover = false,
+  }) async {
     // Rewrite only BROKEN sender clocks; ordering is arrival-based, so an
     // old-but-plausible time is display truth, not a sorting hazard.
     Message processedMessage = message;
@@ -9553,13 +9732,21 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // DMs keep the lenient window unconditionally: room servers push old
       // messages while LIVE (legitimate), so the channel-side live/backlog
       // split does not transfer. Follow-up: strict clamp for non-room DMs.
+      final now = DateTime.now();
       final sane = sanitizeSenderTimestamp(
         message.timestamp,
-        DateTime.now(),
+        now,
         fromBacklog: true,
       );
       if (sane != message.timestamp) {
         processedMessage = message.copyWith(timestamp: sane);
+      }
+      // Its place is its arrival, under what came before: the line tells a
+      // leftover's age. No floor, as above: the 30-day cap decides.
+      final claimedAt =
+          leftover ? heldClaimToShow(message.timestamp, now) : null;
+      if (claimedAt != null) {
+        processedMessage = processedMessage.copyWith(claimedAt: claimedAt);
       }
     }
 
@@ -10658,6 +10845,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage? replyTarget,
     Channel? identity,
     bool fromBacklog = false,
+    bool leftover = false,
     DateTime? receivedAt,
   }) async {
     final sw = Stopwatch()..start();
@@ -10667,6 +10855,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       replyTarget: replyTarget,
       identity: identity,
       fromBacklog: fromBacklog,
+      leftover: leftover,
       receivedAt: receivedAt,
     );
     appLogger.perf(
@@ -10686,6 +10875,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     ChannelMessage? replyTarget,
     Channel? identity,
     bool fromBacklog = false,
+    bool leftover = false,
     DateTime? receivedAt,
   }) async {
     // [identity] bypasses the slot lookup for sends queued while the map is
@@ -10704,12 +10894,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Rewrite only BROKEN sender clocks. An old-but-plausible time is display
     // truth, and since #247 it is also where the message stands in the chat.
     ChannelMessage sanitizedMessage = message;
+    DateTime? claimedAt;
     if (!message.isOutgoing) {
+      // Buffered messages are judged against the moment the radio handed
+      // them over, not the (possibly much later) flush time.
+      final now = receivedAt ?? DateTime.now();
       final sane = sanitizeSenderTimestamp(
         message.timestamp,
-        // Buffered messages are judged against the moment the radio handed
-        // them over, not the (possibly much later) flush time.
-        receivedAt ?? DateTime.now(),
+        now,
         fromBacklog: fromBacklog,
         channelFloor: fromBacklog
             ? _drainFloorByIdKey.putIfAbsent(
@@ -10720,6 +10912,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
       if (sane != message.timestamp) {
         sanitizedMessage = message.copyWith(timestamp: sane);
+        final syncStart = _queueSyncStartUs;
+        if (leftover && !fromBacklog && syncStart != null) {
+          claimedAt = heldClaimToShow(
+            message.timestamp,
+            now,
+            floor: await _channelMessageStore.newestShownTimeArrivedBefore(
+              idKey,
+              syncStart,
+            ),
+          );
+        }
       }
     }
 
@@ -10740,12 +10943,31 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         idKey,
         _reactionWindowStart(),
       );
-      final applied = await _processReaction(
+      var applied = await _processReaction(
         idKey,
         rows,
         reactionInfo,
         reactorName,
       );
+      // A reaction to an older message (field 2026-11-17: a 🍻 to a post
+      // from 86 hours before). It names the target's sender, so that
+      // sender's messages are searched over the whole channel.
+      final named = reactionInfo.targetSender;
+      if (!applied && named != null) {
+        final older = [
+          for (final found in await _channelMessageStore.searchChannelMessages(
+            idKey,
+            named,
+          ))
+            if (found.message.senderName == named) found.message,
+        ];
+        applied = await _processReaction(
+          idKey,
+          older,
+          reactionInfo,
+          reactorName,
+        );
+      }
       appLogger.perf('channel reaction over ${rows.length} rows', sw);
       if (applied || reactionInfo.format == ReactionFormat.open) {
         // Unmatched r: text is unambiguously a reaction — drop it. A
@@ -10820,23 +11042,38 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
     } else if (replyInfo != null) {
       // Incoming reply — locate the quoted message by sender + snippet prefix,
-      // among recent arrivals. If we don't have it, still show a quote bubble
-      // using the snippet text.
-      final originalMessage = _findMessageBySenderAndSnippet(
-        await _channelMessageStore.loadChannelMessagesArrivedSince(
-          idKey,
-          _reactionWindowStart(),
-        ),
-        replyInfo.mentionedNode,
-        replyInfo.snippet,
-      );
-      processedMessage = _withReplyMetadata(
+      // among recent arrivals, else in the whole channel the way a tap on
+      // the quote does: an original from days ago is linked too. If we don't
+      // have it, still show a quote bubble using the snippet text.
+      final unlinked = _withReplyMetadata(
         sanitizedMessage,
         text: replyInfo.actualMessage,
-        replyToMessageId: originalMessage?.messageId,
-        replyToSenderName: originalMessage?.senderName ?? replyInfo.mentionedNode,
-        replyToText: originalMessage?.text ?? replyInfo.snippet,
+        replyToSenderName: replyInfo.mentionedNode,
+        replyToText: replyInfo.snippet,
       );
+      final originalMessage = _findMessageBySenderAndSnippet(
+            await _channelMessageStore.loadChannelMessagesArrivedSince(
+              idKey,
+              _reactionWindowStart(),
+            ),
+            replyInfo.mentionedNode,
+            replyInfo.snippet,
+          ) ??
+          (await _channelMessageStore.findReplyTarget(idKey, unlinked))
+              ?.message;
+      processedMessage = originalMessage == null
+          ? unlinked
+          : _withReplyMetadata(
+              sanitizedMessage,
+              text: replyInfo.actualMessage,
+              replyToMessageId: originalMessage.messageId,
+              replyToSenderName: originalMessage.senderName,
+              replyToText: originalMessage.text,
+            );
+    }
+
+    if (claimedAt != null) {
+      processedMessage = processedMessage.copyWith(claimedAt: claimedAt);
     }
 
     // An SOS its sender keeps repeating is one card that updates in place.
@@ -11098,6 +11335,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ),
     );
     _pendingChannelSentQueue.remove(existing.messageId);
+    if (existing.isOutgoing && incoming.packetHash != null) {
+      onOwnChannelEcho?.call(existing.messageId, incoming.packetHash!);
+    }
     appLogger.info(
       'Matched repeat for ${existing.messageId}, cancelling timer',
       tag: 'Connector',
@@ -11270,6 +11510,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return timestamp.isBefore(oldestBelievable) ? now : timestamp;
   }
 
+  /// The claimed send time a message read after a drain gave up shows as
+  /// "sent 14:00 by its clock", or null.
+  ///
+  /// The radio held such a message past the give-up, so its old claim may
+  /// be real, but it is read as LIVE and stands where it arrives: a channel
+  /// shows it at [now], a DM at its arrival. Its place and time stay so; only
+  /// the line is added. Fresh claims need no line, and a claim the BACKLOG
+  /// rule would not believe ([floor] minus 10 minutes, the 30-day cap
+  /// without one, more than a minute ahead) gets none.
+  @visibleForTesting
+  static DateTime? heldClaimToShow(
+    DateTime claim,
+    DateTime now, {
+    DateTime? floor,
+  }) {
+    if (sanitizeSenderTimestamp(claim, now, fromBacklog: false) == claim) {
+      return null;
+    }
+    final believed = sanitizeSenderTimestamp(
+      claim,
+      now,
+      fromBacklog: true,
+      channelFloor: floor,
+    );
+    return believed == claim ? claim : null;
+  }
+
   /// The ORIGINAL wire timestamp of a message, in ms — even after the ingest
   /// clamp has rewritten the stored [ChannelMessage.timestamp].
   ///
@@ -11435,6 +11702,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _gpsPollTimer = null;
     selfGps.value = null;
     _selfPositionLive = false;
+    _forgetSelfGpsChanges();
     _stopRadioStatsPolling();
     _latestRadioStats = null;
     radioStatsNotifier.value = null;
@@ -11479,6 +11747,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _didInitialQueueSync = false;
     _completedFirstQueueDrain = false;
     _drainFloorByIdKey.clear();
+    _readingQueueLeftovers = false;
+    _queueSyncStartUs = null;
     _pendingQueueSync = false;
     _pendingChannelSyncAfterQueueSync = false;
     _stopQueueDrainRetries();
@@ -11715,6 +11985,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _reconnectTimer?.cancel();
     _batteryPollTimer?.cancel();
     _gpsPollTimer?.cancel();
+    _selfGpsFreshTimer?.cancel();
     _radioStatsPollTimer?.cancel();
     _queueDrainRetryTimer?.cancel();
     for (final timer in _channelMessageTimers.values) {
@@ -12383,8 +12654,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           .join();
 
       timestamp = advert.readInt32LE();
-      //TODO add signature verification
-      advert.skipBytes(64); // Skip signature for now
+      advert.skipBytes(64); // Signature, checked below.
       final flags = advert.readByte();
       type = flags & 0x0F;
       hasLocation = (flags & 0x10) != 0;
@@ -12404,6 +12674,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     } catch (e) {
       appLogger.warn('Malformed advert frame: $e', tag: 'Connector');
+      return;
+    }
+
+    if (!advertSignatureValid(payload)) {
+      appLogger.warn('Advert with a bad signature dropped: $contactKeyHex',
+          tag: 'Connector');
       return;
     }
 

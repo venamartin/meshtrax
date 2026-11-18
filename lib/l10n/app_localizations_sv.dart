@@ -895,6 +895,68 @@ class AppLocalizationsSv extends AppLocalizations {
       'Försöker igen så här många gånger tills minst en upprepning hörs';
 
   @override
+  String get appSettings_heardCheck =>
+      'Kontrollera sändningar med observatörer';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Fråga en observatörsserver om ett kanalmeddelande hördes innan det skickas igen';
+
+  @override
+  String get appSettings_heardServer => 'Observatörsserver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Inte angiven';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Observatörer är radioapparater som rapporterar vad de hör till en server. MeshTrax skickar ett fingeravtryck av varje kanalmeddelande du skickar till den servern, aldrig texten. Servern ser din internetadress och när du skickade.';
+
+  @override
+  String get appSettings_heardServerOther => 'Annan adress';
+
+  @override
+  String get appSettings_heardServerAddress => 'Serveradress';
+
+  @override
+  String get appSettings_heardServerChecking => 'Kontrollerar servern…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Inget svar från den här adressen';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Spara ändå';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Servern svarade';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hört av $count observatörer',
+      one: 'Hört av 1 observatör',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direkt';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeatrar',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batteri';
 
   @override
@@ -1870,6 +1932,31 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Dela markeringen här';
+
+  @override
+  String get map_lastKnown => 'Senast känd';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Senast känd · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Från din senast kända position, kan vara gammal';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Från din senast kända position ($time), kan vara gammal';
+  }
+
+  @override
+  String get gps_lastKnown => 'Din senast kända position, kan vara gammal';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Din senast kända position ($time), kan vara gammal';
+  }
 
   @override
   String get map_setAsMyLocation => 'Ange som min plats';
@@ -3776,6 +3863,11 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'skickat $time enligt avsändarens klocka';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '${name}s radio skickar korta repeaterkoder (1 byte). Pathfinder kan inte lära sig rutter till dem förrän deras radio använder 2-byte-koder.';
   }
@@ -5669,6 +5761,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get roadLegend_trail => 'Led';
 
   @override
+  String get roadLegend_walkway => 'Gångväg eller cykelväg';
+
+  @override
   String get roadLegend_interstate => 'Interstate';
 
   @override
@@ -6861,4 +6956,17 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Höjdkurvor för siktlinje';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Din radio sparar den här typen av kontakt själv, så den kommer tillbaka nästa gång den hörs.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Dela en kontakt';
+
+  @override
+  String get shareContact_myContact => 'Min kontakt';
 }

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.10.2+184
+version: 1.11.0+223
 
 environment:
   # Dart 3.14 = Flutter 3.50, the minimum whose Gradle plugin knows the
@@ -99,10 +99,14 @@ dependencies:
   # Line of sight and radio reach, offline from the contours packs
   traxlos:
     path: packages/traxlos
+  # Asks an observer server whether a channel message was heard
+  traxheard:
+    path: packages/traxheard
   # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
   traxroute_ios:
     path: packages/traxroute_ios
   emoji_picker_flutter: ^4.4.0
+  pinenacl: 0.6.0
 
 
 dev_dependencies:

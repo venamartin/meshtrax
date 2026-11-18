@@ -1733,6 +1733,90 @@ abstract class AppLocalizations {
   /// **'It will retry this many times until it hears at least one repeat'**
   String get appSettings_maxChannelMessageRetriesSubtitle;
 
+  /// No description provided for @appSettings_heardCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check sends with observers'**
+  String get appSettings_heardCheck;
+
+  /// No description provided for @appSettings_heardCheckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before sending a channel message again, ask an observer server whether it was heard'**
+  String get appSettings_heardCheckSubtitle;
+
+  /// No description provided for @appSettings_heardServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Observer server'**
+  String get appSettings_heardServer;
+
+  /// No description provided for @appSettings_heardServerNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get appSettings_heardServerNotSet;
+
+  /// No description provided for @appSettings_heardServerAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.'**
+  String get appSettings_heardServerAbout;
+
+  /// No description provided for @appSettings_heardServerOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other address'**
+  String get appSettings_heardServerOther;
+
+  /// No description provided for @appSettings_heardServerAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get appSettings_heardServerAddress;
+
+  /// No description provided for @appSettings_heardServerChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the server…'**
+  String get appSettings_heardServerChecking;
+
+  /// No description provided for @appSettings_heardServerNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer from this address'**
+  String get appSettings_heardServerNoAnswer;
+
+  /// No description provided for @appSettings_heardServerSaveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get appSettings_heardServerSaveAnyway;
+
+  /// No description provided for @appSettings_heardServerAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'The server answered'**
+  String get appSettings_heardServerAnswered;
+
+  /// No description provided for @chat_heardBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Heard by 1 observer} other{Heard by {count} observers}}'**
+  String chat_heardBy(int count);
+
+  /// No description provided for @chat_heardDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'direct'**
+  String get chat_heardDirect;
+
+  /// No description provided for @chat_heardVia.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{via 1 repeater} other{via {count} repeaters}}'**
+  String chat_heardVia(int count);
+
   /// No description provided for @appSettings_battery.
   ///
   /// In en, this message translates to:
@@ -3418,6 +3502,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share marker here'**
   String get map_shareMarkerHere;
+
+  /// No description provided for @map_lastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known'**
+  String get map_lastKnown;
+
+  /// No description provided for @map_lastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known · {time}'**
+  String map_lastKnownAt(String time);
+
+  /// No description provided for @route_fromLastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'From your last known position, may be old'**
+  String get route_fromLastKnown;
+
+  /// No description provided for @route_fromLastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'From your last known position ({time}), may be old'**
+  String route_fromLastKnownAt(String time);
+
+  /// No description provided for @gps_lastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last known position, may be old'**
+  String get gps_lastKnown;
+
+  /// No description provided for @gps_lastKnownAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last known position ({time}), may be old'**
+  String gps_lastKnownAt(String time);
 
   /// No description provided for @map_setAsMyLocation.
   ///
@@ -6609,6 +6729,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No repeater heard you. Will try again when one is in range.'**
   String get chat_statusNoRepeaterHeard;
+
+  /// Under a message the radio held after a failed read: the time its sender's own clock gave it.
+  ///
+  /// In en, this message translates to:
+  /// **'sent {time} by its clock'**
+  String chat_sentByItsClock(String time);
 
   /// No description provided for @chat_narrowHashNotice.
   ///
@@ -9808,6 +9934,12 @@ abstract class AppLocalizations {
   /// **'Trail'**
   String get roadLegend_trail;
 
+  /// No description provided for @roadLegend_walkway.
+  ///
+  /// In en, this message translates to:
+  /// **'Walkway or bike path'**
+  String get roadLegend_walkway;
+
   /// No description provided for @roadLegend_interstate.
   ///
   /// In en, this message translates to:
@@ -11877,6 +12009,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contours for line of sight'**
   String get offlineMaps_losContours;
+
+  /// No description provided for @contacts_deleteComesBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio saves this kind of contact by itself, so it comes back the next time it is heard.'**
+  String get contacts_deleteComesBack;
+
+  /// No description provided for @tray_contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get tray_contact;
+
+  /// No description provided for @shareContact_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a contact'**
+  String get shareContact_title;
+
+  /// No description provided for @shareContact_myContact.
+  ///
+  /// In en, this message translates to:
+  /// **'My contact'**
+  String get shareContact_myContact;
 }
 
 class _AppLocalizationsDelegate

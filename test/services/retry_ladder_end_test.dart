@@ -111,6 +111,7 @@ void main() {
         estimateAirtime: (_) => 200,
         onFloodAttemptEnded: (_, {required delivered}) => ended.add(delivered),
       ));
+      withEcho.noteRepeaterHeard(); // parks only with a repeater near
       withEcho.sendMessageWithRetry(contact: bob, text: 'anyone?', floodFirst: true);
       async.flushMicrotasks();
       withEcho.updateMessageFromSent(ackFor(0), 30000);

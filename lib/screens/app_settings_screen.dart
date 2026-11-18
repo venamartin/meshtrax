@@ -19,6 +19,7 @@ import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
+import '../widgets/heard_check_settings.dart';
 import '../utils/format_bytes.dart';
 import '../widgets/routing_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -630,8 +631,8 @@ class AppSettingsScreen extends StatelessWidget {
                   value: settingsService.settings.maxChannelMessageRetries
                       .toDouble(),
                   min: 0,
-                  max: 2,
-                  divisions: 2,
+                  max: 3,
+                  divisions: 3,
                   label: settingsService.settings.maxChannelMessageRetries
                       .toString(),
                   onChanged: (value) => settingsService
@@ -640,6 +641,8 @@ class AppSettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          const Divider(height: 1),
+          const HeardCheckSettings(),
           const Divider(height: 1),
           ListTile(
             leading: const RoutingIcon(),

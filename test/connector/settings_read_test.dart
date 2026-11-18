@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/cayenne_lpp.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -102,6 +103,21 @@ Uint8List _clockNow() {
           (ByteData(4)..setUint32(0, secs, Endian.little)).buffer.asUint8List(),
         ))
       .toBytes();
+}
+
+/// The radio's own GPS reading at 41.8301, -71.4012 and [altitude] metres.
+Uint8List _selfGps(double altitude) {
+  List<int> int24(int v) => [v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF];
+  return Uint8List.fromList([
+    pushCodeTelemetryResponse,
+    0,
+    ..._selfKey.sublist(0, 6),
+    1,
+    CayenneLpp.lppGps,
+    ...int24(418301),
+    ...int24(-714012 & 0xFFFFFF),
+    ...int24((altitude * 100).round()),
+  ]);
 }
 
 Future<void> _settle() async {
@@ -238,6 +254,35 @@ void main() {
       expect(radio.selfPositionIsLive, isFalse, reason: 'a handshake may not');
     });
 
+    // Every health check reads the settings: neither a good fix may go
+    // grey, nor a frozen one turn blue.
+    test('a fresh GPS position stays fresh, and a stale one stale', () async {
+      final radio = await syncedRadio();
+      radio.handleFrameForTest(_selfGps(30.7));
+      radio.handleFrameForTest(_selfGps(30.9));
+      final changedAt = radio.selfGpsChangedAt;
+      expect(radio.selfGpsIsFresh, isTrue);
+      await radio.readRadioSettings();
+      expect(radio.selfGpsIsFresh, isTrue);
+      expect(radio.selfGpsChangedAt, changedAt);
+
+      // The same reading again is still a repeat, not a change.
+      radio.backdateSelfGpsChangeForTest(const Duration(hours: 1));
+      radio.handleFrameForTest(_selfGps(30.9));
+      expect(radio.selfGpsIsFresh, isFalse);
+      await radio.readRadioSettings();
+      radio.handleFrameForTest(_selfGps(30.9));
+      expect(radio.selfGpsIsFresh, isFalse);
+
+      radio.handleFrameForTest(_selfGps(31.0));
+      expect(radio.selfGpsIsFresh, isTrue);
+      radio.handleFrameForTest(_selfInfo());
+      expect(radio.selfGpsIsFresh, isFalse, reason: 'a handshake may not');
+      expect(radio.selfGpsChangedAt, isNull);
+      radio.handleFrameForTest(_selfGps(31.1));
+      expect(radio.selfGpsIsFresh, isFalse, reason: 'nothing to compare with');
+    });
+
     test('a clock far ahead is reported, and Check again sees it go', () async {
       final radio = await syncedRadio();
       final ahead = DateTime.now().add(const Duration(hours: 1));
@@ -295,12 +340,15 @@ void main() {
     test('a saved position is no longer the live one', () async {
       final radio = await syncedRadio();
       radio.markSelfPositionLiveForTest();
+      radio.handleFrameForTest(_selfGps(30.7));
+      radio.handleFrameForTest(_selfGps(30.9));
 
       await radio.setNodeLocation(lat: 40, lon: 2);
       await radio.refreshRadioSettings();
       await _settle();
 
       expect(radio.selfPositionIsLive, isFalse);
+      expect(radio.selfGpsIsFresh, isFalse);
     });
 
     test('saved radio values show before the read answers', () async {

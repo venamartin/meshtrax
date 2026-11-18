@@ -21,6 +21,7 @@ import '../helpers/path_helper.dart';
 import '../helpers/path_resolver.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/app_map.dart';
+import '../widgets/heard_ear.dart';
 import '../widgets/pull_down_card.dart';
 
 class ChannelMessagePathScreen extends StatelessWidget {
@@ -125,6 +126,8 @@ class ChannelMessagePathScreen extends StatelessWidget {
                   )
                 else
                   ..._buildHopTiles(context, hops),
+                if (channelMessage && message.isOutgoing)
+                  HeardBySection(message.messageId),
               ],
             ),
           ),

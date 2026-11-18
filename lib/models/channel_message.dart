@@ -69,6 +69,11 @@ class ChannelMessage {
   // Who reacted, per emoji. Rows written before attribution existed have
   // counts with no names, so this can be shorter than the count.
   final Map<String, List<String>> reactionSenders;
+  // The sender's own send time, for a message the radio still held when a
+  // queue read gave up. The ingest showed it at its arrival, as for any
+  // live message with an old time; this keeps the time it claimed, when
+  // believable, for a "sent 14:00 by its clock" line. Null otherwise.
+  final DateTime? claimedAt;
 
   /// An SOS whose sender repeats it: when the newest repeat merged in, with
   /// [text] its latest wire text. Null for any other message.
@@ -105,6 +110,7 @@ class ChannelMessage {
     Map<String, List<String>>? reactionSenders,
     this.sosUpdatedAt,
     this.sosCancelledAt,
+    this.claimedAt,
   }) : messageId =
            messageId ??
            '${timestamp.millisecondsSinceEpoch}_${senderName.hashCode}_${text.hashCode}',
@@ -146,6 +152,7 @@ class ChannelMessage {
     Map<String, List<String>>? reactionSenders,
     DateTime? sosUpdatedAt,
     DateTime? sosCancelledAt,
+    DateTime? claimedAt,
   }) {
     return ChannelMessage(
       senderKey: senderKey,
@@ -175,6 +182,7 @@ class ChannelMessage {
       reactionSenders: reactionSenders ?? this.reactionSenders,
       sosUpdatedAt: sosUpdatedAt ?? this.sosUpdatedAt,
       sosCancelledAt: sosCancelledAt ?? this.sosCancelledAt,
+      claimedAt: claimedAt ?? this.claimedAt,
     );
   }
 

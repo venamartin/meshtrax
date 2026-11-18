@@ -23,6 +23,9 @@ enum RoadLegendItem {
     LegendSample('trail-halo', {'class': 'path', 'subclass': 'path'}),
     LegendSample('trail', {'class': 'path', 'subclass': 'path'}),
   ]),
+  walkway([
+    LegendSample('walkway', {'class': 'path', 'subclass': 'footway'}),
+  ]),
   interstate([
     LegendSample('road-shield', {
       'network': 'us-interstate',

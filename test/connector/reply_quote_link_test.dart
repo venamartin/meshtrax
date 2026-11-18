@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/reaction_helper.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -118,5 +119,60 @@ void main() {
     expect(first.replyToMessageId, original.messageId);
     expect(second.replyToMessageId, first.messageId);
     expect(second.replyToText, 'I got mine at the store');
+  });
+
+  // Field 2026-11-17: a reply to a three-day-old post kept the sender's short
+  // quote, because only the last 48 hours of arrivals were searched. A tap
+  // on the quote found the post, so the reply now links the same way.
+  test('a reply to a message that arrived days ago links to it', () async {
+    await hear(120, 'Bob', 'Pine cones are free');
+    await AppDatabase.instance.customStatement(
+      'UPDATE channel_message_rows SET received_at_us = ?',
+      [
+        DateTime.now()
+            .subtract(const Duration(days: 3))
+            .microsecondsSinceEpoch,
+      ],
+    );
+    await hear(60, 'Ann', '@[Bob]\n>Pine cones..\nNot yet');
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    final original = rows.singleWhere((m) => m.text == 'Pine cones are free');
+    final reply = rows.singleWhere((m) => m.text == 'Not yet');
+    expect(reply.replyToMessageId, original.messageId);
+    expect(reply.replyToText, 'Pine cones are free');
+  });
+
+  // Field 2026-11-17: a 🍻 to a post from 86 hours before showed as a stub,
+  // because only the last 48 hours of arrivals were searched.
+  test('a reaction to a message that arrived days ago lands on it', () async {
+    final secs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 60;
+    c.handleFrameForTest(_heard(secs, 'Bob', 'Pine cones are free'));
+    await pumpEventQueue(times: 200);
+    await AppDatabase.instance.customStatement(
+      'UPDATE channel_message_rows SET received_at_us = ?',
+      [
+        DateTime.now()
+            .subtract(const Duration(days: 3))
+            .microsecondsSinceEpoch,
+      ],
+    );
+    final hash =
+        ReactionHelper.computeMeshCoreOneHash('Pine cones are free', secs);
+    await hear(30, 'Ann', '@[Bob]🍻\n$hash');
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    expect(rows.map((m) => m.text), ['Pine cones are free'],
+        reason: 'no stub row for the reaction');
+    expect(rows.single.reactions, {'🍻': 1});
+  });
+
+  test('a reply to a message never heard keeps its quote', () async {
+    await hear(60, 'Ann', '@[Bob]\n>Pine cones..\nNot yet');
+
+    final reply = (await c.loadChannelMessagesFor(channel)).single;
+    expect(reply.replyToMessageId, isNull);
+    expect(reply.replyToSenderName, 'Bob');
+    expect(reply.replyToText, 'Pine cones');
   });
 }

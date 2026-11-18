@@ -34,6 +34,8 @@ migrate_working_dir/
 pubspec.lock
 !/pubspec.lock
 /build/
+# Release files from release.sh and tool/linux_docker/build.sh
+/dist/
 packages/*/build/
 # Captures written by integration_test live runs
 /*.jsonl

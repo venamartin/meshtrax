@@ -186,7 +186,12 @@ class ProfileData {
 /// [covered] holds the stretches with data as start, end pairs in metres;
 /// the rest is unknown. [startM] and [endM] are the ground at the path's
 /// ends when known. [packInterval] gives each pack's interval in metres,
-/// by the pack index the crossings carry.
+/// by the pack index the crossings carry; [packSeaGuardInterval] the
+/// interval for the guard near sea level, 0 for a pack with lines below
+/// sea level (it defaults to [packInterval]: no lines at or below 0 m).
+/// [startSeaGuard] and [endSeaGuard] are that interval at the path's
+/// ends, for the ground next to a known end where no lines cross (see
+/// ContourTerrain.seaGuardAt); each defaults to the largest of them.
 ProfileData buildProfile({
   required Crossings crossings,
   required double length,
@@ -194,14 +199,19 @@ ProfileData buildProfile({
   required double? endM,
   required List<double> covered,
   required List<double> packInterval,
+  List<double>? packSeaGuardInterval,
+  double? startSeaGuard,
+  double? endSeaGuard,
   double fillStepM = 50,
   List<PathPeak> peaks = const [],
   double peakMaxAboveIntervals = 3,
 }) {
-  final b = _Builder(packInterval, fillStepM);
+  final guard = packSeaGuardInterval ?? packInterval;
+  final b = _Builder(packInterval, guard, fillStepM);
   final maxInterval = packInterval.isEmpty
       ? 0.0
       : packInterval.reduce(math.max);
+  final maxGuard = guard.isEmpty ? 0.0 : guard.reduce(math.max);
   var ci = 0;
   var lastEnd = 0.0;
   for (var k = 0; k + 1 < covered.length; k += 2) {
@@ -214,14 +224,16 @@ ProfileData buildProfile({
     while (ci < crossings.length && crossings.d(ci) <= e) {
       run.add(ci++);
     }
+    final hs = s <= 1e-6 ? startM : null;
     b.run(
       crossings,
       run,
       s,
       e,
-      s <= 1e-6 ? startM : null,
+      hs,
       e >= length - 1e-6 ? endM : null,
       maxInterval,
+      hs != null ? startSeaGuard ?? maxGuard : endSeaGuard ?? maxGuard,
       peaks,
       peakMaxAboveIntervals,
     );
@@ -235,6 +247,7 @@ ProfileData buildProfile({
 
 class _Builder {
   final List<double> packInterval;
+  final List<double> packSeaGuard;
   final double fillStep;
   final _d = <double>[], _h = <double>[], _raise = <double>[];
   final _iv = <double>[];
@@ -245,7 +258,7 @@ class _Builder {
   final _segRaise = <double>[];
   final peaksUsed = <PathPeak>[];
 
-  _Builder(this.packInterval, this.fillStep);
+  _Builder(this.packInterval, this.packSeaGuard, this.fillStep);
 
   void _add(double d, double h, int kind, double raise, double iv) {
     _d.add(d);
@@ -281,6 +294,7 @@ class _Builder {
     double? hs,
     double? he,
     double maxInterval,
+    double knownEndGuard,
     List<PathPeak> peaks,
     double peakMaxAbove,
   ) {
@@ -304,7 +318,7 @@ class _Builder {
     double lv(int k) => c.level(idx[k]);
     double dv(int k) => c.d(idx[k]);
     double ivOf(int k) => packInterval[c.pack(idx[k])];
-    bool low(int k) => isNearSeaLevel(lv(k), ivOf(k));
+    bool low(int k) => isNearSeaLevel(lv(k), packSeaGuard[c.pack(idx[k])]);
 
     if (m == 0) {
       // No lines: the ground stays within the band of the known end, which
@@ -312,7 +326,10 @@ class _Builder {
       // end is.
       final h0 = hs ?? he ?? double.nan, h1 = he ?? hs ?? double.nan;
       final known = hs ?? he;
-      final below = known != null && known <= 3 * maxInterval + 1e-6;
+      final below =
+          known != null &&
+          knownEndGuard > 0 &&
+          known <= 3 * knownEndGuard + 1e-6;
       _add(s, h0, PointKind.end, 0, maxInterval);
       _seg(below ? PointKind.belowLowest : 0, 0);
       _add(e, h1, PointKind.end, 0, maxInterval);

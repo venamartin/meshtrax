@@ -901,6 +901,68 @@ class AppLocalizationsSk extends AppLocalizations {
       'Opakuje toľkokrát, kým nezachytí aspoň jedno zopakovanie';
 
   @override
+  String get appSettings_heardCheck => 'Kontrolovať odoslanie u pozorovateľov';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Pred opätovným odoslaním správy v kanáli sa opýtať servera pozorovateľov, či bola počutá';
+
+  @override
+  String get appSettings_heardServer => 'Server pozorovateľov';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nenastavené';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Pozorovatelia sú rádiostanice, ktoré hlásia serveru, čo počujú. MeshTrax posiela tomuto serveru odtlačok každej správy, ktorú pošlete do kanála, nikdy jej text. Server vidí vašu internetovú adresu a čas odoslania.';
+
+  @override
+  String get appSettings_heardServerOther => 'Iná adresa';
+
+  @override
+  String get appSettings_heardServerAddress => 'Adresa servera';
+
+  @override
+  String get appSettings_heardServerChecking => 'Kontrola servera…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Žiadna odpoveď z tejto adresy';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Aj tak uložiť';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Server odpovedal';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Počulo $count pozorovateľov',
+      few: 'Počuli $count pozorovatelia',
+      one: 'Počul 1 pozorovateľ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'priamo';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'cez $count opakovačov',
+      few: 'cez $count opakovače',
+      one: 'cez 1 opakovač',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batéria';
 
   @override
@@ -1881,6 +1943,31 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Zdieľte značku tu';
+
+  @override
+  String get map_lastKnown => 'Naposledy známa';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Naposledy známa · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Začiatok: vaša naposledy známa poloha, môže byť stará';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Začiatok: vaša naposledy známa poloha ($time), môže byť stará';
+  }
+
+  @override
+  String get gps_lastKnown => 'Vaša naposledy známa poloha, môže byť stará';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Vaša naposledy známa poloha ($time), môže byť stará';
+  }
 
   @override
   String get map_setAsMyLocation => 'Nastavte ako moju polohu';
@@ -3801,6 +3888,11 @@ class AppLocalizationsSk extends AppLocalizations {
       'Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'odoslané $time podľa hodín odosielateľa';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Rádio $name posiela krátke kódy opakovačov (1 bajt). Pathfinder sa nemôže naučiť trasy k tomuto kontaktu, kým jeho rádio nebude používať 2-bajtové kódy.';
   }
@@ -5703,6 +5795,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get roadLegend_trail => 'Chodník';
 
   @override
+  String get roadLegend_walkway => 'Peší chodník alebo cyklochodník';
+
+  @override
   String get roadLegend_interstate => 'Diaľnica Interstate';
 
   @override
@@ -6905,4 +7000,17 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Vrstevnice pre priamu viditeľnosť';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Rádio si tento druh kontaktu ukladá samo, takže sa vráti, keď ho nabudúce začuje.';
+
+  @override
+  String get tray_contact => 'Kontakt';
+
+  @override
+  String get shareContact_title => 'Zdieľať kontakt';
+
+  @override
+  String get shareContact_myContact => 'Môj kontakt';
 }

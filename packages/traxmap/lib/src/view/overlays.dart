@@ -36,6 +36,10 @@ class MapMarker extends MapOverlay {
   final String? label;
   final double? labelMinZoom;
 
+  /// How wide the label may grow before it is cut short, in place of the
+  /// label style's `maxWidth`: for a label that must show in full.
+  final double? labelMaxWidth;
+
   /// False lets taps pass through to the map (e.g. a highlight pin). Markers
   /// without handlers are never interactive.
   final bool interactive;
@@ -50,6 +54,7 @@ class MapMarker extends MapOverlay {
     this.anchor = Alignment.center,
     this.label,
     this.labelMinZoom,
+    this.labelMaxWidth,
     this.interactive = true,
     super.onTap,
     super.onLongPress,

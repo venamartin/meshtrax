@@ -45,12 +45,12 @@ jobs:
         working-directory: packages/path_graph
         run: dart test -r github
 
-      # Offline routing, points of interest, coordinates and line of sight:
-      # pure Dart, each with its own pubspec. Tests that need local routing
-      # data skip here.
-      - name: Analyze and test traxroute, traxpoi, traxcoords and traxlos
+      # Offline routing, points of interest, coordinates, line of sight and
+      # the observer check: pure Dart, each with its own pubspec. Tests that
+      # need local routing data skip here.
+      - name: Analyze and test traxroute, traxpoi, traxcoords, traxlos and traxheard
         run: |
-          for p in traxroute traxpoi traxcoords traxlos; do
+          for p in traxroute traxpoi traxcoords traxlos traxheard; do
             (cd packages/$p && dart pub get && dart analyze --fatal-infos --fatal-warnings && dart test -r github) || exit 1
           done
 

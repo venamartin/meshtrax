@@ -131,6 +131,7 @@ The rest of this section is the record from 2026-10-17 to 2026-11-02.
    - **Now (#184, #186):**
      - My location shows only on a radio with a GPS module. With the GPS on it centres on the radio's blue dot. With the GPS off it offers to turn it on (a first fix can take minutes).
      - Without a GPS module, or with the GPS off, the radio is the teal "You" pin at its typed-in position.
+     - The blue dot turns grey, "Last known · 14:02", once the radio's reading hasn't changed for 3 min (2026-11-16, [`offline-maps-notes.md`](offline-maps-notes.md)).
      - The app reads the radio's position every 10 s while the Node Map or the GPS dialog is open, and every 60 s otherwise.
      - A top-bar GPS icon (only with a GPS module) opens a dialog with the switch, position and altitude.
      - The Map tab's top bar has no title.
@@ -249,7 +250,7 @@ Test: auto-connect firing while either of these is open.
 │                                ┌───────────┐ │
 │   vector map  /  online raster │ 12 nodes ▾│ │  legend card (hidden in no-radio mode)
 │      ● teal "You" (radio)      └───────────┘ │
-│            ◉ blue dot (radio GPS on)         │  GPS off or no GPS module: the teal "You" pin
+│            ◉ blue dot (radio GPS on)         │  GPS off or no GPS module: the teal "You" pin; a fix lost: grey "Last known"
 │                                         [≋]  │  layers → S2
 │                                         [◎]  │  centre on me
 │                                         [+]  │  desktop only
@@ -594,6 +595,7 @@ It doesn't use `extraLayers`, so a renderer change stays inside traxmap.
   - the charts "Not for navigation" dialog;
   - My location and the GPS icon:
     - with a GPS radio, GPS on: the blue dot follows within about 10 s;
+    - the same radio losing its fix (antenna covered): the dot turns grey, "Last known" with the time, about 3 min later, and blue again within a read of the fix coming back;
     - GPS off: My location offers to turn it on;
     - a radio without a GPS module: no My location and no GPS icon; the "You" pin is at the typed-in position;
   - on Windows, updating a pack while the map is open.
