@@ -210,6 +210,126 @@
   "healthCheck_promptRun": "Run check",
   "healthCheck_promptLater": "Not now",
   "settings_title": "Settings",
+  "trax_title": "TRAX mode",
+  "trax_isOn": "TRAX mode is on",
+  "trax_isOff": "TRAX mode is off",
+  "trax_intro": "Moves your radio to the group's off-grid frequency, where every radio relays for the others. Nobody on the regular mesh hears you until you leave.",
+  "trax_now": "Now",
+  "trax_inTrax": "In TRAX mode",
+  "trax_repeatOn": "Off-Grid Repeat on",
+  "trax_savedNote": "Your radio's settings are saved on this phone, and Leave puts them back.",
+  "trax_until": "Until {time}",
+  "@trax_until": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noEnd": "Set the trip's end in TRAX settings.",
+  "trax_tellsNot": "Doesn't tell the group.",
+  "trax_noChannel": "Pick a trip channel in TRAX settings, or turn off Tell the group.",
+  "trax_trailhead": "Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.",
+  "trax_settings": "TRAX settings",
+  "trax_switch": "Switch to TRAX",
+  "trax_groupCheck": "Group check",
+  "trax_heard": "{count, plural, =0{Nobody heard on TRAX yet} other{{count} heard on TRAX: {names}}}",
+  "@trax_heard": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_checkAgain": "Check again",
+  "trax_noSaved": "No saved settings on this phone: Leave asks which preset to return to.",
+  "trax_leave": "Leave TRAX",
+  "trax_unsupported": "This radio's firmware can't relay for others. Update it to use TRAX mode.",
+  "trax_stepTelling": "Telling the group…",
+  "trax_stepSwitching": "Switching…",
+  "trax_stepChecking": "Sending the group check…",
+  "trax_stepLeaving": "Leaving…",
+  "trax_errorBusy": "The radio is still busy. Try again in a moment.",
+  "trax_errorRefused": "The radio didn't take the settings. Nothing changed.",
+  "trax_errorNotAllowed": "This radio can't relay on {mhz} MHz.",
+  "@trax_errorNotAllowed": {
+    "placeholders": {
+      "mhz": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_unconfirmed": "The radio didn't confirm it sent the TRAX message: tell the group another way.",
+  "trax_preset": "Preset",
+  "trax_presetMesh": "The mesh's own",
+  "trax_presetLongRange": "Long range",
+  "trax_presetLongRangeHint": "Reaches a little further, but each message takes 2.5 to 3 times as long to send.",
+  "trax_tripChannel": "Trip channel",
+  "trax_tripChannelHint": "Private channels only",
+  "trax_none": "None",
+  "trax_tripEnds": "Trip ends",
+  "trax_notSet": "Not set",
+  "trax_tellGroup": "Tell the group",
+  "trax_tellGroupHint": "Posts a TRAX message on the trip channel before switching or leaving. Each member follows with one tap; nothing switches by itself.",
+  "trax_followBody": "{name} switched to TRAX mode until {time}. Switch too?",
+  "@trax_followBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_followDetail": "Your radio moves to {settings} with Off-Grid Repeat on. Nobody on the regular mesh hears you until you leave.",
+  "@trax_followDetail": {
+    "placeholders": {
+      "settings": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_switchToo": "Switch too",
+  "trax_notNow": "Not now",
+  "trax_leaveBody": "{name} is leaving TRAX mode. Leave too?",
+  "@trax_leaveBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_leaveToo": "Leave too",
+  "trax_stillOn": "Your radio is still in TRAX mode: the regular mesh can't hear you. Leave?",
+  "trax_pickPreset": "Return to which preset?",
+  "trax_pickPresetHint": "This phone has no saved settings for this radio: another phone switched it.",
+  "trax_cardOn": "{name} switched to TRAX mode",
+  "@trax_cardOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_cardOff": "{name} is leaving TRAX mode",
+  "@trax_cardOff": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_cardYouOn": "You switched to TRAX mode",
+  "trax_cardYouOff": "You left TRAX mode",
+  "trax_youreOn": "You're on TRAX",
+  "trax_ended": "Ended",
+  "trax_notificationText": "The regular mesh can't hear you. Open MeshTrax to leave.",
+  "trax_endedTitle": "Your trip has ended",
+  "trax_endedText": "Your radio is still in TRAX mode: the regular mesh can't hear you.",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
   "settings_appSettingsSubtitle": "Notifications, messaging, and map preferences",
@@ -220,6 +340,7 @@
   "settings_nodeNameUpdated": "Name updated",
   "settings_radioSettings": "Radio Settings",
   "settings_radioSettingsSubtitle": "Frequency, power, spreading factor",
+  "settings_traxSettingsSubtitle": "Off-grid preset, trip channel, trip end",
   "settings_radioSettingsUpdated": "Radio settings updated",
   "settings_location": "Location",
   "settings_locationSubtitle": "GPS coordinates",

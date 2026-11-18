@@ -34,6 +34,7 @@ All of the following is stored locally in the App's private storage on your devi
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 | Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages (name, signal, how many repeaters), for the last 300 messages | Show the ear on a message and list the observers in its packet path |
+| TRAX mode | Your companion device's radio settings from before TRAX mode (frequency, bandwidth, spreading factor, coding rate, transmit power, Off-Grid Repeat), when it switched and the trip's end; your TRAX settings (preset, trip channel, trip end, Tell the group) | Put the radio back on its regular mesh when you leave TRAX mode, and remind you after the trip |
 
 **Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
 
@@ -154,6 +155,8 @@ The camera is used **only** to scan QR codes (for importing contacts and configu
 ## Mesh network communications
 
 Messages and contact information are exchanged with your MeshCore companion device over Bluetooth LE, USB serial, or local-network TCP, and are then relayed over the LoRa radio mesh to other devices. This radio communication is a function of the MeshCore hardware and network, not of any MeshTrax server. Message contents on encrypted channels are protected by the channel/community keys described above.
+
+With **Tell the group** on, TRAX mode posts a short TRAX message on the trip channel you picked, before it switches and before it leaves, naming the trip's end (with your time zone's offset from UTC) and the radio settings. It goes over the mesh to that channel's members like any other message. In TRAX mode your radio also relays other radios' messages on the off-grid frequency.
 
 When you send a **Location** or **SOS** message, the position in it is either your companion device's position (from its GPS or the position set on it) or a point you pick on the map, never your phone's GPS, and it goes over the mesh to the people in that conversation, like any other message. It is never sent to a server.
 

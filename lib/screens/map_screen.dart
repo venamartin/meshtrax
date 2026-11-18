@@ -14,6 +14,7 @@ import 'package:path_graph/path_graph.dart'
 import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:meshtrax/widgets/gps_status_button.dart';
 import 'package:meshtrax/widgets/location_sharing_button.dart';
+import 'package:meshtrax/widgets/trax_button.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
@@ -739,6 +740,7 @@ class _MapScreenState extends State<MapScreen> {
                     automaticallyImplyLeading: isPoiLink,
                     actions: [
                       if (!widget.pickPosition) ...[
+                        const TraxButton(),
                         const GpsStatusButton(),
                         const LocationSharingButton(),
                       ],

@@ -461,6 +461,218 @@ class AppLocalizationsSk extends AppLocalizations {
   String get settings_title => 'Nastavenia';
 
   @override
+  String get trax_title => 'Režim TRAX';
+
+  @override
+  String get trax_isOn => 'Režim TRAX je zapnutý';
+
+  @override
+  String get trax_isOff => 'Režim TRAX je vypnutý';
+
+  @override
+  String get trax_intro =>
+      'Presunie vaše rádio na mimosieťovú frekvenciu skupiny, kde každé rádio preposiela pre ostatných. Nikto v bežnej sieti mesh vás nepočuje, kým režim neopustíte.';
+
+  @override
+  String get trax_now => 'Teraz';
+
+  @override
+  String get trax_inTrax => 'V režime TRAX';
+
+  @override
+  String get trax_repeatOn =>
+      '„Opätovné použitie bez elektrickej siete“ zapnuté';
+
+  @override
+  String get trax_savedNote =>
+      'Nastavenia rádia sa uložia v tomto telefóne a „Opustiť TRAX“ ich vráti.';
+
+  @override
+  String trax_until(String time) {
+    return 'Do $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Nastavte koniec výletu v nastaveniach TRAX.';
+
+  @override
+  String get trax_tellsNot => 'Skupine nič neoznámi.';
+
+  @override
+  String get trax_noChannel =>
+      'Vyberte kanál výletu v nastaveniach TRAX alebo vypnite „Oznámiť skupine“.';
+
+  @override
+  String get trax_trailhead =>
+      'Prepnite na začiatku trasy, keď má rádio polohu z GPS: rádio si s novými nastaveniami uloží, kde je.';
+
+  @override
+  String get trax_settings => 'Nastavenia TRAX';
+
+  @override
+  String get trax_switch => 'Prepnúť na TRAX';
+
+  @override
+  String get trax_groupCheck => 'Kontrola skupiny';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Počuť na TRAX ($count): $names',
+      zero: 'Na TRAX zatiaľ nikoho nepočuť',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Skontrolovať znova';
+
+  @override
+  String get trax_noSaved =>
+      'V tomto telefóne nie sú uložené nastavenia: „Opustiť TRAX“ sa spýta, na ktorú predvoľbu sa vrátiť.';
+
+  @override
+  String get trax_leave => 'Opustiť TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Firmvér tohto rádia nevie preposielať pre iných. Aktualizujte ho, aby ste mohli používať režim TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Oznamuje sa skupine…';
+
+  @override
+  String get trax_stepSwitching => 'Prepína sa…';
+
+  @override
+  String get trax_stepChecking => 'Posiela sa kontrola skupiny…';
+
+  @override
+  String get trax_stepLeaving => 'Opúšťa sa…';
+
+  @override
+  String get trax_errorBusy =>
+      'Rádio je ešte zaneprázdnené. Skúste to o chvíľu znova.';
+
+  @override
+  String get trax_errorRefused =>
+      'Rádio neprijalo nastavenia. Nič sa nezmenilo.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Toto rádio nemôže preposielať na $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Rádio nepotvrdilo, že správu TRAX odoslalo: oznámte to skupine inak.';
+
+  @override
+  String get trax_preset => 'Predvoľba';
+
+  @override
+  String get trax_presetMesh => 'Tá zo siete mesh';
+
+  @override
+  String get trax_presetLongRange => 'Veľký dosah';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Siaha o niečo ďalej, ale odoslanie každej správy trvá 2,5- až 3-krát dlhšie.';
+
+  @override
+  String get trax_tripChannel => 'Kanál výletu';
+
+  @override
+  String get trax_tripChannelHint => 'Iba súkromné kanály';
+
+  @override
+  String get trax_none => 'Žiadny';
+
+  @override
+  String get trax_tripEnds => 'Koniec výletu';
+
+  @override
+  String get trax_notSet => 'Nenastavené';
+
+  @override
+  String get trax_tellGroup => 'Oznámiť skupine';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Pred prepnutím alebo opustením uverejní správu TRAX v kanáli výletu. Každý člen sa pridá jedným ťuknutím; nič sa neprepne samo.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name prepol do režimu TRAX do $time. Prepnúť aj vás?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Vaše rádio prejde na $settings so zapnutým „Opätovné použitie bez elektrickej siete“. Nikto v bežnej sieti mesh vás nepočuje, kým režim neopustíte.';
+  }
+
+  @override
+  String get trax_switchToo => 'Prepnúť aj mňa';
+
+  @override
+  String get trax_notNow => 'Teraz nie';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name opúšťa režim TRAX. Opustiť aj vy?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Opustiť aj ja';
+
+  @override
+  String get trax_stillOn =>
+      'Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje. Opustiť?';
+
+  @override
+  String get trax_pickPreset => 'Na ktorú predvoľbu sa vrátiť?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Tento telefón nemá uložené nastavenia tohto rádia: prepol ho iný telefón.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name prepol do režimu TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name opúšťa režim TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Prepli ste do režimu TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Opustili ste režim TRAX';
+
+  @override
+  String get trax_youreOn => 'Ste na TRAX';
+
+  @override
+  String get trax_ended => 'Skončené';
+
+  @override
+  String get trax_notificationText =>
+      'Bežná sieť mesh vás nepočuje. Otvorte MeshTrax a režim opustite.';
+
+  @override
+  String get trax_endedTitle => 'Váš výlet sa skončil';
+
+  @override
+  String get trax_endedText =>
+      'Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje.';
+
+  @override
   String get settings_deviceInfo => 'Informácie o zariadení';
 
   @override
@@ -491,6 +703,10 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Frekvencia, výkon, rozptylovací faktor';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Mimosieťová predvoľba, kanál a koniec výletu';
 
   @override
   String get settings_radioSettingsUpdated => 'Nastavenia rádia aktualizované';

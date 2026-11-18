@@ -460,6 +460,217 @@ class AppLocalizationsHu extends AppLocalizations {
   String get settings_title => 'Beállítások';
 
   @override
+  String get trax_title => 'TRAX mód';
+
+  @override
+  String get trax_isOn => 'A TRAX mód be van kapcsolva';
+
+  @override
+  String get trax_isOff => 'A TRAX mód ki van kapcsolva';
+
+  @override
+  String get trax_intro =>
+      'A rádióját a csoport hálózaton kívüli frekvenciájára állítja, ahol minden rádió továbbít a többieknek. A szokásos mesh hálózaton senki sem hallja, amíg ki nem lép a módból.';
+
+  @override
+  String get trax_now => 'Most';
+
+  @override
+  String get trax_inTrax => 'TRAX módban';
+
+  @override
+  String get trax_repeatOn => '„Autonóm rendszer újra” bekapcsolva';
+
+  @override
+  String get trax_savedNote =>
+      'A rádió beállításai erre a telefonra mentődnek, a „Kilépés a TRAX-ból” pedig visszaállítja őket.';
+
+  @override
+  String trax_until(String time) {
+    return 'Eddig: $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Adja meg a túra végét a TRAX beállításokban.';
+
+  @override
+  String get trax_tellsNot => 'Nem szól a csoportnak.';
+
+  @override
+  String get trax_noChannel =>
+      'Válasszon túracsatornát a TRAX beállításokban, vagy kapcsolja ki a „Szólj a csoportnak” lehetőséget.';
+
+  @override
+  String get trax_trailhead =>
+      'A kiindulópontnál váltson, amikor a rádiónak van GPS-pozíciója: a rádió az új beállításokkal együtt elmenti, hol van.';
+
+  @override
+  String get trax_settings => 'TRAX beállítások';
+
+  @override
+  String get trax_switch => 'Váltás TRAX-ra';
+
+  @override
+  String get trax_groupCheck => 'Csoportellenőrzés';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hallható a TRAX-on ($count): $names',
+      zero: 'Még senki sem hallható a TRAX-on',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Ellenőrzés újra';
+
+  @override
+  String get trax_noSaved =>
+      'Nincs mentett beállítás ezen a telefonon: a „Kilépés a TRAX-ból” megkérdezi, melyik előbeállításra térjen vissza.';
+
+  @override
+  String get trax_leave => 'Kilépés a TRAX-ból';
+
+  @override
+  String get trax_unsupported =>
+      'A rádió firmware-e nem tud továbbítani másoknak. Frissítse a TRAX mód használatához.';
+
+  @override
+  String get trax_stepTelling => 'Szólás a csoportnak…';
+
+  @override
+  String get trax_stepSwitching => 'Váltás…';
+
+  @override
+  String get trax_stepChecking => 'Csoportellenőrzés küldése…';
+
+  @override
+  String get trax_stepLeaving => 'Kilépés…';
+
+  @override
+  String get trax_errorBusy =>
+      'A rádió még elfoglalt. Próbálja újra egy pillanat múlva.';
+
+  @override
+  String get trax_errorRefused =>
+      'A rádió nem fogadta el a beállításokat. Semmi sem változott.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Ez a rádió nem tud továbbítani $mhz MHz-en.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'A rádió nem erősítette meg, hogy elküldte a TRAX üzenetet: szóljon a csoportnak más módon.';
+
+  @override
+  String get trax_preset => 'Előbeállítás';
+
+  @override
+  String get trax_presetMesh => 'A mesh hálózaté';
+
+  @override
+  String get trax_presetLongRange => 'Nagy hatótáv';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Valamivel messzebbre ér, de minden üzenet elküldése 2,5–3-szor tovább tart.';
+
+  @override
+  String get trax_tripChannel => 'Túracsatorna';
+
+  @override
+  String get trax_tripChannelHint => 'Csak privát csatornák';
+
+  @override
+  String get trax_none => 'Nincs';
+
+  @override
+  String get trax_tripEnds => 'A túra vége';
+
+  @override
+  String get trax_notSet => 'Nincs megadva';
+
+  @override
+  String get trax_tellGroup => 'Szólj a csoportnak';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Váltás vagy kilépés előtt TRAX üzenetet tesz közzé a túracsatornán. Minden tag egy koppintással követi; semmi sem vált magától.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name TRAX módra váltott eddig: $time. Ön is vált?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'A rádiója erre vált: $settings, bekapcsolt „Autonóm rendszer újra” mellett. A szokásos mesh hálózaton senki sem hallja, amíg ki nem lép a módból.';
+  }
+
+  @override
+  String get trax_switchToo => 'Én is váltok';
+
+  @override
+  String get trax_notNow => 'Most nem';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name kilép a TRAX módból. Ön is kilép?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Én is kilépek';
+
+  @override
+  String get trax_stillOn =>
+      'A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja. Kilép?';
+
+  @override
+  String get trax_pickPreset => 'Melyik előbeállításra térjen vissza?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Ezen a telefonon nincs mentett beállítás ehhez a rádióhoz: egy másik telefon váltotta át.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name TRAX módra váltott';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name kilép a TRAX módból';
+  }
+
+  @override
+  String get trax_cardYouOn => 'TRAX módra váltott';
+
+  @override
+  String get trax_cardYouOff => 'Kilépett a TRAX módból';
+
+  @override
+  String get trax_youreOn => 'Ön a TRAX-on van';
+
+  @override
+  String get trax_ended => 'Véget ért';
+
+  @override
+  String get trax_notificationText =>
+      'A szokásos mesh hálózat nem hallja. Nyissa meg a MeshTraxot a kilépéshez.';
+
+  @override
+  String get trax_endedTitle => 'A túrája véget ért';
+
+  @override
+  String get trax_endedText =>
+      'A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja.';
+
+  @override
   String get settings_deviceInfo => 'A készülék információi';
 
   @override
@@ -490,6 +701,10 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Frekvencia, teljesítmény, szélesítési tényező';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Hálózaton kívüli előbeállítás, túracsatorna, a túra vége';
 
   @override
   String get settings_radioSettingsUpdated => 'A rádió beállítások frissítve';

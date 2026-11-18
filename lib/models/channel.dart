@@ -29,6 +29,27 @@ class Channel {
 
   bool get isPublicChannel => pskHex == publicChannelPsk;
 
+  /// Only its members can read it: not Public, not empty, and not a
+  /// hashtag channel, whose key anyone works out from its name. A '#' name
+  /// the radio cut at its 31-byte limit can't be checked, so it counts as
+  /// a hashtag channel. A renamed hashtag channel or a widely shared key
+  /// can't be caught.
+  bool get isPrivate {
+    if (isPublicChannel || psk.every((b) => b == 0)) return false;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.startsWith('#') &&
+        (utf8.encode(trimmed).length >= 31 || trimmed.endsWith('�'))) {
+      return false;
+    }
+    for (final candidate in {trimmed, trimmed.toLowerCase()}) {
+      if (_bytesToHex(derivePskFromHashtag(candidate)) == pskHex) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Human-friendly name for display in the UI and notifications.
   /// The public channel has no stored name, so show "Public" instead of a
   /// bare index-based label.

@@ -463,6 +463,217 @@ class AppLocalizationsPl extends AppLocalizations {
   String get settings_title => 'Ustawienia';
 
   @override
+  String get trax_title => 'Tryb TRAX';
+
+  @override
+  String get trax_isOn => 'Tryb TRAX jest włączony';
+
+  @override
+  String get trax_isOff => 'Tryb TRAX jest wyłączony';
+
+  @override
+  String get trax_intro =>
+      'Przełącza radio na pozasieciową częstotliwość grupy, na której każde radio przekazuje dalej dla pozostałych. Nikt w zwykłej sieci mesh cię nie słyszy, dopóki nie wyjdziesz z trybu.';
+
+  @override
+  String get trax_now => 'Teraz';
+
+  @override
+  String get trax_inTrax => 'W trybie TRAX';
+
+  @override
+  String get trax_repeatOn => '„Powtórzenie: Niezależne od sieci” włączone';
+
+  @override
+  String get trax_savedNote =>
+      'Ustawienia radia są zapisywane na tym telefonie, a „Opuść TRAX” je przywraca.';
+
+  @override
+  String trax_until(String time) {
+    return 'Do $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Ustaw koniec wyprawy w ustawieniach TRAX.';
+
+  @override
+  String get trax_tellsNot => 'Nie informuje grupy.';
+
+  @override
+  String get trax_noChannel =>
+      'Wybierz kanał wyprawy w ustawieniach TRAX albo wyłącz „Poinformuj grupę”.';
+
+  @override
+  String get trax_trailhead =>
+      'Przełącz w punkcie startowym, gdy radio ma pozycję GPS: radio zapisuje, gdzie jest, razem z nowymi ustawieniami.';
+
+  @override
+  String get trax_settings => 'Ustawienia TRAX';
+
+  @override
+  String get trax_switch => 'Przełącz na TRAX';
+
+  @override
+  String get trax_groupCheck => 'Sprawdzenie grupy';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Słyszani na TRAX ($count): $names',
+      zero: 'Jeszcze nikogo nie słychać na TRAX',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Sprawdź ponownie';
+
+  @override
+  String get trax_noSaved =>
+      'Brak zapisanych ustawień na tym telefonie: „Opuść TRAX” zapyta, do którego ustawienia wrócić.';
+
+  @override
+  String get trax_leave => 'Opuść TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Oprogramowanie tego radia nie potrafi przekazywać dalej dla innych. Zaktualizuj je, aby używać trybu TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Informowanie grupy…';
+
+  @override
+  String get trax_stepSwitching => 'Przełączanie…';
+
+  @override
+  String get trax_stepChecking => 'Wysyłanie sprawdzenia grupy…';
+
+  @override
+  String get trax_stepLeaving => 'Opuszczanie…';
+
+  @override
+  String get trax_errorBusy =>
+      'Radio jest jeszcze zajęte. Spróbuj ponownie za chwilę.';
+
+  @override
+  String get trax_errorRefused =>
+      'Radio nie przyjęło ustawień. Nic się nie zmieniło.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'To radio nie może przekazywać dalej na $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Radio nie potwierdziło wysłania wiadomości TRAX: poinformuj grupę w inny sposób.';
+
+  @override
+  String get trax_preset => 'Ustawienie wstępne';
+
+  @override
+  String get trax_presetMesh => 'To z sieci mesh';
+
+  @override
+  String get trax_presetLongRange => 'Duży zasięg';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Sięga nieco dalej, ale wysłanie każdej wiadomości trwa 2,5–3 razy dłużej.';
+
+  @override
+  String get trax_tripChannel => 'Kanał wyprawy';
+
+  @override
+  String get trax_tripChannelHint => 'Tylko kanały prywatne';
+
+  @override
+  String get trax_none => 'Brak';
+
+  @override
+  String get trax_tripEnds => 'Koniec wyprawy';
+
+  @override
+  String get trax_notSet => 'Nie ustawiono';
+
+  @override
+  String get trax_tellGroup => 'Poinformuj grupę';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Publikuje wiadomość TRAX na kanale wyprawy przed przełączeniem lub wyjściem. Każdy członek dołącza jednym dotknięciem; nic nie przełącza się samo.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name przełączył(a) się na tryb TRAX do $time. Też przełączyć?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Twoje radio przejdzie na $settings z włączonym „Powtórzenie: Niezależne od sieci”. Nikt w zwykłej sieci mesh cię nie słyszy, dopóki nie wyjdziesz z trybu.';
+  }
+
+  @override
+  String get trax_switchToo => 'Też przełącz';
+
+  @override
+  String get trax_notNow => 'Nie teraz';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name opuszcza tryb TRAX. Też opuścić?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Też opuść';
+
+  @override
+  String get trax_stillOn =>
+      'Twoje radio jest nadal w trybie TRAX: zwykła sieć mesh cię nie słyszy. Opuścić?';
+
+  @override
+  String get trax_pickPreset => 'Wrócić do którego ustawienia?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Ten telefon nie ma zapisanych ustawień tego radia: przełączył je inny telefon.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name przełączył(a) się na tryb TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name opuszcza tryb TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Przełączono cię na tryb TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Opuszczono tryb TRAX';
+
+  @override
+  String get trax_youreOn => 'Jesteś na TRAX';
+
+  @override
+  String get trax_ended => 'Zakończono';
+
+  @override
+  String get trax_notificationText =>
+      'Zwykła sieć mesh cię nie słyszy. Otwórz MeshTrax, aby opuścić tryb.';
+
+  @override
+  String get trax_endedTitle => 'Twoja wyprawa się zakończyła';
+
+  @override
+  String get trax_endedText =>
+      'Twoje radio jest nadal w trybie TRAX: zwykła sieć mesh cię nie słyszy.';
+
+  @override
   String get settings_deviceInfo => 'Informacje o urządzeniu';
 
   @override
@@ -493,6 +704,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Częstotliwość, moc, współczynnik rozpraszania';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Pozasieciowe ustawienie wstępne, kanał i koniec wyprawy';
 
   @override
   String get settings_radioSettingsUpdated =>

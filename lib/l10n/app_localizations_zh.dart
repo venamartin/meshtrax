@@ -438,6 +438,204 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_title => '设置';
 
   @override
+  String get trax_title => 'TRAX 模式';
+
+  @override
+  String get trax_isOn => 'TRAX 模式已开启';
+
+  @override
+  String get trax_isOff => 'TRAX 模式已关闭';
+
+  @override
+  String get trax_intro =>
+      '将电台切换到小组的离网频率，在那里每台电台都会为其他电台转发。在退出之前，常规网状网络上的人都听不到你。';
+
+  @override
+  String get trax_now => '当前';
+
+  @override
+  String get trax_inTrax => 'TRAX 模式';
+
+  @override
+  String get trax_repeatOn => '“离网重复”已开启';
+
+  @override
+  String get trax_savedNote => '电台的设置会保存在这部手机上，“退出 TRAX”会将其恢复。';
+
+  @override
+  String trax_until(String time) {
+    return '直到 $time';
+  }
+
+  @override
+  String get trax_noEnd => '请在 TRAX 设置中设定行程结束时间。';
+
+  @override
+  String get trax_tellsNot => '不通知小组。';
+
+  @override
+  String get trax_noChannel => '请在 TRAX 设置中选择行程频道，或关闭“通知小组”。';
+
+  @override
+  String get trax_trailhead => '请在出发点、电台获得 GPS 定位后再切换：电台会连同新设置一起保存当前位置。';
+
+  @override
+  String get trax_settings => 'TRAX 设置';
+
+  @override
+  String get trax_switch => '切换到 TRAX';
+
+  @override
+  String get trax_groupCheck => '小组检查';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'TRAX 上听到 ($count)：$names',
+      zero: 'TRAX 上还没有听到任何人',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => '再次检查';
+
+  @override
+  String get trax_noSaved => '这部手机上没有保存的设置：“退出 TRAX”会询问恢复到哪个预设。';
+
+  @override
+  String get trax_leave => '退出 TRAX';
+
+  @override
+  String get trax_unsupported => '此电台的固件无法为他人转发。请更新固件以使用 TRAX 模式。';
+
+  @override
+  String get trax_stepTelling => '正在通知小组…';
+
+  @override
+  String get trax_stepSwitching => '正在切换…';
+
+  @override
+  String get trax_stepChecking => '正在发送小组检查…';
+
+  @override
+  String get trax_stepLeaving => '正在退出…';
+
+  @override
+  String get trax_errorBusy => '电台仍在忙。请稍后再试。';
+
+  @override
+  String get trax_errorRefused => '电台未接受这些设置。没有任何更改。';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return '此电台无法在 $mhz MHz 上转发。';
+  }
+
+  @override
+  String get trax_unconfirmed => '电台未确认已发送 TRAX 消息：请通过其他方式通知小组。';
+
+  @override
+  String get trax_preset => '预设';
+
+  @override
+  String get trax_presetMesh => '与网状网络相同';
+
+  @override
+  String get trax_presetLongRange => '远距离';
+
+  @override
+  String get trax_presetLongRangeHint => '能传得更远一些，但每条消息的发送时间是原来的 2.5 到 3 倍。';
+
+  @override
+  String get trax_tripChannel => '行程频道';
+
+  @override
+  String get trax_tripChannelHint => '仅限私人频道';
+
+  @override
+  String get trax_none => '无';
+
+  @override
+  String get trax_tripEnds => '行程结束';
+
+  @override
+  String get trax_notSet => '未设置';
+
+  @override
+  String get trax_tellGroup => '通知小组';
+
+  @override
+  String get trax_tellGroupHint =>
+      '在切换或退出之前，在行程频道发布一条 TRAX 消息。每位成员轻点一下即可跟随；不会自动切换。';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name 已切换到 TRAX 模式，直到 $time。你也切换吗？';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return '你的电台将切换到 $settings，并开启“离网重复”。在退出之前，常规网状网络上的人都听不到你。';
+  }
+
+  @override
+  String get trax_switchToo => '我也切换';
+
+  @override
+  String get trax_notNow => '暂不';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name 正在退出 TRAX 模式。你也退出吗？';
+  }
+
+  @override
+  String get trax_leaveToo => '我也退出';
+
+  @override
+  String get trax_stillOn => '你的电台仍处于 TRAX 模式：常规网状网络听不到你。要退出吗？';
+
+  @override
+  String get trax_pickPreset => '恢复到哪个预设？';
+
+  @override
+  String get trax_pickPresetHint => '这部手机上没有此电台保存的设置：是另一部手机切换的。';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name 已切换到 TRAX 模式';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name 正在退出 TRAX 模式';
+  }
+
+  @override
+  String get trax_cardYouOn => '你已切换到 TRAX 模式';
+
+  @override
+  String get trax_cardYouOff => '你已退出 TRAX 模式';
+
+  @override
+  String get trax_youreOn => '你在 TRAX 上';
+
+  @override
+  String get trax_ended => '已结束';
+
+  @override
+  String get trax_notificationText => '常规网状网络听不到你。打开 MeshTrax 即可退出。';
+
+  @override
+  String get trax_endedTitle => '你的行程已结束';
+
+  @override
+  String get trax_endedText => '你的电台仍处于 TRAX 模式：常规网状网络听不到你。';
+
+  @override
   String get settings_deviceInfo => '设备信息';
 
   @override
@@ -466,6 +664,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_radioSettingsSubtitle => '频率、功率、扩频因子';
+
+  @override
+  String get settings_traxSettingsSubtitle => '离网预设、行程频道、行程结束';
 
   @override
   String get settings_radioSettingsUpdated => '无线电设置已更新';

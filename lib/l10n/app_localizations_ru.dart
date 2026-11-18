@@ -461,6 +461,216 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_title => 'Настройки';
 
   @override
+  String get trax_title => 'Режим TRAX';
+
+  @override
+  String get trax_isOn => 'Режим TRAX включён';
+
+  @override
+  String get trax_isOff => 'Режим TRAX выключен';
+
+  @override
+  String get trax_intro =>
+      'Переводит радио на автономную частоту группы, где каждое радио ретранслирует для остальных. В обычной сети mesh вас никто не слышит, пока вы не выйдете из режима.';
+
+  @override
+  String get trax_now => 'Сейчас';
+
+  @override
+  String get trax_inTrax => 'В режиме TRAX';
+
+  @override
+  String get trax_repeatOn => '«Повторение \"вне сети\"» включено';
+
+  @override
+  String get trax_savedNote =>
+      'Настройки радио сохраняются на этом телефоне, а «Выйти из TRAX» возвращает их.';
+
+  @override
+  String trax_until(String time) {
+    return 'До $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Укажите конец поездки в настройках TRAX.';
+
+  @override
+  String get trax_tellsNot => 'Не сообщает группе.';
+
+  @override
+  String get trax_noChannel =>
+      'Выберите канал поездки в настройках TRAX или выключите «Сообщить группе».';
+
+  @override
+  String get trax_trailhead =>
+      'Переключайтесь в начале маршрута, когда у радио есть GPS-позиция: радио сохраняет своё местоположение вместе с новыми настройками.';
+
+  @override
+  String get trax_settings => 'Настройки TRAX';
+
+  @override
+  String get trax_switch => 'Перейти в TRAX';
+
+  @override
+  String get trax_groupCheck => 'Проверка группы';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Слышно на TRAX ($count): $names',
+      zero: 'На TRAX пока никого не слышно',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Проверить снова';
+
+  @override
+  String get trax_noSaved =>
+      'На этом телефоне нет сохранённых настроек: «Выйти из TRAX» спросит, к какому пресету вернуться.';
+
+  @override
+  String get trax_leave => 'Выйти из TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Прошивка этого радио не умеет ретранслировать для других. Обновите её, чтобы пользоваться режимом TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Сообщаем группе…';
+
+  @override
+  String get trax_stepSwitching => 'Переключаем…';
+
+  @override
+  String get trax_stepChecking => 'Отправляем проверку группы…';
+
+  @override
+  String get trax_stepLeaving => 'Выходим…';
+
+  @override
+  String get trax_errorBusy => 'Радио ещё занято. Попробуйте чуть позже.';
+
+  @override
+  String get trax_errorRefused =>
+      'Радио не приняло настройки. Ничего не изменилось.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Это радио не может ретранслировать на $mhz МГц.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Радио не подтвердило отправку сообщения TRAX: сообщите группе другим способом.';
+
+  @override
+  String get trax_preset => 'Пресет';
+
+  @override
+  String get trax_presetMesh => 'Как у сети mesh';
+
+  @override
+  String get trax_presetLongRange => 'Дальний';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Достаёт немного дальше, но каждое сообщение отправляется в 2,5–3 раза дольше.';
+
+  @override
+  String get trax_tripChannel => 'Канал поездки';
+
+  @override
+  String get trax_tripChannelHint => 'Только частные каналы';
+
+  @override
+  String get trax_none => 'Нет';
+
+  @override
+  String get trax_tripEnds => 'Конец поездки';
+
+  @override
+  String get trax_notSet => 'Не задан';
+
+  @override
+  String get trax_tellGroup => 'Сообщить группе';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Публикует сообщение TRAX в канале поездки перед переключением или выходом. Каждый участник присоединяется одним касанием; само по себе ничего не переключается.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name перешёл в режим TRAX до $time. Тоже перейти?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Ваше радио перейдёт на $settings с включённым «Повторение \"вне сети\"». В обычной сети mesh вас никто не слышит, пока вы не выйдете из режима.';
+  }
+
+  @override
+  String get trax_switchToo => 'Тоже перейти';
+
+  @override
+  String get trax_notNow => 'Не сейчас';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name выходит из режима TRAX. Тоже выйти?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Тоже выйти';
+
+  @override
+  String get trax_stillOn =>
+      'Ваше радио всё ещё в режиме TRAX: обычная сеть mesh вас не слышит. Выйти?';
+
+  @override
+  String get trax_pickPreset => 'К какому пресету вернуться?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'На этом телефоне нет сохранённых настроек этого радио: его переключил другой телефон.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name перешёл в режим TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name выходит из режима TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Вы перешли в режим TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Вы вышли из режима TRAX';
+
+  @override
+  String get trax_youreOn => 'Вы на TRAX';
+
+  @override
+  String get trax_ended => 'Завершено';
+
+  @override
+  String get trax_notificationText =>
+      'Обычная сеть mesh вас не слышит. Откройте MeshTrax, чтобы выйти.';
+
+  @override
+  String get trax_endedTitle => 'Ваша поездка закончилась';
+
+  @override
+  String get trax_endedText =>
+      'Ваше радио всё ещё в режиме TRAX: обычная сеть mesh вас не слышит.';
+
+  @override
   String get settings_deviceInfo => 'Информация об устройстве';
 
   @override
@@ -491,6 +701,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Частота, мощность и коэффициент распространения';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Автономный пресет, канал и конец поездки';
 
   @override
   String get settings_radioSettingsUpdated => 'Настройки радио обновлены';

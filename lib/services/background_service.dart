@@ -5,6 +5,10 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 class BackgroundService {
   bool _initialized = false;
   bool _wifiLock = false;
+  ({String title, String text})? _traxNote;
+
+  static const _title = 'MeshTrax running';
+  static const _text = 'Keeping radio connected';
 
   /// [wifiLock] holds the WiFi radio awake while the service runs. TCP needs
   /// it: without it the socket stalls once the screen is off. BLE does not,
@@ -43,8 +47,8 @@ class BackgroundService {
     if (running) await FlutterForegroundTask.stopService();
     await initialize(wifiLock: wifiLock);
     final result = await FlutterForegroundTask.startService(
-      notificationTitle: 'MeshTrax running',
-      notificationText: 'Keeping radio connected',
+      notificationTitle: _traxNote?.title ?? _title,
+      notificationText: _traxNote?.text ?? _text,
       notificationIcon: const NotificationIcon(metaDataName: 'com.meshtrax.notification.icon'),
       callback: startCallback,
     );
@@ -52,6 +56,18 @@ class BackgroundService {
       appLogger.warn('Background service did not start: ${result.error}',
           tag: 'Background');
     }
+  }
+
+  /// While TRAX mode is on, the running notification says so; null puts
+  /// the usual text back.
+  Future<void> setTraxNote(({String title, String text})? note) async {
+    if (!PlatformInfo.isAndroid || note == _traxNote) return;
+    _traxNote = note;
+    if (!await FlutterForegroundTask.isRunningService) return;
+    await FlutterForegroundTask.updateService(
+      notificationTitle: note?.title ?? _title,
+      notificationText: note?.text ?? _text,
+    );
   }
 
   Future<void> stop() async {

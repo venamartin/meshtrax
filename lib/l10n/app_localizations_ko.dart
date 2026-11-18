@@ -444,6 +444,211 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_title => '설정';
 
   @override
+  String get trax_title => 'TRAX 모드';
+
+  @override
+  String get trax_isOn => 'TRAX 모드 켜짐';
+
+  @override
+  String get trax_isOff => 'TRAX 모드 꺼짐';
+
+  @override
+  String get trax_intro =>
+      '무전기를 그룹의 오프그리드 주파수로 옮깁니다. 그곳에서는 모든 무전기가 서로를 위해 중계합니다. 모드를 나갈 때까지 일반 메시에서는 아무도 내 소리를 듣지 못합니다.';
+
+  @override
+  String get trax_now => '현재';
+
+  @override
+  String get trax_inTrax => 'TRAX 모드';
+
+  @override
+  String get trax_repeatOn => '‘오프그리드 반복’ 켜짐';
+
+  @override
+  String get trax_savedNote => '무전기 설정은 이 휴대폰에 저장되며, ‘TRAX 나가기’로 되돌립니다.';
+
+  @override
+  String trax_until(String time) {
+    return '$time까지';
+  }
+
+  @override
+  String get trax_noEnd => 'TRAX 설정에서 여행 종료 시각을 정하세요.';
+
+  @override
+  String get trax_tellsNot => '그룹에 알리지 않습니다.';
+
+  @override
+  String get trax_noChannel => 'TRAX 설정에서 여행 채널을 고르거나 ‘그룹에 알리기’를 끄세요.';
+
+  @override
+  String get trax_trailhead =>
+      '출발 지점에서 무전기가 GPS 위치를 잡은 뒤에 전환하세요. 무전기는 새 설정과 함께 현재 위치를 저장합니다.';
+
+  @override
+  String get trax_settings => 'TRAX 설정';
+
+  @override
+  String get trax_switch => 'TRAX로 전환';
+
+  @override
+  String get trax_groupCheck => '그룹 확인';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'TRAX에서 들림 ($count): $names',
+      zero: '아직 TRAX에서 들린 사람이 없습니다',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => '다시 확인';
+
+  @override
+  String get trax_noSaved => '이 휴대폰에 저장된 설정이 없습니다. ‘TRAX 나가기’가 돌아갈 프리셋을 묻습니다.';
+
+  @override
+  String get trax_leave => 'TRAX 나가기';
+
+  @override
+  String get trax_unsupported =>
+      '이 무전기의 펌웨어는 다른 무전기를 위해 중계할 수 없습니다. TRAX 모드를 쓰려면 업데이트하세요.';
+
+  @override
+  String get trax_stepTelling => '그룹에 알리는 중…';
+
+  @override
+  String get trax_stepSwitching => '전환 중…';
+
+  @override
+  String get trax_stepChecking => '그룹 확인을 보내는 중…';
+
+  @override
+  String get trax_stepLeaving => '나가는 중…';
+
+  @override
+  String get trax_errorBusy => '무전기가 아직 바쁩니다. 잠시 후 다시 시도하세요.';
+
+  @override
+  String get trax_errorRefused => '무전기가 설정을 받아들이지 않았습니다. 바뀐 것은 없습니다.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return '이 무전기는 $mhz MHz에서 중계할 수 없습니다.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      '무전기가 TRAX 메시지를 보냈는지 확인하지 못했습니다. 다른 방법으로 그룹에 알리세요.';
+
+  @override
+  String get trax_preset => '프리셋';
+
+  @override
+  String get trax_presetMesh => '메시와 같은 설정';
+
+  @override
+  String get trax_presetLongRange => '장거리';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      '조금 더 멀리 닿지만, 메시지마다 보내는 데 2.5~3배 더 걸립니다.';
+
+  @override
+  String get trax_tripChannel => '여행 채널';
+
+  @override
+  String get trax_tripChannelHint => '비공개 채널만';
+
+  @override
+  String get trax_none => '없음';
+
+  @override
+  String get trax_tripEnds => '여행 종료';
+
+  @override
+  String get trax_notSet => '설정 안 됨';
+
+  @override
+  String get trax_tellGroup => '그룹에 알리기';
+
+  @override
+  String get trax_tellGroupHint =>
+      '전환하거나 나가기 전에 여행 채널에 TRAX 메시지를 올립니다. 각 구성원은 한 번 탭으로 따라옵니다. 저절로 전환되는 것은 없습니다.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name 님이 $time까지 TRAX 모드로 전환했습니다. 함께 전환할까요?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return '무전기가 $settings(으)로 바뀌고 ‘오프그리드 반복’이 켜집니다. 모드를 나갈 때까지 일반 메시에서는 아무도 내 소리를 듣지 못합니다.';
+  }
+
+  @override
+  String get trax_switchToo => '함께 전환';
+
+  @override
+  String get trax_notNow => '나중에';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name 님이 TRAX 모드를 나갑니다. 함께 나갈까요?';
+  }
+
+  @override
+  String get trax_leaveToo => '함께 나가기';
+
+  @override
+  String get trax_stillOn =>
+      '무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다. 나갈까요?';
+
+  @override
+  String get trax_pickPreset => '어느 프리셋으로 돌아갈까요?';
+
+  @override
+  String get trax_pickPresetHint =>
+      '이 휴대폰에는 이 무전기의 저장된 설정이 없습니다. 다른 휴대폰이 전환했습니다.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name 님이 TRAX 모드로 전환했습니다';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name 님이 TRAX 모드를 나갑니다';
+  }
+
+  @override
+  String get trax_cardYouOn => 'TRAX 모드로 전환했습니다';
+
+  @override
+  String get trax_cardYouOff => 'TRAX 모드를 나갔습니다';
+
+  @override
+  String get trax_youreOn => 'TRAX 사용 중';
+
+  @override
+  String get trax_ended => '종료됨';
+
+  @override
+  String get trax_notificationText =>
+      '일반 메시에서는 내 소리를 듣지 못합니다. 나가려면 MeshTrax를 여세요.';
+
+  @override
+  String get trax_endedTitle => '여행이 종료되었습니다';
+
+  @override
+  String get trax_endedText => '무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.';
+
+  @override
   String get settings_deviceInfo => '장치 정보';
 
   @override
@@ -472,6 +677,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_radioSettingsSubtitle => '주파수, 전력, 스펙트럼';
+
+  @override
+  String get settings_traxSettingsSubtitle => '오프그리드 프리셋, 여행 채널, 여행 종료';
 
   @override
   String get settings_radioSettingsUpdated => '라디오 설정이 업데이트되었습니다.';

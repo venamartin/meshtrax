@@ -221,6 +221,27 @@ void main() {
     }
   });
 
+  // There's no updating a radio's firmware in the field.
+  group('TRAX firmware rule', () {
+    final rule = healthRules.firstWhere((r) => r.id == 'radio_trax_firmware');
+
+    test('a radio that can\'t relay is told before the trip', () async {
+      expect(await rule.check(ctx), isFalse, reason: 'not known yet');
+      // Companion 1.12: DEVICE_INFO ends before the Off-Grid Repeat byte.
+      c.handleFrameForTest(
+        _deviceInfo(version: 'v1.12.0', code: 8).sublist(0, 80),
+      );
+      expect(await rule.check(ctx), isTrue);
+      expect(rule.needsRadio, isTrue);
+      expect(rule.fix, isNull, reason: 'it only explains');
+    });
+
+    test('a radio that can relay passes', () async {
+      c.handleFrameForTest(_deviceInfo(version: 'v1.13.0', code: 9));
+      expect(await rule.check(ctx), isFalse);
+    });
+  });
+
   test('a full contact list only matters with overwrite off', () async {
     final rule = healthRules.firstWhere((r) => r.id == 'radio_contacts_full');
     c.handleFrameForTest(_selfInfo(manualAdd: 1));
@@ -476,5 +497,36 @@ void main() {
     expect(sentFrame(cmdSetAutoAddConfig), isNull);
     expect(sentFrame(cmdSetOtherParams), isNull);
     expect(c.autoAddRepeaters, isTrue);
+  });
+
+  // TRAX mode: Off-Grid Repeat on an off-grid frequency, on purpose. The
+  // TRAX button shows it; the check doesn't call it a problem.
+  group('TRAX mode', () {
+    final frequency = healthRules.firstWhere((r) => r.id == 'radio_frequency');
+    final repeat = healthRules.firstWhere((r) => r.id == 'radio_client_repeat');
+
+    void radio({required bool repeatOn, required int freq}) {
+      final info = _deviceInfo();
+      info[80] = repeatOn ? 1 : 0;
+      c.handleFrameForTest(info);
+      c.handleFrameForTest(_selfInfo(manualAdd: 1, freq: freq));
+    }
+
+    test('the check stays quiet in TRAX mode', () async {
+      radio(repeatOn: true, freq: 918000);
+      expect(await frequency.check(ctx), isFalse);
+      expect(await repeat.check(ctx), isFalse);
+    });
+
+    test('off TRAX mode the rules still look', () async {
+      radio(repeatOn: false, freq: 918000);
+      expect(await frequency.check(ctx), isTrue, reason: 'no preset has it');
+      radio(repeatOn: true, freq: 910525);
+      expect(
+        await repeat.check(ctx),
+        isTrue,
+        reason: 'repeating on the regular mesh is no TRAX mode',
+      );
+    });
   });
 }
