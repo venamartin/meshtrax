@@ -662,6 +662,13 @@ class AppLocalizationsSv extends AppLocalizations {
       'Det vanliga meshet hör dig inte. Öppna MeshTrax för att lämna.';
 
   @override
+  String get trax_endedTitle => 'Turen har slutat';
+
+  @override
+  String get trax_endedText =>
+      'Din radio är fortfarande i TRAX-läge: det vanliga meshet hör dig inte.';
+
+  @override
   String get settings_deviceInfo => 'Enhetens information';
 
   @override

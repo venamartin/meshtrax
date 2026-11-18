@@ -158,6 +158,8 @@
   "trax_youreOn": "Du är på TRAX",
   "trax_ended": "Avslutad",
   "trax_notificationText": "Det vanliga meshet hör dig inte. Öppna MeshTrax för att lämna.",
+  "trax_endedTitle": "Turen har slutat",
+  "trax_endedText": "Din radio är fortfarande i TRAX-läge: det vanliga meshet hör dig inte.",
   "settings_deviceInfo": "Enhetens information",
   "settings_appSettings": "Appinställningar",
   "settings_appSettingsSubtitle": "Meddelanden, notiser och kartinställningar",

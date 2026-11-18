@@ -630,6 +630,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_notificationText => '常规网状网络听不到你。打开 MeshTrax 即可退出。';
 
   @override
+  String get trax_endedTitle => '你的行程已结束';
+
+  @override
+  String get trax_endedText => '你的电台仍处于 TRAX 模式：常规网状网络听不到你。';
+
+  @override
   String get settings_deviceInfo => '设备信息';
 
   @override

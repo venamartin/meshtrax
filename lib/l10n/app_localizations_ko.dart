@@ -643,6 +643,12 @@ class AppLocalizationsKo extends AppLocalizations {
       '일반 메시에서는 내 소리를 듣지 못합니다. 나가려면 MeshTrax를 여세요.';
 
   @override
+  String get trax_endedTitle => '여행이 종료되었습니다';
+
+  @override
+  String get trax_endedText => '무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.';
+
+  @override
   String get settings_deviceInfo => '장치 정보';
 
   @override

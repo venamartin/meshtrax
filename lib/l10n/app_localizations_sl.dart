@@ -661,6 +661,13 @@ class AppLocalizationsSl extends AppLocalizations {
       'Običajno omrežje mesh vas ne sliši. Odprite MeshTrax, da zapustite način.';
 
   @override
+  String get trax_endedTitle => 'Vaš izlet se je končal';
+
+  @override
+  String get trax_endedText =>
+      'Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.';
+
+  @override
   String get settings_deviceInfo => 'Informacije o napravei';
 
   @override

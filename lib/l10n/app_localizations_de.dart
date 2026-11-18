@@ -667,6 +667,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Das normale Mesh kann Sie nicht hören. Öffnen Sie MeshTrax, um den Modus zu verlassen.';
 
   @override
+  String get trax_endedTitle => 'Ihre Tour ist zu Ende';
+
+  @override
+  String get trax_endedText =>
+      'Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören.';
+
+  @override
   String get settings_deviceInfo => 'Geräteinformationen';
 
   @override

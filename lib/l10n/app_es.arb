@@ -158,6 +158,8 @@
   "trax_youreOn": "Estás en TRAX",
   "trax_ended": "Terminado",
   "trax_notificationText": "La malla habitual no te oye. Abre MeshTrax para salir.",
+  "trax_endedTitle": "Tu salida ha terminado",
+  "trax_endedText": "Tu radio sigue en modo TRAX: la malla habitual no te oye.",
   "settings_deviceInfo": "Información del dispositivo",
   "settings_appSettings": "Configuración de la App",
   "settings_appSettingsSubtitle": "Notificaciones, mensajes y preferencias de mapa",

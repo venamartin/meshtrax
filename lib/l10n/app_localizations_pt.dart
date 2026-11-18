@@ -667,6 +667,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'A malha normal não ouve você. Abra o MeshTrax para sair.';
 
   @override
+  String get trax_endedTitle => 'Sua viagem terminou';
+
+  @override
+  String get trax_endedText =>
+      'Seu rádio ainda está no modo TRAX: a malha normal não ouve você.';
+
+  @override
   String get settings_deviceInfo => 'Informações do Dispositivo';
 
   @override

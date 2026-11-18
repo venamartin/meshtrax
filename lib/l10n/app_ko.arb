@@ -215,6 +215,8 @@
   "trax_youreOn": "TRAX 사용 중",
   "trax_ended": "종료됨",
   "trax_notificationText": "일반 메시에서는 내 소리를 듣지 못합니다. 나가려면 MeshTrax를 여세요.",
+  "trax_endedTitle": "여행이 종료되었습니다",
+  "trax_endedText": "무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.",
   "settings_deviceInfo": "장치 정보",
   "settings_appSettings": "앱 설정",
   "settings_appSettingsSubtitle": "알림, 메시징, 지도 설정",

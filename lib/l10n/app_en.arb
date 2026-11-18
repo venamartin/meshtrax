@@ -328,6 +328,8 @@
   "trax_youreOn": "You're on TRAX",
   "trax_ended": "Ended",
   "trax_notificationText": "The regular mesh can't hear you. Open MeshTrax to leave.",
+  "trax_endedTitle": "Your trip has ended",
+  "trax_endedText": "Your radio is still in TRAX mode: the regular mesh can't hear you.",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
   "settings_appSettingsSubtitle": "Notifications, messaging, and map preferences",

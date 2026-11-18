@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../helpers/date_time_helper.dart';
@@ -8,6 +10,7 @@ import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/radio_settings.dart';
 import '../models/trax.dart';
+import '../services/notification_service.dart';
 import '../services/trax_service.dart';
 
 /// "Sunday 18:00": a trip's end in this phone's time zone.
@@ -155,7 +158,7 @@ Future<void> showTraxFollowDialog(
 }
 
 /// What TRAX mode asks when it happens: a member switched or is leaving,
-/// or the radio connected in TRAX mode after the trip's end.
+/// or the trip has ended with the radio still in TRAX mode.
 Future<void> showTraxPrompt(
   BuildContext context,
   TraxService trax,
@@ -186,6 +189,38 @@ Future<void> showTraxPrompt(
       run: () => _leaveText(context, trax),
     ),
   };
+}
+
+/// TRAX mode's questions over whatever screen is open: each as it comes,
+/// and again from a TRAX notification's tap while it still fits. One that
+/// is open already isn't put up again.
+class TraxQuestions {
+  TraxQuestions(this.trax, this.navigatorKey);
+
+  final TraxService trax;
+  final GlobalKey<NavigatorState> navigatorKey;
+  final _open = <TraxPrompt>[];
+
+  void ask(TraxPrompt prompt) {
+    final context = navigatorKey.currentContext;
+    if (context == null || !context.mounted || _open.contains(prompt)) return;
+    _open.add(prompt);
+    unawaited(
+      showTraxPrompt(
+        context,
+        trax,
+        prompt,
+      ).whenComplete(() => _open.remove(prompt)),
+    );
+  }
+
+  /// A notification's tap: null when it was TRAX mode's reminder, which
+  /// asks again; else the payload to open as usual.
+  String? onTap(String tapped) {
+    if (tapped != NotificationService.traxEndedPayload) return tapped;
+    if (trax.tripEndedPrompt case final prompt?) ask(prompt);
+    return null;
+  }
 }
 
 Future<String?> _leaveText(

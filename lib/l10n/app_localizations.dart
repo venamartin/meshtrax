@@ -1265,6 +1265,18 @@ abstract class AppLocalizations {
   /// **'The regular mesh can\'t hear you. Open MeshTrax to leave.'**
   String get trax_notificationText;
 
+  /// No description provided for @trax_endedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trip has ended'**
+  String get trax_endedTitle;
+
+  /// No description provided for @trax_endedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio is still in TRAX mode: the regular mesh can\'t hear you.'**
+  String get trax_endedText;
+
   /// No description provided for @settings_deviceInfo.
   ///
   /// In en, this message translates to:

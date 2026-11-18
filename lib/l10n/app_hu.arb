@@ -215,6 +215,8 @@
   "trax_youreOn": "Ön a TRAX-on van",
   "trax_ended": "Véget ért",
   "trax_notificationText": "A szokásos mesh hálózat nem hallja. Nyissa meg a MeshTraxot a kilépéshez.",
+  "trax_endedTitle": "A túrája véget ért",
+  "trax_endedText": "A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja.",
   "settings_deviceInfo": "A készülék információi",
   "settings_appSettings": "Alkalmazási beállítások",
   "settings_appSettingsSubtitle": "Értesítések, üzenetküldés és térképi beállítások",

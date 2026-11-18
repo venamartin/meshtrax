@@ -667,6 +667,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'La mesh abituale non ti sente. Apri MeshTrax per uscire.';
 
   @override
+  String get trax_endedTitle => 'La tua uscita è terminata';
+
+  @override
+  String get trax_endedText =>
+      'La tua radio è ancora in modalità TRAX: la mesh abituale non ti sente.';
+
+  @override
   String get settings_deviceInfo => 'Informazioni Dispositivo';
 
   @override

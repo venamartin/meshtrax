@@ -667,6 +667,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'Zwykła sieć mesh cię nie słyszy. Otwórz MeshTrax, aby opuścić tryb.';
 
   @override
+  String get trax_endedTitle => 'Twoja wyprawa się zakończyła';
+
+  @override
+  String get trax_endedText =>
+      'Twoje radio jest nadal w trybie TRAX: zwykła sieć mesh cię nie słyszy.';
+
+  @override
   String get settings_deviceInfo => 'Informacje o urządzeniu';
 
   @override

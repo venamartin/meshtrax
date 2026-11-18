@@ -158,6 +158,8 @@
   "trax_youreOn": "Ви на TRAX",
   "trax_ended": "Завершено",
   "trax_notificationText": "Звичайна мережа mesh вас не чує. Відкрийте MeshTrax, щоб вийти.",
+  "trax_endedTitle": "Ваша поїздка закінчилася",
+  "trax_endedText": "Ваше радіо досі в режимі TRAX: звичайна мережа mesh вас не чує.",
   "settings_deviceInfo": "Інформація про пристрій",
   "settings_appSettings": "Налаштування програми",
   "settings_appSettingsSubtitle": "Сповіщення, повідомлення та налаштування карти",

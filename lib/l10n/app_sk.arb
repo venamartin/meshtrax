@@ -158,6 +158,8 @@
   "trax_youreOn": "Ste na TRAX",
   "trax_ended": "Skončené",
   "trax_notificationText": "Bežná sieť mesh vás nepočuje. Otvorte MeshTrax a režim opustite.",
+  "trax_endedTitle": "Váš výlet sa skončil",
+  "trax_endedText": "Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje.",
   "settings_deviceInfo": "Informácie o zariadení",
   "settings_appSettings": "Nastavenia aplikácie",
   "settings_appSettingsSubtitle": "Upozornenia, správy a nastavenia mapy",

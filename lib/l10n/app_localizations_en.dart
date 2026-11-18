@@ -659,6 +659,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The regular mesh can\'t hear you. Open MeshTrax to leave.';
 
   @override
+  String get trax_endedTitle => 'Your trip has ended';
+
+  @override
+  String get trax_endedText =>
+      'Your radio is still in TRAX mode: the regular mesh can\'t hear you.';
+
+  @override
   String get settings_deviceInfo => 'Device Info';
 
   @override

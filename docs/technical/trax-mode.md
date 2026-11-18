@@ -76,6 +76,14 @@ Once per connection, when the radio has reported its settings:
 
 While it is on, Android's foreground notification reads "TRAX mode is on" and "The regular mesh can't hear you. Open MeshTrax to leave."
 
+## At the trip's end
+
+While the phone stays connected in TRAX mode, a timer waits for the trip's end. Then a notification says "Your trip has ended" and "Your radio is still in TRAX mode: the regular mesh can't hear you.", and the same question as at a connect comes over whatever screen is open. The notification has a category of its own, "TRAX mode" (`meshtrax_trax`), at default importance: not the SOS alarm. Tapping it asks the question again while it still fits; a question already open isn't put up twice.
+
+- **A new end** in TRAX settings moves the timer, and while the radio is on it is this radio's end too. Following a member's TRAX message makes their end the timer's.
+- **Leaving**, or the radio going away, cancels it. An end already past when it is set brings no notification: the next connect asks.
+- **The timer** is a Dart timer. On Android the foreground service holds a wake lock while connected, so it fires on time. iOS suspends the app between radio events, and a suspended app runs no timers: there the notification can come late or not at all, and the question at the next connect remains.
+
 ## Side effects handled
 
 - **Later settings writes keep repeat.** `setRadioParams` sends the repeat byte as on when the radio is known to repeat and the caller gave none. The radio settings dialog already sends the switch's state.
@@ -89,5 +97,4 @@ While it is on, Android's foreground notification reads "TRAX mode is on" and "T
 - The TRAX extras in TRAX settings: trip mode, the recorder, members can ask my radio (Trip setup's grants, GPS on, `gps_interval:0`, favourites), position in adverts and SOS through Do Not Disturb. None exist yet; Leave will turn off what they turn on.
 - Ask their radio, which would let the group check ask silent members one at a time.
 - A **Leave** action on the Android notification: the foreground service has no channel from its isolate to the app yet. Tapping the notification opens the app.
-- A notification at the trip's end; today the reminder comes at the next connect.
 - Field tests: whether a retune takes effect during a receive, battery life with repeat on, airtime with five radios relaying, and range with each preset.

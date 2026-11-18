@@ -158,6 +158,8 @@
   "trax_youreOn": "Ste na TRAX",
   "trax_ended": "Končano",
   "trax_notificationText": "Običajno omrežje mesh vas ne sliši. Odprite MeshTrax, da zapustite način.",
+  "trax_endedTitle": "Vaš izlet se je končal",
+  "trax_endedText": "Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.",
   "settings_deviceInfo": "Informacije o napravei",
   "settings_appSettings": "Nastavitve aplikacije",
   "settings_appSettingsSubtitle": "Obveščanja, sporoščanje in zemljevidi.",

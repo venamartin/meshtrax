@@ -158,6 +158,8 @@
   "trax_youreOn": "Je zit op TRAX",
   "trax_ended": "Afgelopen",
   "trax_notificationText": "Het gewone mesh hoort je niet. Open MeshTrax om de modus te verlaten.",
+  "trax_endedTitle": "Je tocht is afgelopen",
+  "trax_endedText": "Je radio staat nog in TRAX-modus: het gewone mesh hoort je niet.",
   "settings_deviceInfo": "Apparateninformatie",
   "settings_appSettings": "App Instellingen",
   "settings_appSettingsSubtitle": "Notificaties, berichten en kaartinstellingen",

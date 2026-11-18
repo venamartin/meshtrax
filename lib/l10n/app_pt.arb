@@ -158,6 +158,8 @@
   "trax_youreOn": "Você está no TRAX",
   "trax_ended": "Encerrado",
   "trax_notificationText": "A malha normal não ouve você. Abra o MeshTrax para sair.",
+  "trax_endedTitle": "Sua viagem terminou",
+  "trax_endedText": "Seu rádio ainda está no modo TRAX: a malha normal não ouve você.",
   "settings_deviceInfo": "Informações do Dispositivo",
   "settings_appSettings": "Configurações do App",
   "settings_appSettingsSubtitle": "Notificações, mensagens e preferências de mapa",

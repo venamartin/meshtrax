@@ -664,6 +664,13 @@ class AppLocalizationsHu extends AppLocalizations {
       'A szokásos mesh hálózat nem hallja. Nyissa meg a MeshTraxot a kilépéshez.';
 
   @override
+  String get trax_endedTitle => 'A túrája véget ért';
+
+  @override
+  String get trax_endedText =>
+      'A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja.';
+
+  @override
   String get settings_deviceInfo => 'A készülék információi';
 
   @override

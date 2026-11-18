@@ -14,6 +14,7 @@ import '../models/trax.dart';
 import '../storage/prefs_manager.dart';
 import '../utils/app_logger.dart';
 import 'background_service.dart';
+import 'notification_service.dart';
 
 /// What a switch or a leave is doing, for the sheet.
 enum TraxStep { telling, switching, checking, leaving }
@@ -69,7 +70,8 @@ class TraxLeavePrompt extends TraxPrompt {
   const TraxLeavePrompt(this.sender);
 }
 
-/// The radio connected in TRAX mode after the trip's end.
+/// The trip has ended with the radio still in TRAX mode: at the end itself
+/// while connected, or at a connect after it.
 class TraxStillOnPrompt extends TraxPrompt {
   const TraxStillOnPrompt();
 }
@@ -123,6 +125,10 @@ class TraxService extends ChangeNotifier {
   DateTime? _heardSince;
   TraxStep? _step;
   Object? _shown;
+
+  /// The trip's end while TRAX mode is on, and the reminder's timer for it.
+  DateTime? _timedEnd;
+  Timer? _endTimer;
 
   /// Notification texts, in the app's language (set by the app).
   String notificationTitle = 'TRAX mode is on';
@@ -223,11 +229,25 @@ class TraxService extends ChangeNotifier {
   }
 
   Future<void> updateSetup(TraxSetup setup) async {
+    final moved = setup.until != _setup.until;
     _setup = setup;
     await PrefsManager.instance.setString(
       _setupKey,
       jsonEncode(setup.toJson()),
     );
+    // A new end in TRAX settings is this radio's too, while it is on.
+    final session = this.session;
+    if (moved && isOn && session != null) {
+      await _saveSession(
+        _connector.selfPublicKeyHex,
+        TraxSession(
+          saved: session.saved,
+          switchedAt: session.switchedAt,
+          until: setup.until,
+        ),
+      );
+    }
+    _syncEndTimer();
     notifyListeners();
   }
 
@@ -564,6 +584,7 @@ class TraxService extends ChangeNotifier {
       }
     }
     _syncNotification();
+    _syncEndTimer();
     final shown = (isOn, _radioKey, isOn ? heard.length : 0);
     if (shown != _shown) {
       _shown = shown;
@@ -595,6 +616,44 @@ class TraxService extends ChangeNotifier {
     }
   }
 
+  /// The reminder's question while it still fits: the trip has ended and
+  /// the radio is still in TRAX mode.
+  TraxPrompt? get tripEndedPrompt {
+    final end = until;
+    return isOn && end != null && !end.isAfter(_clock())
+        ? const TraxStillOnPrompt()
+        : null;
+  }
+
+  /// While TRAX mode is on and the phone stays connected, the trip's end
+  /// brings a notification and the question a connect after it asks. An
+  /// end already past when set brings none: that connect asked.
+  void _syncEndTimer() {
+    final end = isOn ? until : null;
+    if (end == _timedEnd) return;
+    _timedEnd = end;
+    _endTimer?.cancel();
+    _endTimer = null;
+    if (end != null && end.isAfter(_clock())) {
+      _endTimer = Timer(end.difference(_clock()), _onTripEnd);
+    }
+  }
+
+  void _onTripEnd() {
+    final end = _timedEnd;
+    if (end == null || !isOn) return;
+    final left = end.difference(_clock());
+    if (left > Duration.zero) {
+      // The phone's clock was set back meanwhile.
+      _endTimer = Timer(left, _onTripEnd);
+      return;
+    }
+    _endTimer = null;
+    appLogger.info('Trip ended in TRAX mode', tag: 'Trax');
+    unawaited(NotificationService().showTraxEndedNotification());
+    _ask(const TraxStillOnPrompt(), 'still ${_connector.selfPublicKeyHex}');
+  }
+
   bool? _noteShown;
 
   void _syncNotification({bool force = false}) {
@@ -617,6 +676,7 @@ class TraxService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _endTimer?.cancel();
     _connector.removeListener(_onConnector);
     unawaited(_messages.cancel());
     unawaited(_prompts.close());

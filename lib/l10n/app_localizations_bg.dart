@@ -665,6 +665,13 @@ class AppLocalizationsBg extends AppLocalizations {
       'Обичайната mesh мрежа не ви чува. Отворете MeshTrax, за да излезете.';
 
   @override
+  String get trax_endedTitle => 'Пътуването ви приключи';
+
+  @override
+  String get trax_endedText =>
+      'Радиото ви все още е в режим TRAX: обичайната mesh мрежа не ви чува.';
+
+  @override
   String get settings_deviceInfo => 'Информация за устройството';
 
   @override

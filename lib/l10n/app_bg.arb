@@ -158,6 +158,8 @@
   "trax_youreOn": "Вие сте в TRAX",
   "trax_ended": "Приключило",
   "trax_notificationText": "Обичайната mesh мрежа не ви чува. Отворете MeshTrax, за да излезете.",
+  "trax_endedTitle": "Пътуването ви приключи",
+  "trax_endedText": "Радиото ви все още е в режим TRAX: обичайната mesh мрежа не ви чува.",
   "settings_deviceInfo": "Информация за устройството",
   "settings_appSettings": "Настройки на приложението",
   "settings_appSettingsSubtitle": "Уведомления, съобщения и предпочитания за карта",

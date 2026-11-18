@@ -639,6 +639,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_notificationText => '通常のメッシュでは聞こえません。終了するにはMeshTraxを開いてください。';
 
   @override
+  String get trax_endedTitle => '旅が終了しました';
+
+  @override
+  String get trax_endedText => '無線機はまだTRAXモードです。通常のメッシュでは聞こえません。';
+
+  @override
   String get settings_deviceInfo => 'デバイス情報';
 
   @override

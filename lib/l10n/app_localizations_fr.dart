@@ -669,6 +669,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le maillage habituel ne vous entend pas. Ouvrez MeshTrax pour en sortir.';
 
   @override
+  String get trax_endedTitle => 'Votre sortie est terminée';
+
+  @override
+  String get trax_endedText =>
+      'Votre radio est toujours en mode TRAX : le maillage habituel ne vous entend pas.';
+
+  @override
   String get settings_deviceInfo => 'Informations du périphérique';
 
   @override

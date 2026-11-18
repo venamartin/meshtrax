@@ -158,6 +158,8 @@
   "trax_youreOn": "Vous êtes sur TRAX",
   "trax_ended": "Terminé",
   "trax_notificationText": "Le maillage habituel ne vous entend pas. Ouvrez MeshTrax pour en sortir.",
+  "trax_endedTitle": "Votre sortie est terminée",
+  "trax_endedText": "Votre radio est toujours en mode TRAX : le maillage habituel ne vous entend pas.",
   "settings_deviceInfo": "Informations du périphérique",
   "settings_appSettings": "Paramètres de l'application",
   "settings_appSettingsSubtitle": "Notifications, messagerie et préférences de carte",

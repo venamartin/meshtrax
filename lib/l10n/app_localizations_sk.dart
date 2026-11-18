@@ -666,6 +666,13 @@ class AppLocalizationsSk extends AppLocalizations {
       'Bežná sieť mesh vás nepočuje. Otvorte MeshTrax a režim opustite.';
 
   @override
+  String get trax_endedTitle => 'Váš výlet sa skončil';
+
+  @override
+  String get trax_endedText =>
+      'Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje.';
+
+  @override
   String get settings_deviceInfo => 'Informácie o zariadení';
 
   @override

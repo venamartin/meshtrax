@@ -664,6 +664,13 @@ class AppLocalizationsNl extends AppLocalizations {
       'Het gewone mesh hoort je niet. Open MeshTrax om de modus te verlaten.';
 
   @override
+  String get trax_endedTitle => 'Je tocht is afgelopen';
+
+  @override
+  String get trax_endedText =>
+      'Je radio staat nog in TRAX-modus: het gewone mesh hoort je niet.';
+
+  @override
   String get settings_deviceInfo => 'Apparateninformatie';
 
   @override

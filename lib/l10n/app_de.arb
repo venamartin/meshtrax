@@ -158,6 +158,8 @@
   "trax_youreOn": "Sie sind auf TRAX",
   "trax_ended": "Beendet",
   "trax_notificationText": "Das normale Mesh kann Sie nicht hören. Öffnen Sie MeshTrax, um den Modus zu verlassen.",
+  "trax_endedTitle": "Ihre Tour ist zu Ende",
+  "trax_endedText": "Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören.",
   "settings_deviceInfo": "Geräteinformationen",
   "settings_appSettings": "App-Einstellungen",
   "settings_appSettingsSubtitle": "Benachrichtigungen, Messaging und Kartenwahrnehmung",

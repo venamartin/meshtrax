@@ -666,6 +666,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'La malla habitual no te oye. Abre MeshTrax para salir.';
 
   @override
+  String get trax_endedTitle => 'Tu salida ha terminado';
+
+  @override
+  String get trax_endedText =>
+      'Tu radio sigue en modo TRAX: la malla habitual no te oye.';
+
+  @override
   String get settings_deviceInfo => 'Información del dispositivo';
 
   @override

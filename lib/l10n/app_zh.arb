@@ -159,6 +159,8 @@
   "trax_youreOn": "你在 TRAX 上",
   "trax_ended": "已结束",
   "trax_notificationText": "常规网状网络听不到你。打开 MeshTrax 即可退出。",
+  "trax_endedTitle": "你的行程已结束",
+  "trax_endedText": "你的电台仍处于 TRAX 模式：常规网状网络听不到你。",
   "settings_deviceInfo": "设备信息",
   "settings_appSettings": "应用设置",
   "settings_appSettingsSubtitle": "通知、消息和地图偏好",

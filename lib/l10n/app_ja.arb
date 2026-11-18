@@ -215,6 +215,8 @@
   "trax_youreOn": "TRAX中",
   "trax_ended": "終了",
   "trax_notificationText": "通常のメッシュでは聞こえません。終了するにはMeshTraxを開いてください。",
+  "trax_endedTitle": "旅が終了しました",
+  "trax_endedText": "無線機はまだTRAXモードです。通常のメッシュでは聞こえません。",
   "settings_deviceInfo": "デバイス情報",
   "settings_appSettings": "アプリ設定",
   "settings_appSettingsSubtitle": "通知、メッセージング、および地図の表示設定",

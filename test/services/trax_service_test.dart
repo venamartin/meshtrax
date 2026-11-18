@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -11,6 +12,7 @@ import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/radio_settings.dart';
 import 'package:meshtrax/models/trax.dart';
+import 'package:meshtrax/services/notification_service.dart';
 import 'package:meshtrax/services/trax_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -31,6 +33,7 @@ class _Radio extends MeshCoreConnector {
       >.broadcast();
 
   bool refuseSettings = false;
+  bool connected = true;
 
   /// Stats polls before the radio has sent what it was handed.
   int pollsUntilSent = 2;
@@ -38,8 +41,13 @@ class _Radio extends MeshCoreConnector {
   int _floods = 0;
   int _queued = 0;
 
+  void drop() {
+    connected = false;
+    notifyListeners();
+  }
+
   @override
-  bool get isConnected => true;
+  bool get isConnected => connected;
   @override
   bool get channelsVerified => true;
   @override
@@ -138,6 +146,40 @@ class _Radio extends MeshCoreConnector {
   }
 
   List<int> commands() => [for (final f in sent) f[0]];
+}
+
+/// For fake time: answers at once. The connector's own waits end on a
+/// stream cancel that completes outside a fake zone.
+class _InstantRadio extends _Radio {
+  @override
+  Future<RepeatRanges?> getAllowedRepeatFrequencies() async => [
+    for (final f in [433000, 869495, 918000]) (lowerKhz: f, upperKhz: f),
+  ];
+
+  @override
+  Future<bool> setRadioParams(
+    int freqKhz,
+    int bwHz,
+    int sf,
+    int cr, {
+    bool? clientRepeat,
+  }) async {
+    sent.add(
+      buildSetRadioParamsFrame(
+        freqKhz,
+        bwHz,
+        sf,
+        cr,
+        clientRepeat: clientRepeat,
+      ),
+    );
+    return true;
+  }
+
+  @override
+  Future<bool> waitForRadio({
+    Duration timeout = const Duration(seconds: 3),
+  }) async => true;
 }
 
 List<int> _u32(int v) =>
@@ -597,4 +639,154 @@ void main() {
       expect(TraxService.sessionFor(radio.selfPublicKeyHex), isNull);
     },
   );
+
+  // A phone that stays connected through the trip's end heard nothing
+  // there: the question came only at the next connect.
+  group('the trip\'s end while connected', () {
+    final t0 = DateTime(2026, 11, 21, 15);
+    final shown = <ShownNotification>[];
+    late List<TraxPrompt> prompts;
+
+    setUp(() {
+      shown.clear();
+      NotificationService.debugOnShow = shown.add;
+      trax.dispose();
+      radio = _InstantRadio()..channelList = [_public, _trip, _hashtag];
+    });
+
+    tearDown(() => NotificationService.debugOnShow = null);
+
+    /// TRAX settings ending [left] after [t0], on fake time from [t0].
+    void begin(FakeAsync async, Duration left) {
+      trax = TraxService(
+        radio,
+        clock: () => t0.add(async.elapsed),
+        sendPoll: const Duration(milliseconds: 1),
+        sendMargin: Duration.zero,
+      );
+      prompts = [];
+      trax.prompts.listen(prompts.add);
+      unawaited(trax.updateSetup(TraxSetup(until: t0.add(left))));
+      async.flushMicrotasks();
+    }
+
+    void connectNow(FakeAsync async, {bool repeat = false}) {
+      radio.handleFrameForTest(_deviceInfo(repeat: repeat));
+      radio.handleFrameForTest(
+        _selfInfo(key: keyA, freq: repeat ? 918000 : 910525),
+      );
+      async.flushMicrotasks();
+    }
+
+    test('brings a notification and the question, at the end', () {
+      fakeAsync((async) {
+        begin(async, const Duration(hours: 2));
+        connectNow(async, repeat: true);
+        expect(trax.isOn, isTrue);
+
+        async.elapse(const Duration(hours: 1, minutes: 59));
+        expect(shown, isEmpty);
+        expect(prompts, isEmpty);
+
+        async.elapse(const Duration(minutes: 1));
+        final note = shown.single;
+        expect(note.channelId, NotificationService.traxChannelId);
+        expect(note.title, 'Your trip has ended');
+        expect(
+          note.body,
+          "Your radio is still in TRAX mode: the regular mesh can't hear you.",
+        );
+        expect(note.payload, NotificationService.traxEndedPayload);
+        expect(prompts.single, isA<TraxStillOnPrompt>());
+        expect(
+          trax.tripEndedPrompt,
+          isA<TraxStillOnPrompt>(),
+          reason: 'its tap asks again',
+        );
+
+        async.elapse(const Duration(days: 1));
+        expect(shown, hasLength(1), reason: 'once');
+      });
+    });
+
+    test('a new end in TRAX settings moves it, after this phone\'s switch '
+        'too', () {
+      fakeAsync((async) {
+        begin(async, const Duration(hours: 1));
+        connectNow(async);
+        unawaited(trax.start(tellGroup: false));
+        async.elapse(const Duration(seconds: 5));
+        expect(trax.isOn, isTrue);
+        expect(trax.session?.until, t0.add(const Duration(hours: 1)));
+
+        unawaited(
+          trax.updateSetup(
+            trax.setup.copyWith(until: () => t0.add(const Duration(hours: 3))),
+          ),
+        );
+        async.flushMicrotasks();
+        expect(trax.until, t0.add(const Duration(hours: 3)));
+        expect(
+          trax.session?.until,
+          t0.add(const Duration(hours: 3)),
+          reason: 'the radio\'s end, which a connect asks by',
+        );
+
+        async.elapse(const Duration(hours: 2));
+        expect(shown, isEmpty, reason: 'the old end passed quietly');
+        async.elapse(const Duration(hours: 1));
+        expect(shown, hasLength(1));
+        expect(prompts.single, isA<TraxStillOnPrompt>());
+      });
+    });
+
+    test('a member\'s end, followed, is the reminder\'s', () {
+      fakeAsync((async) {
+        begin(async, const Duration(hours: 1));
+        connectNow(async);
+        final message = TraxMessage.switching(
+          until: t0.add(const Duration(hours: 5)),
+          preset: const LoRaParams(freqKhz: 918000, bwHz: 62500, sf: 7, cr: 5),
+        );
+        TraxOutcome? outcome;
+        unawaited(trax.follow(message, _trip).then((o) => outcome = o));
+        async.elapse(const Duration(seconds: 5));
+        expect(outcome, TraxOutcome.ok);
+        expect(trax.until, t0.add(const Duration(hours: 5)));
+
+        async.elapse(const Duration(hours: 4, minutes: 59));
+        expect(shown, isEmpty, reason: 'not at the end TRAX settings had');
+        async.elapse(const Duration(minutes: 1));
+        expect(shown, hasLength(1));
+      });
+    });
+
+    test('goes with TRAX mode, and with the radio', () {
+      fakeAsync((async) {
+        begin(async, const Duration(hours: 1));
+        connectNow(async);
+        unawaited(trax.start(tellGroup: false));
+        async.elapse(const Duration(seconds: 5));
+        expect(trax.isOn, isTrue);
+        unawaited(trax.leave(tellGroup: false));
+        async.elapse(const Duration(seconds: 5));
+        expect(trax.isOn, isFalse);
+        expect(trax.session, isNull);
+        async.elapse(const Duration(hours: 2));
+        expect(shown, isEmpty, reason: 'left before the end');
+
+        unawaited(
+          trax.updateSetup(
+            trax.setup.copyWith(until: () => t0.add(const Duration(hours: 4))),
+          ),
+        );
+        connectNow(async, repeat: true);
+        expect(trax.isOn, isTrue);
+        radio.drop();
+        async.elapse(const Duration(hours: 3));
+        expect(shown, isEmpty, reason: 'no radio to say anything about');
+        expect(prompts, isEmpty);
+      });
+    });
+  });
 }

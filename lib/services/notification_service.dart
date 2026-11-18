@@ -252,6 +252,62 @@ class NotificationService {
     }
   }
 
+  /// The category TRAX mode's reminder goes out on: an ordinary one, not
+  /// an alarm.
+  static const traxChannelId = 'meshtrax_trax';
+
+  /// The reminder at the trip's end, clear of the message ids, and what its
+  /// tap hands the app.
+  static const traxEndedId = 0x5445; // 'TE'
+  static const traxEndedPayload = 'traxended';
+
+  @visibleForTesting
+  static AndroidNotificationDetails traxAndroidDetails(AppLocalizations l10n) =>
+      AndroidNotificationDetails(
+        traxChannelId,
+        l10n.trax_title,
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+      );
+
+  /// Every notification the app asks for, before the platform shows it.
+  @visibleForTesting
+  static void Function(ShownNotification shown)? debugOnShow;
+
+  /// The trip's end came with the radio still in TRAX mode. Shown at once,
+  /// never batched behind messages; a tap asks TRAX mode's question again.
+  Future<void> showTraxEndedNotification() async {
+    final l10n = _l10n;
+    final title = l10n.trax_endedTitle;
+    final body = l10n.trax_endedText;
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: traxChannelId,
+        id: traxEndedId,
+        title: title,
+        body: body,
+        payload: traxEndedPayload,
+      ),
+    );
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      if (!await _ensureInitialized()) return;
+      await _notifications.show(
+        id: traxEndedId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: traxAndroidDetails(l10n),
+          iOS: const DarwinNotificationDetails(),
+          macOS: const DarwinNotificationDetails(),
+        ),
+        payload: traxEndedPayload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show the TRAX reminder: $e');
+    }
+  }
+
   /// Format special message types for human-readable notifications.
   /// Markdown is stripped unless [formatting] is off; notifications always
   /// strip it so a spoiler never shows on the lock screen.
@@ -638,6 +694,23 @@ class NotificationService {
       debugPrint('Failed to show immediate notification: $e');
     }
   }
+}
+
+/// A notification the app asked for ([NotificationService.debugOnShow]).
+class ShownNotification {
+  final String channelId;
+  final int? id;
+  final String title;
+  final String body;
+  final String? payload;
+
+  const ShownNotification({
+    required this.channelId,
+    this.id,
+    required this.title,
+    required this.body,
+    this.payload,
+  });
 }
 
 // Helper class for pending notifications

@@ -228,6 +228,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
   late final AppLifecycleListener _lifecycleListener;
   late final StreamSubscription<BlockedCliCommand> _blockedCliSubscription;
   late final StreamSubscription<TraxPrompt> _traxPrompts;
+  late final TraxQuestions _trax;
 
   @override
   void initState() {
@@ -255,11 +256,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     });
 
     // TRAX mode asks over whatever screen is open; nothing switches by itself.
-    _traxPrompts = widget.traxService.prompts.listen((prompt) {
-      final context = NotificationService.navigatorKey.currentContext;
-      if (context == null || !context.mounted) return;
-      unawaited(showTraxPrompt(context, widget.traxService, prompt));
-    });
+    _trax = TraxQuestions(widget.traxService, NotificationService.navigatorKey);
+    _traxPrompts = widget.traxService.prompts.listen(_trax.ask);
 
     // Route notification taps to the relevant chat, and handle a notification
     // that cold-started the app once the first frame is ready.
@@ -270,10 +268,13 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     });
   }
 
-  void _handleNotificationTap(String payload) {
+  void _handleNotificationTap(String tapped) {
     final navigator = NotificationService.navigatorKey.currentState;
     if (navigator == null) return;
     final connector = widget.connector;
+    // A TRAX notification asks its question again while it still fits.
+    final payload = _trax.onTap(tapped);
+    if (payload == null) return;
 
     if (payload.startsWith('mention:')) {
       // mention:<channelIndex>:<messageId> — open the channel AND land on
