@@ -401,6 +401,23 @@ class NotificationService {
     }
   }
 
+  /// The alarm volume an SOS alert sounds at, and its most (Android); null
+  /// elsewhere, or when the phone doesn't say.
+  Future<({int volume, int max})?> alarmVolume() async {
+    if (!Platform.isAndroid) return null;
+    final alarm = await const MethodChannel('meshtrax/system')
+        .invokeMapMethod<String, int>('getAlarmVolume');
+    final volume = alarm?['volume'], max = alarm?['max'];
+    return volume == null || max == null ? null : (volume: volume, max: max);
+  }
+
+  /// The phone's sound settings, where the alarm volume is (Android).
+  Future<void> openSoundSettings() async {
+    if (!Platform.isAndroid) return;
+    await const MethodChannel('meshtrax/system')
+        .invokeMethod<void>('openSoundSettings');
+  }
+
   /// Every notification the app asks for, before the platform shows it.
   @visibleForTesting
   static void Function(ShownNotification shown)? debugOnShow;

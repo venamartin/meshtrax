@@ -50,6 +50,8 @@ enum HealthDialog {
   location,
   batterySettings,
   notificationSettings,
+  sosSettings,
+  soundSettings,
 }
 
 class HealthContext {
@@ -62,16 +64,27 @@ class HealthContext {
   /// False on Windows and Linux, where the app never shows a notification.
   final bool canShowNotifications;
 
+  /// What the phone lets an SOS alert do; unknown where it can't be known.
+  final Future<SosAlertState> Function() sosAlertState;
+
+  /// The alarm volume an SOS alert sounds at, and its most; null where it
+  /// can't be known.
+  final Future<({int volume, int max})?> Function() alarmVolume;
+
   HealthContext(
     this.connector,
     this.settingsService, {
     Future<bool?> Function()? notificationsAllowed,
     bool? canShowNotifications,
+    Future<SosAlertState> Function()? sosAlertState,
+    Future<({int volume, int max})?> Function()? alarmVolume,
   }) : notificationsAllowed =
            notificationsAllowed ?? NotificationService().notificationsAllowed,
        canShowNotifications =
            canShowNotifications ??
-           !(PlatformInfo.isWindows || PlatformInfo.isLinux);
+           !(PlatformInfo.isWindows || PlatformInfo.isLinux),
+       sosAlertState = sosAlertState ?? NotificationService().sosAlertState,
+       alarmVolume = alarmVolume ?? NotificationService().alarmVolume;
 
   AppSettings get app => settingsService.settings;
   bool get radioConnected => connector.isConnected;
@@ -593,6 +606,53 @@ final List<HealthRule> healthRules = [
         'covers a blocked message or channel category on Android and alerts '
         'turned off on iOS and macOS. Unknown on Windows and Linux, so those '
         'pass.',
+  ),
+  HealthRule(
+    id: 'app_sos_dnd',
+    enabled: true,
+    severity: HealthSeverity.problem,
+    title: "SOS alerts can't get through Do Not Disturb",
+    why:
+        'If someone in your group sends an SOS at night while this phone is '
+        'on Do Not Disturb, the phone keeps it silent, or does not show it at '
+        'all, so it will not wake you. Let SOS alerts override Do Not '
+        'Disturb.',
+    check: (ctx) async =>
+        ctx.app.notificationsEnabled &&
+        switch (await ctx.sosAlertState()) {
+          SosAlertState.silencedByDnd || SosAlertState.blocked => true,
+          SosAlertState.throughDnd || SosAlertState.unknown => false,
+        },
+    fix: HealthFix.ask,
+    dialog: HealthDialog.sosSettings,
+    notes:
+        'Android only: elsewhere the state is unknown and the rule passes. '
+        'Fix opens the SOS alerts category, made first so its page exists, '
+        'where the user switches on Override Do Not Disturb. Also flags SOS '
+        'alerts turned off on the phone. With notifications off in the app, '
+        'app_notifications_off speaks instead (owner, 2026-11-18).',
+  ),
+  HealthRule(
+    id: 'app_sos_alarm_volume',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Alarm volume is off or low',
+    why:
+        "An SOS alert sounds at this phone's alarm volume, the one its alarm "
+        'clock uses, not the ringer or media volume. With it off or low, an '
+        'SOS at night may not wake you.',
+    check: (ctx) async {
+      if (!ctx.app.notificationsEnabled) return false;
+      final alarm = await ctx.alarmVolume();
+      if (alarm == null) return false;
+      return alarm.volume == 0 || alarm.volume * 3 < alarm.max;
+    },
+    fix: HealthFix.ask,
+    dialog: HealthDialog.soundSettings,
+    notes:
+        'Android only (MainActivity getAlarmVolume). Flags 0 and anything '
+        "under a third of the alarm stream's most. Fix opens the phone's "
+        'sound settings (owner, 2026-11-18).',
   ),
   HealthRule(
     id: 'app_notify_dm',
