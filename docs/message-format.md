@@ -45,7 +45,8 @@ trailing space when you tap a name or pick one from the `@` list.
 
 ### What MeshTrax sends
 
-MeshCore One's reply format, in channels, direct messages and rooms:
+MeshCore One's reply format, in channels and rooms (MeshTrax has no replies
+in direct messages):
 
 ```
 @[{name of the person replied to}]
