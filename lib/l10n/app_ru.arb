@@ -1250,7 +1250,7 @@
   "appSettings_senderNameColors": "Цветные имена отправителей",
   "appSettings_senderNameColorsSubtitle": "Свой цвет имени для каждого отправителя в канале. Если выключено, у всех цвет темы.",
   "appSettings_showTextFormatting": "Показывать форматирование текста",
-  "appSettings_showTextFormattingSubtitle": "Markdown в сообщениях: **жирный**, *курсив*, ||спойлеры||, заголовки и ссылки. Другие приложения MeshCore показывают исходные символы.",
+  "appSettings_showTextFormattingSubtitle": "Markdown в сообщениях: **жирный**, *курсив*, ||спойлеры||, заголовки, списки и ссылки. Другие приложения MeshCore показывают исходные символы.",
   "appSettings_maxChannelMessageRetries": "Макс. повторов сообщений в канале",
   "appSettings_maxChannelMessageRetriesSubtitle": "Столько раз будет повторять отправку, пока не услышит хотя бы один повтор",
   "appSettings_heardCheck": "Проверять отправку у наблюдателей",

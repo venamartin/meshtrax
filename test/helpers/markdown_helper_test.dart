@@ -141,6 +141,58 @@ void main() {
     });
   });
 
+  // Bulleted lists (owner, 2026-11-18): - and * at a line's start, one
+  // level only.
+  group('lists', () {
+    test('- and * at the start of a line make a bullet', () {
+      for (final text in ['- milk', '* milk']) {
+        final runs = parse(text);
+        expect(runs.first.bullet, isTrue, reason: text);
+        expect(shown(runs), '• milk', reason: text);
+      }
+    });
+
+    test('a bullet line is formatted inside', () {
+      final runs = parse('- **milk** and *eggs*');
+      expect(runs.first.bullet, isTrue);
+      expect(run(runs, 'milk').bold, isTrue);
+      expect(run(runs, 'eggs').italic, isTrue);
+    });
+
+    test('one level: an indented bullet is a plain bullet', () {
+      final runs = parse('Bring:\n- milk\n  - eggs');
+      expect(runs.where((r) => r.bullet), hasLength(2));
+      expect(shown(runs), 'Bring:\n• milk\n• eggs');
+    });
+
+    test('a marker needs a space and text after it, at the line start', () {
+      for (final text in [
+        '-5 degrees',
+        '*italic*',
+        '**bold**',
+        '---',
+        'a - b',
+        '-',
+        '- ',
+        '-# small',
+      ]) {
+        expect(parse(text).any((r) => r.bullet), isFalse, reason: text);
+      }
+    });
+
+    test(r'\- keeps a dash as typed', () {
+      final runs = parse(r'\- not a list');
+      expect(runs.any((r) => r.bullet), isFalse);
+      expect(shown(runs), '- not a list');
+    });
+
+    test('formatting off: no bullets', () {
+      final runs = MarkdownHelper.parse('- milk', formatting: false);
+      expect(runs.any((r) => r.bullet), isFalse);
+      expect(shown(runs), '- milk');
+    });
+  });
+
   group('links', () {
     test('[text](url) shows the text and opens the url', () {
       final site = run(parse('go [site](https://example.com) now'), 'site');
@@ -190,6 +242,10 @@ void main() {
       expect(MarkdownHelper.toPlainText('the answer is ||42||'), 'the answer is ▮▮▮');
       expect(MarkdownHelper.toPlainText('**b** [site](https://x.org)'), 'b site');
       expect(MarkdownHelper.toPlainText('# Title'), 'Title');
+      expect(
+        MarkdownHelper.toPlainText('Bring:\n- milk\n* eggs'),
+        'Bring:\n• milk\n• eggs',
+      );
     });
 
     test('formatting off returns the raw text', () {

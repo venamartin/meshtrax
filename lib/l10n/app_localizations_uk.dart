@@ -1055,7 +1055,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown у повідомленнях: **жирний**, *курсив*, ||спойлери||, заголовки й посилання. Інші програми MeshCore показують символи як є.';
+      'Markdown у повідомленнях: **жирний**, *курсив*, ||спойлери||, заголовки, списки й посилання. Інші програми MeshCore показують символи як є.';
 
   @override
   String get appSettings_notifications => 'Сповіщення';

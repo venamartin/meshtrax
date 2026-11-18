@@ -1882,7 +1882,7 @@
   "appSettings_senderNameColors": "Цветни имена на подателите",
   "appSettings_senderNameColorsSubtitle": "Всеки подател в канал получава свой цвят на името. Когато е изключено, всички са в цвета на темата.",
   "appSettings_showTextFormatting": "Показвай форматирането на текста",
-  "appSettings_showTextFormattingSubtitle": "Markdown в съобщенията: **удебелен**, *курсив*, ||спойлери||, заглавия и връзки. Другите приложения за MeshCore показват символите както са.",
+  "appSettings_showTextFormattingSubtitle": "Markdown в съобщенията: **удебелен**, *курсив*, ||спойлери||, заглавия, списъци и връзки. Другите приложения за MeshCore показват символите както са.",
   "appSettings_maxChannelMessageRetries": "Макс. повторни опити за съобщения в канал",
   "appSettings_maxChannelMessageRetriesSubtitle": "Толкова пъти ще опитва отново, докато не чуе поне едно повторение",
   "appSettings_heardCheck": "Проверка на изпращанията при наблюдатели",

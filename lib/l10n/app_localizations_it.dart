@@ -1062,7 +1062,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown nei messaggi: **grassetto**, *corsivo*, ||testo nascosto||, titoli e link. Le altre app MeshCore mostrano i caratteri grezzi.';
+      'Markdown nei messaggi: **grassetto**, *corsivo*, ||testo nascosto||, titoli, elenchi e link. Le altre app MeshCore mostrano i caratteri grezzi.';
 
   @override
   String get appSettings_notifications => 'Notifiche';

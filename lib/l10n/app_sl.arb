@@ -1882,7 +1882,7 @@
   "appSettings_senderNameColors": "Barvna imena pošiljateljev",
   "appSettings_senderNameColorsSubtitle": "Vsak pošiljatelj v kanalu dobi svojo barvo imena. Izklopljeno pomeni barvo teme za vse.",
   "appSettings_showTextFormatting": "Prikaži oblikovanje besedila",
-  "appSettings_showTextFormattingSubtitle": "Markdown v sporočilih: **krepko**, *ležeče*, ||spojlerji||, naslovi in povezave. Druge aplikacije MeshCore prikažejo surove znake.",
+  "appSettings_showTextFormattingSubtitle": "Markdown v sporočilih: **krepko**, *ležeče*, ||spojlerji||, naslovi, seznami in povezave. Druge aplikacije MeshCore prikažejo surove znake.",
   "appSettings_maxChannelMessageRetries": "Največ ponovitev sporočil v kanalu",
   "appSettings_maxChannelMessageRetriesSubtitle": "Ponavlja tolikokrat, dokler ne sliši vsaj ene ponovitve",
   "appSettings_heardCheck": "Preverjaj pošiljanje pri opazovalcih",

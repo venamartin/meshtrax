@@ -1015,7 +1015,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'メッセージ内のMarkdown：**太字**、*斜体*、||ネタバレ||、見出し、リンク。ほかのMeshCoreアプリでは記号がそのまま表示されます。';
+      'メッセージ内のMarkdown：**太字**、*斜体*、||ネタバレ||、見出し、リスト、リンク。ほかのMeshCoreアプリでは記号がそのまま表示されます。';
 
   @override
   String get appSettings_notifications => '通知';

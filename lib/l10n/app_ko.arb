@@ -1920,7 +1920,7 @@
   "appSettings_senderNameColors": "보낸 사람 이름 색상",
   "appSettings_senderNameColorsSubtitle": "채널에서 보낸 사람마다 이름 색을 다르게 표시합니다. 끄면 모두 테마 색상을 사용합니다.",
   "appSettings_showTextFormatting": "텍스트 서식 표시",
-  "appSettings_showTextFormattingSubtitle": "메시지의 마크다운: **굵게**, *기울임*, ||스포일러||, 제목, 링크. 다른 MeshCore 앱에서는 기호가 그대로 보입니다.",
+  "appSettings_showTextFormattingSubtitle": "메시지의 마크다운: **굵게**, *기울임*, ||스포일러||, 제목, 목록, 링크. 다른 MeshCore 앱에서는 기호가 그대로 보입니다.",
   "appSettings_maxChannelMessageRetries": "채널 메시지 최대 재시도 횟수",
   "appSettings_maxChannelMessageRetriesSubtitle": "중계가 한 번 이상 들릴 때까지 이 횟수만큼 다시 시도합니다",
   "appSettings_heardCheck": "옵저버로 전송 확인",

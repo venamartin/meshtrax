@@ -1061,7 +1061,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown az üzenetekben: **félkövér**, *dőlt*, ||spoiler||, címsorok és linkek. Más MeshCore alkalmazások a nyers karaktereket mutatják.';
+      'Markdown az üzenetekben: **félkövér**, *dőlt*, ||spoiler||, címsorok, listák és linkek. Más MeshCore alkalmazások a nyers karaktereket mutatják.';
 
   @override
   String get appSettings_notifications => 'Értesítések';

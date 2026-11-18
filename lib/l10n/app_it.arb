@@ -1882,7 +1882,7 @@
   "appSettings_senderNameColors": "Nomi mittente colorati",
   "appSettings_senderNameColorsSubtitle": "Dà a ogni mittente del canale un colore del nome tutto suo. Se disattivato, tutti usano il colore del tema.",
   "appSettings_showTextFormatting": "Mostra formattazione del testo",
-  "appSettings_showTextFormattingSubtitle": "Markdown nei messaggi: **grassetto**, *corsivo*, ||testo nascosto||, titoli e link. Le altre app MeshCore mostrano i caratteri grezzi.",
+  "appSettings_showTextFormattingSubtitle": "Markdown nei messaggi: **grassetto**, *corsivo*, ||testo nascosto||, titoli, elenchi e link. Le altre app MeshCore mostrano i caratteri grezzi.",
   "appSettings_maxChannelMessageRetries": "Tentativi massimi messaggi canale",
   "appSettings_maxChannelMessageRetriesSubtitle": "Riproverà fino a questo numero di volte finché non sente almeno una ripetizione",
   "appSettings_heardCheck": "Verifica gli invii con gli osservatori",

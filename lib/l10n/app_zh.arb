@@ -1887,7 +1887,7 @@
   "appSettings_senderNameColors": "彩色发送者名称",
   "appSettings_senderNameColorsSubtitle": "为每位频道发送者分配各自的名称颜色。关闭后所有人都使用主题颜色。",
   "appSettings_showTextFormatting": "显示文本格式",
-  "appSettings_showTextFormattingSubtitle": "消息中的 Markdown：**粗体**、*斜体*、||剧透||、标题和链接。其他 MeshCore 应用会显示原始字符。",
+  "appSettings_showTextFormattingSubtitle": "消息中的 Markdown：**粗体**、*斜体*、||剧透||、标题、列表和链接。其他 MeshCore 应用会显示原始字符。",
   "appSettings_maxChannelMessageRetries": "频道消息最大重试次数",
   "appSettings_maxChannelMessageRetriesSubtitle": "在听到至少一次转发之前，最多重试这么多次",
   "appSettings_heardCheck": "通过观测站确认发送",

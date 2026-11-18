@@ -1882,7 +1882,7 @@
   "appSettings_senderNameColors": "Noms d'expéditeurs en couleur",
   "appSettings_senderNameColorsSubtitle": "Donne à chaque expéditeur d'un canal sa propre couleur de nom. Désactivé, tout le monde a la couleur du thème.",
   "appSettings_showTextFormatting": "Afficher la mise en forme du texte",
-  "appSettings_showTextFormattingSubtitle": "Markdown dans les messages : **gras**, *italique*, ||texte caché||, titres et liens. Les autres applications MeshCore affichent les caractères bruts.",
+  "appSettings_showTextFormattingSubtitle": "Markdown dans les messages : **gras**, *italique*, ||texte caché||, titres, listes et liens. Les autres applications MeshCore affichent les caractères bruts.",
   "appSettings_maxChannelMessageRetries": "Nouveaux essais max. (canal)",
   "appSettings_maxChannelMessageRetriesSubtitle": "Renvoie jusqu'à ce nombre de fois tant qu'aucune répétition n'est entendue",
   "appSettings_heardCheck": "Vérifier les envois auprès d'observateurs",

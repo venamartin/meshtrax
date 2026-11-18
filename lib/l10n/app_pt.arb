@@ -1882,7 +1882,7 @@
   "appSettings_senderNameColors": "Nomes de remetentes coloridos",
   "appSettings_senderNameColorsSubtitle": "Dá a cada remetente do canal uma cor de nome própria. Desligado usa a cor do tema para todos.",
   "appSettings_showTextFormatting": "Mostrar formatação de texto",
-  "appSettings_showTextFormattingSubtitle": "Markdown nas mensagens: **negrito**, *itálico*, ||spoilers||, títulos e links. Outros apps MeshCore mostram os caracteres brutos.",
+  "appSettings_showTextFormattingSubtitle": "Markdown nas mensagens: **negrito**, *itálico*, ||spoilers||, títulos, listas e links. Outros apps MeshCore mostram os caracteres brutos.",
   "appSettings_maxChannelMessageRetries": "Máximo de reenvios no canal",
   "appSettings_maxChannelMessageRetriesSubtitle": "Tenta de novo esse número de vezes até ouvir pelo menos uma repetição",
   "appSettings_heardCheck": "Verificar envios com observadores",

@@ -1020,7 +1020,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      '메시지의 마크다운: **굵게**, *기울임*, ||스포일러||, 제목, 링크. 다른 MeshCore 앱에서는 기호가 그대로 보입니다.';
+      '메시지의 마크다운: **굵게**, *기울임*, ||스포일러||, 제목, 목록, 링크. 다른 MeshCore 앱에서는 기호가 그대로 보입니다.';
 
   @override
   String get appSettings_notifications => '알림';

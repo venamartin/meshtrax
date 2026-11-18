@@ -1054,7 +1054,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown v správach: **tučné**, *kurzíva*, ||spoilery||, nadpisy a odkazy. Iné aplikácie MeshCore zobrazujú nespracované znaky.';
+      'Markdown v správach: **tučné**, *kurzíva*, ||spoilery||, nadpisy, zoznamy a odkazy. Iné aplikácie MeshCore zobrazujú nespracované znaky.';
 
   @override
   String get appSettings_notifications => 'Upozornenia';

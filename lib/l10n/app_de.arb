@@ -1910,7 +1910,7 @@
   "appSettings_senderNameColors": "Farbige Absendernamen",
   "appSettings_senderNameColorsSubtitle": "Gibt jedem Absender in Kanälen eine eigene Namensfarbe. Aus verwendet für alle die Designfarbe.",
   "appSettings_showTextFormatting": "Textformatierung anzeigen",
-  "appSettings_showTextFormattingSubtitle": "Markdown in Nachrichten: **fett**, *kursiv*, ||Spoiler||, Überschriften und Links. Andere MeshCore-Apps zeigen die Rohzeichen.",
+  "appSettings_showTextFormattingSubtitle": "Markdown in Nachrichten: **fett**, *kursiv*, ||Spoiler||, Überschriften, Listen und Links. Andere MeshCore-Apps zeigen die Rohzeichen.",
   "appSettings_maxChannelMessageRetries": "Max. Wiederholungen für Kanalnachrichten",
   "appSettings_maxChannelMessageRetriesSubtitle": "Sendet so oft erneut, bis mindestens eine Wiederholung zu hören ist",
   "appSettings_heardCheck": "Sendungen bei Beobachtern prüfen",

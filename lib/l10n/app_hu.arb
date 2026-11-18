@@ -1920,7 +1920,7 @@
   "appSettings_senderNameColors": "Színes feladónevek",
   "appSettings_senderNameColorsSubtitle": "Minden csatornán küldő saját névszínt kap. Kikapcsolva mindenki a téma színét kapja.",
   "appSettings_showTextFormatting": "Szövegformázás megjelenítése",
-  "appSettings_showTextFormattingSubtitle": "Markdown az üzenetekben: **félkövér**, *dőlt*, ||spoiler||, címsorok és linkek. Más MeshCore alkalmazások a nyers karaktereket mutatják.",
+  "appSettings_showTextFormattingSubtitle": "Markdown az üzenetekben: **félkövér**, *dőlt*, ||spoiler||, címsorok, listák és linkek. Más MeshCore alkalmazások a nyers karaktereket mutatják.",
   "appSettings_maxChannelMessageRetries": "Csatornaüzenet max. újraküldése",
   "appSettings_maxChannelMessageRetriesSubtitle": "Ennyiszer próbálja újra, amíg legalább egy ismétlést nem hall",
   "appSettings_heardCheck": "Küldések ellenőrzése megfigyelőknél",
