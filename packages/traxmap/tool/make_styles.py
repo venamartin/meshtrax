@@ -29,6 +29,14 @@ MAJOR_ROADS = ["motorway", "trunk", "primary", "secondary"]
 TRAIL = ["all", ["==", ["get", "class"], "path"],
          ["any", ["match", ["get", "subclass"], ["path", "bridleway"], True, False],
           ["all", ["==", ["get", "subclass"], "footway"], ["==", ["get", "surface"], "unpaved"]]]]
+# Walkways: steps, pedestrian streets and cycleways, and footways not tagged
+# unpaved (sidewalks and park paths, untagged included); an unpaved footway
+# is a trail (Martin, 2026-11-17, after Fort Mason showed almost none of its
+# paths). Lines only: a pedestrian area (a plaza) is a polygon, and its
+# outline no path.
+WALKWAY = ["all", ["==", ["get", "class"], "path"], ["==", ["geometry-type"], "LineString"],
+           ["any", ["match", ["get", "subclass"], ["steps", "pedestrian", "cycleway"], True, False],
+            ["all", ["==", ["get", "subclass"], "footway"], ["!=", ["get", "surface"], "unpaved"]]]]
 # The trail names. transportation_name carries no surface, so every named
 # footway takes the trail label; road-label leaves these to it.
 TRAIL_NAME = ["all", ["==", ["get", "class"], "path"],
@@ -181,6 +189,12 @@ def style(name, P, note):
         O("track", "line", "transportation", minzoom=11, filter=["==", ["get", "class"], "track"],
           paint={"line-color": P["track"], "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.8, 16, 2.2],
                  "line-dasharray": [3, 1.5]}),
+        # Thinner and quieter than a trail, and from zoom 14 only, where a
+        # city's sidewalks have room.
+        O("walkway", "line", "transportation", minzoom=14, filter=WALKWAY,
+          paint={"line-color": P["walkway"],
+                 "line-width": ["interpolate", ["linear"], ["zoom"], 14, P["walkway_w"][0], 17, P["walkway_w"][1]],
+                 "line-dasharray": [2, 1.5]}),
         O("trail-halo", "line", "transportation", minzoom=11, filter=TRAIL,
           paint={"line-color": P["trail_halo"], "line-opacity": P["trail_halo_op"],
                  "line-width": ["interpolate", ["linear"], ["zoom"], 11, 3, 16, 6]}),
@@ -256,7 +270,8 @@ def style(name, P, note):
 
 BASE = dict(cover_op=0.85, landuse_op=0.7, park_op=0.35, hl_op=0.2, road_scale=1.0, casing_w=0.8,
             contour_w=[0.45, 1.0], contour_op=0.75, building_op=1, trail_halo_op=0,
-            trail_w=[0.9, 2.4], poi_minzoom=15, poi_rank=20, peak_minzoom=10, place_case="none", place_spacing=0)
+            trail_w=[0.9, 2.4], walkway_w=[0.6, 1.4], poi_minzoom=15, poi_rank=20, peak_minzoom=10,
+            place_case="none", place_spacing=0)
 
 DARK = {**BASE,
     "bg": "#1c2026", "wood": "#1f2b24", "grass": "#222a24", "farm": "#23262a", "wetland": "#1e2a2c",
@@ -268,6 +283,7 @@ DARK = {**BASE,
     "aeroway": "#3a3f48", "building": "#2c3138", "building_line": "#363c44",
     "casing": "#14171b", "motorway": "#9a7440", "primary": "#6e6650", "secondary": "#585548",
     "tertiary": "#4a4c50", "minor": "#3b3f45", "track": "#7a6a55", "trail": "#d0705f", "trail_halo": "#000000",
+    "walkway": "#70685e",
     "rail": "#555b63", "boundary": "#6b5b80", "label": "#c9d0d8", "halo": "#1c2026",
     "contour_label": "#a08c72", "water_label": "#6f9cc7", "poi_label": "#9aa3ad", "peak": "#d8b98a", "place": "#e6eaef"}
 
@@ -282,7 +298,7 @@ MODERN = {**BASE,
     "contour_w": [0.4, 0.8], "aeroway": "#dcdbe6", "building": "#e8e3dc", "building_line": "#d8d1c8",
     "casing": "#dcd6cd", "casing_w": 1, "motorway": "#ffd58a", "primary": "#fff3c9", "secondary": "#ffffff",
     "tertiary": "#ffffff", "minor": "#ffffff", "road_scale": 1.15, "track": "#b89f7d", "trail": "#e07a5f",
-    "trail_halo": "#ffffff", "trail_halo_op": 0.6, "rail": "#b3b0aa", "boundary": "#c3b3d6",
+    "trail_halo": "#ffffff", "trail_halo_op": 0.6, "walkway": "#a69a8b", "rail": "#b3b0aa", "boundary": "#c3b3d6",
     "label": "#55595e", "halo": "#ffffff", "contour_label": "#b39a7e", "water_label": "#4a86b8",
     "poi_label": "#7a7f85", "poi_minzoom": 16, "poi_rank": 10, "peak": "#7a5a3a", "place": "#2f3337",
     "place_spacing": 0.02}
@@ -300,6 +316,7 @@ OUTDOOR = {**BASE,
     "building_op": 0.8, "casing": "#a9a090", "casing_w": 0.6, "motorway": "#e8a75b", "primary": "#f2cf8a",
     "secondary": "#f7e6b5", "tertiary": "#ffffff", "minor": "#ffffff", "road_scale": 0.8,
     "track": "#8a6a3e", "trail": "#d1340f", "trail_halo": "#ffffff", "trail_halo_op": 0.7, "trail_w": [1.3, 3.2],
+    "walkway": "#8f7f6a", "walkway_w": [0.7, 1.6],
     "rail": "#8f8a84", "boundary": "#9d7fb6", "label": "#3d3a35", "halo": "#ffffff",
     "contour_label": "#7a4f26", "water_label": "#2f6fa8", "poi_label": "#6a655d", "poi_minzoom": 16,
     "poi_rank": 8, "peak": "#5a2e0e", "peak_minzoom": 9, "place": "#2c2a26",

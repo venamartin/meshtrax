@@ -4,26 +4,58 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxmap/traxmap.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/helpers/date_time_helper.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/structured_message_card.dart';
 import 'package:meshtrax/widgets/structured_message_dialogs.dart';
 
+import '../helpers/map_fakes.dart';
+
 // The tray's location dialogs and how a location is named (owner,
 // 2026-10-27): "My location" is the sender's own position, titled so on
 // the air; anything else, or no title, is just a place.
 class _Radio extends MeshCoreConnector {
-  _Radio({this.lat, this.lon});
+  _Radio({this.lat, this.lon, this.gps = false, this.fresh = false, this.at});
   final double? lat, lon;
+
+  /// GPS on, whether its reading changed lately, and when it last did.
+  final bool gps, fresh;
+  final DateTime? at;
   @override
   double? get selfLatitude => lat;
   @override
   double? get selfLongitude => lon;
+  @override
+  bool get gpsOn => gps;
+  @override
+  bool get selfGpsIsFresh => fresh;
+  @override
+  DateTime? get selfGpsChangedAt => at;
+}
+
+class _NoDownloads implements PackDownloader {
+  @override
+  Stream<PackDownload> get updates => const Stream.empty();
+  @override
+  List<PackDownload> get downloads => const [];
+  @override
+  Future<void> start(DownloadItem item) async {}
+  @override
+  Future<void> pause(String packId) async {}
+  @override
+  Future<void> resume(String packId) async {}
+  @override
+  Future<void> cancel(String packId) async {}
+  @override
+  Future<void> finish(String id, {String? error}) async {}
 }
 
 const _here = '36.970000, -121.900000';
@@ -39,7 +71,11 @@ class _NoNetwork extends HttpOverrides {
 }
 
 void main() {
+  final systemFormats = DateTimeHelper.systemFormats;
   setUp(() async {
+    // Times as a US phone writes them, whatever machine runs the tests.
+    DateTimeHelper.systemFormats = () => null;
+    addTearDown(() => DateTimeHelper.systemFormats = systemFormats);
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
@@ -254,6 +290,73 @@ void main() {
       expect(wire, 'Location: $_here');
     });
 
+    // A radio that lost its fix keeps reporting the last one (safety review
+    // CH-07): the dialogs say so, and never stop you sending it.
+    testWidgets('My location from a GPS that may be old says so', (
+      tester,
+    ) async {
+      String? wire;
+      final radio = _Radio(
+        lat: 36.97,
+        lon: -121.9,
+        gps: true,
+        at: DateTime(2026, 11, 16, 14, 2),
+      );
+      await host(tester, radio, (context) async {
+        wire = await StructuredMessageDialogs.myLocation(
+          context,
+          context.read<MeshCoreConnector>(),
+        );
+      });
+      expect(
+        find.textContaining(
+          RegExp(r'^Your last known position \(2:02\sPM\), may be old$'),
+        ),
+        findsOneWidget,
+      );
+      await done(tester);
+      expect(wire, 'Location: My location\n$_here');
+    });
+
+    testWidgets('SOS says so too, until another position is typed', (
+      tester,
+    ) async {
+      String? wire;
+      await host(tester, _Radio(lat: 36.97, lon: -121.9, gps: true), (
+        context,
+      ) async {
+        wire = await StructuredMessageDialogs.sos(
+          context,
+          context.read<MeshCoreConnector>(),
+        );
+      });
+      const line = 'Your last known position, may be old';
+      expect(find.text(line), findsOneWidget);
+      expect(insert(tester).onPressed, isNotNull, reason: 'it never blocks');
+
+      await tester.enterText(field('Position'), '36.98, -121.9');
+      await tester.pump();
+      expect(find.text(line), findsNothing);
+      await tester.enterText(field('What happened?'), 'Broken leg');
+      await done(tester);
+      expect(wire, 'SOS: Broken leg\n36.980000, -121.900000');
+    });
+
+    testWidgets('a fresh GPS position, or one typed in: no line', (
+      tester,
+    ) async {
+      for (final radio in [
+        _Radio(lat: 36.97, lon: -121.9, gps: true, fresh: true),
+        _Radio(lat: 36.97, lon: -121.9),
+      ]) {
+        await host(tester, radio, (context) {
+          StructuredMessageDialogs.sos(context, radio);
+        });
+        expect(find.text(_here), findsOneWidget);
+        expect(find.textContaining('last known'), findsNothing);
+      }
+    });
+
     testWidgets('SOS takes a pasted position too', (tester) async {
       String? wire;
       await host(tester, _Radio(), (context) async {
@@ -268,6 +371,86 @@ void main() {
       await tester.pump();
       await done(tester);
       expect(wire, 'SOS: Broken leg\n$_here');
+    });
+  });
+
+  group('the distance on a card', () {
+    late Directory tmp;
+    setUp(() async => tmp = await Directory.systemTemp.createTemp('card'));
+    tearDown(() => tmp.delete(recursive: true));
+
+    // An SOS 2.2 km north of a radio at 36.97, -121.9.
+    Future<void> card(WidgetTester tester, MeshCoreConnector radio) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
+          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider(
+            create: (_) => MapPacksService(
+              manager: PackManager(Directory('${tmp.path}/packs')),
+              downloader: _NoDownloads(),
+              cacheDir: tmp,
+              styles: StyleRegistry(MemoryStyles()),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 322,
+                child: StructuredMessageCard(
+                  message: StructuredMessage.parse(
+                    'SOS: Broken leg\n36.990000, -121.900000',
+                  )!,
+                  textScale: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    testWidgets('from a GPS position that may be old: the map\'s mark', (
+      tester,
+    ) async {
+      await card(
+        tester,
+        _Radio(
+          lat: 36.97,
+          lon: -121.9,
+          gps: true,
+          at: DateTime(2026, 11, 16, 14, 2),
+        ),
+      );
+      expect(find.textContaining(RegExp(r' N$')), findsOneWidget);
+      expect(
+        find.textContaining(RegExp(r'^Last known · 2:02\sPM$')),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.navigation_outlined), findsOneWidget);
+    });
+
+    testWidgets('from a fresh one, or one typed in: no mark', (tester) async {
+      for (final radio in [
+        _Radio(lat: 36.97, lon: -121.9, gps: true, fresh: true),
+        _Radio(lat: 36.97, lon: -121.9),
+      ]) {
+        await card(tester, radio);
+        expect(find.textContaining(RegExp(r' N$')), findsOneWidget);
+        expect(find.textContaining('Last known'), findsNothing);
+        expect(find.byIcon(Icons.navigation), findsOneWidget);
+      }
     });
   });
 }

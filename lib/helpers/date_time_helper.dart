@@ -88,6 +88,19 @@ class DateTimeHelper {
   static String dayMonth(BuildContext context, DateTime t) =>
       _format(context, 'Md').format(t);
 
+  /// [time], after [dayMonth] when [t] is not today: "2:22 PM" or
+  /// "11/3 2:22 PM".
+  static String timeWithDay(BuildContext context, DateTime t) {
+    final now = DateTime.now();
+    final clock = time(context, t);
+    return t.year == now.year && t.month == now.month && t.day == now.day
+        ? clock
+        : '${dayMonth(context, t)} $clock';
+  }
+
+  /// The midnight after [t]: when [timeWithDay] adds the day.
+  static DateTime nextDay(DateTime t) => DateTime(t.year, t.month, t.day + 1);
+
   /// "11/3/2026" or "03/11/2026".
   static String date(BuildContext context, DateTime t) =>
       _format(context, 'yMd').format(t);

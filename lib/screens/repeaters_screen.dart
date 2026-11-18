@@ -424,18 +424,31 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.contacts_deleteContact),
-        content: Text(context.l10n.contacts_removeConfirm(contact.name)),
+        content: Text([
+          context.l10n.contacts_removeConfirm(contact.name),
+          if (connector.radioAutoAdds(contact.type))
+            context.l10n.contacts_deleteComesBack,
+        ].join('\n\n')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(context.l10n.common_cancel),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogContext);
               // During a download a saved repeater's row can look only heard.
-              if (contact.isActive || connector.isLoadingContacts) {
-                connector.removeContact(contact);
+              if ((contact.isActive || connector.isLoadingContacts) &&
+                  !await connector.removeContact(contact)) {
+                if (context.mounted) {
+                  showDismissibleSnackBar(
+                    context,
+                    content: Text(
+                      context.l10n.contacts_contactDeleteFailed(contact.name),
+                    ),
+                  );
+                }
+                return;
               }
               connector.removeDiscoveredContact(contact);
             },

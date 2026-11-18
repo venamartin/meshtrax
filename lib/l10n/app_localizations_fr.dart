@@ -1137,6 +1137,68 @@ class AppLocalizationsFr extends AppLocalizations {
       'Renvoie jusqu\'à ce nombre de fois tant qu\'aucune répétition n\'est entendue';
 
   @override
+  String get appSettings_heardCheck =>
+      'Vérifier les envois auprès d\'observateurs';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Avant de renvoyer un message de canal, demander à un serveur d\'observateurs s\'il a été entendu';
+
+  @override
+  String get appSettings_heardServer => 'Serveur d\'observateurs';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Non défini';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Les observateurs sont des radios qui signalent à un serveur ce qu\'elles entendent. MeshTrax envoie à ce serveur une empreinte de chaque message de canal que vous envoyez, jamais son texte. Le serveur voit votre adresse internet et l\'heure de l\'envoi.';
+
+  @override
+  String get appSettings_heardServerOther => 'Autre adresse';
+
+  @override
+  String get appSettings_heardServerAddress => 'Adresse du serveur';
+
+  @override
+  String get appSettings_heardServerChecking => 'Vérification du serveur…';
+
+  @override
+  String get appSettings_heardServerNoAnswer =>
+      'Aucune réponse de cette adresse';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Enregistrer quand même';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Le serveur a répondu';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entendu par $count observateurs',
+      one: 'Entendu par 1 observateur',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count répéteurs',
+      one: 'via 1 répéteur',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batterie';
 
   @override
@@ -2122,6 +2184,32 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Partager le marqueur ici';
+
+  @override
+  String get map_lastKnown => 'Dernière position';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Dernière position · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Depuis votre dernière position connue, peut-être ancienne';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Depuis votre dernière position connue ($time), peut-être ancienne';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Votre dernière position connue, peut-être ancienne';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Votre dernière position connue ($time), peut-être ancienne';
+  }
 
   @override
   String get map_setAsMyLocation => 'Définir comme ma localisation';
@@ -4065,6 +4153,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun répéteur ne vous a entendu. Nouvel essai dès qu\'un répéteur sera à portée.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'envoyé $time selon l\'horloge de l\'expéditeur';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'La radio de $name envoie des codes de répéteur courts (1 octet). Pathfinder ne peut pas apprendre d\'itinéraires vers ce contact tant que sa radio n\'utilise pas des codes de 2 octets.';
   }
@@ -5832,6 +5925,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get roadLegend_trail => 'Sentier';
 
   @override
+  String get roadLegend_walkway => 'Voie piétonne ou piste cyclable';
+
+  @override
   String get roadLegend_interstate => 'Autoroute inter-États';
 
   @override
@@ -7039,4 +7135,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get offlineMaps_losContours =>
       'Courbes de niveau pour la ligne de vue';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Votre radio enregistre ce type de contact d\'elle-même : il reviendra la prochaine fois qu\'il sera entendu.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Partager un contact';
+
+  @override
+  String get shareContact_myContact => 'Mon contact';
 }

@@ -33,6 +33,7 @@ import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/line_of_sight.dart';
 import '../services/line_of_sight_session.dart';
+import '../helpers/date_time_helper.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/map_places.dart';
 import '../helpers/poi_kinds.dart';
@@ -935,7 +936,8 @@ class _MapScreenState extends State<MapScreen> {
                             connector.pathHashByteWidth,
                           ),
                           ...sharedMarkers.map(_buildSharedMarker),
-                          // The GPS's live position is a blue dot; a position
+                          // The GPS's position is a blue dot while its reading
+                          // changes, then grey and "Last known"; a position
                           // typed into the radio is the "You" pin.
                           if (selfPosition != null && connector.gpsOn)
                             MapMarker(
@@ -943,7 +945,19 @@ class _MapScreenState extends State<MapScreen> {
                               position: selfPosition.toOvm(),
                               size: const Size(24, 24),
                               interactive: false,
-                              child: const _GpsDot(),
+                              label: !connector.selfPositionMayBeOld
+                                  ? null
+                                  : switch (connector.selfGpsChangedAt) {
+                                      final at? => context.l10n.map_lastKnownAt(
+                                        DateTimeHelper.time(context, at),
+                                      ),
+                                      null => context.l10n.map_lastKnown,
+                                    },
+                              // Its time must show in full.
+                              labelMaxWidth: 200,
+                              child: _GpsDot(
+                                old: connector.selfPositionMayBeOld,
+                              ),
                             )
                           else if (selfPosition != null)
                             MapMarker(
@@ -2486,6 +2500,8 @@ class _MapScreenState extends State<MapScreen> {
               from.longitude,
               coordFormatOf(settings),
             ).first,
+      positionMayBeOld: _connector.selfPositionMayBeOld,
+      positionKnownAt: _connector.selfGpsChangedAt,
       onUseMyPosition: () {
         setState(() => _routeFrom = null);
         unawaited(_findRoute(selfPosition));
@@ -3603,14 +3619,16 @@ class _ReportHeightState extends State<_ReportHeight> {
   Widget build(BuildContext context) => widget.child;
 }
 
-/// The radio's live GPS position: a blue dot.
+/// The radio's GPS position: a blue dot, or grey when it may be [old].
 class _GpsDot extends StatelessWidget {
-  const _GpsDot();
+  final bool old;
+
+  const _GpsDot({required this.old});
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: Colors.blue[600],
+      color: old ? Colors.grey[500] : Colors.blue[600],
       shape: BoxShape.circle,
       border: Border.all(color: Colors.white, width: 3),
       boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],

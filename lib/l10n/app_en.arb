@@ -508,6 +508,34 @@
   "appSettings_maxMessageRetriesSubtitle": "Send attempts before a message is marked failed. Known routes get the first tries; the rest flood.",
   "appSettings_maxChannelMessageRetries": "Max Channel Message Retries",
   "appSettings_maxChannelMessageRetriesSubtitle": "It will retry this many times until it hears at least one repeat",
+  "appSettings_heardCheck": "Check sends with observers",
+  "appSettings_heardCheckSubtitle": "Before sending a channel message again, ask an observer server whether it was heard",
+  "appSettings_heardServer": "Observer server",
+  "appSettings_heardServerNotSet": "Not set",
+  "appSettings_heardServerAbout": "Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.",
+  "appSettings_heardServerOther": "Other address",
+  "appSettings_heardServerAddress": "Server address",
+  "appSettings_heardServerChecking": "Checking the server…",
+  "appSettings_heardServerNoAnswer": "No answer from this address",
+  "appSettings_heardServerSaveAnyway": "Save anyway",
+  "appSettings_heardServerAnswered": "The server answered",
+  "chat_heardBy": "{count, plural, =1{Heard by 1 observer} other{Heard by {count} observers}}",
+  "@chat_heardBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_heardDirect": "direct",
+  "chat_heardVia": "{count, plural, =1{via 1 repeater} other{via {count} repeaters}}",
+  "@chat_heardVia": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "appSettings_battery": "Battery",
   "appSettings_batteryChemistry": "Battery Chemistry",
   "appSettings_batteryChemistryPerDevice": "Set per device ({deviceName})",
@@ -1122,6 +1150,15 @@
   "map_source": "Source",
   "map_flags": "Flags",
   "map_shareMarkerHere": "Share marker here",
+  "map_lastKnown": "Last known",
+  "map_lastKnownAt": "Last known · {time}",
+  "@map_lastKnownAt": {"placeholders": {"time": {"type": "String"}}},
+  "route_fromLastKnown": "From your last known position, may be old",
+  "route_fromLastKnownAt": "From your last known position ({time}), may be old",
+  "@route_fromLastKnownAt": {"placeholders": {"time": {"type": "String"}}},
+  "gps_lastKnown": "Your last known position, may be old",
+  "gps_lastKnownAt": "Your last known position ({time}), may be old",
+  "@gps_lastKnownAt": {"placeholders": {"time": {"type": "String"}}},
   "map_setAsMyLocation": "Set as my location",
   "map_pinLabel": "Pin label",
   "map_label": "Label",
@@ -2172,6 +2209,15 @@
   },
   "chat_statusQueued": "Queued",
   "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
+  "chat_sentByItsClock": "sent {time} by its clock",
+  "@chat_sentByItsClock": {
+    "description": "Under a message the radio held after a failed read: the time its sender's own clock gave it.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "chat_narrowHashNotice": "{name}'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.",
   "@chat_narrowHashNotice": {
     "placeholders": {
@@ -2881,6 +2927,7 @@
   "roadLegend_road": "Road",
   "roadLegend_track": "Dirt road or track",
   "roadLegend_trail": "Trail",
+  "roadLegend_walkway": "Walkway or bike path",
   "roadLegend_interstate": "Interstate",
   "roadLegend_usRoute": "US highway",
   "roadLegend_stateRoute": "State route",
@@ -3383,5 +3430,9 @@
   "@los_lookFurther": {"placeholders": {"distance": {"type": "String"}}},
   "los_nobodyWithin": "No one with a position within {distance}.",
   "@los_nobodyWithin": {"placeholders": {"distance": {"type": "String"}}},
-  "offlineMaps_losContours": "Contours for line of sight"
+  "offlineMaps_losContours": "Contours for line of sight",
+  "contacts_deleteComesBack": "Your radio saves this kind of contact by itself, so it comes back the next time it is heard.",
+  "tray_contact": "Contact",
+  "shareContact_title": "Share a contact",
+  "shareContact_myContact": "My contact"
 }

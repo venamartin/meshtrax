@@ -92,6 +92,21 @@ void main() {
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
     c = _Connector();
+    // The radio holds the repeater: route writes go only to saved contacts.
+    await c.getContacts();
+    c.handleFrameForTest([respCodeContactsStart, 1, 0, 0, 0]);
+    c.handleFrameForTest([
+      respCodeContact,
+      ..._repeater().publicKey,
+      advTypeRepeater,
+      0,
+      0xFF,
+      ...Uint8List(maxPathSize),
+      ...Uint8List(maxNameSize)..setRange(0, 4, 'HILL'.codeUnits),
+      ...Uint8List(16),
+    ]);
+    c.handleFrameForTest([respCodeEndOfContacts, 0, 0, 0, 0]);
+    c.frames.clear();
   });
 
   group('the route of each try', () {

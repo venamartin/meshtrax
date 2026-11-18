@@ -1135,6 +1135,67 @@ class AppLocalizationsBg extends AppLocalizations {
       'Толкова пъти ще опитва отново, докато не чуе поне едно повторение';
 
   @override
+  String get appSettings_heardCheck =>
+      'Проверка на изпращанията при наблюдатели';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Преди повторно изпращане на съобщение в канал да се пита сървър на наблюдатели дали е било чуто';
+
+  @override
+  String get appSettings_heardServer => 'Сървър на наблюдатели';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Не е зададен';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Наблюдателите са радиостанции, които съобщават на сървър какво чуват. MeshTrax изпраща на този сървър отпечатък на всяко съобщение в канал, което изпращате, но никога текста му. Сървърът вижда интернет адреса ви и кога сте изпратили.';
+
+  @override
+  String get appSettings_heardServerOther => 'Друг адрес';
+
+  @override
+  String get appSettings_heardServerAddress => 'Адрес на сървъра';
+
+  @override
+  String get appSettings_heardServerChecking => 'Проверка на сървъра…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Няма отговор от този адрес';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Запази въпреки това';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Сървърът отговори';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Чуто от $count наблюдатели',
+      one: 'Чуто от 1 наблюдател',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'директно';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'през $count ретранслатора',
+      one: 'през 1 ретранслатор',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Батерия';
 
   @override
@@ -2116,6 +2177,32 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Споделете маркер тук';
+
+  @override
+  String get map_lastKnown => 'Последно известно';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Последно известно · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'От последното ви известно местоположение, може да е старо';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'От последното ви известно местоположение ($time), може да е старо';
+  }
+
+  @override
+  String get gps_lastKnown =>
+      'Последното ви известно местоположение, може да е старо';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Последното ви известно местоположение ($time), може да е старо';
+  }
 
   @override
   String get map_setAsMyLocation => 'Задайте като моя местоположение';
@@ -4032,6 +4119,11 @@ class AppLocalizationsBg extends AppLocalizations {
       'Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'изпратено $time по часовника на подателя';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Радиото на $name изпраща кратки кодове на повторители (1 байт). Pathfinder не може да научи маршрути до този контакт, докато радиото му не започне да използва 2-байтови кодове.';
   }
@@ -5790,6 +5882,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get roadLegend_trail => 'Пътека';
 
   @override
+  String get roadLegend_walkway => 'Алея или велоалея';
+
+  @override
   String get roadLegend_interstate => 'Междущатска магистрала';
 
   @override
@@ -6987,4 +7082,17 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Хоризонтали за пряка видимост';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Радиото запазва този вид контакт само, така че той ще се върне следващия път, когато бъде чут.';
+
+  @override
+  String get tray_contact => 'Контакт';
+
+  @override
+  String get shareContact_title => 'Споделяне на контакт';
+
+  @override
+  String get shareContact_myContact => 'Моят контакт';
 }

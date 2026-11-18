@@ -1134,6 +1134,66 @@ class AppLocalizationsHu extends AppLocalizations {
       'Ennyiszer próbálja újra, amíg legalább egy ismétlést nem hall';
 
   @override
+  String get appSettings_heardCheck => 'Küldések ellenőrzése megfigyelőknél';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Csatornaüzenet újraküldése előtt megkérdez egy megfigyelő szervert, hogy hallották-e';
+
+  @override
+  String get appSettings_heardServer => 'Megfigyelő szerver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Nincs beállítva';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'A megfigyelők olyan rádiók, amelyek jelentik egy szervernek, amit hallanak. A MeshTrax minden elküldött csatornaüzenetből egy ujjlenyomatot küld ennek a szervernek, a szövegét soha. A szerver látja az internetcímedet és azt, hogy mikor küldtél.';
+
+  @override
+  String get appSettings_heardServerOther => 'Más cím';
+
+  @override
+  String get appSettings_heardServerAddress => 'Szerver címe';
+
+  @override
+  String get appSettings_heardServerChecking => 'Szerver ellenőrzése…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Nincs válasz erről a címről';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Mentés mégis';
+
+  @override
+  String get appSettings_heardServerAnswered => 'A szerver válaszolt';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count megfigyelő hallotta',
+      one: '1 megfigyelő hallotta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'közvetlenül';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count átjátszón át',
+      one: '1 átjátszón át',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Akku';
 
   @override
@@ -2122,6 +2182,31 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Osztja ezt a tartalmat itt';
+
+  @override
+  String get map_lastKnown => 'Utolsó ismert';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Utolsó ismert · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Kiindulópont: az Ön utolsó ismert helyzete, lehet, hogy régi';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Kiindulópont: az Ön utolsó ismert helyzete ($time), lehet, hogy régi';
+  }
+
+  @override
+  String get gps_lastKnown => 'Az Ön utolsó ismert helyzete, lehet, hogy régi';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Az Ön utolsó ismert helyzete ($time), lehet, hogy régi';
+  }
 
   @override
   String get map_setAsMyLocation => 'Állítsa be a jelenlegi helyzetemként';
@@ -4049,6 +4134,11 @@ class AppLocalizationsHu extends AppLocalizations {
       'Egy repeater sem hallotta. Újra próbálja, amikor lesz egy hatótávon belül.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'elküldve $time, a küldő órája szerint';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name rádiója rövid repeaterkódokat küld (1 bájt). A Pathfinder addig nem tud útvonalat tanulni hozzá, amíg a rádiója nem használ 2 bájtos kódokat.';
   }
@@ -5808,6 +5898,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get roadLegend_trail => 'Ösvény';
 
   @override
+  String get roadLegend_walkway => 'Gyalogút vagy kerékpárút';
+
+  @override
   String get roadLegend_interstate => 'Interstate autópálya';
 
   @override
@@ -7011,4 +7104,17 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Szintvonalak a rálátáshoz';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'A rádió magától elmenti az ilyen típusú névjegyet, ezért visszakerül, amikor legközelebb hallja.';
+
+  @override
+  String get tray_contact => 'Névjegy';
+
+  @override
+  String get shareContact_title => 'Névjegy megosztása';
+
+  @override
+  String get shareContact_myContact => 'Saját névjegy';
 }

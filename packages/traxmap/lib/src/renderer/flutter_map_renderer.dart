@@ -590,7 +590,7 @@ class _MarkerLabelLayer extends StatelessWidget {
           if (m.labelMinZoom == null || zoom >= m.labelMinZoom!)
             fm.Marker(
               point: ll.LatLng(m.position.latitude, m.position.longitude),
-              width: style.maxWidth,
+              width: m.labelMaxWidth ?? style.maxWidth,
               height: 24,
               alignment: Alignment.topCenter, // label box sits above the point
               child: IgnorePointer(

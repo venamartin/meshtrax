@@ -1116,6 +1116,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'It will retry this many times until it hears at least one repeat';
 
   @override
+  String get appSettings_heardCheck => 'Check sends with observers';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Before sending a channel message again, ask an observer server whether it was heard';
+
+  @override
+  String get appSettings_heardServer => 'Observer server';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Not set';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Observers are radios that report what they hear to a server. MeshTrax sends that server a fingerprint of each channel message you send, never its text. The server sees your internet address and when you sent.';
+
+  @override
+  String get appSettings_heardServerOther => 'Other address';
+
+  @override
+  String get appSettings_heardServerAddress => 'Server address';
+
+  @override
+  String get appSettings_heardServerChecking => 'Checking the server…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'No answer from this address';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Save anyway';
+
+  @override
+  String get appSettings_heardServerAnswered => 'The server answered';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Heard by $count observers',
+      one: 'Heard by 1 observer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeaters',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Battery';
 
   @override
@@ -2082,6 +2142,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Share marker here';
+
+  @override
+  String get map_lastKnown => 'Last known';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Last known · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => 'From your last known position, may be old';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'From your last known position ($time), may be old';
+  }
+
+  @override
+  String get gps_lastKnown => 'Your last known position, may be old';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Your last known position ($time), may be old';
+  }
 
   @override
   String get map_setAsMyLocation => 'Set as my location';
@@ -3966,6 +4050,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'No repeater heard you. Will try again when one is in range.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'sent $time by its clock';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name\'s radio sends short repeater codes (1 byte). Pathfinder cannot learn routes to them until their radio uses 2-byte codes.';
   }
@@ -5707,6 +5796,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roadLegend_trail => 'Trail';
 
   @override
+  String get roadLegend_walkway => 'Walkway or bike path';
+
+  @override
   String get roadLegend_interstate => 'Interstate';
 
   @override
@@ -6896,4 +6988,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Contours for line of sight';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Your radio saves this kind of contact by itself, so it comes back the next time it is heard.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Share a contact';
+
+  @override
+  String get shareContact_myContact => 'My contact';
 }

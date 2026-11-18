@@ -48,17 +48,17 @@ class MeshCoreQr {
     if (!data.startsWith(_channelPrefix)) return false;
     final uri = Uri.tryParse(data);
     if (uri == null) return false;
-    
+
     final name = uri.queryParameters['name'];
     final secret = uri.queryParameters['secret'];
-    
+
     return name != null && secret != null && secret.length == 32;
   }
 
   /// Parse a channel QR
   static ChannelQrData? parseChannelQr(String data) {
     if (!isChannelQr(data)) return null;
-    
+
     final uri = Uri.parse(data);
     return ChannelQrData(
       name: uri.queryParameters['name']!,
@@ -71,7 +71,7 @@ class MeshCoreQr {
     if (!data.startsWith(_contactPrefix)) return false;
     final uri = Uri.tryParse(data);
     if (uri == null) return false;
-    
+
     final pubKey = uri.queryParameters['public_key'];
     return pubKey != null && pubKey.length == 64;
   }
@@ -116,6 +116,14 @@ class MeshCoreQr {
       pubKeyHex: m.group(1)!.toLowerCase(),
       type: int.parse(m.group(2)!),
     );
+  }
+
+  /// The `<public key:type:name>` line the official app shares a contact
+  /// as; [parseContactText] reads it back.
+  static String encodeContactText(String name, String pubKeyHex, int type) {
+    final clean = name.replaceAll(RegExp(r'[<>\r\n]'), '').trim();
+    final key = pubKeyHex.toLowerCase();
+    return '<$key:$type:${clean.isEmpty ? key.substring(0, 8) : clean}>';
   }
 
   static final _contactText = RegExp(r'^<([0-9a-fA-F]{64}):([1-4]):(.+)>$');

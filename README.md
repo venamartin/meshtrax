@@ -72,10 +72,10 @@ MeshTrax is a **client** — it requires a compatible **MeshCore** device (a sup
 - **Google Play:** [Get MeshTrax on Google Play](https://play.google.com/store/apps/details?id=com.vena.meshtrax)
 - **App Store (iPhone/iPad):** [Download MeshTrax on the App Store](https://apps.apple.com/us/app/meshtrax/id6799214428)
 - **Microsoft Store (Windows):** [Get MeshTrax from the Microsoft Store](https://apps.microsoft.com/detail/9N0DM90LRH49)
-- **Linux (Raspberry Pi & desktop):** one-line installer, see below.
+- **Linux (desktop PC & Raspberry Pi):** one-line installer, see below.
 - **Build from source:** see below.
 
-### Linux (Raspberry Pi & desktop)
+### Linux (desktop PC & Raspberry Pi)
 
 Install — or upgrade — with one command:
 
@@ -85,17 +85,35 @@ curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.
 
 This installs MeshTrax under `~/.local/share/meshtrax`, adds it to your applications menu, and puts a `meshtrax` command on your `PATH`. No root required. Re-run the same command any time to upgrade — it checks the latest release and does nothing if you are already up to date.
 
-Requires a **64-bit** OS: `uname -m` should print `aarch64` or `x86_64`. 32-bit Raspberry Pi OS is not supported — reflash with the 64-bit image. For USB-serial radios, add yourself to the `dialout` group:
+Requires a **64-bit** OS: `uname -m` should print `aarch64` (Raspberry Pi and other 64-bit ARM) or `x86_64` (a 64-bit Intel or AMD PC). The installer picks the matching build. Every release from v1.11.0 has both; earlier ones have the Raspberry Pi build only. The Raspberry Pi build needs 64-bit Raspberry Pi OS Bookworm or newer. 32-bit Raspberry Pi OS is not supported — reflash with the 64-bit image. For USB-serial radios, add yourself to the `dialout` group:
 
 ```bash
 sudo usermod -aG dialout $USER   # then log out and back in
 ```
+
+Without the installer, download `meshtrax-linux-x64-v….zip` (PC) or `meshtrax-linux-arm64-v….zip` (Raspberry Pi) from the [releases page](https://github.com/venamartin/meshtrax/releases), unzip it, and run `./meshtrax` in the folder.
 
 To pin a specific version, or to remove MeshTrax:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --version v1.7.22
 curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh | bash -s -- --uninstall
+```
+
+#### Ubuntu and other desktop Linux on a 64-bit PC
+
+MeshTrax runs on Ubuntu 22.04 or newer, Debian 12, Linux Mint 21 or newer, and Fedora 36 or newer. A normal desktop install already has what the app needs. The installer itself needs `curl` and `unzip`, which Ubuntu doesn't always include:
+
+```bash
+sudo apt install curl unzip
+```
+
+After installing, open MeshTrax from the applications menu. The `meshtrax` command works from your next login, when Ubuntu adds `~/.local/bin` to your `PATH`.
+
+On a minimal Ubuntu or Debian install without a full desktop, add the libraries the app loads:
+
+```bash
+sudo apt install libgtk-3-0 libegl1 libgles2 xdg-user-dirs
 ```
 
 ### Build from source
@@ -117,6 +135,9 @@ flutter run -d windows
 
 # Run on Linux
 flutter run -d linux
+
+# Build the Linux release zip in Docker (x64 on an x86-64 host, arm64 on arm64)
+tool/linux_docker/build.sh
 ```
 
 ---
@@ -140,7 +161,7 @@ flutter run -d linux
 - [Privacy Policy](docs/privacy.md)
 - [Terms of Use](docs/terms.md)
 
-MeshTrax has no accounts and no analytics. Its only server is a download server for maps, routing data, and places, which receives none of your data. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. The app reaches the internet only for that map server and Giphy (GIFs), plus links you tap; line of sight, routing, and place search run on your device. See the Privacy Policy for the full details.
+MeshTrax has no accounts and no analytics. Its only server is a download server for maps, routing data, and places, which receives none of your data. Your messages, contacts, and keys are stored only on your device and exchanged only with your own MeshCore hardware and the LoRa mesh. The app reaches the internet only for that map server and Giphy (GIFs), plus links you tap, and, if you turn on "Check sends with observers", the observer server you choose, which gets a fingerprint of each channel message you send, never its text. Line of sight, routing, and place search run on your device. See the Privacy Policy for the full details.
 
 ---
 

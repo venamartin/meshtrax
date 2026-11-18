@@ -67,12 +67,14 @@ const saltPan = Geo(36.227697, -116.780625); // -84.8 m
 const badwaterGroundM = -82.6;
 
 /// A synthetic contours pack in [dir]: [tiles] maps z13 x, y to an MVT
-/// tile (see mvt_writer.dart).
+/// tile (see mvt_writer.dart). [belowSeaLevel] marks it as having lines
+/// at and below sea level, as the rebuilt packs do.
 String syntheticPack(
   Directory dir,
   String name,
   Map<(int, int), List<int>> tiles, {
   String interval = '20ft',
+  bool belowSeaLevel = false,
 }) {
   final path = '${dir.path}/$name.pmtiles';
   final m = RegExp(r'(\d+)(ft|m)').firstMatch(interval)!;
@@ -85,6 +87,7 @@ String syntheticPack(
       'interval': int.parse(m.group(1)!),
       'interval_unit': m.group(2),
       'attribution': 'Test heights',
+      if (belowSeaLevel) 'below_sea_level': true,
     },
     gzipTiles: true,
   );

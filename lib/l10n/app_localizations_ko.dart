@@ -1085,6 +1085,64 @@ class AppLocalizationsKo extends AppLocalizations {
       '중계가 한 번 이상 들릴 때까지 이 횟수만큼 다시 시도합니다';
 
   @override
+  String get appSettings_heardCheck => '옵저버로 전송 확인';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      '채널 메시지를 다시 보내기 전에 옵저버 서버에 수신 여부를 묻습니다';
+
+  @override
+  String get appSettings_heardServer => '옵저버 서버';
+
+  @override
+  String get appSettings_heardServerNotSet => '설정 안 됨';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      '옵저버는 들은 내용을 서버에 보고하는 무선기입니다. MeshTrax는 보내는 각 채널 메시지의 지문을 그 서버로 보내며, 본문은 보내지 않습니다. 서버는 사용자의 인터넷 주소와 보낸 시각을 볼 수 있습니다.';
+
+  @override
+  String get appSettings_heardServerOther => '다른 주소';
+
+  @override
+  String get appSettings_heardServerAddress => '서버 주소';
+
+  @override
+  String get appSettings_heardServerChecking => '서버 확인 중…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => '이 주소에서 응답이 없습니다';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => '그래도 저장';
+
+  @override
+  String get appSettings_heardServerAnswered => '서버가 응답했습니다';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '옵저버 $count대가 수신',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '직접';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '리피터 $count대 경유',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => '배터리';
 
   @override
@@ -2032,6 +2090,30 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => '여기에서 마커 공유';
+
+  @override
+  String get map_lastKnown => '마지막 위치';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '마지막 위치 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '마지막으로 알려진 내 위치에서 (오래되었을 수 있음)';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '마지막으로 알려진 내 위치($time)에서 (오래되었을 수 있음)';
+  }
+
+  @override
+  String get gps_lastKnown => '마지막으로 알려진 내 위치입니다. 오래되었을 수 있습니다';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '마지막으로 알려진 내 위치($time)입니다. 오래되었을 수 있습니다';
+  }
 
   @override
   String get map_setAsMyLocation => '내 위치로 설정';
@@ -3852,6 +3934,11 @@ class AppLocalizationsKo extends AppLocalizations {
       '내 신호를 들은 리피터가 없습니다. 범위 안에 리피터가 들어오면 다시 시도합니다.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '보낸 쪽 시계 기준 $time에 보냄';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name님의 무전기는 짧은 리피터 코드(1바이트)를 보냅니다. 상대 무전기가 2바이트 코드를 사용하기 전까지 Pathfinder는 상대에게 가는 경로를 학습할 수 없습니다.';
   }
@@ -5534,6 +5621,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get roadLegend_trail => '탐방로';
 
   @override
+  String get roadLegend_walkway => '보행로·자전거길';
+
+  @override
   String get roadLegend_interstate => '주간 고속도로';
 
   @override
@@ -6693,4 +6783,17 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '가시선용 등고선';
+
+  @override
+  String get contacts_deleteComesBack =>
+      '라디오가 이 종류의 연락처를 자동으로 저장하므로, 다음에 수신될 때 다시 나타납니다.';
+
+  @override
+  String get tray_contact => '연락처';
+
+  @override
+  String get shareContact_title => '연락처 공유';
+
+  @override
+  String get shareContact_myContact => '내 연락처';
 }

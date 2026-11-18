@@ -819,8 +819,14 @@ class StructuredMessageCard extends StatelessWidget {
     LatLng position,
     String? label,
   ) {
-    final (lat, lon) = context.select<MeshCoreConnector, (double?, double?)>(
-      (c) => (c.selfLatitude, c.selfLongitude),
+    final (lat, lon, old, knownAt) = context.select<MeshCoreConnector,
+        (double?, double?, bool, DateTime?)>(
+      (c) => (
+        c.selfLatitude,
+        c.selfLongitude,
+        c.selfPositionMayBeOld,
+        c.selfPositionMayBeOld ? c.selfGpsChangedAt : null,
+      ),
     );
     final units = context.select<AppSettingsService, UnitSystem>(
       (s) => s.settings.unitSystem,
@@ -828,6 +834,12 @@ class StructuredMessageCard extends StatelessWidget {
     final offset = GeoFormat.isValidPosition(lat, lon)
         ? GeoFormat.offset(LatLng(lat!, lon!), position, units)
         : null;
+    // Measured from a position that may be old: the map's mark, under it.
+    final lastKnown = !old
+        ? null
+        : knownAt == null
+            ? context.l10n.map_lastKnown
+            : context.l10n.map_lastKnownAt(DateTimeHelper.time(context, knownAt));
     return Stack(
       children: [
         MiniMap(
@@ -841,34 +853,58 @@ class StructuredMessageCard extends StatelessWidget {
           Positioned(
             left: 10,
             bottom: 10,
-            child: IgnorePointer(child: _distanceLabel(p, offset)),
+            child: IgnorePointer(
+              child: _distanceLabel(p, offset, lastKnown),
+            ),
           ),
       ],
     );
   }
 
-  Widget _distanceLabel(StructuredPalette p, GeoOffset offset) => Container(
+  Widget _distanceLabel(
+    StructuredPalette p,
+    GeoOffset offset,
+    String? lastKnown,
+  ) =>
+      Container(
         padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
         decoration: BoxDecoration(
           color: p.scrim.withValues(alpha: 0.88),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(lastKnown == null ? 999 : 12),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Transform.rotate(
-              angle: offset.bearing * math.pi / 180,
-              child: Icon(Icons.navigation, size: 13, color: p.onScrim),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.rotate(
+                  angle: offset.bearing * math.pi / 180,
+                  child: Icon(
+                    lastKnown == null
+                        ? Icons.navigation
+                        : Icons.navigation_outlined,
+                    size: 13,
+                    color: p.onScrim,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  offset.text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              offset.text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+            if (lastKnown != null)
+              Text(
+                lastKnown,
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
-            ),
           ],
         ),
       );

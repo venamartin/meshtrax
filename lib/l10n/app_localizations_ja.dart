@@ -1082,6 +1082,64 @@ class AppLocalizationsJa extends AppLocalizations {
       '中継が1つ以上聞こえるまで、この回数だけ再試行します';
 
   @override
+  String get appSettings_heardCheck => 'オブザーバーで送信を確認';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'チャンネルメッセージを再送する前に、オブザーバーサーバーに届いたかを問い合わせます';
+
+  @override
+  String get appSettings_heardServer => 'オブザーバーサーバー';
+
+  @override
+  String get appSettings_heardServerNotSet => '未設定';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'オブザーバーとは、受信した内容をサーバーに報告する無線機です。MeshTrax は送信した各チャンネルメッセージの指紋をそのサーバーに送ります。本文は送りません。サーバーにはあなたのインターネットアドレスと送信時刻が見えます。';
+
+  @override
+  String get appSettings_heardServerOther => 'その他のアドレス';
+
+  @override
+  String get appSettings_heardServerAddress => 'サーバーアドレス';
+
+  @override
+  String get appSettings_heardServerChecking => 'サーバーを確認中…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'このアドレスから応答がありません';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'それでも保存';
+
+  @override
+  String get appSettings_heardServerAnswered => 'サーバーが応答しました';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count台のオブザーバーが受信',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '直接';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'リピーター$count台経由',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'バッテリー';
 
   @override
@@ -2032,6 +2090,30 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'この場所でシェア';
+
+  @override
+  String get map_lastKnown => '最後の位置';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '最後の位置 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '最後にわかった現在地から（古い可能性があります）';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '最後にわかった現在地（$time）から（古い可能性があります）';
+  }
+
+  @override
+  String get gps_lastKnown => '最後にわかった位置です。古い可能性があります';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '最後にわかった位置（$time）です。古い可能性があります';
+  }
 
   @override
   String get map_setAsMyLocation => '現在地として設定';
@@ -3847,6 +3929,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'どのリピーターにも届きませんでした。範囲内にリピーターが入ったら再試行します。';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '送信元の時計で $time に送信';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$nameの無線機は短いリピーターコード（1バイト）を送っています。相手の無線機が2バイトのコードを使うまで、Pathfinderは相手へのルートを学習できません。';
   }
@@ -5522,6 +5609,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get roadLegend_trail => 'トレイル';
 
   @override
+  String get roadLegend_walkway => '歩道・自転車道';
+
+  @override
   String get roadLegend_interstate => '州間高速道路';
 
   @override
@@ -6676,4 +6766,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '見通し用の等高線';
+
+  @override
+  String get contacts_deleteComesBack =>
+      '無線機はこの種類の連絡先を自動で保存するため、次に受信したときに戻ってきます。';
+
+  @override
+  String get tray_contact => '連絡先';
+
+  @override
+  String get shareContact_title => '連絡先を共有';
+
+  @override
+  String get shareContact_myContact => '自分の連絡先';
 }

@@ -50,6 +50,11 @@ class ContourTerrain {
   final _absent = <int>{};
   final _peakTiles = <int, List<_PeakAt>>{};
   Coverage _coverage = Coverage(const []);
+
+  /// The order [tileAt] asks the packs in: those with lines below sea
+  /// level first, since a tile two packs share may be an older copy in
+  /// the other.
+  var _tileOrder = <int>[];
   int _depth = 0;
   final _usedPacks = <int>{};
   var _peaksUsed = false;
@@ -163,12 +168,36 @@ class ContourTerrain {
     for (final p in _packs) p.info?.intervalM ?? 0,
   ];
 
-  /// The z13 tile [x], [y] from the first pack that has it, or null.
+  /// Each pack's interval for the guard near sea level (see
+  /// [isNearSeaLevel]), or 0 for a pack with lines below sea level, where
+  /// the lowest lines above it are ordinary ones.
+  List<double> get packSeaGuardIntervals => [
+    for (final p in _packs)
+      p.info == null || p.info!.belowSeaLevel ? 0 : p.info!.intervalM,
+  ];
+
+  /// The interval for the guard near sea level at [p]: 0 where a pack
+  /// with lines below sea level covers it, else the largest of the packs
+  /// that do (all packs' where none does).
+  double seaGuardAt(Geo p) {
+    final x = worldX(p.lon), y = worldY(p.lat);
+    double? guard;
+    for (final k in _packs) {
+      final info = k.info;
+      if (info == null || !k.coverage.contains(x, y)) continue;
+      if (info.belowSeaLevel) return 0;
+      guard = math.max(guard ?? 0, info.intervalM);
+    }
+    return guard ?? packSeaGuardIntervals.fold(0.0, math.max);
+  }
+
+  /// The z13 tile [x], [y] from the first pack that has it (see
+  /// [_tileOrder]), or null.
   ContourTile? tileAt(int x, int y) {
     final key = x << tileZoom | y;
     var t = _tiles.remove(key) ?? ContourTile.none;
     if (identical(t, ContourTile.none) && !_absent.contains(key)) {
-      for (var p = 0; p < _packs.length; p++) {
+      for (final p in _tileOrder) {
         final info = _packs[p].info;
         if (info == null) continue;
         final bytes = _packs[p].file.tile(tileZoom, x, y);
@@ -243,6 +272,12 @@ class ContourTerrain {
         for (final p in _packs)
           if (p.info != null) ...p.pack.coverage,
       ]);
+      _tileOrder = [
+        for (var p = 0; p < _packs.length; p++)
+          if (_packs[p].info?.belowSeaLevel == true) p,
+        for (var p = 0; p < _packs.length; p++)
+          if (_packs[p].info?.belowSeaLevel == false) p,
+      ];
     }
     for (final p in _peakPacks) {
       final before = p.file.generation;
@@ -300,6 +335,9 @@ class ContourTerrain {
       endM: tg.groundM,
       covered: path.covered,
       packInterval: packIntervals,
+      packSeaGuardInterval: packSeaGuardIntervals,
+      startSeaGuard: seaGuardAt(a),
+      endSeaGuard: seaGuardAt(b),
       peaks: peaks,
       peakMaxAboveIntervals: peakMaxAboveIntervals,
     );
@@ -450,11 +488,11 @@ class ContourTerrain {
     }
     if (hits.isEmpty) return const EndHeight.unknown(HeightIssue.noLinesNearby);
     final intervals = packIntervals;
+    final guard = seaGuardAt(p);
     hits.sort((a, b) => a.d.compareTo(b.d));
     final nearest = hits.first;
     final iv = intervals[nearest.pack];
-    bool nearSea(double level) =>
-        intervals.any((i) => i > 0 && isNearSeaLevel(level, i));
+    bool nearSea(double level) => guard > 0 && isNearSeaLevel(level, guard);
     const unknownBelow = EndHeight.unknown(HeightIssue.belowLowestContour);
     double nearestOf(double level) =>
         hits.firstWhere((h) => h.level == level).d;
@@ -853,6 +891,7 @@ class _Pack {
   final ContourPack pack;
   _PackInfo? info;
   bool failed = false;
+  late final coverage = Coverage(pack.coverage);
 
   _Pack(this.file, this.pack);
 }
@@ -863,7 +902,12 @@ class _PackInfo {
   final double intervalM;
   final String? attribution;
 
-  _PackInfo(this.feet, this.intervalM, this.attribution);
+  /// The pack has lines at and below sea level too, wherever there is
+  /// land; only the sea is left blank. Older packs have none at or below
+  /// 0 m.
+  final bool belowSeaLevel;
+
+  _PackInfo(this.feet, this.intervalM, this.attribution, this.belowSeaLevel);
 
   static _PackInfo read(PmtilesFile f) {
     final m = f.metadata;
@@ -891,6 +935,7 @@ class _PackInfo {
       feet,
       interval * (feet ? 0.3048 : 1.0),
       a is String && a.isNotEmpty ? a : null,
+      m['below_sea_level'] == true,
     );
   }
 }

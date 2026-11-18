@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** November 16, 2026
+**Last updated:** November 17, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -15,7 +15,7 @@ The App is developed by an independent, open-source developer. You can review th
 - There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files, trail routing data, points of interest (place names, Wikipedia text and photos) and addresses, and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
 - The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind. (On Android, the QR code scanner's Google library may send Google its own usage statistics; see "Camera and photos".)
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
-- Apart from the Android QR scanner's statistics noted above, the only data the App sends over the internet goes to the MeshTrax map server and to **Giphy**, which powers the optional GIF features. What each receives is described below. The base map that comes with the App, line of sight, radio reach, trail routing and place search need no connection.
+- Apart from the Android QR scanner's statistics noted above, the only data the App sends over the internet goes to the MeshTrax map server, to **Giphy**, which powers the optional GIF features, and, only if you turn on **Check sends with observers**, to the **observer server** you choose. What each receives is described below. The base map that comes with the App, line of sight, radio reach, trail routing and place search need no connection.
 
 ## Data the App collects and stores on your device
 
@@ -33,6 +33,7 @@ All of the following is stored locally in the App's private storage on your devi
 | Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download or install from a drive, and the list of what's available | Show maps, plan routes and search for places without a connection |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
+| Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages (name, signal, how many repeaters), for the last 300 messages | Show the ear on a message and list the observers in its packet path |
 
 **Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
 
@@ -44,7 +45,7 @@ All of the following is stored locally in the App's private storage on your devi
 
 ## Data shared with third parties
 
-The App contacts the MeshTrax map server and one third-party service, Giphy, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
+The App contacts the MeshTrax map server, one third-party service, Giphy, and, only if you turn it on, an observer server you choose, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
 
 ### 1. MeshTrax map server (offline maps)
 - **When:** You open the Offline maps screen, download or update a map, trail routing data, points of interest or addresses, and, while offline maps are installed, about once a day to check for updates.
@@ -56,6 +57,12 @@ The App contacts the MeshTrax map server and one third-party service, Giphy, and
 - **When:** You open the GIF picker to send a GIF, or a GIF shared in a chat is displayed. GIF display can be turned off in Settings ("Inline GIFs").
 - **What is sent:** When you open the picker, a request for trending GIFs. When you search in the picker, the **search words you type**. When a GIF is displayed, only the GIF **identifier** contained in the message, used to fetch that image from Giphy's media servers. No message text, contacts, or location is sent.
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
+
+### 3. Observer server (optional, off by default)
+Observers are radios that report what they hear on the mesh to a server. **Check sends with observers** (App settings, Messaging) asks such a server whether your channel messages were heard, so the App doesn't send one again for nothing.
+- **When:** Only while the setting is on, about 10, 25 and 60 seconds after you send a channel message, until an observer has heard it. Saving a server also asks it one test question.
+- **What is sent:** The **fingerprint** (packet hash) of each channel message you send: 16 characters worked out from the encrypted packet. Never the message text, the channel, your name, contacts or location. Because the request comes from your device, the server sees your **IP address** and the time you sent; it can also see that the fingerprint matches a packet its observers heard, and so tell which packets came from your device.
+- **Who runs it:** Not the developer. You pick the server: one from the App's list, whose question-answering service is open to anyone, or another address you type. Its operator's own policy applies.
 
 ### Earlier versions
 MeshTrax 1.10.2 and earlier also contacted two other services:
@@ -106,7 +113,7 @@ iOS does not require location permission for BLE scanning; the App never request
 |---|---|
 | App Sandbox | Required for Mac App Store apps. The App's data stays in its own container, and the App can reach only what is listed below |
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, and connect to a companion device over your local network (TCP) |
+| Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, ask the observer server you chose whether your channel messages were heard (only if you turn that on), and connect to a companion device over your local network (TCP) |
 | USB and serial ports | Connect to a companion device over a USB serial cable, through the serial port of the radio you plug in |
 | Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, an image to scan a QR code from, or a folder of offline maps on a drive to install from. The App reaches no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
@@ -121,7 +128,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | `BLUETOOTH`, `BLUETOOTH_ADMIN` (Android 11 and below) | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | `BLUETOOTH_SCAN` (with `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE` (Android 12+) | Scan for and communicate with your companion device. The scan is flagged so it is **not** used to derive location |
 | `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Required by the Android operating system to permit BLE scanning on Android 11 and below. The App does not read, store, or transmit your device location through these permissions |
-| `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features |
+| `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, and ask the observer server you chose whether your channel messages were heard (only if you turn that on) |
 | `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
@@ -133,7 +140,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | Capability | Why it is needed |
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Internet | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features |
+| Internet | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, and ask the observer server you chose whether your channel messages were heard (only if you turn that on) |
 | Full trust (desktop app) | Standard for Windows desktop apps; lets the App open USB serial (COM) ports to reach a companion device over a cable |
 
 The Windows app does not use the camera, location, or notifications.

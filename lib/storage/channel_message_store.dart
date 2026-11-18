@@ -531,6 +531,30 @@ class ChannelMessageStore {
         });
   }
 
+  /// The latest shown time among [idKey]'s rows that arrived before
+  /// [arrivalUs], or null when none did: the newest message the chat held
+  /// at that moment.
+  Future<DateTime?> newestShownTimeArrivedBefore(
+    String idKey,
+    int arrivalUs,
+  ) async {
+    if (publicKeyHex.isEmpty) return null;
+    final rows = _db.channelMessageRows;
+    final ms =
+        await (_db.selectOnly(rows)
+              ..addColumns([rows.timestampMs])
+              ..where(
+                rows.nodeScope.equals(publicKeyHex) &
+                    rows.channelIdKey.equals(idKey) &
+                    rows.receivedAtUs.isSmallerThanValue(arrivalUs),
+              )
+              ..orderBy([OrderingTerm.desc(rows.timestampMs)])
+              ..limit(1))
+            .map((r) => r.read(rows.timestampMs))
+            .getSingleOrNull();
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
   /// Repeat/echo lookup by firmware packet hash (indexed).
   Future<ChannelMessage?> findByPacketHash(
     String idKey,
@@ -1135,6 +1159,8 @@ class ChannelMessageStore {
       'wireText': msg.wireText,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
+      if (msg.claimedAt != null)
+        'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
     };
   }
 
@@ -1193,6 +1219,9 @@ class ChannelMessageStore {
           ) ??
           {},
       reactionSenders: ReactionHelper.decodeSenders(json['reactionSenders']),
+      claimedAt: json['claimedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
+          : null,
     );
   }
 

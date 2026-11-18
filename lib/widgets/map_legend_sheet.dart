@@ -272,6 +272,7 @@ String _roadText(AppLocalizations l10n, RoadLegendItem item) => switch (item) {
   RoadLegendItem.road => l10n.roadLegend_road,
   RoadLegendItem.track => l10n.roadLegend_track,
   RoadLegendItem.trail => l10n.roadLegend_trail,
+  RoadLegendItem.walkway => l10n.roadLegend_walkway,
   RoadLegendItem.interstate => l10n.roadLegend_interstate,
   RoadLegendItem.usRoute => l10n.roadLegend_usRoute,
   RoadLegendItem.stateRoute => l10n.roadLegend_stateRoute,

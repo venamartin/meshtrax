@@ -15,6 +15,7 @@ import 'package:traxroute/traxroute.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/date_time_helper.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
@@ -58,6 +59,14 @@ class _FakeConnector extends MeshCoreConnector {
   bool get hasGps => gps != null;
   @override
   bool get gpsOn => gps == '1';
+
+  /// Whether the GPS reading changed lately, and when it last did.
+  bool fresh = true;
+  DateTime? changedAt;
+  @override
+  bool get selfGpsIsFresh => fresh;
+  @override
+  DateTime? get selfGpsChangedAt => changedAt;
   @override
   Future<void> setGps(bool on) async {
     gpsSets.add(on);
@@ -221,7 +230,11 @@ void main() {
   late Directory tmp;
   late MapPacksService maps;
 
+  final systemFormats = DateTimeHelper.systemFormats;
   setUp(() async {
+    // Times as a US phone writes them, whatever machine runs the tests.
+    DateTimeHelper.systemFormats = () => null;
+    addTearDown(() => DateTimeHelper.systemFormats = systemFormats);
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
@@ -490,9 +503,11 @@ void main() {
       WidgetTester tester, {
       Widget screen = const MapScreen(),
       Size view = const Size(800, 900),
+      _FakeConnector? radio,
     }) => pumpMap(
       tester,
-      _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+      radio ??
+          _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
       screen: screen,
       routing: routing,
       view: view,
@@ -505,9 +520,10 @@ void main() {
       Completer<void>? gate,
       Widget screen = const MapScreen(),
       Size view = const Size(800, 900),
+      _FakeConnector? radio,
     }) async {
       routing = _Routing(maps, elevations: heights, steps: steps)..gate = gate;
-      await showMap(tester, screen: screen, view: view);
+      await showMap(tester, screen: screen, view: view, radio: radio);
       await longPress(tester, const LatLng(41.8, -71.4));
       await tap(tester, find.text('Route here'));
       expect(find.byType(RouteSheet), findsOneWidget);
@@ -741,6 +757,44 @@ void main() {
       await tap(tester, find.text('Route here'));
       expect(routing.requests, hasLength(3));
       expect(routing.requests.last.$1, PathType.paved);
+    });
+
+    testWidgets('from a GPS position that may be old, says so', (tester) async {
+      final radio =
+          _FakeConnector(
+              nodes: const [],
+              self: const ll.LatLng(41.81, -71.42),
+              gps: '1',
+            )
+            ..fresh = false
+            ..changedAt = DateTime(2026, 11, 16, 14, 2);
+      await showRoute(tester, steps: steps, radio: radio);
+      await tap(tester, find.text('Directions'));
+      expect(
+        find
+            .textContaining(
+              RegExp(
+                r'^From your last known position \(2:02\sPM\), may be old$',
+              ),
+            )
+            .hitTestable(),
+        findsOneWidget,
+      );
+
+      radio
+        ..changedAt = null
+        ..notifyListeners();
+      await settle(tester);
+      expect(
+        shown('From your last known position, may be old'),
+        findsOneWidget,
+      );
+
+      radio
+        ..fresh = true
+        ..notifyListeners();
+      await settle(tester);
+      expect(shown('From your position'), findsOneWidget);
     });
 
     testWidgets('the directions start where the route does', (tester) async {
@@ -1611,6 +1665,65 @@ void main() {
     expect(overlays(tester).where((o) => o.id == 'self'), isEmpty);
   });
 
+  // A radio that lost its fix keeps reporting the last one (safety review
+  // CH-07): blue only while the reading changes.
+  group('a GPS reading that stopped changing', () {
+    _FakeConnector frozen({DateTime? since}) =>
+        _FakeConnector(
+            nodes: const [],
+            self: const ll.LatLng(41.81, -71.42),
+            gps: '1',
+          )
+          ..fresh = false
+          ..changedAt = since;
+
+    testWidgets('is a grey "Last known" pin with its time', (tester) async {
+      final radio = frozen(since: DateTime(2026, 11, 16, 14, 2));
+      await pumpMap(tester, radio);
+      final self = overlay<MapMarker>(tester, 'self');
+      expect(self.label, matches(RegExp(r'^Last known · 2:02\sPM$')));
+      expect(self.labelMinZoom, isNull, reason: 'at every zoom');
+
+      radio
+        ..fresh = true
+        ..notifyListeners();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(overlay<MapMarker>(tester, 'self').label, isNull);
+    });
+
+    testWidgets("in the phone's 24-hour time", (tester) async {
+      tester.platformDispatcher.alwaysUse24HourFormatTestValue = true;
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      await pumpMap(tester, frozen(since: DateTime(2026, 11, 16, 14, 2)));
+      expect(overlay<MapMarker>(tester, 'self').label, 'Last known · 14:02');
+    });
+
+    testWidgets('with no change seen since connecting, has no time', (
+      tester,
+    ) async {
+      await pumpMap(tester, frozen());
+      expect(overlay<MapMarker>(tester, 'self').label, 'Last known');
+    });
+
+    testWidgets('My location still goes there', (tester) async {
+      await pumpMap(tester, frozen());
+      tester
+          .widget<AppMap>(find.byType(AppMap))
+          .controller!
+          .move(const LatLng(40, -100), zoom: 6);
+      await tester.pump();
+      await tester.tap(find.byTooltip('My location'));
+      await tester.pump();
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+    });
+
+    testWidgets('a typed position is still the "You" pin', (tester) async {
+      await pumpMap(tester, frozen()..gps = '0');
+      expect(overlay<MapMarker>(tester, 'self').label, 'You');
+    });
+  });
+
   group('where the map opens', () {
     final contact = _node('Contact', advTypeChat, 3, 37.3, -122.0);
     const gps = ll.LatLng(41.81, -71.42);
@@ -1654,6 +1767,17 @@ void main() {
         AppMap.baseMapZoom,
         reason: 'nothing downloaded there: as close as My location goes',
       );
+    });
+
+    testWidgets('it opens there before the reading has changed, too', (
+      tester,
+    ) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: [contact], self: gps, gps: '1')..fresh = false,
+      );
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
+      expect(camera(tester).center.longitude, closeTo(-71.42, 1e-6));
     });
 
     testWidgets('a fix that comes later moves the map there, once a run', (

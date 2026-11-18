@@ -1127,6 +1127,67 @@ class AppLocalizationsNl extends AppLocalizations {
       'Zo vaak wordt het opnieuw geprobeerd tot er minstens één herhaling gehoord wordt';
 
   @override
+  String get appSettings_heardCheck =>
+      'Verzendingen controleren bij waarnemers';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Vraag een waarnemersserver of een kanaalbericht is gehoord voordat het opnieuw wordt verzonden';
+
+  @override
+  String get appSettings_heardServer => 'Waarnemersserver';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Niet ingesteld';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Waarnemers zijn radio\'s die aan een server melden wat ze horen. MeshTrax stuurt die server een vingerafdruk van elk kanaalbericht dat je verstuurt, nooit de tekst. De server ziet je internetadres en wanneer je verstuurde.';
+
+  @override
+  String get appSettings_heardServerOther => 'Ander adres';
+
+  @override
+  String get appSettings_heardServerAddress => 'Serveradres';
+
+  @override
+  String get appSettings_heardServerChecking => 'Server controleren…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Geen antwoord van dit adres';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Toch opslaan';
+
+  @override
+  String get appSettings_heardServerAnswered => 'De server antwoordde';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Gehoord door $count waarnemers',
+      one: 'Gehoord door 1 waarnemer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'direct';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'via $count repeaters',
+      one: 'via 1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Batterij';
 
   @override
@@ -2105,6 +2166,31 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Deel marker hier';
+
+  @override
+  String get map_lastKnown => 'Laatst bekend';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Laatst bekend · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Vanaf je laatst bekende positie, mogelijk verouderd';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Vanaf je laatst bekende positie ($time), mogelijk verouderd';
+  }
+
+  @override
+  String get gps_lastKnown => 'Je laatst bekende positie, mogelijk verouderd';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Je laatst bekende positie ($time), mogelijk verouderd';
+  }
 
   @override
   String get map_setAsMyLocation => 'Stel dit in als mijn locatie';
@@ -4020,6 +4106,11 @@ class AppLocalizationsNl extends AppLocalizations {
       'Geen repeater heeft je gehoord. Er wordt opnieuw geprobeerd zodra er een binnen bereik is.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'verzonden $time volgens de klok van de afzender';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'De radio van $name stuurt korte repeatercodes (1 byte). Pathfinder kan geen routes naar hen leren tot hun radio 2-byte-codes gebruikt.';
   }
@@ -5773,6 +5864,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get roadLegend_trail => 'Wandelpad';
 
   @override
+  String get roadLegend_walkway => 'Voetpad of fietspad';
+
+  @override
   String get roadLegend_interstate => 'Interstate-snelweg';
 
   @override
@@ -6973,4 +7067,17 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Hoogtelijnen voor zichtlijn';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Je radio slaat dit soort contact zelf op, dus het komt terug zodra het weer wordt gehoord.';
+
+  @override
+  String get tray_contact => 'Contact';
+
+  @override
+  String get shareContact_title => 'Contact delen';
+
+  @override
+  String get shareContact_myContact => 'Mijn contact';
 }

@@ -9,6 +9,7 @@ import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/heard_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -268,6 +269,33 @@ void main() {
       await ctx.settingsService.setMaxMessageRetries(retries);
       expect(await rule.check(ctx), flagged, reason: '$retries tries');
     }
+  });
+
+  // The owner, 2026-11-17: with observers checking sends, 2 or 3 retries.
+  test('channel retries: 2 or 3 while observers check sends', () async {
+    final rule = healthRules.firstWhere(
+      (r) => r.id == 'app_channel_retries_observers',
+    );
+    addTearDown(HeardService.resetForTesting);
+    final service = ctx.settingsService;
+
+    await service.setMaxChannelMessageRetries(1);
+    expect(await rule.check(ctx), isFalse, reason: 'observers off');
+
+    await HeardService.instance.setEnabled(true);
+    for (final (retries, flagged) in [
+      (0, true),
+      (1, true),
+      (2, false),
+      (3, false),
+    ]) {
+      await service.setMaxChannelMessageRetries(retries);
+      expect(await rule.check(ctx), flagged, reason: '$retries retries');
+    }
+
+    await service.setMaxChannelMessageRetries(1);
+    await rule.apply!(ctx);
+    expect(ctx.app.maxChannelMessageRetries, 2);
   });
 
   group('notifications', () {

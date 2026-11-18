@@ -641,9 +641,13 @@ class _ChatsScreenState extends State<ChatsScreen>
                         builder: (dialogContext) => AlertDialog(
                           title: Text(context.l10n.contacts_deleteContact),
                           content: Text(
-                            dialogContext.l10n.contacts_deleteContactConfirm(
-                              contact.name,
-                            ),
+                            [
+                              dialogContext.l10n.contacts_deleteContactConfirm(
+                                contact.name,
+                              ),
+                              if (connector.radioAutoAdds(contact.type))
+                                dialogContext.l10n.contacts_deleteComesBack,
+                            ].join('\n\n'),
                           ),
                           actions: [
                             TextButton(
@@ -666,7 +670,9 @@ class _ChatsScreenState extends State<ChatsScreen>
 
                   if (confirmed) {
                     try {
-                      await connector.removeContact(contact);
+                      if (!await connector.removeContact(contact)) {
+                        throw StateError('no answer from the radio');
+                      }
                       if (context.mounted) {
                         showDismissibleSnackBar(
                           context,

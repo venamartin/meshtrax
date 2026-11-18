@@ -1061,6 +1061,63 @@ class AppLocalizationsZh extends AppLocalizations {
       '在听到至少一次转发之前，最多重试这么多次';
 
   @override
+  String get appSettings_heardCheck => '通过观测站确认发送';
+
+  @override
+  String get appSettings_heardCheckSubtitle => '重新发送频道消息前，先询问观测服务器是否已收到';
+
+  @override
+  String get appSettings_heardServer => '观测服务器';
+
+  @override
+  String get appSettings_heardServerNotSet => '未设置';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      '观测站是把收到的内容报告给服务器的电台。MeshTrax 会把你发送的每条频道消息的指纹发给该服务器，绝不发送正文。服务器能看到你的网络地址和发送时间。';
+
+  @override
+  String get appSettings_heardServerOther => '其他地址';
+
+  @override
+  String get appSettings_heardServerAddress => '服务器地址';
+
+  @override
+  String get appSettings_heardServerChecking => '正在检查服务器…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => '此地址没有回应';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => '仍然保存';
+
+  @override
+  String get appSettings_heardServerAnswered => '服务器已回应';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个观测站收到',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => '直接';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '经 $count 个转发节点',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => '电池';
 
   @override
@@ -1999,6 +2056,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => '在此分享标记';
+
+  @override
+  String get map_lastKnown => '最后位置';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return '最后位置 · $time';
+  }
+
+  @override
+  String get route_fromLastKnown => '从您最后已知的位置出发，可能已过时';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return '从您最后已知的位置（$time）出发，可能已过时';
+  }
+
+  @override
+  String get gps_lastKnown => '您最后已知的位置，可能已过时';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return '您最后已知的位置（$time），可能已过时';
+  }
 
   @override
   String get map_setAsMyLocation => '设置为我的位置';
@@ -3748,6 +3829,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_statusNoRepeaterHeard => '没有转发节点听到您。有转发节点进入范围时会再试。';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return '按发送方时钟 $time 发送';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return '$name 的电台发送的是短转发节点代码（1 字节）。在对方电台改用 2 字节代码之前，Pathfinder 无法学习到对方的路由。';
   }
@@ -5409,6 +5495,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roadLegend_trail => '步道';
 
   @override
+  String get roadLegend_walkway => '人行道或自行车道';
+
+  @override
   String get roadLegend_interstate => '州际公路';
 
   @override
@@ -6555,4 +6644,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => '用于视线的等高线';
+
+  @override
+  String get contacts_deleteComesBack => '电台会自动保存此类联系人，因此下次收到它时它会重新出现。';
+
+  @override
+  String get tray_contact => '联系人';
+
+  @override
+  String get shareContact_title => '分享联系人';
+
+  @override
+  String get shareContact_myContact => '我的联系人';
 }

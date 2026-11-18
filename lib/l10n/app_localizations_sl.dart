@@ -1120,6 +1120,70 @@ class AppLocalizationsSl extends AppLocalizations {
       'Ponavlja tolikokrat, dokler ne sliši vsaj ene ponovitve';
 
   @override
+  String get appSettings_heardCheck => 'Preverjaj pošiljanje pri opazovalcih';
+
+  @override
+  String get appSettings_heardCheckSubtitle =>
+      'Pred ponovnim pošiljanjem sporočila v kanal vpraša strežnik opazovalcev, ali je bilo slišano';
+
+  @override
+  String get appSettings_heardServer => 'Strežnik opazovalcev';
+
+  @override
+  String get appSettings_heardServerNotSet => 'Ni nastavljeno';
+
+  @override
+  String get appSettings_heardServerAbout =>
+      'Opazovalci so radijske postaje, ki strežniku sporočajo, kaj slišijo. MeshTrax temu strežniku pošlje prstni odtis vsakega sporočila, ki ga pošljete v kanal, nikoli njegovega besedila. Strežnik vidi vaš internetni naslov in čas pošiljanja.';
+
+  @override
+  String get appSettings_heardServerOther => 'Drug naslov';
+
+  @override
+  String get appSettings_heardServerAddress => 'Naslov strežnika';
+
+  @override
+  String get appSettings_heardServerChecking => 'Preverjanje strežnika…';
+
+  @override
+  String get appSettings_heardServerNoAnswer => 'Ni odgovora s tega naslova';
+
+  @override
+  String get appSettings_heardServerSaveAnyway => 'Vseeno shrani';
+
+  @override
+  String get appSettings_heardServerAnswered => 'Strežnik je odgovoril';
+
+  @override
+  String chat_heardBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Slišalo $count opazovalcev',
+      few: 'Slišali $count opazovalci',
+      two: 'Slišala $count opazovalca',
+      one: 'Slišal $count opazovalec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_heardDirect => 'neposredno';
+
+  @override
+  String chat_heardVia(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prek $count repetitorjev',
+      few: 'prek $count repetitorjev',
+      two: 'prek $count repetitorjev',
+      one: 'prek $count repetitorja',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get appSettings_battery => 'Baterija';
 
   @override
@@ -2094,6 +2158,31 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get map_shareMarkerHere => 'Delite točke tukaj.';
+
+  @override
+  String get map_lastKnown => 'Zadnji znani';
+
+  @override
+  String map_lastKnownAt(String time) {
+    return 'Zadnji znani · $time';
+  }
+
+  @override
+  String get route_fromLastKnown =>
+      'Začetek: vaš zadnji znani položaj, morda je star';
+
+  @override
+  String route_fromLastKnownAt(String time) {
+    return 'Začetek: vaš zadnji znani položaj ($time), morda je star';
+  }
+
+  @override
+  String get gps_lastKnown => 'Vaš zadnji znani položaj, morda je star';
+
+  @override
+  String gps_lastKnownAt(String time) {
+    return 'Vaš zadnji znani položaj ($time), morda je star';
+  }
 
   @override
   String get map_setAsMyLocation => 'Nastavite to kot mojo lokacijo';
@@ -4020,6 +4109,11 @@ class AppLocalizationsSl extends AppLocalizations {
       'Noben ponovitelj vas ni slišal. Ponovni poskus, ko bo kateri v dosegu.';
 
   @override
+  String chat_sentByItsClock(String time) {
+    return 'poslano $time po uri pošiljatelja';
+  }
+
+  @override
   String chat_narrowHashNotice(String name) {
     return 'Radio $name pošilja kratke kode ponoviteljev (1 bajt). Pathfinder se ne more naučiti poti do tega stika, dokler njegov radio ne uporablja 2-bajtnih kod.';
   }
@@ -5782,6 +5876,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get roadLegend_trail => 'Pot';
 
   @override
+  String get roadLegend_walkway => 'Pešpot ali kolesarska steza';
+
+  @override
   String get roadLegend_interstate => 'Avtocesta Interstate';
 
   @override
@@ -6986,4 +7083,17 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get offlineMaps_losContours => 'Plastnice za neposredno vidljivost';
+
+  @override
+  String get contacts_deleteComesBack =>
+      'Radio to vrsto stika shrani samodejno, zato se bo vrnil, ko ga bo naslednjič slišal.';
+
+  @override
+  String get tray_contact => 'Stik';
+
+  @override
+  String get shareContact_title => 'Deli stik';
+
+  @override
+  String get shareContact_myContact => 'Moj stik';
 }

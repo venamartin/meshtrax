@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -46,6 +47,37 @@ void main() {
       );
       expect(packs.peaks, isEmpty);
       expect(covers(packs, geoOf(dantes)), isTrue);
+      expect(covers(packs, geoOf(nevada)), isFalse);
+    });
+
+    test('a lake cut out of the region\'s outline for drawing is covered: '
+        'the pack was cut with it', () async {
+      const norcal = 'north-america/us/california/norcal';
+      final picker =
+          jsonDecode(
+                File(
+                  'packages/traxmap/test/support/picker.geojson',
+                ).readAsStringSync(),
+              )
+              as Map<String, Object?>;
+      for (final f in (picker['features'] as List).cast<Map>()) {
+        if ((f['properties'] as Map)['path'] != norcal) continue;
+        // A lake around Badwater.
+        ((f['geometry'] as Map)['coordinates'] as List).add([
+          [-116.80, 36.20],
+          [-116.74, 36.20],
+          [-116.74, 36.26],
+          [-116.80, 36.26],
+          [-116.80, 36.20],
+        ]);
+      }
+      final lake = await losMaps(
+        Directory('${tmp.path}/lake')..createSync(),
+        picker: jsonEncode(picker),
+      );
+      expect(lake.regions![norcal]!.polygons.single, hasLength(2));
+      final packs = losPacksFrom(lake, UnitSystem.imperial);
+      expect(covers(packs, geoOf(badwater)), isTrue);
       expect(covers(packs, geoOf(nevada)), isFalse);
     });
 
