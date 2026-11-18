@@ -18,7 +18,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | Page | What it covers |
 |---|---|
 | [Message format](message-format.md) | How MeshTrax writes replies, reactions, GIFs and cards into a message, so other apps can read them |
-| [proposals/](proposals/) | Suggestions written for the MeshCore firmware and other app projects |
+| [proposals/](proposals/) | Suggestions for the MeshCore firmware and other app projects, and formats planned for MeshTrax (weather alerts) |
 
 ## For contributors
 
