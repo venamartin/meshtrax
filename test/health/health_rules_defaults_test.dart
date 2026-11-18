@@ -221,6 +221,27 @@ void main() {
     }
   });
 
+  // There's no updating a radio's firmware in the field.
+  group('TRAX firmware rule', () {
+    final rule = healthRules.firstWhere((r) => r.id == 'radio_trax_firmware');
+
+    test('a radio that can\'t relay is told before the trip', () async {
+      expect(await rule.check(ctx), isFalse, reason: 'not known yet');
+      // Companion 1.12: DEVICE_INFO ends before the Off-Grid Repeat byte.
+      c.handleFrameForTest(
+        _deviceInfo(version: 'v1.12.0', code: 8).sublist(0, 80),
+      );
+      expect(await rule.check(ctx), isTrue);
+      expect(rule.needsRadio, isTrue);
+      expect(rule.fix, isNull, reason: 'it only explains');
+    });
+
+    test('a radio that can relay passes', () async {
+      c.handleFrameForTest(_deviceInfo(version: 'v1.13.0', code: 9));
+      expect(await rule.check(ctx), isFalse);
+    });
+  });
+
   test('a full contact list only matters with overwrite off', () async {
     final rule = healthRules.firstWhere((r) => r.id == 'radio_contacts_full');
     c.handleFrameForTest(_selfInfo(manualAdd: 1));

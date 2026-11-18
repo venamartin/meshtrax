@@ -87,7 +87,7 @@ While the phone stays connected in TRAX mode, a timer waits for the trip's end. 
 ## Side effects handled
 
 - **Later settings writes keep repeat.** `setRadioParams` sends the repeat byte as on when the radio is known to repeat and the caller gave none. The radio settings dialog already sends the switch's state.
-- **Health check:** `radio_frequency` and `radio_client_repeat` stay quiet in TRAX mode.
+- **Health check:** `radio_frequency` and `radio_client_repeat` stay quiet in TRAX mode. `radio_trax_firmware` says when a radio can't relay (firmware before 1.13), so TRAX mode won't work there: in the field there's no internet to update it.
 - **Nearby repeaters:** any retune clears them (`noteRadioSettingsSaved`); repeaters heard on the old settings can't hear the radio now.
 - **Pathfinder:** it keeps one graph per mesh, keyed by frequency, bandwidth, SF and CR (`MeshId`), so the TRAX preset gets its own graph and Leave reopens the regular one. Between the retune and the reopen, frames and air events are dropped (`_onOtherMesh`), so nothing heard on TRAX lands in the regular graph.
 - **Parked DMs:** unchanged. On TRAX, a flood relayed by a member (hop count over 0) wakes them as a repeater would.

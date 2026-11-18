@@ -8,6 +8,7 @@ import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/heard_service.dart';
 import '../services/notification_service.dart';
+import '../services/trax_service.dart';
 import '../utils/platform_info.dart';
 
 /// The health check's rule list. Edit this file to change what the check
@@ -440,6 +441,26 @@ final List<HealthRule> healthRules = [
     notes:
         'Report only. Change the version here and in the title when we need a '
         'newer one.',
+  ),
+  HealthRule(
+    id: 'radio_trax_firmware',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: "This radio can't relay, so TRAX mode won't work",
+    why:
+        'TRAX mode needs the radio to relay for the group, which takes '
+        "firmware 1.13 or newer. There's no internet in the field to update "
+        'it, so update before the trip.',
+    needsRadio: true,
+    check: (ctx) async =>
+        ctx.connector.firmwareVerCode != null &&
+        !TraxService.supportedBy(ctx.connector),
+    linkLabel: 'Open the firmware flasher',
+    linkUrl: 'https://flasher.meshcore.io',
+    notes:
+        'Report only. Off-Grid Repeat came with ver code 9 (companion 1.13); '
+        'TraxService.supportedBy decides. Quiet until the radio has said '
+        'which firmware it runs.',
   ),
   HealthRule(
     id: 'radio_clock',

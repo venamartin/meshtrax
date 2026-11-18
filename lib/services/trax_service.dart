@@ -157,7 +157,11 @@ class TraxService extends ChangeNotifier {
   bool get busy => _step != null;
 
   /// The radio can repeat (firmware ver code 9+).
-  bool get supported => _connector.clientRepeat != null;
+  bool get supported => supportedBy(_connector);
+
+  /// [supported], for a check that has only the connector.
+  static bool supportedBy(MeshCoreConnector connector) =>
+      connector.clientRepeat != null;
 
   /// The connected radio is on a TRAX preset, whichever phone switched it.
   bool get isOn =>
