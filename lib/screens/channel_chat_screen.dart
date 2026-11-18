@@ -27,6 +27,7 @@ import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
+import '../services/heard_service.dart';
 import '../services/notification_service.dart';
 import '../services/sos_service.dart';
 import '../services/trax_service.dart';
@@ -1699,8 +1700,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                             status: !isOutgoing
                                 ? null
                                 : enableTracing
-                                    ? _tracingStatusIcon(message)
-                                    : _statusIcon(message, displayPathString),
+                                    ? _tracingStatusIcon(context, message)
+                                    : _statusIcon(context, message),
                           ),
                       ] else ...[
                         if (cleanDisplayText.isNotEmpty)
@@ -1757,7 +1758,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                               const SizedBox(width: 4),
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 2),
-                                child: _statusIcon(message, displayPathString),
+                                child: _statusIcon(context, message),
                               ),
                             ],
                           ],
@@ -1831,7 +1832,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                         topRight: Radius.circular(8),
                                       ),
                                     ),
-                                    child: _statusIcon(message, displayPathString),
+                                    child: _statusIcon(context, message),
                                   ),
                                 ),
                             ],
@@ -1920,7 +1921,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                   ),
                                   const SizedBox(width: 4),
                                 ],
-                                _tracingStatusIcon(message),
+                                _tracingStatusIcon(context, message),
                               ],
                             ],
                           ),
@@ -1978,36 +1979,64 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         (c) => c.isChannelMessageRetrying(message.messageId),
       );
 
-  Widget _statusIcon(ChannelMessage message, String displayPathString) =>
-      _withHeardEar(
-        message,
-        MessageStatusIcon(
-          isAcked: (message.status == ChannelMessageStatus.sent ||
-                  message.status == ChannelMessageStatus.delivered) &&
-              displayPathString.isNotEmpty,
-          isDelivered: message.status == ChannelMessageStatus.delivered,
-          isFailed: message.status == ChannelMessageStatus.failed,
-          isChannelMessage: true,
-        ),
+  /// Sent, the wait for a repeat is over, and neither a radio nor an
+  /// observer repeated it: nothing says anyone got it.
+  bool _isUnheard(BuildContext context, ChannelMessage message) =>
+      message.isOutgoing &&
+      message.status == ChannelMessageStatus.sent &&
+      message.repeatCount == 0 &&
+      !context.select<MeshCoreConnector, bool>(
+        (c) => c.isChannelMessageRetrying(message.messageId),
       );
 
-  Widget _tracingStatusIcon(ChannelMessage message) => _withHeardEar(
-        message,
-        Icon(
-          message.status == ChannelMessageStatus.delivered
-              ? Icons.done_all
-              : (message.status == ChannelMessageStatus.sent ||
-                      message.status == ChannelMessageStatus.failed)
-                  ? Icons.check
-                  : message.status == ChannelMessageStatus.pending
-                      ? Icons.schedule
-                      : Icons.error_outline,
-          size: 14,
-          color: message.status == ChannelMessageStatus.failed
-              ? Colors.amber[700]
-              : Colors.grey[600],
+  static bool _observerHeard(ChannelMessage message) =>
+      HeardService.instance.heardBy(message.messageId)?.isNotEmpty ?? false;
+
+  Widget _statusIcon(BuildContext context, ChannelMessage message) {
+    final unheard = _isUnheard(context, message);
+    return _withHeardEar(
+      message,
+      ListenableBuilder(
+        listenable: HeardService.instance,
+        builder: (context, _) => MessageStatusIcon(
+          isAcked: message.status == ChannelMessageStatus.sent ||
+              message.status == ChannelMessageStatus.delivered,
+          isDelivered: message.status == ChannelMessageStatus.delivered,
+          isFailed: message.status == ChannelMessageStatus.failed,
+          isUnheard: unheard && !_observerHeard(message),
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _tracingStatusIcon(BuildContext context, ChannelMessage message) {
+    final unheard = _isUnheard(context, message);
+    return _withHeardEar(
+      message,
+      ListenableBuilder(
+        listenable: HeardService.instance,
+        builder: (context, _) {
+          final failed = message.status == ChannelMessageStatus.failed;
+          if (failed || (unheard && !_observerHeard(message))) {
+            return MessageStatusIcon(
+              isAcked: true,
+              isFailed: failed,
+              isUnheard: true,
+            );
+          }
+          return Icon(
+            switch (message.status) {
+              ChannelMessageStatus.delivered => Icons.done_all,
+              ChannelMessageStatus.sent => Icons.check,
+              _ => Icons.schedule,
+            },
+            size: 14,
+            color: Colors.grey[600],
+          );
+        },
+      ),
+    );
+  }
 
   /// The status, then the grey ear when observers heard the message.
   Widget _withHeardEar(ChannelMessage message, Widget status) => Row(

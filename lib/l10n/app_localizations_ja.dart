@@ -3921,6 +3921,9 @@ class AppLocalizationsJa extends AppLocalizations {
       'どのリピーターにも届きませんでした。範囲内にリピーターが入ったら再試行します。';
 
   @override
+  String get chat_channelNoSign => '送信済み · 誰に届いたか不明';
+
+  @override
   String chat_sentByItsClock(String time) {
     return '送信元の時計で $time に送信';
   }
@@ -3942,22 +3945,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '配信済み · $kind · $secs秒';
+    return '相手の無線機に到着 · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '$attempt回目で配信 · $kind · $secs秒';
+    return '$attempt回目で相手の無線機に到着 · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '遅れて配信 · $kind · $secs秒';
+    return '遅れて相手の無線機に到着 · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '配信済み · $secs秒';
+    return '相手の無線機に到着 · $secs秒';
   }
 
   @override

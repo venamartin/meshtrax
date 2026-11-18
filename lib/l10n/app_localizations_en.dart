@@ -4043,6 +4043,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'No repeater heard you. Will try again when one is in range.';
 
   @override
+  String get chat_channelNoSign => 'Sent · no sign of who got it';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'sent $time by its clock';
   }
@@ -4064,22 +4067,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Delivered · $kind · $secs s';
+    return 'Their radio got it · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Delivered on attempt $attempt · $kind · $secs s';
+    return 'Their radio got it on attempt $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Delivered late · $kind · $secs s';
+    return 'Their radio got it late · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Delivered · $secs s';
+    return 'Their radio got it · $secs s';
   }
 
   @override

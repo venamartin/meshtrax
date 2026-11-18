@@ -3926,6 +3926,9 @@ class AppLocalizationsKo extends AppLocalizations {
       '내 신호를 들은 리피터가 없습니다. 범위 안에 리피터가 들어오면 다시 시도합니다.';
 
   @override
+  String get chat_channelNoSign => '보냄 · 누가 받았는지 알 수 없음';
+
+  @override
   String chat_sentByItsClock(String time) {
     return '보낸 쪽 시계 기준 $time에 보냄';
   }
@@ -3947,22 +3950,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '전달됨 · $kind · $secs초';
+    return '상대 무전기가 받음 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '$attempt번째 시도에 전달됨 · $kind · $secs초';
+    return '$attempt번째 시도에 상대 무전기가 받음 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '늦게 전달됨 · $kind · $secs초';
+    return '늦게 상대 무전기가 받음 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '전달됨 · $secs초';
+    return '상대 무전기가 받음 · $secs초';
   }
 
   @override

@@ -4102,6 +4102,9 @@ class AppLocalizationsSl extends AppLocalizations {
       'Noben ponovitelj vas ni slišal. Ponovni poskus, ko bo kateri v dosegu.';
 
   @override
+  String get chat_channelNoSign => 'Poslano · ni znaka, kdo je prejel';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'poslano $time po uri pošiljatelja';
   }
@@ -4123,22 +4126,22 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Dostavljeno · $kind · $secs s';
+    return 'Prejeto na njihovem radiu · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Dostavljeno v $attempt. poskusu · $kind · $secs s';
+    return 'Prejeto na njihovem radiu v $attempt. poskusu · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Dostavljeno pozno · $kind · $secs s';
+    return 'Prejeto na njihovem radiu pozno · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Dostavljeno · $secs s';
+    return 'Prejeto na njihovem radiu · $secs s';
   }
 
   @override

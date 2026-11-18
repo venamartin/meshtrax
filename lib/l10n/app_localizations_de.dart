@@ -4126,6 +4126,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Kein Repeater hat Sie gehört. Neuer Versuch, sobald einer in Reichweite ist.';
 
   @override
+  String get chat_channelNoSign => 'Gesendet · kein Zeichen, wer sie erhielt';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'gesendet $time laut Uhr des Absenders';
   }
@@ -4147,22 +4150,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Zugestellt · $kind · $secs s';
+    return 'Am Funkgerät angekommen · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Zugestellt bei Versuch $attempt · $kind · $secs s';
+    return 'Am Funkgerät angekommen bei Versuch $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Verspätet zugestellt · $kind · $secs s';
+    return 'Verspätet am Funkgerät angekommen · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Zugestellt · $secs s';
+    return 'Am Funkgerät angekommen · $secs s';
   }
 
   @override

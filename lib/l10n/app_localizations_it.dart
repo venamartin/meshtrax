@@ -4127,6 +4127,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Nessun ripetitore ti ha sentito. Riproverà quando uno sarà in portata.';
 
   @override
+  String get chat_channelNoSign =>
+      'Inviato · nessun segno di chi l\'ha ricevuto';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'inviato $time secondo l\'orologio del mittente';
   }
@@ -4148,22 +4152,22 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Consegnato · $kind · $secs s';
+    return 'La sua radio l\'ha ricevuto · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Consegnato al tentativo $attempt · $kind · $secs s';
+    return 'La sua radio l\'ha ricevuto al tentativo $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Consegnato in ritardo · $kind · $secs s';
+    return 'La sua radio l\'ha ricevuto in ritardo · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Consegnato · $secs s';
+    return 'La sua radio l\'ha ricevuto · $secs s';
   }
 
   @override

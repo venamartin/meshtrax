@@ -3822,6 +3822,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_statusNoRepeaterHeard => '没有转发节点听到您。有转发节点进入范围时会再试。';
 
   @override
+  String get chat_channelNoSign => '已发送 · 不知道谁收到了';
+
+  @override
   String chat_sentByItsClock(String time) {
     return '按发送方时钟 $time 发送';
   }
@@ -3843,22 +3846,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '已送达 · $kind · $secs 秒';
+    return '对方电台已收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '第 $attempt 次尝试送达 · $kind · $secs 秒';
+    return '第 $attempt 次尝试对方电台收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '延迟送达 · $kind · $secs 秒';
+    return '对方电台延迟收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '已送达 · $secs 秒';
+    return '对方电台已收到 · $secs 秒';
   }
 
   @override

@@ -4099,6 +4099,9 @@ class AppLocalizationsNl extends AppLocalizations {
       'Geen repeater heeft je gehoord. Er wordt opnieuw geprobeerd zodra er een binnen bereik is.';
 
   @override
+  String get chat_channelNoSign => 'Verzonden · geen teken wie het kreeg';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'verzonden $time volgens de klok van de afzender';
   }
@@ -4120,22 +4123,22 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Afgeleverd · $kind · $secs s';
+    return 'Hun radio heeft het · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Afgeleverd bij poging $attempt · $kind · $secs s';
+    return 'Hun radio heeft het bij poging $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Laat afgeleverd · $kind · $secs s';
+    return 'Hun radio heeft het laat · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Afgeleverd · $secs s';
+    return 'Hun radio heeft het · $secs s';
   }
 
   @override

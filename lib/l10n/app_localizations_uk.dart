@@ -4128,6 +4128,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'Жоден ретранслятор вас не почув. Спробуємо знову, коли якийсь буде поруч.';
 
   @override
+  String get chat_channelNoSign => 'Надіслано · не видно, хто отримав';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'надіслано $time за годинником відправника';
   }
@@ -4149,22 +4152,22 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Доставлено · $kind · $secs с';
+    return 'Отримано їхньою рацією · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Доставлено зі спроби $attempt · $kind · $secs с';
+    return 'Отримано їхньою рацією зі спроби $attempt · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Доставлено із запізненням · $kind · $secs с';
+    return 'Отримано їхньою рацією із запізненням · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Доставлено · $secs с';
+    return 'Отримано їхньою рацією · $secs с';
   }
 
   @override
