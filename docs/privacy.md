@@ -24,6 +24,7 @@ All of the following is stored locally in the App's private storage on your devi
 | Category | What it includes | Purpose |
 |---|---|---|
 | Messages | Direct and channel/group messages you send and receive over the mesh | Show your conversation history |
+| Your SOS while it lasts | Its text, the chat it went to, the last position sent and who answered | Keep sending it after the App restarts; deleted when you cancel it |
 | Contacts | Contact names, public keys, and any node coordinates advertised over the mesh | Address and display messages, show nodes on the map |
 | Channels & communities | Channel names and their pre-shared keys (PSKs); community secret keys | Encrypt/decrypt mesh traffic on those channels |
 | Node identity | Your device's **public** key and display name | Identify your own messages |
@@ -159,6 +160,8 @@ Messages and contact information are exchanged with your MeshCore companion devi
 With **Tell the group** on, TRAX mode posts a short TRAX message on the trip channel you picked, before it switches and before it leaves, naming the trip's end (with your time zone's offset from UTC) and the radio settings. It goes over the mesh to that channel's members like any other message. In TRAX mode your radio also relays other radios' messages on the off-grid frequency.
 
 When you send a **Location** or **SOS** message, the position in it is either your companion device's position (from its GPS or the position set on it) or a point you pick on the map, never your phone's GPS, and it goes over the mesh to the people in that conversation, like any other message. It is never sent to a server.
+
+An SOS sent in a channel other than Public is sent again every 2 minutes (every 5 once someone answers) with your companion device's latest position, until you cancel it. With **Also send to Public** ticked, which it is unless you untick it, its first message also goes to the Public channel, where anyone in range can read it, position included; the cancel goes there too. An SOS sent in the Public channel itself goes once, as does its cancel.
 
 ## Data security
 

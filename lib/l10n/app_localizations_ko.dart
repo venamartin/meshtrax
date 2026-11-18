@@ -5033,6 +5033,164 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dialog_sosText => '무슨 일이 있었나요?';
 
   @override
+  String get sos_alsoPublic => 'Public에도 보내기';
+
+  @override
+  String get sos_alsoPublicHint =>
+      '범위 안의 누구나 읽을 수 있으며 위치도 보입니다. 첫 메시지만 그곳으로 갑니다.';
+
+  @override
+  String get sos_askingRadio => '무전기에 위치를 묻는 중…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return '$time의 무전기 위치 ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return '무전기가 새 위치를 주지 않았습니다. $time의 마지막으로 알려진 위치입니다 ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      '마지막으로 알려진 위치입니다. 무전기가 언제 위치인지 알려 주지 않았습니다.';
+
+  @override
+  String get sos_positionTyped => '직접 입력한 위치: 반복할 때마다 이 위치를 보냅니다.';
+
+  @override
+  String get sos_repeats =>
+      '취소할 때까지 2분마다 무전기의 최신 위치로 다시 보냅니다. 첫 \"확인\" 이후에는 5분마다 보냅니다.';
+
+  @override
+  String get sos_publicOnce =>
+      'Public에서는 SOS를 한 번만 보냅니다. 다른 채널에서는 취소할 때까지 다시 보냅니다.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return '$chat의 SOS가 취소됩니다.';
+  }
+
+  @override
+  String get sos_active => 'SOS 활성화됨';
+
+  @override
+  String sos_lastSent(String time) {
+    return '마지막 전송 $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => '전송을 위해 무전기를 기다리는 중';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return '확인 ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => '아직 \"확인\"이 없습니다';
+
+  @override
+  String get sos_cancel => 'SOS 취소';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return '$chat의 모두가 \"SOS cancelled\"를 받습니다.';
+  }
+
+  @override
+  String get sos_keep => 'SOS 유지';
+
+  @override
+  String get sos_cancelPending => 'SOS가 취소되었습니다. 무전기가 연결되면 전송됩니다.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'MeshTrax가 닫혀 SOS가 멈췄습니다. 마지막 전송 $time.';
+  }
+
+  @override
+  String get sos_sendAgain => '다시 보내기';
+
+  @override
+  String get sos_gotIt => '확인';
+
+  @override
+  String sos_updated(String time) {
+    return '$time 업데이트';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return '$time 취소됨';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return '$time 전송';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return 'SOS 활성화됨 · 마지막 전송 $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'SOS 활성화됨 · 무전기를 기다리는 중';
+
+  @override
+  String get sos_stoppedSendAgain => 'SOS가 멈췄습니다 · 다시 보내기';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS가 취소되었습니다 · 무전기를 기다리는 중';
+
+  @override
+  String get notification_sosChannel => 'SOS 알림';
+
+  @override
+  String get notification_sosChannelDescription => '나에게 또는 내가 있는 채팅에 보낸 SOS';
+
+  @override
+  String notification_sosFrom(String name) {
+    return '$name의 SOS';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name이(가) SOS를 취소함';
+  }
+
+  @override
+  String get notification_mySosChannel => '내 SOS';
+
+  @override
+  String get notification_mySosChannelDescription => '활성화된 동안의 내 SOS';
+
+  @override
+  String get appSettings_sosAlerts => 'SOS 알림';
+
+  @override
+  String get appSettings_sosAlways => 'SOS는 음소거한 채팅이나 메시지 알림이 꺼져 있어도 항상 알립니다.';
+
+  @override
+  String get appSettings_sosThroughDnd => '방해 금지 모드에서도 울립니다.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      '방해 금지 모드에서는 무음이 됩니다. 탭하여 방해 금지 무시를 허용하세요.';
+
+  @override
+  String get appSettings_sosBlocked => '휴대폰에서 SOS 알림이 꺼져 있습니다. 탭하여 켜세요.';
+
+  @override
+  String get appSettings_sosApple =>
+      '이 기기에서는 집중 모드와 무음 모드가 여전히 무음으로 만들 수 있습니다.';
+
+  @override
+  String get appSettings_sosOff => '알림이 꺼져 있어 SOS 알림도 꺼져 있습니다.';
+
+  @override
   String get dialog_noticeTitle => '공지';
 
   @override

@@ -95,11 +95,21 @@ class LinkHandler {
     );
   }
 
-  static void openMapAt(BuildContext context, LatLng position, {String? label}) {
+  /// [sos]: the point is an SOS, whose pin opens Route here.
+  static void openMapAt(
+    BuildContext context,
+    LatLng position, {
+    String? label,
+    bool sos = false,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MapScreen(highlightPosition: position, highlightLabel: label),
+        builder: (_) => MapScreen(
+          highlightPosition: position,
+          highlightLabel: label,
+          highlightSos: sos,
+        ),
       ),
     );
   }

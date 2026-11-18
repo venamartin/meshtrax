@@ -5258,6 +5258,171 @@ class AppLocalizationsSl extends AppLocalizations {
   String get dialog_sosText => 'Kaj se je zgodilo?';
 
   @override
+  String get sos_alsoPublic => 'Pošlji tudi v Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Vsak v dosegu ga lahko prebere, tudi vaš položaj. Tja gre samo prvo sporočilo.';
+
+  @override
+  String get sos_askingRadio => 'Radio sprašujemo za položaj…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Položaj radia od $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'Radio ni dal novega položaja. Zadnji znani položaj od $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Zadnji znani položaj. Radio ni povedal, kako star je.';
+
+  @override
+  String get sos_positionTyped =>
+      'Vaš lastni položaj: vsaka ponovitev ga pošlje.';
+
+  @override
+  String get sos_repeats =>
+      'Pošlje se znova vsaki 2 minuti z najnovejšim položajem radia, dokler ga ne prekličete, po prvem »Razumem« vsakih 5 minut.';
+
+  @override
+  String get sos_publicOnce =>
+      'V Public gre SOS enkrat. V drugem kanalu se pošilja znova, dokler ga ne prekličete.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'S tem se prekliče vaš SOS v $chat.';
+  }
+
+  @override
+  String get sos_active => 'Vaš SOS je aktiven';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Nazadnje poslano $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Čaka na radio, da ga pošlje';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Razumem ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Še nobenega »Razumem«';
+
+  @override
+  String get sos_cancel => 'Prekliči SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Vsi v $chat dobijo »SOS cancelled«.';
+  }
+
+  @override
+  String get sos_keep => 'Obdrži SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS preklican. Sporočilo gre, ko bo radio povezan.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Vaš SOS se je ustavil, ko se je MeshTrax zaprl. Nazadnje poslano $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Pošlji znova';
+
+  @override
+  String get sos_gotIt => 'Razumem';
+
+  @override
+  String sos_updated(String time) {
+    return 'Posodobljeno $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Preklicano $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Poslano $time';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return 'Vaš SOS je aktiven · nazadnje poslano $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Vaš SOS je aktiven · čaka na radio';
+
+  @override
+  String get sos_stoppedSendAgain => 'Vaš SOS se je ustavil · Pošlji znova';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS preklican · čaka na radio';
+
+  @override
+  String get notification_sosChannel => 'Opozorila SOS';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'SOS, poslan vam ali v klepet, v katerem ste';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS od $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name je preklical(a) SOS';
+  }
+
+  @override
+  String get notification_mySosChannel => 'Vaš SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Vaš lastni SOS, dokler je aktiven';
+
+  @override
+  String get appSettings_sosAlerts => 'Opozorila SOS';
+
+  @override
+  String get appSettings_sosAlways =>
+      'SOS vedno opozori, tudi v utišanem klepetu ali z izklopljenimi obvestili o sporočilih.';
+
+  @override
+  String get appSettings_sosThroughDnd => 'Zazvoni tudi v načinu Ne moti.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Način Ne moti ga utiša. Tapnite in dovolite preglasitev načina Ne moti.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'Telefon ima opozorila SOS izklopljena. Tapnite, da jih vklopite.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Načini zbranosti in tihi način ga na tej napravi še vedno lahko utišajo.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Obvestila so izklopljena, zato tudi opozorila SOS.';
+
+  @override
   String get dialog_noticeTitle => 'Obvestilo';
 
   @override

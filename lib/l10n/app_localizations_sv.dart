@@ -5221,6 +5221,171 @@ class AppLocalizationsSv extends AppLocalizations {
   String get dialog_sosText => 'Vad har hänt?';
 
   @override
+  String get sos_alsoPublic => 'Skicka även till Public';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Alla inom räckvidd kan läsa det, även din position. Bara det första meddelandet går dit.';
+
+  @override
+  String get sos_askingRadio => 'Frågar radion efter dess position…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Radions position från $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'Radion gav ingen ny position. Senast kända position från $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Senast kända position. Radion sa inte hur gammal den är.';
+
+  @override
+  String get sos_positionTyped =>
+      'Din egen position: varje upprepning skickar den.';
+
+  @override
+  String get sos_repeats =>
+      'Skickas igen varannan minut med radions senaste position tills du avbryter, var femte minut efter första ”Uppfattat”.';
+
+  @override
+  String get sos_publicOnce =>
+      'I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Detta avbryter ditt SOS i $chat.';
+  }
+
+  @override
+  String get sos_active => 'Ditt SOS är aktivt';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Senast skickat $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Väntar på radion för att skicka';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Uppfattat ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Inget ”Uppfattat” än';
+
+  @override
+  String get sos_cancel => 'Avbryt SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Alla i $chat får ”SOS cancelled”.';
+  }
+
+  @override
+  String get sos_keep => 'Behåll SOS';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS avbrutet. Meddelandet går ut när radion är ansluten.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Ditt SOS stoppades när MeshTrax stängdes. Senast skickat $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Skicka igen';
+
+  @override
+  String get sos_gotIt => 'Uppfattat';
+
+  @override
+  String sos_updated(String time) {
+    return 'Uppdaterad $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Avbruten $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Skickad $time';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return 'Ditt SOS är aktivt · senast skickat $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Ditt SOS är aktivt · väntar på radion';
+
+  @override
+  String get sos_stoppedSendAgain => 'Ditt SOS stoppades · Skicka igen';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS avbrutet · väntar på radion';
+
+  @override
+  String get notification_sosChannel => 'SOS-larm';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'Ett SOS till dig eller till en chatt du är med i';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS från $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return 'SOS avbrutet av $name';
+  }
+
+  @override
+  String get notification_mySosChannel => 'Ditt SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Ditt eget SOS, medan det är aktivt';
+
+  @override
+  String get appSettings_sosAlerts => 'SOS-larm';
+
+  @override
+  String get appSettings_sosAlways =>
+      'Ett SOS larmar alltid, även i en tystad chatt eller med meddelandeaviseringar avstängda.';
+
+  @override
+  String get appSettings_sosThroughDnd => 'Det hörs även i Stör ej.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Stör ej tystar det. Tryck och tillåt Åsidosätt Stör ej.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'Telefonen har stängt av SOS-larm. Tryck för att slå på dem.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Fokus och ljudlöst läge kan fortfarande tysta det på den här enheten.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Aviseringar är avstängda, så SOS-larm är det också.';
+
+  @override
   String get dialog_noticeTitle => 'Notis';
 
   @override

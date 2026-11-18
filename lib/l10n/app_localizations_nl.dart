@@ -5244,6 +5244,171 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dialog_sosText => 'Wat is er gebeurd?';
 
   @override
+  String get sos_alsoPublic => 'Ook naar Public sturen';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Iedereen binnen bereik kan het lezen, ook je positie. Alleen het eerste bericht gaat daarheen.';
+
+  @override
+  String get sos_askingRadio => 'De radio wordt om zijn positie gevraagd…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'Positie van de radio van $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'De radio gaf geen nieuwe positie. Laatst bekende positie van $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Laatst bekende positie. De radio zei niet hoe oud die is.';
+
+  @override
+  String get sos_positionTyped =>
+      'Je eigen positie: elke herhaling stuurt die.';
+
+  @override
+  String get sos_repeats =>
+      'Wordt elke 2 minuten opnieuw verstuurd met de nieuwste positie van de radio tot je het annuleert, elke 5 minuten na het eerste ‘Begrepen’.';
+
+  @override
+  String get sos_publicOnce =>
+      'In Public gaat een SOS één keer weg. In een ander kanaal wordt het opnieuw verstuurd tot je het annuleert.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Dit annuleert je SOS in $chat.';
+  }
+
+  @override
+  String get sos_active => 'Je SOS is actief';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Laatst verstuurd $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Wacht op de radio om het te versturen';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Begrepen ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Nog geen ‘Begrepen’';
+
+  @override
+  String get sos_cancel => 'SOS annuleren';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Iedereen in $chat krijgt ‘SOS cancelled’.';
+  }
+
+  @override
+  String get sos_keep => 'SOS houden';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS geannuleerd. Het bericht gaat weg zodra de radio verbonden is.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Je SOS stopte toen MeshTrax sloot. Laatst verstuurd $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Opnieuw sturen';
+
+  @override
+  String get sos_gotIt => 'Begrepen';
+
+  @override
+  String sos_updated(String time) {
+    return 'Bijgewerkt $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Geannuleerd $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Verstuurd $time';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return 'Je SOS is actief · laatst verstuurd $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Je SOS is actief · wacht op de radio';
+
+  @override
+  String get sos_stoppedSendAgain => 'Je SOS is gestopt · Opnieuw sturen';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS geannuleerd · wacht op de radio';
+
+  @override
+  String get notification_sosChannel => 'SOS-meldingen';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'Een SOS aan jou of in een chat waar je in zit';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS van $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return 'SOS geannuleerd door $name';
+  }
+
+  @override
+  String get notification_mySosChannel => 'Je SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Je eigen SOS, zolang die actief is';
+
+  @override
+  String get appSettings_sosAlerts => 'SOS-meldingen';
+
+  @override
+  String get appSettings_sosAlways =>
+      'Een SOS meldt zich altijd, ook in een gedempte chat of met berichtmeldingen uit.';
+
+  @override
+  String get appSettings_sosThroughDnd => 'Hij klinkt ook bij Niet storen.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'Niet storen maakt hem stil. Tik en sta Niet storen negeren toe.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'De telefoon heeft SOS-meldingen uitgezet. Tik om ze aan te zetten.';
+
+  @override
+  String get appSettings_sosApple =>
+      'Focus en de stille modus kunnen hem op dit apparaat nog steeds stil maken.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Meldingen staan uit, dus SOS-meldingen ook.';
+
+  @override
   String get dialog_noticeTitle => 'Mededeling';
 
   @override

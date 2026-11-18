@@ -1159,6 +1159,10 @@ class ChannelMessageStore {
       'wireText': msg.wireText,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
+      if (msg.sosUpdatedAt case final at?)
+        'sosUpdatedAt': at.millisecondsSinceEpoch,
+      if (msg.sosCancelledAt case final at?)
+        'sosCancelledAt': at.millisecondsSinceEpoch,
       if (msg.claimedAt != null)
         'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
     };
@@ -1219,11 +1223,16 @@ class ChannelMessageStore {
           ) ??
           {},
       reactionSenders: ReactionHelper.decodeSenders(json['reactionSenders']),
+      sosUpdatedAt: _time(json['sosUpdatedAt']),
+      sosCancelledAt: _time(json['sosCancelledAt']),
       claimedAt: json['claimedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
           : null,
     );
   }
+
+  static DateTime? _time(Object? ms) =>
+      ms is int ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
 
   Map<String, dynamic> _repeatToJson(Repeat repeat) {
     return {

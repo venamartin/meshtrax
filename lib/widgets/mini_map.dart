@@ -15,12 +15,16 @@ class MiniMap extends StatelessWidget {
   final Color markerColor;
   final double height;
 
+  /// The pin is an SOS: the full map's pin opens Route here.
+  final bool sos;
+
   const MiniMap({
     super.key,
     required this.position,
     this.label,
     this.markerColor = Colors.blue,
     this.height = 140,
+    this.sos = false,
   });
 
   @override
@@ -68,6 +72,7 @@ class MiniMap extends StatelessWidget {
                     builder: (_) => MapScreen(
                       highlightPosition: position,
                       highlightLabel: label,
+                      highlightSos: sos,
                     ),
                   ),
                 ),

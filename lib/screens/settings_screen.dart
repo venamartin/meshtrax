@@ -366,6 +366,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       HealthDialog.location => _editLocation(context, connector),
       HealthDialog.batterySettings => BatterySleepService.openSettings(),
       HealthDialog.notificationSettings => NotificationService().askToAllow(),
+      HealthDialog.sosSettings => NotificationService().openSosSettings(),
+      HealthDialog.soundSettings => NotificationService().openSoundSettings(),
     };
   }
 

@@ -67,13 +67,14 @@ class _Radio extends MeshCoreConnector {
   Future<void> refreshRadioSettings() async {}
 
   @override
-  Future<void> sendChannelMessage(
+  Future<String?> sendChannelMessage(
     Channel channel,
     String text, {
     ChannelMessage? replyTarget,
   }) async {
     posted.add(text);
     await sendFrame(buildSendChannelTextMsgFrame(channel.index, text));
+    return null;
   }
 
   @override

@@ -28,9 +28,11 @@ import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/notification_service.dart';
+import '../services/sos_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
+import '../widgets/active_sos_bar.dart';
 import '../widgets/byte_count_input.dart';
 import '../widgets/chat_zoom_wrapper.dart';
 import '../widgets/clear_chat_dialog.dart';
@@ -66,11 +68,17 @@ class ChannelChatScreen extends StatefulWidget {
   /// message instead of the bottom or the oldest-unread position.
   final String? scrollToMessageId;
 
+  /// Got it goes to the SOS card [scrollToMessageId] as the chat opens: the
+  /// SOS notification's Got it button was tapped. With the radio away, the
+  /// chat says so instead.
+  final bool gotIt;
+
   const ChannelChatScreen({
     super.key,
     required this.channel,
     this.unreadCount,
     this.scrollToMessageId,
+    this.gotIt = false,
   });
 
   @override
@@ -396,6 +404,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       _viewing = true;
       connector.setActiveChannel(widget.channel.index);
       _connector = connector;
+      final gotIt = widget.scrollToMessageId;
+      if (widget.gotIt && gotIt != null && _warnIfDisconnected(connector)) {
+        unawaited(context.read<SosService>().gotItFor(widget.channel, gotIt));
+      }
     });
   }
 
@@ -1175,6 +1187,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                   ConnectionStatusBanner.ifSecondApp(context, connector) ??
                   const SizedBox.shrink(),
             ),
+            _buildActiveSos(),
             Expanded(
               child: Consumer<MeshCoreConnector>(
                 builder: (context, connector, child) {
@@ -1663,6 +1676,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                           traxChannel: structured is TraxMessage &&
                                   widget.channel.isPrivate
                               ? widget.channel
+                              : null,
+                          sos: structured is SosMessage
+                              ? _sosState(message)
                               : null,
                         ),
                         if (enableTracing || isOutgoing)
@@ -2224,6 +2240,114 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     _insertComposerText(wire);
   }
 
+  /// An SOS here goes out from its dialog, and on from [SosService] until
+  /// cancelled, whichever screen is open. In Public it goes once, and an
+  /// SOS active elsewhere carries on.
+  Future<void> _startSos(MeshCoreConnector connector) async {
+    final sos = context.read<SosService>();
+    if (widget.channel.isPublicChannel) {
+      final request = await StructuredMessageDialogs.sosInChannel(
+        context,
+        connector,
+        offerPublic: false,
+        repeats: false,
+      );
+      if (!mounted || request == null) return;
+      // Not lost with the radio away: it waits in the box, as typed text does.
+      if (!_warnIfDisconnected(connector)) {
+        _insertComposerText(request.message.toWire());
+        return;
+      }
+      setState(() => _trayOpen = false);
+      await sos.sendOnce(widget.channel, request);
+      return;
+    }
+    final active = sos.current;
+    final elsewhere = active != null &&
+            active.phase != SosPhase.cancelling &&
+            active.channelIdKey != widget.channel.idKey
+        ? active.channelName
+        : null;
+    final request = await StructuredMessageDialogs.sosInChannel(
+      context,
+      connector,
+      offerPublic: !sos.activeIn(widget.channel.idKey) &&
+          connector.channels.any((c) => c.isPublicChannel),
+      replaces: elsewhere,
+    );
+    if (!mounted || request == null) return;
+    setState(() => _trayOpen = false);
+    await sos.start(widget.channel, request);
+  }
+
+  Widget _buildActiveSos() {
+    return Consumer2<SosService?, MeshCoreConnector>(
+      builder: (context, service, connector, _) {
+        final sos = service?.current;
+        if (sos == null || sos.channelIdKey != widget.channel.idKey) {
+          return const SizedBox.shrink();
+        }
+        return ActiveSosBar(
+          sos: sos,
+          connected: connector.isConnected,
+          onSendAgain: () => unawaited(service!.resume()),
+          onCancel: () async {
+            if (await ActiveSosBar.confirmCancel(context, sos.channelName)) {
+              await service!.cancel();
+            }
+          },
+        );
+      },
+    );
+  }
+
+  /// Who replied to each row, for the SOS cards, worked out once per list.
+  Map<String, List<String>> _repliesTo(List<ChannelMessage> messages) {
+    if (!identical(messages, _repliesFor)) {
+      _repliesFor = messages;
+      _replies = SosService.repliesTo(messages);
+    }
+    return _replies;
+  }
+
+  List<ChannelMessage>? _repliesFor;
+  Map<String, List<String>> _replies = const {};
+
+  SosCardState _sosState(ChannelMessage message) {
+    final cancelled = message.sosCancelledAt;
+    return SosCardState(
+      updatedAt: message.sosUpdatedAt,
+      cancelledAt: cancelled,
+      gotIt: _repliesTo(_messages)[message.messageId] ?? const [],
+      onGotIt: message.isOutgoing || cancelled != null
+          ? null
+          : () {
+              if (!_warnIfDisconnected(context.read<MeshCoreConnector>())) {
+                return;
+              }
+              unawaited(
+                context.read<SosService>().sendGotIt(widget.channel, message),
+              );
+            },
+      onCancel:
+          message.isOutgoing &&
+              cancelled == null &&
+              widget.channel.isPublicChannel
+          ? () => unawaited(_cancelPublicSos(message))
+          : null,
+    );
+  }
+
+  /// My SOS in Public went once, with no bar: its card cancels it, once.
+  Future<void> _cancelPublicSos(ChannelMessage sos) async {
+    final connector = context.read<MeshCoreConnector>();
+    final service = context.read<SosService>();
+    final chat = widget.channel.displayName;
+    if (!await ActiveSosBar.confirmCancel(context, chat)) return;
+    if (!mounted || !_warnIfDisconnected(connector)) return;
+    await service.cancelOnce(widget.channel, sos);
+  }
+
   /// [maxBytes]: what the message box has left, after any reply's quote.
   Widget _buildAttachTray(MeshCoreConnector connector, int maxBytes) {
     final l10n = context.l10n;
@@ -2261,8 +2385,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           icon: Icons.warning_rounded,
           label: l10n.tray_sos,
           color: scheme.errorContainer,
-          onTap: () =>
-              _runTile(() => StructuredMessageDialogs.sos(context, connector)),
+          onTap: () => _startSos(connector),
         ),
         AttachTile(
           icon: Icons.event,
@@ -2310,6 +2433,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               text: messages[i].text,
               timestamp: messages[i].timestamp,
               index: total - 1 - i,
+              sosUpdatedAt: messages[i].sosUpdatedAt,
+              sosCancelled: messages[i].sosCancelledAt != null,
             ),
         ];
         final entries = PinnedMessagesBar.compute(

@@ -503,6 +503,17 @@ class LocationMessage extends StructuredMessage {
 }
 
 class SosMessage extends StructuredMessage {
+  /// A receiver's answer, sent as a reply to the SOS. Always English on the
+  /// air, like [LocationMessage.myLocationLabel]. Any reply to an SOS tells
+  /// its sender that one more person got it.
+  static const gotItText = 'Got it';
+
+  /// What the sender's Cancel sends. Always English on the air; readers
+  /// turn that sender's open SOS cards into cancelled ones.
+  static const cancelText = 'SOS cancelled';
+
+  static final _cancel = RegExp(r'^sos cancell?ed[.!]*$', caseSensitive: false);
+
   @override
   final LatLng position;
   final String text;
@@ -516,6 +527,12 @@ class SosMessage extends StructuredMessage {
     super.extraText,
     super.extensions,
   });
+
+  /// Whether [text] cancels its sender's SOS: a first line of
+  /// [cancelText], in any case, `canceled` too, as anyone can type it.
+  static bool isCancel(String text) => _cancel.hasMatch(
+        StructuredMessage.stripMarkup(text).split('\n').first.trim(),
+      );
 
   @override
   String get keyword => 'SOS';

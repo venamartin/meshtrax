@@ -5276,6 +5276,171 @@ class AppLocalizationsHu extends AppLocalizations {
   String get dialog_sosText => 'Mi történt?';
 
   @override
+  String get sos_alsoPublic => 'Küldés a Public csatornára is';
+
+  @override
+  String get sos_alsoPublicHint =>
+      'Hatótávon belül bárki elolvashatja, a pozícióját is. Csak az első üzenet megy oda.';
+
+  @override
+  String get sos_askingRadio => 'A rádió pozíciójának lekérése…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return 'A rádió pozíciója: $time ($age)';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return 'A rádió nem adott új pozíciót. Utolsó ismert pozíció: $time ($age).';
+  }
+
+  @override
+  String get sos_positionAgeUnknown =>
+      'Utolsó ismert pozíció. A rádió nem közölte, milyen régi.';
+
+  @override
+  String get sos_positionTyped => 'Saját pozíció: minden ismétlés ezt küldi.';
+
+  @override
+  String get sos_repeats =>
+      '2 percenként újra elküldi a rádió legfrissebb pozíciójával, amíg vissza nem vonja, az első „Megkaptam” után 5 percenként.';
+
+  @override
+  String get sos_publicOnce =>
+      'A Public csatornán az SOS egyszer megy el. Más csatornán újra elküldi, amíg vissza nem vonja.';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return 'Ez visszavonja az SOS-t itt: $chat.';
+  }
+
+  @override
+  String get sos_active => 'Az SOS aktív';
+
+  @override
+  String sos_lastSent(String time) {
+    return 'Utoljára elküldve: $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => 'Várakozás a rádióra a küldéshez';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return 'Megkapták ($count): $names';
+  }
+
+  @override
+  String get sos_noGotIt => 'Még nincs „Megkaptam”';
+
+  @override
+  String get sos_cancel => 'SOS visszavonása';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return 'Mindenki itt: $chat megkapja: „SOS cancelled”.';
+  }
+
+  @override
+  String get sos_keep => 'SOS megtartása';
+
+  @override
+  String get sos_cancelPending =>
+      'SOS visszavonva. Az üzenet elmegy, amint a rádió csatlakozik.';
+
+  @override
+  String sos_stopped(String time) {
+    return 'Az SOS leállt, amikor a MeshTrax bezárult. Utoljára elküldve: $time.';
+  }
+
+  @override
+  String get sos_sendAgain => 'Újraküldés';
+
+  @override
+  String get sos_gotIt => 'Megkaptam';
+
+  @override
+  String sos_updated(String time) {
+    return 'Frissítve: $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return 'Visszavonva: $time';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return 'Elküldve: $time';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return 'Az SOS aktív · utoljára elküldve: $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Az SOS aktív · várakozás a rádióra';
+
+  @override
+  String get sos_stoppedSendAgain => 'Az SOS leállt · Újraküldés';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS visszavonva · várakozás a rádióra';
+
+  @override
+  String get notification_sosChannel => 'SOS-riasztások';
+
+  @override
+  String get notification_sosChannelDescription =>
+      'Önnek vagy egy csevegésébe küldött SOS';
+
+  @override
+  String notification_sosFrom(String name) {
+    return 'SOS tőle: $name';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name visszavonta az SOS-t';
+  }
+
+  @override
+  String get notification_mySosChannel => 'Saját SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Az Ön által küldött SOS, amíg aktív';
+
+  @override
+  String get appSettings_sosAlerts => 'SOS-riasztások';
+
+  @override
+  String get appSettings_sosAlways =>
+      'Az SOS mindig riaszt, némított csevegésben és kikapcsolt üzenetértesítéseknél is.';
+
+  @override
+  String get appSettings_sosThroughDnd =>
+      'A Ne zavarjanak módban is megszólal.';
+
+  @override
+  String get appSettings_sosSilencedByDnd =>
+      'A Ne zavarjanak mód elnémítja. Koppintson, és engedélyezze a Ne zavarjanak felülbírálását.';
+
+  @override
+  String get appSettings_sosBlocked =>
+      'A telefonon ki vannak kapcsolva az SOS-riasztások. Koppintson a bekapcsoláshoz.';
+
+  @override
+  String get appSettings_sosApple =>
+      'A Fókusz és a néma mód ezen az eszközön továbbra is elnémíthatja.';
+
+  @override
+  String get appSettings_sosOff =>
+      'Az értesítések ki vannak kapcsolva, így az SOS-riasztások is.';
+
+  @override
   String get dialog_noticeTitle => 'Közlemény';
 
   @override

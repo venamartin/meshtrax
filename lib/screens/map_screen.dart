@@ -90,6 +90,9 @@ class MapScreen extends StatefulWidget {
   /// Route here does; Back then goes straight back (Navigate on a card).
   final bool routeToHighlight;
 
+  /// [highlightPosition] is an SOS: its pin opens Route here and Navigate.
+  final bool highlightSos;
+
   const MapScreen({
     super.key,
     this.highlightPosition,
@@ -98,6 +101,7 @@ class MapScreen extends StatefulWidget {
     this.hideBackButton = false,
     this.pickPosition = false,
     this.routeToHighlight = false,
+    this.highlightSos = false,
   });
 
   @override
@@ -464,15 +468,15 @@ class _MapScreenState extends State<MapScreen> {
 
         final highlightPosition = widget.highlightPosition;
         _refreshDirectMarkersIfChanged(connector);
-        final sharedMarkers = settings.mapShowMarkers
-            ? _channelMarkers
-                  .where(
-                    (marker) =>
-                        !_hiddenMarkerIds.contains(marker.id) &&
-                        !_removedMarkerIds.contains(marker.id),
-                  )
-                  .toList()
-            : <_SharedMarker>[];
+        // An SOS shows whatever the marker filter says, until removed.
+        final sharedMarkers = _channelMarkers
+            .where(
+              (marker) =>
+                  (settings.mapShowMarkers || marker.isSos) &&
+                  !_hiddenMarkerIds.contains(marker.id) &&
+                  !_removedMarkerIds.contains(marker.id),
+            )
+            .toList();
 
         // Filter by time
         final now = DateTime.now();
@@ -920,14 +924,32 @@ class _MapScreenState extends State<MapScreen> {
                               id: 'highlight',
                               position: highlightPosition.toOvm(),
                               size: const Size(40, 40),
-                              anchor: Alignment.bottomCenter,
-                              interactive: false,
+                              // An SOS looks as its pin from the message
+                              // does, which lies on it.
+                              anchor: widget.highlightSos
+                                  ? Alignment.center
+                                  : Alignment.bottomCenter,
+                              interactive: widget.highlightSos,
+                              onTap: widget.highlightSos
+                                  ? () => _showSosSheet(
+                                      highlightPosition,
+                                      title:
+                                          widget.highlightLabel ??
+                                          context.l10n.structured_sos,
+                                    )
+                                  : null,
                               label: widget.highlightLabel,
-                              child: Icon(
-                                Icons.location_on_outlined,
-                                color: Colors.red[600],
-                                size: 34,
-                              ),
+                              child: widget.highlightSos
+                                  ? _nodeDot(
+                                      Colors.red,
+                                      Icons.warning_rounded,
+                                      padding: 6,
+                                    )
+                                  : Icon(
+                                      Icons.location_on_outlined,
+                                      color: Colors.red[600],
+                                      size: 34,
+                                    ),
                             ),
                           ..._buildGuessedMarkers(guessedLocations),
                           ..._buildMarkers(
@@ -1385,6 +1407,7 @@ class _MapScreenState extends State<MapScreen> {
             sourceLabel: contact.name,
             isChannel: false,
             isPublicChannel: false,
+            sentAt: message.timestamp,
           ),
         );
       }
@@ -1421,11 +1444,15 @@ class _MapScreenState extends State<MapScreen> {
             fromName: message.senderName,
           );
           if (payload == null) continue;
-          final id = _buildMarkerId(
-            sourceId: 'channel:${channel.index}',
-            timestamp: message.timestamp,
-            text: message.text,
-          );
+          // An SOS keeps its id as its repeats move it, so a removed one
+          // stays removed.
+          final id = payload.flags == 'sos'
+              ? 'channel:${channel.index}|sos|${message.messageId}'
+              : _buildMarkerId(
+                  sourceId: 'channel:${channel.index}',
+                  timestamp: message.timestamp,
+                  text: message.text,
+                );
           markers.add(
             _SharedMarker(
               id: id,
@@ -1438,14 +1465,18 @@ class _MapScreenState extends State<MapScreen> {
                   : channel.name,
               isChannel: true,
               isPublicChannel: isPublic,
+              sentAt: message.timestamp,
+              updatedAt: message.sosUpdatedAt,
+              cancelledAt: message.sosCancelledAt,
             ),
           );
         }
       }
       appLogger.perf('map marker scan over $scanned candidate messages', sw);
       if (!mounted) return;
-      final newIds = markers.map((m) => m.id).toSet();
-      final oldIds = _channelMarkers.map((m) => m.id).toSet();
+      // An SOS repeat moves a marker under the same id.
+      final newIds = markers.map((m) => m.signature).toSet();
+      final oldIds = _channelMarkers.map((m) => m.signature).toSet();
       if (newIds.length != oldIds.length || !newIds.containsAll(oldIds)) {
         setState(() => _channelMarkers = markers);
       }
@@ -1479,7 +1510,11 @@ class _MapScreenState extends State<MapScreen> {
         'poi',
       ),
       LocationMessage m => (m.position, m.label ?? '', 'poi'),
-      SosMessage m => (m.position, m.text, 'sos'),
+      SosMessage m => (
+        m.position,
+        m.text.isEmpty ? context.l10n.structured_sos : m.text,
+        'sos',
+      ),
       _ => (const LatLng(0, 0), '', ''),
     };
     if (flags.isEmpty) return null;
@@ -1504,17 +1539,113 @@ class _MapScreenState extends State<MapScreen> {
     size: const Size(40, 40),
     onTap: () => _los != null
         ? _los!.tap(LosPlace.point(marker.position, name: marker.label))
+        : marker.isSos
+        ? _showSosSheet(marker.position, title: marker.label, marker: marker)
         : _showMarkerInfo(marker),
     child: _nodeDot(
-      marker.flags == 'sos'
-          ? Colors.red
+      marker.isSos
+          ? (marker.cancelledAt != null ? Colors.grey : Colors.red)
           : marker.isChannel
           ? (marker.isPublicChannel ? Colors.orange : Colors.purple)
           : Colors.blue,
-      Icons.flag,
+      marker.isSos ? Icons.warning_rounded : Icons.flag,
       padding: 6,
     ),
   );
+
+  /// An SOS pin: Route here with MeshTrax's own offline routing first,
+  /// then Navigate in another app, which may have no maps out there.
+  /// [marker]: the pin from a message, which says who sent it and when,
+  /// and can be removed from the map.
+  void _showSosSheet(
+    LatLng position, {
+    required String title,
+    _SharedMarker? marker,
+  }) {
+    final l10n = context.l10n;
+    final routing = context.read<RoutingService?>();
+    final canRoute =
+        routing != null &&
+        routing.available &&
+        routing.offeredAt((lat: position.latitude, lon: position.longitude));
+    final format = coordFormatOf(context.read<AppSettingsService>().settings);
+    final lines = positionLines(position.latitude, position.longitude, format);
+    final selfPosition = _selfPosition(_connector);
+    String time(DateTime t) => DateTimeHelper.time(context, t);
+    final details = [
+      if (marker != null) '${marker.fromName} · ${marker.sourceLabel}',
+      if (marker?.cancelledAt case final at?)
+        l10n.sos_cancelledAt(time(at))
+      else if (marker?.updatedAt case final at?)
+        l10n.sos_updated(time(at))
+      else if (marker?.sentAt case final at?)
+        l10n.sos_sentAt(time(at)),
+      ...lines,
+    ];
+    _showPointSheet(
+      position,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.warning_rounded,
+                  color: Theme.of(sheetContext).colorScheme.error,
+                ),
+                title: Text(
+                  title,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+                subtitle: Text(details.join('\n')),
+                trailing: CopyPositionButton(text: lines.first),
+              ),
+              ListTile(
+                leading: const Icon(Icons.directions),
+                title: Text(l10n.route_here),
+                subtitle: canRoute ? null : Text(l10n.navigate_noRoutingHere),
+                enabled: canRoute,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _routeHere(title, position, selfPosition);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.near_me_outlined),
+                title: Text(l10n.structured_navigate),
+                subtitle: Text(l10n.route_otherApp),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(
+                    LinkHandler.openInMapsApp(context, position, label: title),
+                  );
+                },
+              ),
+              if (marker != null)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline),
+                  title: Text(l10n.common_remove),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    setState(() {
+                      _hiddenMarkerIds.add(marker.id);
+                      _removedMarkerIds.add(marker.id);
+                    });
+                    await _markerService.saveRemovedIds(_removedMarkerIds);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(l10n.common_close),
+                onTap: () => Navigator.pop(sheetContext),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showRepeaterLogin(BuildContext context, Contact repeater) {
     showDialog(
@@ -3690,6 +3821,11 @@ class _SharedMarker {
   final String sourceLabel;
   final bool isChannel;
   final bool isPublicChannel;
+  final DateTime? sentAt;
+
+  /// An SOS: its latest repeat, and its cancel.
+  final DateTime? updatedAt;
+  final DateTime? cancelledAt;
 
   _SharedMarker({
     required this.id,
@@ -3700,5 +3836,15 @@ class _SharedMarker {
     required this.sourceLabel,
     required this.isChannel,
     required this.isPublicChannel,
+    this.sentAt,
+    this.updatedAt,
+    this.cancelledAt,
   });
+
+  bool get isSos => flags == 'sos';
+
+  /// What the map redraws on: an SOS moves and closes under one id.
+  String get signature =>
+      '$id|${position.latitude},${position.longitude}|'
+      '${updatedAt?.millisecondsSinceEpoch}|${cancelledAt != null}';
 }

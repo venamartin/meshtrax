@@ -1,11 +1,17 @@
+import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart' show MaterialPageRoute;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/reaction_helper.dart';
@@ -60,9 +66,17 @@ class NotificationService {
   // Locale for localized notification strings
   Locale _locale = const Locale('en');
 
+  /// The app's language is known from its first frame on; a time can't be
+  /// written in it before.
+  bool _localeKnown = false;
+
   /// Set the locale for notification strings (call when app locale changes)
   void setLocale(Locale locale) {
+    final changed = !_localeKnown || locale != _locale;
     _locale = locale;
+    _localeKnown = true;
+    // The user's own SOS in the shade speaks the app's language.
+    if (changed) unawaited(_postMySos());
   }
 
   AppLocalizations get _l10n => lookupAppLocalizations(_locale);
@@ -113,14 +127,21 @@ class NotificationService {
 
     await _notifications.initialize(
       settings: initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveNotificationResponse: handleTap,
     );
+    // Test builds 215-224 made the SOS category with the alarm sound.
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.deleteNotificationChannel(channelId: 'meshtrax_sos');
 
     // Capture a notification that cold-started the app so the payload can be
     // routed once the UI is ready.
     final launchDetails = await _notifications.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       final response = launchDetails?.notificationResponse;
+      if (response != null) _keepGotIt(response);
       _pendingLaunchPayload = response == null ? null : tapPayload(response);
     }
 
@@ -253,6 +274,120 @@ class NotificationService {
     }
   }
 
+  /// The category SOS alerts go out on, and nothing else (Android). Its
+  /// sound, vibration and importance are fixed when it is first made, so
+  /// they live in [sosChannel] and [sosAndroidDetails] alike, and a new
+  /// sound needs a new id.
+  static const sosChannelId = 'meshtrax_sos_morse';
+
+  /// The Got it button on a channel's SOS notification.
+  static const sosGotItAction = 'sos_got_it';
+
+  static final _sosVibration =
+      Int64List.fromList([0, 1200, 400, 1200, 400, 1200]);
+
+  /// "SOS" in Morse, twice (tool/make_sos_sound.py), played as an alarm.
+  static const _sosSound = RawResourceAndroidNotificationSound('sos_morse');
+
+  /// Android lets a category through Do Not Disturb only when the user says
+  /// so in its settings ([openSosSettings]); asking for it here takes
+  /// effect only for an app holding notification policy access.
+  static AndroidNotificationChannel sosChannel(AppLocalizations l10n) =>
+      AndroidNotificationChannel(
+        sosChannelId,
+        l10n.notification_sosChannel,
+        description: l10n.notification_sosChannelDescription,
+        importance: Importance.max,
+        bypassDnd: true,
+        sound: _sosSound,
+        vibrationPattern: _sosVibration,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      );
+
+  /// [silent]: an update that must not sound again (a cancel). [gotIt]:
+  /// with a Got it button, which opens the app to send it. The button
+  /// leaves the alert up: the app takes it away once Got it went, and with
+  /// the radio away nothing went.
+  @visibleForTesting
+  static AndroidNotificationDetails sosAndroidDetails(
+    AppLocalizations l10n, {
+    bool silent = false,
+    bool gotIt = false,
+  }) {
+    final channel = sosChannel(l10n);
+    return AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      channelDescription: channel.description,
+      importance: channel.importance,
+      priority: Priority.max,
+      channelBypassDnd: channel.bypassDnd,
+      sound: channel.sound,
+      enableVibration: true,
+      vibrationPattern: channel.vibrationPattern,
+      audioAttributesUsage: channel.audioAttributesUsage,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      silent: silent,
+      actions: gotIt
+          ? [
+              AndroidNotificationAction(
+                sosGotItAction,
+                l10n.sos_gotIt,
+                showsUserInterface: true,
+                cancelNotification: false,
+              ),
+            ]
+          : null,
+    );
+  }
+
+  /// What the SOS category may do on this phone, for the settings row.
+  Future<SosAlertState> sosAlertState() async {
+    if (!Platform.isAndroid) return SosAlertState.unknown;
+    if (!await _ensureInitialized()) return SosAlertState.unknown;
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (await android?.areNotificationsEnabled() == false) {
+      return SosAlertState.blocked;
+    }
+    final categories = await android?.getNotificationChannels() ?? const [];
+    final sos = categories.where((c) => c.id == sosChannelId).firstOrNull;
+    if (sos == null) return SosAlertState.silencedByDnd;
+    if (sos.importance == Importance.none) return SosAlertState.blocked;
+    return sos.bypassDnd
+        ? SosAlertState.throughDnd
+        : SosAlertState.silencedByDnd;
+  }
+
+  /// The SOS category's own settings page (Android), made first so the
+  /// page exists, where "Override Do Not Disturb" is switched on; the app's
+  /// settings elsewhere.
+  Future<void> openSosSettings() async {
+    if (Platform.isAndroid) {
+      await _ensureInitialized();
+      await _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(sosChannel(_l10n));
+      await const MethodChannel('meshtrax/system').invokeMethod<void>(
+        'openNotificationChannelSettings',
+        {'channelId': sosChannelId},
+      );
+    } else if (Platform.isIOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+    } else if (Platform.isMacOS) {
+      await launchUrl(
+        Uri.parse(
+          'x-apple.systempreferences:com.apple.preference.notifications',
+        ),
+      );
+    }
+  }
+
   /// The category TRAX mode's reminder goes out on: an ordinary one, not
   /// an alarm.
   static const traxChannelId = 'meshtrax_trax';
@@ -306,9 +441,88 @@ class NotificationService {
   @visibleForTesting
   static int traxNotificationId(int channelIndex) => 0x5500 + channelIndex;
 
+  /// The alarm volume an SOS alert sounds at, and its most (Android); null
+  /// elsewhere, or when the phone doesn't say.
+  Future<({int volume, int max})?> alarmVolume() async {
+    if (!Platform.isAndroid) return null;
+    final alarm = await const MethodChannel('meshtrax/system')
+        .invokeMapMethod<String, int>('getAlarmVolume');
+    final volume = alarm?['volume'], max = alarm?['max'];
+    return volume == null || max == null ? null : (volume: volume, max: max);
+  }
+
+  /// The phone's sound settings, where the alarm volume is (Android).
+  Future<void> openSoundSettings() async {
+    if (!Platform.isAndroid) return;
+    await const MethodChannel('meshtrax/system')
+        .invokeMethod<void>('openSoundSettings');
+  }
+
   /// Every notification the app asks for, before the platform shows it.
   @visibleForTesting
   static void Function(ShownNotification shown)? debugOnShow;
+
+  /// An SOS, its repeat or its cancel: on its own category, shown at once
+  /// (never batched behind other messages), one notification per sender
+  /// and chat, replaced as the SOS updates. [where] names the chat, empty
+  /// for a direct message. [payload] opens it, as a message's would:
+  /// `mention:{channel}:{messageId}` lands on the card.
+  Future<void> showSosNotification({
+    required String chatKey,
+    required String senderName,
+    required String where,
+    required String text,
+    required String payload,
+    bool cancelled = false,
+  }) async {
+    final l10n = _l10n;
+    final title = cancelled
+        ? l10n.notification_sosCancelledBy(senderName)
+        : l10n.notification_sosFrom(senderName);
+    final body = [
+      MarkdownHelper.toPlainText(text),
+      where,
+    ].where((part) => part.isNotEmpty).join(' · ');
+    final id = sosNotificationId(chatKey, senderName);
+    // A cancelled SOS has no Got it left to wait for.
+    if (cancelled) _kept.remove(id);
+    // Got it answers in a channel; a direct message or a room has none.
+    final gotIt = !cancelled && payload.startsWith('mention:');
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: sosChannelId,
+        id: id,
+        title: title,
+        body: body,
+        payload: payload,
+        silent: cancelled,
+        gotIt: gotIt,
+      ),
+    );
+    if (!await _ensureInitialized()) return;
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      await _notifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: sosAndroidDetails(l10n, silent: cancelled, gotIt: gotIt),
+          iOS: DarwinNotificationDetails(presentSound: !cancelled),
+          macOS: DarwinNotificationDetails(presentSound: !cancelled),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show SOS notification: $e');
+    }
+  }
+
+  /// One per sender and chat, clear of the message ids (small numbers and
+  /// contact key hashes).
+  @visibleForTesting
+  static int sosNotificationId(String chatKey, String senderName) =>
+      (('sos|$chatKey|$senderName').hashCode & 0x3FFFFFFF) | 0x40000000;
 
   /// The trip's end came with the radio still in TRAX mode. Shown at once,
   /// never batched behind messages; a tap asks TRAX mode's question again.
@@ -341,6 +555,106 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint('Failed to show the TRAX reminder: $e');
+    }
+  }
+
+  /// The category the user's own SOS shows on while it lasts (Android):
+  /// quiet and ongoing. Never [sosChannelId], which is the alarm.
+  static const mySosChannelId = 'meshtrax_my_sos';
+
+  /// Below zero, clear of every other notification's id.
+  static const mySosNotificationId = -0x534F53; // 'SOS'
+
+  @visibleForTesting
+  static AndroidNotificationDetails mySosAndroidDetails(
+    AppLocalizations l10n,
+  ) => AndroidNotificationDetails(
+    mySosChannelId,
+    l10n.notification_mySosChannel,
+    channelDescription: l10n.notification_mySosChannelDescription,
+    importance: Importance.low,
+    priority: Priority.low,
+    playSound: false,
+    enableVibration: false,
+    ongoing: true,
+    autoCancel: false,
+    onlyAlertOnce: true,
+    visibility: NotificationVisibility.public,
+  );
+
+  /// The user's own SOS as [showMySos] last had it, to word it again in
+  /// another language.
+  ({
+    String Function(AppLocalizations l10n, String Function(DateTime) time)
+    status,
+    String chat,
+    int? channelIndex,
+  })?
+  _mySos;
+
+  /// What its notification says now: one that would say the same is not
+  /// posted again.
+  (String, String, String?)? _mySosShown;
+
+  /// The user's own SOS in the shade while it lasts, on a quiet category of
+  /// its own: [status] words it as the Chats and Map screens do, [chat] is
+  /// where it went, and a tap opens channel [channelIndex]. Android only:
+  /// iOS keeps no ongoing notification, and the screens show it there.
+  Future<void> showMySos(
+    String Function(AppLocalizations l10n, String Function(DateTime) time)
+    status, {
+    required String chat,
+    int? channelIndex,
+  }) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    _mySos = (status: status, chat: chat, channelIndex: channelIndex);
+    await _postMySos();
+  }
+
+  /// Takes the user's own SOS out of the shade: it ended.
+  Future<void> cancelMySos() async {
+    if (_mySos == null) return;
+    _mySos = null;
+    _mySosShown = null;
+    await cancel(mySosNotificationId);
+  }
+
+  Future<void> _postMySos() async {
+    final mine = _mySos;
+    if (mine == null || !_localeKnown) return;
+    final l10n = _l10n;
+    final title = mine.status(l10n, (t) => DateTimeHelper.timeIn(_locale, t));
+    final index = mine.channelIndex;
+    final payload = index == null ? null : 'channel:$index';
+    final shown = (title, mine.chat, payload);
+    if (shown == _mySosShown) return;
+    _mySosShown = shown;
+    // Opening the app clears the other notifications, not this one.
+    _kept.add(mySosNotificationId);
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: mySosChannelId,
+        id: mySosNotificationId,
+        title: title,
+        body: mine.chat,
+        payload: payload,
+        silent: true,
+      ),
+    );
+    if (!await _ensureInitialized()) return;
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      await _notifications.show(
+        id: mySosNotificationId,
+        title: title,
+        body: mine.chat,
+        notificationDetails: NotificationDetails(
+          android: mySosAndroidDetails(l10n),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show my SOS notification: $e');
     }
   }
 
@@ -503,19 +817,38 @@ class NotificationService {
     }
   }
 
-  void _onNotificationTapped(NotificationResponse response) {
+  /// A tapped notification, or one of its buttons.
+  @visibleForTesting
+  void handleTap(NotificationResponse response) {
+    _keepGotIt(response);
     final payload = tapPayload(response);
     if (payload != null) onNotificationTap?.call(payload);
   }
 
-  /// What a tap hands the app: the notification's payload, with
-  /// `traxfollow:` or `traxleave:` in front when the tap was TRAX mode's
-  /// Switch too or Leave too.
+  /// Notifications [cancelAll] leaves up: an SOS alert whose Got it was
+  /// tapped, until Got it went ([cancelSos]), and the user's own SOS.
+  final Set<int> _kept = {};
+
+  @visibleForTesting
+  bool keeps(int id) => _kept.contains(id);
+
+  /// The app clears its notifications when it comes to the front, as a tap
+  /// on Got it makes it do. That alert stays until Got it went: with the
+  /// radio away, nothing went.
+  void _keepGotIt(NotificationResponse response) {
+    final id = response.id;
+    if (response.actionId == sosGotItAction && id != null) _kept.add(id);
+  }
+
+  /// What a tap hands the app: the notification's payload, with `gotit:`
+  /// in front when the tap was an SOS notification's Got it, and
+  /// `traxfollow:` or `traxleave:` for TRAX mode's Switch too or Leave too.
   @visibleForTesting
   static String? tapPayload(NotificationResponse response) {
     final payload = response.payload;
     if (payload == null || payload.isEmpty) return null;
     return switch (response.actionId) {
+      sosGotItAction => 'gotit:$payload',
       traxFollowAction => 'traxfollow:$payload',
       traxLeaveAction => 'traxleave:$payload',
       _ => payload,
@@ -551,15 +884,37 @@ class NotificationService {
       notificationDetails: NotificationDetails(android: summaryDetails),
     );
   }
+
+  /// Clears the app's notifications, all but the ones [_kept] holds.
   Future<void> cancelAll() async {
     if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     _pendingNotifications.clear();
-    await _notifications.cancelAll();
+    if (_kept.isEmpty) {
+      await _notifications.cancelAll();
+    } else {
+      for (final shown in await _notifications.getActiveNotifications()) {
+        final id = shown.id;
+        if (id != null && !_kept.contains(id)) {
+          await _notifications.cancel(id: id, tag: shown.tag);
+        }
+      }
+    }
     _updateBadge(0);
   }
 
+  /// Stops an SOS alert, even mid-sound: [chatKey] and [senderName] as
+  /// [showSosNotification] had them.
+  Future<void> cancelSos(String chatKey, String senderName) =>
+      cancel(sosNotificationId(chatKey, senderName));
+
+  /// Every notification the app takes back, before the platform does.
+  @visibleForTesting
+  static void Function(int id)? debugOnCancel;
+
   Future<void> cancel(int id) async {
+    debugOnCancel?.call(id);
+    _kept.remove(id);
     if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     await _notifications.cancel(id: id);
@@ -604,6 +959,14 @@ class NotificationService {
     String? contactId,
     int? badgeCount,
   }) async {
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: 'meshtrax_messages',
+        title: contactName,
+        body: message,
+        payload: contactId,
+      ),
+    );
     if (_suppressNotifications) return;
 
     _queueNotification(
@@ -764,6 +1127,9 @@ class NotificationService {
   }
 }
 
+/// What the SOS category may do on this phone ([NotificationService.sosAlertState]).
+enum SosAlertState { unknown, blocked, silencedByDnd, throughDnd }
+
 /// A notification the app asked for ([NotificationService.debugOnShow]).
 class ShownNotification {
   final String channelId;
@@ -771,6 +1137,10 @@ class ShownNotification {
   final String title;
   final String body;
   final String? payload;
+  final bool silent;
+
+  /// An SOS notification with a Got it button.
+  final bool gotIt;
 
   /// TRAX mode's button on it, by action id.
   final String? action;
@@ -781,6 +1151,8 @@ class ShownNotification {
     required this.title,
     required this.body,
     this.payload,
+    this.silent = false,
+    this.gotIt = false,
     this.action,
   });
 }

@@ -8938,6 +8938,258 @@ abstract class AppLocalizations {
   /// **'What happened?'**
   String get dialog_sosText;
 
+  /// No description provided for @sos_alsoPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Also send to Public'**
+  String get sos_alsoPublic;
+
+  /// No description provided for @sos_alsoPublicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone in range can read it, your position too. Only the first message goes there.'**
+  String get sos_alsoPublicHint;
+
+  /// No description provided for @sos_askingRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking the radio for its position…'**
+  String get sos_askingRadio;
+
+  /// No description provided for @sos_positionFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio position from {time} ({age})'**
+  String sos_positionFrom(String time, String age);
+
+  /// No description provided for @sos_positionNotNew.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio gave no new position. Last known position from {time} ({age}).'**
+  String sos_positionNotNew(String time, String age);
+
+  /// No description provided for @sos_positionAgeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known position. The radio didn\'t say how old it is.'**
+  String get sos_positionAgeUnknown;
+
+  /// No description provided for @sos_positionTyped.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own position: every repeat sends it.'**
+  String get sos_positionTyped;
+
+  /// No description provided for @sos_repeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.'**
+  String get sos_repeats;
+
+  /// No description provided for @sos_publicOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'In Public an SOS goes once. In another channel it is sent again until you cancel it.'**
+  String get sos_publicOnce;
+
+  /// No description provided for @sos_replacesOther.
+  ///
+  /// In en, this message translates to:
+  /// **'This cancels your SOS in {chat}.'**
+  String sos_replacesOther(String chat);
+
+  /// No description provided for @sos_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS is active'**
+  String get sos_active;
+
+  /// No description provided for @sos_lastSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sent {time}'**
+  String sos_lastSent(String time);
+
+  /// No description provided for @sos_waitingForRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the radio to send it'**
+  String get sos_waitingForRadio;
+
+  /// No description provided for @sos_gotItBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it ({count}): {names}'**
+  String sos_gotItBy(int count, String names);
+
+  /// No description provided for @sos_noGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'No Got it yet'**
+  String get sos_noGotIt;
+
+  /// No description provided for @sos_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel SOS'**
+  String get sos_cancel;
+
+  /// No description provided for @sos_cancelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone in {chat} gets \"SOS cancelled\".'**
+  String sos_cancelBody(String chat);
+
+  /// No description provided for @sos_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep SOS'**
+  String get sos_keep;
+
+  /// No description provided for @sos_cancelPending.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS cancelled. It goes out when the radio is connected.'**
+  String get sos_cancelPending;
+
+  /// No description provided for @sos_stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS stopped when MeshTrax closed. Last sent {time}.'**
+  String sos_stopped(String time);
+
+  /// No description provided for @sos_sendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again'**
+  String get sos_sendAgain;
+
+  /// No description provided for @sos_gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get sos_gotIt;
+
+  /// No description provided for @sos_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String sos_updated(String time);
+
+  /// No description provided for @sos_cancelledAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled {time}'**
+  String sos_cancelledAt(String time);
+
+  /// No description provided for @sos_sentAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {time}'**
+  String sos_sentAt(String time);
+
+  /// No description provided for @sos_activeLastSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS is active · last sent {time}'**
+  String sos_activeLastSent(String time);
+
+  /// No description provided for @sos_activeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS is active · waiting for the radio'**
+  String get sos_activeWaiting;
+
+  /// No description provided for @sos_stoppedSendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS stopped · Send again'**
+  String get sos_stoppedSendAgain;
+
+  /// No description provided for @sos_cancelledWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS cancelled · waiting for the radio'**
+  String get sos_cancelledWaiting;
+
+  /// No description provided for @notification_sosChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS alerts'**
+  String get notification_sosChannel;
+
+  /// No description provided for @notification_sosChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An SOS sent to you or to a chat you are in'**
+  String get notification_sosChannelDescription;
+
+  /// No description provided for @notification_sosFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS from {name}'**
+  String notification_sosFrom(String name);
+
+  /// No description provided for @notification_sosCancelledBy.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS cancelled by {name}'**
+  String notification_sosCancelledBy(String name);
+
+  /// No description provided for @notification_mySosChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS'**
+  String get notification_mySosChannel;
+
+  /// No description provided for @notification_mySosChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own SOS, while it is active'**
+  String get notification_mySosChannelDescription;
+
+  /// No description provided for @appSettings_sosAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS alerts'**
+  String get appSettings_sosAlerts;
+
+  /// No description provided for @appSettings_sosAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'An SOS always alerts, even in a muted chat or with message notifications off.'**
+  String get appSettings_sosAlways;
+
+  /// No description provided for @appSettings_sosThroughDnd.
+  ///
+  /// In en, this message translates to:
+  /// **'It sounds through Do Not Disturb.'**
+  String get appSettings_sosThroughDnd;
+
+  /// No description provided for @appSettings_sosSilencedByDnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Do Not Disturb silences it. Tap and allow Override Do Not Disturb.'**
+  String get appSettings_sosSilencedByDnd;
+
+  /// No description provided for @appSettings_sosBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone has SOS alerts turned off. Tap to turn them on.'**
+  String get appSettings_sosBlocked;
+
+  /// No description provided for @appSettings_sosApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus and silent mode can still silence it on this device.'**
+  String get appSettings_sosApple;
+
+  /// No description provided for @appSettings_sosOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off, so SOS alerts are off too.'**
+  String get appSettings_sosOff;
+
   /// No description provided for @dialog_noticeTitle.
   ///
   /// In en, this message translates to:

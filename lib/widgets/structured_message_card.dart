@@ -151,6 +151,32 @@ class StructuredPalette {
   }
 }
 
+/// What a chat knows about an SOS card beyond its text.
+class SosCardState {
+  /// When the sender's latest repeat came in.
+  final DateTime? updatedAt;
+  final DateTime? cancelledAt;
+
+  /// Who replied to it, Got it or anything else.
+  final List<String> gotIt;
+
+  /// Sends Got it; null where it isn't offered (my own SOS, a cancelled
+  /// one, a direct message).
+  final VoidCallback? onGotIt;
+
+  /// Cancels my own SOS in Public, which went once and has no bar to
+  /// cancel it from; null elsewhere.
+  final VoidCallback? onCancel;
+
+  const SosCardState({
+    this.updatedAt,
+    this.cancelledAt,
+    this.gotIt = const [],
+    this.onGotIt,
+    this.onCancel,
+  });
+}
+
 class _Action {
   final IconData icon;
   final String label;
@@ -180,6 +206,9 @@ class StructuredMessageCard extends StatelessWidget {
   /// offer to switch or leave too.
   final Channel? traxChannel;
 
+  /// An SOS card's repeats, cancel and answers.
+  final SosCardState? sos;
+
   const StructuredMessageCard({
     super.key,
     required this.message,
@@ -188,6 +217,7 @@ class StructuredMessageCard extends StatelessWidget {
     this.isOutgoing = false,
     this.senderName,
     this.traxChannel,
+    this.sos,
   });
 
   /// What a location is called on screen: the sender's own position by
@@ -248,36 +278,10 @@ class StructuredMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final p = StructuredPalette.of(context, message);
     return switch (message) {
       LocationMessage m => _locationCard(context, p, m),
-      SosMessage m => _scaffold(
-          context,
-          p,
-          lead: _badge(p, Icons.warning_rounded),
-          overline: l10n.structured_sos,
-          title: m.text.isEmpty ? l10n.structured_sos : m.text,
-          richTitle: m.text.isNotEmpty,
-          lines: [?m.note],
-          position: m.position,
-          positionLabel: l10n.structured_sos,
-          actions: [
-            _Action(
-              Icons.near_me_outlined,
-              l10n.structured_navigate,
-              () => NavigateHelper.navigate(context, m.position,
-                  label: l10n.structured_sos),
-            ),
-            _Action(
-              Icons.map_outlined,
-              l10n.structured_map,
-              () => LinkHandler.openMapAt(context, m.position,
-                  label: l10n.structured_sos),
-              primary: false,
-            ),
-          ],
-        ),
+      SosMessage m => _sosCard(context, p, m),
       EventMessage m => _event(context, p, m),
       NoticeMessage m => _notice(context, p, m),
       ShareMessage m => _share(context, p, m),
@@ -343,6 +347,66 @@ class StructuredMessageCard extends StatelessWidget {
             ),
       ],
     );
+  }
+
+  /// MeshTrax's own offline map first: Navigate may hand the point to an
+  /// app with no maps out there.
+  Widget _sosCard(BuildContext context, StructuredPalette p, SosMessage m) {
+    final l10n = context.l10n;
+    final state = sos;
+    final cancelled = state?.cancelledAt;
+    final updated = state?.updatedAt;
+    String time(DateTime t) => DateTimeHelper.time(context, t);
+    final label = m.text.isEmpty ? l10n.structured_sos : m.text;
+    final gotIt = state?.gotIt ?? const <String>[];
+    final card = _scaffold(
+      context,
+      p,
+      lead: _badge(p, Icons.warning_rounded),
+      overline: l10n.structured_sos,
+      title: m.text.isEmpty ? l10n.structured_sos : m.text,
+      richTitle: m.text.isNotEmpty,
+      chips: [
+        if (cancelled != null)
+          _chip(p, l10n.sos_cancelledAt(time(cancelled)), highlight: true)
+        else if (updated != null)
+          _chip(p, l10n.sos_updated(time(updated)), highlight: true),
+      ],
+      lines: [
+        ?m.note,
+        if (gotIt.isNotEmpty) l10n.sos_gotItBy(gotIt.length, gotIt.join(', ')),
+      ],
+      position: m.position,
+      positionLabel: label,
+      actions: [
+        _Action(
+          Icons.map_outlined,
+          l10n.structured_map,
+          () => LinkHandler.openMapAt(
+            context,
+            m.position,
+            label: label,
+            sos: true,
+          ),
+        ),
+        if (cancelled == null && state?.onGotIt != null)
+          _Action(Icons.check, l10n.sos_gotIt, state!.onGotIt, primary: false),
+        if (cancelled == null && state?.onCancel != null)
+          _Action(
+            Icons.close,
+            l10n.sos_cancel,
+            state!.onCancel,
+            primary: false,
+          ),
+        _Action(
+          Icons.near_me_outlined,
+          l10n.structured_navigate,
+          () => NavigateHelper.navigate(context, m.position, label: label),
+          primary: false,
+        ),
+      ],
+    );
+    return cancelled != null ? Opacity(opacity: 0.6, child: card) : card;
   }
 
   Widget _drawing(BuildContext context, StructuredPalette p, SvgMessage m) {
@@ -847,6 +911,7 @@ class StructuredMessageCard extends StatelessWidget {
           label: label,
           markerColor: p.pin,
           height: 170,
+          sos: message is SosMessage,
         ),
         // Your own shared spot is "0 m N" away: say nothing.
         if (offset != null && offset.meters >= 50)

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The SOS sound is named only from Dart, so release builds must keep it. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/sos_morse" />

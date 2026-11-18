@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/date_time_helper.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/structured_message.dart';
 import '../l10n/l10n.dart';
@@ -21,12 +22,20 @@ class PinCandidate {
   /// Rooms: a post the room server authored (room.post).
   final bool serverAuthored;
 
+  /// An SOS its sender repeats: when the latest repeat came in.
+  final DateTime? sosUpdatedAt;
+
+  /// An SOS its sender cancelled, which no longer pins.
+  final bool sosCancelled;
+
   const PinCandidate({
     required this.id,
     required this.text,
     required this.timestamp,
     required this.index,
     this.serverAuthored = false,
+    this.sosUpdatedAt,
+    this.sosCancelled = false,
   });
 }
 
@@ -35,7 +44,15 @@ class PinnedEntry {
   final StructuredMessage message;
   final int index;
 
-  const PinnedEntry({required this.id, required this.message, required this.index});
+  /// An SOS: when it was sent, or last repeated, shown on its row.
+  final DateTime? at;
+
+  const PinnedEntry({
+    required this.id,
+    required this.message,
+    required this.index,
+    this.at,
+  });
 }
 
 /// The bar above a chat's message list. Which messages it shows is decided
@@ -43,7 +60,8 @@ class PinnedEntry {
 ///
 /// Rules: everything stacks, one row per message, each until dismissed
 /// (owner, 2026-10-26: "if three came in, you should see them all"). Every
-/// SOS, newest first; then every Event until it is over, soonest first;
+/// SOS until dismissed or cancelled, newest (or newest repeated) first,
+/// with its time; then every Event until it is over, soonest first;
 /// then every notice until it expires, newest first; in a room only the
 /// server's own notices (room.post), with the newest of the server's other
 /// posts (a plain announcement) last. A Location never pins. An entry that
@@ -82,11 +100,18 @@ class PinnedMessagesBar extends StatefulWidget {
           ? StructuredMessage.parseAnnouncement(c.text, now: clock)
           : StructuredMessage.parse(c.text, now: clock);
       if (parsed == null) continue;
+      if (parsed is SosMessage) {
+        if (c.sosCancelled) continue;
+        final at = c.sosUpdatedAt ?? c.timestamp;
+        sos.add((
+          at,
+          PinnedEntry(id: c.id, message: parsed, index: c.index, at: at),
+        ));
+        continue;
+      }
       final entry = PinnedEntry(id: c.id, message: parsed, index: c.index);
 
       switch (parsed) {
-        case SosMessage():
-          sos.add((c.timestamp, entry));
         case EventMessage(when: final span):
           if (span.effectiveEnd.isAfter(clock)) events.add((span.start, entry));
         case NoticeMessage(:final expires?) when server:
@@ -236,6 +261,17 @@ class _PinnedMessagesBarState extends State<PinnedMessagesBar> {
                 style: TextStyle(fontSize: 13, color: scheme.onSurface),
               ),
             ),
+            if (entry.at case final at?) ...[
+              const SizedBox(width: 8),
+              Text(
+                DateTimeHelper.time(context, at),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurfaceVariant,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.close, size: 16),
               tooltip: context.l10n.pinned_dismiss,

@@ -1,0 +1,158 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/services/notification_service.dart';
+
+// SOS alerts go out on a notification category of their own: the loudest,
+// the alarm sound and a long vibration, asking to pass Do Not Disturb.
+// Plain channel messages keep theirs, so muting chatter in the phone's
+// settings never mutes an SOS.
+void main() {
+  late AppLocalizations l10n;
+  setUp(() async {
+    l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  });
+
+  test('SOS has its own category, made the same wherever it is made', () {
+    final sos = NotificationService.sosAndroidDetails(l10n);
+    final category = NotificationService.sosChannel(l10n);
+    expect(sos.channelId, 'meshtrax_sos_morse');
+    expect(category.id, sos.channelId);
+    expect(sos.channelName, 'SOS alerts');
+    expect(category.name, 'SOS alerts');
+    expect(sos.importance, Importance.max);
+    expect(category.importance, Importance.max);
+    expect(sos.priority, Priority.max);
+    expect(sos.channelBypassDnd, isTrue);
+    expect(category.bypassDnd, isTrue);
+    expect(sos.category, AndroidNotificationCategory.alarm);
+    expect(sos.audioAttributesUsage, AudioAttributesUsage.alarm);
+    expect(category.audioAttributesUsage, AudioAttributesUsage.alarm);
+    expect(
+      (sos.sound! as RawResourceAndroidNotificationSound).sound,
+      'sos_morse',
+      reason: 'SOS in Morse, android/app/src/main/res/raw',
+    );
+    expect(sos.vibrationPattern, category.vibrationPattern);
+    expect(sos.vibrationPattern, isNotEmpty);
+    expect(sos.visibility, NotificationVisibility.public);
+    expect(sos.groupKey, isNull, reason: 'never folded into the messages');
+    expect(sos.silent, isFalse);
+    expect(
+      NotificationService.sosAndroidDetails(l10n, silent: true).silent,
+      isTrue,
+    );
+    expect(sos.actions, isNull);
+  });
+
+  test('Got it on the notification opens the app to send it', () {
+    final details = NotificationService.sosAndroidDetails(l10n, gotIt: true);
+    final action = details.actions!.single;
+    expect(action.id, NotificationService.sosGotItAction);
+    expect(action.title, 'Got it');
+    expect(action.showsUserInterface, isTrue);
+    expect(
+      action.cancelNotification,
+      isFalse,
+      reason: 'the app takes it away once Got it went',
+    );
+
+    String? tapped(String? actionId) => NotificationService.tapPayload(
+      NotificationResponse(
+        notificationResponseType: actionId == null
+            ? NotificationResponseType.selectedNotification
+            : NotificationResponseType.selectedNotificationAction,
+        actionId: actionId,
+        payload: 'mention:1:abc',
+      ),
+    );
+    expect(tapped(null), 'mention:1:abc');
+    expect(tapped(NotificationService.sosGotItAction), 'gotit:mention:1:abc');
+  });
+
+  // The app clears its notifications when it comes to the front, and a tap
+  // on Got it brings it there: with the radio away, nothing went.
+  test('a tapped Got it keeps its alert up until Got it went', () async {
+    final shade = NotificationService();
+    final id = NotificationService.sosNotificationId('trip', 'Ann');
+    void tap(String? actionId) => shade.handleTap(
+      NotificationResponse(
+        notificationResponseType: actionId == null
+            ? NotificationResponseType.selectedNotification
+            : NotificationResponseType.selectedNotificationAction,
+        id: id,
+        actionId: actionId,
+        payload: 'mention:1:abc',
+      ),
+    );
+
+    tap(null);
+    expect(shade.keeps(id), isFalse, reason: 'the alert itself was tapped');
+    tap(NotificationService.sosGotItAction);
+    expect(shade.keeps(id), isTrue);
+    await shade.cancelSos('trip', 'Ann');
+    expect(shade.keeps(id), isFalse, reason: 'Got it went');
+
+    tap(NotificationService.sosGotItAction);
+    await shade.showSosNotification(
+      chatKey: 'trip',
+      senderName: 'Ann',
+      where: 'trip',
+      text: 'Broken leg',
+      payload: 'mention:1:abc',
+      cancelled: true,
+    );
+    expect(shade.keeps(id), isFalse, reason: 'nothing left to answer');
+  });
+
+  // Martin's field review, 2026-11-18: my own SOS shows while it lasts,
+  // quietly, on Android, where a notification can stay.
+  test('my own SOS has a quiet category of its own, never the alarm', () {
+    final mine = NotificationService.mySosAndroidDetails(l10n);
+    expect(mine.channelId, 'meshtrax_my_sos');
+    expect(mine.channelId, isNot(NotificationService.sosChannelId));
+    expect(mine.channelName, 'Your SOS');
+    expect(mine.importance, Importance.low);
+    expect(mine.playSound, isFalse);
+    expect(mine.enableVibration, isFalse);
+    expect(mine.ongoing, isTrue);
+    expect(mine.autoCancel, isFalse, reason: 'a tap opens its chat');
+    expect(mine.audioAttributesUsage, AudioAttributesUsage.notification);
+    expect(mine.category, isNull);
+    expect(
+      NotificationService.mySosNotificationId,
+      isNegative,
+      reason: 'every other notification has an id of 0 or more',
+    );
+  });
+
+  test('my own SOS stays when the app opens, until it ends', () async {
+    final shade = NotificationService()..setLocale(const Locale('en'));
+    const id = NotificationService.mySosNotificationId;
+    await shade.showMySos(
+      (l10n, time) => l10n.sos_stoppedSendAgain,
+      chat: 'trip',
+      channelIndex: 1,
+    );
+    expect(shade.keeps(id), isTrue);
+    await shade.cancelMySos();
+    expect(shade.keeps(id), isFalse);
+  });
+
+  test('channel messages keep their own category', () {
+    final plain = NotificationService.channelAndroidDetails(l10n);
+    expect(plain.channelId, 'meshtrax_channels');
+    expect(plain.audioAttributesUsage, AudioAttributesUsage.notification);
+  });
+
+  test('one SOS notification per sender and chat, clear of message ids', () {
+    final ann = NotificationService.sosNotificationId('trip', 'Ann');
+    expect(NotificationService.sosNotificationId('trip', 'Ann'), ann);
+    expect(NotificationService.sosNotificationId('trip', 'Bob'), isNot(ann));
+    expect(NotificationService.sosNotificationId('camp', 'Ann'), isNot(ann));
+    expect(ann & 0x40000000, isNonZero);
+    expect(ann, lessThan(0x80000000), reason: 'an Android id is 32-bit');
+  });
+}

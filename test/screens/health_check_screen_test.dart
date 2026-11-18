@@ -286,7 +286,7 @@ void main() {
           linkLabel: rule.linkLabel,
           linkUrl: rule.linkUrl,
         ),
-    ], size: const Size(360, 12000));
+    ], size: const Size(360, 16000));
     expect(tester.takeException(), isNull);
     expect(
       find.text(healthRules.firstWhere((r) => r.enabled).title),

@@ -75,6 +75,13 @@ class ChannelMessage {
   // believable, for a "sent 14:00 by its clock" line. Null otherwise.
   final DateTime? claimedAt;
 
+  /// An SOS whose sender repeats it: when the newest repeat merged in, with
+  /// [text] its latest wire text. Null for any other message.
+  final DateTime? sosUpdatedAt;
+
+  /// When the sender cancelled this SOS ("SOS cancelled"), or null.
+  final DateTime? sosCancelledAt;
+
   ChannelMessage({
     this.senderKey,
     required this.senderName,
@@ -101,6 +108,8 @@ class ChannelMessage {
     this.wireText,
     Map<String, int>? reactions,
     Map<String, List<String>>? reactionSenders,
+    this.sosUpdatedAt,
+    this.sosCancelledAt,
     this.claimedAt,
   }) : messageId =
            messageId ??
@@ -122,6 +131,7 @@ class ChannelMessage {
   List<String> get displayPathVariants => pathVariants.map((p) => PathHelper.formatPathHex(p, stride: pathHashSize)).toList();
 
   ChannelMessage copyWith({
+    String? text,
     ChannelMessageStatus? status,
     DateTime? timestamp,
     List<Repeat>? repeats,
@@ -140,12 +150,14 @@ class ChannelMessage {
     String? wireText,
     Map<String, int>? reactions,
     Map<String, List<String>>? reactionSenders,
+    DateTime? sosUpdatedAt,
+    DateTime? sosCancelledAt,
     DateTime? claimedAt,
   }) {
     return ChannelMessage(
       senderKey: senderKey,
       senderName: senderName,
-      text: text,
+      text: text ?? this.text,
 
       timestamp: timestamp ?? this.timestamp,
       isOutgoing: isOutgoing,
@@ -168,6 +180,8 @@ class ChannelMessage {
       wireText: wireText ?? this.wireText,
       reactions: reactions ?? this.reactions,
       reactionSenders: reactionSenders ?? this.reactionSenders,
+      sosUpdatedAt: sosUpdatedAt ?? this.sosUpdatedAt,
+      sosCancelledAt: sosCancelledAt ?? this.sosCancelledAt,
       claimedAt: claimedAt ?? this.claimedAt,
     );
   }

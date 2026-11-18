@@ -4911,6 +4911,158 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dialog_sosText => '发生了什么？';
 
   @override
+  String get sos_alsoPublic => '同时发送到 Public';
+
+  @override
+  String get sos_alsoPublicHint => '范围内的任何人都能读到，包括您的位置。只有第一条消息会发到那里。';
+
+  @override
+  String get sos_askingRadio => '正在向电台询问位置…';
+
+  @override
+  String sos_positionFrom(String time, String age) {
+    return '电台位置（$time，$age）';
+  }
+
+  @override
+  String sos_positionNotNew(String time, String age) {
+    return '电台没有给出新位置。最后已知位置（$time，$age）。';
+  }
+
+  @override
+  String get sos_positionAgeUnknown => '最后已知位置。电台没有说明它有多旧。';
+
+  @override
+  String get sos_positionTyped => '您自己输入的位置：每次重发都会发送它。';
+
+  @override
+  String get sos_repeats => '在您取消之前，每 2 分钟用电台的最新位置重发一次；收到第一个“收到”后改为每 5 分钟一次。';
+
+  @override
+  String get sos_publicOnce => '在 Public 中 SOS 只发送一次。在其他频道中会重复发送，直到您取消。';
+
+  @override
+  String sos_replacesOther(String chat) {
+    return '这会取消您在 $chat 中的 SOS。';
+  }
+
+  @override
+  String get sos_active => '您的 SOS 正在发送';
+
+  @override
+  String sos_lastSent(String time) {
+    return '上次发送 $time';
+  }
+
+  @override
+  String get sos_waitingForRadio => '正在等待电台发送';
+
+  @override
+  String sos_gotItBy(int count, String names) {
+    return '收到（$count）：$names';
+  }
+
+  @override
+  String get sos_noGotIt => '还没有人回复“收到”';
+
+  @override
+  String get sos_cancel => '取消 SOS';
+
+  @override
+  String sos_cancelBody(String chat) {
+    return '$chat 中的每个人都会收到“SOS cancelled”。';
+  }
+
+  @override
+  String get sos_keep => '保留 SOS';
+
+  @override
+  String get sos_cancelPending => 'SOS 已取消。电台连接后会发出。';
+
+  @override
+  String sos_stopped(String time) {
+    return 'MeshTrax 关闭时您的 SOS 已停止。上次发送 $time。';
+  }
+
+  @override
+  String get sos_sendAgain => '再次发送';
+
+  @override
+  String get sos_gotIt => '收到';
+
+  @override
+  String sos_updated(String time) {
+    return '更新于 $time';
+  }
+
+  @override
+  String sos_cancelledAt(String time) {
+    return '已于 $time 取消';
+  }
+
+  @override
+  String sos_sentAt(String time) {
+    return '发送于 $time';
+  }
+
+  @override
+  String sos_activeLastSent(String time) {
+    return '您的 SOS 正在发送 · 上次发送 $time';
+  }
+
+  @override
+  String get sos_activeWaiting => '您的 SOS 正在发送 · 正在等待电台';
+
+  @override
+  String get sos_stoppedSendAgain => '您的 SOS 已停止 · 再次发送';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS 已取消 · 正在等待电台';
+
+  @override
+  String get notification_sosChannel => 'SOS 警报';
+
+  @override
+  String get notification_sosChannelDescription => '发给您或您所在聊天的 SOS';
+
+  @override
+  String notification_sosFrom(String name) {
+    return '来自 $name 的 SOS';
+  }
+
+  @override
+  String notification_sosCancelledBy(String name) {
+    return '$name 已取消 SOS';
+  }
+
+  @override
+  String get notification_mySosChannel => '您的 SOS';
+
+  @override
+  String get notification_mySosChannelDescription => '您自己的 SOS，在发送期间显示';
+
+  @override
+  String get appSettings_sosAlerts => 'SOS 警报';
+
+  @override
+  String get appSettings_sosAlways => '即使聊天已静音或消息通知已关闭，SOS 也总会提醒。';
+
+  @override
+  String get appSettings_sosThroughDnd => '在勿扰模式下也会响铃。';
+
+  @override
+  String get appSettings_sosSilencedByDnd => '勿扰模式会让它静音。点按并允许“覆盖勿扰模式”。';
+
+  @override
+  String get appSettings_sosBlocked => '手机已关闭 SOS 警报。点按以开启。';
+
+  @override
+  String get appSettings_sosApple => '在此设备上，专注模式和静音模式仍可能让它静音。';
+
+  @override
+  String get appSettings_sosOff => '通知已关闭，因此 SOS 警报也已关闭。';
+
+  @override
   String get dialog_noticeTitle => '公告';
 
   @override

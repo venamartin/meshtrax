@@ -18,8 +18,10 @@ class DateTimeHelper {
   /// region when the system speaks it. The app knows only "English"; the
   /// region is what tells 11/3 from 03/11. Only dates take the region, so
   /// the rest of the app keeps its one translation per language.
-  static String localeOf(BuildContext context) {
-    final language = Localizations.localeOf(context).languageCode;
+  static String localeOf(BuildContext context) =>
+      _localeFor(Localizations.localeOf(context).languageCode);
+
+  static String _localeFor(String language) {
     final formats = systemFormats();
     final candidates = [
       if (formats != null) _split(formats),
@@ -70,11 +72,11 @@ class DateTimeHelper {
 
   /// [skeleton] must be one of intl's named skeletons (DateFormat.yMd and
   /// the like): anything else is read as a literal pattern.
-  static DateFormat _format(BuildContext context, String skeleton) {
-    final locale = localeOf(context);
-    return _formats.putIfAbsent(
-        '$locale $skeleton', () => DateFormat(skeleton, locale));
-  }
+  static DateFormat _format(BuildContext context, String skeleton) =>
+      _formatIn(localeOf(context), skeleton);
+
+  static DateFormat _formatIn(String locale, String skeleton) => _formats
+      .putIfAbsent('$locale $skeleton', () => DateFormat(skeleton, locale));
 
   /// "2:22 PM" or "14:22", as the phone's clock reads. [seconds] for a
   /// detail screen.
@@ -82,6 +84,15 @@ class DateTimeHelper {
     final h24 = MediaQuery.alwaysUse24HourFormatOf(context);
     final skeleton = seconds ? (h24 ? 'Hms' : 'jms') : (h24 ? 'Hm' : 'jm');
     return _format(context, skeleton).format(t);
+  }
+
+  /// [time] where there is no screen to ask, as in a notification: in the
+  /// app's [language], 12- or 24-hour as the phone's clock reads.
+  static String timeIn(Locale language, DateTime t) {
+    final h24 =
+        WidgetsBinding.instance.platformDispatcher.alwaysUse24HourFormat;
+    final locale = _localeFor(language.languageCode);
+    return _formatIn(locale, h24 ? 'Hm' : 'jm').format(t);
   }
 
   /// "11/3" or "03/11".
