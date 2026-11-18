@@ -5320,6 +5320,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'У Public SOS надсилається один раз. В іншому каналі він надсилається повторно, доки ви його не скасуєте.';
 
   @override
+  String get sos_traxOnly =>
+      'Режим TRAX увімкнено: цей SOS чують лише радіо в режимі TRAX, і в Public теж.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Це скасує ваш SOS у $chat.';
   }

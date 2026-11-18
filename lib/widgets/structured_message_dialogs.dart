@@ -137,6 +137,7 @@ class StructuredMessageDialogs {
     required bool offerPublic,
     String? replaces,
     bool repeats = true,
+    bool traxOnly = false,
   }) {
     return showDialog<SosRequest>(
       context: context,
@@ -146,6 +147,7 @@ class StructuredMessageDialogs {
         offerPublic: offerPublic,
         replaces: replaces,
         repeats: repeats,
+        traxOnly: traxOnly,
       ),
     );
   }
@@ -569,13 +571,15 @@ class _PositionFieldState extends State<_PositionField> {
 
 /// [inChannel]: sent from here, and repeated unless [repeats] is off
 /// (Public), with the Public copy on offer; otherwise inserted into the
-/// composer.
+/// composer. [traxOnly]: the radio is in TRAX mode, so only the radios
+/// there hear it.
 class _SosDialog extends StatefulWidget {
   final MeshCoreConnector connector;
   final bool inChannel;
   final bool offerPublic;
   final String? replaces;
   final bool repeats;
+  final bool traxOnly;
 
   const _SosDialog({
     required this.connector,
@@ -583,6 +587,7 @@ class _SosDialog extends StatefulWidget {
     this.offerPublic = false,
     this.replaces,
     this.repeats = true,
+    this.traxOnly = false,
   });
 
   @override
@@ -789,6 +794,13 @@ class _SosDialogState extends State<_SosDialog> {
             widget.repeats ? l10n.sos_repeats : l10n.sos_publicOnce,
             style: muted,
           ),
+          if (widget.traxOnly) ...[
+            const SizedBox(height: 6),
+            Text(
+              l10n.sos_traxOnly,
+              style: muted?.copyWith(color: scheme.error),
+            ),
+          ],
           if (widget.replaces case final chat?) ...[
             const SizedBox(height: 6),
             Text(

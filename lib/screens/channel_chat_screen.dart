@@ -29,6 +29,7 @@ import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/notification_service.dart';
 import '../services/sos_service.dart';
+import '../services/trax_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
@@ -2245,12 +2246,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
   /// SOS active elsewhere carries on.
   Future<void> _startSos(MeshCoreConnector connector) async {
     final sos = context.read<SosService>();
+    final traxOnly = context.read<TraxService?>()?.isOn ?? false;
     if (widget.channel.isPublicChannel) {
       final request = await StructuredMessageDialogs.sosInChannel(
         context,
         connector,
         offerPublic: false,
         repeats: false,
+        traxOnly: traxOnly,
       );
       if (!mounted || request == null) return;
       // Not lost with the radio away: it waits in the box, as typed text does.
@@ -2274,6 +2277,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       offerPublic: !sos.activeIn(widget.channel.idKey) &&
           connector.channels.any((c) => c.isPublicChannel),
       replaces: elsewhere,
+      traxOnly: traxOnly,
     );
     if (!mounted || request == null) return;
     setState(() => _trayOpen = false);

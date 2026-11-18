@@ -5257,6 +5257,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.';
 
   @override
+  String get sos_traxOnly =>
+      'TRAX-läget är på: bara radioapparater i TRAX-läge hör detta SOS, även i Public.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Detta avbryter ditt SOS i $chat.';
   }

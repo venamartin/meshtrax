@@ -2269,6 +2269,7 @@
   "sos_positionTyped": "Din egen position: varje upprepning skickar den.",
   "sos_repeats": "Skickas igen varannan minut med radions senaste position tills du avbryter, var femte minut efter första ”Uppfattat”.",
   "sos_publicOnce": "I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.",
+  "sos_traxOnly": "TRAX-läget är på: bara radioapparater i TRAX-läge hör detta SOS, även i Public.",
   "sos_replacesOther": "Detta avbryter ditt SOS i {chat}.",
   "sos_active": "Ditt SOS är aktivt",
   "sos_lastSent": "Senast skickat {time}",

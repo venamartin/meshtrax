@@ -2269,6 +2269,7 @@
   "sos_positionTyped": "A sua própria posição: cada repetição a envia.",
   "sos_repeats": "Enviado de novo a cada 2 minutos com a posição mais recente do rádio até você cancelar, a cada 5 minutos depois do primeiro “Recebido”.",
   "sos_publicOnce": "No Public, um SOS vai uma vez. Em outro canal, é enviado de novo até você cancelar.",
+  "sos_traxOnly": "O modo TRAX está ligado: só os rádios em modo TRAX ouvem este SOS, também no Public.",
   "sos_replacesOther": "Isto cancela o seu SOS em {chat}.",
   "sos_active": "O seu SOS está ativo",
   "sos_lastSent": "Último envio {time}",

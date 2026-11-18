@@ -2307,6 +2307,7 @@
   "sos_positionTyped": "自分で入力した位置：毎回の再送でこの位置を送ります。",
   "sos_repeats": "取り消すまで2分ごとに無線機の最新位置で再送します。最初の「了解」の後は5分ごとです。",
   "sos_publicOnce": "PublicではSOSは1回だけ送信されます。他のチャンネルでは取り消すまで再送されます。",
+  "sos_traxOnly": "TRAXモードはオンです。このSOSはTRAXモードの無線機にしか届きません。Publicでも同じです。",
   "sos_replacesOther": "{chat} のSOSは取り消されます。",
   "sos_active": "SOSを送信中",
   "sos_lastSent": "最終送信 {time}",

@@ -5293,6 +5293,10 @@ class AppLocalizationsBg extends AppLocalizations {
       'В Public SOS се изпраща веднъж. В друг канал се изпраща отново, докато не го отмените.';
 
   @override
+  String get sos_traxOnly =>
+      'Режимът TRAX е включен: само радиа в режим TRAX чуват този SOS, и в Public.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Това отменя вашия SOS в $chat.';
   }

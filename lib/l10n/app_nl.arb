@@ -2269,6 +2269,7 @@
   "sos_positionTyped": "Je eigen positie: elke herhaling stuurt die.",
   "sos_repeats": "Wordt elke 2 minuten opnieuw verstuurd met de nieuwste positie van de radio tot je het annuleert, elke 5 minuten na het eerste ‘Begrepen’.",
   "sos_publicOnce": "In Public gaat een SOS één keer weg. In een ander kanaal wordt het opnieuw verstuurd tot je het annuleert.",
+  "sos_traxOnly": "TRAX-modus staat aan: alleen radio's in TRAX-modus horen deze SOS, ook in Public.",
   "sos_replacesOther": "Dit annuleert je SOS in {chat}.",
   "sos_active": "Je SOS is actief",
   "sos_lastSent": "Laatst verstuurd {time}",
