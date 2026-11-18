@@ -2661,6 +2661,8 @@
   "poiKind_hut": "Притулок",
   "poiKind_shelter": "Укриття",
   "poiKind_drinkingWater": "Питна вода",
+  "poiCaveat_spring": "Може пересохнути або бути небезпечним: очищуйте воду перед питтям і не розраховуйте на нього",
+  "poiCaveat_drinkingWater": "Може бути перекрита: перевірте, перш ніж на неї розраховувати",
   "poiKind_toilets": "Туалет",
   "poiKind_viewpoint": "Оглядовий майданчик",
   "poiKind_attraction": "Пам'ятка",

@@ -6529,6 +6529,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String get poiKind_drinkingWater => 'Питна вода';
 
   @override
+  String get poiCaveat_spring =>
+      'Може пересохнути або бути небезпечним: очищуйте воду перед питтям і не розраховуйте на нього';
+
+  @override
+  String get poiCaveat_drinkingWater =>
+      'Може бути перекрита: перевірте, перш ніж на неї розраховувати';
+
+  @override
   String get poiKind_toilets => 'Туалет';
 
   @override

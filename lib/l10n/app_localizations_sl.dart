@@ -6497,6 +6497,14 @@ class AppLocalizationsSl extends AppLocalizations {
   String get poiKind_drinkingWater => 'Pitna voda';
 
   @override
+  String get poiCaveat_spring =>
+      'Lahko je presahnjen ali nevaren: vodo pred pitjem prečistite in ne računajte nanj';
+
+  @override
+  String get poiCaveat_drinkingWater =>
+      'Lahko je zaprta: preverite, preden računate nanjo';
+
+  @override
   String get poiKind_toilets => 'Stranišča';
 
   @override

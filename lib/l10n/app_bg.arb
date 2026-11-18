@@ -2661,6 +2661,8 @@
   "poiKind_hut": "Хижа",
   "poiKind_shelter": "Заслон",
   "poiKind_drinkingWater": "Питейна вода",
+  "poiCaveat_spring": "Може да е пресъхнал или опасен: пречиствайте водата преди пиене и не разчитайте на него",
+  "poiCaveat_drinkingWater": "Може да е спряна: проверете, преди да разчитате на нея",
   "poiKind_toilets": "Тоалетна",
   "poiKind_viewpoint": "Панорамна площадка",
   "poiKind_attraction": "Забележителност",

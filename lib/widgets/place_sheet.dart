@@ -88,6 +88,15 @@ class PlaceSheet extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(kind, style: theme.textTheme.bodyMedium),
                   ],
+                  if (poiKindCaveat(l10n, p.kind) case final caveat?) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      caveat,
+                      style: theme.textTheme.bodyMedium!.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [

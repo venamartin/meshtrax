@@ -164,17 +164,26 @@ class _MapSearchScreenState extends State<MapSearchScreen> {
             ListTile(
               leading: Icon(poiKindIcon(r.kind)),
               title: Text(_title(l10n, r)),
-              subtitle: Text(
-                [
-                  if (r.name.isNotEmpty) poiKindLabel(l10n, r.kind),
-                  if (r.near case final nextTo?) l10n.search_near(nextTo),
-                  if (widget.near case final near?)
-                    GeoFormat.offset(
-                      LatLng(near.lat, near.lon),
-                      LatLng(r.point.lat, r.point.lon),
-                      widget.units,
-                    ).text,
-                ].join(' · '),
+              subtitle: Text.rich(
+                TextSpan(
+                  text: [
+                    if (r.name.isNotEmpty) poiKindLabel(l10n, r.kind),
+                    if (r.near case final nextTo?) l10n.search_near(nextTo),
+                    if (widget.near case final near?)
+                      GeoFormat.offset(
+                        LatLng(near.lat, near.lon),
+                        LatLng(r.point.lat, r.point.lon),
+                        widget.units,
+                      ).text,
+                  ].join(' · '),
+                  children: [
+                    if (poiKindCaveat(l10n, r.kind) case final caveat?)
+                      TextSpan(
+                        text: '\n$caveat',
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
+                  ],
+                ),
               ),
               onTap: () => Navigator.pop(
                 context,

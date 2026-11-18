@@ -6517,6 +6517,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get poiKind_drinkingWater => 'Ivóvíz';
 
   @override
+  String get poiCaveat_spring =>
+      'Kiszáradhatott vagy nem biztonságos: ivás előtt tisztítsa, és ne számítson rá';
+
+  @override
+  String get poiCaveat_drinkingWater =>
+      'Elzárhatták: ellenőrizze, mielőtt számít rá';
+
+  @override
   String get poiKind_toilets => 'Mosdó';
 
   @override

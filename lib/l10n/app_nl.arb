@@ -2661,6 +2661,8 @@
   "poiKind_hut": "Berghut",
   "poiKind_shelter": "Schuilhut",
   "poiKind_drinkingWater": "Drinkwater",
+  "poiCaveat_spring": "Kan droog of onveilig zijn: behandel het water voor het drinken en reken er niet op",
+  "poiCaveat_drinkingWater": "Kan afgesloten zijn: controleer het voordat je erop rekent",
   "poiKind_toilets": "Toiletten",
   "poiKind_viewpoint": "Uitzichtpunt",
   "poiKind_attraction": "Bezienswaardigheid",

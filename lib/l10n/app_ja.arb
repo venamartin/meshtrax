@@ -2699,6 +2699,8 @@
   "poiKind_hut": "山小屋",
   "poiKind_shelter": "避難小屋",
   "poiKind_drinkingWater": "飲料水",
+  "poiCaveat_spring": "涸れているか安全でない場合があります。飲む前に浄水し、当てにしないでください",
+  "poiCaveat_drinkingWater": "止まっている場合があります。当てにする前に確認してください",
   "poiKind_toilets": "トイレ",
   "poiKind_viewpoint": "展望所",
   "poiKind_attraction": "観光スポット",

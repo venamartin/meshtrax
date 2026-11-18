@@ -6483,6 +6483,14 @@ class AppLocalizationsNl extends AppLocalizations {
   String get poiKind_drinkingWater => 'Drinkwater';
 
   @override
+  String get poiCaveat_spring =>
+      'Kan droog of onveilig zijn: behandel het water voor het drinken en reken er niet op';
+
+  @override
+  String get poiCaveat_drinkingWater =>
+      'Kan afgesloten zijn: controleer het voordat je erop rekent';
+
+  @override
   String get poiKind_toilets => 'Toiletten';
 
   @override

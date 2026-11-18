@@ -3186,6 +3186,14 @@
   "poiKind_hut": "Hut",
   "poiKind_shelter": "Shelter",
   "poiKind_drinkingWater": "Drinking water",
+  "poiCaveat_spring": "May be dry or unsafe: treat before drinking, and don't count on it",
+  "@poiCaveat_spring": {
+    "description": "Under a spring in search results and on its place sheet. Desert springs are often dry or unsafe to drink untreated"
+  },
+  "poiCaveat_drinkingWater": "May be turned off: check before you count on it",
+  "@poiCaveat_drinkingWater": {
+    "description": "Under a drinking-water tap or water point in search results and on its place sheet. Taps out in parks are often turned off"
+  },
   "poiKind_toilets": "Toilets",
   "poiKind_viewpoint": "Viewpoint",
   "poiKind_attraction": "Attraction",

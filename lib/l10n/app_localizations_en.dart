@@ -6412,6 +6412,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get poiKind_drinkingWater => 'Drinking water';
 
   @override
+  String get poiCaveat_spring =>
+      'May be dry or unsafe: treat before drinking, and don\'t count on it';
+
+  @override
+  String get poiCaveat_drinkingWater =>
+      'May be turned off: check before you count on it';
+
+  @override
   String get poiKind_toilets => 'Toilets';
 
   @override

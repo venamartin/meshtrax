@@ -97,6 +97,15 @@ Color poiKindColor(String kind) => switch (kind) {
   _ => const Color(0xFF00796B),
 };
 
+/// A warning that goes wherever a kind is listed: water out there may not
+/// be there, or safe to drink.
+String? poiKindCaveat(AppLocalizations l10n, String kind) => switch (kind) {
+  'natural=spring' => l10n.poiCaveat_spring,
+  'amenity=drinking_water' ||
+  'amenity=water_point' => l10n.poiCaveat_drinkingWater,
+  _ => null,
+};
+
 /// What a kind is called, in the app's language.
 String poiKindLabel(AppLocalizations l10n, String kind) => switch (kind) {
   'natural=peak' => l10n.poiKind_peak,
