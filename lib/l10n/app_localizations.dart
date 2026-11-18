@@ -1325,6 +1325,12 @@ abstract class AppLocalizations {
   /// **'Frequency, power, spreading factor'**
   String get settings_radioSettingsSubtitle;
 
+  /// No description provided for @settings_traxSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-grid preset, trip channel, trip end'**
+  String get settings_traxSettingsSubtitle;
+
   /// No description provided for @settings_radioSettingsUpdated.
   ///
   /// In en, this message translates to:

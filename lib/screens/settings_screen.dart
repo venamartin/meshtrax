@@ -32,10 +32,12 @@ import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
+import 'trax_settings_screen.dart';
 import 'wifi_settings_screen.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/trax_dialogs.dart';
 import '../utils/platform_info.dart';
 import 'package:traxmap/traxmap.dart' show LatLng;
 
@@ -415,6 +417,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(l10n.settings_radioSettingsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showRadioSettings(context, connector),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const TraxIcon(size: 24),
+            title: Text(l10n.trax_settings),
+            subtitle: Text(l10n.settings_traxSettingsSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const TraxSettingsScreen(),
+              ),
+            ),
           ),
           const Divider(height: 1),
           ListTile(

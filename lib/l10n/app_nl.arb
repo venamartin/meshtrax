@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Naam bijgewerkt",
   "settings_radioSettings": "Radio Instellingen",
   "settings_radioSettingsSubtitle": "Frequentie, vermogen, spredfactor",
+  "settings_traxSettingsSubtitle": "Off-grid voorinstelling, tochtkanaal, einde van de tocht",
   "settings_radioSettingsUpdated": "Radio instellingen bijgewerkt",
   "settings_location": "Locatie",
   "settings_locationSubtitle": "GPS coördinaten",

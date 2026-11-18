@@ -660,6 +660,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_radioSettingsSubtitle => '频率、功率、扩频因子';
 
   @override
+  String get settings_traxSettingsSubtitle => '离网预设、行程频道、行程结束';
+
+  @override
   String get settings_radioSettingsUpdated => '无线电设置已更新';
 
   @override

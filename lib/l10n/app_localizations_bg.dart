@@ -697,6 +697,10 @@ class AppLocalizationsBg extends AppLocalizations {
       'Честота, мощност, разпространяващ фактор';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Автономна настройка, канал и край на пътуването';
+
+  @override
   String get settings_radioSettingsUpdated =>
       'Радио настройките са актуализирани';
 

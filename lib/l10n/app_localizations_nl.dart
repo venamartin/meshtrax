@@ -696,6 +696,10 @@ class AppLocalizationsNl extends AppLocalizations {
       'Frequentie, vermogen, spredfactor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Off-grid voorinstelling, tochtkanaal, einde van de tocht';
+
+  @override
   String get settings_radioSettingsUpdated => 'Radio instellingen bijgewerkt';
 
   @override

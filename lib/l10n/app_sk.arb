@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Meno aktualizované",
   "settings_radioSettings": "Nastavenia rádia",
   "settings_radioSettingsSubtitle": "Frekvencia, výkon, rozptylovací faktor",
+  "settings_traxSettingsSubtitle": "Mimosieťová predvoľba, kanál a koniec výletu",
   "settings_radioSettingsUpdated": "Nastavenia rádia aktualizované",
   "settings_location": "Lokalita",
   "settings_locationSubtitle": "GPS súradnice",

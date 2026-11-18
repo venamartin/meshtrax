@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Name aktualisiert",
   "settings_radioSettings": "Funk Einstellungen",
   "settings_radioSettingsSubtitle": "Frequenz, Leistung, Verbreitungsfaktor",
+  "settings_traxSettingsSubtitle": "Netzunabhängige Voreinstellung, Tour-Kanal, Ende der Tour",
   "settings_radioSettingsUpdated": "Funkparameter aktualisiert",
   "settings_location": "Ort",
   "settings_locationSubtitle": "GPS-Koordinaten",

@@ -673,6 +673,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_radioSettingsSubtitle => '주파수, 전력, 스펙트럼';
 
   @override
+  String get settings_traxSettingsSubtitle => '오프그리드 프리셋, 여행 채널, 여행 종료';
+
+  @override
   String get settings_radioSettingsUpdated => '라디오 설정이 업데이트되었습니다.';
 
   @override

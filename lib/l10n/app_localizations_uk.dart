@@ -694,6 +694,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Частота, потужність, коефіцієнт розширення';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Автономний пресет, канал і кінець поїздки';
+
+  @override
   String get settings_radioSettingsUpdated => 'Налаштування радіо оновлено';
 
   @override

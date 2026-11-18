@@ -225,6 +225,7 @@
   "settings_nodeNameUpdated": "氏名変更",
   "settings_radioSettings": "ラジオ設定",
   "settings_radioSettingsSubtitle": "周波数、電力、スプレッドファクター",
+  "settings_traxSettingsSubtitle": "オフグリッドのプリセット、旅のチャンネル、旅の終了",
   "settings_radioSettingsUpdated": "ラジオの設定が更新されました",
   "settings_location": "場所",
   "settings_locationSubtitle": "GPS 座標",

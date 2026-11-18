@@ -699,6 +699,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Częstotliwość, moc, współczynnik rozpraszania';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Pozasieciowe ustawienie wstępne, kanał i koniec wyprawy';
+
+  @override
   String get settings_radioSettingsUpdated =>
       'Ustawienia radia zostały zaktualizowane';
 

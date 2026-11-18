@@ -701,6 +701,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Fréquence, puissance, facteur d\'espacement';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Préréglage hors réseau, canal et fin de la sortie';
+
+  @override
   String get settings_radioSettingsUpdated => 'Paramètres radio mis à jour';
 
   @override

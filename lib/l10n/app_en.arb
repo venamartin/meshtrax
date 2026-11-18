@@ -338,6 +338,7 @@
   "settings_nodeNameUpdated": "Name updated",
   "settings_radioSettings": "Radio Settings",
   "settings_radioSettingsSubtitle": "Frequency, power, spreading factor",
+  "settings_traxSettingsSubtitle": "Off-grid preset, trip channel, trip end",
   "settings_radioSettingsUpdated": "Radio settings updated",
   "settings_location": "Location",
   "settings_locationSubtitle": "GPS coordinates",

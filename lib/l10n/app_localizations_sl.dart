@@ -693,6 +693,10 @@ class AppLocalizationsSl extends AppLocalizations {
       'Frekvenca, moč, razširitveni faktor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Prednastavitev zunaj omrežja, kanal in konec izleta';
+
+  @override
   String get settings_radioSettingsUpdated => 'Radio nastavitve posodobljene';
 
   @override

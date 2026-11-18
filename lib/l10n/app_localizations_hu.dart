@@ -696,6 +696,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Frekvencia, teljesítmény, szélesítési tényező';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Hálózaton kívüli előbeállítás, túracsatorna, a túra vége';
+
+  @override
   String get settings_radioSettingsUpdated => 'A rádió beállítások frissítve';
 
   @override

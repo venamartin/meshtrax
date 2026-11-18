@@ -118,6 +118,51 @@ void main() {
     expect(find.text('Node Name'), findsOneWidget);
   });
 
+  // Martin, 2026-11-18: TRAX settings opens from Settings too, under Radio
+  // Settings, as well as from the TRAX sheet.
+  testWidgets('TRAX settings sits right under Radio Settings', (tester) async {
+    tester.view.physicalSize = const Size(360, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final radio = _Radio()..handleFrameForTest(_selfInfo());
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
+          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final trax = find.text('TRAX settings');
+    expect(trax, findsOneWidget);
+    expect(
+      find.text('Off-grid preset, trip channel, trip end'),
+      findsOneWidget,
+    );
+    final radioRow = tester.getRect(
+      find.ancestor(
+        of: find.text('Radio Settings'),
+        matching: find.byType(ListTile),
+      ),
+    );
+    final traxRow = tester.getRect(
+      find.ancestor(of: trax, matching: find.byType(ListTile)),
+    );
+    expect(traxRow.top - radioRow.bottom, lessThanOrEqualTo(1));
+    // The radio's SELF_INFO left short timers running (the message
+    // database opening, the change debounce).
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   // The owner, 2026-11-17: testing builds needs the build number in About.
   testWidgets('About shows the build number beside the version', (
     tester,

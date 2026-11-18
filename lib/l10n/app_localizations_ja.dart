@@ -669,6 +669,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_radioSettingsSubtitle => '周波数、電力、スプレッドファクター';
 
   @override
+  String get settings_traxSettingsSubtitle => 'オフグリッドのプリセット、旅のチャンネル、旅の終了';
+
+  @override
   String get settings_radioSettingsUpdated => 'ラジオの設定が更新されました';
 
   @override

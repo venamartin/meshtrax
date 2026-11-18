@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Ime posodobljeno",
   "settings_radioSettings": "Nastavitve radija",
   "settings_radioSettingsSubtitle": "Frekvenca, moč, razširitveni faktor",
+  "settings_traxSettingsSubtitle": "Prednastavitev zunaj omrežja, kanal in konec izleta",
   "settings_radioSettingsUpdated": "Radio nastavitve posodobljene",
   "settings_location": "Lokacija",
   "settings_locationSubtitle": "GPS koordinate",

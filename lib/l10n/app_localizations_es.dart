@@ -698,6 +698,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Frecuencia, potencia, factor de dispersión';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Preajuste fuera de red, canal y fin de la salida';
+
+  @override
   String get settings_radioSettingsUpdated => 'Ajustes de radio actualizados';
 
   @override

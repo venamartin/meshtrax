@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Namn uppdaterat",
   "settings_radioSettings": "Radioinställningar",
   "settings_radioSettingsSubtitle": "Frekvens, effekt, spridningsfaktor",
+  "settings_traxSettingsSubtitle": "Förinställning utanför nätet, turkanal, turens slut",
   "settings_radioSettingsUpdated": "Radioinställningarna har uppdaterats",
   "settings_location": "Plats",
   "settings_locationSubtitle": "GPS koordinater",

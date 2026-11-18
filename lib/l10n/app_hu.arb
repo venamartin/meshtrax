@@ -225,6 +225,7 @@
   "settings_nodeNameUpdated": "Neve frissítve",
   "settings_radioSettings": "Rádióbeállítások",
   "settings_radioSettingsSubtitle": "Frekvencia, teljesítmény, szélesítési tényező",
+  "settings_traxSettingsSubtitle": "Hálózaton kívüli előbeállítás, túracsatorna, a túra vége",
   "settings_radioSettingsUpdated": "A rádió beállítások frissítve",
   "settings_location": "Helyszín",
   "settings_locationSubtitle": "GPS koordináták",

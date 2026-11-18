@@ -696,6 +696,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Частота, мощность и коэффициент распространения';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Автономный пресет, канал и конец поездки';
+
+  @override
   String get settings_radioSettingsUpdated => 'Настройки радио обновлены';
 
   @override

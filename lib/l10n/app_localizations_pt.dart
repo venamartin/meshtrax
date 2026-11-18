@@ -699,6 +699,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Frequência, potência, fator de espalhamento';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Predefinição fora da rede, canal e fim da viagem';
+
+  @override
   String get settings_radioSettingsUpdated =>
       'Configurações de rádio atualizadas';
 

@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Ім'я оновлено",
   "settings_radioSettings": "Налаштування радіо",
   "settings_radioSettingsSubtitle": "Частота, потужність, коефіцієнт розширення",
+  "settings_traxSettingsSubtitle": "Автономний пресет, канал і кінець поїздки",
   "settings_radioSettingsUpdated": "Налаштування радіо оновлено",
   "settings_location": "Розташування",
   "settings_locationSubtitle": "GPS координати",

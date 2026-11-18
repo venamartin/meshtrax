@@ -694,6 +694,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'Frekvens, effekt, spridningsfaktor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Förinställning utanför nätet, turkanal, turens slut';
+
+  @override
   String get settings_radioSettingsUpdated =>
       'Radioinställningarna har uppdaterats';
 

@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Nome aggiornato",
   "settings_radioSettings": "Impostazioni Radio",
   "settings_radioSettingsSubtitle": "Frequenza, potenza, fattore di dispersione",
+  "settings_traxSettingsSubtitle": "Preimpostazione fuori rete, canale e fine dell'uscita",
   "settings_radioSettingsUpdated": "Impostazioni radio aggiornate",
   "settings_location": "Posizione",
   "settings_locationSubtitle": "coordinate GPS",

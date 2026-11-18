@@ -225,6 +225,7 @@
   "settings_nodeNameUpdated": "이름 변경",
   "settings_radioSettings": "라디오 설정",
   "settings_radioSettingsSubtitle": "주파수, 전력, 스펙트럼",
+  "settings_traxSettingsSubtitle": "오프그리드 프리셋, 여행 채널, 여행 종료",
   "settings_radioSettingsUpdated": "라디오 설정이 업데이트되었습니다.",
   "settings_location": "위치",
   "settings_locationSubtitle": "GPS 좌표",

@@ -691,6 +691,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Frequency, power, spreading factor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Off-grid preset, trip channel, trip end';
+
+  @override
   String get settings_radioSettingsUpdated => 'Radio settings updated';
 
   @override

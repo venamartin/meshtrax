@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Nazwa zaktualizowana",
   "settings_radioSettings": "Ustawienia radia",
   "settings_radioSettingsSubtitle": "Częstotliwość, moc, współczynnik rozpraszania",
+  "settings_traxSettingsSubtitle": "Pozasieciowe ustawienie wstępne, kanał i koniec wyprawy",
   "settings_radioSettingsUpdated": "Ustawienia radia zostały zaktualizowane",
   "settings_location": "Lokalizacja",
   "settings_locationSubtitle": "Koordynaty GPS",

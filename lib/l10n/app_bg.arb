@@ -168,6 +168,7 @@
   "settings_nodeNameUpdated": "Името е актуализирано",
   "settings_radioSettings": "Настройки на радиопредавателя",
   "settings_radioSettingsSubtitle": "Честота, мощност, разпространяващ фактор",
+  "settings_traxSettingsSubtitle": "Автономна настройка, канал и край на пътуването",
   "settings_radioSettingsUpdated": "Радио настройките са актуализирани",
   "settings_location": "Местоположение",
   "settings_locationSubtitle": "Координати на GPS",

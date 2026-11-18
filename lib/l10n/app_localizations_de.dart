@@ -699,6 +699,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Frequenz, Leistung, Verbreitungsfaktor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Netzunabhängige Voreinstellung, Tour-Kanal, Ende der Tour';
+
+  @override
   String get settings_radioSettingsUpdated => 'Funkparameter aktualisiert';
 
   @override

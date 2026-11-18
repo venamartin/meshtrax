@@ -698,6 +698,10 @@ class AppLocalizationsSk extends AppLocalizations {
       'Frekvencia, výkon, rozptylovací faktor';
 
   @override
+  String get settings_traxSettingsSubtitle =>
+      'Mimosieťová predvoľba, kanál a koniec výletu';
+
+  @override
   String get settings_radioSettingsUpdated => 'Nastavenia rádia aktualizované';
 
   @override
