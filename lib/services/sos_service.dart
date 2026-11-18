@@ -10,6 +10,7 @@ import '../helpers/structured_message.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../storage/prefs_manager.dart';
+import 'notification_service.dart';
 
 /// What the SOS dialog asks for in a channel.
 class SosRequest {
@@ -310,7 +311,9 @@ class SosService extends ChangeNotifier {
   }
 
   /// A receiver's Got it: a reply to [sos] using the app's reply format.
+  /// Its alert stops at once, even mid-sound.
   Future<void> sendGotIt(Channel channel, ChannelMessage sos) async {
+    unawaited(NotificationService().cancelSos(channel.idKey, sos.senderName));
     final maxBytes = maxChannelMessageBytes(_connector.selfName);
     final wire = ChannelMessage.buildReplyWireText(
       targetName: sos.senderName,
@@ -326,6 +329,15 @@ class SosService extends ChangeNotifier {
     );
     if (wire == null) return;
     await _connector.sendChannelMessage(channel, wire, replyTarget: sos);
+  }
+
+  /// The Got it on an SOS notification: card [messageId] in [channel],
+  /// unless it is mine or was cancelled since.
+  Future<void> gotItFor(Channel channel, String messageId) async {
+    final rows = await _connector.loadChannelMessagesFor(channel);
+    final sos = rows.where((m) => m.messageId == messageId).firstOrNull;
+    if (sos == null || sos.isOutgoing || sos.sosCancelledAt != null) return;
+    await sendGotIt(channel, sos);
   }
 
   /// Who answered the SOS rows [ids] among [rows]: the senders of replies

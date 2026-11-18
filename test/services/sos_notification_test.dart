@@ -18,7 +18,7 @@ void main() {
   test('SOS has its own category, made the same wherever it is made', () {
     final sos = NotificationService.sosAndroidDetails(l10n);
     final category = NotificationService.sosChannel(l10n);
-    expect(sos.channelId, 'meshtrax_sos');
+    expect(sos.channelId, 'meshtrax_sos_morse');
     expect(category.id, sos.channelId);
     expect(sos.channelName, 'SOS alerts');
     expect(category.name, 'SOS alerts');
@@ -31,8 +31,9 @@ void main() {
     expect(sos.audioAttributesUsage, AudioAttributesUsage.alarm);
     expect(category.audioAttributesUsage, AudioAttributesUsage.alarm);
     expect(
-      (sos.sound! as UriAndroidNotificationSound).sound,
-      'content://settings/system/alarm_alert',
+      (sos.sound! as RawResourceAndroidNotificationSound).sound,
+      'sos_morse',
+      reason: 'SOS in Morse, android/app/src/main/res/raw',
     );
     expect(sos.vibrationPattern, category.vibrationPattern);
     expect(sos.vibrationPattern, isNotEmpty);
@@ -43,6 +44,28 @@ void main() {
       NotificationService.sosAndroidDetails(l10n, silent: true).silent,
       isTrue,
     );
+    expect(sos.actions, isNull);
+  });
+
+  test('Got it on the notification opens the app to send it', () {
+    final details = NotificationService.sosAndroidDetails(l10n, gotIt: true);
+    final action = details.actions!.single;
+    expect(action.id, NotificationService.sosGotItAction);
+    expect(action.title, 'Got it');
+    expect(action.showsUserInterface, isTrue);
+    expect(action.cancelNotification, isTrue, reason: 'the sound stops');
+
+    String? tapped(String? actionId) => NotificationService.tapPayload(
+      NotificationResponse(
+        notificationResponseType: actionId == null
+            ? NotificationResponseType.selectedNotification
+            : NotificationResponseType.selectedNotificationAction,
+        actionId: actionId,
+        payload: 'mention:1:abc',
+      ),
+    );
+    expect(tapped(null), 'mention:1:abc');
+    expect(tapped(NotificationService.sosGotItAction), 'gotit:mention:1:abc');
   });
 
   test('channel messages keep their own category', () {

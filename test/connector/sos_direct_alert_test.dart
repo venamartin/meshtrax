@@ -132,7 +132,7 @@ void main() {
     expect(shown, isEmpty);
     await receive('SOS: Lost\n36.460000, -116.870000', now - 10);
     final alert = shown.single;
-    expect(alert.channelId, 'meshtrax_sos');
+    expect(alert.channelId, 'meshtrax_sos_morse');
     expect(alert.title, 'SOS from Ann');
     expect(alert.body, 'Lost');
     expect(alert.payload, ann.publicKeyHex);

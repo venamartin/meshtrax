@@ -266,10 +266,13 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     });
   }
 
-  void _handleNotificationTap(String payload) {
+  void _handleNotificationTap(String tapped) {
     final navigator = NotificationService.navigatorKey.currentState;
     if (navigator == null) return;
     final connector = widget.connector;
+    // An SOS notification's Got it: sent, then its chat opens as for a tap.
+    final gotIt = tapped.startsWith('gotit:');
+    final payload = gotIt ? tapped.substring('gotit:'.length) : tapped;
 
     if (payload.startsWith('mention:')) {
       // mention:<channelIndex>:<messageId> — open the channel AND land on
@@ -288,6 +291,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         }
       }
       if (channel == null) return;
+      if (gotIt) unawaited(widget.sosService.gotItFor(channel, messageId));
       // Even over the same channel: the new page lands on the message.
       NotificationService.openChat(
         navigator,

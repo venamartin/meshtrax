@@ -117,12 +117,19 @@ class NotificationService {
       settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+    // Test builds 215-224 made the SOS category with the alarm sound.
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.deleteNotificationChannel(channelId: 'meshtrax_sos');
 
     // Capture a notification that cold-started the app so the payload can be
     // routed once the UI is ready.
     final launchDetails = await _notifications.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
-      _pendingLaunchPayload = launchDetails?.notificationResponse?.payload;
+      final response = launchDetails?.notificationResponse;
+      _pendingLaunchPayload = response == null ? null : tapPayload(response);
     }
 
     _isInitialized = true;
@@ -256,15 +263,18 @@ class NotificationService {
 
   /// The category SOS alerts go out on, and nothing else (Android). Its
   /// sound, vibration and importance are fixed when it is first made, so
-  /// they live in [sosChannel] and [sosAndroidDetails] alike.
-  static const sosChannelId = 'meshtrax_sos';
+  /// they live in [sosChannel] and [sosAndroidDetails] alike, and a new
+  /// sound needs a new id.
+  static const sosChannelId = 'meshtrax_sos_morse';
+
+  /// The Got it button on a channel's SOS notification.
+  static const sosGotItAction = 'sos_got_it';
 
   static final _sosVibration =
       Int64List.fromList([0, 1200, 400, 1200, 400, 1200]);
 
-  /// The alarm sound the phone has set, not the message sound.
-  static const _sosSound =
-      UriAndroidNotificationSound('content://settings/system/alarm_alert');
+  /// "SOS" in Morse, twice (tool/make_sos_sound.py), played as an alarm.
+  static const _sosSound = RawResourceAndroidNotificationSound('sos_morse');
 
   /// Android lets a category through Do Not Disturb only when the user says
   /// so in its settings ([openSosSettings]); asking for it here takes
@@ -281,11 +291,13 @@ class NotificationService {
         audioAttributesUsage: AudioAttributesUsage.alarm,
       );
 
-  /// [silent]: an update that must not sound again (a cancel).
+  /// [silent]: an update that must not sound again (a cancel). [gotIt]:
+  /// with a Got it button, which opens the app to send it.
   @visibleForTesting
   static AndroidNotificationDetails sosAndroidDetails(
     AppLocalizations l10n, {
     bool silent = false,
+    bool gotIt = false,
   }) {
     final channel = sosChannel(l10n);
     return AndroidNotificationDetails(
@@ -302,6 +314,15 @@ class NotificationService {
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       silent: silent,
+      actions: gotIt
+          ? [
+              AndroidNotificationAction(
+                sosGotItAction,
+                l10n.sos_gotIt,
+                showsUserInterface: true,
+              ),
+            ]
+          : null,
     );
   }
 
@@ -390,6 +411,8 @@ class NotificationService {
       where,
     ].where((part) => part.isNotEmpty).join(' · ');
     final id = sosNotificationId(chatKey, senderName);
+    // Got it answers in a channel; a direct message or a room has none.
+    final gotIt = !cancelled && payload.startsWith('mention:');
     debugOnShow?.call(
       ShownNotification(
         channelId: sosChannelId,
@@ -398,6 +421,7 @@ class NotificationService {
         body: body,
         payload: payload,
         silent: cancelled,
+        gotIt: gotIt,
       ),
     );
     if (!await _ensureInitialized()) return;
@@ -408,7 +432,7 @@ class NotificationService {
         title: title,
         body: body,
         notificationDetails: NotificationDetails(
-          android: sosAndroidDetails(l10n, silent: cancelled),
+          android: sosAndroidDetails(l10n, silent: cancelled, gotIt: gotIt),
           iOS: DarwinNotificationDetails(presentSound: !cancelled),
           macOS: DarwinNotificationDetails(presentSound: !cancelled),
         ),
@@ -581,10 +605,17 @@ class NotificationService {
   }
 
   void _onNotificationTapped(NotificationResponse response) {
+    final payload = tapPayload(response);
+    if (payload != null) onNotificationTap?.call(payload);
+  }
+
+  /// What a tap hands the app: the notification's payload, with `gotit:`
+  /// in front when the tap was an SOS notification's Got it.
+  @visibleForTesting
+  static String? tapPayload(NotificationResponse response) {
     final payload = response.payload;
-    if (payload != null && payload.isNotEmpty) {
-      onNotificationTap?.call(payload);
-    }
+    if (payload == null || payload.isEmpty) return null;
+    return response.actionId == sosGotItAction ? 'gotit:$payload' : payload;
   }
 
   static const _groupKey = 'com.meshtrax.MESSAGES';
@@ -618,7 +649,17 @@ class NotificationService {
     _updateBadge(0);
   }
 
+  /// Stops an SOS alert, even mid-sound: [chatKey] and [senderName] as
+  /// [showSosNotification] had them.
+  Future<void> cancelSos(String chatKey, String senderName) =>
+      cancel(sosNotificationId(chatKey, senderName));
+
+  /// Every notification the app takes back, before the platform does.
+  @visibleForTesting
+  static void Function(int id)? debugOnCancel;
+
   Future<void> cancel(int id) async {
+    debugOnCancel?.call(id);
     if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     await _notifications.cancel(id: id);
@@ -837,6 +878,9 @@ class ShownNotification {
   final String? payload;
   final bool silent;
 
+  /// An SOS notification with a Got it button.
+  final bool gotIt;
+
   const ShownNotification({
     required this.channelId,
     this.id,
@@ -844,6 +888,7 @@ class ShownNotification {
     required this.body,
     this.payload,
     this.silent = false,
+    this.gotIt = false,
   });
 }
 

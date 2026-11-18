@@ -170,7 +170,7 @@ void main() {
       await hear(now - 20, 'Ann', _sos('Broken leg', 36.46));
       final sos = (await rows()).last;
       final alert = shown.single;
-      expect(alert.channelId, 'meshtrax_sos');
+      expect(alert.channelId, 'meshtrax_sos_morse');
       expect(alert.title, 'SOS from Ann');
       expect(alert.body, 'Broken leg · trip');
       expect(
@@ -190,7 +190,7 @@ void main() {
         'meshtrax_channels',
         'meshtrax_channels',
         'meshtrax_channels',
-        'meshtrax_sos',
+        'meshtrax_sos_morse',
       ]);
     });
 
@@ -473,6 +473,46 @@ void main() {
         expect(sos.interval, SosService.slowInterval);
       },
     );
+
+    test('is a button on the alert, which its cancel no longer has', () async {
+      await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
+      expect(sosAlerts().single.gotIt, isTrue);
+      await hear(now - 20, 'Ann', SosMessage.cancelText);
+      expect(sosAlerts().last.silent, isTrue);
+      expect(sosAlerts().last.gotIt, isFalse);
+    });
+
+    test('stops its alert at once, even while it sounds', () async {
+      final cancelled = <int>[];
+      NotificationService.debugOnCancel = cancelled.add;
+      addTearDown(() => NotificationService.debugOnCancel = null);
+      await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
+      final sos = (await rows()).single;
+      await SosService(c).sendGotIt(channel, sos);
+      expect(cancelled, [
+        NotificationService.sosNotificationId(channel.idKey, 'Ann'),
+      ]);
+      expect(sosAlerts().single.id, cancelled.single);
+    });
+
+    test('from the alert goes back as a reply to its card', () async {
+      await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
+      final sos = (await rows()).single;
+      await SosService(c).gotItFor(channel, sos.messageId);
+      await pumpEventQueue(times: 200);
+      final reply = (await rows()).last;
+      expect(reply.text, 'Got it');
+      expect(reply.replyToMessageId, sos.messageId);
+    });
+
+    test('from the alert sends nothing once the SOS is cancelled', () async {
+      await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
+      final sos = (await rows()).single;
+      await hear(now - 20, 'Ann', SosMessage.cancelText);
+      await SosService(c).gotItFor(channel, sos.messageId);
+      await pumpEventQueue(times: 200);
+      expect((await rows()).where((m) => m.isOutgoing), isEmpty);
+    });
   });
 }
 
