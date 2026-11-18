@@ -7257,6 +7257,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Частину рельєфу тут не вдається розрахувати, наприклад нижче рівня моря, тому її не зафарбовано.';
 
   @override
+  String get los_reachTapHint =>
+      'Торкніться карти або імені, щоб побачити пряму видимість до цієї точки.';
+
+  @override
   String get los_positionGuessed => 'Імовірна позиція';
 
   @override

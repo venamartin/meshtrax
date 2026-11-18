@@ -6918,6 +6918,9 @@ class AppLocalizationsKo extends AppLocalizations {
       '해수면 아래처럼 계산할 수 없는 지형이 있어 그 부분은 색칠되지 않습니다.';
 
   @override
+  String get los_reachTapHint => '지도나 이름을 탭하면 그곳까지의 가시선을 볼 수 있습니다.';
+
+  @override
   String get los_positionGuessed => '추정 위치';
 
   @override

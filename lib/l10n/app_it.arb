@@ -2858,6 +2858,7 @@
   "los_helpBody": "La risposta si basa solo sul terreno, letto dalle curve di livello che hai scaricato. Non sa nulla di alberi, edifici, persone, linee elettriche o altre antenne, e una cima può essere fino a una curva di livello più alta di quanto disegnato.\n\n«Libera» significa che il terreno non è d'intralcio. Non garantisce che un messaggio arrivi. «Al limite» significa che il terreno si avvicina alla linea. «Bloccata» significa che il terreno è d'intralcio: un messaggio potrebbe comunque superare una cresta bassa, ma non contarci.\n\nProvala sul campo con le tue radio prima di fidarti.",
   "los_reachShaded": "Ombreggiato: lì il terreno non ostacola una radio portatile, fino a {distance}.",
   "los_reachUnknownPart": "Parte del terreno qui non si può calcolare, ad esempio sotto il livello del mare, quindi non è ombreggiata.",
+  "los_reachTapHint": "Tocca la mappa o un nome per vedere la linea di vista fin lì.",
   "los_positionGuessed": "Posizione stimata",
   "los_positionGuessedVia": "Posizione stimata (via {names})",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

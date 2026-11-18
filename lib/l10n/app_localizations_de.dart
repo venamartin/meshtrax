@@ -7255,6 +7255,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Manches Gelände hier lässt sich nicht berechnen, etwa unter dem Meeresspiegel, und ist darum nicht schattiert.';
 
   @override
+  String get los_reachTapHint =>
+      'Tippen Sie auf die Karte oder einen Namen, um die Sichtlinie dorthin zu sehen.';
+
+  @override
   String get los_positionGuessed => 'Position geschätzt';
 
   @override

@@ -224,30 +224,43 @@ void main() {
   T overlay<T extends MapOverlay>(WidgetTester tester, String id) =>
       map(tester).overlays.whereType<T>().firstWhere((o) => o.id == id);
 
-  testWidgets('⋮ → Line of sight opens the sheet on the map; nothing runs '
-      'until a target is picked', (tester) async {
+  // One ⋮ entry for both (owner, 2026-11-18): it opens the reach from you,
+  // where a tap anywhere gives the line of sight to it.
+  testWidgets('⋮ → Line of sight opens the radio reach from you, and says a '
+      'tap gives the line', (tester) async {
     await pumpMap(
       tester,
       _Radio(self: badwater, nodes: [ana], altitude: -81.1),
     );
     // The top bar has no line of sight icon any more.
     expect(find.byTooltip('Line of Sight'), findsNothing);
-    await menu(tester, 'Line of sight');
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Radio reach from me'), findsNothing);
+    await tester.tap(find.text('Line of sight'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(LineOfSightSheet), findsOneWidget);
-    expect(find.text('Tap a person or a place on the map.'), findsOneWidget);
+    expect(session(tester)!.mode, LosMode.reach);
+    expect(find.text('Radio reach from me'), findsOneWidget);
+    expect(
+      find.text('Checking… Tap the map or a name for the line of sight to it.'),
+      findsOneWidget,
+    );
     expect(find.text('Me, 2m ago'), findsOneWidget);
-    expect(session(tester)!.busy, isFalse);
-    expect(session(tester)!.line, isNull);
   });
 
-  testWidgets('a tap on the map moves To and gives the answer, worked out '
-      'offline from the contours', (tester) async {
+  testWidgets('a tap on the map gives the line from you, worked out offline '
+      'from the contours; another tap moves To', (tester) async {
     await pumpMap(
       tester,
       _Radio(self: badwater, nodes: [ana], altitude: -81.1),
     );
     await menu(tester, 'Line of sight');
     await tapMap(tester, dantes);
+    expect(session(tester)!.mode, LosMode.line);
+    expect(find.byTooltip('Back'), findsOneWidget);
     expect(find.text('Blocked'), findsOneWidget);
     expect(
       find.textContaining(
@@ -464,7 +477,7 @@ void main() {
       tester,
       _Radio(self: dantes, nodes: [far, heard, peak, ana], altitude: 1670.1),
     );
-    await menu(tester, 'Radio reach from me');
+    await menu(tester, 'Line of sight');
     await answer(tester);
     final s = session(tester)!;
     expect(s.reach, isNotNull);
@@ -473,7 +486,12 @@ void main() {
       isNotEmpty,
     );
     expect(
-      find.textContaining('Shaded: the ground isn\'t in the way'),
+      find.textContaining(
+        RegExp(
+          r"^Shaded: the ground isn't in the way .*\. Tap the map or a "
+          r'name for the line of sight to it\.$',
+        ),
+      ),
       findsOneWidget,
     );
     // The valley floor is below sea level: not shaded, and it says why.
@@ -534,7 +552,7 @@ void main() {
     expect(session(tester)!.currentLine!.verdict, Verdict.blocked);
     await tapMap(tester, nevada);
     expect(session(tester)!.currentLine!.verdict, Verdict.unknown);
-    await menu(tester, 'Radio reach from me');
+    await menu(tester, 'Line of sight');
     await answer(tester);
     expect(session(tester)!.reach, isNotNull);
     expect(http.made, 0);
@@ -573,7 +591,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     final l10n = lookupAppLocalizations(const Locale('de'));
     expect(find.text(l10n.los_lineOfSight), findsOneWidget);
-    expect(find.text(l10n.los_reachFromMe), findsOneWidget);
+    expect(find.text(l10n.los_reachFromMe), findsNothing);
   });
 
   testWidgets('the sheet says how old each position is, by the clock it is '

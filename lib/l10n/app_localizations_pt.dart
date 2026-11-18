@@ -7236,6 +7236,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Parte do terreno aqui não pode ser calculada, como abaixo do nível do mar, por isso não está sombreada.';
 
   @override
+  String get los_reachTapHint =>
+      'Toque no mapa ou em um nome para ver a linha de visão até lá.';
+
+  @override
   String get los_positionGuessed => 'Posição estimada';
 
   @override

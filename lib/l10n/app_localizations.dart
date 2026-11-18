@@ -12376,6 +12376,12 @@ abstract class AppLocalizations {
   /// **'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.'**
   String get los_reachUnknownPart;
 
+  /// No description provided for @los_reachTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map or a name for the line of sight to it.'**
+  String get los_reachTapHint;
+
   /// No description provided for @los_positionGuessed.
   ///
   /// In en, this message translates to:

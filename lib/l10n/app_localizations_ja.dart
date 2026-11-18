@@ -6896,6 +6896,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get los_reachUnknownPart => '海面下など、ここには計算できない地形があり、その部分は色付けされていません。';
 
   @override
+  String get los_reachTapHint => '地図か名前をタップすると、そこまでの見通しを表示します。';
+
+  @override
   String get los_positionGuessed => '推定位置';
 
   @override

@@ -2858,6 +2858,7 @@
   "los_helpBody": "A resposta vem só do terreno, lido das curvas de nível que você baixou. Ela não sabe nada de árvores, prédios, pessoas, linhas de energia ou outras antenas, e um topo de morro pode ser até uma curva de nível mais alto do que o desenhado.\n\n“Livre” significa que o terreno não está no caminho. Isso não garante que uma mensagem chegue. “No limite” significa que o terreno chega perto da linha. “Bloqueada” significa que o terreno está no caminho: uma mensagem ainda pode passar por cima de uma crista baixa, mas não conte com isso.\n\nTeste em campo com seus próprios rádios antes de confiar nisso.",
   "los_reachShaded": "Sombreado: ali o terreno não bloqueia um rádio portátil, até {distance}.",
   "los_reachUnknownPart": "Parte do terreno aqui não pode ser calculada, como abaixo do nível do mar, por isso não está sombreada.",
+  "los_reachTapHint": "Toque no mapa ou em um nome para ver a linha de visão até lá.",
   "los_positionGuessed": "Posição estimada",
   "los_positionGuessedVia": "Posição estimada (via {names})",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

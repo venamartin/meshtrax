@@ -2858,6 +2858,7 @@
   "los_helpBody": "Het antwoord komt alleen van het terrein, gelezen uit de hoogtelijnen die je hebt gedownload. Het weet niets van bomen, gebouwen, mensen, hoogspanningslijnen of andere antennes, en een heuveltop kan tot één hoogtelijn hoger zijn dan getekend.\n\n“Vrij” betekent dat het terrein niet in de weg zit. Dat belooft niet dat een bericht aankomt. “Krap” betekent dat het terrein dicht bij de lijn komt. “Geblokkeerd” betekent dat het terrein in de weg zit: een bericht kan nog over één lage rug komen, maar reken er niet op.\n\nTest het in het veld met je eigen radio's voordat je erop vertrouwt.",
   "los_reachShaded": "Ingekleurd: daar zit het terrein niet in de weg naar een portofoon, tot {distance}.",
   "los_reachUnknownPart": "Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.",
+  "los_reachTapHint": "Tik op de kaart of een naam voor de zichtlijn daarheen.",
   "los_positionGuessed": "Positie geschat",
   "los_positionGuessedVia": "Positie geschat, gehoord via {names}",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

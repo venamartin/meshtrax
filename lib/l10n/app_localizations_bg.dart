@@ -7224,6 +7224,10 @@ class AppLocalizationsBg extends AppLocalizations {
       'Част от терена тук не може да се изчисли, например под морското равнище, затова не е оцветена.';
 
   @override
+  String get los_reachTapHint =>
+      'Докоснете картата или име за пряката видимост дотам.';
+
+  @override
   String get los_positionGuessed => 'Предполагаема позиция';
 
   @override

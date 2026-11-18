@@ -2863,6 +2863,7 @@
   "los_helpBody": "结果只依据地形，读取自您下载的等高线。它不考虑树木、建筑、人、电线或其他天线，而且山顶可能比图上画的高出最多一条等高线。\n\n“无遮挡”表示地形没有挡住。这不保证消息一定能送达。“临界”表示地形接近视线。“被遮挡”表示地形挡住了：消息仍可能越过一道低矮的山脊，但不要指望。\n\n在依赖它之前，请先在野外用您自己的电台测试。",
   "los_reachShaded": "着色区域：在 {distance} 以内，地形不会挡住与该处手持电台之间的视线。",
   "los_reachUnknownPart": "此处部分地形无法计算（例如低于海平面的地方），因此未着色。",
+  "los_reachTapHint": "点按地图或名称，查看到那里的视线。",
   "los_positionGuessed": "推测位置",
   "los_positionGuessedVia": "推测位置（经 {names} 收到）",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

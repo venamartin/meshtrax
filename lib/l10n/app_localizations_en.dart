@@ -7130,6 +7130,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.';
 
   @override
+  String get los_reachTapHint =>
+      'Tap the map or a name for the line of sight to it.';
+
+  @override
   String get los_positionGuessed => 'Position guessed';
 
   @override
