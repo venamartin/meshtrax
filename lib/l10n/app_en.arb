@@ -2711,6 +2711,7 @@
   "sos_positionTyped": "Your own position: every repeat sends it.",
   "sos_repeats": "Sent again every 2 minutes with the radio's latest position until you cancel it, every 5 minutes after the first Got it.",
   "sos_publicOnce": "In Public an SOS goes once. In another channel it is sent again until you cancel it.",
+  "sos_traxOnly": "TRAX mode is on: only radios in TRAX mode hear this SOS, in Public too.",
   "sos_replacesOther": "This cancels your SOS in {chat}.",
   "@sos_replacesOther": {"placeholders": {"chat": {"type": "String"}}},
   "sos_active": "Your SOS is active",

@@ -5294,6 +5294,10 @@ class AppLocalizationsSl extends AppLocalizations {
       'V Public gre SOS enkrat. V drugem kanalu se pošilja znova, dokler ga ne prekličete.';
 
   @override
+  String get sos_traxOnly =>
+      'Način TRAX je vklopljen: ta SOS slišijo le radii v načinu TRAX, tudi v Public.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'S tem se prekliče vaš SOS v $chat.';
   }

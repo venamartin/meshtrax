@@ -5054,6 +5054,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sos_publicOnce => 'PublicではSOSは1回だけ送信されます。他のチャンネルでは取り消すまで再送されます。';
 
   @override
+  String get sos_traxOnly =>
+      'TRAXモードはオンです。このSOSはTRAXモードの無線機にしか届きません。Publicでも同じです。';
+
+  @override
   String sos_replacesOther(String chat) {
     return '$chat のSOSは取り消されます。';
   }

@@ -5068,6 +5068,10 @@ class AppLocalizationsKo extends AppLocalizations {
       'Public에서는 SOS를 한 번만 보냅니다. 다른 채널에서는 취소할 때까지 다시 보냅니다.';
 
   @override
+  String get sos_traxOnly =>
+      'TRAX 모드 켜짐: 이 SOS는 TRAX 모드인 무전기만 받습니다. Public에서도 마찬가지입니다.';
+
+  @override
   String sos_replacesOther(String chat) {
     return '$chat의 SOS가 취소됩니다.';
   }

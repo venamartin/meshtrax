@@ -5311,6 +5311,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'A Public csatornán az SOS egyszer megy el. Más csatornán újra elküldi, amíg vissza nem vonja.';
 
   @override
+  String get sos_traxOnly =>
+      'A TRAX mód be van kapcsolva: ezt az SOS-t csak a TRAX módban lévő rádiók hallják, a Public csatornán is.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Ez visszavonja az SOS-t itt: $chat.';
   }

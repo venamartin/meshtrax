@@ -5334,6 +5334,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Dans Public, un SOS part une seule fois. Dans un autre canal, il est renvoyé jusqu’à ce que vous l’annuliez.';
 
   @override
+  String get sos_traxOnly =>
+      'Le mode TRAX est activé : seules les radios en mode TRAX entendent ce SOS, Public compris.';
+
+  @override
   String sos_replacesOther(String chat) {
     return 'Cela annule votre SOS dans $chat.';
   }

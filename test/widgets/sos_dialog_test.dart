@@ -61,6 +61,7 @@ void main() {
     bool offerPublic = true,
     String? replaces,
     bool repeats = true,
+    bool traxOnly = false,
   }) async {
     SosRequest? result;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -87,6 +88,7 @@ void main() {
                       offerPublic: offerPublic,
                       replaces: replaces,
                       repeats: repeats,
+                      traxOnly: traxOnly,
                     );
                   },
                   child: const Text('open'),
@@ -280,5 +282,24 @@ void main() {
     );
     expect(find.text('This cancels your SOS in camp.'), findsOneWidget);
     expect(find.textContaining('Sent again every 2 minutes'), findsOneWidget);
+  });
+
+  // Martin, 2026-11-18: in TRAX mode only the group's radios are on that
+  // frequency, so an SOS (its Public copy too) reaches nobody else.
+  testWidgets('in TRAX mode it says only TRAX radios hear it', (tester) async {
+    const only =
+        'TRAX mode is on: only radios in TRAX mode hear this SOS, '
+        'in Public too.';
+    await open(tester, _Radio(lat: 36.46, lon: -116.87, asks: false));
+    expect(find.text(only), findsNothing);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    await open(
+      tester,
+      _Radio(lat: 36.46, lon: -116.87, asks: false),
+      traxOnly: true,
+    );
+    expect(find.text(only), findsOneWidget);
   });
 }

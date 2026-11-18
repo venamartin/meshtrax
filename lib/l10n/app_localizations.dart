@@ -8992,6 +8992,12 @@ abstract class AppLocalizations {
   /// **'In Public an SOS goes once. In another channel it is sent again until you cancel it.'**
   String get sos_publicOnce;
 
+  /// No description provided for @sos_traxOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode is on: only radios in TRAX mode hear this SOS, in Public too.'**
+  String get sos_traxOnly;
+
   /// No description provided for @sos_replacesOther.
   ///
   /// In en, this message translates to:

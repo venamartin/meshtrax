@@ -4942,6 +4942,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sos_publicOnce => '在 Public 中 SOS 只发送一次。在其他频道中会重复发送，直到您取消。';
 
   @override
+  String get sos_traxOnly =>
+      'TRAX 模式已开启：只有处于 TRAX 模式的电台能收到此 SOS，在 Public 中也是如此。';
+
+  @override
   String sos_replacesOther(String chat) {
     return '这会取消您在 $chat 中的 SOS。';
   }
