@@ -5084,24 +5084,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       });
 
   /// The route each of [attempts] tries of a one-shot request (login,
-  /// repeater command, status, telemetry) goes out on. With Pathfinder
-  /// able to route and no user override it is the DM ladder's own rule
-  /// ([planAttempts]): Pathfinder's routes, best first, then floods.
-  /// Otherwise every try uses the contact's resolved route, as before.
-  List<PathSelection> planRequestAttempts(Contact contact, int attempts) {
+  /// repeater command, status, telemetry) goes out on: the DM ladder's own
+  /// rule ([planAttempts]). With Pathfinder able to route and no user
+  /// override, Pathfinder's routes best first; otherwise the contact's
+  /// route; then floods either way. [floodOnly]: every try floods, as where
+  /// no repeater was heard lately a route can't get through.
+  List<PathSelection> planRequestAttempts(
+    Contact contact,
+    int attempts, {
+    bool floodOnly = false,
+  }) {
     final width = _pathHashByteWidth;
+    final budget = attempts < 1 ? 1 : attempts;
+    if (floodOnly) return List.filled(budget, PathSelection.flood(width));
     final routes = contact.pathOverride == null
         ? graphRouteCandidates?.call(contact)
         : null;
-    if (routes == null) {
-      return List.filled(
-          attempts < 1 ? 1 : attempts,
-          resolvePathSelection(contact, radioWidth: width));
-    }
+    // A route learned through a repeater at home never gets through where
+    // there is none, so the ladder ends in floods, as a message's does.
     return planAttempts(contact,
-        radioWidth: width,
-        budget: attempts < 1 ? 1 : attempts,
-        graphRoutes: routes);
+        radioWidth: width, budget: budget, graphRoutes: routes);
   }
 
   /// The radio's add-or-update command adds a key it doesn't hold, so a path

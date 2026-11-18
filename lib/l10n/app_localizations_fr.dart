@@ -1473,6 +1473,81 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contact_telemetry => 'Télémétrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Interroger la radio de $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Où elle est, même téléphone éteint';
+
+  @override
+  String get radioAsk_how =>
+      'Sa radio répond d\'elle-même, même téléphone éteint, si elle vous autorise la télémétrie.';
+
+  @override
+  String get radioAsk_waiting => 'En attente de la fin d\'une autre demande';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Demande en cours… essai $attempt sur $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Nouvelle demande pour voir si elle bouge… essai $attempt sur $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Nouvelle demande à $time pour voir si elle bouge';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Où est la radio de $name · reçu $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Pas de position : le GPS de sa radio est peut-être éteint';
+
+  @override
+  String get radioAsk_noFix =>
+      'Peut-être ancienne : sa radio n\'a pas de position GPS en direct';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Peut-être ancienne : aucun changement en 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Impossible de redemander pour voir si elle bouge';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Pas de réponse de la radio de $name : hors de portée, éteinte, ou elle ne vous y autorise pas.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Voir sur la carte';
+
+  @override
+  String get radioAsk_askAgain => 'Redemander';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Réponse de la radio';
+
+  @override
   String get contact_nickname => 'Surnom';
 
   @override

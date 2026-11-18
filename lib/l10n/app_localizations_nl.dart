@@ -1461,6 +1461,81 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Radio van $name vragen';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle =>
+      'Waar die is, ook als hun telefoon uit staat';
+
+  @override
+  String get radioAsk_how =>
+      'Hun radio antwoordt zelf, ook met de telefoon uit, als die jou telemetrie toestaat.';
+
+  @override
+  String get radioAsk_waiting => 'Wacht tot een andere vraag klaar is';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Vragen… poging $attempt van $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Opnieuw vragen om te zien of die beweegt… poging $attempt van $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Vraagt om $time opnieuw om te zien of die beweegt';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Waar de radio van $name is · ontvangen $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Geen positie: de gps van hun radio staat misschien uit';
+
+  @override
+  String get radioAsk_noFix =>
+      'Misschien oud: hun radio heeft geen actuele gps-fix';
+
+  @override
+  String get radioAsk_unchanged => 'Misschien oud: geen verandering in 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Kon geen tweede keer vragen om te zien of die beweegt';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Geen antwoord van de radio van $name: buiten bereik, uitgeschakeld of die staat het jou niet toe.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Op de kaart tonen';
+
+  @override
+  String get radioAsk_askAgain => 'Opnieuw vragen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio van $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Antwoord van de radio';
+
+  @override
   String get contact_nickname => 'Bijnaam';
 
   @override

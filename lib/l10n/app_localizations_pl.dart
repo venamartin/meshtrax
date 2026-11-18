@@ -1480,6 +1480,82 @@ class AppLocalizationsPl extends AppLocalizations {
   String get contact_telemetry => 'Telemetryka';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Zapytaj radio $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle =>
+      'Gdzie jest, nawet gdy telefon jest wyłączony';
+
+  @override
+  String get radioAsk_how =>
+      'Radio odpowiada samo, nawet przy wyłączonym telefonie, jeśli zezwala Ci na telemetrię.';
+
+  @override
+  String get radioAsk_waiting => 'Czeka na zakończenie innego zapytania';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Pytanie… próba $attempt z $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Ponowne pytanie, czy się porusza… próba $attempt z $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Ponowne pytanie o $time, czy się porusza';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Gdzie jest radio $name · odebrano $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Brak pozycji: GPS radia może być wyłączony';
+
+  @override
+  String get radioAsk_noFix =>
+      'Może być nieaktualna: radio nie ma bieżącego fixu GPS';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Może być nieaktualna: bez zmian przez 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Nie udało się zapytać drugi raz, czy się porusza';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Brak odpowiedzi od radia $name: poza zasięgiem, wyłączone albo nie zezwala Ci.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Pokaż na mapie';
+
+  @override
+  String get radioAsk_askAgain => 'Zapytaj ponownie';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Odpowiedź radia';
+
+  @override
   String get contact_nickname => 'Pseudonim';
 
   @override

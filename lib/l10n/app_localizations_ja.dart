@@ -1402,6 +1402,76 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contact_telemetry => 'テレメトリー';
 
   @override
+  String radioAsk_title(String name) {
+    return '$nameの無線機に問い合わせ';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => '電話がオフでも位置がわかります';
+
+  @override
+  String get radioAsk_how => '相手の無線機が自動で応答します。電話がオフでも、テレメトリーを許可されていれば応答します。';
+
+  @override
+  String get radioAsk_waiting => '別の問い合わせが終わるのを待っています';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return '問い合わせ中… $count回中$attempt回目';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return '動いているか確認するため再度問い合わせ中… $count回中$attempt回目';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return '$timeに再度問い合わせて、動いているか確認します';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$nameの無線機の位置 · $timeに受信';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '無線機 $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => '位置なし：無線機のGPSがオフかもしれません';
+
+  @override
+  String get radioAsk_noFix => '古い可能性：無線機にGPSの現在の測位がありません';
+
+  @override
+  String get radioAsk_unchanged => '古い可能性：1分間変化なし';
+
+  @override
+  String get radioAsk_notChecked => '動いているか確認する2回目の問い合わせができませんでした';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return '$nameの無線機から応答なし：圏外、電源オフ、または許可されていません。';
+  }
+
+  @override
+  String get radioAsk_showOnMap => '地図に表示';
+
+  @override
+  String get radioAsk_askAgain => '再度問い合わせ';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$nameの無線機 · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => '無線機の応答';
+
+  @override
   String get contact_nickname => 'ニックネーム';
 
   @override

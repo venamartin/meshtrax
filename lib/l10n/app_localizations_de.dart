@@ -1467,6 +1467,81 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Funkgerät von $name fragen';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Wo es ist, auch wenn das Handy aus ist';
+
+  @override
+  String get radioAsk_how =>
+      'Das Funkgerät antwortet von selbst, auch bei ausgeschaltetem Handy, wenn es Ihnen Telemetrie erlaubt.';
+
+  @override
+  String get radioAsk_waiting => 'Wartet, bis eine andere Anfrage fertig ist';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Fragt… Versuch $attempt von $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Fragt erneut, ob es sich bewegt… Versuch $attempt von $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Fragt um $time erneut, ob es sich bewegt';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Wo das Funkgerät von $name ist · empfangen $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Funkgerät $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Keine Position: Das GPS des Funkgeräts ist vielleicht aus';
+
+  @override
+  String get radioAsk_noFix =>
+      'Vielleicht veraltet: Das Funkgerät hat keinen aktuellen GPS-Fix';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Vielleicht veraltet: keine Änderung in 1 Min.';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Konnte kein zweites Mal fragen, ob es sich bewegt';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Keine Antwort vom Funkgerät von $name: außer Reichweite, ausgeschaltet oder es erlaubt es Ihnen nicht.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Auf der Karte zeigen';
+
+  @override
+  String get radioAsk_askAgain => 'Erneut fragen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Funkgerät von $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Antwort des Funkgeräts';
+
+  @override
   String get contact_nickname => 'Spitzname';
 
   @override

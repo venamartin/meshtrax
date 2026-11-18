@@ -1445,6 +1445,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contact_telemetry => 'Telemetry';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Ask $name\'s radio';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Where it is, even with their phone off';
+
+  @override
+  String get radioAsk_how =>
+      'Their radio answers by itself, even with their phone off, if it allows you telemetry.';
+
+  @override
+  String get radioAsk_waiting => 'Waiting for another ask to finish';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Asking… try $attempt of $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Asking again to see if it moves… try $attempt of $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Asking again at $time to see if it moves';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Where $name\'s radio is · received $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'No position: their radio\'s GPS may be off';
+
+  @override
+  String get radioAsk_noFix => 'May be old: their radio has no live GPS fix';
+
+  @override
+  String get radioAsk_unchanged => 'May be old: no change in 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Couldn\'t ask a second time to see if it moves';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'No answer from $name\'s radio: out of range, switched off, or it doesn\'t allow you.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Show on map';
+
+  @override
+  String get radioAsk_askAgain => 'Ask again';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$name\'s radio · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Radio answer';
+
+  @override
   String get contact_nickname => 'Nickname';
 
   @override

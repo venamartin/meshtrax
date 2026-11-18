@@ -1468,6 +1468,81 @@ class AppLocalizationsEs extends AppLocalizations {
   String get contact_telemetry => 'Telemetría';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Preguntar a la radio de $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle =>
+      'Dónde está, aunque su teléfono esté apagado';
+
+  @override
+  String get radioAsk_how =>
+      'Su radio responde sola, aunque su teléfono esté apagado, si te permite la telemetría.';
+
+  @override
+  String get radioAsk_waiting => 'Esperando a que termine otra consulta';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Preguntando… intento $attempt de $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Preguntando otra vez para ver si se mueve… intento $attempt de $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Preguntará otra vez a las $time para ver si se mueve';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Dónde está la radio de $name · recibido $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Sin posición: puede que el GPS de su radio esté apagado';
+
+  @override
+  String get radioAsk_noFix =>
+      'Puede ser antigua: su radio no tiene señal GPS actual';
+
+  @override
+  String get radioAsk_unchanged => 'Puede ser antigua: sin cambios en 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'No se pudo preguntar una segunda vez para ver si se mueve';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Sin respuesta de la radio de $name: fuera de alcance, apagada o no te lo permite.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Ver en el mapa';
+
+  @override
+  String get radioAsk_askAgain => 'Preguntar otra vez';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Respuesta de la radio';
+
+  @override
   String get contact_nickname => 'Apodo';
 
   @override

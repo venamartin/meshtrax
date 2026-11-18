@@ -42,6 +42,7 @@ import '../helpers/position_text.dart';
 import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/poi_service.dart';
+import '../services/radio_ask_service.dart';
 import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/app_logger.dart';
@@ -55,6 +56,7 @@ import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_legend_sheet.dart';
 import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
+import '../widgets/radio_ask_sheet.dart';
 import '../widgets/route_sheet.dart';
 import '../widgets/quick_switch_bar.dart';
 import 'chat_screen.dart';
@@ -457,6 +459,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final radioAsks = context.watch<RadioAskService?>();
     return Consumer2<MeshCoreConnector, AppSettingsService>(
       builder: (context, connector, settingsService, child) {
         final settings = settingsService.settings;
@@ -952,6 +955,7 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                             ),
                           ..._buildGuessedMarkers(guessedLocations),
+                          ..._buildRadioAnswerMarkers(radioAsks, connector),
                           ..._buildMarkers(
                             contactsWithLocation,
                             settings,
@@ -1213,6 +1217,48 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
     return filtered;
+  }
+
+  /// Where people's radios said they were, when asked: apart from their
+  /// advert pins, with the time it said so.
+  List<MapMarker> _buildRadioAnswerMarkers(
+    RadioAskService? asks,
+    MeshCoreConnector connector,
+  ) {
+    if (asks == null) return const [];
+    return [
+      for (final ask in asks.located)
+        if (ask.latest case final answer?)
+          if (answer.position case final p?)
+            MapMarker(
+              id: 'ask:${ask.contact.publicKeyHex}',
+              position: LatLng(p.lat, p.lon).toOvm(),
+              size: const Size(35, 35),
+              label: context.l10n.radioAsk_mapLabel(
+                ask.contact.name,
+                DateTimeHelper.timeWithDay(context, answer.receivedAt),
+              ),
+              labelMinZoom: _labelMinZoom,
+              onTap: () => _los != null
+                  ? _los!.tap(
+                      LosPlace.point(
+                        LatLng(p.lat, p.lon),
+                        name: ask.contact.name,
+                      ),
+                    )
+                  : _showNodeInfo(
+                      context,
+                      connector.allContacts.firstWhere(
+                        (c) => c.publicKeyHex == ask.contact.publicKeyHex,
+                        orElse: () => ask.contact,
+                      ),
+                    ),
+              child: _nodeDot(
+                _getNodeColor(advTypeChat),
+                Icons.settings_input_antenna,
+              ),
+            ),
+    ];
   }
 
   List<MapMarker> _buildMarkers(
@@ -1730,7 +1776,37 @@ class _MapScreenState extends State<MapScreen> {
                 context.l10n.map_lastSeen,
                 _formatLastSeen(contact.lastSeen),
               ),
+              if (context.read<RadioAskService?>()?.positionOf(contact)
+                  case final answer?)
+                _buildInfoRow(
+                  context.l10n.radioAsk_rowLabel,
+                  '${answer.position!.lat.toStringAsFixed(4)}, '
+                  '${answer.position!.lon.toStringAsFixed(4)} · '
+                  '${DateTimeHelper.timeWithDay(context, answer.receivedAt)}',
+                ),
               _buildInfoRow('Public Key', contact.publicKeyHex),
+              if (contact.type == advTypeChat &&
+                  connector.isConnected &&
+                  !_isBuildingPathTrace) ...[
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.settings_input_antenna),
+                  title: Text(context.l10n.radioAsk_title(contact.name)),
+                  subtitle: Text(context.l10n.radioAsk_menuSubtitle),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    RadioAskSheet.show(
+                      context,
+                      contact,
+                      onShowOnMap: (p) => _moveTo(
+                        p,
+                        max(_mapController.camera?.zoom ?? 14, 14),
+                      ),
+                    );
+                  },
+                ),
+              ],
               // Not from a guessed position: it can be tens of km out.
               if (_losOffered &&
                   guessedPosition == null &&

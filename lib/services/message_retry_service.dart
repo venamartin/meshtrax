@@ -183,7 +183,9 @@ class MessageRetryService extends ChangeNotifier {
   final DateTime Function() _now;
   DateTime? _repeaterHeardAt;
 
-  bool get _repeaterHeardRecently {
+  /// Whether a repeater was heard within [repeaterHeardWindow]: where
+  /// none was, a direct route can't be relied on.
+  bool get repeaterHeardRecently {
     final at = _repeaterHeardAt;
     if (at == null) return false;
     // A clock set back can't tell: no park, the default.
@@ -787,7 +789,7 @@ class MessageRetryService extends ChangeNotifier {
         _resolvedMessages.contains(messageId)) {
       return;
     }
-    if (!_repeaterHeardRecently) {
+    if (!repeaterHeardRecently) {
       // The ACK wait runs on, and the ladder after it.
       config.debugLogService?.warn(
         'No repeater heard "${_short(message.text)}" to ${contact.name} '

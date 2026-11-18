@@ -1463,6 +1463,80 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contact_telemetry => 'Телеметрія';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Запитати радіо $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Де воно, навіть якщо телефон вимкнено';
+
+  @override
+  String get radioAsk_how =>
+      'Радіо відповідає саме, навіть із вимкненим телефоном, якщо дозволяє вам телеметрію.';
+
+  @override
+  String get radioAsk_waiting => 'Очікування завершення іншого запиту';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Запит… спроба $attempt з $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Повторний запит: чи воно рухається… спроба $attempt з $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Повторний запит о $time: чи воно рухається';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Де радіо $name · отримано $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Радіо $volts В';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Немає позиції: GPS радіо, можливо, вимкнено';
+
+  @override
+  String get radioAsk_noFix =>
+      'Може бути застарілою: радіо не має поточної GPS-фіксації';
+
+  @override
+  String get radioAsk_unchanged => 'Може бути застарілою: без змін за 1 хв';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Не вдалося запитати вдруге, чи воно рухається';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Немає відповіді від радіо $name: поза зоною, вимкнено або не дозволяє вам.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Показати на мапі';
+
+  @override
+  String get radioAsk_askAgain => 'Запитати знову';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Радіо $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Відповідь радіо';
+
+  @override
   String get contact_nickname => 'Прізвисько';
 
   @override

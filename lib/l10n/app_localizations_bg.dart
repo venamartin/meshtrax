@@ -1470,6 +1470,79 @@ class AppLocalizationsBg extends AppLocalizations {
   String get contact_telemetry => 'Телеметрия';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Попитай радиото на $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Къде е, дори ако телефонът е изключен';
+
+  @override
+  String get radioAsk_how =>
+      'Радиото отговаря само, дори при изключен телефон, ако ви разрешава телеметрия.';
+
+  @override
+  String get radioAsk_waiting => 'Изчаква друга заявка да приключи';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Пита… опит $attempt от $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Пита отново дали се движи… опит $attempt от $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Ще пита отново в $time дали се движи';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Къде е радиото на $name · получено $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Радио $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Няма позиция: GPS на радиото може да е изключен';
+
+  @override
+  String get radioAsk_noFix =>
+      'Може да е стара: радиото няма текуща GPS позиция';
+
+  @override
+  String get radioAsk_unchanged => 'Може да е стара: без промяна за 1 мин';
+
+  @override
+  String get radioAsk_notChecked => 'Не успя да пита втори път дали се движи';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Няма отговор от радиото на $name: извън обхват, изключено или не ви разрешава.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Покажи на картата';
+
+  @override
+  String get radioAsk_askAgain => 'Попитай отново';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Радиото на $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Отговор на радиото';
+
+  @override
   String get contact_nickname => 'Прякор';
 
   @override

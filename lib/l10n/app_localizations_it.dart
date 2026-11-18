@@ -1468,6 +1468,81 @@ class AppLocalizationsIt extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Chiedi alla radio di $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Dov\'è, anche con il telefono spento';
+
+  @override
+  String get radioAsk_how =>
+      'La sua radio risponde da sola, anche con il telefono spento, se ti consente la telemetria.';
+
+  @override
+  String get radioAsk_waiting => 'In attesa che finisca un\'altra richiesta';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Richiesta in corso… tentativo $attempt di $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Nuova richiesta per vedere se si muove… tentativo $attempt di $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Nuova richiesta alle $time per vedere se si muove';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Dov\'è la radio di $name · ricevuto $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Nessuna posizione: il GPS della sua radio potrebbe essere spento';
+
+  @override
+  String get radioAsk_noFix =>
+      'Potrebbe essere vecchia: la sua radio non ha un fix GPS attuale';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Potrebbe essere vecchia: nessun cambiamento in 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Impossibile chiedere una seconda volta per vedere se si muove';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Nessuna risposta dalla radio di $name: fuori portata, spenta o non te lo consente.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Mostra sulla mappa';
+
+  @override
+  String get radioAsk_askAgain => 'Chiedi di nuovo';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio di $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Risposta della radio';
+
+  @override
   String get contact_nickname => 'Soprannome';
 
   @override

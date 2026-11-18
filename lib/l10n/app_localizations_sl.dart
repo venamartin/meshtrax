@@ -1455,6 +1455,80 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrija';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Vprašaj radio $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Kje je, tudi ko je telefon izklopljen';
+
+  @override
+  String get radioAsk_how =>
+      'Radio odgovori samo, tudi z izklopljenim telefonom, če vam dovoli telemetrijo.';
+
+  @override
+  String get radioAsk_waiting => 'Čaka, da se konča drugo vprašanje';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Sprašuje… poskus $attempt od $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Znova sprašuje, ali se premika… poskus $attempt od $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Ob $time bo znova vprašal, ali se premika';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Kje je radio $name · prejeto $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Ni položaja: GPS radia je morda izklopljen';
+
+  @override
+  String get radioAsk_noFix =>
+      'Morda je star: radio nima trenutnega GPS-položaja';
+
+  @override
+  String get radioAsk_unchanged => 'Morda je star: brez spremembe v 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Drugič ni bilo mogoče vprašati, ali se premika';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Ni odgovora od radia $name: zunaj dosega, izklopljen ali vam ne dovoli.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Pokaži na zemljevidu';
+
+  @override
+  String get radioAsk_askAgain => 'Vprašaj znova';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Odgovor radia';
+
+  @override
   String get contact_nickname => 'Vzdevek';
 
   @override

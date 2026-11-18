@@ -33,6 +33,7 @@ import 'services/map_packs_service.dart';
 import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/trax_service.dart';
+import 'services/radio_ask_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
@@ -373,6 +374,13 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.chatTextScaleService),
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         ChangeNotifierProvider.value(value: widget.sosService),
+        ChangeNotifierProvider(
+          create: (_) => RadioAskService(
+            widget.connector,
+            repeaterHeardRecently: () =>
+                widget.retryService.repeaterHeardRecently,
+          ),
+        ),
         Provider.value(value: widget.storage),
         if (widget.mapPacksService case final maps?)
           ChangeNotifierProvider.value(value: maps),

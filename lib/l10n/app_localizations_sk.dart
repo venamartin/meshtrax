@@ -1462,6 +1462,78 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Opýtať sa rádia $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Kde je, aj keď je telefón vypnutý';
+
+  @override
+  String get radioAsk_how =>
+      'Rádio odpovie samo, aj pri vypnutom telefóne, ak vám povoľuje telemetriu.';
+
+  @override
+  String get radioAsk_waiting => 'Čaká sa na dokončenie inej otázky';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Pýta sa… pokus $attempt z $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Znova sa pýta, či sa hýbe… pokus $attempt z $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Znova sa opýta o $time, či sa hýbe';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Kde je rádio $name · prijaté $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Rádio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Bez polohy: GPS rádia môže byť vypnuté';
+
+  @override
+  String get radioAsk_noFix => 'Môže byť stará: rádio nemá aktuálny GPS fix';
+
+  @override
+  String get radioAsk_unchanged => 'Môže byť stará: bez zmeny za 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Nepodarilo sa opýtať druhýkrát, či sa hýbe';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Žiadna odpoveď z rádia $name: mimo dosahu, vypnuté alebo vám to nepovoľuje.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Zobraziť na mape';
+
+  @override
+  String get radioAsk_askAgain => 'Opýtať sa znova';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Rádio $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Odpoveď rádia';
+
+  @override
   String get contact_nickname => 'Prezývka';
 
   @override

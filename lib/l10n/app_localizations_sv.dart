@@ -1450,6 +1450,80 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contact_telemetry => 'Telemetri';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Fråga radion hos $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Var den är, även med telefonen avstängd';
+
+  @override
+  String get radioAsk_how =>
+      'Radion svarar själv, även med telefonen avstängd, om den tillåter dig telemetri.';
+
+  @override
+  String get radioAsk_waiting => 'Väntar på att en annan fråga ska bli klar';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Frågar… försök $attempt av $count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Frågar igen för att se om den rör sig… försök $attempt av $count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Frågar igen kl. $time för att se om den rör sig';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Var radion hos $name är · mottaget $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return 'Radio $volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition =>
+      'Ingen position: radions GPS kan vara avstängd';
+
+  @override
+  String get radioAsk_noFix =>
+      'Kan vara gammal: radion har ingen aktuell GPS-fix';
+
+  @override
+  String get radioAsk_unchanged => 'Kan vara gammal: ingen ändring på 1 min';
+
+  @override
+  String get radioAsk_notChecked =>
+      'Kunde inte fråga en andra gång för att se om den rör sig';
+
+  @override
+  String radioAsk_noAnswer(String name) {
+    return 'Inget svar från radion hos $name: utom räckvidd, avstängd eller så tillåter den inte dig.';
+  }
+
+  @override
+  String get radioAsk_showOnMap => 'Visa på kartan';
+
+  @override
+  String get radioAsk_askAgain => 'Fråga igen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radion hos $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Radions svar';
+
+  @override
   String get contact_nickname => 'Smeknamn';
 
   @override
