@@ -47,6 +47,21 @@ String losVerdictWord(AppLocalizations l10n, Verdict verdict) =>
       Verdict.unknown => l10n.los_cantTell,
     };
 
+/// The radio reach list's order: who can hear you first, Clear then
+/// Marginal, then Blocked, then Can't tell, then a guessed position, which
+/// has no answer ([a] or [b] null); nearest first within each.
+int compareReachRows(Verdict? a, double aM, Verdict? b, double bM) {
+  int rank(Verdict? v) => switch (v) {
+    Verdict.clear => 0,
+    Verdict.marginal => 1,
+    Verdict.blocked => 2,
+    Verdict.unknown => 3,
+    null => 4,
+  };
+  final byAnswer = rank(a).compareTo(rank(b));
+  return byAnswer != 0 ? byAnswer : aM.compareTo(bM);
+}
+
 /// How long ago [at] was: "Just now", "12m ago".
 String losAge(AppLocalizations l10n, DateTime at, DateTime now) {
   final d = now.difference(at);
@@ -663,7 +678,8 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
     final r = s.reach;
     final units = _units;
     final radius = GeoFormat.distanceText(s.listRadiusM, units);
-    // Nearest first; a guessed position has no answer.
+    // Who can hear you first, so they need no scrolling (owner,
+    // 2026-11-18); a guessed position has no answer.
     final rows = <(LosPlace, LineOfSight?, double)>[
       if (r != null) ...[
         for (var i = 0; i < s.reachPeople.length; i++)
@@ -671,7 +687,9 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
         for (final p in s.reachGuessed)
           (p, null, distanceM(r.center, geoOf(p.position))),
       ],
-    ]..sort((a, b) => a.$3.compareTo(b.$3));
+    ]..sort(
+        (a, b) => compareReachRows(a.$2?.verdict, a.$3, b.$2?.verdict, b.$3),
+      );
     final now = widget.clock();
     return [
       if (r != null && s.reachRadiusM < LineOfSightSession.farRadiusM)
