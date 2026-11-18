@@ -186,6 +186,11 @@ class RouteResult {
   /// say so past 100 m, even for a house far up an unmapped driveway).
   final double kmShortOfDestination;
 
+  /// How far the route's first point is from the requested start: the
+  /// engine snaps a start up to 35 km away to the nearest path of the type.
+  /// More than 100 m is walked or driven off any mapped path.
+  final double kmFromStart;
+
   const RouteResult({
     required this.pathType,
     required this.points,
@@ -195,9 +200,12 @@ class RouteResult {
     required this.seconds,
     required this.maneuvers,
     required this.kmShortOfDestination,
+    this.kmFromStart = 0,
   });
 
   bool get reachesDestination => kmShortOfDestination <= 0.1;
+
+  bool get startsOffPath => kmFromStart > 0.1;
 
   /// This route, measured against [destination] instead.
   RouteResult withDestination(LatLon destination) => RouteResult(
@@ -209,6 +217,7 @@ class RouteResult {
     seconds: seconds,
     maneuvers: maneuvers,
     kmShortOfDestination: kmBetween(points.last, destination),
+    kmFromStart: kmFromStart,
   );
 
   /// Total climb and descent in metres. Changes under 5 m are ignored, so

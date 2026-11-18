@@ -2067,6 +2067,25 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return '从您 $time 所在的位置出发';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return '起点距您的出发点 $distance，不在任何已绘制的道路上';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax 不知道封路、冲毁路段或哪些路需要四驱。出发前请确认当前路况。';
+
+  @override
+  String route_dataDate(String date) {
+    return '地图数据日期：$date';
+  }
+
+  @override
   String get gps_lastKnown => '您最后已知的位置，可能已过时';
 
   @override

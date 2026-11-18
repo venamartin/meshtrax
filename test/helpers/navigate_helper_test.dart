@@ -125,15 +125,20 @@ void main() {
   });
 
   group('route sheet', () {
-    Widget sheet({VoidCallback? onOtherApp}) => RouteSheet(
+    Widget sheet({
+      VoidCallback? onOtherApp,
+      RouteResult? result,
+      DateTime? dataDate,
+    }) => RouteSheet(
           destination: 'Ridge trailhead',
           start: null,
+          dataDate: dataDate,
           onUseMyPosition: () {},
           pathType: PathType.hiking,
           onPathType: (_) {},
           options: const RouteOptions(),
           onOptions: (_) {},
-          result: null,
+          result: result,
           loading: false,
           error: null,
           units: UnitSystem.metric,
@@ -152,6 +157,40 @@ void main() {
     testWidgets('no button without somewhere to hand it', (tester) async {
       await pump(tester, sheet());
       expect(find.byTooltip('Open in another app'), findsNothing);
+    });
+
+    testWidgets('says what the data can\'t know, and how old it is', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        sheet(
+          result: const RouteResult(
+            pathType: PathType.hiking,
+            points: [(lat: 36.5, lon: -117.0), (lat: 36.51, lon: -117.0)],
+            elevations: [],
+            elevationIntervalM: 30,
+            km: 1.1,
+            seconds: 900,
+            maneuvers: [],
+            kmShortOfDestination: 0,
+          ),
+          dataDate: DateTime(2026, 11, 5),
+        ),
+      );
+      expect(
+        find.text(
+          "MeshTrax doesn't know closures, washouts or which roads need 4x4. "
+          'Check current conditions before you go.\n'
+          'Map data from Nov 5, 2026',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('nothing to say before a route is asked for', (tester) async {
+      await pump(tester, sheet(dataDate: DateTime(2026, 11, 5)));
+      expect(find.textContaining('Map data from'), findsNothing);
     });
   });
 }

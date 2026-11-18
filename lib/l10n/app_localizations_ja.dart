@@ -2100,6 +2100,25 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return '$timeにいた場所から';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return '出発地点から$distance離れた、地図にない場所から始まります';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTraxは通行止め、流失、四輪駆動が必要な道を把握していません。出発前に最新の状況を確認してください。';
+
+  @override
+  String route_dataDate(String date) {
+    return '地図データ：$date';
+  }
+
+  @override
   String get gps_lastKnown => '最後にわかった位置です。古い可能性があります';
 
   @override

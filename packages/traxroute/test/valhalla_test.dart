@@ -117,6 +117,34 @@ void main() {
     expect(r.maneuvers.last.startIndex, lessThan(r.points.length));
   });
 
+  test('a start off any path: the gap to where the route begins', () {
+    final json =
+        jsonDecode(
+              File(
+                'test/fixtures/ouray_camp_bird_auto.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final onRoad = parseValhallaRoute(
+      const RouteRequest([ouray, campBird], PathType.dirt),
+      json,
+    );
+    expect(onRoad.startsOffPath, isFalse);
+    // About 2 km due north of the route's first point, up on the slope.
+    final up = (lat: onRoad.points.first.lat + 0.018, lon: ouray.lon);
+    final offPath = parseValhallaRoute(
+      RouteRequest([up, campBird], PathType.dirt),
+      json,
+    );
+    expect(offPath.kmFromStart, closeTo(2.0, 0.05));
+    expect(offPath.startsOffPath, isTrue);
+    expect(
+      offPath.withDestination(campBird).kmFromStart,
+      offPath.kmFromStart,
+      reason: 'a route that ends short keeps its start gap',
+    );
+  });
+
   test('a route through tiles without heights has none', () {
     final json =
         jsonDecode(

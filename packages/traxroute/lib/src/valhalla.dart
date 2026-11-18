@@ -122,6 +122,7 @@ RouteResult parseValhallaRoute(
     seconds: (summary['time'] as num).toDouble(),
     maneuvers: maneuvers,
     kmShortOfDestination: kmBetween(points.last, request.destination),
+    kmFromStart: kmBetween(request.points.first, points.first),
   );
 }
 

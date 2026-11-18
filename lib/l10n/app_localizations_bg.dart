@@ -2189,6 +2189,25 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'От мястото, където бяхте в $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Започва на $distance от началната ви точка, извън картографираните пътеки';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax не знае за затваряния, отнесени пътища или кои пътища изискват 4x4. Проверете актуалните условия, преди да тръгнете.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Картни данни от $date';
+  }
+
+  @override
   String get gps_lastKnown =>
       'Последното ви известно местоположение, може да е старо';
 

@@ -2100,6 +2100,25 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return '$time에 있던 곳에서';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return '출발 지점에서 $distance 떨어진, 지도에 없는 곳에서 시작합니다';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax는 통제, 유실된 길, 4륜구동이 필요한 길을 알지 못합니다. 출발 전에 현재 상황을 확인하세요.';
+
+  @override
+  String route_dataDate(String date) {
+    return '지도 데이터: $date';
+  }
+
+  @override
   String get gps_lastKnown => '마지막으로 알려진 내 위치입니다. 오래되었을 수 있습니다';
 
   @override

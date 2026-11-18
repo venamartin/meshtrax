@@ -2153,6 +2153,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'From where you were at $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Starts $distance from where you start, off any mapped path';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax doesn\'t know closures, washouts or which roads need 4x4. Check current conditions before you go.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Map data from $date';
+  }
+
+  @override
   String get gps_lastKnown => 'Your last known position, may be old';
 
   @override

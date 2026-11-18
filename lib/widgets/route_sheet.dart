@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:traxroute/traxroute.dart';
@@ -55,6 +56,13 @@ class RouteSheet extends StatefulWidget {
   /// last known at [positionKnownAt] when that is known.
   final bool positionMayBeOld;
   final DateTime? positionKnownAt;
+
+  /// When the route was found from your position, if you have since moved
+  /// more than 100 m from there: it doesn't follow you.
+  final DateTime? youWereAt;
+
+  /// The day the routing data was built.
+  final DateTime? dataDate;
   final VoidCallback onUseMyPosition;
   final PathType pathType;
   final ValueChanged<PathType> onPathType;
@@ -86,6 +94,8 @@ class RouteSheet extends StatefulWidget {
     required this.start,
     this.positionMayBeOld = false,
     this.positionKnownAt,
+    this.youWereAt,
+    this.dataDate,
     required this.onUseMyPosition,
     required this.pathType,
     required this.onPathType,
@@ -301,6 +311,7 @@ class RouteSheetState extends State<RouteSheet> {
       :side,
     ) = widget;
     final r = result;
+    final youWereAt = widget.youWereAt;
     final changed = !options.isDefaultFor(pathType);
     final hasSteps = r != null && r.maneuvers.isNotEmpty;
 
@@ -393,7 +404,16 @@ class RouteSheetState extends State<RouteSheet> {
                           Expanded(
                             child: Text(
                               [
-                                GeoFormat.distanceText(r.km * 1000, units),
+                                // A start off any path is walked or driven
+                                // too, so it counts.
+                                GeoFormat.distanceText(
+                                  (r.km +
+                                          (r.startsOffPath
+                                              ? r.kmFromStart
+                                              : 0)) *
+                                      1000,
+                                  units,
+                                ),
                                 routeDuration(context, r.seconds),
                                 if (r.elevations.isNotEmpty)
                                   '↑ ${GeoFormat.heightText(r.climb.up, units)}',
@@ -446,6 +466,15 @@ class RouteSheetState extends State<RouteSheet> {
                       style: theme.textTheme.bodySmall,
                     ),
                   ),
+                if (r != null && r.startsOffPath) ...[
+                  _Gap(
+                    icon: Icons.trip_origin,
+                    text: l10n.route_startsOffPath(
+                      GeoFormat.distanceText(r.kmFromStart * 1000, units),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (r != null && !r.reachesDestination) ...[
                   _EndsShort(result: r, destination: destination, units: units),
                   const SizedBox(height: 12),
@@ -461,6 +490,27 @@ class RouteSheetState extends State<RouteSheet> {
                   )
                 else if (loading && r == null)
                   const SizedBox(height: 64),
+                // The data can't say what a road or trail is like today
+                // (safety review CH-17). There from the start of the search,
+                // so the sheet keeps its height.
+                if (r != null || loading)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      [
+                        l10n.route_conditionsCaveat,
+                        if (widget.dataDate case final date?)
+                          l10n.route_dataDate(
+                            DateFormat.yMMMd(
+                              Localizations.localeOf(context).toString(),
+                            ).format(date),
+                          ),
+                      ].join('\n'),
+                      style: theme.textTheme.bodySmall!.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -577,6 +627,10 @@ class RouteSheetState extends State<RouteSheet> {
                           title: Text(
                             start != null
                                 ? l10n.route_from(start)
+                                : youWereAt != null
+                                ? l10n.route_fromWhereYouWere(
+                                    DateTimeHelper.time(context, youWereAt),
+                                  )
                                 : !positionMayBeOld
                                 ? l10n.route_fromYou
                                 : positionKnownAt == null
@@ -636,7 +690,6 @@ class _EndsShort extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     final distance = GeoFormat.distanceText(
       result.kmShortOfDestination * 1000,
       units,
@@ -646,6 +699,20 @@ class _EndsShort extends StatelessWidget {
       PathType.dirt => l10n.route_endsShortDirt(distance, destination),
       PathType.hiking => l10n.route_endsShortHiking(distance, destination),
     };
+    return _Gap(icon: Icons.flag_outlined, text: text);
+  }
+}
+
+/// A stretch at either end of the route that no mapped path covers.
+class _Gap extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _Gap({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -655,7 +722,7 @@ class _EndsShort extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.flag_outlined, color: scheme.onTertiaryContainer),
+          Icon(icon, color: scheme.onTertiaryContainer),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -143,6 +143,11 @@ class _MapScreenState extends State<MapScreen> {
   ({String name, LatLng point})? _routeTo;
   LatLng? _routeFrom;
   trax.RouteResult? _route;
+
+  /// Where the route was found from, and when: a route from your position
+  /// stays from there as you move.
+  LatLng? _routeFoundFrom;
+  DateTime? _routeFoundAt;
   bool _routing = false;
   String? _routeError;
   int _routeGeneration = 0;
@@ -214,6 +219,8 @@ class _MapScreenState extends State<MapScreen> {
       _routeTo = (name: kept.name, point: kept.to.toLatLong2());
       _routeFrom = kept.from?.toLatLong2();
       _route = kept.result;
+      _routeFoundFrom = kept.foundFrom?.toLatLong2();
+      _routeFoundAt = kept.foundAt;
     }
     final connector = _connector = context.read<MeshCoreConnector>();
     final to = widget.highlightPosition;
@@ -2477,6 +2484,8 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _route = r;
         _routing = false;
+        _routeFoundFrom = from;
+        _routeFoundAt = DateTime.now();
       });
       _keepRoute();
       // Once the sheet is laid out for this route, to fit clear of it.
@@ -2592,6 +2601,8 @@ class _MapScreenState extends State<MapScreen> {
       _routeTo = null;
       _routeFrom = null;
       _route = null;
+      _routeFoundFrom = null;
+      _routeFoundAt = null;
       _routing = false;
       _routeError = null;
     });
@@ -2611,6 +2622,8 @@ class _MapScreenState extends State<MapScreen> {
             to: to.point.toOvm(),
             from: _routeFrom?.toOvm(),
             result: _routing ? null : _route,
+            foundFrom: _routeFoundFrom?.toOvm(),
+            foundAt: _routeFoundAt,
           );
   }
 
@@ -2621,6 +2634,13 @@ class _MapScreenState extends State<MapScreen> {
   }) {
     final settings = settingsService.settings;
     final from = _routeFrom;
+    final foundFrom = _routeFoundFrom;
+    final movedAway =
+        from == null &&
+        _route != null &&
+        foundFrom != null &&
+        selfPosition != null &&
+        const Distance().as(LengthUnit.Meter, foundFrom, selfPosition) > 100;
     return RouteSheet(
       key: side ? null : _sheetKey,
       destination: _routeTo!.name,
@@ -2633,6 +2653,8 @@ class _MapScreenState extends State<MapScreen> {
             ).first,
       positionMayBeOld: _connector.selfPositionMayBeOld,
       positionKnownAt: _connector.selfGpsChangedAt,
+      youWereAt: movedAway ? _routeFoundAt : null,
+      dataDate: context.read<RoutingService?>()?.dataDate,
       onUseMyPosition: () {
         setState(() => _routeFrom = null);
         unawaited(_findRoute(selfPosition));
@@ -2671,8 +2693,20 @@ class _MapScreenState extends State<MapScreen> {
     if (to == null) return const [];
     final r = _route;
     final color = routeColor(context);
+    final start = _routeFoundFrom;
     return [
       if (r != null) ...[
+        if (r.startsOffPath && start != null)
+          MapLine(
+            id: 'route-start-gap',
+            points: [
+              start.toOvm(),
+              LatLng(r.points.first.lat, r.points.first.lon).toOvm(),
+            ],
+            color: color,
+            width: 2,
+            pattern: MapLinePattern.dotted,
+          ),
         if (!r.reachesDestination)
           MapLine(
             id: 'route-rest',

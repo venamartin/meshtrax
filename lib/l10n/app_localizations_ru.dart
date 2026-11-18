@@ -2186,6 +2186,25 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Откуда: где вы были в $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Начинается в $distance от точки старта, вне нанесённых на карту дорог';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax не знает о перекрытиях, размывах и о том, где нужен полный привод. Перед выездом проверьте текущую обстановку.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Данные карты от $date';
+  }
+
+  @override
   String get gps_lastKnown =>
       'Ваше последнее известное местоположение, может быть устаревшим';
 
