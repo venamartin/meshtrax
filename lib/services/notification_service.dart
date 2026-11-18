@@ -342,19 +342,6 @@ class NotificationService {
     );
   }
 
-  /// The category plain channel messages go out on.
-  @visibleForTesting
-  static AndroidNotificationDetails channelAndroidDetails(
-    AppLocalizations l10n,
-  ) =>
-      AndroidNotificationDetails(
-        'meshtrax_channels',
-        l10n.appSettings_channelMessageNotifications,
-        importance: Importance.max,
-        priority: Priority.high,
-        groupKey: _groupKey,
-      );
-
   /// What the SOS category may do on this phone, for the settings row.
   Future<SosAlertState> sosAlertState() async {
     if (!Platform.isAndroid) return SosAlertState.unknown;
@@ -400,6 +387,59 @@ class NotificationService {
       );
     }
   }
+
+  /// The category TRAX mode's reminder goes out on: an ordinary one, not
+  /// an alarm.
+  static const traxChannelId = 'meshtrax_trax';
+
+  /// The reminder at the trip's end, clear of the message ids, and what its
+  /// tap hands the app.
+  static const traxEndedId = 0x5445; // 'TE'
+  static const traxEndedPayload = 'traxended';
+
+  @visibleForTesting
+  static AndroidNotificationDetails traxAndroidDetails(AppLocalizations l10n) =>
+      AndroidNotificationDetails(
+        traxChannelId,
+        l10n.trax_title,
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+      );
+
+  /// Switch too and Leave too on a member's TRAX message (Android). Each
+  /// opens the app to ask TRAX mode's question; nothing switches from here.
+  static const traxFollowAction = 'trax_follow';
+  static const traxLeaveAction = 'trax_leave';
+
+  /// The category channel messages go out on, with TRAX mode's button when
+  /// [traxAction] names one.
+  @visibleForTesting
+  static AndroidNotificationDetails channelAndroidDetails(
+    AppLocalizations l10n, {
+    String? traxAction,
+  }) => AndroidNotificationDetails(
+    'meshtrax_channels',
+    l10n.appSettings_channelMessageNotifications,
+    importance: Importance.max,
+    priority: Priority.high,
+    groupKey: _groupKey,
+    actions: traxAction == null
+        ? null
+        : [
+            AndroidNotificationAction(
+              traxAction,
+              traxAction == traxFollowAction
+                  ? l10n.trax_switchToo
+                  : l10n.trax_leaveToo,
+              showsUserInterface: true,
+            ),
+          ],
+  );
+
+  /// A channel message with TRAX mode's button, one per channel and clear
+  /// of the other ids, so the chat after it doesn't take the button away.
+  @visibleForTesting
+  static int traxNotificationId(int channelIndex) => 0x5500 + channelIndex;
 
   /// The alarm volume an SOS alert sounds at, and its most (Android); null
   /// elsewhere, or when the phone doesn't say.
@@ -483,6 +523,40 @@ class NotificationService {
   @visibleForTesting
   static int sosNotificationId(String chatKey, String senderName) =>
       (('sos|$chatKey|$senderName').hashCode & 0x3FFFFFFF) | 0x40000000;
+
+  /// The trip's end came with the radio still in TRAX mode. Shown at once,
+  /// never batched behind messages; a tap asks TRAX mode's question again.
+  Future<void> showTraxEndedNotification() async {
+    final l10n = _l10n;
+    final title = l10n.trax_endedTitle;
+    final body = l10n.trax_endedText;
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: traxChannelId,
+        id: traxEndedId,
+        title: title,
+        body: body,
+        payload: traxEndedPayload,
+      ),
+    );
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      if (!await _ensureInitialized()) return;
+      await _notifications.show(
+        id: traxEndedId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: traxAndroidDetails(l10n),
+          iOS: const DarwinNotificationDetails(),
+          macOS: const DarwinNotificationDetails(),
+        ),
+        payload: traxEndedPayload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show the TRAX reminder: $e');
+    }
+  }
 
   /// The category the user's own SOS shows on while it lasts (Android):
   /// quiet and ongoing. Never [sosChannelId], which is the alarm.
@@ -682,11 +756,12 @@ class NotificationService {
     int? channelIndex,
     int? badgeCount,
     String? mentionMessageId,
+    String? traxAction,
   }) async {
     if (!await _ensureInitialized()) return;
     if (Platform.isWindows || Platform.isLinux) return;
 
-    final androidDetails = channelAndroidDetails(_l10n);
+    final androidDetails = channelAndroidDetails(_l10n, traxAction: traxAction);
     const darwinDetails = DarwinNotificationDetails();
     final details = NotificationDetails(
       android: androidDetails,
@@ -701,9 +776,12 @@ class NotificationService {
 
     // A mention gets its own title, id (so a later plain message doesn't
     // replace it), and a payload that deep-links to the exact message.
+    // TRAX mode's button gets its own id too.
     final isMention = mentionMessageId != null;
-    final id =
-        (channelIndex ?? channelName.hashCode.abs()) ^ (isMention ? 0x0E : 0x0C);
+    final id = traxAction != null && channelIndex != null
+        ? traxNotificationId(channelIndex)
+        : (channelIndex ?? channelName.hashCode.abs()) ^
+              (isMention ? 0x0E : 0x0C);
 
     await _notifications.show(
       id: id,
@@ -763,12 +841,24 @@ class NotificationService {
   }
 
   /// What a tap hands the app: the notification's payload, with `gotit:`
-  /// in front when the tap was an SOS notification's Got it.
+  /// in front when the tap was an SOS notification's Got it, and
+  /// `traxfollow:` or `traxleave:` for TRAX mode's Switch too or Leave too.
   @visibleForTesting
   static String? tapPayload(NotificationResponse response) {
     final payload = response.payload;
     if (payload == null || payload.isEmpty) return null;
-    return response.actionId == sosGotItAction ? 'gotit:$payload' : payload;
+    return switch (response.actionId) {
+      sosGotItAction => 'gotit:$payload',
+      traxFollowAction => 'traxfollow:$payload',
+      traxLeaveAction => 'traxleave:$payload',
+      _ => payload,
+    };
+  }
+
+  /// The channel a `channel:` or `mention:` payload opens.
+  static int? channelIndexOf(String payload) {
+    final match = RegExp(r'^(?:channel|mention):(\d+)').firstMatch(payload);
+    return match == null ? null : int.parse(match.group(1)!);
   }
 
   static const _groupKey = 'com.meshtrax.MESSAGES';
@@ -919,6 +1009,8 @@ class NotificationService {
     );
   }
 
+  /// [traxAction]: TRAX mode's button on a member's TRAX message
+  /// ([traxFollowAction] or [traxLeaveAction]).
   Future<void> showChannelMessageNotification({
     required String channelName,
     required String senderName,
@@ -926,6 +1018,7 @@ class NotificationService {
     int? channelIndex,
     int? badgeCount,
     String? mentionMessageId,
+    String? traxAction,
   }) async {
     debugOnShow?.call(
       ShownNotification(
@@ -935,6 +1028,7 @@ class NotificationService {
         payload: mentionMessageId != null
             ? 'mention:$channelIndex:$mentionMessageId'
             : 'channel:$channelIndex',
+        action: traxAction,
       ),
     );
     if (_suppressNotifications) return;
@@ -947,6 +1041,7 @@ class NotificationService {
         id: channelIndex?.toString(),
         badgeCount: badgeCount,
         mentionMessageId: mentionMessageId,
+        traxAction: traxAction,
       ),
     );
   }
@@ -1022,6 +1117,7 @@ class NotificationService {
             channelIndex: int.tryParse(notification.id ?? ''),
             badgeCount: notification.badgeCount,
             mentionMessageId: notification.mentionMessageId,
+            traxAction: notification.traxAction,
           );
           break;
       }
@@ -1046,6 +1142,9 @@ class ShownNotification {
   /// An SOS notification with a Got it button.
   final bool gotIt;
 
+  /// TRAX mode's button on it, by action id.
+  final String? action;
+
   const ShownNotification({
     required this.channelId,
     this.id,
@@ -1054,6 +1153,7 @@ class ShownNotification {
     this.payload,
     this.silent = false,
     this.gotIt = false,
+    this.action,
   });
 }
 
@@ -1067,6 +1167,7 @@ class _PendingNotification {
   final String? id;
   final int? badgeCount;
   final String? mentionMessageId;
+  final String? traxAction;
 
   _PendingNotification({
     required this.type,
@@ -1075,6 +1176,7 @@ class _PendingNotification {
     this.id,
     this.badgeCount,
     this.mentionMessageId,
+    this.traxAction,
   });
 }
 

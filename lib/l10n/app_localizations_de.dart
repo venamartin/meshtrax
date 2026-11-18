@@ -462,6 +462,218 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings_title => 'Einstellungen';
 
   @override
+  String get trax_title => 'TRAX-Modus';
+
+  @override
+  String get trax_isOn => 'TRAX-Modus ist an';
+
+  @override
+  String get trax_isOff => 'TRAX-Modus ist aus';
+
+  @override
+  String get trax_intro =>
+      'Stellt Ihr Funkgerät auf die netzunabhängige Frequenz der Gruppe, auf der jedes Funkgerät für die anderen weiterleitet. Im normalen Mesh hört Sie niemand, bis Sie den Modus verlassen.';
+
+  @override
+  String get trax_now => 'Jetzt';
+
+  @override
+  String get trax_inTrax => 'Im TRAX-Modus';
+
+  @override
+  String get trax_repeatOn => '„Wiederholung, ohne Stromanschluss“ an';
+
+  @override
+  String get trax_savedNote =>
+      'Die Einstellungen Ihres Funkgeräts werden auf diesem Telefon gespeichert, und „TRAX verlassen“ stellt sie wieder her.';
+
+  @override
+  String trax_until(String time) {
+    return 'Bis $time';
+  }
+
+  @override
+  String get trax_noEnd =>
+      'Legen Sie das Ende der Tour in den TRAX-Einstellungen fest.';
+
+  @override
+  String get trax_tellsNot => 'Sagt der Gruppe nicht Bescheid.';
+
+  @override
+  String get trax_noChannel =>
+      'Wählen Sie in den TRAX-Einstellungen einen Tour-Kanal, oder schalten Sie „Der Gruppe Bescheid sagen“ aus.';
+
+  @override
+  String get trax_trailhead =>
+      'Wechseln Sie am Ausgangspunkt, wenn das Funkgerät einen GPS-Fix hat: Es speichert mit den neuen Einstellungen, wo es gerade ist.';
+
+  @override
+  String get trax_settings => 'TRAX-Einstellungen';
+
+  @override
+  String get trax_switch => 'Zu TRAX wechseln';
+
+  @override
+  String get trax_groupCheck => 'Gruppencheck';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Auf TRAX gehört ($count): $names',
+      zero: 'Noch niemand auf TRAX gehört',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Erneut prüfen';
+
+  @override
+  String get trax_noSaved =>
+      'Keine gespeicherten Einstellungen auf diesem Telefon: „TRAX verlassen“ fragt nach der Voreinstellung.';
+
+  @override
+  String get trax_leave => 'TRAX verlassen';
+
+  @override
+  String get trax_unsupported =>
+      'Die Firmware dieses Funkgeräts kann nicht für andere weiterleiten. Aktualisieren Sie sie, um den TRAX-Modus zu nutzen.';
+
+  @override
+  String get trax_stepTelling => 'Gruppe wird informiert…';
+
+  @override
+  String get trax_stepSwitching => 'Wechsel läuft…';
+
+  @override
+  String get trax_stepChecking => 'Gruppencheck wird gesendet…';
+
+  @override
+  String get trax_stepLeaving => 'TRAX wird verlassen…';
+
+  @override
+  String get trax_errorBusy =>
+      'Das Funkgerät ist noch beschäftigt. Versuchen Sie es gleich noch einmal.';
+
+  @override
+  String get trax_errorRefused =>
+      'Das Funkgerät hat die Einstellungen nicht übernommen. Nichts wurde geändert.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Dieses Funkgerät kann auf $mhz MHz nicht weiterleiten.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Das Funkgerät hat nicht bestätigt, dass es die TRAX-Nachricht gesendet hat: Sagen Sie der Gruppe auf anderem Weg Bescheid.';
+
+  @override
+  String get trax_preset => 'Voreinstellung';
+
+  @override
+  String get trax_presetMesh => 'Die des Mesh';
+
+  @override
+  String get trax_presetLongRange => 'Große Reichweite';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Reicht etwas weiter, aber jede Nachricht braucht 2,5- bis 3-mal so lange zum Senden.';
+
+  @override
+  String get trax_tripChannel => 'Tour-Kanal';
+
+  @override
+  String get trax_tripChannelHint => 'Nur private Kanäle';
+
+  @override
+  String get trax_none => 'Keiner';
+
+  @override
+  String get trax_tripEnds => 'Ende der Tour';
+
+  @override
+  String get trax_notSet => 'Nicht festgelegt';
+
+  @override
+  String get trax_tellGroup => 'Der Gruppe Bescheid sagen';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Postet vor dem Wechseln oder Verlassen eine TRAX-Nachricht im Tour-Kanal. Jedes Mitglied folgt mit einem Tippen; nichts wechselt von selbst.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name ist bis $time in den TRAX-Modus gewechselt. Auch wechseln?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Ihr Funkgerät wechselt auf $settings, mit „Wiederholung, ohne Stromanschluss“ an. Im normalen Mesh hört Sie niemand, bis Sie den Modus verlassen.';
+  }
+
+  @override
+  String get trax_switchToo => 'Auch wechseln';
+
+  @override
+  String get trax_notNow => 'Nicht jetzt';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name verlässt den TRAX-Modus. Auch verlassen?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Auch verlassen';
+
+  @override
+  String get trax_stillOn =>
+      'Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören. Verlassen?';
+
+  @override
+  String get trax_pickPreset => 'Zu welcher Voreinstellung zurück?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Dieses Telefon hat keine gespeicherten Einstellungen für dieses Funkgerät: Ein anderes Telefon hat es umgestellt.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name ist in den TRAX-Modus gewechselt';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name verlässt den TRAX-Modus';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Sie sind in den TRAX-Modus gewechselt';
+
+  @override
+  String get trax_cardYouOff => 'Sie haben den TRAX-Modus verlassen';
+
+  @override
+  String get trax_youreOn => 'Sie sind auf TRAX';
+
+  @override
+  String get trax_ended => 'Beendet';
+
+  @override
+  String get trax_notificationText =>
+      'Das normale Mesh kann Sie nicht hören. Öffnen Sie MeshTrax, um den Modus zu verlassen.';
+
+  @override
+  String get trax_endedTitle => 'Ihre Tour ist zu Ende';
+
+  @override
+  String get trax_endedText =>
+      'Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören.';
+
+  @override
   String get settings_deviceInfo => 'Geräteinformationen';
 
   @override
@@ -492,6 +704,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Frequenz, Leistung, Verbreitungsfaktor';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Netzunabhängige Voreinstellung, Tour-Kanal, Ende der Tour';
 
   @override
   String get settings_radioSettingsUpdated => 'Funkparameter aktualisiert';

@@ -929,6 +929,354 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings_title;
 
+  /// No description provided for @trax_title.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode'**
+  String get trax_title;
+
+  /// No description provided for @trax_isOn.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode is on'**
+  String get trax_isOn;
+
+  /// No description provided for @trax_isOff.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode is off'**
+  String get trax_isOff;
+
+  /// No description provided for @trax_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Moves your radio to the group\'s off-grid frequency, where every radio relays for the others. Nobody on the regular mesh hears you until you leave.'**
+  String get trax_intro;
+
+  /// No description provided for @trax_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get trax_now;
+
+  /// No description provided for @trax_inTrax.
+  ///
+  /// In en, this message translates to:
+  /// **'In TRAX mode'**
+  String get trax_inTrax;
+
+  /// No description provided for @trax_repeatOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-Grid Repeat on'**
+  String get trax_repeatOn;
+
+  /// No description provided for @trax_savedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio\'s settings are saved on this phone, and Leave puts them back.'**
+  String get trax_savedNote;
+
+  /// No description provided for @trax_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {time}'**
+  String trax_until(String time);
+
+  /// No description provided for @trax_noEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the trip\'s end in TRAX settings.'**
+  String get trax_noEnd;
+
+  /// No description provided for @trax_tellsNot.
+  ///
+  /// In en, this message translates to:
+  /// **'Doesn\'t tell the group.'**
+  String get trax_tellsNot;
+
+  /// No description provided for @trax_noChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a trip channel in TRAX settings, or turn off Tell the group.'**
+  String get trax_noChannel;
+
+  /// No description provided for @trax_trailhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.'**
+  String get trax_trailhead;
+
+  /// No description provided for @trax_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX settings'**
+  String get trax_settings;
+
+  /// No description provided for @trax_switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to TRAX'**
+  String get trax_switch;
+
+  /// No description provided for @trax_groupCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Group check'**
+  String get trax_groupCheck;
+
+  /// No description provided for @trax_heard.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nobody heard on TRAX yet} other{{count} heard on TRAX: {names}}}'**
+  String trax_heard(int count, String names);
+
+  /// No description provided for @trax_checkAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get trax_checkAgain;
+
+  /// No description provided for @trax_noSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved settings on this phone: Leave asks which preset to return to.'**
+  String get trax_noSaved;
+
+  /// No description provided for @trax_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave TRAX'**
+  String get trax_leave;
+
+  /// No description provided for @trax_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio\'s firmware can\'t relay for others. Update it to use TRAX mode.'**
+  String get trax_unsupported;
+
+  /// No description provided for @trax_stepTelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Telling the group…'**
+  String get trax_stepTelling;
+
+  /// No description provided for @trax_stepSwitching.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching…'**
+  String get trax_stepSwitching;
+
+  /// No description provided for @trax_stepChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending the group check…'**
+  String get trax_stepChecking;
+
+  /// No description provided for @trax_stepLeaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving…'**
+  String get trax_stepLeaving;
+
+  /// No description provided for @trax_errorBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is still busy. Try again in a moment.'**
+  String get trax_errorBusy;
+
+  /// No description provided for @trax_errorRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio didn\'t take the settings. Nothing changed.'**
+  String get trax_errorRefused;
+
+  /// No description provided for @trax_errorNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio can\'t relay on {mhz} MHz.'**
+  String trax_errorNotAllowed(String mhz);
+
+  /// No description provided for @trax_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio didn\'t confirm it sent the TRAX message: tell the group another way.'**
+  String get trax_unconfirmed;
+
+  /// No description provided for @trax_preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get trax_preset;
+
+  /// No description provided for @trax_presetMesh.
+  ///
+  /// In en, this message translates to:
+  /// **'The mesh\'s own'**
+  String get trax_presetMesh;
+
+  /// No description provided for @trax_presetLongRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Long range'**
+  String get trax_presetLongRange;
+
+  /// No description provided for @trax_presetLongRangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reaches a little further, but each message takes 2.5 to 3 times as long to send.'**
+  String get trax_presetLongRangeHint;
+
+  /// No description provided for @trax_tripChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip channel'**
+  String get trax_tripChannel;
+
+  /// No description provided for @trax_tripChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Private channels only'**
+  String get trax_tripChannelHint;
+
+  /// No description provided for @trax_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get trax_none;
+
+  /// No description provided for @trax_tripEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip ends'**
+  String get trax_tripEnds;
+
+  /// No description provided for @trax_notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get trax_notSet;
+
+  /// No description provided for @trax_tellGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the group'**
+  String get trax_tellGroup;
+
+  /// No description provided for @trax_tellGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts a TRAX message on the trip channel before switching or leaving. Each member follows with one tap; nothing switches by itself.'**
+  String get trax_tellGroupHint;
+
+  /// No description provided for @trax_followBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} switched to TRAX mode until {time}. Switch too?'**
+  String trax_followBody(String name, String time);
+
+  /// No description provided for @trax_followDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio moves to {settings} with Off-Grid Repeat on. Nobody on the regular mesh hears you until you leave.'**
+  String trax_followDetail(String settings);
+
+  /// No description provided for @trax_switchToo.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch too'**
+  String get trax_switchToo;
+
+  /// No description provided for @trax_notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get trax_notNow;
+
+  /// No description provided for @trax_leaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is leaving TRAX mode. Leave too?'**
+  String trax_leaveBody(String name);
+
+  /// No description provided for @trax_leaveToo.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave too'**
+  String get trax_leaveToo;
+
+  /// No description provided for @trax_stillOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio is still in TRAX mode: the regular mesh can\'t hear you. Leave?'**
+  String get trax_stillOn;
+
+  /// No description provided for @trax_pickPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to which preset?'**
+  String get trax_pickPreset;
+
+  /// No description provided for @trax_pickPresetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no saved settings for this radio: another phone switched it.'**
+  String get trax_pickPresetHint;
+
+  /// No description provided for @trax_cardOn.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} switched to TRAX mode'**
+  String trax_cardOn(String name);
+
+  /// No description provided for @trax_cardOff.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is leaving TRAX mode'**
+  String trax_cardOff(String name);
+
+  /// No description provided for @trax_cardYouOn.
+  ///
+  /// In en, this message translates to:
+  /// **'You switched to TRAX mode'**
+  String get trax_cardYouOn;
+
+  /// No description provided for @trax_cardYouOff.
+  ///
+  /// In en, this message translates to:
+  /// **'You left TRAX mode'**
+  String get trax_cardYouOff;
+
+  /// No description provided for @trax_youreOn.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on TRAX'**
+  String get trax_youreOn;
+
+  /// No description provided for @trax_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get trax_ended;
+
+  /// No description provided for @trax_notificationText.
+  ///
+  /// In en, this message translates to:
+  /// **'The regular mesh can\'t hear you. Open MeshTrax to leave.'**
+  String get trax_notificationText;
+
+  /// No description provided for @trax_endedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trip has ended'**
+  String get trax_endedTitle;
+
+  /// No description provided for @trax_endedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio is still in TRAX mode: the regular mesh can\'t hear you.'**
+  String get trax_endedText;
+
   /// No description provided for @settings_deviceInfo.
   ///
   /// In en, this message translates to:
@@ -988,6 +1336,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Frequency, power, spreading factor'**
   String get settings_radioSettingsSubtitle;
+
+  /// No description provided for @settings_traxSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-grid preset, trip channel, trip end'**
+  String get settings_traxSettingsSubtitle;
 
   /// No description provided for @settings_radioSettingsUpdated.
   ///

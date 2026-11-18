@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
+import '../models/radio_settings.dart';
 import 'calendar_share.dart';
 import 'maps_link.dart';
 import 'meshcore_qr.dart';
@@ -59,7 +60,7 @@ sealed class StructuredMessage {
   static final _extension = RegExp(r'^([a-z][a-z0-9_]*)=(.*)$');
 
   static final _header = RegExp(
-    r'^(location|poi|sos|event|notice|svg)\s*:\s*',
+    r'^(location|poi|sos|event|notice|svg|trax)\s*:\s*',
     caseSensitive: false,
   );
 
@@ -158,6 +159,7 @@ sealed class StructuredMessage {
 
     final keyword = header.group(1)!.toLowerCase();
     if (keyword == 'svg') return SvgMessage._fromHeader(body, header);
+    if (keyword == 'trax') return TraxMessage._fromBody(body.substring(header.end));
     final fields = _splitFields(body.substring(header.end));
     final sorted = _Fields.classify(fields);
 
@@ -705,6 +707,151 @@ class SvgMessage extends StructuredMessage {
         'SVG:${drawing.pathData}',
         ?drawing.map?.toLine(),
         if (drawing.caption.isNotEmpty) drawing.caption,
+      ].join('\n');
+}
+
+/// TRAX mode's Tell the group, MeshTrax only for now:
+///
+/// ```
+/// TRAX: on until 2026-11-22 18:00 UTC-8
+/// 918.000 MHz 62.5 kHz SF7 CR5
+/// ```
+///
+/// or `TRAX: off` when the sender is leaving. The end is the sender's wall
+/// clock with its offset from UTC, so every reader knows the same instant
+/// and a person reads the sender's time. Anything malformed is plain text:
+/// a message that could move a radio is read strictly.
+class TraxMessage extends StructuredMessage {
+  final bool on;
+
+  /// The end of the trip, in UTC. Null when leaving.
+  final DateTime? until;
+
+  /// The sender's offset from UTC at [until], in minutes.
+  final int utcOffsetMinutes;
+
+  /// The TRAX preset: frequency, bandwidth, SF and CR. Off-Grid Repeat is
+  /// always on in TRAX mode. Null when leaving.
+  final LoRaParams? preset;
+
+  const TraxMessage._({
+    required this.on,
+    this.until,
+    this.utcOffsetMinutes = 0,
+    this.preset,
+    super.extraText,
+  });
+
+  /// Switching, until [until] (any zone; written in its local zone).
+  factory TraxMessage.switching({
+    required DateTime until,
+    required LoRaParams preset,
+  }) {
+    final local = until.toLocal();
+    return TraxMessage._(
+      on: true,
+      until: local.toUtc(),
+      utcOffsetMinutes: local.timeZoneOffset.inMinutes,
+      preset: preset,
+    );
+  }
+
+  const TraxMessage.leaving() : this._(on: false);
+
+  static final _onLine = RegExp(
+    r'^on until (\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2}) '
+    r'UTC(?:([+-])(\d{1,2})(?::(\d{2}))?)?$',
+    caseSensitive: false,
+  );
+
+  static final _presetLine = RegExp(
+    r'^(\d{3,4}\.\d{1,3}) MHz (\d{1,3}(?:\.\d{1,2})?) kHz SF(\d{1,2}) CR(\d)$',
+    caseSensitive: false,
+  );
+
+  static TraxMessage? _fromBody(String rest) {
+    final lines = rest
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) return null;
+    final head = lines.first;
+    if (head.toLowerCase() == 'off') {
+      return TraxMessage._(on: false, extraText: lines.skip(1).toList());
+    }
+    final m = _onLine.firstMatch(head);
+    if (m == null) return null;
+    final y = int.parse(m.group(1)!), mo = int.parse(m.group(2)!);
+    final d = int.parse(m.group(3)!);
+    final h = int.parse(m.group(4)!), min = int.parse(m.group(5)!);
+    if (mo < 1 || mo > 12 || d < 1 || h > 23 || min > 59) return null;
+    final wall = DateTime.utc(y, mo, d, h, min);
+    if (wall.month != mo || wall.day != d) return null;
+    var offset = 0;
+    if (m.group(6) != null) {
+      final hours = int.parse(m.group(7)!);
+      final minutes = int.parse(m.group(8) ?? '0');
+      if (hours > 14 || minutes > 59) return null;
+      offset = (hours * 60 + minutes) * (m.group(6) == '-' ? -1 : 1);
+    }
+    LoRaParams? preset;
+    final extra = <String>[];
+    for (final line in lines.skip(1)) {
+      final p = preset == null ? _presetLine.firstMatch(line) : null;
+      if (p == null) {
+        extra.add(line);
+        continue;
+      }
+      final khz = double.parse(p.group(2)!);
+      preset = LoRaParams(
+        freqKhz: (double.parse(p.group(1)!) * 1000).round(),
+        bwHz: (khz * 1000).round(),
+        sf: int.parse(p.group(3)!),
+        cr: int.parse(p.group(4)!),
+      );
+      if (!preset.isValid) return null;
+    }
+    if (preset == null) return null;
+    return TraxMessage._(
+      on: true,
+      until: wall.subtract(Duration(minutes: offset)),
+      utcOffsetMinutes: offset,
+      preset: preset,
+      extraText: extra,
+    );
+  }
+
+  static String _two(int n) => n.toString().padLeft(2, '0');
+
+  String _untilWire() {
+    final wall = until!.add(Duration(minutes: utcOffsetMinutes));
+    final off = utcOffsetMinutes.abs();
+    final zone = utcOffsetMinutes == 0
+        ? 'UTC'
+        : 'UTC${utcOffsetMinutes < 0 ? '-' : '+'}${off ~/ 60}'
+              '${off % 60 == 0 ? '' : ':${_two(off % 60)}'}';
+    return '${wall.year}-${_two(wall.month)}-${_two(wall.day)} '
+        '${_two(wall.hour)}:${_two(wall.minute)} $zone';
+  }
+
+  @override
+  LatLng? get position => null;
+
+  @override
+  String get keyword => 'TRAX';
+
+  @override
+  String get summary => on ? 'TRAX mode on' : 'TRAX mode off';
+
+  @override
+  String toWire() => [
+        on ? 'TRAX: on until ${_untilWire()}' : 'TRAX: off',
+        if (on) preset!.wireText,
+        for (final t in extraText)
+          if (StructuredMessage.sanitizeField(t) case final s
+              when s.isNotEmpty)
+            s,
       ].join('\n');
 }
 

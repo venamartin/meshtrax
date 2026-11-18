@@ -457,6 +457,217 @@ class AppLocalizationsSl extends AppLocalizations {
   String get settings_title => 'Nastavitve';
 
   @override
+  String get trax_title => 'Način TRAX';
+
+  @override
+  String get trax_isOn => 'Način TRAX je vklopljen';
+
+  @override
+  String get trax_isOff => 'Način TRAX je izklopljen';
+
+  @override
+  String get trax_intro =>
+      'Premakne vaš radio na skupinsko frekvenco zunaj omrežja, kjer vsak radio posreduje za druge. Nihče v običajnem omrežju mesh vas ne sliši, dokler načina ne zapustite.';
+
+  @override
+  String get trax_now => 'Zdaj';
+
+  @override
+  String get trax_inTrax => 'V načinu TRAX';
+
+  @override
+  String get trax_repeatOn => '»Neovadno ponavljanje« vklopljeno';
+
+  @override
+  String get trax_savedNote =>
+      'Nastavitve radia se shranijo v ta telefon, »Zapusti TRAX« pa jih povrne.';
+
+  @override
+  String trax_until(String time) {
+    return 'Do $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Konec izleta nastavite v nastavitvah TRAX.';
+
+  @override
+  String get trax_tellsNot => 'Skupini ne sporoči.';
+
+  @override
+  String get trax_noChannel =>
+      'Izberite kanal izleta v nastavitvah TRAX ali izklopite »Sporoči skupini«.';
+
+  @override
+  String get trax_trailhead =>
+      'Preklopite na izhodišču, ko ima radio položaj GPS: radio z novimi nastavitvami shrani, kje je.';
+
+  @override
+  String get trax_settings => 'Nastavitve TRAX';
+
+  @override
+  String get trax_switch => 'Preklopi na TRAX';
+
+  @override
+  String get trax_groupCheck => 'Preverjanje skupine';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Slišani na TRAX ($count): $names',
+      zero: 'Na TRAX še nikogar ni slišati',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Preveri znova';
+
+  @override
+  String get trax_noSaved =>
+      'V tem telefonu ni shranjenih nastavitev: »Zapusti TRAX« vpraša, na katero prednastavitev se vrniti.';
+
+  @override
+  String get trax_leave => 'Zapusti TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'Vdelana programska oprema tega radia ne more posredovati za druge. Posodobite jo za uporabo načina TRAX.';
+
+  @override
+  String get trax_stepTelling => 'Obveščanje skupine…';
+
+  @override
+  String get trax_stepSwitching => 'Preklapljanje…';
+
+  @override
+  String get trax_stepChecking => 'Pošiljanje preverjanja skupine…';
+
+  @override
+  String get trax_stepLeaving => 'Zapuščanje…';
+
+  @override
+  String get trax_errorBusy =>
+      'Radio je še zaseden. Poskusite znova čez trenutek.';
+
+  @override
+  String get trax_errorRefused =>
+      'Radio ni sprejel nastavitev. Nič se ni spremenilo.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'Ta radio ne more posredovati na $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'Radio ni potrdil, da je poslal sporočilo TRAX: skupini sporočite drugače.';
+
+  @override
+  String get trax_preset => 'Prednastavitev';
+
+  @override
+  String get trax_presetMesh => 'Tista iz omrežja mesh';
+
+  @override
+  String get trax_presetLongRange => 'Velik doseg';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Seže malo dlje, a pošiljanje vsakega sporočila traja 2,5- do 3-krat dlje.';
+
+  @override
+  String get trax_tripChannel => 'Kanal izleta';
+
+  @override
+  String get trax_tripChannelHint => 'Samo zasebni kanali';
+
+  @override
+  String get trax_none => 'Brez';
+
+  @override
+  String get trax_tripEnds => 'Konec izleta';
+
+  @override
+  String get trax_notSet => 'Ni nastavljeno';
+
+  @override
+  String get trax_tellGroup => 'Sporoči skupini';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Pred preklopom ali izhodom objavi sporočilo TRAX v kanalu izleta. Vsak član sledi z enim dotikom; nič ne preklopi samo.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name je preklopil v način TRAX do $time. Preklopite tudi vi?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Vaš radio preide na $settings z vklopljenim »Neovadno ponavljanje«. Nihče v običajnem omrežju mesh vas ne sliši, dokler načina ne zapustite.';
+  }
+
+  @override
+  String get trax_switchToo => 'Preklopi tudi jaz';
+
+  @override
+  String get trax_notNow => 'Ne zdaj';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name zapušča način TRAX. Zapustite tudi vi?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Zapusti tudi jaz';
+
+  @override
+  String get trax_stillOn =>
+      'Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši. Zapustim?';
+
+  @override
+  String get trax_pickPreset => 'Na katero prednastavitev se vrniti?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'Ta telefon nima shranjenih nastavitev za ta radio: preklopil ga je drug telefon.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name je preklopil v način TRAX';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name zapušča način TRAX';
+  }
+
+  @override
+  String get trax_cardYouOn => 'Preklopili ste v način TRAX';
+
+  @override
+  String get trax_cardYouOff => 'Zapustili ste način TRAX';
+
+  @override
+  String get trax_youreOn => 'Ste na TRAX';
+
+  @override
+  String get trax_ended => 'Končano';
+
+  @override
+  String get trax_notificationText =>
+      'Običajno omrežje mesh vas ne sliši. Odprite MeshTrax, da zapustite način.';
+
+  @override
+  String get trax_endedTitle => 'Vaš izlet se je končal';
+
+  @override
+  String get trax_endedText =>
+      'Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.';
+
+  @override
   String get settings_deviceInfo => 'Informacije o napravei';
 
   @override
@@ -487,6 +698,10 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Frekvenca, moč, razširitveni faktor';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Prednastavitev zunaj omrežja, kanal in konec izleta';
 
   @override
   String get settings_radioSettingsUpdated => 'Radio nastavitve posodobljene';

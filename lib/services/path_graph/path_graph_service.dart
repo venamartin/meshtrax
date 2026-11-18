@@ -629,9 +629,19 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
+  /// The radio was just retuned (TRAX mode, a new preset) and the graph of
+  /// its new mesh isn't open yet: what it hears now belongs to that mesh,
+  /// not to this graph. Never for a database the caller owns.
+  bool get _onOtherMesh {
+    final connector = _connector, open = _mesh;
+    if (!_ownsDatabase || connector == null || open == null) return false;
+    final now = meshOf(connector);
+    return now != null && now != open;
+  }
+
   void _onFrame(Uint8List frame) {
     final adapter = _adapter;
-    if (adapter == null) return;
+    if (adapter == null || _onOtherMesh) return;
     final before = adapter.framesSeen;
     adapter.expectedDiscoverTag = _connector?.pendingDiscoverTag;
     adapter.expectedTraceTag = _connector?.pendingTraceTag;
@@ -758,7 +768,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// rule, 2026-10-14).
   void _onFirmwarePath(Contact snapshot) {
     final connector = _connector;
-    if (connector == null || snapshot.pathLength < 0) return;
+    if (connector == null || snapshot.pathLength < 0 || _onOtherMesh) return;
     // The reply that carried this route was a flood from them: credit
     // their doorstep from the logged copy before proving the route.
     _adapter?.attributePathReply(snapshot.publicKeyHex);
@@ -813,6 +823,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// The radio confirmed an ACK: if it came back as a flood, its first hop
   /// heard the contact.
   void _onAckHeard(Contact contact, int ackHash) {
+    if (_onOtherMesh) return;
     _adapter?.attributeAck(contact.publicKeyHex, ackHash);
     _notifySoon();
   }
@@ -1019,7 +1030,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// one contact, the packet's first hop is a repeater that heard them.
   void _onChannelPacket(String senderName, Uint8List pathBytes, int stride) {
     final graph = _graph;
-    if (graph == null) return;
+    if (graph == null || _onOtherMesh) return;
     graph.observeChannelSender(senderName, pathBytes, stride);
     _notifySoon();
   }
@@ -1027,6 +1038,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// A DM or room post names its sender by key; the adapter matches it to
   /// the raw packet it came from and credits the sender's doorstep.
   void _onContactMessage(String pubkeyHex, int pathLenRaw, int? snrByte) {
+    if (_onOtherMesh) return;
     _adapter?.attributeContactMessage(pubkeyHex, pathLenRaw, snrByte);
     // Their flood came with repeater codes narrower than the graph's: the
     // graph drops such paths, so it can never learn where they are.
@@ -1089,7 +1101,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// first hops confirm two doorsteps from one message.
   void _onOwnEcho(Uint8List pathBytes, int stride) {
     final graph = _graph;
-    if (graph == null) return;
+    if (graph == null || _onOtherMesh) return;
     appLogger.info(
         'own echo via ${_hops(pathBytes, stride)} — first hop credited as hearing me',
         tag: 'PathGraph');

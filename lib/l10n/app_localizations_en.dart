@@ -455,6 +455,217 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_title => 'Settings';
 
   @override
+  String get trax_title => 'TRAX mode';
+
+  @override
+  String get trax_isOn => 'TRAX mode is on';
+
+  @override
+  String get trax_isOff => 'TRAX mode is off';
+
+  @override
+  String get trax_intro =>
+      'Moves your radio to the group\'s off-grid frequency, where every radio relays for the others. Nobody on the regular mesh hears you until you leave.';
+
+  @override
+  String get trax_now => 'Now';
+
+  @override
+  String get trax_inTrax => 'In TRAX mode';
+
+  @override
+  String get trax_repeatOn => 'Off-Grid Repeat on';
+
+  @override
+  String get trax_savedNote =>
+      'Your radio\'s settings are saved on this phone, and Leave puts them back.';
+
+  @override
+  String trax_until(String time) {
+    return 'Until $time';
+  }
+
+  @override
+  String get trax_noEnd => 'Set the trip\'s end in TRAX settings.';
+
+  @override
+  String get trax_tellsNot => 'Doesn\'t tell the group.';
+
+  @override
+  String get trax_noChannel =>
+      'Pick a trip channel in TRAX settings, or turn off Tell the group.';
+
+  @override
+  String get trax_trailhead =>
+      'Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.';
+
+  @override
+  String get trax_settings => 'TRAX settings';
+
+  @override
+  String get trax_switch => 'Switch to TRAX';
+
+  @override
+  String get trax_groupCheck => 'Group check';
+
+  @override
+  String trax_heard(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count heard on TRAX: $names',
+      zero: 'Nobody heard on TRAX yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trax_checkAgain => 'Check again';
+
+  @override
+  String get trax_noSaved =>
+      'No saved settings on this phone: Leave asks which preset to return to.';
+
+  @override
+  String get trax_leave => 'Leave TRAX';
+
+  @override
+  String get trax_unsupported =>
+      'This radio\'s firmware can\'t relay for others. Update it to use TRAX mode.';
+
+  @override
+  String get trax_stepTelling => 'Telling the group…';
+
+  @override
+  String get trax_stepSwitching => 'Switching…';
+
+  @override
+  String get trax_stepChecking => 'Sending the group check…';
+
+  @override
+  String get trax_stepLeaving => 'Leaving…';
+
+  @override
+  String get trax_errorBusy =>
+      'The radio is still busy. Try again in a moment.';
+
+  @override
+  String get trax_errorRefused =>
+      'The radio didn\'t take the settings. Nothing changed.';
+
+  @override
+  String trax_errorNotAllowed(String mhz) {
+    return 'This radio can\'t relay on $mhz MHz.';
+  }
+
+  @override
+  String get trax_unconfirmed =>
+      'The radio didn\'t confirm it sent the TRAX message: tell the group another way.';
+
+  @override
+  String get trax_preset => 'Preset';
+
+  @override
+  String get trax_presetMesh => 'The mesh\'s own';
+
+  @override
+  String get trax_presetLongRange => 'Long range';
+
+  @override
+  String get trax_presetLongRangeHint =>
+      'Reaches a little further, but each message takes 2.5 to 3 times as long to send.';
+
+  @override
+  String get trax_tripChannel => 'Trip channel';
+
+  @override
+  String get trax_tripChannelHint => 'Private channels only';
+
+  @override
+  String get trax_none => 'None';
+
+  @override
+  String get trax_tripEnds => 'Trip ends';
+
+  @override
+  String get trax_notSet => 'Not set';
+
+  @override
+  String get trax_tellGroup => 'Tell the group';
+
+  @override
+  String get trax_tellGroupHint =>
+      'Posts a TRAX message on the trip channel before switching or leaving. Each member follows with one tap; nothing switches by itself.';
+
+  @override
+  String trax_followBody(String name, String time) {
+    return '$name switched to TRAX mode until $time. Switch too?';
+  }
+
+  @override
+  String trax_followDetail(String settings) {
+    return 'Your radio moves to $settings with Off-Grid Repeat on. Nobody on the regular mesh hears you until you leave.';
+  }
+
+  @override
+  String get trax_switchToo => 'Switch too';
+
+  @override
+  String get trax_notNow => 'Not now';
+
+  @override
+  String trax_leaveBody(String name) {
+    return '$name is leaving TRAX mode. Leave too?';
+  }
+
+  @override
+  String get trax_leaveToo => 'Leave too';
+
+  @override
+  String get trax_stillOn =>
+      'Your radio is still in TRAX mode: the regular mesh can\'t hear you. Leave?';
+
+  @override
+  String get trax_pickPreset => 'Return to which preset?';
+
+  @override
+  String get trax_pickPresetHint =>
+      'This phone has no saved settings for this radio: another phone switched it.';
+
+  @override
+  String trax_cardOn(String name) {
+    return '$name switched to TRAX mode';
+  }
+
+  @override
+  String trax_cardOff(String name) {
+    return '$name is leaving TRAX mode';
+  }
+
+  @override
+  String get trax_cardYouOn => 'You switched to TRAX mode';
+
+  @override
+  String get trax_cardYouOff => 'You left TRAX mode';
+
+  @override
+  String get trax_youreOn => 'You\'re on TRAX';
+
+  @override
+  String get trax_ended => 'Ended';
+
+  @override
+  String get trax_notificationText =>
+      'The regular mesh can\'t hear you. Open MeshTrax to leave.';
+
+  @override
+  String get trax_endedTitle => 'Your trip has ended';
+
+  @override
+  String get trax_endedText =>
+      'Your radio is still in TRAX mode: the regular mesh can\'t hear you.';
+
+  @override
   String get settings_deviceInfo => 'Device Info';
 
   @override
@@ -485,6 +696,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settings_radioSettingsSubtitle =>
       'Frequency, power, spreading factor';
+
+  @override
+  String get settings_traxSettingsSubtitle =>
+      'Off-grid preset, trip channel, trip end';
 
   @override
   String get settings_radioSettingsUpdated => 'Radio settings updated';

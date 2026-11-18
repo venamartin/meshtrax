@@ -31,6 +31,7 @@ import '../widgets/contact_name.dart';
 import '../widgets/contact_info_dialog.dart';
 import '../widgets/gps_status_button.dart';
 import '../widgets/location_sharing_button.dart';
+import '../widgets/trax_button.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -907,6 +908,7 @@ class _ChatsScreenState extends State<ChatsScreen>
               ),
               centerTitle: true,
               actions: [
+                const TraxButton(),
                 const GpsStatusButton(),
                 const LocationSharingButton(),
                 PopupMenuButton<void>(

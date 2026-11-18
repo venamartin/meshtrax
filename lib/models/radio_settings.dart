@@ -317,3 +317,61 @@ class RadioSettings {
   int get sf => spreadingFactor.value;
   int get cr => codingRate.value;
 }
+
+/// The four numbers that make a mesh: radios hear each other only when all
+/// four match. [cr] is 5 to 8 (4/5 to 4/8), whichever way the radio counts.
+class LoRaParams {
+  final int freqKhz;
+  final int bwHz;
+  final int sf;
+  final int cr;
+
+  const LoRaParams({
+    required this.freqKhz,
+    required this.bwHz,
+    required this.sf,
+    required this.cr,
+  });
+
+  /// Settings the firmware takes (MyMesh.cpp CMD_SET_RADIO_PARAMS), with a
+  /// bandwidth from the app's list.
+  bool get isValid =>
+      freqKhz >= 150000 &&
+      freqKhz <= 2500000 &&
+      LoRaBandwidth.values.any((b) => b.hz == bwHz) &&
+      sf >= 5 &&
+      sf <= 12 &&
+      cr >= 5 &&
+      cr <= 8;
+
+  String get mhzText => (freqKhz / 1000).toStringAsFixed(3);
+
+  String get khzText => bwHz % 1000 == 0
+      ? '${bwHz ~/ 1000}'
+      : (bwHz / 1000)
+            .toStringAsFixed(2)
+            .replaceFirst(RegExp(r'0+$'), '')
+            .replaceFirst(RegExp(r'\.$'), '');
+
+  /// `918.000 MHz 62.5 kHz SF7 CR5`, as TRAX messages carry it.
+  String get wireText => '$mhzText MHz $khzText kHz SF$sf CR$cr';
+
+  /// `918.000 MHz · 62.5 kHz · SF7 · CR5`, for the screen; a number never
+  /// wraps away from its unit.
+  String get label =>
+      '$mhzText\u00A0MHz · $khzText\u00A0kHz · SF$sf · CR$cr';
+
+  @override
+  bool operator ==(Object other) =>
+      other is LoRaParams &&
+      other.freqKhz == freqKhz &&
+      other.bwHz == bwHz &&
+      other.sf == sf &&
+      other.cr == cr;
+
+  @override
+  int get hashCode => Object.hash(freqKhz, bwHz, sf, cr);
+
+  @override
+  String toString() => wireText;
+}

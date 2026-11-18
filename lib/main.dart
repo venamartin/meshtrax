@@ -32,6 +32,7 @@ import 'services/background_service.dart';
 import 'services/map_packs_service.dart';
 import 'services/poi_service.dart';
 import 'services/routing_service.dart';
+import 'services/trax_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
@@ -40,6 +41,7 @@ import 'utils/app_logger.dart';
 import 'utils/route_transitions.dart';
 import 'utils/scroll_jank_reporter.dart';
 import 'widgets/legacy_material_bridge.dart';
+import 'widgets/trax_dialogs.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,6 +129,10 @@ void main() async {
   appSettingsService.addListener(syncPathGraph);
   await syncPathGraph();
 
+  final traxService = TraxService(connector, background: backgroundService);
+  // A member's TRAX message gets Switch too or Leave too on its notification.
+  connector.traxActionFor = traxService.notificationAction;
+
   // Offline map packs: cached catalogue, installed packs, and downloads
   // restored from the last run. Pack storage doesn't exist on the web.
   final mapPacksService = PlatformInfo.isWeb
@@ -160,6 +166,7 @@ void main() async {
     MeshTraxApp(
       connector: connector,
       pathGraphService: pathGraphService,
+      traxService: traxService,
       retryService: retryService,
       storage: storage,
       appSettingsService: appSettingsService,
@@ -193,6 +200,7 @@ https://creativecommons.org/licenses/by/4.0/
 class MeshTraxApp extends StatefulWidget {
   final MeshCoreConnector connector;
   final PathGraphService pathGraphService;
+  final TraxService traxService;
   final MessageRetryService retryService;
   final StorageService storage;
   final AppSettingsService appSettingsService;
@@ -211,6 +219,7 @@ class MeshTraxApp extends StatefulWidget {
     super.key,
     required this.connector,
     required this.pathGraphService,
+    required this.traxService,
     required this.retryService,
     required this.storage,
     required this.appSettingsService,
@@ -231,6 +240,8 @@ class MeshTraxApp extends StatefulWidget {
 class _MeshTraxAppState extends State<MeshTraxApp> {
   late final AppLifecycleListener _lifecycleListener;
   late final StreamSubscription<BlockedCliCommand> _blockedCliSubscription;
+  late final StreamSubscription<TraxPrompt> _traxPrompts;
+  late final TraxQuestions _trax;
 
   @override
   void initState() {
@@ -257,6 +268,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       );
     });
 
+    // TRAX mode asks over whatever screen is open; nothing switches by itself.
+    _trax = TraxQuestions(widget.traxService, NotificationService.navigatorKey);
+    _traxPrompts = widget.traxService.prompts.listen(_trax.ask);
+
     // Route notification taps to the relevant chat, and handle a notification
     // that cold-started the app once the first frame is ready.
     NotificationService().onNotificationTap = _handleNotificationTap;
@@ -270,10 +285,14 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     final navigator = NotificationService.navigatorKey.currentState;
     if (navigator == null) return;
     final connector = widget.connector;
+    // TRAX mode's reminder, and Switch too or Leave too on a member's TRAX
+    // message, ask their question again while it still fits.
+    final untrax = _trax.onTap(tapped);
+    if (untrax == null) return;
     // An SOS notification's Got it: its chat opens as for a tap and sends
     // it, or says the radio is away.
-    final gotIt = tapped.startsWith('gotit:');
-    final payload = gotIt ? tapped.substring('gotit:'.length) : tapped;
+    final gotIt = untrax.startsWith('gotit:');
+    final payload = gotIt ? untrax.substring('gotit:'.length) : untrax;
 
     if (payload.startsWith('mention:')) {
       // mention:<channelIndex>:<messageId> — open the channel AND land on
@@ -336,6 +355,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
   void dispose() {
     _lifecycleListener.dispose();
     _blockedCliSubscription.cancel();
+    _traxPrompts.cancel();
     super.dispose();
   }
 
@@ -345,6 +365,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.connector),
         ChangeNotifierProvider.value(value: widget.pathGraphService),
+        ChangeNotifierProvider.value(value: widget.traxService),
         ChangeNotifierProvider.value(value: widget.retryService),
         ChangeNotifierProvider.value(value: widget.appSettingsService),
         ChangeNotifierProvider.value(value: widget.bleDebugLogService),
@@ -403,6 +424,10 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
               final locale = Localizations.localeOf(context);
               NotificationService().setLocale(locale);
               final l10n = AppLocalizations.of(context);
+              widget.traxService.setNotificationTexts(
+                title: l10n.trax_isOn,
+                text: l10n.trax_notificationText,
+              );
               widget.mapPacksService?.setNotificationTitles(
                 running: l10n.offlineMaps_notificationRunning,
                 paused: l10n.offlineMaps_notificationPaused,
