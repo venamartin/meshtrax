@@ -9718,6 +9718,12 @@ abstract class AppLocalizations {
   /// **'Trail'**
   String get roadLegend_trail;
 
+  /// No description provided for @roadLegend_walkway.
+  ///
+  /// In en, this message translates to:
+  /// **'Walkway or bike path'**
+  String get roadLegend_walkway;
+
   /// No description provided for @roadLegend_interstate.
   ///
   /// In en, this message translates to:

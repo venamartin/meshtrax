@@ -2791,6 +2791,7 @@
   "roadLegend_road": "Road",
   "roadLegend_track": "Dirt road or track",
   "roadLegend_trail": "Trail",
+  "roadLegend_walkway": "Walkway or bike path",
   "roadLegend_interstate": "Interstate",
   "roadLegend_usRoute": "US highway",
   "roadLegend_stateRoute": "State route",

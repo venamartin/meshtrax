@@ -2503,6 +2503,7 @@
   "roadLegend_road": "도로",
   "roadLegend_track": "비포장도로·임도",
   "roadLegend_trail": "탐방로",
+  "roadLegend_walkway": "보행로·자전거길",
   "roadLegend_interstate": "주간 고속도로",
   "roadLegend_usRoute": "미국 국도",
   "roadLegend_stateRoute": "주 도로",

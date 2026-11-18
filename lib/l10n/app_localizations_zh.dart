@@ -5287,6 +5287,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roadLegend_trail => '步道';
 
   @override
+  String get roadLegend_walkway => '人行道或自行车道';
+
+  @override
   String get roadLegend_interstate => '州际公路';
 
   @override

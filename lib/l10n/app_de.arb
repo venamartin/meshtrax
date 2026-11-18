@@ -2493,6 +2493,7 @@
   "roadLegend_road": "Straße",
   "roadLegend_track": "Schotterstraße oder Feldweg",
   "roadLegend_trail": "Wanderweg",
+  "roadLegend_walkway": "Fußweg oder Radweg",
   "roadLegend_interstate": "Interstate-Highway",
   "roadLegend_usRoute": "US-Highway",
   "roadLegend_stateRoute": "State Route",

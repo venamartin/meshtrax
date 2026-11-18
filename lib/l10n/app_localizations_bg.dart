@@ -5660,6 +5660,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get roadLegend_trail => 'Пътека';
 
   @override
+  String get roadLegend_walkway => 'Алея или велоалея';
+
+  @override
   String get roadLegend_interstate => 'Междущатска магистрала';
 
   @override

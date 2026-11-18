@@ -5405,6 +5405,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get roadLegend_trail => '탐방로';
 
   @override
+  String get roadLegend_walkway => '보행로·자전거길';
+
+  @override
   String get roadLegend_interstate => '주간 고속도로';
 
   @override

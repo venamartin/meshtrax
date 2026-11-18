@@ -2493,6 +2493,7 @@
   "roadLegend_road": "Carretera",
   "roadLegend_track": "Camino de tierra o pista",
   "roadLegend_trail": "Sendero",
+  "roadLegend_walkway": "Vía peatonal o ciclovía",
   "roadLegend_interstate": "Autopista interestatal",
   "roadLegend_usRoute": "Carretera federal de EE. UU.",
   "roadLegend_stateRoute": "Carretera estatal",

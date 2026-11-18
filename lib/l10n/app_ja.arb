@@ -2503,6 +2503,7 @@
   "roadLegend_road": "道路",
   "roadLegend_track": "未舗装路・林道",
   "roadLegend_trail": "トレイル",
+  "roadLegend_walkway": "歩道・自転車道",
   "roadLegend_interstate": "州間高速道路",
   "roadLegend_usRoute": "アメリカ国道",
   "roadLegend_stateRoute": "州道",

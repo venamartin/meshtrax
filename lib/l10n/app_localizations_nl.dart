@@ -5642,6 +5642,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get roadLegend_trail => 'Wandelpad';
 
   @override
+  String get roadLegend_walkway => 'Voetpad of fietspad';
+
+  @override
   String get roadLegend_interstate => 'Interstate-snelweg';
 
   @override

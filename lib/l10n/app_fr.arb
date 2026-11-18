@@ -2465,6 +2465,7 @@
   "roadLegend_road": "Route",
   "roadLegend_track": "Piste ou chemin de terre",
   "roadLegend_trail": "Sentier",
+  "roadLegend_walkway": "Voie piétonne ou piste cyclable",
   "roadLegend_interstate": "Autoroute inter-États",
   "roadLegend_usRoute": "U.S. Route",
   "roadLegend_stateRoute": "Route d'État",

@@ -5574,6 +5574,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roadLegend_trail => 'Trail';
 
   @override
+  String get roadLegend_walkway => 'Walkway or bike path';
+
+  @override
   String get roadLegend_interstate => 'Interstate';
 
   @override

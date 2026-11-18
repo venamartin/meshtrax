@@ -5702,6 +5702,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get roadLegend_trail => 'Sentier';
 
   @override
+  String get roadLegend_walkway => 'Voie piétonne ou piste cyclable';
+
+  @override
   String get roadLegend_interstate => 'Autoroute inter-États';
 
   @override

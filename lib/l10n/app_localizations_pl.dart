@@ -5689,6 +5689,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get roadLegend_trail => 'Szlak';
 
   @override
+  String get roadLegend_walkway => 'Chodnik lub ścieżka rowerowa';
+
+  @override
   String get roadLegend_interstate => 'Autostrada międzystanowa';
 
   @override

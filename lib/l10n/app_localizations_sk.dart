@@ -5651,6 +5651,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get roadLegend_trail => 'Chodník';
 
   @override
+  String get roadLegend_walkway => 'Peší chodník alebo cyklochodník';
+
+  @override
   String get roadLegend_interstate => 'Diaľnica Interstate';
 
   @override

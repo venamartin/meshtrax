@@ -1833,6 +1833,7 @@
   "roadLegend_road": "Дорога",
   "roadLegend_track": "Грунтовая или полевая дорога",
   "roadLegend_trail": "Тропа",
+  "roadLegend_walkway": "Пешеходная или велосипедная дорожка",
   "roadLegend_interstate": "Межштатная автомагистраль",
   "roadLegend_usRoute": "Шоссе США",
   "roadLegend_stateRoute": "Шоссе штата",
