@@ -1618,6 +1618,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channels_hashtagHint => '例如：#团队';
 
   @override
+  String get channels_keepCapitals => '保留大写字母';
+
+  @override
   String get chat_noMessages => '暂无消息';
 
   @override

@@ -1718,6 +1718,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get channels_hashtagHint => 'например, #команда';
 
   @override
+  String get channels_keepCapitals => 'Сохранить заглавные буквы';
+
+  @override
   String get chat_noMessages => 'Сообщений пока нет';
 
   @override

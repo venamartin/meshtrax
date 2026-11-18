@@ -19,63 +19,78 @@ class LinkHandler {
   static Future<void> handleHashtagTap(BuildContext context, String hashtag) async {
     final connector = context.read<MeshCoreConnector>();
 
-    // Check if channel already exists
-    final int existingIndex = connector.channels.indexWhere((c) => c.name == hashtag);
-    if (existingIndex != -1) {
+    final existing = hashtagChannel(connector.channels, hashtag);
+    if (existing != null) {
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ChannelChatScreen(
-              channel: connector.channels[existingIndex],
-            ),
+            builder: (context) => ChannelChatScreen(channel: existing),
           ),
         );
       }
       return;
     }
 
-    // Show confirmation dialog
-    final shouldAdd = await showDialog<bool>(
+    // Joined in lowercase unless the capitals are kept: the key comes from
+    // the name as written, so #Test and #test are two channels.
+    final lower = hashtag.toLowerCase();
+    var keepCapitals = false;
+    final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.channels_addChannel),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.l10n.channels_addChannelConfirmation,
-              style: const TextStyle(fontSize: 14),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final shown = keepCapitals ? hashtag : lower;
+          return AlertDialog(
+            title: Text(context.l10n.channels_addChannel),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.channels_addChannelConfirmation,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText(
+                    shown,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+                if (lower != hashtag)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(context.l10n.channels_keepCapitals),
+                    value: keepCapitals,
+                    onChanged: (keep) => setState(() => keepCapitals = keep),
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(context.l10n.common_cancel),
               ),
-              child: SelectableText(
-                hashtag,
-                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, shown),
+                child: Text(context.l10n.channels_addChannel),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.common_cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.channels_addChannel),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
 
-    if (shouldAdd != true) return;
+    if (name == null) return;
     if (!context.mounted) return;
 
     int nextIndex = 1;
@@ -86,13 +101,21 @@ class LinkHandler {
       }
     }
 
-    final psk = Channel.derivePskFromHashtag(hashtag.substring(1));
-    connector.setChannel(nextIndex, hashtag, psk);
+    final psk = Channel.derivePskFromHashtag(name.substring(1));
+    connector.setChannel(nextIndex, name, psk);
 
     showDismissibleSnackBar(
       context,
-      content: Text(context.l10n.channels_channelAdded(hashtag)),
+      content: Text(context.l10n.channels_channelAdded(name)),
     );
+  }
+
+  /// The channel a tapped #tag opens: the one named exactly so, else the
+  /// lowercase one the tag would join.
+  static Channel? hashtagChannel(List<Channel> channels, String hashtag) {
+    final lower = hashtag.toLowerCase();
+    return channels.where((c) => c.name == hashtag).firstOrNull ??
+        channels.where((c) => c.name == lower).firstOrNull;
   }
 
   /// [sos]: the point is an SOS, whose pin opens Route here.

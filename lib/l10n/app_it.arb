@@ -1292,6 +1292,7 @@
   "channels_scanQrCodeComingSoon": "Arriverà presto",
   "channels_enterHashtag": "Inserisci hashtag",
   "channels_hashtagHint": "es. #team",
+  "channels_keepCapitals": "Mantieni le maiuscole",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

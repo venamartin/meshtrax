@@ -1643,6 +1643,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_hashtagHint => '예: #팀';
 
   @override
+  String get channels_keepCapitals => '대문자 유지';
+
+  @override
   String get chat_noMessages => '아직 메시지가 없습니다.';
 
   @override

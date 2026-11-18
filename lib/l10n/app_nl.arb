@@ -1292,6 +1292,7 @@
   "channels_scanQrCodeComingSoon": "Komt later",
   "channels_enterHashtag": "Voer hashtag in",
   "channels_hashtagHint": "bijv. #team",
+  "channels_keepCapitals": "Hoofdletters behouden",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

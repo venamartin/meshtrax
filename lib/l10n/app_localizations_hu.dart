@@ -1725,6 +1725,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get channels_hashtagHint => 'pl. #csapat';
 
   @override
+  String get channels_keepCapitals => 'Nagybetűk megtartása';
+
+  @override
   String get chat_noMessages => 'Még nincs üzenet.';
 
   @override

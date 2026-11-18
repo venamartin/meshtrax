@@ -1698,6 +1698,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get channels_hashtagHint => 't.ex. #team';
 
   @override
+  String get channels_keepCapitals => 'Behåll versaler';
+
+  @override
   String get chat_noMessages => 'Inga meddelanden ännu';
 
   @override

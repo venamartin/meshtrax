@@ -1643,6 +1643,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channels_hashtagHint => '例：#チーム';
 
   @override
+  String get channels_keepCapitals => '大文字のままにする';
+
+  @override
   String get chat_noMessages => 'まだメッセージは届いていません';
 
   @override
