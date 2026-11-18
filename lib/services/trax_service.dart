@@ -61,6 +61,16 @@ class TraxFollowPrompt extends TraxPrompt {
   final Channel channel;
 
   const TraxFollowPrompt(this.sender, this.message, this.channel);
+
+  @override
+  bool operator ==(Object other) =>
+      other is TraxFollowPrompt &&
+      other.sender == sender &&
+      other.channel.idKey == channel.idKey &&
+      other.message.toWire() == message.toWire();
+
+  @override
+  int get hashCode => Object.hash(sender, channel.idKey, message.toWire());
 }
 
 /// A member is leaving TRAX mode: leave too?
@@ -68,6 +78,13 @@ class TraxLeavePrompt extends TraxPrompt {
   final String sender;
 
   const TraxLeavePrompt(this.sender);
+
+  @override
+  bool operator ==(Object other) =>
+      other is TraxLeavePrompt && other.sender == sender;
+
+  @override
+  int get hashCode => sender.hashCode;
 }
 
 /// The trip has ended with the radio still in TRAX mode: at the end itself
@@ -526,28 +543,59 @@ class TraxService extends ChangeNotifier {
         txPowerDbm: s.txPowerDbm,
       );
 
-  void _onChannelMessage(({ChannelMessage message, bool fromBacklog}) e) {
-    if (e.fromBacklog || busy) return;
-    final parsed = StructuredMessage.parse(e.message.text);
-    if (parsed is! TraxMessage) return;
-    final index = e.message.channelIndex;
+  /// What TRAX mode asks about a member's [message], if anything: a TRAX
+  /// message heard live on a private channel, and only what fits this
+  /// radio now.
+  TraxPrompt? _promptFor(ChannelMessage message, {bool fromBacklog = false}) {
+    if (fromBacklog || busy) return null;
+    final parsed = StructuredMessage.parse(message.text);
+    if (parsed is! TraxMessage) return null;
+    final index = message.channelIndex;
     final channel = _connector.channels
         .where((c) => c.index == index)
         .firstOrNull;
     // Public, hashtag and other channels anyone can read never ask.
-    if (channel == null || !channel.isPrivate) return;
+    if (channel == null || !channel.isPrivate) return null;
     if (parsed.on) {
       final end = parsed.until;
-      if (isOn || end == null || !end.isAfter(_clock())) return;
-      _ask(
-        TraxFollowPrompt(e.message.senderName, parsed, channel),
-        'on ${e.message.senderName} ${parsed.toWire()}',
-      );
-    } else if (isOn) {
-      _ask(
-        TraxLeavePrompt(e.message.senderName),
-        'off ${e.message.senderName}',
-      );
+      if (isOn || end == null || !end.isAfter(_clock())) return null;
+      return TraxFollowPrompt(message.senderName, parsed, channel);
+    }
+    return isOn ? TraxLeavePrompt(message.senderName) : null;
+  }
+
+  /// Switch too or Leave too on [message]'s notification, where TRAX mode
+  /// asks about it ([MeshCoreConnector.traxActionFor]).
+  String? notificationAction(
+    ChannelMessage message, {
+    required bool fromBacklog,
+  }) => switch (_promptFor(message, fromBacklog: fromBacklog)) {
+    TraxFollowPrompt() => NotificationService.traxFollowAction,
+    TraxLeavePrompt() => NotificationService.traxLeaveAction,
+    _ => null,
+  };
+
+  /// The latest TRAX message heard live on each channel.
+  final _latest = <int, ChannelMessage>{};
+
+  /// What the latest TRAX message on channel [index] asks now, for its
+  /// notification's button: null once it no longer fits.
+  TraxPrompt? askedOn(int index) {
+    final message = _latest[index];
+    return message == null ? null : _promptFor(message);
+  }
+
+  void _onChannelMessage(({ChannelMessage message, bool fromBacklog}) e) {
+    final m = e.message;
+    if (e.fromBacklog || StructuredMessage.parse(m.text) is! TraxMessage) {
+      return;
+    }
+    if (m.channelIndex case final index?) _latest[index] = m;
+    final prompt = _promptFor(m);
+    if (prompt is TraxFollowPrompt) {
+      _ask(prompt, 'on ${prompt.sender} ${prompt.message.toWire()}');
+    } else if (prompt is TraxLeavePrompt) {
+      _ask(prompt, 'off ${prompt.sender}');
     }
   }
 
@@ -571,6 +619,7 @@ class TraxService extends ChangeNotifier {
       _radioKey = null;
       _allowed = null;
       _heardSince = null;
+      _latest.clear();
     } else {
       final key = c.selfPublicKeyHex;
       if (key.isNotEmpty &&

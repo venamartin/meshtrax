@@ -453,6 +453,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Stream<({ChannelMessage message, bool fromBacklog})> get channelMessagesIn =>
       _channelMessagesInController.stream;
 
+  /// TRAX mode's button on a channel message's notification, by action id
+  /// ([NotificationService.traxFollowAction]), or null. Wired by the app.
+  String? Function(ChannelMessage message, {required bool fromBacklog})?
+  traxActionFor;
+
   final StreamController<SensorPush> _sensorPushController =
       StreamController<SensorPush>.broadcast();
 
@@ -8573,6 +8578,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       channelIndex: channelIndex,
       badgeCount: getTotalUnreadCount(),
       mentionMessageId: isMention ? message.messageId : null,
+      traxAction: traxActionFor?.call(message, fromBacklog: fromBacklog),
     );
   }
 

@@ -129,6 +129,8 @@ void main() async {
   await syncPathGraph();
 
   final traxService = TraxService(connector, background: backgroundService);
+  // A member's TRAX message gets Switch too or Leave too on its notification.
+  connector.traxActionFor = traxService.notificationAction;
 
   // Offline map packs: cached catalogue, installed packs, and downloads
   // restored from the last run. Pack storage doesn't exist on the web.
@@ -272,7 +274,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     final navigator = NotificationService.navigatorKey.currentState;
     if (navigator == null) return;
     final connector = widget.connector;
-    // A TRAX notification asks its question again while it still fits.
+    // TRAX mode's reminder, and Switch too or Leave too on a member's TRAX
+    // message, ask their question again while it still fits.
     final payload = _trax.onTap(tapped);
     if (payload == null) return;
 

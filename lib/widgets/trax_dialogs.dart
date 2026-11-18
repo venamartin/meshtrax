@@ -214,11 +214,24 @@ class TraxQuestions {
     );
   }
 
-  /// A notification's tap: null when it was TRAX mode's reminder, which
-  /// asks again; else the payload to open as usual.
+  /// A notification's tap: null when TRAX mode asked its question again;
+  /// else the payload to open as usual. A Switch too or Leave too that no
+  /// longer fits opens its chat, as a tap would.
   String? onTap(String tapped) {
-    if (tapped != NotificationService.traxEndedPayload) return tapped;
-    if (trax.tripEndedPrompt case final prompt?) ask(prompt);
+    if (tapped == NotificationService.traxEndedPayload) {
+      if (trax.tripEndedPrompt case final prompt?) ask(prompt);
+      return null;
+    }
+    final follow = tapped.startsWith('traxfollow:');
+    if (!follow && !tapped.startsWith('traxleave:')) return tapped;
+    final payload = tapped.substring(tapped.indexOf(':') + 1);
+    final index = NotificationService.channelIndexOf(payload);
+    final prompt = index == null ? null : trax.askedOn(index);
+    final fits = follow
+        ? prompt is TraxFollowPrompt
+        : prompt is TraxLeavePrompt;
+    if (prompt == null || !fits) return payload;
+    ask(prompt);
     return null;
   }
 }

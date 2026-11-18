@@ -574,6 +574,41 @@ void main() {
         expect(prompts.single, isA<TraxLeavePrompt>());
       },
     );
+
+    // A phone in a pocket hears only the notification.
+    test('its notification gets the same button, which asks again while '
+        'it fits', () async {
+      String? button(String text, Channel channel, {bool backlog = false}) =>
+          trax.notificationAction(
+            _from('Bo', text, channel),
+            fromBacklog: backlog,
+          );
+      final over = TraxMessage.switching(
+        until: DateTime.now().subtract(const Duration(hours: 1)),
+        preset: const LoRaParams(freqKhz: 918000, bwHz: 62500, sf: 7, cr: 5),
+      ).toWire();
+
+      expect(button(on, _trip), NotificationService.traxFollowAction);
+      expect(button(on, _public), isNull);
+      expect(button(on, _hashtag), isNull);
+      expect(button(on, _trip, backlog: true), isNull);
+      expect(button(over, _trip), isNull, reason: 'after its end');
+      expect(button('TRAX: off', _trip), isNull, reason: 'not on TRAX');
+      expect(button('Meet at the trailhead', _trip), isNull);
+
+      expect(trax.askedOn(_trip.index), isNull, reason: 'nothing heard');
+      receive(on, _trip);
+      await _settle();
+      expect(trax.askedOn(_trip.index), prompts.single);
+
+      await trax.start(tellGroup: false);
+      expect(trax.askedOn(_trip.index), isNull, reason: 'on TRAX now');
+      expect(button(on, _trip), isNull);
+      expect(button('TRAX: off', _trip), NotificationService.traxLeaveAction);
+      receive('TRAX: off', _trip);
+      await _settle();
+      expect(trax.askedOn(_trip.index), const TraxLeavePrompt('Bo'));
+    });
   });
 
   test('the group check lists who was heard on TRAX', () async {

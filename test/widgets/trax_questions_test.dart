@@ -1,9 +1,16 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/models/radio_settings.dart';
 import 'package:meshtrax/models/trax.dart';
 import 'package:meshtrax/services/notification_service.dart';
 import 'package:meshtrax/services/trax_service.dart';
@@ -17,7 +24,23 @@ class _Radio extends MeshCoreConnector {
   _Radio({this.repeat = false});
 
   bool repeat;
+  final sent = <Uint8List>[];
+  final incoming =
+      StreamController<
+        ({ChannelMessage message, bool fromBacklog})
+      >.broadcast();
 
+  @override
+  Stream<({ChannelMessage message, bool fromBacklog})> get channelMessagesIn =>
+      incoming.stream;
+  @override
+  List<Channel> get channels => [_trip];
+  @override
+  Future<void> sendFrame(
+    Uint8List data, {
+    String? channelSendQueueId,
+    bool expectsGenericAck = false,
+  }) async => sent.add(data);
   @override
   bool get isConnected => true;
   @override
@@ -37,7 +60,25 @@ class _Radio extends MeshCoreConnector {
   @override
   Future<List<({int lowerKhz, int upperKhz})>?>
   getAllowedRepeatFrequencies() async => null;
+
+  void hear(String sender, String text) => incoming.add((
+    message: ChannelMessage(
+      senderKey: null,
+      senderName: sender,
+      text: text,
+      timestamp: DateTime.now(),
+      isOutgoing: false,
+      channelIndex: _trip.index,
+    ),
+    fromBacklog: false,
+  ));
 }
+
+final _trip = Channel(
+  index: 1,
+  name: 'Desert trip',
+  psk: Uint8List.fromList(List.generate(16, (i) => 0x40 + i)),
+);
 
 void main() {
   setUp(() async {
@@ -46,8 +87,8 @@ void main() {
     await PrefsManager.initialize();
   });
 
-  /// TRAX mode over a home screen; the test disposes [TraxService], whose
-  /// timer must not outlive it.
+  /// TRAX mode over a home screen, wired as the app wires it; the test
+  /// disposes [TraxService], whose timer must not outlive it.
   Future<(TraxService, TraxQuestions)> pump(
     WidgetTester tester,
     _Radio radio,
@@ -62,7 +103,9 @@ void main() {
         home: const Scaffold(body: Text('Map')),
       ),
     );
-    return (trax, TraxQuestions(trax, key));
+    final questions = TraxQuestions(trax, key);
+    trax.prompts.listen(questions.ask);
+    return (trax, questions);
   }
 
   final stillOn = find.textContaining('still in TRAX mode');
@@ -110,6 +153,72 @@ void main() {
     expect(questions.onTap(NotificationService.traxEndedPayload), isNull);
     await tester.pumpAndSettle();
     expect(stillOn, findsNothing, reason: 'the radio left TRAX mode');
+    trax.dispose();
+  });
+
+  final on = TraxMessage.switching(
+    until: DateTime.now().add(const Duration(days: 1)),
+    preset: const LoRaParams(freqKhz: 918000, bwHz: 62500, sf: 7, cr: 5),
+  ).toWire();
+  final switchToo = find.textContaining('Switch too?');
+
+  testWidgets('Switch too asks the member\'s question, once, and switches '
+      'nothing', (tester) async {
+    final radio = _Radio();
+    final (trax, questions) = await pump(tester, radio);
+    radio.hear('Ana', on);
+    await tester.pumpAndSettle();
+    expect(switchToo, findsOneWidget, reason: 'put up as it came');
+
+    expect(questions.onTap('traxfollow:channel:1'), isNull);
+    await tester.pumpAndSettle();
+    expect(switchToo, findsOneWidget, reason: 'not stacked on itself');
+
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(switchToo, findsNothing);
+    expect(questions.onTap('traxfollow:channel:1'), isNull);
+    await tester.pumpAndSettle();
+    expect(switchToo, findsOneWidget, reason: 'asked again');
+    expect(radio.sent, isEmpty, reason: 'only its own button switches');
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    // Ana left again: her old button opens the chat instead.
+    radio.hear('Ana', 'TRAX: off');
+    await tester.pumpAndSettle();
+    expect(questions.onTap('traxfollow:channel:1'), 'channel:1');
+    await tester.pumpAndSettle();
+    expect(switchToo, findsNothing);
+    trax.dispose();
+  });
+
+  testWidgets('Leave too asks while this radio is on TRAX', (tester) async {
+    final radio = _Radio(repeat: true);
+    final (trax, questions) = await pump(tester, radio);
+    final leaveToo = find.textContaining('Leave too?');
+    radio.hear('Bo', 'TRAX: off');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsNothing);
+
+    expect(questions.onTap('traxleave:mention:1:m1'), isNull);
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsOneWidget);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(
+      questions.onTap('traxfollow:channel:1'),
+      'channel:1',
+      reason: 'a Switch too that no longer fits',
+    );
+    expect(questions.onTap('traxleave:channel:7'), 'channel:7');
+    radio.repeat = false;
+    expect(questions.onTap('traxleave:channel:1'), 'channel:1');
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsNothing);
     trax.dispose();
   });
 }
