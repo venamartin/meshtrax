@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart' show MaterialPageRoute;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/reaction_helper.dart';
@@ -62,9 +66,17 @@ class NotificationService {
   // Locale for localized notification strings
   Locale _locale = const Locale('en');
 
+  /// The app's language is known from its first frame on; a time can't be
+  /// written in it before.
+  bool _localeKnown = false;
+
   /// Set the locale for notification strings (call when app locale changes)
   void setLocale(Locale locale) {
+    final changed = !_localeKnown || locale != _locale;
     _locale = locale;
+    _localeKnown = true;
+    // The user's own SOS in the shade speaks the app's language.
+    if (changed) unawaited(_postMySos());
   }
 
   AppLocalizations get _l10n => lookupAppLocalizations(_locale);
@@ -455,6 +467,106 @@ class NotificationService {
   static int sosNotificationId(String chatKey, String senderName) =>
       (('sos|$chatKey|$senderName').hashCode & 0x3FFFFFFF) | 0x40000000;
 
+  /// The category the user's own SOS shows on while it lasts (Android):
+  /// quiet and ongoing. Never [sosChannelId], which is the alarm.
+  static const mySosChannelId = 'meshtrax_my_sos';
+
+  /// Below zero, clear of every other notification's id.
+  static const mySosNotificationId = -0x534F53; // 'SOS'
+
+  @visibleForTesting
+  static AndroidNotificationDetails mySosAndroidDetails(
+    AppLocalizations l10n,
+  ) => AndroidNotificationDetails(
+    mySosChannelId,
+    l10n.notification_mySosChannel,
+    channelDescription: l10n.notification_mySosChannelDescription,
+    importance: Importance.low,
+    priority: Priority.low,
+    playSound: false,
+    enableVibration: false,
+    ongoing: true,
+    autoCancel: false,
+    onlyAlertOnce: true,
+    visibility: NotificationVisibility.public,
+  );
+
+  /// The user's own SOS as [showMySos] last had it, to word it again in
+  /// another language.
+  ({
+    String Function(AppLocalizations l10n, String Function(DateTime) time)
+    status,
+    String chat,
+    int? channelIndex,
+  })?
+  _mySos;
+
+  /// What its notification says now: one that would say the same is not
+  /// posted again.
+  (String, String, String?)? _mySosShown;
+
+  /// The user's own SOS in the shade while it lasts, on a quiet category of
+  /// its own: [status] words it as the Chats and Map screens do, [chat] is
+  /// where it went, and a tap opens channel [channelIndex]. Android only:
+  /// iOS keeps no ongoing notification, and the screens show it there.
+  Future<void> showMySos(
+    String Function(AppLocalizations l10n, String Function(DateTime) time)
+    status, {
+    required String chat,
+    int? channelIndex,
+  }) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    _mySos = (status: status, chat: chat, channelIndex: channelIndex);
+    await _postMySos();
+  }
+
+  /// Takes the user's own SOS out of the shade: it ended.
+  Future<void> cancelMySos() async {
+    if (_mySos == null) return;
+    _mySos = null;
+    _mySosShown = null;
+    await cancel(mySosNotificationId);
+  }
+
+  Future<void> _postMySos() async {
+    final mine = _mySos;
+    if (mine == null || !_localeKnown) return;
+    final l10n = _l10n;
+    final title = mine.status(l10n, (t) => DateTimeHelper.timeIn(_locale, t));
+    final index = mine.channelIndex;
+    final payload = index == null ? null : 'channel:$index';
+    final shown = (title, mine.chat, payload);
+    if (shown == _mySosShown) return;
+    _mySosShown = shown;
+    // Opening the app clears the other notifications, not this one.
+    _kept.add(mySosNotificationId);
+    debugOnShow?.call(
+      ShownNotification(
+        channelId: mySosChannelId,
+        id: mySosNotificationId,
+        title: title,
+        body: mine.chat,
+        payload: payload,
+        silent: true,
+      ),
+    );
+    if (!await _ensureInitialized()) return;
+    if (Platform.isWindows || Platform.isLinux) return;
+    try {
+      await _notifications.show(
+        id: mySosNotificationId,
+        title: title,
+        body: mine.chat,
+        notificationDetails: NotificationDetails(
+          android: mySosAndroidDetails(l10n),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Failed to show my SOS notification: $e');
+    }
+  }
+
   /// Format special message types for human-readable notifications.
   /// Markdown is stripped unless [formatting] is off; notifications always
   /// strip it so a spoiler never shows on the lock screen.
@@ -619,7 +731,7 @@ class NotificationService {
   }
 
   /// Notifications [cancelAll] leaves up: an SOS alert whose Got it was
-  /// tapped, until Got it went ([cancelSos]).
+  /// tapped, until Got it went ([cancelSos]), and the user's own SOS.
   final Set<int> _kept = {};
 
   @visibleForTesting

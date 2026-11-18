@@ -1,13 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show Locale;
 
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/helpers/date_time_helper.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
@@ -512,22 +517,23 @@ void main() {
     }, channels: [_public, _trip, _other]);
   });
 
-  group('the app closed and opened again', () {
-    void saved(DateTime lastSent, {SosPhase phase = SosPhase.active}) {
-      final sos = ActiveSos(
-        channelIdKey: _trip.idKey,
-        channelName: 'trip',
-        messageId: 'row7',
-        text: 'Broken leg',
-        position: _here,
-        startedAt: lastSent.subtract(const Duration(minutes: 4)),
-        lastSentAt: lastSent,
-        phase: phase,
-        gotIt: const ['Ann'],
-      );
-      PrefsManager.instance.setString('active_sos', jsonEncode(sos.toJson()));
-    }
+  /// An SOS an earlier run of the app left, last sent at [lastSent].
+  void saved(DateTime lastSent, {SosPhase phase = SosPhase.active}) {
+    final sos = ActiveSos(
+      channelIdKey: _trip.idKey,
+      channelName: 'trip',
+      messageId: 'row7',
+      text: 'Broken leg',
+      position: _here,
+      startedAt: lastSent.subtract(const Duration(minutes: 4)),
+      lastSentAt: lastSent,
+      phase: phase,
+      gotIt: const ['Ann'],
+    );
+    PrefsManager.instance.setString('active_sos', jsonEncode(sos.toJson()));
+  }
 
+  group('the app closed and opened again', () {
     test('within 30 minutes of its last send, it carries on by itself', () {
       onClock((async, sos, radio) {
         saved(start.subtract(const Duration(minutes: 10)));
@@ -579,6 +585,108 @@ void main() {
       expect(saved.publicMessageId, 'row1');
       expect(saved.lastSentAt, start);
       expect(saved.text, 'Broken leg');
+    });
+  });
+
+  // Martin's field review, 2026-11-18: on Chats or the Map nothing showed
+  // that my SOS was still going. Android keeps it in the shade too.
+  group('in the notification shade', () {
+    final shown = <ShownNotification>[];
+    final cleared = <int>[];
+    final systemFormats = DateTimeHelper.systemFormats;
+    final dispatcher = TestWidgetsFlutterBinding.instance.platformDispatcher;
+
+    setUpAll(initializeDateFormatting);
+
+    setUp(() {
+      // Times as a US phone writes them, whatever machine runs the tests.
+      DateTimeHelper.systemFormats = () => null;
+      dispatcher.localesTestValue = const [Locale('en', 'US')];
+      NotificationService().setLocale(const Locale('en'));
+      shown.clear();
+      cleared.clear();
+      NotificationService.debugOnShow = shown.add;
+      NotificationService.debugOnCancel = cleared.add;
+    });
+
+    tearDown(() {
+      DateTimeHelper.systemFormats = systemFormats;
+      dispatcher.clearAllTestValues();
+      NotificationService.debugOnShow = null;
+      NotificationService.debugOnCancel = null;
+    });
+
+    List<String> mine() => [
+      for (final n in shown)
+        if (n.channelId == NotificationService.mySosChannelId) n.title,
+    ];
+
+    test('quiet, with when it last went, and gone when the SOS is', () {
+      onClock((async, sos, radio) {
+        sos.start(_trip, _request(alsoPublic: false));
+        async.flushMicrotasks();
+        expect(mine(), [
+          'Your SOS is active · waiting for the radio',
+          matches(RegExp(r'^Your SOS is active · last sent 2:00\sPM$')),
+        ]);
+        final first = shown.last;
+        expect(first.id, NotificationService.mySosNotificationId);
+        expect(first.body, 'trip');
+        expect(first.payload, 'channel:1', reason: 'a tap opens its chat');
+        expect(first.silent, isTrue);
+
+        async.elapse(const Duration(minutes: 2, seconds: 5));
+        expect(mine().last, matches(RegExp(r'last sent 2:02\sPM$')));
+
+        radio.rows(_trip, [_reply('Ann', 'row0', minutes: 3)]);
+        async.flushMicrotasks();
+        expect(mine(), hasLength(3), reason: 'a Got it changes no words');
+
+        radio.connected = false;
+        sos.cancel();
+        async.flushMicrotasks();
+        expect(mine().last, 'SOS cancelled · waiting for the radio');
+        expect(cleared, isEmpty);
+
+        radio.connected = true;
+        async.elapse(const Duration(seconds: 6));
+        expect(sos.current, isNull);
+        expect(cleared, [NotificationService.mySosNotificationId]);
+      });
+    });
+
+    test('after a long break it says it stopped, until Send again', () {
+      onClock((async, sos, radio) {
+        saved(start.subtract(const Duration(hours: 3)));
+        sos.restore();
+        async.flushMicrotasks();
+        expect(mine(), ['Your SOS stopped · Send again']);
+
+        sos.resume();
+        async.flushMicrotasks();
+        expect(mine().last, matches(RegExp(r'last sent 2:00\sPM$')));
+      });
+    });
+
+    test('in the app\'s language, once it is known', () {
+      onClock((async, sos, radio) {
+        sos.start(_trip, _request(alsoPublic: false));
+        async.flushMicrotasks();
+        NotificationService().setLocale(const Locale('de'));
+        async.flushMicrotasks();
+        expect(mine().last, 'Ihr SOS ist aktiv · zuletzt gesendet 14:00');
+        NotificationService().setLocale(const Locale('en'));
+      });
+    });
+
+    test('not on an iPhone, which keeps no ongoing notification', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      onClock((async, sos, radio) {
+        sos.start(_trip, _request(alsoPublic: false));
+        async.flushMicrotasks();
+        expect(mine(), isEmpty);
+      });
     });
   });
 }

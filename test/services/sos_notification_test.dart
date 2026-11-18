@@ -107,6 +107,40 @@ void main() {
     expect(shade.keeps(id), isFalse, reason: 'nothing left to answer');
   });
 
+  // Martin's field review, 2026-11-18: my own SOS shows while it lasts,
+  // quietly, on Android, where a notification can stay.
+  test('my own SOS has a quiet category of its own, never the alarm', () {
+    final mine = NotificationService.mySosAndroidDetails(l10n);
+    expect(mine.channelId, 'meshtrax_my_sos');
+    expect(mine.channelId, isNot(NotificationService.sosChannelId));
+    expect(mine.channelName, 'Your SOS');
+    expect(mine.importance, Importance.low);
+    expect(mine.playSound, isFalse);
+    expect(mine.enableVibration, isFalse);
+    expect(mine.ongoing, isTrue);
+    expect(mine.autoCancel, isFalse, reason: 'a tap opens its chat');
+    expect(mine.audioAttributesUsage, AudioAttributesUsage.notification);
+    expect(mine.category, isNull);
+    expect(
+      NotificationService.mySosNotificationId,
+      isNegative,
+      reason: 'every other notification has an id of 0 or more',
+    );
+  });
+
+  test('my own SOS stays when the app opens, until it ends', () async {
+    final shade = NotificationService()..setLocale(const Locale('en'));
+    const id = NotificationService.mySosNotificationId;
+    await shade.showMySos(
+      (l10n, time) => l10n.sos_stoppedSendAgain,
+      chat: 'trip',
+      channelIndex: 1,
+    );
+    expect(shade.keeps(id), isTrue);
+    await shade.cancelMySos();
+    expect(shade.keeps(id), isFalse);
+  });
+
   test('channel messages keep their own category', () {
     final plain = NotificationService.channelAndroidDetails(l10n);
     expect(plain.channelId, 'meshtrax_channels');

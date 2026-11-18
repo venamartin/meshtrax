@@ -4924,6 +4924,20 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return 'SOS 활성화됨 · 마지막 전송 $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'SOS 활성화됨 · 무전기를 기다리는 중';
+
+  @override
+  String get sos_stoppedSendAgain => 'SOS가 멈췄습니다 · 다시 보내기';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS가 취소되었습니다 · 무전기를 기다리는 중';
+
+  @override
   String get notification_sosChannel => 'SOS 알림';
 
   @override
@@ -4938,6 +4952,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name이(가) SOS를 취소함';
   }
+
+  @override
+  String get notification_mySosChannel => '내 SOS';
+
+  @override
+  String get notification_mySosChannelDescription => '활성화된 동안의 내 SOS';
 
   @override
   String get appSettings_sosAlerts => 'SOS 알림';

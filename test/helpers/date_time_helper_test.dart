@@ -60,6 +60,20 @@ void main() {
     expect(DateTimeHelper.dayMonth(ctx, t), '11/3');
   });
 
+  // A notification has no screen to ask: the app's language, and the
+  // phone's own 24-hour switch.
+  testWidgets('a notification writes times the same way', (tester) async {
+    await on(tester, 'en', const Locale('en', 'GB'));
+    expect(DateTimeHelper.timeIn(const Locale('en'), t), '14:22');
+    await on(tester, 'en', const Locale('en', 'US'));
+    expect(
+      DateTimeHelper.timeIn(const Locale('en'), t),
+      matches(RegExp(r'^2:22\sPM$')),
+    );
+    tester.platformDispatcher.alwaysUse24HourFormatTestValue = true;
+    expect(DateTimeHelper.timeIn(const Locale('en'), t), '14:22');
+  });
+
   testWidgets('the app in another language writes that language\'s way',
       (tester) async {
     final ctx = await on(tester, 'de', const Locale('en', 'US'));

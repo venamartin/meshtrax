@@ -5144,6 +5144,20 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return 'Vaš SOS je aktiven · nazadnje poslano $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Vaš SOS je aktiven · čaka na radio';
+
+  @override
+  String get sos_stoppedSendAgain => 'Vaš SOS se je ustavil · Pošlji znova';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS preklican · čaka na radio';
+
+  @override
   String get notification_sosChannel => 'Opozorila SOS';
 
   @override
@@ -5159,6 +5173,13 @@ class AppLocalizationsSl extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name je preklical(a) SOS';
   }
+
+  @override
+  String get notification_mySosChannel => 'Vaš SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Vaš lastni SOS, dokler je aktiven';
 
   @override
   String get appSettings_sosAlerts => 'Opozorila SOS';

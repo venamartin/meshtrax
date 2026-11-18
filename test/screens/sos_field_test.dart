@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
@@ -24,11 +25,14 @@ import 'package:meshtrax/services/sos_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/widgets/active_sos_bar.dart';
+import 'package:meshtrax/widgets/active_sos_strip.dart';
+import 'package:meshtrax/widgets/quick_switch_bar.dart';
 
 import '../helpers/map_fakes.dart';
 
 // Martin's field review, 2026-11-18, for desert trips with no cell service:
-// Got it never fails silently.
+// Got it never fails silently, and my own SOS shows wherever I am.
 final _trip = Channel(
   index: 1,
   name: '#trip',
@@ -80,6 +84,21 @@ class _Radio extends MeshCoreConnector {
   }
 }
 
+/// The SOS service with my own SOS as [show] puts it: nothing goes out.
+class _MySos extends SosService {
+  _MySos(super.connector);
+
+  ActiveSos? mine;
+
+  @override
+  ActiveSos? get current => mine;
+
+  void show(ActiveSos? sos) {
+    mine = sos;
+    notifyListeners();
+  }
+}
+
 class _NoDownloads implements PackDownloader {
   @override
   Stream<PackDownload> get updates => const Stream.empty();
@@ -104,6 +123,7 @@ Future<void> tapLands(WidgetTester tester) =>
 void main() {
   late Directory tmp;
   late MapPacksService maps;
+  late _MySos sos;
   final cleared = <int>[];
   final annAlert = NotificationService.sosNotificationId(_trip.idKey, 'Ann');
   const notConnected = 'Not connected to a radio. Message not sent.';
@@ -133,12 +153,13 @@ void main() {
     WidgetTester tester,
     Widget screen, {
     bool connected = true,
+    ActiveSos? mine,
   }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     final radio = _Radio()..connected = connected;
-    final sos = SosService(radio);
+    sos = _MySos(radio)..mine = mine;
     addTearDown(sos.dispose);
     await tester.pumpWidget(
       MultiProvider(
@@ -150,7 +171,7 @@ void main() {
           ChangeNotifierProvider.value(value: PathGraphService()),
           ChangeNotifierProvider.value(value: MessageRetryService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
-          ChangeNotifierProvider.value(value: sos),
+          ChangeNotifierProvider<SosService>.value(value: sos),
         ],
         child: MaterialApp(
           navigatorObservers: [NotificationService.routeObserver],
@@ -230,6 +251,105 @@ void main() {
       );
       expect(radio.sent, isEmpty);
       expect(cleared, isEmpty);
+    });
+  });
+
+  group('my SOS on the Chats and Map screens', () {
+    final lastSent = DateTime(2026, 11, 18, 14, 6);
+    ActiveSos mine(SosPhase phase, {DateTime? at}) => ActiveSos(
+      channelIdKey: _trip.idKey,
+      channelName: _trip.displayName,
+      messageId: 'mine0',
+      text: 'Broken leg',
+      position: const LatLng(36.46, -116.87),
+      startedAt: DateTime(2026, 11, 18, 14),
+      lastSentAt: at,
+      phase: phase,
+    );
+
+    /// The bar the Chats and Map screens share, at the bottom.
+    Widget chats() => Scaffold(
+      body: const SizedBox.expand(),
+      bottomNavigationBar: QuickSwitchBar(
+        selectedIndex: 0,
+        onDestinationSelected: (_) {},
+      ),
+    );
+
+    final strip = find.byType(ActiveSosStrip);
+    Finder line(Pattern text) =>
+        find.descendant(of: strip, matching: find.textContaining(text));
+
+    testWidgets('says in one line how it stands, in red', (tester) async {
+      await pump(tester, chats(), mine: mine(SosPhase.active, at: lastSent));
+      expect(
+        line(RegExp(r'^Your SOS is active · last sent 2:06\sPM$')),
+        findsOneWidget,
+      );
+      final text = find.descendant(of: strip, matching: find.byType(Text));
+      expect(tester.widget<Text>(text).maxLines, 1);
+      final scheme = Theme.of(tester.element(strip)).colorScheme;
+      expect(
+        tester
+            .widget<Material>(
+              find.descendant(of: strip, matching: find.byType(Material)),
+            )
+            .color,
+        scheme.errorContainer,
+        reason: 'as the bar in its chat',
+      );
+
+      sos.show(mine(SosPhase.active));
+      await tester.pump();
+      expect(
+        line('Your SOS is active · waiting for the radio'),
+        findsOneWidget,
+      );
+
+      sos.show(mine(SosPhase.stopped, at: lastSent));
+      await tester.pump();
+      expect(line('Your SOS stopped · Send again'), findsOneWidget);
+
+      sos.show(mine(SosPhase.cancelling, at: lastSent));
+      await tester.pump();
+      expect(line('SOS cancelled · waiting for the radio'), findsOneWidget);
+
+      sos.show(null);
+      await tester.pump();
+      expect(text, findsNothing);
+    });
+
+    testWidgets('never cuts its line short, even in large type', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(tester, chats(), mine: mine(SosPhase.active, at: lastSent));
+      final text = find.descendant(of: strip, matching: find.byType(Text));
+      expect(
+        tester.renderObject<RenderParagraph>(text).didExceedMaxLines,
+        isFalse,
+      );
+      expect(
+        tester.getRect(text).right,
+        lessThanOrEqualTo(
+          tester.getRect(find.byIcon(Icons.chevron_right)).left,
+        ),
+        reason: 'the time, last, stays in sight',
+      );
+    });
+
+    testWidgets('a tap opens its chat, with the full bar there and no strip', (
+      tester,
+    ) async {
+      await pump(tester, chats(), mine: mine(SosPhase.active, at: lastSent));
+      await tester.tap(strip);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(ChannelChatScreen), findsOneWidget);
+      expect(find.byType(ActiveSosBar), findsOneWidget);
+      expect(find.text('Your SOS is active'), findsOneWidget);
+      expect(strip, findsNothing);
     });
   });
 }

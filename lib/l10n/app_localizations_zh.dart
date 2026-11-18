@@ -4805,6 +4805,20 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return '您的 SOS 正在发送 · 上次发送 $time';
+  }
+
+  @override
+  String get sos_activeWaiting => '您的 SOS 正在发送 · 正在等待电台';
+
+  @override
+  String get sos_stoppedSendAgain => '您的 SOS 已停止 · 再次发送';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS 已取消 · 正在等待电台';
+
+  @override
   String get notification_sosChannel => 'SOS 警报';
 
   @override
@@ -4819,6 +4833,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name 已取消 SOS';
   }
+
+  @override
+  String get notification_mySosChannel => '您的 SOS';
+
+  @override
+  String get notification_mySosChannelDescription => '您自己的 SOS，在发送期间显示';
 
   @override
   String get appSettings_sosAlerts => 'SOS 警报';

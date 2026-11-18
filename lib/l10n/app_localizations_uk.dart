@@ -5171,6 +5171,20 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return 'Ваш SOS активний · останнє надсилання $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Ваш SOS активний · чекаємо на рацію';
+
+  @override
+  String get sos_stoppedSendAgain => 'Ваш SOS зупинився · Надіслати знову';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS скасовано · чекаємо на рацію';
+
+  @override
   String get notification_sosChannel => 'SOS-сповіщення';
 
   @override
@@ -5186,6 +5200,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name скасував(ла) SOS';
   }
+
+  @override
+  String get notification_mySosChannel => 'Ваш SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Ваш власний SOS, поки він активний';
 
   @override
   String get appSettings_sosAlerts => 'SOS-сповіщення';

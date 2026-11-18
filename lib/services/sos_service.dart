@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/structured_message.dart';
+import '../l10n/app_localizations.dart';
 import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../storage/prefs_manager.dart';
@@ -89,6 +90,18 @@ class ActiveSos {
 
   SosMessage message([LatLng? at]) =>
       SosMessage(position: at ?? position, text: text, note: note);
+
+  /// How it stands, in one line: on the Chats and Map screens, and in the
+  /// notification shade.
+  String status(AppLocalizations l10n, String Function(DateTime t) time) =>
+      switch (phase) {
+        SosPhase.active => switch (lastSentAt) {
+          final last? => l10n.sos_activeLastSent(time(last)),
+          null => l10n.sos_activeWaiting,
+        },
+        SosPhase.stopped => l10n.sos_stoppedSendAgain,
+        SosPhase.cancelling => l10n.sos_cancelledWaiting,
+      };
 
   ActiveSos copyWith({
     String? messageId,
@@ -174,7 +187,9 @@ class ActiveSos {
 /// phone closed picks it up again ([restore]).
 class SosService extends ChangeNotifier {
   SosService(this._connector, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+    : _now = now ?? DateTime.now {
+    addListener(_showInShade);
+  }
 
   final MeshCoreConnector _connector;
   final DateTime Function() _now;
@@ -391,10 +406,28 @@ class SosService extends ChangeNotifier {
   @override
   void dispose() {
     _stop();
+    unawaited(NotificationService().cancelMySos());
     super.dispose();
   }
 
   // -------------------------------------------------------------------
+
+  /// Every change shows in the notification shade too, while it lasts.
+  void _showInShade() {
+    final sos = _sos;
+    final shade = NotificationService();
+    if (sos == null) {
+      unawaited(shade.cancelMySos());
+      return;
+    }
+    unawaited(
+      shade.showMySos(
+        sos.status,
+        chat: sos.channelName,
+        channelIndex: _channel(sos.channelIdKey)?.index,
+      ),
+    );
+  }
 
   void _run() {
     _ticker ??= Timer.periodic(_tickEvery, (_) => unawaited(_tick()));

@@ -4913,6 +4913,20 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return 'SOSを送信中 · 最終送信 $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'SOSを送信中 · 無線機を待っています';
+
+  @override
+  String get sos_stoppedSendAgain => 'SOSが止まりました · もう一度送信';
+
+  @override
+  String get sos_cancelledWaiting => 'SOSを取り消しました · 無線機を待っています';
+
+  @override
   String get notification_sosChannel => 'SOSアラート';
 
   @override
@@ -4927,6 +4941,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name がSOSを取り消しました';
   }
+
+  @override
+  String get notification_mySosChannel => '自分のSOS';
+
+  @override
+  String get notification_mySosChannelDescription => '送信中の自分のSOS';
 
   @override
   String get appSettings_sosAlerts => 'SOSアラート';

@@ -5161,6 +5161,20 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
+  String sos_activeLastSent(String time) {
+    return 'Az SOS aktív · utoljára elküldve: $time';
+  }
+
+  @override
+  String get sos_activeWaiting => 'Az SOS aktív · várakozás a rádióra';
+
+  @override
+  String get sos_stoppedSendAgain => 'Az SOS leállt · Újraküldés';
+
+  @override
+  String get sos_cancelledWaiting => 'SOS visszavonva · várakozás a rádióra';
+
+  @override
   String get notification_sosChannel => 'SOS-riasztások';
 
   @override
@@ -5176,6 +5190,13 @@ class AppLocalizationsHu extends AppLocalizations {
   String notification_sosCancelledBy(String name) {
     return '$name visszavonta az SOS-t';
   }
+
+  @override
+  String get notification_mySosChannel => 'Saját SOS';
+
+  @override
+  String get notification_mySosChannelDescription =>
+      'Az Ön által küldött SOS, amíg aktív';
 
   @override
   String get appSettings_sosAlerts => 'SOS-riasztások';

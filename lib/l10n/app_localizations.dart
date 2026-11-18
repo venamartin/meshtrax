@@ -8734,6 +8734,30 @@ abstract class AppLocalizations {
   /// **'Sent {time}'**
   String sos_sentAt(String time);
 
+  /// No description provided for @sos_activeLastSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS is active · last sent {time}'**
+  String sos_activeLastSent(String time);
+
+  /// No description provided for @sos_activeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS is active · waiting for the radio'**
+  String get sos_activeWaiting;
+
+  /// No description provided for @sos_stoppedSendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS stopped · Send again'**
+  String get sos_stoppedSendAgain;
+
+  /// No description provided for @sos_cancelledWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS cancelled · waiting for the radio'**
+  String get sos_cancelledWaiting;
+
   /// No description provided for @notification_sosChannel.
   ///
   /// In en, this message translates to:
@@ -8757,6 +8781,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SOS cancelled by {name}'**
   String notification_sosCancelledBy(String name);
+
+  /// No description provided for @notification_mySosChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SOS'**
+  String get notification_mySosChannel;
+
+  /// No description provided for @notification_mySosChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own SOS, while it is active'**
+  String get notification_mySosChannelDescription;
 
   /// No description provided for @appSettings_sosAlerts.
   ///

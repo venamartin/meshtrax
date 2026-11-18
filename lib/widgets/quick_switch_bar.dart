@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../services/app_settings_service.dart';
+import 'active_sos_strip.dart';
 
 /// Chats | Map at the bottom of the screen: a standard bar, edge to edge.
 /// It keeps clear of the system's gesture area itself. Chats carries the
-/// count of unread messages, so new ones show from the map too.
+/// count of unread messages, so new ones show from the map too. Above it,
+/// the user's own SOS while it lasts.
 class QuickSwitchBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -51,7 +53,7 @@ class QuickSwitchBar extends StatelessWidget {
       (connector) => _unmutedUnread(connector, settings),
     );
 
-    return NavigationBarTheme(
+    final bar = NavigationBarTheme(
       data: NavigationBarThemeData(
         indicatorColor: colorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -95,6 +97,10 @@ class QuickSwitchBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [const ActiveSosStrip(), bar],
     );
   }
 }
