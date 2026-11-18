@@ -206,7 +206,7 @@ These apply on the reader's side:
 
 - **No usable `expires=`:** an alert (`wx=`) shows as a card but never pins. In a channel a plain notice with no expiry pins until it is dismissed, so it must not fall back to one.
 - **48 hours:** alerts count as expired 48 hours after they were sent, whatever `expires=` says. Long alerts are sent again with `act=upd`.
-- **Matching:** cancels and updates are matched only against the last 48 hours, the same window as replies and reactions.
+- **Matching:** cancels and updates are matched only against the last 48 hours, the window replies and reactions search first.
 - **Sender times:** a sender time more than 10 minutes ahead of the phone's clock is not believed.
 
 ## Rollout
