@@ -107,10 +107,25 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text("Set the trip's end in TRAX settings."), findsOneWidget);
+    expect(find.text('Trip ends'), findsOneWidget);
+    expect(find.text('Not set'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Switch to TRAX'),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('the sheet\'s buttons clear the navigation bar', (tester) async {
+    tester.view.padding = const FakeViewPadding(bottom: 144);
+    addTearDown(tester.view.resetPadding);
+    await pump(tester, _Radio());
+    await tester.tap(find.byType(IconButton));
+    await tester.pumpAndSettle();
+    final ratio = tester.view.devicePixelRatio;
+    final screen = tester.view.physicalSize.height / ratio;
+    final button = tester.getRect(
+      find.widgetWithText(FilledButton, 'Switch to TRAX'),
+    );
+    expect(button.bottom, lessThanOrEqualTo(screen - 144 / ratio));
   });
 }

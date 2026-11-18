@@ -227,20 +227,11 @@
     }
   },
   "trax_noEnd": "Set the trip's end in TRAX settings.",
-  "trax_tells": "Tells {channel} first, so the others can switch with one tap.",
-  "@trax_tells": {
-    "placeholders": {
-      "channel": {
-        "type": "String"
-      }
-    }
-  },
   "trax_tellsNot": "Doesn't tell the group.",
   "trax_noChannel": "Pick a trip channel in TRAX settings, or turn off Tell the group.",
   "trax_trailhead": "Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.",
   "trax_settings": "TRAX settings",
   "trax_switch": "Switch to TRAX",
-  "trax_onNote": "Nobody on the regular mesh hears you. Your radio relays for the group.",
   "trax_groupCheck": "Group check",
   "trax_heard": "{count, plural, =0{Nobody heard on TRAX yet} other{{count} heard on TRAX: {names}}}",
   "@trax_heard": {
@@ -254,15 +245,6 @@
     }
   },
   "trax_checkAgain": "Check again",
-  "trax_checkHint": "Sends one advert on the TRAX frequency. Members show here as their radios are heard.",
-  "trax_returnsTo": "Leave returns to {settings}.",
-  "@trax_returnsTo": {
-    "placeholders": {
-      "settings": {
-        "type": "String"
-      }
-    }
-  },
   "trax_noSaved": "No saved settings on this phone: Leave asks which preset to return to.",
   "trax_leave": "Leave TRAX",
   "trax_unsupported": "This radio's firmware can't relay for others. Update it to use TRAX mode.",

@@ -495,11 +495,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Stel het einde van de tocht in bij TRAX-instellingen.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Laat het eerst weten in $channel, zodat de anderen met één tik kunnen meewisselen.';
-  }
-
-  @override
   String get trax_tellsNot => 'Laat het de groep niet weten.';
 
   @override
@@ -517,10 +512,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trax_switch => 'Naar TRAX wisselen';
 
   @override
-  String get trax_onNote =>
-      'Niemand op het gewone mesh hoort je. Je radio geeft door voor de groep.';
-
-  @override
   String get trax_groupCheck => 'Groepscheck';
 
   @override
@@ -536,15 +527,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Opnieuw controleren';
-
-  @override
-  String get trax_checkHint =>
-      'Stuurt één aankondiging op de TRAX-frequentie. Leden verschijnen hier zodra hun radio\'s gehoord worden.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '‘TRAX verlaten’ gaat terug naar $settings.';
-  }
 
   @override
   String get trax_noSaved =>

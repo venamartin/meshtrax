@@ -989,12 +989,6 @@ abstract class AppLocalizations {
   /// **'Set the trip\'s end in TRAX settings.'**
   String get trax_noEnd;
 
-  /// No description provided for @trax_tells.
-  ///
-  /// In en, this message translates to:
-  /// **'Tells {channel} first, so the others can switch with one tap.'**
-  String trax_tells(String channel);
-
   /// No description provided for @trax_tellsNot.
   ///
   /// In en, this message translates to:
@@ -1025,12 +1019,6 @@ abstract class AppLocalizations {
   /// **'Switch to TRAX'**
   String get trax_switch;
 
-  /// No description provided for @trax_onNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Nobody on the regular mesh hears you. Your radio relays for the group.'**
-  String get trax_onNote;
-
   /// No description provided for @trax_groupCheck.
   ///
   /// In en, this message translates to:
@@ -1048,18 +1036,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check again'**
   String get trax_checkAgain;
-
-  /// No description provided for @trax_checkHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Sends one advert on the TRAX frequency. Members show here as their radios are heard.'**
-  String get trax_checkHint;
-
-  /// No description provided for @trax_returnsTo.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave returns to {settings}.'**
-  String trax_returnsTo(String settings);
 
   /// No description provided for @trax_noSaved.
   ///

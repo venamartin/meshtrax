@@ -494,11 +494,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_noEnd => 'Adja meg a túra végét a TRAX beállításokban.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Először szól a(z) $channel csatornán, hogy a többiek egy koppintással válthassanak.';
-  }
-
-  @override
   String get trax_tellsNot => 'Nem szól a csoportnak.';
 
   @override
@@ -516,10 +511,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_switch => 'Váltás TRAX-ra';
 
   @override
-  String get trax_onNote =>
-      'A szokásos mesh hálózaton senki sem hallja. A rádiója továbbít a csoportnak.';
-
-  @override
   String get trax_groupCheck => 'Csoportellenőrzés';
 
   @override
@@ -535,15 +526,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Ellenőrzés újra';
-
-  @override
-  String get trax_checkHint =>
-      'Egy bejelentést küld a TRAX frekvencián. A tagok itt jelennek meg, amikor a rádiójuk hallható.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return 'A „Kilépés a TRAX-ból” ide tér vissza: $settings.';
-  }
 
   @override
   String get trax_noSaved =>

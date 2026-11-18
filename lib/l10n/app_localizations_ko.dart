@@ -477,11 +477,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_noEnd => 'TRAX 설정에서 여행 종료 시각을 정하세요.';
 
   @override
-  String trax_tells(String channel) {
-    return '먼저 $channel에 알려서 다른 사람들이 한 번 탭으로 전환할 수 있게 합니다.';
-  }
-
-  @override
   String get trax_tellsNot => '그룹에 알리지 않습니다.';
 
   @override
@@ -496,9 +491,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trax_switch => 'TRAX로 전환';
-
-  @override
-  String get trax_onNote => '일반 메시에서는 아무도 내 소리를 듣지 못합니다. 내 무전기가 그룹을 위해 중계합니다.';
 
   @override
   String get trax_groupCheck => '그룹 확인';
@@ -516,15 +508,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trax_checkAgain => '다시 확인';
-
-  @override
-  String get trax_checkHint =>
-      'TRAX 주파수로 광고를 한 번 보냅니다. 구성원의 무전기가 들리면 여기에 표시됩니다.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '‘TRAX 나가기’는 $settings(으)로 돌아갑니다.';
-  }
 
   @override
   String get trax_noSaved => '이 휴대폰에 저장된 설정이 없습니다. ‘TRAX 나가기’가 돌아갈 프리셋을 묻습니다.';

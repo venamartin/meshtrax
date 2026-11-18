@@ -496,11 +496,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trax_noEnd => 'Nastavte koniec výletu v nastaveniach TRAX.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Najprv to oznámi v $channel, aby sa ostatní mohli prepnúť jedným ťuknutím.';
-  }
-
-  @override
   String get trax_tellsNot => 'Skupine nič neoznámi.';
 
   @override
@@ -518,10 +513,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trax_switch => 'Prepnúť na TRAX';
 
   @override
-  String get trax_onNote =>
-      'Nikto v bežnej sieti mesh vás nepočuje. Vaše rádio preposiela pre skupinu.';
-
-  @override
   String get trax_groupCheck => 'Kontrola skupiny';
 
   @override
@@ -537,15 +528,6 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Skontrolovať znova';
-
-  @override
-  String get trax_checkHint =>
-      'Pošle jedno oznámenie na frekvencii TRAX. Členovia sa tu zobrazia, keď počuť ich rádiá.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '„Opustiť TRAX“ sa vráti na $settings.';
-  }
 
   @override
   String get trax_noSaved =>

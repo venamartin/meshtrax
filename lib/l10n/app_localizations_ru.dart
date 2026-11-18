@@ -495,11 +495,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_noEnd => 'Укажите конец поездки в настройках TRAX.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Сначала сообщает в $channel, чтобы остальные могли переключиться одним касанием.';
-  }
-
-  @override
   String get trax_tellsNot => 'Не сообщает группе.';
 
   @override
@@ -517,10 +512,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_switch => 'Перейти в TRAX';
 
   @override
-  String get trax_onNote =>
-      'В обычной сети mesh вас никто не слышит. Ваше радио ретранслирует для группы.';
-
-  @override
   String get trax_groupCheck => 'Проверка группы';
 
   @override
@@ -536,15 +527,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Проверить снова';
-
-  @override
-  String get trax_checkHint =>
-      'Отправляет один анонс на частоте TRAX. Участники появляются здесь, когда их радио слышно.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '«Выйти из TRAX» вернёт к $settings.';
-  }
 
   @override
   String get trax_noSaved =>

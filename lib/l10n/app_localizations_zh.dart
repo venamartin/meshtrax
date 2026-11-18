@@ -471,11 +471,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_noEnd => '请在 TRAX 设置中设定行程结束时间。';
 
   @override
-  String trax_tells(String channel) {
-    return '先在 $channel 中通知，其他人轻点一下即可跟着切换。';
-  }
-
-  @override
   String get trax_tellsNot => '不通知小组。';
 
   @override
@@ -489,9 +484,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trax_switch => '切换到 TRAX';
-
-  @override
-  String get trax_onNote => '常规网状网络上的人都听不到你。你的电台在为小组转发。';
 
   @override
   String get trax_groupCheck => '小组检查';
@@ -509,14 +501,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trax_checkAgain => '再次检查';
-
-  @override
-  String get trax_checkHint => '在 TRAX 频率上发送一次广播。听到成员的电台后，他们会显示在这里。';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '“退出 TRAX”将恢复为 $settings。';
-  }
 
   @override
   String get trax_noSaved => '这部手机上没有保存的设置：“退出 TRAX”会询问恢复到哪个预设。';

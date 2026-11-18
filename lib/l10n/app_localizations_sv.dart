@@ -492,11 +492,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_noEnd => 'Ange när turen slutar i TRAX-inställningar.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Säger först till i $channel, så att de andra kan byta med ett tryck.';
-  }
-
-  @override
   String get trax_tellsNot => 'Säger inte till gruppen.';
 
   @override
@@ -514,10 +509,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_switch => 'Byt till TRAX';
 
   @override
-  String get trax_onNote =>
-      'Ingen på det vanliga meshet hör dig. Din radio vidarebefordrar åt gruppen.';
-
-  @override
   String get trax_groupCheck => 'Gruppkontroll';
 
   @override
@@ -533,15 +524,6 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Kontrollera igen';
-
-  @override
-  String get trax_checkHint =>
-      'Skickar en annons på TRAX-frekvensen. Medlemmar visas här när deras radior hörs.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '”Lämna TRAX” går tillbaka till $settings.';
-  }
 
   @override
   String get trax_noSaved =>

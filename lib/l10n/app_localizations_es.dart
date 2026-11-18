@@ -496,11 +496,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trax_noEnd => 'Indica el fin de la salida en los ajustes de TRAX.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Avisa primero en $channel, para que los demás puedan cambiar con un toque.';
-  }
-
-  @override
   String get trax_tellsNot => 'No avisa al grupo.';
 
   @override
@@ -518,10 +513,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trax_switch => 'Cambiar a TRAX';
 
   @override
-  String get trax_onNote =>
-      'Nadie en la malla habitual te oye. Tu radio retransmite para el grupo.';
-
-  @override
   String get trax_groupCheck => 'Comprobación del grupo';
 
   @override
@@ -537,15 +528,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Comprobar de nuevo';
-
-  @override
-  String get trax_checkHint =>
-      'Envía un anuncio en la frecuencia TRAX. Los miembros aparecen aquí cuando se oyen sus radios.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '«Salir de TRAX» vuelve a $settings.';
-  }
 
   @override
   String get trax_noSaved =>

@@ -493,11 +493,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get trax_noEnd => 'Вкажіть кінець поїздки в налаштуваннях TRAX.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Спершу повідомляє в $channel, щоб інші могли перемкнутися одним дотиком.';
-  }
-
-  @override
   String get trax_tellsNot => 'Не повідомляє групу.';
 
   @override
@@ -515,10 +510,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get trax_switch => 'Перейти на TRAX';
 
   @override
-  String get trax_onNote =>
-      'У звичайній мережі mesh вас ніхто не чує. Ваше радіо ретранслює для групи.';
-
-  @override
   String get trax_groupCheck => 'Перевірка групи';
 
   @override
@@ -534,15 +525,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Перевірити знову';
-
-  @override
-  String get trax_checkHint =>
-      'Надсилає один анонс на частоті TRAX. Учасники з\'являються тут, коли їхнє радіо чути.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '«Вийти з TRAX» поверне до $settings.';
-  }
 
   @override
   String get trax_noSaved =>

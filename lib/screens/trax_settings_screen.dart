@@ -29,6 +29,9 @@ class TraxSettingsScreen extends StatelessWidget {
     final channel = trax.tripChannel;
     final end = setup.until;
     void save(TraxSetup next) => unawaited(trax.updateSetup(next));
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -40,6 +43,20 @@ class TraxSettingsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
+            // What the TRAX sheet leaves out, to stay short.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.trax_intro),
+                  const SizedBox(height: 8),
+                  Text(l10n.trax_savedNote, style: muted),
+                  const SizedBox(height: 8),
+                  Text(l10n.trax_trailhead, style: muted),
+                ],
+              ),
+            ),
             _header(context, l10n.trax_preset),
             RadioGroup<TraxPresetKind>(
               groupValue: setup.preset,

@@ -489,11 +489,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_noEnd => 'Set the trip\'s end in TRAX settings.';
 
   @override
-  String trax_tells(String channel) {
-    return 'Tells $channel first, so the others can switch with one tap.';
-  }
-
-  @override
   String get trax_tellsNot => 'Doesn\'t tell the group.';
 
   @override
@@ -511,10 +506,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_switch => 'Switch to TRAX';
 
   @override
-  String get trax_onNote =>
-      'Nobody on the regular mesh hears you. Your radio relays for the group.';
-
-  @override
   String get trax_groupCheck => 'Group check';
 
   @override
@@ -530,15 +521,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'Check again';
-
-  @override
-  String get trax_checkHint =>
-      'Sends one advert on the TRAX frequency. Members show here as their radios are heard.';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return 'Leave returns to $settings.';
-  }
 
   @override
   String get trax_noSaved =>

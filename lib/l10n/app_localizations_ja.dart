@@ -476,11 +476,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_noEnd => 'TRAX設定で旅の終了日時を設定してください。';
 
   @override
-  String trax_tells(String channel) {
-    return '先に$channelで知らせるので、ほかのメンバーはワンタップで切り替えられます。';
-  }
-
-  @override
   String get trax_tellsNot => 'グループには知らせません。';
 
   @override
@@ -495,9 +490,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trax_switch => 'TRAXに切り替え';
-
-  @override
-  String get trax_onNote => '通常のメッシュでは誰にも聞こえません。あなたの無線機がグループのために中継します。';
 
   @override
   String get trax_groupCheck => 'グループ確認';
@@ -515,15 +507,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trax_checkAgain => 'もう一度確認';
-
-  @override
-  String get trax_checkHint =>
-      'TRAX周波数でアドバートを1回送信します。メンバーの無線機が聞こえると、ここに表示されます。';
-
-  @override
-  String trax_returnsTo(String settings) {
-    return '「TRAXを終了」で$settingsに戻ります。';
-  }
 
   @override
   String get trax_noSaved => 'この電話に保存された設定がありません。「TRAXを終了」で戻るプリセットを尋ねます。';

@@ -18,7 +18,8 @@ Future<void> showTraxSheet(BuildContext context) => showModalBottomSheet<void>(
 );
 
 /// TRAX mode in one place: off, what one tap changes; on, what the radio
-/// is on, the group check and Leave. Both link to TRAX settings.
+/// is on, the group check and Leave. Both link to TRAX settings, which
+/// explains the rest. Kept short: it is read at the trailhead.
 class TraxSheet extends StatefulWidget {
   const TraxSheet({super.key});
 
@@ -66,7 +67,13 @@ class _TraxSheetState extends State<TraxSheet> {
     final busy = trax.busy;
     final step = trax.step;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      // Clear of Android's navigation bar: the sheet runs behind it.
+      padding: EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -144,10 +151,7 @@ class _TraxSheetState extends State<TraxSheet> {
     final l10n = context.l10n;
     final error = Theme.of(context).colorScheme.error;
     if (!trax.supported) {
-      return [
-        Text(l10n.trax_intro),
-        _note(Icons.error_outline, l10n.trax_unsupported),
-      ];
+      return [_note(Icons.error_outline, l10n.trax_unsupported)];
     }
     final now = trax.current;
     final planned = trax.plannedPreset;
@@ -156,8 +160,6 @@ class _TraxSheetState extends State<TraxSheet> {
     final hasEnd = end != null && end.isAfter(DateTime.now());
     final channel = trax.tripChannel;
     return [
-      Text(l10n.trax_intro),
-      const SizedBox(height: 16),
       if (now != null) _row(context, l10n.trax_now, now.label),
       if (planned != null)
         _row(
@@ -166,18 +168,20 @@ class _TraxSheetState extends State<TraxSheet> {
           '${planned.label}\n${l10n.trax_repeatOn}',
           strong: true,
         ),
-      const SizedBox(height: 8),
-      _note(Icons.save_outlined, l10n.trax_savedNote),
-      hasEnd
-          ? _note(Icons.schedule, l10n.trax_until(traxTimeText(context, end)))
-          : _note(Icons.schedule, l10n.trax_noEnd, color: error),
-      if (!setup.tellGroup)
-        _note(Icons.forum_outlined, l10n.trax_tellsNot)
-      else if (channel == null)
-        _note(Icons.forum_outlined, l10n.trax_noChannel, color: error)
-      else
-        _note(Icons.forum_outlined, l10n.trax_tells(channel.displayName)),
-      _note(Icons.gps_fixed, l10n.trax_trailhead),
+      _row(
+        context,
+        l10n.trax_tripEnds,
+        hasEnd ? traxTimeText(context, end) : l10n.trax_notSet,
+        color: hasEnd ? null : error,
+      ),
+      _row(
+        context,
+        l10n.trax_tripChannel,
+        !setup.tellGroup
+            ? l10n.trax_tellsNot
+            : channel?.displayName ?? l10n.trax_none,
+        color: setup.tellGroup && channel == null ? error : null,
+      ),
     ];
   }
 
@@ -187,7 +191,6 @@ class _TraxSheetState extends State<TraxSheet> {
     final now = trax.current;
     final end = trax.until;
     final heard = trax.heard;
-    final saved = trax.session?.saved;
     return [
       if (end != null)
         Text(
@@ -196,10 +199,8 @@ class _TraxSheetState extends State<TraxSheet> {
         ),
       if (now != null) ...[
         const SizedBox(height: 4),
-        Text('${now.label} · ${l10n.trax_repeatOn}'),
+        Text('${now.label}\n${l10n.trax_repeatOn}'),
       ],
-      const SizedBox(height: 8),
-      Text(l10n.trax_onNote),
       const Divider(height: 32),
       Text(l10n.trax_groupCheck, style: theme.textTheme.titleSmall),
       const SizedBox(height: 4),
@@ -207,53 +208,45 @@ class _TraxSheetState extends State<TraxSheet> {
         l10n.trax_heard(heard.length, heard.map((c) => c.name).join(', ')),
         style: theme.textTheme.bodyLarge,
       ),
-      const SizedBox(height: 4),
-      Text(l10n.trax_checkHint, style: theme.textTheme.bodySmall),
       const SizedBox(height: 8),
       OutlinedButton.icon(
         onPressed: trax.busy ? null : () => _check(trax),
         icon: const Icon(Icons.campaign_outlined),
         label: Text(l10n.trax_checkAgain),
       ),
-      const Divider(height: 32),
-      _note(
-        Icons.restore,
-        saved == null
-            ? l10n.trax_noSaved
-            : l10n.trax_returnsTo(saved.params.label),
-      ),
+      if (trax.session?.saved == null) ...[
+        const SizedBox(height: 8),
+        _note(Icons.restore, l10n.trax_noSaved),
+      ],
     ];
   }
 
+  /// A label over its value, so a long radio setting wraps at its own
+  /// width rather than beside a label column.
   Widget _row(
     BuildContext context,
     String label,
     String value, {
     bool strong = false,
+    Color? color,
   }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 112,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: strong
-                  ? theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    )
-                  : theme.textTheme.bodyMedium,
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: strong ? FontWeight.w600 : null,
+              color: color,
             ),
           ),
         ],
