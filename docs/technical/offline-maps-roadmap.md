@@ -660,6 +660,53 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
   - **Needs the contours pack** of every region the line crosses, drawn or not. They aren't ticked by default since 2026-11-02, so the screen offers to download them where a stretch has none. US only until Canada and Mexico contours are built.
   - **360° sweep from a point:** the same check along rays all round (e.g. every 1°) out to a chosen range, shading where a node at a given height would be seen. Runs off the UI thread.
   - **Credits:** the contours pack's (USGS 3DEP, the GLO-30 notice) instead of Open-Meteo's.
+- **Share a line of sight or a radio reach** (Martin, 2026-11-18: plan, not built). Send a reach or a line from the sheet the way a map pin is shared. The receiver taps it and sees the same reach, or the same line, centred on that position.
+  - **Share the question, not the answer:**
+    - A reach's shading would take many kilobytes; LoRa messages hold about 150 bytes.
+    - So the message carries the centre, the antennas and the frequency, and the receiver's phone works it out offline from its own contours packs, as for a reach of its own. Same packs, same picture.
+    - Without the contours there, the sheet offers the download as it does today.
+  - **A Location card with keys**, so every other app and older MeshTrax still show an ordinary pin, with the keys in the card's footer ([message-format.md](../message-format.md), rules 3 and 5).
+    - A reach:
+      ```
+      Location: Radio reach from Dantes View
+      36.220300, -116.726200
+      reach=6m
+      ```
+      70 bytes.
+    - A line:
+      ```
+      Location: Line of sight to Telescope Peak
+      36.220300, -116.726200
+      los=36.169700, -117.089200
+      ant=6m|to=1.5m
+      ```
+      106 bytes.
+    - Both fit a channel message.
+    - **Keys:**
+      - `reach=` marks a reach and gives the height of the antenna at the pin.
+      - `los=` gives the line's other end. It must be a key: a second bare position line is dropped, because the card keeps the first one.
+      - `ant=` gives the height at the pin for a line.
+      - `to=` gives the other end's antenna. Hand-held (1.5 m) when left out.
+      - `mhz=` gives the sender's frequency, so both phones answer the same question; the receiver's radio's when left out.
+      - `r=30km` is sent only after "Look further".
+    - Heights go on the wire in metres (`ft` is read too) and show in the user's units.
+  - **Sending:**
+    - A Share button in the line of sight sheet, in both modes.
+    - It opens the pin's Location dialog with the title filled in ("Radio reach from …", "Line of sight to …") and an optional note. Then the same chat list as a shared pin, with Public asking first.
+    - A reach from your own position goes out titled `My location`, so it reads "GWQ's radio reach" on the other end.
+  - **Receiving:**
+    - The card shows "Radio reach" or "Line of sight", the antennas and the frequency.
+    - Tapping Show reach (or Show line) opens the Node Map with the sheet set from the card, then works it out.
+    - The receiver can change their own end (for example, to a vehicle antenna) as with any reach.
+    - The reach's "who can be reached" list uses the receiver's own contacts.
+  - **The same, without a message:** a Radio reach action on any Location card and on any shared position. A plain pin already says where; the heights start at the defaults. This may cover much of the need, and is cheap to build first.
+  - **Uses:**
+    - Choosing a repeater site: share a reach from a ridge with a raised antenna before anyone carries it up.
+    - On a trip: "this is where my radio reaches from camp".
+    - Later, in TRAX mode, a reach for any member's shared position from the focus view ([#240](https://github.com/venamartin/meshtrax/pull/240)).
+  - **Safety:**
+    - It's a prediction from the terrain, so the sheet keeps its caveats on the receiver's side as well. They cost no bytes.
+    - A shared reach gives away the position it's centred on, the same as a pin, so Public asks first.
 - Cutting areas on the device
 - Online vector tiles streamed from R2
 - Per-park toggles
