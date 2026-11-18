@@ -234,6 +234,37 @@ void main() {
     });
   });
 
+  test('my SOS in Public is cancelled from its card: once, and it greys', () {
+    onClock((async, sos, radio) {
+      sos.start(_public, _request());
+      async.flushMicrotasks();
+      final card = ChannelMessage(
+        messageId: 'row0',
+        senderName: 'GWQ',
+        text: radio.sent.single.$2,
+        timestamp: DateTime(2026, 11, 18, 10),
+        isOutgoing: true,
+        channelIndex: 0,
+      );
+      bool? done;
+      sos.cancelOnce(_public, card).then((v) => done = v);
+      async.flushMicrotasks();
+      expect(done, isTrue);
+      expect(radio.sent.last, (_public.idKey, 'SOS cancelled'));
+      expect(radio.cancelled, [(_public.idKey, 'row0')]);
+
+      async.elapse(const Duration(minutes: 10));
+      expect(radio.sent, hasLength(2), reason: 'once, never repeated');
+      expect(sos.current, isNull);
+
+      radio.connected = false;
+      sos.cancelOnce(_public, card).then((v) => done = v);
+      async.flushMicrotasks();
+      expect(done, isFalse, reason: 'the radio away: nothing went');
+      expect(radio.sent, hasLength(2));
+    });
+  });
+
   test('an SOS in Public with the radio away says it was not sent', () {
     onClock((async, sos, radio) {
       radio.connected = false;

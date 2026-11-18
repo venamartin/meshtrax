@@ -228,6 +228,32 @@ void main() {
     expect(find.text('Got it (1): Ann'), findsOneWidget);
   });
 
+  // Martin, 2026-11-18: an SOS in Public goes once, with no bar, so its
+  // own card is where it is cancelled.
+  testWidgets('my own card in Public: Cancel SOS, until it is cancelled', (
+    tester,
+  ) async {
+    var cancels = 0;
+    await pumpCard(
+      tester,
+      outgoing: true,
+      state: SosCardState(onCancel: () => cancels++),
+    );
+    expect(buttons(tester), ['Map', 'Cancel SOS', 'Navigate']);
+    await tester.tap(find.text('Cancel SOS'));
+    expect(cancels, 1);
+
+    await pumpCard(
+      tester,
+      outgoing: true,
+      state: SosCardState(
+        cancelledAt: DateTime(2026, 11, 18, 10, 30),
+        onCancel: () => cancels++,
+      ),
+    );
+    expect(buttons(tester), ['Map', 'Navigate']);
+  });
+
   testWidgets('a cancelled card says so, greyed, and offers no Got it', (
     tester,
   ) async {

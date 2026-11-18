@@ -2312,7 +2312,23 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                     .read<SosService>()
                     .sendGotIt(widget.channel, message),
               ),
+      onCancel:
+          message.isOutgoing &&
+              cancelled == null &&
+              widget.channel.isPublicChannel
+          ? () => unawaited(_cancelPublicSos(message))
+          : null,
     );
+  }
+
+  /// My SOS in Public went once, with no bar: its card cancels it, once.
+  Future<void> _cancelPublicSos(ChannelMessage sos) async {
+    final connector = context.read<MeshCoreConnector>();
+    final service = context.read<SosService>();
+    final chat = widget.channel.displayName;
+    if (!await ActiveSosBar.confirmCancel(context, chat)) return;
+    if (!mounted || !_warnIfDisconnected(connector)) return;
+    await service.cancelOnce(widget.channel, sos);
   }
 
   /// [maxBytes]: what the message box has left, after any reply's quote.

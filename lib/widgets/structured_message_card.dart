@@ -159,11 +159,16 @@ class SosCardState {
   /// one, a direct message).
   final VoidCallback? onGotIt;
 
+  /// Cancels my own SOS in Public, which went once and has no bar to
+  /// cancel it from; null elsewhere.
+  final VoidCallback? onCancel;
+
   const SosCardState({
     this.updatedAt,
     this.cancelledAt,
     this.gotIt = const [],
     this.onGotIt,
+    this.onCancel,
   });
 }
 
@@ -315,6 +320,13 @@ class StructuredMessageCard extends StatelessWidget {
         ),
         if (cancelled == null && state?.onGotIt != null)
           _Action(Icons.check, l10n.sos_gotIt, state!.onGotIt, primary: false),
+        if (cancelled == null && state?.onCancel != null)
+          _Action(
+            Icons.close,
+            l10n.sos_cancel,
+            state!.onCancel,
+            primary: false,
+          ),
         _Action(
           Icons.near_me_outlined,
           l10n.structured_navigate,

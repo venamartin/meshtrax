@@ -287,6 +287,19 @@ class SosService extends ChangeNotifier {
       await _connector.sendChannelMessage(channel, request.message.toWire()) !=
       null;
 
+  /// Takes back an SOS that went once (in Public): "SOS cancelled" once,
+  /// and my card there greys. False when it was not sent (the radio not
+  /// connected).
+  Future<bool> cancelOnce(Channel channel, ChannelMessage sos) async {
+    final id = await _connector.sendChannelMessage(
+      channel,
+      SosMessage.cancelText,
+    );
+    if (id == null) return false;
+    await _connector.markSosCancelled(channel, sos.messageId);
+    return true;
+  }
+
   /// Sends a stopped SOS again, and keeps sending it.
   Future<void> resume() async {
     final sos = _sos;
