@@ -95,12 +95,24 @@ from meshcore-open looks like: it sends `@[Name] {reply}` with no quote.
 
 ### Finding the original
 
-For an incoming reply MeshTrax looks through recent messages (in a channel,
-those that arrived in the last 48 hours) for one from the named sender whose text starts with the
-quote. The comparison ignores case, collapses whitespace and strips leading
-mentions on both sides. When found, the quote bubble shows the full original
-and tapping it jumps there. When not found, the quote bubble shows the
-quoted characters and the name.
+For an incoming reply MeshTrax looks for a message from the named sender
+whose text starts with the quote. The comparison ignores case, collapses
+whitespace and strips leading mentions on both sides.
+
+- **Channel**: first among the messages that arrived in the last 48 hours,
+  then in the whole channel. The most recent match wins. Tapping a quote
+  that didn't link searches the whole channel again, taking the nearest
+  match before the reply, else the nearest after it, so an original that
+  arrived after the reply is found too.
+- **Room**: among the posts loaded on screen, the nearest one before the
+  reply. Tapping a quote whose original isn't loaded pages back through
+  older posts until it is found.
+- **Direct message**: a reply isn't linked to its original. It shows as it
+  was sent, quote line included.
+
+When found, the quote bubble shows the full original and tapping it jumps
+there. When not found, the quote bubble shows the quoted characters and the
+name.
 
 A quote that ends inside a mention is never found. MeshTrax before 1.10.3
 sent those for an original that starts with a long mention.
@@ -158,8 +170,15 @@ The quick-reaction row offers the twelve emoji you used last, topped up from
 
 ### Matching
 
-- A reaction is matched against messages that arrived in the last 48 hours.
-  For a MeshCore One reaction, MeshTrax tries every stored form of each
+- Where MeshTrax looks for the message a reaction belongs to:
+  - **Channel**: the messages that arrived in the last 48 hours. A MeshCore
+    One reaction that matches none of them is then tried against every
+    message in the channel from the person named in its mention. A
+    meshcore-open reaction names no one, so it is only matched within the
+    48 hours.
+  - **Direct message**: the whole chat.
+  - **Room**: the posts that arrived in the last 48 hours.
+- For a MeshCore One reaction, MeshTrax tries every stored form of each
   message's text (as received, trimmed, with leading mentions removed) with
   every timestamp the message was seen with, and prefers messages from the
   sender named in the mention.
