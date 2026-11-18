@@ -53,7 +53,11 @@ void main() {
     expect(action.id, NotificationService.sosGotItAction);
     expect(action.title, 'Got it');
     expect(action.showsUserInterface, isTrue);
-    expect(action.cancelNotification, isTrue, reason: 'the sound stops');
+    expect(
+      action.cancelNotification,
+      isFalse,
+      reason: 'the app takes it away once Got it went',
+    );
 
     String? tapped(String? actionId) => NotificationService.tapPayload(
       NotificationResponse(
@@ -66,6 +70,41 @@ void main() {
     );
     expect(tapped(null), 'mention:1:abc');
     expect(tapped(NotificationService.sosGotItAction), 'gotit:mention:1:abc');
+  });
+
+  // The app clears its notifications when it comes to the front, and a tap
+  // on Got it brings it there: with the radio away, nothing went.
+  test('a tapped Got it keeps its alert up until Got it went', () async {
+    final shade = NotificationService();
+    final id = NotificationService.sosNotificationId('trip', 'Ann');
+    void tap(String? actionId) => shade.handleTap(
+      NotificationResponse(
+        notificationResponseType: actionId == null
+            ? NotificationResponseType.selectedNotification
+            : NotificationResponseType.selectedNotificationAction,
+        id: id,
+        actionId: actionId,
+        payload: 'mention:1:abc',
+      ),
+    );
+
+    tap(null);
+    expect(shade.keeps(id), isFalse, reason: 'the alert itself was tapped');
+    tap(NotificationService.sosGotItAction);
+    expect(shade.keeps(id), isTrue);
+    await shade.cancelSos('trip', 'Ann');
+    expect(shade.keeps(id), isFalse, reason: 'Got it went');
+
+    tap(NotificationService.sosGotItAction);
+    await shade.showSosNotification(
+      chatKey: 'trip',
+      senderName: 'Ann',
+      where: 'trip',
+      text: 'Broken leg',
+      payload: 'mention:1:abc',
+      cancelled: true,
+    );
+    expect(shade.keeps(id), isFalse, reason: 'nothing left to answer');
   });
 
   test('channel messages keep their own category', () {

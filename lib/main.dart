@@ -270,7 +270,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
     final navigator = NotificationService.navigatorKey.currentState;
     if (navigator == null) return;
     final connector = widget.connector;
-    // An SOS notification's Got it: sent, then its chat opens as for a tap.
+    // An SOS notification's Got it: its chat opens as for a tap and sends
+    // it, or says the radio is away.
     final gotIt = tapped.startsWith('gotit:');
     final payload = gotIt ? tapped.substring('gotit:'.length) : tapped;
 
@@ -291,11 +292,14 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         }
       }
       if (channel == null) return;
-      if (gotIt) unawaited(widget.sosService.gotItFor(channel, messageId));
       // Even over the same channel: the new page lands on the message.
       NotificationService.openChat(
         navigator,
-        ChannelChatScreen(channel: channel, scrollToMessageId: messageId),
+        ChannelChatScreen(
+          channel: channel,
+          scrollToMessageId: messageId,
+          gotIt: gotIt,
+        ),
       );
     } else if (payload.startsWith('channel:')) {
       final index = int.tryParse(payload.substring('channel:'.length));

@@ -68,11 +68,17 @@ class ChannelChatScreen extends StatefulWidget {
   /// message instead of the bottom or the oldest-unread position.
   final String? scrollToMessageId;
 
+  /// Got it goes to the SOS card [scrollToMessageId] as the chat opens: the
+  /// SOS notification's Got it button was tapped. With the radio away, the
+  /// chat says so instead.
+  final bool gotIt;
+
   const ChannelChatScreen({
     super.key,
     required this.channel,
     this.unreadCount,
     this.scrollToMessageId,
+    this.gotIt = false,
   });
 
   @override
@@ -398,6 +404,10 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       _viewing = true;
       connector.setActiveChannel(widget.channel.index);
       _connector = connector;
+      final gotIt = widget.scrollToMessageId;
+      if (widget.gotIt && gotIt != null && _warnIfDisconnected(connector)) {
+        unawaited(context.read<SosService>().gotItFor(widget.channel, gotIt));
+      }
     });
   }
 
@@ -2307,11 +2317,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       gotIt: _repliesTo(_messages)[message.messageId] ?? const [],
       onGotIt: message.isOutgoing || cancelled != null
           ? null
-          : () => unawaited(
-                context
-                    .read<SosService>()
-                    .sendGotIt(widget.channel, message),
-              ),
+          : () {
+              if (!_warnIfDisconnected(context.read<MeshCoreConnector>())) {
+                return;
+              }
+              unawaited(
+                context.read<SosService>().sendGotIt(widget.channel, message),
+              );
+            },
       onCancel:
           message.isOutgoing &&
               cancelled == null &&

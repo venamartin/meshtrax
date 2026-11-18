@@ -324,9 +324,11 @@ class SosService extends ChangeNotifier {
   }
 
   /// A receiver's Got it: a reply to [sos] using the app's reply format.
-  /// Its alert stops at once, even mid-sound.
-  Future<void> sendGotIt(Channel channel, ChannelMessage sos) async {
-    unawaited(NotificationService().cancelSos(channel.idKey, sos.senderName));
+  /// False when it was not handed to the radio (not connected): the alert
+  /// then stays, as nothing went. Handed over, the alert stops at once,
+  /// even mid-sound, before the radio waits for a quiet channel to send.
+  Future<bool> sendGotIt(Channel channel, ChannelMessage sos) async {
+    if (!_connector.isConnected) return false;
     final maxBytes = maxChannelMessageBytes(_connector.selfName);
     final wire = ChannelMessage.buildReplyWireText(
       targetName: sos.senderName,
@@ -340,8 +342,14 @@ class SosService extends ChangeNotifier {
               .length <=
           maxBytes,
     );
-    if (wire == null) return;
-    await _connector.sendChannelMessage(channel, wire, replyTarget: sos);
+    if (wire == null) return false;
+    unawaited(NotificationService().cancelSos(channel.idKey, sos.senderName));
+    final id = await _connector.sendChannelMessage(
+      channel,
+      wire,
+      replyTarget: sos,
+    );
+    return id != null;
   }
 
   /// The Got it on an SOS notification: card [messageId] in [channel],

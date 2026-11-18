@@ -115,7 +115,7 @@ class NotificationService {
 
     await _notifications.initialize(
       settings: initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveNotificationResponse: handleTap,
     );
     // Test builds 215-224 made the SOS category with the alarm sound.
     await _notifications
@@ -129,6 +129,7 @@ class NotificationService {
     final launchDetails = await _notifications.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       final response = launchDetails?.notificationResponse;
+      if (response != null) _keepGotIt(response);
       _pendingLaunchPayload = response == null ? null : tapPayload(response);
     }
 
@@ -292,7 +293,9 @@ class NotificationService {
       );
 
   /// [silent]: an update that must not sound again (a cancel). [gotIt]:
-  /// with a Got it button, which opens the app to send it.
+  /// with a Got it button, which opens the app to send it. The button
+  /// leaves the alert up: the app takes it away once Got it went, and with
+  /// the radio away nothing went.
   @visibleForTesting
   static AndroidNotificationDetails sosAndroidDetails(
     AppLocalizations l10n, {
@@ -320,6 +323,7 @@ class NotificationService {
                 sosGotItAction,
                 l10n.sos_gotIt,
                 showsUserInterface: true,
+                cancelNotification: false,
               ),
             ]
           : null,
@@ -411,6 +415,8 @@ class NotificationService {
       where,
     ].where((part) => part.isNotEmpty).join(' · ');
     final id = sosNotificationId(chatKey, senderName);
+    // A cancelled SOS has no Got it left to wait for.
+    if (cancelled) _kept.remove(id);
     // Got it answers in a channel; a direct message or a room has none.
     final gotIt = !cancelled && payload.startsWith('mention:');
     debugOnShow?.call(
@@ -604,9 +610,27 @@ class NotificationService {
     }
   }
 
-  void _onNotificationTapped(NotificationResponse response) {
+  /// A tapped notification, or one of its buttons.
+  @visibleForTesting
+  void handleTap(NotificationResponse response) {
+    _keepGotIt(response);
     final payload = tapPayload(response);
     if (payload != null) onNotificationTap?.call(payload);
+  }
+
+  /// Notifications [cancelAll] leaves up: an SOS alert whose Got it was
+  /// tapped, until Got it went ([cancelSos]).
+  final Set<int> _kept = {};
+
+  @visibleForTesting
+  bool keeps(int id) => _kept.contains(id);
+
+  /// The app clears its notifications when it comes to the front, as a tap
+  /// on Got it makes it do. That alert stays until Got it went: with the
+  /// radio away, nothing went.
+  void _keepGotIt(NotificationResponse response) {
+    final id = response.id;
+    if (response.actionId == sosGotItAction && id != null) _kept.add(id);
   }
 
   /// What a tap hands the app: the notification's payload, with `gotit:`
@@ -641,11 +665,22 @@ class NotificationService {
       notificationDetails: NotificationDetails(android: summaryDetails),
     );
   }
+
+  /// Clears the app's notifications, all but the ones [_kept] holds.
   Future<void> cancelAll() async {
     if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     _pendingNotifications.clear();
-    await _notifications.cancelAll();
+    if (_kept.isEmpty) {
+      await _notifications.cancelAll();
+    } else {
+      for (final shown in await _notifications.getActiveNotifications()) {
+        final id = shown.id;
+        if (id != null && !_kept.contains(id)) {
+          await _notifications.cancel(id: id, tag: shown.tag);
+        }
+      }
+    }
     _updateBadge(0);
   }
 
@@ -660,6 +695,7 @@ class NotificationService {
 
   Future<void> cancel(int id) async {
     debugOnCancel?.call(id);
+    _kept.remove(id);
     if (Platform.isWindows || Platform.isLinux) return;
     if (!await _ensureInitialized()) return;
     await _notifications.cancel(id: id);

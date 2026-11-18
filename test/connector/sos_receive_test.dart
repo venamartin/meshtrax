@@ -26,9 +26,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 // own notification category, until the user has seen to it.
 class _Connector extends MeshCoreConnector {
   final frames = <Uint8List>[];
+  bool connected = true;
 
   @override
-  bool get isConnected => true;
+  bool get isConnected => connected;
 
   @override
   Future<void> sendFrame(
@@ -488,11 +489,26 @@ void main() {
       addTearDown(() => NotificationService.debugOnCancel = null);
       await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
       final sos = (await rows()).single;
-      await SosService(c).sendGotIt(channel, sos);
+      final sent = SosService(c).sendGotIt(channel, sos);
       expect(cancelled, [
         NotificationService.sosNotificationId(channel.idKey, 'Ann'),
-      ]);
+      ], reason: 'before the radio waits for a quiet channel');
+      expect(await sent, isTrue);
       expect(sosAlerts().single.id, cancelled.single);
+    });
+
+    test('with the radio away goes nowhere, and its alert stays', () async {
+      final cancelled = <int>[];
+      NotificationService.debugOnCancel = cancelled.add;
+      addTearDown(() => NotificationService.debugOnCancel = null);
+      await hear(now - 30, 'Ann', _sos('Broken leg', 36.46));
+      final sos = (await rows()).single;
+      c.connected = false;
+      expect(await SosService(c).sendGotIt(channel, sos), isFalse);
+      await SosService(c).gotItFor(channel, sos.messageId);
+      await pumpEventQueue(times: 200);
+      expect((await rows()).where((m) => m.isOutgoing), isEmpty);
+      expect(cancelled, isEmpty);
     });
 
     test('from the alert goes back as a reply to its card', () async {

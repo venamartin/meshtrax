@@ -11,6 +11,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/services/notification_service.dart';
 import 'package:meshtrax/services/sos_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 
@@ -315,6 +316,42 @@ void main() {
       ]);
       async.flushMicrotasks();
       expect(sos.current!.gotIt, ['Ann', 'Bob']);
+    });
+  });
+
+  // Martin's field review, 2026-11-18: with the radio away, Got it took the
+  // alert away and sent nothing, and nobody was told.
+  test('Got it with the radio away sends nothing, and its alert stays', () {
+    onClock((async, sos, radio) {
+      final cleared = <int>[];
+      NotificationService.debugOnCancel = cleared.add;
+      addTearDown(() => NotificationService.debugOnCancel = null);
+      final card = ChannelMessage(
+        messageId: 'ann0',
+        senderName: 'Ann',
+        text: 'SOS: Broken leg\n36.460000, -116.870000',
+        timestamp: start,
+        isOutgoing: false,
+        channelIndex: 1,
+      );
+      bool? sent;
+      radio.connected = false;
+      sos.sendGotIt(_trip, card).then((v) => sent = v);
+      async.flushMicrotasks();
+      expect(sent, isFalse);
+      expect(radio.sent, isEmpty);
+      expect(cleared, isEmpty, reason: 'nothing went, so the alert stays');
+
+      radio.connected = true;
+      sos.sendGotIt(_trip, card).then((v) => sent = v);
+      async.flushMicrotasks();
+      expect(sent, isTrue);
+      expect(radio.sent.single.$1, _trip.idKey);
+      expect(radio.sent.single.$2, startsWith('@[Ann]\n'));
+      expect(radio.sent.single.$2, endsWith('\nGot it'));
+      expect(cleared, [
+        NotificationService.sosNotificationId(_trip.idKey, 'Ann'),
+      ]);
     });
   });
 
