@@ -9231,7 +9231,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     tried.add(_ackRouteKey(route));
     _appDebugLogService?.info(
       'Second ACK to ${contact.name}: '
-      '${route == null ? 'flood' : PathHelper.formatPathHex(route.pathBytes, stride: route.hashSize)}',
+      '${route == null ? 'flood' : route.hopCount == 0 ? 'direct (no repeater)' : PathHelper.formatPathHex(route.pathBytes, stride: route.hashSize)}',
       tag: 'Connector',
     );
     return PassingCopyOpener.secondAckPackets(
