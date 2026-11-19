@@ -15,9 +15,12 @@ class KnownServer {
   final String address;
   final ObserverServerKind kind;
 
-  /// How the list shows it: its area and host,
+  /// "corescope.stonekitty.net".
+  String get host => observerServerUri(address)?.host ?? address;
+
+  /// Its area and host on one line,
   /// "Northern California · corescope.stonekitty.net".
-  String get label => '$area · ${observerServerUri(address)?.host ?? address}';
+  String get label => '$area · $host';
 }
 
 /// Observer servers in North America whose read API is open to anyone.

@@ -129,6 +129,7 @@ class _HeardServerDialogState extends State<HeardServerDialog> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: Text(l10n.appSettings_heardServer),
       content: SingleChildScrollView(
         child: Column(
@@ -142,12 +143,25 @@ class _HeardServerDialogState extends State<HeardServerDialog> {
             const SizedBox(height: 16),
             DropdownButton<int>(
               isExpanded: true,
+              itemHeight: null,
               value: _picked,
               items: [
                 for (final (i, known) in knownServers.indexed)
                   DropdownMenuItem(
                     value: i,
-                    child: Text(known.label, overflow: TextOverflow.ellipsis),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(known.area),
+                        Text(
+                          known.host,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 DropdownMenuItem(
                   value: -1,
