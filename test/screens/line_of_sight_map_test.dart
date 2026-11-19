@@ -132,7 +132,8 @@ void main() {
   );
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
+    // The first route's one-time popup has its own tests.
+    SharedPreferences.setMockInitialValues({RouteSheet.conditionsToldKey: true});
     PrefsManager.reset();
     await PrefsManager.initialize();
     tmp = await Directory.systemTemp.createTemp('los-map');

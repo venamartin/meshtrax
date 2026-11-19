@@ -240,7 +240,8 @@ void main() {
     // Times as a US phone writes them, whatever machine runs the tests.
     DateTimeHelper.systemFormats = () => null;
     addTearDown(() => DateTimeHelper.systemFormats = systemFormats);
-    SharedPreferences.setMockInitialValues({});
+    // The first route's one-time popup has its own tests.
+    SharedPreferences.setMockInitialValues({RouteSheet.conditionsToldKey: true});
     PrefsManager.reset();
     await PrefsManager.initialize();
     tmp = await Directory.systemTemp.createTemp('mapscreen');
@@ -569,6 +570,29 @@ void main() {
 
       await tap(tester, find.text('Paved'));
       expect(find.text('No heights for this area.'), findsOneWidget);
+    });
+
+    testWidgets('the first route ever says what the data can\'t know, once', (
+      tester,
+    ) async {
+      await PrefsManager.instance.remove(RouteSheet.conditionsToldKey);
+      await showRoute(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+          "MeshTrax doesn't know closures, washouts or which roads need 4x4. "
+          'Check current conditions before you go.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+
+      await tap(tester, find.text('Paved'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.textContaining("doesn't know closures"), findsNothing);
     });
 
     testWidgets('slides between a bar, open and the whole map', (tester) async {

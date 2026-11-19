@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PointerDeviceKind;
 
@@ -11,6 +12,7 @@ import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../storage/prefs_manager.dart';
 import 'elevation_profile.dart';
 import 'route_options.dart';
 
@@ -88,6 +90,9 @@ class RouteSheet extends StatefulWidget {
   /// How wide the panel at the side of a wide screen is.
   static const sideWidth = 360.0;
 
+  /// Set once the first route has said what the data can't know.
+  static const conditionsToldKey = 'route_conditions_told';
+
   const RouteSheet({
     super.key,
     required this.destination,
@@ -145,9 +150,42 @@ class RouteSheetState extends State<RouteSheet> {
   _Stop? _to = _Stop.rest;
 
   @override
+  void initState() {
+    super.initState();
+    _tellConditionsOnce();
+  }
+
+  @override
   void didUpdateWidget(RouteSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.destination != widget.destination) _to = _Stop.rest;
+    _tellConditionsOnce();
+  }
+
+  /// The data can't say what a road or trail is like today (safety review
+  /// CH-17): the first route ever says so, once.
+  void _tellConditionsOnce() {
+    final prefs = PrefsManager.instance;
+    if (widget.result == null ||
+        (prefs.getBool(RouteSheet.conditionsToldKey) ?? false)) {
+      return;
+    }
+    unawaited(prefs.setBool(RouteSheet.conditionsToldKey, true));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: Text(context.l10n.route_conditionsCaveat),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.common_ok),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   @override
@@ -490,22 +528,17 @@ class RouteSheetState extends State<RouteSheet> {
                   )
                 else if (loading && r == null)
                   const SizedBox(height: 64),
-                // The data can't say what a road or trail is like today
-                // (safety review CH-17). There from the start of the search,
-                // so the sheet keeps its height.
-                if (r != null || loading)
+                // There from the start of the search, so the sheet keeps
+                // its height.
+                if (widget.dataDate case final date? when r != null || loading)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      [
-                        l10n.route_conditionsCaveat,
-                        if (widget.dataDate case final date?)
-                          l10n.route_dataDate(
-                            DateFormat.yMMMd(
-                              Localizations.localeOf(context).toString(),
-                            ).format(date),
-                          ),
-                      ].join('\n'),
+                      l10n.route_dataDate(
+                        DateFormat.yMMMd(
+                          Localizations.localeOf(context).toString(),
+                        ).format(date),
+                      ),
                       style: theme.textTheme.bodySmall!.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
