@@ -2897,6 +2897,7 @@
   "los_helpBody": "A válasz csak a terepen alapul, amelyet a letöltött szintvonalakból olvas ki. Nem tud fákról, épületekről, emberekről, villanyvezetékekről vagy más antennákról, és egy dombtető akár egy szintvonallal magasabb is lehet, mint ami ki van rajzolva.\n\nA „Szabad” azt jelenti, hogy a terep nincs útban. Ez nem garantálja, hogy egy üzenet átjut. A „Határeset” azt jelenti, hogy a terep közel kerül a vonalhoz. A „Takarva” azt jelenti, hogy a terep útban van: egy üzenet még átjuthat egy alacsony gerincen, de ne számítson rá.\n\nPróbálja ki terepen a saját rádióival, mielőtt megbízna benne.",
   "los_reachShaded": "Színezett: ott a terep nem takarja el a kézi rádiót, legfeljebb {distance} távolságig.",
   "los_reachUnknownPart": "Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.",
+  "los_reachTapHint": "Koppintson a térképre vagy egy névre, hogy lássa a rálátást odáig.",
   "los_positionGuessed": "Becsült pozíció",
   "los_positionGuessedVia": "Becsült pozíció ({names} közvetítésével)",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

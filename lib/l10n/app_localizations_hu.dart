@@ -7250,6 +7250,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.';
 
   @override
+  String get los_reachTapHint =>
+      'Koppintson a térképre vagy egy névre, hogy lássa a rálátást odáig.';
+
+  @override
   String get los_positionGuessed => 'Becsült pozíció';
 
   @override

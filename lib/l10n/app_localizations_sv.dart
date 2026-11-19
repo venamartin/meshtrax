@@ -7180,6 +7180,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.';
 
   @override
+  String get los_reachTapHint =>
+      'Tryck på kartan eller ett namn för siktlinjen dit.';
+
+  @override
   String get los_positionGuessed => 'Gissad position';
 
   @override

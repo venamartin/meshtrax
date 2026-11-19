@@ -2897,6 +2897,7 @@
   "los_helpBody": "Odpowiedź opiera się wyłącznie na terenie odczytanym z pobranych poziomic. Nie uwzględnia drzew, budynków, ludzi, linii energetycznych ani innych anten, a szczyt wzgórza może być wyższy, niż pokazano, nawet o jedną poziomicę.\n\n„Czysto” oznacza, że teren nie przeszkadza. Nie gwarantuje to, że wiadomość dotrze. „Na granicy” oznacza, że teren zbliża się do linii. „Zasłonięte” oznacza, że teren przeszkadza: wiadomość może jeszcze przejść nad jednym niskim grzbietem, ale nie licz na to.\n\nPrzetestuj to w terenie z własnymi radiami, zanim zaczniesz na tym polegać.",
   "los_reachShaded": "Zacieniowane: tam teren nie zasłania radia ręcznego, do {distance}.",
   "los_reachUnknownPart": "Części terenu tutaj nie da się obliczyć, np. poniżej poziomu morza, więc nie jest zacieniowana.",
+  "los_reachTapHint": "Stuknij mapę lub nazwę, aby zobaczyć linię widoczności do tego miejsca.",
   "los_positionGuessed": "Przypuszczalna pozycja",
   "los_positionGuessedVia": "Przypuszczalna pozycja (przez {names})",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

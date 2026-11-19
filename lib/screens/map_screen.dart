@@ -756,6 +756,8 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       PopupMenuButton(
                         itemBuilder: (context) => [
+                          // One entry: the reach from you, where a tap on
+                          // the map or a name gives the line to it.
                           if (_losOffered) ...<PopupMenuEntry<Object?>>[
                             PopupMenuItem(
                               child: Row(
@@ -764,21 +766,6 @@ class _MapScreenState extends State<MapScreen> {
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(context.l10n.los_lineOfSight),
-                                  ),
-                                ],
-                              ),
-                              onTap: () => _openLos(
-                                LosMode.line,
-                                from: _me(connector, selfPosition),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.wifi_tethering),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(context.l10n.los_reachFromMe),
                                   ),
                                 ],
                               ),

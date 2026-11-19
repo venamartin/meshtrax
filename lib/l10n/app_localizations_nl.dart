@@ -7213,6 +7213,10 @@ class AppLocalizationsNl extends AppLocalizations {
       'Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.';
 
   @override
+  String get los_reachTapHint =>
+      'Tik op de kaart of een naam voor de zichtlijn daarheen.';
+
+  @override
   String get los_positionGuessed => 'Positie geschat';
 
   @override

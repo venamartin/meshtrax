@@ -7229,6 +7229,10 @@ class AppLocalizationsSl extends AppLocalizations {
       'Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.';
 
   @override
+  String get los_reachTapHint =>
+      'Tapnite zemljevid ali ime za neposredno vidljivost do tja.';
+
+  @override
   String get los_positionGuessed => 'Predpostavljen položaj';
 
   @override

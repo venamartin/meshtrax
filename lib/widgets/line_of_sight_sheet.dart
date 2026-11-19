@@ -414,13 +414,22 @@ class LineOfSightSheetState extends State<LineOfSightSheet> {
     final s = _s;
     final from = s.from;
     if (from == null) return l10n.los_noPosition;
+    // The map's menu has no line of sight of its own: a tap here gives it,
+    // without waiting for the reach.
     if (s.mode == LosMode.reach) {
       final r = s.reach;
-      if (r == null) return s.failed ? l10n.los_failed : l10n.los_checking;
+      if (r == null) {
+        return s.failed
+            ? l10n.los_failed
+            : '${l10n.los_checking} ${l10n.los_reachTapHint}';
+      }
       if (!r.centerGround.isKnown) {
         return _heightIssue(l10n, from, r.centerGround.issue);
       }
-      return l10n.los_reachShaded(GeoFormat.distanceText(r.radiusM, _units));
+      final shaded = l10n.los_reachShaded(
+        GeoFormat.distanceText(r.radiusM, _units),
+      );
+      return '$shaded ${l10n.los_reachTapHint}';
     }
     final to = s.to;
     if (to == null) return l10n.los_pickTarget;

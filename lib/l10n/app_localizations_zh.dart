@@ -6777,6 +6777,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get los_reachUnknownPart => '此处部分地形无法计算（例如低于海平面的地方），因此未着色。';
 
   @override
+  String get los_reachTapHint => '点按地图或名称，查看到那里的视线。';
+
+  @override
   String get los_positionGuessed => '推测位置';
 
   @override

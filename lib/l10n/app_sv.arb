@@ -2859,6 +2859,7 @@
   "los_helpBody": "Svaret bygger bara på marken, avläst från höjdkurvorna du har laddat ner. Det vet inget om träd, byggnader, människor, kraftledningar eller andra antenner, och en kulle kan vara upp till en höjdkurva högre än det som ritats.\n\n”Fritt” betyder att marken inte är i vägen. Det lovar inte att ett meddelande kommer fram. ”Knappt” betyder att marken kommer nära linjen. ”Blockerat” betyder att marken är i vägen: ett meddelande kan ändå ta sig över en låg ås, men räkna inte med det.\n\nTesta i fält med dina egna radioapparater innan du litar på det.",
   "los_reachShaded": "Skuggat: där är marken inte i vägen till en handburen radio, upp till {distance}.",
   "los_reachUnknownPart": "En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.",
+  "los_reachTapHint": "Tryck på kartan eller ett namn för siktlinjen dit.",
   "los_positionGuessed": "Gissad position",
   "los_positionGuessedVia": "Gissad position, hörd via {names}",
   "@los_reachShaded": {"placeholders": {"distance": {"type": "String"}}},

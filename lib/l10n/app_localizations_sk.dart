@@ -7225,6 +7225,10 @@ class AppLocalizationsSk extends AppLocalizations {
       'Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.';
 
   @override
+  String get los_reachTapHint =>
+      'Klepnite na mapu alebo meno a uvidíte priamu viditeľnosť až tam.';
+
+  @override
   String get los_positionGuessed => 'Odhadnutá poloha';
 
   @override

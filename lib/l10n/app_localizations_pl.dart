@@ -7262,6 +7262,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Części terenu tutaj nie da się obliczyć, np. poniżej poziomu morza, więc nie jest zacieniowana.';
 
   @override
+  String get los_reachTapHint =>
+      'Stuknij mapę lub nazwę, aby zobaczyć linię widoczności do tego miejsca.';
+
+  @override
   String get los_positionGuessed => 'Przypuszczalna pozycja';
 
   @override
