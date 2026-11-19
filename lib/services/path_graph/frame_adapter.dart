@@ -315,9 +315,11 @@ ParsedAdvert? parseAdvert(Uint8List payload) {
 /// Feeds parsed frames into the module. The harness owns windowing of
 /// discover responses (they arrive one push per responder).
 class PathLabAdapter {
-  PathLabAdapter(this.graph);
+  PathLabAdapter(this.graph, {DateTime Function()? now})
+      : _now = now ?? DateTime.now;
 
   final PathGraph graph;
+  final DateTime Function() _now;
 
   /// Answers to my current (or last) Discover request, each already filed
   /// with the graph as it arrived; the bench and the screen read this.
@@ -728,14 +730,17 @@ class PathLabAdapter {
 
     // A direct packet's path is the hops still AHEAD of it; every
     // forwarder strips its own hash (Mesh.cpp removeSelfFromPath). Nothing
-    // in it says who transmitted it or which links were travelled, and
-    // the plan it carries is the originator's stored route — a guess some
-    // app may have written. File nothing.
+    // in one copy says who transmitted it or which links were travelled,
+    // and the plan it carries is the originator's stored route — a guess
+    // some app may have written. Only a later copy of it says more.
     if (!_isFlood(packet)) {
       _rememberDirectPath(packet);
-      _log(kind, _fmtHops(packet.pathBytes, packet.stride),
-          'direct — carries the hops ahead, not the ones travelled; nothing '
-          'to learn',
+      _log(
+          kind,
+          _fmtHops(packet.pathBytes, packet.stride),
+          _observeCopyChain(packet, rxSnr) ??
+              'direct — carries the hops ahead, not the ones travelled; '
+                  'nothing to learn',
           rxSnr);
       return;
     }
@@ -815,6 +820,98 @@ class PathLabAdapter {
       srcHash: packet.payload[1],
       payload: Uint8List.fromList(packet.payload),
     ));
+  }
+
+  /// Routed copies heard lately, oldest first, for [_observeCopyChain].
+  final List<_RoutedCopy> _routedCopies = [];
+  static const int _routedCopyCap = 32;
+  static const Duration _routedCopyKeep = Duration(seconds: 30);
+
+  /// How long one hop may take to pass a routed packet on. A repeater waits
+  /// up to 5 × airtime × direct_tx_delay_factor (0.3 by default, at most 2;
+  /// simple_repeater MyMesh.cpp) before sending it. A copy later than this
+  /// per hop is taken for a resend of the same bytes, which may be on
+  /// another route and so name the wrong transmitter (no nonce: the same
+  /// text, timestamp and attempt encrypt the same).
+  static const Duration copyChainHopWindow = Duration(seconds: 8);
+
+  /// Routed types whose bytes belong to one send on one route. ACKs are
+  /// left out: one ACK hash can go out on two routes at once (an app's
+  /// second ACK), and a repeater rebuilds the ACKs it passes on.
+  static const Set<int> _chainTypes = {
+    0x00, // request
+    0x01, // response
+    _payloadTypeTxtMsg,
+    _payloadTypeAnonReq,
+    _payloadTypePath,
+  };
+
+  /// Two copies of one routed packet are a chain. The repeater named first
+  /// in a routed path takes itself off the front and sends the packet on
+  /// (Mesh.cpp onRecvPacket, removeSelfFromPath), so the hops a later copy
+  /// lacks were travelled, in order, and the last of them transmitted it:
+  /// A277›AD77›BEEF then AD77›BEEF says A277 sent the second and I hear
+  /// A277; BEEF next says AD77 passed it from A277. Filed like a flood copy
+  /// over those hops, once per copy. The first copy's transmitter stays
+  /// unknown, and nothing here says who hears me.
+  String? _observeCopyChain(RawPacket packet, double rxSnr) {
+    if (!_chainTypes.contains(packet.payloadType)) return null;
+    final now = _now();
+    _routedCopies.removeWhere((c) => now.difference(c.at) > _routedCopyKeep);
+    final same = _routedCopies
+        .where((c) =>
+            c.routeType == packet.routeType &&
+            c.stride == packet.stride &&
+            _sameBytes(c.payload, packet.payload))
+        .toList();
+    _routedCopies.add(_RoutedCopy(now, packet.routeType, packet.stride,
+        Uint8List.fromList(packet.pathBytes),
+        Uint8List.fromList(packet.payload)));
+    if (_routedCopies.length > _routedCopyCap) _routedCopies.removeAt(0);
+
+    final path = packet.pathBytes;
+    final stride = packet.stride;
+    Uint8List? before(List<int> longer, List<int> tail) =>
+        PathHelper.hopsBefore(longer, tail, stride: stride);
+    // The same bytes on two routes that are not one plan shrinking, now or
+    // between copies heard before: a resend on another route, so no copy
+    // of it can be placed.
+    final paths = [for (final c in same) c.pathBytes, path];
+    for (var i = 0; i < paths.length; i++) {
+      for (var j = i + 1; j < paths.length; j++) {
+        if (before(paths[i], paths[j]) == null &&
+            before(paths[j], paths[i]) == null) {
+          return 'direct — the same packet on two routes; nothing to learn';
+        }
+      }
+    }
+    // Hops passed on since each earlier copy, for those recent enough that
+    // this copy is the same send.
+    final travelled = [
+      for (final c in same)
+        if (before(c.pathBytes, path) case final hops?
+            when hops.isNotEmpty &&
+                now.difference(c.at) <=
+                    copyChainHopWindow *
+                        PathHelper.getHopCount(hops, stride: stride))
+          hops,
+    ];
+    // The longest chain names the most links; all end in the same hop.
+    final hops = travelled.fold<Uint8List?>(
+        null, (best, h) => best == null || h.length > best.length ? h : best);
+    // None, or this very copy again (filed the first time).
+    if (hops == null || same.any((c) => _sameBytes(c.pathBytes, path))) {
+      return null;
+    }
+    graph.observePath(hops, stride, const ObservationOrigin.anonymous(),
+        rxSnr: rxSnr, messageId: payloadFingerprint(packet.payload));
+    if (stride < graph.hashWidthBytes) {
+      return 'direct — later copy of one heard before; '
+          '${_notFiled(hops, stride)}';
+    }
+    final sender = PathHelper.lastHopHex(hops, stride: stride);
+    return 'direct — later copy of one heard before: '
+        '${_fmtHops(hops, stride)} passed it on, so I hear $sender';
   }
 
   /// The radio confirmed delivery to [contactPubkeyHex] with [ackHash]
@@ -1250,4 +1347,15 @@ class PathLabAdapter {
   void commitDiscover({required bool failureEpisode}) {
     pendingDiscover.clear();
   }
+}
+
+/// A routed packet as logged, for chaining with its later copies.
+class _RoutedCopy {
+  _RoutedCopy(
+      this.at, this.routeType, this.stride, this.pathBytes, this.payload);
+  final DateTime at;
+  final int routeType;
+  final int stride;
+  final Uint8List pathBytes;
+  final Uint8List payload;
 }

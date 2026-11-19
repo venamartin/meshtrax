@@ -123,6 +123,24 @@ class PathHelper {
     return hop == null ? null : hopHex(hop);
   }
 
+  /// The hops [pathBytes] has in front of [tail] when [tail] is its last
+  /// hops, both at [stride]; null when it is not. For a routed packet heard
+  /// twice, these are the repeaters that passed it on in between.
+  static Uint8List? hopsBefore(
+    List<int> pathBytes,
+    List<int> tail, {
+    required int stride,
+  }) {
+    final hops = getHops(pathBytes, stride: stride);
+    final last = getHops(tail, stride: stride);
+    final front = hops.length - last.length;
+    if (front < 0) return null;
+    for (var i = 0; i < last.length; i++) {
+      if (hopHex(hops[front + i]) != hopHex(last[i])) return null;
+    }
+    return Uint8List.fromList(hops.take(front).expand((h) => h).toList());
+  }
+
   static Uint8List reverseHops(List<int> pathBytes, {required int stride}) {
     return Uint8List.fromList(
       getHops(pathBytes, stride: stride).reversed.expand((h) => h).toList(),

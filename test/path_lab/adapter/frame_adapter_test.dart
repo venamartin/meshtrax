@@ -884,4 +884,96 @@ void main() {
       expect(graph.egressCandidates().length, mine);
     });
   });
+
+  // Two copies of one routed packet: the later one's transmitter is the
+  // earlier one's next hop (Mesh.cpp removeSelfFromPath). Owner, 2026-11-19.
+  group('copy chain', () {
+    var now = DateTime(2026, 11, 19, 12);
+    late PathLabAdapter chain;
+    const dm = [0x5B, 0xAB, 9, 9, 9, 9];
+
+    setUp(() {
+      now = DateTime(2026, 11, 19, 12);
+      chain = PathLabAdapter(graph, now: () => now);
+    });
+
+    void copy(List<int> path,
+        {List<int> payload = dm, int type = 0x02, int stride = 2}) {
+      chain.handleFrame(rxFrame(
+          payloadType: type,
+          path: path,
+          payload: payload,
+          stride: stride,
+          routeType: 0x02));
+    }
+
+    Map<String, Candidate> heard() =>
+        {for (final c in graph.egressCandidates()) c.repeaterHash: c};
+
+    test('each later copy names the hop that passed it on', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty, reason: 'one copy: its sender is unknown');
+
+      now = now.add(const Duration(seconds: 2));
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard().keys, ['A277']);
+      expect(graph.snapshot().edges, isEmpty);
+      expect(chain.packetLog.first.verdict,
+          'direct — later copy of one heard before: A277 passed it on, '
+          'so I hear A277');
+
+      now = now.add(const Duration(seconds: 2));
+      copy([0xBE, 0xEF]);
+      expect(heard().keys, containsAll(['A277', 'AD77']));
+      expect(graph.snapshot().edges.keys, [('A277', 'AD77')]);
+
+      now = now.add(const Duration(seconds: 2));
+      copy([]);
+      expect(heard().keys, containsAll(['A277', 'AD77', 'BEEF']));
+      expect(graph.snapshot().edges.containsKey(('AD77', 'BEEF')), isTrue);
+      expect(graph.snapshot().edges[('A277', 'AD77')]!.obsCount, 1,
+          reason: 'one packet is one sighting of a link');
+      expect(heard().values.where((c) => c.proven), isEmpty,
+          reason: 'nothing here says who hears me');
+    });
+
+    test('a copy too late for its hops is another send', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      now = now.add(const Duration(seconds: 9));
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty);
+      // Two hops on from the first copy still fit two hops' time.
+      now = now.add(const Duration(seconds: 1));
+      copy([0xBE, 0xEF]);
+      expect(heard().keys, ['AD77']);
+      expect(graph.snapshot().edges.keys, [('A277', 'AD77')]);
+    });
+
+    test('the same bytes on two routes place nobody', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      copy([0x10, 0x00, 0xAD, 0x77, 0xBE, 0xEF]);
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty);
+      expect(chain.packetLog.first.verdict,
+          'direct — the same packet on two routes; nothing to learn');
+    });
+
+    test('the same copy twice is one proof', () {
+      copy([0xA2, 0x77, 0xBE, 0xEF]);
+      copy([0xBE, 0xEF]);
+      copy([0xBE, 0xEF]);
+      expect(heard()['A277']!.finalCount, 1);
+    });
+
+    test('other bytes, ACKs and narrow codes chain nothing', () {
+      copy([0xA2, 0x77, 0xBE, 0xEF]);
+      copy([0xBE, 0xEF], payload: [0x5B, 0xAB, 1, 1, 1, 1]);
+      copy([0xA2, 0x77, 0xBE, 0xEF], type: 0x03, payload: [1, 2, 3, 4]);
+      copy([0xBE, 0xEF], type: 0x03, payload: [1, 2, 3, 4]);
+      copy([0xA2, 0xBE], stride: 1);
+      copy([0xBE], stride: 1);
+      expect(heard(), isEmpty);
+      expect(graph.counters.droppedNarrow, 1);
+    });
+  });
 }
