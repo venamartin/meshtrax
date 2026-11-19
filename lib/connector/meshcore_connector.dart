@@ -659,6 +659,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, Timer> _channelMessageTimers = {};
   final Map<String, Timer> _channelRepeatTimers = {};
   final Map<String, int> _channelMessageRetries = {};
+
+  /// How long a channel send waits for a repeater to pass it on.
+  @visibleForTesting
+  static Duration channelRepeatWait = const Duration(seconds: 30);
+
+  /// The repeater codes heard carrying each channel message of mine that
+  /// waits for a second repeater, over all its copies. Car repeaters are
+  /// left out.
+  final Map<String, Set<String>> _repeatersHeard = {};
   // The connector holds one itself: send pacing reads the radio's airtime
   // from these stats ([_airtimeBumpStopwatch]).
   int _radioStatsPollRefCount = 1;
@@ -2188,12 +2197,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// the packet it came in.
   void Function(String messageId, String packetHash)? onOwnChannelEcho;
 
+  /// Whether a channel message of mine that only one repeater carried, and
+  /// no observer heard, may go out once more: observers hear this radio
+  /// lately (the observer-server hook). Null or false: one repeat is
+  /// enough.
+  bool Function()? mayResendAfterOneRepeater;
+
+  /// A channel message of mine went out once more after only one repeater
+  /// carried it.
+  void Function(String messageId)? onResentAfterOneRepeater;
+
   /// Someone else heard this channel message of mine (an observer server
   /// said so). It is on air, so it isn't sent again. Only a repeat my own
   /// radio hears marks it delivered.
   void confirmChannelSendHeard(String messageId) {
     _pendingChannelSentQueue.remove(messageId);
     _channelRepeatTimers.remove(messageId)?.cancel();
+    _repeatersHeard.remove(messageId);
     _channelMessageTimers.remove(messageId)?.cancel();
     unawaited(() async {
       final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
@@ -5584,6 +5604,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _pendingChannelSentQueue.remove(messageId);
     _pendingChannelSentQueue.add(messageId);
     _channelRepeatTimers.remove(messageId)?.cancel();
+    _repeatersHeard.remove(messageId);
     _channelMessageTimers.remove(messageId)?.cancel();
     _channelMessageTimers[messageId] = Timer(const Duration(seconds: 30), () {
       _handleChannelMessageTimeout(live.index, messageId);
@@ -5664,7 +5685,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         message.text;
   }
 
-  Future<void> resendChannelMessageById(int channelIndex, String messageId) async {
+  /// Sends my channel message [messageId] again, stamped anew. With
+  /// [keepStatus] it is the one more send after only one repeater carried
+  /// it: the row stays delivered, and the send gets no retries of its own.
+  Future<void> resendChannelMessageById(
+    int channelIndex,
+    String messageId, {
+    bool keepStatus = false,
+  }) async {
     // Same live-slot rule as sendChannelMessage: retrying with a slot index
     // whose key changed (mid-sync, or slot reshuffled) would encrypt the
     // text for the wrong channel. A settled live slot plus the message
@@ -5683,24 +5711,26 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       messageId,
     );
     if (message == null) return;
-    final retries = _channelMessageRetries[messageId] ?? 0;
-    await _channelMessageStore.updateMessage(
-      live.idKey,
-      messageId,
-      (m) => m.copyWith(
-        sendRetryCount: retries,
-        status: ChannelMessageStatus.pending,
-      ),
-    );
-    notifyListeners();
+    if (!keepStatus) {
+      final retries = _channelMessageRetries[messageId] ?? 0;
+      await _channelMessageStore.updateMessage(
+        live.idKey,
+        messageId,
+        (m) => m.copyWith(
+          sendRetryCount: retries,
+          status: ChannelMessageStatus.pending,
+        ),
+      );
+      notifyListeners();
 
-    appLogger.info('Retrying channel message $messageId (attempt ${_channelMessageRetries[messageId]})', tag: 'Connector');
-    
-    _pendingChannelSentQueue.add(messageId);
-    _channelMessageTimers[messageId] = Timer(const Duration(seconds: 30), () {
-      _handleChannelMessageTimeout(channelIndex, messageId);
-    });
-    
+      appLogger.info('Retrying channel message $messageId (attempt ${_channelMessageRetries[messageId]})', tag: 'Connector');
+
+      _pendingChannelSentQueue.add(messageId);
+      _channelMessageTimers[messageId] = Timer(const Duration(seconds: 30), () {
+        _handleChannelMessageTimeout(channelIndex, messageId);
+      });
+    }
+
     final outboundText = prepareChannelOutboundText(
       channelIndex,
       _rebuildOutboundWireText(channelIndex, message),
@@ -5711,7 +5741,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
     // Same as sendChannelMessage: a link drop (or a repeat of the earlier
     // attempt) during the wait settled this row already.
-    if (!_channelMessageTimers.containsKey(messageId)) return;
+    if (keepStatus
+        ? !isConnected
+        : !_channelMessageTimers.containsKey(messageId)) {
+      return;
+    }
     // Retries re-stamp on purpose (an identical payload would be dropped by
     // mesh dedup); record this stamp too so reactions to the retry copy
     // still hash-match our row.
@@ -6781,8 +6815,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   void _startWaitForRepeatTimer(int channelIndex, String messageId) {
     _channelRepeatTimers[messageId]?.cancel();
-    _channelRepeatTimers[messageId] = Timer(const Duration(seconds: 30), () {
+    _repeatersHeard.remove(messageId);
+    _channelRepeatTimers[messageId] = Timer(channelRepeatWait, () {
       _channelRepeatTimers.remove(messageId);
+      final repeaters = _repeatersHeard.remove(messageId);
+      if (repeaters != null) {
+        _resendAfterOneRepeater(channelIndex, messageId, repeaters);
+        return;
+      }
       final retries = _channelMessageRetries[messageId] ?? 0;
       final maxRetries = _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
       if (retries < maxRetries) {
@@ -6793,6 +6833,51 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         notifyListeners();
       }
     });
+  }
+
+  /// One more send for a channel message only one repeater carried: never
+  /// with channel retries set to 0, and only while observers hear this
+  /// radio (traxheard's README).
+  bool _oneRepeaterResendAllowed() =>
+      (_appSettingsService?.settings.maxChannelMessageRetries ?? 1) > 0 &&
+      mayResendAfterOneRepeater?.call() == true;
+
+  /// Whether my channel message [messageId], just heard back as [copy],
+  /// keeps waiting for a second repeater. Repeaters count by their codes
+  /// over all the copies, and a car repeater doesn't count.
+  bool _waitForSecondRepeater(String messageId, ChannelMessage copy) {
+    if (!_channelRepeatTimers.containsKey(messageId) ||
+        !_oneRepeaterResendAllowed()) {
+      return false;
+    }
+    final heard = _repeatersHeard.putIfAbsent(messageId, () => <String>{});
+    final width = copy.pathHashSize;
+    for (final hop in PathHelper.getHops(copy.pathBytes, stride: width)) {
+      if (isCarRepeater?.call(hop, width) != true) {
+        heard.add(PathHelper.hopHex(hop));
+      }
+    }
+    return heard.length < 2;
+  }
+
+  /// Only [repeaters] (one at most) carried my channel message [messageId],
+  /// and no observer heard it: it goes out once more, still delivered.
+  void _resendAfterOneRepeater(
+    int channelIndex,
+    String messageId,
+    Set<String> repeaters,
+  ) {
+    if (!_oneRepeaterResendAllowed()) return;
+    final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join();
+    appLogger.info(
+      'Only $by carried $messageId and no observer heard it: sending it '
+      'once more',
+      tag: 'Connector',
+    );
+    onResentAfterOneRepeater?.call(messageId);
+    unawaited(
+      resendChannelMessageById(channelIndex, messageId, keepStatus: true),
+    );
   }
 
   void _cleanupChannelSync({required bool completed}) {
@@ -9270,23 +9355,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           return m;
         },
       );
-      if (!updated || idKey == null) return;
+      // Only a send this OK took from pending waits for a repeat. A late OK,
+      // or the one more send after one repeater, leaves its row as it was;
+      // a new wait could send a delivered message again.
+      final row = sentRow;
+      if (!updated || idKey == null || row == null) return;
       final liveIndex = _liveChannelByIdKey(idKey)?.index;
       if (liveIndex != null) {
         // Only wait for a repeat echo that can physically reach us: the
         // firmware's RX-log push drops packets that don't fit the serial
         // frame, so an oversize send's echo is unobservable — waiting
         // would just burn a pointless retry and end in a false amber.
-        final row = sentRow;
-        final observable = row == null ||
-            isChannelEchoObservable(
-              _selfName,
-              prepareChannelOutboundText(
-                liveIndex,
-                _rebuildOutboundWireText(liveIndex, row),
-              ),
-              _pathHashByteWidth,
-            );
+        final observable = isChannelEchoObservable(
+          _selfName,
+          prepareChannelOutboundText(
+            liveIndex,
+            _rebuildOutboundWireText(liveIndex, row),
+          ),
+          _pathHashByteWidth,
+        );
         if (observable) {
           _startWaitForRepeatTimer(liveIndex, messageId);
         } else {
@@ -11398,12 +11485,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (existing.isOutgoing && incoming.packetHash != null) {
       onOwnChannelEcho?.call(existing.messageId, incoming.packetHash!);
     }
-    appLogger.info(
-      'Matched repeat for ${existing.messageId}, cancelling timer',
-      tag: 'Connector',
-    );
-    _channelRepeatTimers[existing.messageId]?.cancel();
-    _channelRepeatTimers.remove(existing.messageId);
+    if (existing.isOutgoing &&
+        _waitForSecondRepeater(existing.messageId, incoming)) {
+      appLogger.info(
+        'Matched repeat for ${existing.messageId}, waiting for a second '
+        'repeater',
+        tag: 'Connector',
+      );
+    } else {
+      appLogger.info(
+        'Matched repeat for ${existing.messageId}, cancelling timer',
+        tag: 'Connector',
+      );
+      _channelRepeatTimers[existing.messageId]?.cancel();
+      _channelRepeatTimers.remove(existing.messageId);
+      _repeatersHeard.remove(existing.messageId);
+    }
     _channelMessageTimers[existing.messageId]?.cancel();
     _channelMessageTimers.remove(existing.messageId);
     notifyListeners();
@@ -11857,6 +11954,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       timer.cancel();
     }
     _channelRepeatTimers.clear();
+    _repeatersHeard.clear();
     _channelMessageRetries.clear();
 
     _setState(MeshCoreConnectionState.disconnected);

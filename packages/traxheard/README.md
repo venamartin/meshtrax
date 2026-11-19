@@ -45,28 +45,29 @@ in North America whose read API is open to anyone, each with the area its
 observers listen in. A server only knows what its observers hear, on their
 own frequency.
 
-## How a channel send ends today
+## How a channel send ends
 
 Once the radio has taken a channel message, it shows Sent. MeshTrax then
 waits 30 seconds for our radio to hear a repeater pass it on:
 - **No repeat heard:** it is sent again, up to the channel retry setting
   (0 to 3, 1 by default). When the last try isn't repeated either, it
   stays Sent.
-- **Any repeat heard:** it shows Delivered and isn't sent again.
+- **A repeat heard:** it shows Delivered. It isn't sent again, except once
+  when only one repeater carried it (below).
 - **An observer heard it:** it isn't sent again either.
 
 The radio's report of a heard packet holds at most 173 bytes, so a
 message whose repeat is longer can't be heard back and isn't waited on.
 A message the radio never takes is tried the same way, then shows Failed.
 
-## Planned: a resend when only one repeater was heard
+## One more send when only one repeater was heard
 
-Owner's decisions, 2026-11-19. Not built yet.
+Owner's decisions, 2026-11-19.
 
-**The problem.** One heard repeat ends the send, even when it is only the
-user's home repeater, or a car repeater ("carpeater") riding along. The
-message may never have gone further. Observers never hear it, so no ear
-appears, and a second try would most likely have reached them.
+**The problem.** One heard repeat used to end the send, even when it was
+only the user's home repeater, or a car repeater ("carpeater") riding
+along. The message may never have gone further. Observers never heard it,
+so no ear appeared, and a second try would most likely have reached them.
 
 **The rule.** It applies only when traxheard has proven that it works for
 this radio: an observer heard one of this radio's own channel messages in
@@ -86,14 +87,18 @@ nothing about coverage where the radio is now.
   changed by the 30-second mark, it sends the message once more. That is
   one extra resend at most per message, with its own echoes and its own
   three asks. A channel retry setting of 0, no resends, turns it off too.
-- **Back-off.** A miss is a message that needed that resend, where neither
-  the message nor its resend got an ear by the resend's last ask. After 3
-  misses in a row, MeshTrax makes no more of these resends until any
-  message gets an ear again. That covers a radio out of the observers'
-  coverage (another state), a radio out of range, and a server that isn't
-  working.
-- **Everything else stays as today:** the switch off, no internet, the
+- **Back-off.** A miss is a message that needed that resend, where no
+  observer heard the message or its resend within 90 seconds of the
+  resend. Its last ask is 60 seconds after it goes out, and it may first
+  wait for the radio to go quiet. After 3 misses in a row, MeshTrax makes
+  no more of these resends until any message gets an ear again. That
+  covers a radio out of the observers' coverage (another state), a radio
+  out of range, and a server that isn't working.
+- **Everything else is as before:** the switch off, no internet, the
   server down, or no ear in the last 2 hours all mean one repeat, stop.
+- **The proof is kept per radio** and survives a restart. Picking another
+  server starts over: what one server's observers heard says nothing
+  about another's.
 
 **What it costs:**
 - **Airtime:** a resend is a full flood. The one-resend cap and the back-off
@@ -103,11 +108,12 @@ nothing about coverage where the radio is now.
   Other apps may show the message twice. MeshTrax shows it once.
 
 **Who owns what:**
-- **HeardService** tells the connector, through a hook, whether these
-  resends are allowed now: an ear in the last 2 hours, and fewer than 3
-  misses in a row.
-- **Pathfinder** tells it through `isCarRepeater(hop, width)`, which is
-  true for a repeater code marked "Moves" or "Moves with me". The hook is
-  null while Pathfinder is off, and then every repeater counts.
+- **HeardService** answers the connector's `mayResendAfterOneRepeater`:
+  an ear for this radio in the last 2 hours, and fewer than 3 misses in a
+  row. The connector reports each of these resends through
+  `onResentAfterOneRepeater`, so HeardService can count the misses.
+- **Pathfinder** answers `isCarRepeater(hop, width)`, which is true for a
+  repeater code marked "Moves" or "Moves with me". The hook is null while
+  Pathfinder is off, and then every repeater counts.
 - **The connector** counts the repeaters it heard and makes the resend. It
   imports neither package.
