@@ -426,14 +426,23 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
             );
           },
         ),
+        // Holes cut by the fill rule. flutter_map's default off the web
+        // subtracts each hole's path from the polygon's on every frame: over
+        // the radio reach's shade that took 10 to 47 ms a frame on a PC, and
+        // made zooming sluggish. No overlay's holes overlap, so the even-odd
+        // rule draws the same.
         if (o.passivePolygons.isNotEmpty)
-          fm.PolygonLayer(polygons: o.passivePolygons),
+          fm.PolygonLayer(
+            polygons: o.passivePolygons,
+            painterFillMethod: fm.PolygonPainterFillMethod.evenOdd,
+          ),
         if (o.activePolygons.isNotEmpty)
           _interactive(
             _polygonHits,
             fm.PolygonLayer<MapOverlay>(
               hitNotifier: _polygonHits,
               polygons: o.activePolygons,
+              painterFillMethod: fm.PolygonPainterFillMethod.evenOdd,
             ),
           ),
         if (o.passiveLines.isNotEmpty)

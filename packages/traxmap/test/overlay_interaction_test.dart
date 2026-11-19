@@ -323,6 +323,37 @@ void main() {
     expect(layer.polygons.single.holePointsList, hasLength(1));
   });
 
+  // flutter_map's default subtracted every hole on every frame, which made
+  // zooming over the radio reach's shade sluggish (owner, 2026-11-18).
+  testWidgets('polygon layers cut holes by the even-odd rule', (tester) async {
+    const ring = [
+      LatLng(36.7, -121.9),
+      LatLng(36.9, -121.9),
+      LatLng(36.9, -121.7),
+      LatLng(36.7, -121.7),
+    ];
+    const hole = [
+      LatLng(36.75, -121.85),
+      LatLng(36.85, -121.85),
+      LatLng(36.8, -121.75),
+    ];
+    await pumpMap(
+      tester,
+      overlays: [
+        const MapPolygon(id: 'passive', points: ring, holes: [hole]),
+        MapPolygon(id: 'active', points: ring, holes: const [hole], onTap: () {}),
+      ],
+    );
+    // Both the plain layer and the tappable one (a PolygonLayer<MapOverlay>).
+    final layers = tester.widgetList<fm.PolygonLayer>(
+      find.byWidgetPredicate((w) => w is fm.PolygonLayer),
+    );
+    expect(layers, hasLength(2));
+    for (final layer in layers) {
+      expect(layer.painterFillMethod, fm.PolygonPainterFillMethod.evenOdd);
+    }
+  });
+
   testWidgets('coverage is reported once, false without packs', (tester) async {
     final reports = <bool>[];
     await pumpMap(tester, onCoverageChanged: reports.add);
