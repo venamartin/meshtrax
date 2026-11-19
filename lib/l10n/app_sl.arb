@@ -1292,6 +1292,7 @@
   "channels_scanQrCodeComingSoon": "Prihajajoča",
   "channels_enterHashtag": "Vnesite hashtag",
   "channels_hashtagHint": "npr. #ekipa",
+  "channels_keepCapitals": "Ohrani velike črke",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

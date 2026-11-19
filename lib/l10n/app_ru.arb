@@ -356,6 +356,7 @@
   "channels_scanQrCodeComingSoon": "Скоро будет",
   "channels_enterHashtag": "Введите хэштег",
   "channels_hashtagHint": "например, #команда",
+  "channels_keepCapitals": "Сохранить заглавные буквы",
   "chat_noMessages": "Сообщений пока нет",
   "chat_sendMessageToStart": "Отправьте сообщение, чтобы начать",
   "chat_originalMessageNotFound": "Исходное сообщение не найдено",

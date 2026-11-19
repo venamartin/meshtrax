@@ -1292,6 +1292,7 @@
   "channels_scanQrCodeComingSoon": "Čoskoro",
   "channels_enterHashtag": "Zadajte hashtag",
   "channels_hashtagHint": "napr. #tím",
+  "channels_keepCapitals": "Ponechať veľké písmená",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

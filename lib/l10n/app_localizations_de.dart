@@ -1721,6 +1721,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get channels_hashtagHint => 'z.B. #team';
 
   @override
+  String get channels_keepCapitals => 'Großbuchstaben behalten';
+
+  @override
   String get chat_noMessages => 'Noch keine Nachrichten.';
 
   @override

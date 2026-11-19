@@ -1302,6 +1302,7 @@
   "channels_scanQrCodeComingSoon": "Wkrótce",
   "channels_enterHashtag": "Wprowadź hashtag",
   "channels_hashtagHint": "np. #zespół",
+  "channels_keepCapitals": "Zachowaj wielkie litery",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

@@ -15,6 +15,7 @@ import '../widgets/list_filter_widget.dart';
 import '../utils/contact_search.dart';
 import '../helpers/channel_join_helper.dart';
 import '../helpers/contact_import_helper.dart';
+import '../helpers/hashtag_case_formatter.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../utils/telemetry_dialog.dart';
 import 'channel_chat_screen.dart';
@@ -327,11 +328,28 @@ class _NewChatScreenState extends State<NewChatScreen> {
     final nameController = TextEditingController();
     final pskController = TextEditingController();
     final hashtagController = TextEditingController();
+    final hashtagCase = HashtagCaseFormatter();
+    final keepCapitals = GlobalKey();
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
+          hashtagCase.onCapital = () {
+            setDialogState(() {});
+            // With the keyboard up the dialog shows little more than the
+            // box: scroll the switch that just appeared under it into view.
+            // At once: the box's own scroll to its cursor, right after,
+            // would stop an animated one.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final shown = keepCapitals.currentContext;
+              if (shown == null) return;
+              Scrollable.ensureVisible(
+                shown,
+                alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+              );
+            });
+          };
           Widget buildOptionTile({
             required int optionIndex,
             required IconData icon,
@@ -375,6 +393,9 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           nameController.clear();
                           pskController.clear();
                           hashtagController.clear();
+                          hashtagCase
+                            ..keepCapitals = false
+                            ..sawCapital = false;
                         });
                       })
                   : null,
@@ -407,6 +428,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
 
           Future<void> addHashtagChannel() async {
             var hashtag = hashtagController.text.trim();
+            if (!hashtagCase.keepCapitals) hashtag = hashtag.toLowerCase();
             if (hashtag.isEmpty) {
               showDismissibleSnackBar(
                 context,
@@ -509,20 +531,53 @@ class _NewChatScreenState extends State<NewChatScreen> {
                   ),
                 );
               case 1:
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    controller: hashtagController,
-                    decoration: InputDecoration(
-                      labelText: dialogContext.l10n.channels_enterHashtag,
-                      hintText: dialogContext.l10n.channels_hashtagHint,
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.tag),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: TextField(
+                        controller: hashtagController,
+                        decoration: InputDecoration(
+                          labelText: dialogContext.l10n.channels_enterHashtag,
+                          hintText: dialogContext.l10n.channels_hashtagHint,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.tag),
+                        ),
+                        maxLength: 31,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        // The limit first, so the case formatter sees only
+                        // what the box keeps.
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(31),
+                          hashtagCase,
+                        ],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => addHashtagChannel(),
+                      ),
                     ),
-                    maxLength: 31,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => addHashtagChannel(),
-                  ),
+                    if (hashtagCase.sawCapital)
+                      SwitchListTile(
+                        key: keepCapitals,
+                        title: Text(dialogContext.l10n.channels_keepCapitals),
+                        value: hashtagCase.keepCapitals,
+                        onChanged: (keep) => setDialogState(() {
+                          hashtagCase.keepCapitals = keep;
+                          final text = keep
+                              ? hashtagCase.typed
+                              : hashtagController.text.toLowerCase();
+                          hashtagController.value = TextEditingValue(
+                            text: text,
+                            selection: TextSelection.collapsed(
+                              offset: text.length,
+                            ),
+                          );
+                        }),
+                      ),
+                  ],
                 );
               case 3:
                 return Column(

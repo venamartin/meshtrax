@@ -1711,6 +1711,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get channels_hashtagHint => 'napr. #tím';
 
   @override
+  String get channels_keepCapitals => 'Ponechať veľké písmená';
+
+  @override
   String get chat_noMessages => 'Zatiaľ žiadne správy.';
 
   @override

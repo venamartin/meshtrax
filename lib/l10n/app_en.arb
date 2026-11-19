@@ -856,6 +856,7 @@
   "channels_scanQrCodeComingSoon": "Coming soon",
   "channels_enterHashtag": "Enter hashtag",
   "channels_hashtagHint": "e.g. #team",
+  "channels_keepCapitals": "Keep capitals",
   "chat_noMessages": "No messages yet",
   "chat_sendMessage": "Send message",
   "chat_sendMessageTo": "Send a message to {contactName}",

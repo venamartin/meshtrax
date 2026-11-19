@@ -631,6 +631,7 @@
   "channels_scanQrCodeComingSoon": "近日公開",
   "channels_enterHashtag": "ハッシュタグを入力してください",
   "channels_hashtagHint": "例：#チーム",
+  "channels_keepCapitals": "大文字のままにする",
   "chat_noMessages": "まだメッセージは届いていません",
   "chat_sendMessageToStart": "開始するためにメッセージを送信してください",
   "chat_originalMessageNotFound": "元のメッセージが見つかりませんでした",

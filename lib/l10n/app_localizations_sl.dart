@@ -1703,6 +1703,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get channels_hashtagHint => 'npr. #ekipa';
 
   @override
+  String get channels_keepCapitals => 'Ohrani velike črke';
+
+  @override
   String get chat_noMessages => 'Še ni sporočil.';
 
   @override

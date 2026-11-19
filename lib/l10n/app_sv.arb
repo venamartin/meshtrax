@@ -1292,6 +1292,7 @@
   "channels_scanQrCodeComingSoon": "Kommer snart",
   "channels_enterHashtag": "Ange hashtag",
   "channels_hashtagHint": "t.ex. #team",
+  "channels_keepCapitals": "Behåll versaler",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

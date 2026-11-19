@@ -262,7 +262,11 @@ Found in every message, formatting on or off, and never formatted inside:
 - Coordinates (`lat, lon` with at least three decimals) and `geo:` URIs:
   open the map.
 - `@[Name]` mentions.
-- Hashtags (`#` followed by letters, digits, `_` or `-`).
+- Hashtags (`#` followed by letters, digits, `_` or `-`): open the channel
+  of that name, else the lowercase one, or offer to join it in lowercase.
+  A hashtag channel's key comes from its name exactly as written, so `#Test`
+  and `#test` are two channels. **Keep capitals** joins it as written; the
+  Create a Hashtag Channel box works the same way.
 
 ## Emoji-only messages
 

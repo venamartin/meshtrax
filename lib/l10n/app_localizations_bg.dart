@@ -1721,6 +1721,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get channels_hashtagHint => 'напр. #отбор';
 
   @override
+  String get channels_keepCapitals => 'Запази главните букви';
+
+  @override
   String get chat_noMessages => 'Няма съобщения.';
 
   @override

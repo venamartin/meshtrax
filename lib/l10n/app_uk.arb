@@ -1293,6 +1293,7 @@
   "channels_scanQrCodeComingSoon": "Скоро буде",
   "channels_enterHashtag": "Введіть хештег",
   "channels_hashtagHint": "напр. #команда",
+  "channels_keepCapitals": "Зберегти великі літери",
   "@neighbors_unknownContact": {
     "placeholders": {
       "pubkey": {

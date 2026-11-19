@@ -1710,6 +1710,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get channels_hashtagHint => 'bijv. #team';
 
   @override
+  String get channels_keepCapitals => 'Hoofdletters behouden';
+
+  @override
   String get chat_noMessages => 'Nog geen berichten.';
 
   @override

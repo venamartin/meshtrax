@@ -3083,6 +3083,12 @@ abstract class AppLocalizations {
   /// **'e.g. #team'**
   String get channels_hashtagHint;
 
+  /// No description provided for @channels_keepCapitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep capitals'**
+  String get channels_keepCapitals;
+
   /// No description provided for @chat_noMessages.
   ///
   /// In en, this message translates to:
