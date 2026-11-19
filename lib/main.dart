@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import 'helpers/snack_bar_builder.dart';
 import 'l10n/app_localizations.dart';
@@ -194,6 +195,10 @@ from GeoNames (cities1000): https://www.geonames.org/
 Creative Commons Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 ''',
+    );
+    yield LicenseEntryWithLineBreaks(
+      <String>['JetBrains Mono'],
+      await rootBundle.loadString('assets/fonts/JetBrainsMono-OFL.txt'),
     );
   });
 }

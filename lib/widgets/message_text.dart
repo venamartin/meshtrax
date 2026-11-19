@@ -27,11 +27,11 @@ class _MessageTextState extends State<MessageText> {
   final _revealed = <int>{};
   final _recognizers = <TapGestureRecognizer>[];
 
-  static String get _monospaceFamily {
-    if (PlatformInfo.isWindows) return 'Consolas';
-    if (PlatformInfo.isMacOS || PlatformInfo.isIOS) return 'Menlo';
-    return 'monospace';
-  }
+  /// Code text: MeshTrax's own monospace font, the same on every platform,
+  /// a little smaller than the message so aligned columns fit a phone (the
+  /// owner's pick, 2026-11-19).
+  static const _monospaceFamily = 'JetBrains Mono';
+  static const _codeScale = 0.8;
 
   @override
   void didUpdateWidget(MessageText oldWidget) {
@@ -181,7 +181,8 @@ class _MessageTextState extends State<MessageText> {
     final isLink = link != null && !isMention;
     final isHeader = run.header >= 1 && run.header <= 3;
     var style = base.copyWith(
-      fontSize: (base.fontSize ?? 14) * _headerScale[run.header],
+      fontSize: (base.fontSize ?? 14) *
+          (run.code ? _codeScale : _headerScale[run.header]),
       fontWeight: run.bold || isHeader || isMention
           ? FontWeight.bold
           : isLink
