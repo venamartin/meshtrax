@@ -2270,6 +2270,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void Function(String contactPubkeyHex, int pathLenRaw, int? snrByte)?
       onContactMessageHeard;
 
+  /// A routed DM or room post to this radio that the app opened from a copy
+  /// still on its way (see PassingCopy): the contact it came from, the hops
+  /// it still had to go at [hopWidth] bytes each, and the copy's signed SNR
+  /// byte. The radio never opened it, and the route it was on never
+  /// finished, so the message hooks above don't fire for it. The path graph
+  /// hook: Pathfinder decides what, if anything, it proves.
+  void Function(
+    String contactPubkeyHex,
+    List<int> hopsLeft,
+    int hopWidth,
+    int snrByte,
+  )? onPassingCopyHeard;
+
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
     unawaited(() async {
@@ -8165,8 +8178,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         (c) => c?.publicKeyHex == message!.senderKeyHex,
         orElse: () => unlisted,
       );
-      // A passing copy is no evidence for Pathfinder: the route it was on
-      // never finished, and the SNR is of a hop before its last.
+      // A passing copy goes to Pathfinder on its own hook
+      // (onPassingCopyHeard), never as a delivered message: the route it
+      // was on never finished, and the SNR is of a hop before its last.
       if (contact != null && passingCopyHopsLeft == null) {
         final layout = parseContactMsgLayout(frame);
         if (layout != null) {
@@ -8962,6 +8976,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       contactKeys: _contacts.map((c) => c.publicKey),
     );
     if (copy == null) return;
+    onPassingCopyHeard?.call(
+      pubKeyToHex(copy.senderKey),
+      copy.hopsLeft,
+      copy.hopWidth,
+      snrByte.toSigned(8),
+    );
     final ts = copy.timestamp;
     final head = <int>[
       respCodeContactMsgRecvV3,
