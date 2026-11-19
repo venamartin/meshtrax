@@ -1466,60 +1466,50 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle =>
-      'Waar die is, ook als hun telefoon uit staat';
+  String get radioAsk_menuSubtitle => 'Werkt ook als hun telefoon uit staat';
 
   @override
-  String get radioAsk_how =>
-      'Hun radio antwoordt zelf, ook met de telefoon uit, als die jou telemetrie toestaat.';
-
-  @override
-  String get radioAsk_waiting => 'Wacht tot een andere vraag klaar is';
+  String get radioAsk_waiting => 'Wacht op een andere vraag';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Vragen… poging $attempt van $count';
+    return 'Vragen… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Opnieuw vragen om te zien of die beweegt… poging $attempt van $count';
+    return 'Opnieuw controleren… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Vraagt om $time opnieuw om te zien of die beweegt';
+    return 'Controleert opnieuw om $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Waar de radio van $name is · ontvangen $time';
+    return 'Radio van $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Geen positie: de gps van hun radio staat misschien uit';
+  String get radioAsk_noPosition => 'Geen gps-positie';
 
   @override
-  String get radioAsk_noFix =>
-      'Misschien oud: hun radio heeft geen actuele gps-fix';
+  String get radioAsk_noFix => 'Misschien oud: geen gps-fix';
 
   @override
   String get radioAsk_unchanged => 'Misschien oud: geen verandering in 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Kon geen tweede keer vragen om te zien of die beweegt';
+  String get radioAsk_notChecked => 'Tweede vraag mislukt';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Geen antwoord van de radio van $name: buiten bereik, uitgeschakeld of die staat het jou niet toe.';
-  }
+  String get radioAsk_noAnswer => 'Geen antwoord';
 
   @override
   String get radioAsk_showOnMap => 'Op de kaart tonen';

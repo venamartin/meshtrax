@@ -1455,59 +1455,50 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Var den är, även med telefonen avstängd';
+  String get radioAsk_menuSubtitle => 'Fungerar med telefonen avstängd';
 
   @override
-  String get radioAsk_how =>
-      'Radion svarar själv, även med telefonen avstängd, om den tillåter dig telemetri.';
-
-  @override
-  String get radioAsk_waiting => 'Väntar på att en annan fråga ska bli klar';
+  String get radioAsk_waiting => 'Väntar på en annan fråga';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Frågar… försök $attempt av $count';
+    return 'Frågar… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Frågar igen för att se om den rör sig… försök $attempt av $count';
+    return 'Kontrollerar igen… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Frågar igen kl. $time för att se om den rör sig';
+    return 'Kontrollerar igen kl. $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Var radion hos $name är · mottaget $time';
+    return 'Radion hos $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Ingen position: radions GPS kan vara avstängd';
+  String get radioAsk_noPosition => 'Ingen GPS-position';
 
   @override
-  String get radioAsk_noFix =>
-      'Kan vara gammal: radion har ingen aktuell GPS-fix';
+  String get radioAsk_noFix => 'Kan vara gammal: ingen GPS-fix';
 
   @override
   String get radioAsk_unchanged => 'Kan vara gammal: ingen ändring på 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Kunde inte fråga en andra gång för att se om den rör sig';
+  String get radioAsk_notChecked => 'Andra frågan misslyckades';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Inget svar från radion hos $name: utom räckvidd, avstängd eller så tillåter den inte dig.';
-  }
+  String get radioAsk_noAnswer => 'Inget svar';
 
   @override
   String get radioAsk_showOnMap => 'Visa på kartan';

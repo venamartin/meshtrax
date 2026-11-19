@@ -1474,61 +1474,51 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle =>
-      'Onde ele está, mesmo com o celular desligado';
+  String get radioAsk_menuSubtitle => 'Funciona com o celular desligado';
 
   @override
-  String get radioAsk_how =>
-      'O rádio responde sozinho, mesmo com o celular desligado, se permitir telemetria para você.';
-
-  @override
-  String get radioAsk_waiting => 'Aguardando outra consulta terminar';
+  String get radioAsk_waiting => 'Aguardando outra consulta';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Perguntando… tentativa $attempt de $count';
+    return 'Perguntando… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Perguntando de novo para ver se ele se move… tentativa $attempt de $count';
+    return 'Verificando de novo… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Pergunta de novo às $time para ver se ele se move';
+    return 'Verifica de novo às $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Onde está o rádio de $name · recebido $time';
+    return 'Rádio de $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Rádio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Sem posição: o GPS do rádio pode estar desligado';
+  String get radioAsk_noPosition => 'Sem posição de GPS';
 
   @override
-  String get radioAsk_noFix =>
-      'Pode estar desatualizada: o rádio não tem fix de GPS atual';
+  String get radioAsk_noFix => 'Pode estar desatualizada: sem fix de GPS';
 
   @override
   String get radioAsk_unchanged =>
       'Pode estar desatualizada: sem mudança em 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Não foi possível perguntar uma segunda vez para ver se ele se move';
+  String get radioAsk_notChecked => 'A segunda consulta falhou';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Sem resposta do rádio de $name: fora de alcance, desligado ou não permite para você.';
-  }
+  String get radioAsk_noAnswer => 'Sem resposta';
 
   @override
   String get radioAsk_showOnMap => 'Mostrar no mapa';

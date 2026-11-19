@@ -1383,55 +1383,50 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => '即使对方手机关机也能找到位置';
+  String get radioAsk_menuSubtitle => '对方手机关机也可用';
 
   @override
-  String get radioAsk_how => '对方的电台会自动应答，即使手机关机，只要它允许您查看遥测。';
-
-  @override
-  String get radioAsk_waiting => '正在等待另一个询问完成';
+  String get radioAsk_waiting => '正在等待另一个询问';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return '正在询问… 第 $attempt 次，共 $count 次';
+    return '正在询问… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return '正在再次询问以确认是否在移动… 第 $attempt 次，共 $count 次';
+    return '正在再次确认… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return '将于 $time 再次询问，确认是否在移动';
+    return '将于 $time 再次确认';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return '$name 的电台位置 · $time 收到';
+    return '$name 的电台 · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return '电台 $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition => '无位置：对方电台的 GPS 可能已关闭';
+  String get radioAsk_noPosition => '无 GPS 位置';
 
   @override
-  String get radioAsk_noFix => '可能已过时：对方电台没有当前 GPS 定位';
+  String get radioAsk_noFix => '可能已过时：无 GPS 定位';
 
   @override
   String get radioAsk_unchanged => '可能已过时：1 分钟内无变化';
 
   @override
-  String get radioAsk_notChecked => '无法再次询问以确认是否在移动';
+  String get radioAsk_notChecked => '第二次询问失败';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return '$name 的电台无应答：超出范围、已关机或不允许您查询。';
-  }
+  String get radioAsk_noAnswer => '无应答';
 
   @override
   String get radioAsk_showOnMap => '在地图上显示';

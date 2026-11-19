@@ -1407,56 +1407,50 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => '휴대폰이 꺼져 있어도 위치를 알 수 있습니다';
+  String get radioAsk_menuSubtitle => '상대 휴대폰이 꺼져 있어도 됩니다';
 
   @override
-  String get radioAsk_how =>
-      '상대 무전기가 스스로 응답합니다. 휴대폰이 꺼져 있어도 텔레메트리를 허용했다면 응답합니다.';
-
-  @override
-  String get radioAsk_waiting => '다른 요청이 끝나기를 기다리는 중';
+  String get radioAsk_waiting => '다른 요청을 기다리는 중';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return '묻는 중… $count번 중 $attempt번째';
+    return '묻는 중… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return '움직이는지 보려고 다시 묻는 중… $count번 중 $attempt번째';
+    return '다시 확인 중… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return '$time에 다시 물어 움직이는지 확인합니다';
+    return '$time에 다시 확인';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return '$name의 무전기 위치 · $time 수신';
+    return '$name의 무전기 · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return '무전기 $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition => '위치 없음: 무전기 GPS가 꺼져 있을 수 있습니다';
+  String get radioAsk_noPosition => 'GPS 위치 없음';
 
   @override
-  String get radioAsk_noFix => '오래된 위치일 수 있음: 무전기에 현재 GPS 신호가 없습니다';
+  String get radioAsk_noFix => '오래된 위치일 수 있음: GPS 신호 없음';
 
   @override
   String get radioAsk_unchanged => '오래된 위치일 수 있음: 1분 동안 변화 없음';
 
   @override
-  String get radioAsk_notChecked => '움직이는지 확인하는 두 번째 요청을 하지 못했습니다';
+  String get radioAsk_notChecked => '두 번째 요청 실패';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return '$name의 무전기에서 응답 없음: 범위 밖이거나, 꺼져 있거나, 허용하지 않았습니다.';
-  }
+  String get radioAsk_noAnswer => '응답 없음';
 
   @override
   String get radioAsk_showOnMap => '지도에 표시';

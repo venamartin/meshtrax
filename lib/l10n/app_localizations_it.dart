@@ -1473,60 +1473,51 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Dov\'è, anche con il telefono spento';
+  String get radioAsk_menuSubtitle => 'Funziona con il telefono spento';
 
   @override
-  String get radioAsk_how =>
-      'La sua radio risponde da sola, anche con il telefono spento, se ti consente la telemetria.';
-
-  @override
-  String get radioAsk_waiting => 'In attesa che finisca un\'altra richiesta';
+  String get radioAsk_waiting => 'In attesa di un\'altra richiesta';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Richiesta in corso… tentativo $attempt di $count';
+    return 'Richiesta… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Nuova richiesta per vedere se si muove… tentativo $attempt di $count';
+    return 'Nuovo controllo… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Nuova richiesta alle $time per vedere se si muove';
+    return 'Nuovo controllo alle $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Dov\'è la radio di $name · ricevuto $time';
+    return 'Radio di $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Nessuna posizione: il GPS della sua radio potrebbe essere spento';
+  String get radioAsk_noPosition => 'Nessuna posizione GPS';
 
   @override
-  String get radioAsk_noFix =>
-      'Potrebbe essere vecchia: la sua radio non ha un fix GPS attuale';
+  String get radioAsk_noFix => 'Potrebbe essere vecchia: nessun fix GPS';
 
   @override
   String get radioAsk_unchanged =>
       'Potrebbe essere vecchia: nessun cambiamento in 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Impossibile chiedere una seconda volta per vedere se si muove';
+  String get radioAsk_notChecked => 'Seconda richiesta non riuscita';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Nessuna risposta dalla radio di $name: fuori portata, spenta o non te lo consente.';
-  }
+  String get radioAsk_noAnswer => 'Nessuna risposta';
 
   @override
   String get radioAsk_showOnMap => 'Mostra sulla mappa';

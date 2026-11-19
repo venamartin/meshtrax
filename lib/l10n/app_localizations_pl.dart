@@ -1485,61 +1485,51 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle =>
-      'Gdzie jest, nawet gdy telefon jest wyłączony';
+  String get radioAsk_menuSubtitle => 'Działa przy wyłączonym telefonie';
 
   @override
-  String get radioAsk_how =>
-      'Radio odpowiada samo, nawet przy wyłączonym telefonie, jeśli zezwala Ci na telemetrię.';
-
-  @override
-  String get radioAsk_waiting => 'Czeka na zakończenie innego zapytania';
+  String get radioAsk_waiting => 'Czeka na inne zapytanie';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Pytanie… próba $attempt z $count';
+    return 'Pytanie… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Ponowne pytanie, czy się porusza… próba $attempt z $count';
+    return 'Ponowne sprawdzanie… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Ponowne pytanie o $time, czy się porusza';
+    return 'Ponowne sprawdzenie o $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Gdzie jest radio $name · odebrano $time';
+    return 'Radio $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Brak pozycji: GPS radia może być wyłączony';
+  String get radioAsk_noPosition => 'Brak pozycji GPS';
 
   @override
-  String get radioAsk_noFix =>
-      'Może być nieaktualna: radio nie ma bieżącego fixu GPS';
+  String get radioAsk_noFix => 'Może być nieaktualna: brak fixu GPS';
 
   @override
   String get radioAsk_unchanged =>
       'Może być nieaktualna: bez zmian przez 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Nie udało się zapytać drugi raz, czy się porusza';
+  String get radioAsk_notChecked => 'Drugie zapytanie nie powiodło się';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Brak odpowiedzi od radia $name: poza zasięgiem, wyłączone albo nie zezwala Ci.';
-  }
+  String get radioAsk_noAnswer => 'Brak odpowiedzi';
 
   @override
   String get radioAsk_showOnMap => 'Pokaż na mapie';

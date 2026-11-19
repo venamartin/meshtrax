@@ -1476,61 +1476,51 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle =>
-      'Hol van, akkor is, ha a telefonja ki van kapcsolva';
+  String get radioAsk_menuSubtitle => 'Kikapcsolt telefonnal is működik';
 
   @override
-  String get radioAsk_how =>
-      'A rádió magától válaszol, kikapcsolt telefonnal is, ha engedélyezi önnek a telemetriát.';
-
-  @override
-  String get radioAsk_waiting => 'Várakozás egy másik lekérdezés végére';
+  String get radioAsk_waiting => 'Várakozás egy másik lekérdezésre';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Lekérdezés… $attempt. próba ($count-ből)';
+    return 'Lekérdezés… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Újra lekérdezés, hogy mozog-e… $attempt. próba ($count-ből)';
+    return 'Újra ellenőrzés… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Újra lekérdezés ekkor: $time, hogy mozog-e';
+    return 'Újra ellenőrzés: $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return '$name rádiója itt van · fogadva: $time';
+    return '$name rádiója · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Rádió $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Nincs pozíció: a rádió GPS-e talán ki van kapcsolva';
+  String get radioAsk_noPosition => 'Nincs GPS-pozíció';
 
   @override
-  String get radioAsk_noFix =>
-      'Lehet, hogy régi: a rádiónak nincs élő GPS-jele';
+  String get radioAsk_noFix => 'Lehet, hogy régi: nincs GPS-jel';
 
   @override
   String get radioAsk_unchanged =>
       'Lehet, hogy régi: 1 perc alatt nem változott';
 
   @override
-  String get radioAsk_notChecked =>
-      'Nem sikerült másodszor is lekérdezni, hogy mozog-e';
+  String get radioAsk_notChecked => 'A második lekérdezés nem sikerült';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Nincs válasz $name rádiójától: hatótávon kívül, kikapcsolva, vagy nem engedi önnek.';
-  }
+  String get radioAsk_noAnswer => 'Nincs válasz';
 
   @override
   String get radioAsk_showOnMap => 'Megjelenítés a térképen';

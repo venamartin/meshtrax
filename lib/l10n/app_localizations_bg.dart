@@ -1475,58 +1475,50 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Къде е, дори ако телефонът е изключен';
+  String get radioAsk_menuSubtitle => 'Работи и при изключен телефон';
 
   @override
-  String get radioAsk_how =>
-      'Радиото отговаря само, дори при изключен телефон, ако ви разрешава телеметрия.';
-
-  @override
-  String get radioAsk_waiting => 'Изчаква друга заявка да приключи';
+  String get radioAsk_waiting => 'Изчаква друга заявка';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Пита… опит $attempt от $count';
+    return 'Пита… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Пита отново дали се движи… опит $attempt от $count';
+    return 'Проверява отново… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Ще пита отново в $time дали се движи';
+    return 'Нова проверка в $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Къде е радиото на $name · получено $time';
+    return 'Радиото на $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Радио $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Няма позиция: GPS на радиото може да е изключен';
+  String get radioAsk_noPosition => 'Няма GPS позиция';
 
   @override
-  String get radioAsk_noFix =>
-      'Може да е стара: радиото няма текуща GPS позиция';
+  String get radioAsk_noFix => 'Може да е стара: без GPS сигнал';
 
   @override
   String get radioAsk_unchanged => 'Може да е стара: без промяна за 1 мин';
 
   @override
-  String get radioAsk_notChecked => 'Не успя да пита втори път дали се движи';
+  String get radioAsk_notChecked => 'Втората заявка не успя';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Няма отговор от радиото на $name: извън обхват, изключено или не ви разрешава.';
-  }
+  String get radioAsk_noAnswer => 'Няма отговор';
 
   @override
   String get radioAsk_showOnMap => 'Покажи на картата';

@@ -1407,55 +1407,50 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => '電話がオフでも位置がわかります';
+  String get radioAsk_menuSubtitle => '相手の電話がオフでも使えます';
 
   @override
-  String get radioAsk_how => '相手の無線機が自動で応答します。電話がオフでも、テレメトリーを許可されていれば応答します。';
-
-  @override
-  String get radioAsk_waiting => '別の問い合わせが終わるのを待っています';
+  String get radioAsk_waiting => '別の問い合わせを待っています';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return '問い合わせ中… $count回中$attempt回目';
+    return '問い合わせ中… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return '動いているか確認するため再度問い合わせ中… $count回中$attempt回目';
+    return '再確認中… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return '$timeに再度問い合わせて、動いているか確認します';
+    return '$timeに再確認';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return '$nameの無線機の位置 · $timeに受信';
+    return '$nameの無線機 · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return '無線機 $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition => '位置なし：無線機のGPSがオフかもしれません';
+  String get radioAsk_noPosition => 'GPS位置なし';
 
   @override
-  String get radioAsk_noFix => '古い可能性：無線機にGPSの現在の測位がありません';
+  String get radioAsk_noFix => '古い可能性：GPS測位なし';
 
   @override
   String get radioAsk_unchanged => '古い可能性：1分間変化なし';
 
   @override
-  String get radioAsk_notChecked => '動いているか確認する2回目の問い合わせができませんでした';
+  String get radioAsk_notChecked => '2回目の問い合わせに失敗';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return '$nameの無線機から応答なし：圏外、電源オフ、または許可されていません。';
-  }
+  String get radioAsk_noAnswer => '応答なし';
 
   @override
   String get radioAsk_showOnMap => '地図に表示';

@@ -1450,58 +1450,50 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Where it is, even with their phone off';
+  String get radioAsk_menuSubtitle => 'Works with their phone off';
 
   @override
-  String get radioAsk_how =>
-      'Their radio answers by itself, even with their phone off, if it allows you telemetry.';
-
-  @override
-  String get radioAsk_waiting => 'Waiting for another ask to finish';
+  String get radioAsk_waiting => 'Waiting for another ask';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Asking… try $attempt of $count';
+    return 'Asking… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Asking again to see if it moves… try $attempt of $count';
+    return 'Checking again… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Asking again at $time to see if it moves';
+    return 'Checking again at $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Where $name\'s radio is · received $time';
+    return '$name\'s radio · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'No position: their radio\'s GPS may be off';
+  String get radioAsk_noPosition => 'No GPS position';
 
   @override
-  String get radioAsk_noFix => 'May be old: their radio has no live GPS fix';
+  String get radioAsk_noFix => 'May be old: no GPS fix';
 
   @override
   String get radioAsk_unchanged => 'May be old: no change in 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Couldn\'t ask a second time to see if it moves';
+  String get radioAsk_notChecked => 'Second ask failed';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'No answer from $name\'s radio: out of range, switched off, or it doesn\'t allow you.';
-  }
+  String get radioAsk_noAnswer => 'No answer';
 
   @override
   String get radioAsk_showOnMap => 'Show on map';

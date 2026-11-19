@@ -83,14 +83,7 @@ class RadioAskSheet extends StatelessWidget {
               l10n.radioAsk_title(contact.name),
               style: theme.textTheme.titleLarge,
             ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.radioAsk_how,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             if (answer != null) ...[
               if (position != null) ...[
                 Text(
@@ -126,7 +119,7 @@ class RadioAskSheet extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             if (ask?.phase == RadioAskPhase.noAnswer) ...[
-              Text(l10n.radioAsk_noAnswer(contact.name), style: warn),
+              Text(l10n.radioAsk_noAnswer, style: warn),
               const SizedBox(height: 12),
             ],
             if (status != null)

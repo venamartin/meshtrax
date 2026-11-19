@@ -1460,59 +1460,50 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Kje je, tudi ko je telefon izklopljen';
+  String get radioAsk_menuSubtitle => 'Deluje tudi z izklopljenim telefonom';
 
   @override
-  String get radioAsk_how =>
-      'Radio odgovori samo, tudi z izklopljenim telefonom, če vam dovoli telemetrijo.';
-
-  @override
-  String get radioAsk_waiting => 'Čaka, da se konča drugo vprašanje';
+  String get radioAsk_waiting => 'Čaka na drugo vprašanje';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Sprašuje… poskus $attempt od $count';
+    return 'Sprašuje… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Znova sprašuje, ali se premika… poskus $attempt od $count';
+    return 'Znova preverja… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Ob $time bo znova vprašal, ali se premika';
+    return 'Znova preveri ob $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Kje je radio $name · prejeto $time';
+    return 'Radio $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Radio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Ni položaja: GPS radia je morda izklopljen';
+  String get radioAsk_noPosition => 'Ni GPS-položaja';
 
   @override
-  String get radioAsk_noFix =>
-      'Morda je star: radio nima trenutnega GPS-položaja';
+  String get radioAsk_noFix => 'Morda je star: ni GPS-signala';
 
   @override
   String get radioAsk_unchanged => 'Morda je star: brez spremembe v 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Drugič ni bilo mogoče vprašati, ali se premika';
+  String get radioAsk_notChecked => 'Drugo vprašanje ni uspelo';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Ni odgovora od radia $name: zunaj dosega, izklopljen ali vam ne dovoli.';
-  }
+  String get radioAsk_noAnswer => 'Ni odgovora';
 
   @override
   String get radioAsk_showOnMap => 'Pokaži na zemljevidu';

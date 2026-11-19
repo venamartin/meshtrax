@@ -1468,59 +1468,50 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Де воно, навіть якщо телефон вимкнено';
+  String get radioAsk_menuSubtitle => 'Працює й з вимкненим телефоном';
 
   @override
-  String get radioAsk_how =>
-      'Радіо відповідає саме, навіть із вимкненим телефоном, якщо дозволяє вам телеметрію.';
-
-  @override
-  String get radioAsk_waiting => 'Очікування завершення іншого запиту';
+  String get radioAsk_waiting => 'Очікування іншого запиту';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Запит… спроба $attempt з $count';
+    return 'Запит… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Повторний запит: чи воно рухається… спроба $attempt з $count';
+    return 'Повторна перевірка… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Повторний запит о $time: чи воно рухається';
+    return 'Повторна перевірка о $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Де радіо $name · отримано $time';
+    return 'Радіо $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Радіо $volts В';
+    return '$volts В';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Немає позиції: GPS радіо, можливо, вимкнено';
+  String get radioAsk_noPosition => 'Немає GPS-позиції';
 
   @override
-  String get radioAsk_noFix =>
-      'Може бути застарілою: радіо не має поточної GPS-фіксації';
+  String get radioAsk_noFix => 'Може бути застарілою: немає GPS-фіксації';
 
   @override
   String get radioAsk_unchanged => 'Може бути застарілою: без змін за 1 хв';
 
   @override
-  String get radioAsk_notChecked =>
-      'Не вдалося запитати вдруге, чи воно рухається';
+  String get radioAsk_notChecked => 'Другий запит не вдався';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Немає відповіді від радіо $name: поза зоною, вимкнено або не дозволяє вам.';
-  }
+  String get radioAsk_noAnswer => 'Немає відповіді';
 
   @override
   String get radioAsk_showOnMap => 'Показати на мапі';

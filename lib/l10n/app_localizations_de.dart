@@ -1472,60 +1472,51 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Wo es ist, auch wenn das Handy aus ist';
+  String get radioAsk_menuSubtitle => 'Geht auch bei ausgeschaltetem Handy';
 
   @override
-  String get radioAsk_how =>
-      'Das Funkgerät antwortet von selbst, auch bei ausgeschaltetem Handy, wenn es Ihnen Telemetrie erlaubt.';
-
-  @override
-  String get radioAsk_waiting => 'Wartet, bis eine andere Anfrage fertig ist';
+  String get radioAsk_waiting => 'Wartet auf eine andere Anfrage';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Fragt… Versuch $attempt von $count';
+    return 'Fragt… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Fragt erneut, ob es sich bewegt… Versuch $attempt von $count';
+    return 'Prüft erneut… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Fragt um $time erneut, ob es sich bewegt';
+    return 'Prüft erneut um $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Wo das Funkgerät von $name ist · empfangen $time';
+    return 'Funkgerät von $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Funkgerät $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Keine Position: Das GPS des Funkgeräts ist vielleicht aus';
+  String get radioAsk_noPosition => 'Keine GPS-Position';
 
   @override
-  String get radioAsk_noFix =>
-      'Vielleicht veraltet: Das Funkgerät hat keinen aktuellen GPS-Fix';
+  String get radioAsk_noFix => 'Vielleicht veraltet: kein GPS-Fix';
 
   @override
   String get radioAsk_unchanged =>
       'Vielleicht veraltet: keine Änderung in 1 Min.';
 
   @override
-  String get radioAsk_notChecked =>
-      'Konnte kein zweites Mal fragen, ob es sich bewegt';
+  String get radioAsk_notChecked => 'Zweite Anfrage fehlgeschlagen';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Keine Antwort vom Funkgerät von $name: außer Reichweite, ausgeschaltet oder es erlaubt es Ihnen nicht.';
-  }
+  String get radioAsk_noAnswer => 'Keine Antwort';
 
   @override
   String get radioAsk_showOnMap => 'Auf der Karte zeigen';

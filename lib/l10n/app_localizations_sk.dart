@@ -1467,57 +1467,50 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Kde je, aj keď je telefón vypnutý';
+  String get radioAsk_menuSubtitle => 'Funguje aj pri vypnutom telefóne';
 
   @override
-  String get radioAsk_how =>
-      'Rádio odpovie samo, aj pri vypnutom telefóne, ak vám povoľuje telemetriu.';
-
-  @override
-  String get radioAsk_waiting => 'Čaká sa na dokončenie inej otázky';
+  String get radioAsk_waiting => 'Čaká sa na inú otázku';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Pýta sa… pokus $attempt z $count';
+    return 'Pýta sa… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Znova sa pýta, či sa hýbe… pokus $attempt z $count';
+    return 'Znova overuje… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Znova sa opýta o $time, či sa hýbe';
+    return 'Znova overí o $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Kde je rádio $name · prijaté $time';
+    return 'Rádio $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Rádio $volts V';
+    return '$volts V';
   }
 
   @override
-  String get radioAsk_noPosition => 'Bez polohy: GPS rádia môže byť vypnuté';
+  String get radioAsk_noPosition => 'Bez polohy GPS';
 
   @override
-  String get radioAsk_noFix => 'Môže byť stará: rádio nemá aktuálny GPS fix';
+  String get radioAsk_noFix => 'Môže byť stará: bez GPS fixu';
 
   @override
   String get radioAsk_unchanged => 'Môže byť stará: bez zmeny za 1 min';
 
   @override
-  String get radioAsk_notChecked =>
-      'Nepodarilo sa opýtať druhýkrát, či sa hýbe';
+  String get radioAsk_notChecked => 'Druhá otázka zlyhala';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Žiadna odpoveď z rádia $name: mimo dosahu, vypnuté alebo vám to nepovoľuje.';
-  }
+  String get radioAsk_noAnswer => 'Žiadna odpoveď';
 
   @override
   String get radioAsk_showOnMap => 'Zobraziť na mape';

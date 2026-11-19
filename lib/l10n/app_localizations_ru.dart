@@ -1472,60 +1472,51 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_menuSubtitle => 'Где оно, даже если телефон выключен';
+  String get radioAsk_menuSubtitle => 'Работает и при выключенном телефоне';
 
   @override
-  String get radioAsk_how =>
-      'Радио отвечает само, даже при выключенном телефоне, если разрешает вам телеметрию.';
-
-  @override
-  String get radioAsk_waiting => 'Ожидание окончания другого запроса';
+  String get radioAsk_waiting => 'Ожидание другого запроса';
 
   @override
   String radioAsk_asking(int attempt, int count) {
-    return 'Запрос… попытка $attempt из $count';
+    return 'Запрос… $attempt/$count';
   }
 
   @override
   String radioAsk_checkingAgain(int attempt, int count) {
-    return 'Повторный запрос: движется ли оно… попытка $attempt из $count';
+    return 'Повторная проверка… $attempt/$count';
   }
 
   @override
   String radioAsk_checkAgainAt(String time) {
-    return 'Повторный запрос в $time: движется ли оно';
+    return 'Повторная проверка в $time';
   }
 
   @override
   String radioAsk_where(String name, String time) {
-    return 'Где радио $name · получено $time';
+    return 'Радио $name · $time';
   }
 
   @override
   String radioAsk_volts(String volts) {
-    return 'Радио $volts В';
+    return '$volts В';
   }
 
   @override
-  String get radioAsk_noPosition =>
-      'Нет позиции: GPS радио, возможно, выключен';
+  String get radioAsk_noPosition => 'Нет GPS-позиции';
 
   @override
-  String get radioAsk_noFix =>
-      'Может быть устаревшей: у радио нет текущей GPS-привязки';
+  String get radioAsk_noFix => 'Может быть устаревшей: нет GPS-привязки';
 
   @override
   String get radioAsk_unchanged =>
       'Может быть устаревшей: без изменений за 1 мин';
 
   @override
-  String get radioAsk_notChecked =>
-      'Не удалось спросить второй раз, движется ли оно';
+  String get radioAsk_notChecked => 'Второй запрос не удался';
 
   @override
-  String radioAsk_noAnswer(String name) {
-    return 'Нет ответа от радио $name: вне зоны, выключено или не разрешает вам.';
-  }
+  String get radioAsk_noAnswer => 'Нет ответа';
 
   @override
   String get radioAsk_showOnMap => 'Показать на карте';

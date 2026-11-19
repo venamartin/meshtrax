@@ -73,14 +73,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text("Ask GWQ's radio"), findsOneWidget);
     expect(
-      find.textContaining("Where GWQ's radio is · received 2:02"),
+      find.textContaining(RegExp(r"^GWQ's radio · 2:02\WPM$")),
       findsOneWidget,
     );
     expect(find.text('36.50000, -117.00000'), findsOneWidget);
-    expect(find.text('Radio 4.15 V · 40°C / 104°F'), findsOneWidget);
+    expect(find.text('4.15 V · 40°C / 104°F'), findsOneWidget);
     expect(
       find.textContaining(
-        RegExp(r'^Asking again at 2:03\WPM to see if it moves$'),
+        RegExp(r'^Checking again at 2:03\WPM$'),
       ),
       findsOneWidget,
     );
@@ -88,7 +88,7 @@ void main() {
 
     await tester.pump(const Duration(minutes: 1));
     await tester.pumpAndSettle();
-    expect(find.textContaining('to see if it moves'), findsNothing);
+    expect(find.textContaining('Checking again'), findsNothing);
     expect(find.textContaining('May be old'), findsNothing);
     expect(find.text('Ask again'), findsOneWidget);
 
@@ -116,10 +116,10 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(
-      find.text('May be old: their radio has no live GPS fix'),
+      find.text('May be old: no GPS fix'),
       findsOneWidget,
     );
-    expect(find.textContaining('to see if it moves'), findsNothing);
+    expect(find.textContaining('Checking again'), findsNothing);
   });
 
   testWidgets('no position: their GPS may be off, and no map button', (
@@ -130,38 +130,29 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(
-      find.text("No position: their radio's GPS may be off"),
-      findsOneWidget,
-    );
-    expect(find.text('Radio 4.15 V'), findsOneWidget);
+    expect(find.text('No GPS position'), findsOneWidget);
+    expect(find.text('4.15 V'), findsOneWidget);
     expect(find.text('Show on map'), findsNothing);
   });
 
-  testWidgets('no answer: says why it may be, and offers to ask again', (
+  testWidgets('no answer: says so, and offers to ask again', (
     tester,
   ) async {
     final (radio, _) = await open(tester);
 
     await tester.tap(find.text('open'));
     await tester.pump();
-    expect(find.text('Asking… try 1 of 3'), findsOneWidget);
+    expect(find.text('Asking… 1/3'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pump(const Duration(minutes: 2));
     await tester.pumpAndSettle();
-    expect(
-      find.text(
-        "No answer from GWQ's radio: out of range, switched off, or it "
-        "doesn't allow you.",
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('No answer'), findsOneWidget);
     expect(radio.tags, hasLength(RadioAskService.attempts));
 
     await tester.tap(find.text('Ask again'));
     await tester.pump();
-    expect(find.text('Asking… try 1 of 3'), findsOneWidget);
+    expect(find.text('Asking… 1/3'), findsOneWidget);
     await tester.pump(const Duration(minutes: 2));
   });
 }

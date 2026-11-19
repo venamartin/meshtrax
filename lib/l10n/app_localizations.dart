@@ -2648,61 +2648,55 @@ abstract class AppLocalizations {
   /// No description provided for @radioAsk_menuSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Where it is, even with their phone off'**
+  /// **'Works with their phone off'**
   String get radioAsk_menuSubtitle;
-
-  /// No description provided for @radioAsk_how.
-  ///
-  /// In en, this message translates to:
-  /// **'Their radio answers by itself, even with their phone off, if it allows you telemetry.'**
-  String get radioAsk_how;
 
   /// No description provided for @radioAsk_waiting.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for another ask to finish'**
+  /// **'Waiting for another ask'**
   String get radioAsk_waiting;
 
   /// No description provided for @radioAsk_asking.
   ///
   /// In en, this message translates to:
-  /// **'Asking… try {attempt} of {count}'**
+  /// **'Asking… {attempt}/{count}'**
   String radioAsk_asking(int attempt, int count);
 
   /// No description provided for @radioAsk_checkingAgain.
   ///
   /// In en, this message translates to:
-  /// **'Asking again to see if it moves… try {attempt} of {count}'**
+  /// **'Checking again… {attempt}/{count}'**
   String radioAsk_checkingAgain(int attempt, int count);
 
   /// No description provided for @radioAsk_checkAgainAt.
   ///
   /// In en, this message translates to:
-  /// **'Asking again at {time} to see if it moves'**
+  /// **'Checking again at {time}'**
   String radioAsk_checkAgainAt(String time);
 
   /// No description provided for @radioAsk_where.
   ///
   /// In en, this message translates to:
-  /// **'Where {name}\'s radio is · received {time}'**
+  /// **'{name}\'s radio · {time}'**
   String radioAsk_where(String name, String time);
 
   /// No description provided for @radioAsk_volts.
   ///
   /// In en, this message translates to:
-  /// **'Radio {volts} V'**
+  /// **'{volts} V'**
   String radioAsk_volts(String volts);
 
   /// No description provided for @radioAsk_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'No position: their radio\'s GPS may be off'**
+  /// **'No GPS position'**
   String get radioAsk_noPosition;
 
   /// No description provided for @radioAsk_noFix.
   ///
   /// In en, this message translates to:
-  /// **'May be old: their radio has no live GPS fix'**
+  /// **'May be old: no GPS fix'**
   String get radioAsk_noFix;
 
   /// No description provided for @radioAsk_unchanged.
@@ -2714,14 +2708,14 @@ abstract class AppLocalizations {
   /// No description provided for @radioAsk_notChecked.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t ask a second time to see if it moves'**
+  /// **'Second ask failed'**
   String get radioAsk_notChecked;
 
   /// No description provided for @radioAsk_noAnswer.
   ///
   /// In en, this message translates to:
-  /// **'No answer from {name}\'s radio: out of range, switched off, or it doesn\'t allow you.'**
-  String radioAsk_noAnswer(String name);
+  /// **'No answer'**
+  String get radioAsk_noAnswer;
 
   /// No description provided for @radioAsk_showOnMap.
   ///
