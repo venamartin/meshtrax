@@ -5,6 +5,7 @@ import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../models/trax.dart';
 import '../services/trax_service.dart';
+import 'app_bar.dart';
 import 'trax_dialogs.dart';
 import 'trax_sheet.dart';
 
@@ -24,9 +25,11 @@ class TraxButton extends StatelessWidget {
     final l10n = context.l10n;
     final on = trax.isOn;
     return IconButton(
+      style: topBarIconStyle,
       tooltip: on ? l10n.trax_isOn : l10n.trax_isOff,
       onPressed: () => showTraxSheet(context),
       icon: TraxIcon(
+        size: topBarIconSize,
         color: on
             ? const Color(Trax.orange)
             : Theme.of(context).colorScheme.onSurfaceVariant,

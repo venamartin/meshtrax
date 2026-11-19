@@ -750,11 +750,14 @@ class _MapScreenState extends State<MapScreen> {
                       ],
                       if (!_isBuildingPathTrace)
                         IconButton(
+                          style: topBarIconStyle,
                           icon: const Icon(Icons.radar),
                           onPressed: () => _startPath(selfPosition),
                           tooltip: context.l10n.contacts_pathTrace,
                         ),
                       PopupMenuButton(
+                        style: topBarIconStyle,
+                        iconSize: topBarIconSize,
                         itemBuilder: (context) => [
                           if (_losOffered) ...<PopupMenuEntry<Object?>>[
                             PopupMenuItem(

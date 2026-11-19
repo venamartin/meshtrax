@@ -899,12 +899,22 @@ class _ChatsScreenState extends State<ChatsScreen>
             appBar: AppBar(
               automaticallyImplyLeading: false,
               // The radio's name is the title: the bar below says Chats
-              // (owner, 2026-10-27, as the Map tab has no title).
-              title: AppBarTitle(
-                connector.isConnected && connector.selfName != null
-                    ? connector.selfName!
-                    : context.l10n.chats_title,
-                subtitle: false,
+              // (owner, 2026-10-27, as the Map tab has no title). Smaller
+              // than a title, with the readouts as far from the icons as
+              // the icons are apart, so a phone has room for the name
+              // (owner, 2026-11-18).
+              titleSpacing: 0,
+              title: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 3),
+                child: DefaultTextStyle.merge(
+                  style: const TextStyle(fontSize: 18),
+                  child: AppBarTitle(
+                    connector.isConnected && connector.selfName != null
+                        ? connector.selfName!
+                        : context.l10n.chats_title,
+                    subtitle: false,
+                  ),
+                ),
               ),
               centerTitle: true,
               actions: [
@@ -912,6 +922,8 @@ class _ChatsScreenState extends State<ChatsScreen>
                 const GpsStatusButton(),
                 const LocationSharingButton(),
                 PopupMenuButton<void>(
+                  style: topBarIconStyle,
+                  iconSize: topBarIconSize,
                   itemBuilder: (context) => <PopupMenuEntry<void>>[
                     PopupMenuItem(
                       child: Row(

@@ -8,6 +8,7 @@ import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/app_settings_service.dart';
+import 'app_bar.dart';
 import 'snr_indicator.dart';
 
 /// The top bar's GPS icon: on or off, shown only when the radio has a GPS.
@@ -25,11 +26,11 @@ class GpsStatusButton extends StatelessWidget {
     if (!shown) return const SizedBox.shrink();
     final l10n = context.l10n;
     return IconButton(
+      style: topBarIconStyle,
       tooltip: on ? l10n.gps_on : l10n.gps_off,
       onPressed: () => showGpsDialog(context),
       icon: Icon(
         on ? Icons.gps_fixed : Icons.gps_off,
-        size: 20,
         color: on ? Colors.green : Colors.grey,
       ),
     );
