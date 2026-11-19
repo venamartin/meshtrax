@@ -4136,22 +4136,22 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Радиото им го получи · $kind · $secs с';
+    return 'Получено · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Радиото им го получи при опит $attempt · $kind · $secs с';
+    return 'Получено при опит $attempt · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Радиото им го получи със закъснение · $kind · $secs с';
+    return 'Получено със закъснение · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Радиото им го получи · $secs с';
+    return 'Получено · $secs с';
   }
 
   @override

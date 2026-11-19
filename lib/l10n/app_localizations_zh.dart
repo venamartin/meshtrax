@@ -3846,22 +3846,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '对方电台已收到 · $kind · $secs 秒';
+    return '已收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '第 $attempt 次尝试对方电台收到 · $kind · $secs 秒';
+    return '第 $attempt 次尝试收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '对方电台延迟收到 · $kind · $secs 秒';
+    return '延迟收到 · $kind · $secs 秒';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '对方电台已收到 · $secs 秒';
+    return '已收到 · $secs 秒';
   }
 
   @override

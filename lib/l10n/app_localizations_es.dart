@@ -4147,22 +4147,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Su radio lo recibió · $kind · $secs s';
+    return 'Recibido · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Su radio lo recibió en el intento $attempt · $kind · $secs s';
+    return 'Recibido en el intento $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Su radio lo recibió tarde · $kind · $secs s';
+    return 'Recibido tarde · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Su radio lo recibió · $secs s';
+    return 'Recibido · $secs s';
   }
 
   @override

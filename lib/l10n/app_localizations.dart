@@ -7117,25 +7117,25 @@ abstract class AppLocalizations {
   /// No description provided for @chat_statusDelivered.
   ///
   /// In en, this message translates to:
-  /// **'Their radio got it · {kind} · {secs} s'**
+  /// **'Received · {kind} · {secs} s'**
   String chat_statusDelivered(String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredAttempt.
   ///
   /// In en, this message translates to:
-  /// **'Their radio got it on attempt {attempt} · {kind} · {secs} s'**
+  /// **'Received on attempt {attempt} · {kind} · {secs} s'**
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredLate.
   ///
   /// In en, this message translates to:
-  /// **'Their radio got it late · {kind} · {secs} s'**
+  /// **'Received late · {kind} · {secs} s'**
   String chat_statusDeliveredLate(String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredShort.
   ///
   /// In en, this message translates to:
-  /// **'Their radio got it · {secs} s'**
+  /// **'Received · {secs} s'**
   String chat_statusDeliveredShort(String secs);
 
   /// No description provided for @chat_statusFailed.

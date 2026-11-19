@@ -3950,22 +3950,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '상대 무전기가 받음 · $kind · $secs초';
+    return '수신됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '$attempt번째 시도에 상대 무전기가 받음 · $kind · $secs초';
+    return '$attempt번째 시도에 수신됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '늦게 상대 무전기가 받음 · $kind · $secs초';
+    return '늦게 수신됨 · $kind · $secs초';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '상대 무전기가 받음 · $secs초';
+    return '수신됨 · $secs초';
   }
 
   @override

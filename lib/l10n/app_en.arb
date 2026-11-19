@@ -2237,7 +2237,7 @@
       }
     }
   },
-  "chat_statusDelivered": "Their radio got it · {kind} · {secs} s",
+  "chat_statusDelivered": "Received · {kind} · {secs} s",
   "@chat_statusDelivered": {
     "placeholders": {
       "kind": {
@@ -2248,7 +2248,7 @@
       }
     }
   },
-  "chat_statusDeliveredAttempt": "Their radio got it on attempt {attempt} · {kind} · {secs} s",
+  "chat_statusDeliveredAttempt": "Received on attempt {attempt} · {kind} · {secs} s",
   "@chat_statusDeliveredAttempt": {
     "placeholders": {
       "attempt": {
@@ -2262,7 +2262,7 @@
       }
     }
   },
-  "chat_statusDeliveredLate": "Their radio got it late · {kind} · {secs} s",
+  "chat_statusDeliveredLate": "Received late · {kind} · {secs} s",
   "@chat_statusDeliveredLate": {
     "placeholders": {
       "kind": {
@@ -2273,7 +2273,7 @@
       }
     }
   },
-  "chat_statusDeliveredShort": "Their radio got it · {secs} s",
+  "chat_statusDeliveredShort": "Received · {secs} s",
   "@chat_statusDeliveredShort": {
     "placeholders": {
       "secs": {

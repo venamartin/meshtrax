@@ -4151,22 +4151,22 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'A rádiója megkapta · $kind · $secs s';
+    return 'Megérkezett · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'A rádiója megkapta, $attempt. kísérlet · $kind · $secs s';
+    return 'Megérkezett, $attempt. kísérlet · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'A rádiója későn kapta meg · $kind · $secs s';
+    return 'Későn érkezett meg · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'A rádiója megkapta · $secs s';
+    return 'Megérkezett · $secs s';
   }
 
   @override

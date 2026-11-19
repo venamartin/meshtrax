@@ -3945,22 +3945,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return '相手の無線機に到着 · $kind · $secs秒';
+    return '受信済み · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return '$attempt回目で相手の無線機に到着 · $kind · $secs秒';
+    return '$attempt回目で受信 · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return '遅れて相手の無線機に到着 · $kind · $secs秒';
+    return '遅れて受信 · $kind · $secs秒';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return '相手の無線機に到着 · $secs秒';
+    return '受信済み · $secs秒';
   }
 
   @override

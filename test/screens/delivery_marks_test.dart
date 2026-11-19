@@ -27,7 +27,7 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 
 // Your own channel text that no radio repeated and no observer heard gets
 // an amber check once the wait for a repeat is over; one that didn't go is
-// red, as a failed DM is. A DM's radio ACK reads "Their radio got it".
+// red, as a failed DM is. A DM's radio ACK reads "Received".
 class _Radio extends MeshCoreConnector {
   _Radio({this.channelRows = const [], this.dmRows = const []});
   final List<ChannelMessage> channelRows;
@@ -239,7 +239,7 @@ void main() {
     expect(find.text(_noSign), findsOneWidget);
   });
 
-  testWidgets('a DM their radio ACKed says so, not "Delivered"', (
+  testWidgets('a DM their radio ACKed says Received, not "Delivered"', (
     tester,
   ) async {
     await open(
@@ -259,7 +259,7 @@ void main() {
         ],
       ),
     );
-    expect(find.textContaining('Their radio got it · 2.3 s'), findsOneWidget);
+    expect(find.textContaining('Received · 2.3 s'), findsOneWidget);
     expect(find.textContaining('Delivered'), findsNothing);
   });
 }

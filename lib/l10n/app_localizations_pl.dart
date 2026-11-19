@@ -4153,22 +4153,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Odebrane przez ich radio · $kind · $secs s';
+    return 'Odebrano · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Odebrane przez ich radio w próbie $attempt · $kind · $secs s';
+    return 'Odebrano w próbie $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Odebrane przez ich radio z opóźnieniem · $kind · $secs s';
+    return 'Odebrano z opóźnieniem · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Odebrane przez ich radio · $secs s';
+    return 'Odebrano · $secs s';
   }
 
   @override

@@ -4152,22 +4152,22 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Отримано їхньою рацією · $kind · $secs с';
+    return 'Отримано · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Отримано їхньою рацією зі спроби $attempt · $kind · $secs с';
+    return 'Отримано зі спроби $attempt · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Отримано їхньою рацією із запізненням · $kind · $secs с';
+    return 'Отримано із запізненням · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Отримано їхньою рацією · $secs с';
+    return 'Отримано · $secs с';
   }
 
   @override

@@ -4150,22 +4150,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Am Funkgerät angekommen · $kind · $secs s';
+    return 'Empfangen · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Am Funkgerät angekommen bei Versuch $attempt · $kind · $secs s';
+    return 'Empfangen bei Versuch $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Verspätet am Funkgerät angekommen · $kind · $secs s';
+    return 'Verspätet empfangen · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Am Funkgerät angekommen · $secs s';
+    return 'Empfangen · $secs s';
   }
 
   @override
