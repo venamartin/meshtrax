@@ -156,6 +156,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(radio.added, [('#BayArea', _key('#BayArea'))]);
     });
+
+    // On the owner's phone the keyboard left room for little more than the
+    // box, and the switch appeared out of sight under it (2026-11-18).
+    testWidgets('with the keyboard up, the switch scrolls into view', (
+      tester,
+    ) async {
+      await openBox(tester);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 1000);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.tap(box);
+      await tester.pumpAndSettle();
+      await tester.enterText(box, 'ThBi');
+      await tester.pumpAndSettle();
+      expect(shown(tester), 'thbi');
+      expect(find.text('Keep capitals').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Keep capitals'));
+      await tester.pumpAndSettle();
+      expect(shown(tester), 'ThBi');
+    });
   });
 
   group('a tapped #tag', () {

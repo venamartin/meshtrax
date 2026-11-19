@@ -329,12 +329,27 @@ class _NewChatScreenState extends State<NewChatScreen> {
     final pskController = TextEditingController();
     final hashtagController = TextEditingController();
     final hashtagCase = HashtagCaseFormatter();
+    final keepCapitals = GlobalKey();
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
-          hashtagCase.onCapital = () => setDialogState(() {});
+          hashtagCase.onCapital = () {
+            setDialogState(() {});
+            // With the keyboard up the dialog shows little more than the
+            // box: scroll the switch that just appeared under it into view.
+            // At once: the box's own scroll to its cursor, right after,
+            // would stop an animated one.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final shown = keepCapitals.currentContext;
+              if (shown == null) return;
+              Scrollable.ensureVisible(
+                shown,
+                alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+              );
+            });
+          };
           Widget buildOptionTile({
             required int optionIndex,
             required IconData icon,
@@ -546,6 +561,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
                     ),
                     if (hashtagCase.sawCapital)
                       SwitchListTile(
+                        key: keepCapitals,
                         title: Text(dialogContext.l10n.channels_keepCapitals),
                         value: hashtagCase.keepCapitals,
                         onChanged: (keep) => setDialogState(() {
