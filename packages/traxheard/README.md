@@ -79,7 +79,8 @@ nothing about coverage where the radio is now.
     through A277 and then BEEF.
   - **Two repeaters that share a code** count as one.
   - **Car repeaters don't count:** a repeater marked "Moves" or "Moves with
-    me" in Pathfinder's "Does it move?" dialog.
+    me" in Pathfinder's "Does it move?" dialog. A 1-byte repeater code names
+    nobody, so on a radio that sends 1-byte codes they still count.
 - **Only one repeater heard and no ear:** the message still shows Delivered,
   and MeshTrax waits for the 25-second observer check. If nothing has
   changed by the 30-second mark, it sends the message once more. That is
