@@ -6524,12 +6524,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get poiKind_drinkingWater => 'Trinkwasser';
 
   @override
-  String get poiCaveat_spring =>
-      'Kann trocken oder unsicher sein: vor dem Trinken aufbereiten und nicht fest damit rechnen';
+  String get poiCaveat_spring => 'Kann trocken oder unsicher sein';
 
   @override
-  String get poiCaveat_drinkingWater =>
-      'Kann abgestellt sein: prüfen, bevor Sie damit rechnen';
+  String get poiCaveat_drinkingWater => 'Kann abgestellt sein';
 
   @override
   String get poiKind_toilets => 'Toiletten';

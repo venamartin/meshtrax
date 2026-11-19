@@ -6457,12 +6457,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get poiKind_drinkingWater => 'Dricksvatten';
 
   @override
-  String get poiCaveat_spring =>
-      'Kan vara torr eller osäker: rena vattnet före drickning och räkna inte med den';
+  String get poiCaveat_spring => 'Kan vara torr eller osäker';
 
   @override
-  String get poiCaveat_drinkingWater =>
-      'Kan vara avstängd: kontrollera innan du räknar med den';
+  String get poiCaveat_drinkingWater => 'Kan vara avstängd';
 
   @override
   String get poiKind_toilets => 'Toaletter';

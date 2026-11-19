@@ -6522,12 +6522,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get poiKind_drinkingWater => 'Acqua potabile';
 
   @override
-  String get poiCaveat_spring =>
-      'Può essere secca o non sicura: tratta l\'acqua prima di berla e non contarci';
+  String get poiCaveat_spring => 'Può essere secca o non sicura';
 
   @override
-  String get poiCaveat_drinkingWater =>
-      'Può essere chiusa: verifica prima di contarci';
+  String get poiCaveat_drinkingWater => 'Può essere chiusa';
 
   @override
   String get poiKind_toilets => 'Bagni';

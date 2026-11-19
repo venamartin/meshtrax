@@ -6210,10 +6210,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get poiKind_drinkingWater => '飲料水';
 
   @override
-  String get poiCaveat_spring => '涸れているか安全でない場合があります。飲む前に浄水し、当てにしないでください';
+  String get poiCaveat_spring => '涸れているか安全でない場合があります';
 
   @override
-  String get poiCaveat_drinkingWater => '止まっている場合があります。当てにする前に確認してください';
+  String get poiCaveat_drinkingWater => '止まっている場合があります';
 
   @override
   String get poiKind_toilets => 'トイレ';

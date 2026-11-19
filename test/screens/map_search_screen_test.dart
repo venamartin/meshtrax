@@ -140,8 +140,7 @@ void main() {
       );
       await tester.pump();
     }
-    const caveat =
-        "May be dry or unsafe: treat before drinking, and don't count on it";
+    const caveat = 'May be dry or unsafe';
     final row = tester.widget<ListTile>(find.byType(ListTile).first);
     expect(
       (row.subtitle! as Text).textSpan!.toPlainText(),
@@ -181,7 +180,7 @@ void main() {
         ),
       ),
     );
-    const tap = 'May be turned off: check before you count on it';
+    const tap = 'May be turned off';
     expect(poiKindCaveat(l10n, 'amenity=drinking_water'), tap);
     expect(poiKindCaveat(l10n, 'amenity=water_point'), tap);
     expect(poiKindCaveat(l10n, 'natural=hot_spring'), isNull);
