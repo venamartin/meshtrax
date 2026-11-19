@@ -4107,6 +4107,9 @@ class AppLocalizationsSk extends AppLocalizations {
       'Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.';
 
   @override
+  String get chat_channelNoSign => 'Odoslané · nevidno, kto to dostal';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'odoslané $time podľa hodín odosielateľa';
   }
@@ -4128,22 +4131,22 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Doručené · $kind · $secs s';
+    return 'Prijaté · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Doručené na $attempt. pokus · $kind · $secs s';
+    return 'Prijaté na $attempt. pokus · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Doručené neskoro · $kind · $secs s';
+    return 'Prijaté neskoro · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Doručené · $secs s';
+    return 'Prijaté · $secs s';
   }
 
   @override

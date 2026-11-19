@@ -4081,6 +4081,9 @@ class AppLocalizationsSv extends AppLocalizations {
       'Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.';
 
   @override
+  String get chat_channelNoSign => 'Skickat · inget tecken på vem som fick det';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'skickat $time enligt avsändarens klocka';
   }
@@ -4102,22 +4105,22 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Levererat · $kind · $secs s';
+    return 'Mottaget · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Levererat vid försök $attempt · $kind · $secs s';
+    return 'Mottaget vid försök $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Levererat sent · $kind · $secs s';
+    return 'Mottaget sent · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Levererat · $secs s';
+    return 'Mottaget · $secs s';
   }
 
   @override

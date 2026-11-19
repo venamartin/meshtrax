@@ -4115,6 +4115,9 @@ class AppLocalizationsBg extends AppLocalizations {
       'Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.';
 
   @override
+  String get chat_channelNoSign => 'Изпратено · няма знак кой го е получил';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'изпратено $time по часовника на подателя';
   }
@@ -4136,22 +4139,22 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Доставено · $kind · $secs с';
+    return 'Получено · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Доставено при опит $attempt · $kind · $secs с';
+    return 'Получено при опит $attempt · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Доставено със закъснение · $kind · $secs с';
+    return 'Получено със закъснение · $kind · $secs с';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Доставено · $secs с';
+    return 'Получено · $secs с';
   }
 
   @override

@@ -2195,6 +2195,10 @@
   },
   "chat_statusQueued": "Queued",
   "chat_statusNoRepeaterHeard": "No repeater heard you. Will try again when one is in range.",
+  "chat_channelNoSign": "Sent · no sign of who got it",
+  "@chat_channelNoSign": {
+    "description": "Long press on the amber check of your own channel text: the radio sent it, but no radio repeated it and no observer heard it"
+  },
   "chat_sentByItsClock": "sent {time} by its clock",
   "@chat_sentByItsClock": {
     "description": "Under a message the radio held after a failed read: the time its sender's own clock gave it.",
@@ -2234,7 +2238,7 @@
       }
     }
   },
-  "chat_statusDelivered": "Delivered · {kind} · {secs} s",
+  "chat_statusDelivered": "Received · {kind} · {secs} s",
   "@chat_statusDelivered": {
     "placeholders": {
       "kind": {
@@ -2245,7 +2249,7 @@
       }
     }
   },
-  "chat_statusDeliveredAttempt": "Delivered on attempt {attempt} · {kind} · {secs} s",
+  "chat_statusDeliveredAttempt": "Received on attempt {attempt} · {kind} · {secs} s",
   "@chat_statusDeliveredAttempt": {
     "placeholders": {
       "attempt": {
@@ -2259,7 +2263,7 @@
       }
     }
   },
-  "chat_statusDeliveredLate": "Delivered late · {kind} · {secs} s",
+  "chat_statusDeliveredLate": "Received late · {kind} · {secs} s",
   "@chat_statusDeliveredLate": {
     "placeholders": {
       "kind": {
@@ -2270,7 +2274,7 @@
       }
     }
   },
-  "chat_statusDeliveredShort": "Delivered · {secs} s",
+  "chat_statusDeliveredShort": "Received · {secs} s",
   "@chat_statusDeliveredShort": {
     "placeholders": {
       "secs": {

@@ -7090,6 +7090,12 @@ abstract class AppLocalizations {
   /// **'No repeater heard you. Will try again when one is in range.'**
   String get chat_statusNoRepeaterHeard;
 
+  /// Long press on the amber check of your own channel text: the radio sent it, but no radio repeated it and no observer heard it
+  ///
+  /// In en, this message translates to:
+  /// **'Sent · no sign of who got it'**
+  String get chat_channelNoSign;
+
   /// Under a message the radio held after a failed read: the time its sender's own clock gave it.
   ///
   /// In en, this message translates to:
@@ -7117,25 +7123,25 @@ abstract class AppLocalizations {
   /// No description provided for @chat_statusDelivered.
   ///
   /// In en, this message translates to:
-  /// **'Delivered · {kind} · {secs} s'**
+  /// **'Received · {kind} · {secs} s'**
   String chat_statusDelivered(String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredAttempt.
   ///
   /// In en, this message translates to:
-  /// **'Delivered on attempt {attempt} · {kind} · {secs} s'**
+  /// **'Received on attempt {attempt} · {kind} · {secs} s'**
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredLate.
   ///
   /// In en, this message translates to:
-  /// **'Delivered late · {kind} · {secs} s'**
+  /// **'Received late · {kind} · {secs} s'**
   String chat_statusDeliveredLate(String kind, String secs);
 
   /// No description provided for @chat_statusDeliveredShort.
   ///
   /// In en, this message translates to:
-  /// **'Delivered · {secs} s'**
+  /// **'Received · {secs} s'**
   String chat_statusDeliveredShort(String secs);
 
   /// No description provided for @chat_statusFailed.

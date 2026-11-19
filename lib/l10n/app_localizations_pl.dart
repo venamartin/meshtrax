@@ -4132,6 +4132,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'Żaden przekaźnik Cię nie usłyszał. Ponowna próba, gdy któryś będzie w zasięgu.';
 
   @override
+  String get chat_channelNoSign => 'Wysłano · brak znaku, kto odebrał';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'wysłano $time wg zegara nadawcy';
   }
@@ -4153,22 +4156,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Dostarczono · $kind · $secs s';
+    return 'Odebrano · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Dostarczono w próbie $attempt · $kind · $secs s';
+    return 'Odebrano w próbie $attempt · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Dostarczono z opóźnieniem · $kind · $secs s';
+    return 'Odebrano z opóźnieniem · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Dostarczono · $secs s';
+    return 'Odebrano · $secs s';
   }
 
   @override

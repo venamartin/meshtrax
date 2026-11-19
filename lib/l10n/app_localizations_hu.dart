@@ -4130,6 +4130,9 @@ class AppLocalizationsHu extends AppLocalizations {
       'Egy repeater sem hallotta. Újra próbálja, amikor lesz egy hatótávon belül.';
 
   @override
+  String get chat_channelNoSign => 'Elküldve · nincs jele, ki kapta meg';
+
+  @override
   String chat_sentByItsClock(String time) {
     return 'elküldve $time, a küldő órája szerint';
   }
@@ -4151,22 +4154,22 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String chat_statusDelivered(String kind, String secs) {
-    return 'Kézbesítve · $kind · $secs s';
+    return 'Megérkezett · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredAttempt(int attempt, String kind, String secs) {
-    return 'Kézbesítve, $attempt. kísérlet · $kind · $secs s';
+    return 'Megérkezett, $attempt. kísérlet · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredLate(String kind, String secs) {
-    return 'Későn kézbesítve · $kind · $secs s';
+    return 'Későn érkezett meg · $kind · $secs s';
   }
 
   @override
   String chat_statusDeliveredShort(String secs) {
-    return 'Kézbesítve · $secs s';
+    return 'Megérkezett · $secs s';
   }
 
   @override
