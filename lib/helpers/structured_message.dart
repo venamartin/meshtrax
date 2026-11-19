@@ -60,7 +60,7 @@ sealed class StructuredMessage {
   static final _extension = RegExp(r'^([a-z][a-z0-9_]*)=(.*)$');
 
   static final _header = RegExp(
-    r'^(location|poi|sos|event|notice|svg|trax)\s*:\s*',
+    r'^(location|poi|sos|event|notice|svg|trax|repeater)\s*:\s*',
     caseSensitive: false,
   );
 
@@ -161,6 +161,7 @@ sealed class StructuredMessage {
     if (keyword == 'svg') return SvgMessage._fromHeader(body, header);
     if (keyword == 'trax') return TraxMessage._fromBody(body.substring(header.end));
     final fields = _splitFields(body.substring(header.end));
+    if (keyword == 'repeater') return RepeaterStatusMessage._fromFields(fields);
     final sorted = _Fields.classify(fields);
 
     switch (keyword) {
@@ -853,6 +854,260 @@ class TraxMessage extends StructuredMessage {
               when s.isNotEmpty)
             s,
       ].join('\n');
+}
+
+/// How a repeater's battery stands, best to worst.
+enum RepeaterStage { ok, low, vlow, crit }
+
+/// What a repeater's line says about it, for its icon and the card's
+/// title: a [RepeaterStage], or no level at all.
+enum RepeaterState { unreachable, crit, vlow, low, noReading, waiting, ok, other }
+
+/// One repeater's field in a [RepeaterStatusMessage]: its name, then any of
+/// volts, stage and age, `key=value` pairs, and a note.
+class RepeaterReport {
+  final String name;
+
+  /// The last reading as written, e.g. "3.52"; null when there is none.
+  final String? volts;
+  final RepeaterStage? stage;
+
+  /// How old the reading is.
+  final Duration? age;
+  final bool waiting;
+  final bool unreachable;
+  final bool noReading;
+
+  /// `key=value` pairs in the order sent, known or not.
+  final Map<String, String> keys;
+  final String? note;
+
+  const RepeaterReport({
+    required this.name,
+    this.volts,
+    this.stage,
+    this.age,
+    this.waiting = false,
+    this.unreachable = false,
+    this.noReading = false,
+    this.keys = const {},
+    this.note,
+  });
+
+  static final _startsLikeName = RegExp(r'^[\p{L}\p{N}]', unicode: true);
+  static final _volts = RegExp(r'^(\d{1,2}\.\d{1,3})V$', caseSensitive: false);
+  static final _age = RegExp(r'^(\d{1,4})([mhd])$');
+  static final _key = RegExp(r'^([a-z][a-z0-9_]*)=(\S*)$');
+
+  /// A field about one repeater, or null when it doesn't start with a
+  /// letter or digit: such a field is plain text.
+  static RepeaterReport? parse(String field) {
+    final words = field.split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+    if (words.isEmpty || !_startsLikeName.hasMatch(words.first)) return null;
+    String? volts;
+    RepeaterStage? stage;
+    Duration? age;
+    var waiting = false, unreachable = false, noReading = false;
+    final keys = <String, String>{};
+    final note = <String>[];
+    final rest = words.skip(1).toList();
+    for (var i = 0; i < rest.length; i++) {
+      final word = rest[i];
+      if (_key.firstMatch(word) case final key?) {
+        keys[key.group(1)!] = key.group(2)!;
+        continue;
+      }
+      // Volts, stage, age and the fixed words come before the note.
+      if (note.isEmpty) {
+        final lower = word.toLowerCase();
+        if (_volts.firstMatch(word) case final v? when volts == null) {
+          volts = v.group(1);
+          continue;
+        }
+        if (stageOf(lower) case final s? when stage == null) {
+          stage = s;
+          continue;
+        }
+        if (ageOf(word) case final a? when age == null) {
+          age = a;
+          continue;
+        }
+        if (lower == 'waiting') {
+          waiting = true;
+          continue;
+        }
+        if (lower == 'unreachable') {
+          unreachable = true;
+          continue;
+        }
+        if (lower == 'no' &&
+            i + 1 < rest.length &&
+            rest[i + 1].toLowerCase() == 'reading') {
+          noReading = true;
+          i++;
+          continue;
+        }
+      }
+      note.add(word);
+    }
+    return RepeaterReport(
+      name: words.first,
+      volts: volts,
+      stage: stage,
+      age: age,
+      waiting: waiting,
+      unreachable: unreachable,
+      noReading: noReading,
+      keys: keys,
+      note: note.isEmpty ? null : note.join(' '),
+    );
+  }
+
+  /// ok, low, vlow or crit, any case.
+  static RepeaterStage? stageOf(String word) => switch (word.toLowerCase()) {
+        'ok' => RepeaterStage.ok,
+        'low' => RepeaterStage.low,
+        'vlow' => RepeaterStage.vlow,
+        'crit' => RepeaterStage.crit,
+        _ => null,
+      };
+
+  /// 2m, 3h or 2d.
+  static Duration? ageOf(String word) {
+    final m = _age.firstMatch(word);
+    if (m == null) return null;
+    final n = int.parse(m.group(1)!);
+    return switch (m.group(2)) {
+      'm' => Duration(minutes: n),
+      'h' => Duration(hours: n),
+      _ => Duration(days: n),
+    };
+  }
+
+  RepeaterState get state {
+    if (unreachable) return RepeaterState.unreachable;
+    if (noReading) return RepeaterState.noReading;
+    if (waiting) return RepeaterState.waiting;
+    return switch (stage) {
+      RepeaterStage.crit => RepeaterState.crit,
+      RepeaterStage.vlow => RepeaterState.vlow,
+      RepeaterStage.low => RepeaterState.low,
+      RepeaterStage.ok => RepeaterState.ok,
+      null => RepeaterState.other,
+    };
+  }
+}
+
+/// How a group of repeaters stands (docs/message-format.md, "Repeater
+/// status"): `Repeater: ` then one field per repeater, separated by `|`.
+/// A field that starts with anything but a letter or digit is plain text,
+/// and so is a message with no repeater in it. MeshTrax reads these and
+/// never writes one.
+class RepeaterStatusMessage extends StructuredMessage {
+  final List<RepeaterReport> repeaters;
+
+  /// This message's page of a status sent in several, from `page=k/n`.
+  final int? page;
+  final int? pages;
+
+  /// From `dryrun=yes`: the sender only simulates what it reports.
+  final bool dryRun;
+
+  final String _wire;
+
+  const RepeaterStatusMessage._(
+    this._wire, {
+    required this.repeaters,
+    this.page,
+    this.pages,
+    this.dryRun = false,
+    super.extraText,
+    super.extensions,
+  });
+
+  static final _page = RegExp(r'^page=(\d{1,3})/(\d{1,3})$');
+
+  static RepeaterStatusMessage? _fromFields(List<String> fields) {
+    final repeaters = <RepeaterReport>[];
+    final text = <String>[];
+    final extensions = <String, String>{};
+    int? page, pages;
+    var dryRun = false;
+    for (final field in fields) {
+      if (_page.firstMatch(field) case final p?) {
+        page = int.parse(p.group(1)!);
+        pages = int.parse(p.group(2)!);
+        continue;
+      }
+      if (StructuredMessage._extension.firstMatch(field) case final e?) {
+        final value = e.group(2)!.trim();
+        if (e.group(1) == 'dryrun' && value == 'yes') {
+          dryRun = true;
+        } else {
+          extensions[e.group(1)!] = value;
+        }
+        continue;
+      }
+      if (RepeaterReport.parse(field) case final report?) {
+        repeaters.add(report);
+      } else {
+        text.add(field);
+      }
+    }
+    if (repeaters.isEmpty) return null;
+    return RepeaterStatusMessage._(
+      'Repeater: ${fields.join(' | ')}',
+      repeaters: repeaters,
+      page: page,
+      pages: pages,
+      dryRun: dryRun,
+      extraText: text,
+      extensions: extensions,
+    );
+  }
+
+  /// How many repeaters stand in each state, worst first; repeaters with
+  /// no state left out.
+  List<(RepeaterState, int)> get counts => [
+        for (final s in RepeaterState.values)
+          if (s != RepeaterState.other)
+            if (repeaters.where((r) => r.state == s).length case final n
+                when n > 0)
+              (s, n),
+      ];
+
+  @override
+  LatLng? get position => null;
+
+  @override
+  String get keyword => 'Repeater';
+
+  @override
+  String get summary {
+    String word(RepeaterState s) => switch (s) {
+          RepeaterState.unreachable => 'unreachable',
+          RepeaterState.crit => 'critical',
+          RepeaterState.vlow => 'very low',
+          RepeaterState.low => 'low',
+          RepeaterState.noReading => 'no reading',
+          RepeaterState.waiting => 'waiting',
+          RepeaterState.ok => 'OK',
+          RepeaterState.other => '',
+        };
+    final title = repeaters.length <= 2
+        ? repeaters
+            .map((r) => r.state == RepeaterState.other
+                ? r.name
+                : '${r.name} ${word(r.state)}')
+            .join(', ')
+        : counts.isEmpty
+            ? '${repeaters.length} repeaters'
+            : counts.map((c) => '${c.$2} ${word(c.$1)}').join(', ');
+    return 'Repeater status: $title';
+  }
+
+  @override
+  String toWire() => _wire;
 }
 
 /// What a meshcore:// share link adds to the radio.

@@ -5170,6 +5170,210 @@ class AppLocalizationsSk extends AppLocalizations {
   String get structured_notice => 'Oznam';
 
   @override
+  String get structured_repeaterStatus => 'Stav opakovačov';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritický';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'veľmi nízky';
+
+  @override
+  String get repeaterStatus_stateLow => 'nízky';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'čaká na svoj inzerát';
+
+  @override
+  String get repeaterStatus_unreachable => 'nedostupný';
+
+  @override
+  String get repeaterStatus_noReading => 'bez merania';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kritických',
+      many: '$count kritického',
+      few: '$count kritické',
+      one: '$count kritický',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count veľmi nízkych',
+      many: '$count veľmi nízkeho',
+      few: '$count veľmi nízke',
+      one: '$count veľmi nízky',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nízkych',
+      many: '$count nízkeho',
+      few: '$count nízke',
+      one: '$count nízky',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count OK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nedostupných',
+      many: '$count nedostupného',
+      few: '$count nedostupné',
+      one: '$count nedostupný',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bez merania',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count čakajúcich',
+      many: '$count čakajúceho',
+      few: '$count čakajúce',
+      one: '$count čakajúci',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count opakovačov',
+      many: '$count opakovača',
+      few: '$count opakovače',
+      one: '$count opakovač',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'opakovanie zap.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'opakovanie vyp.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'pred $time';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'ďalšie zisťovanie o $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zmeškaných zisťovaní',
+      many: '$count zmeškaného zisťovania',
+      few: '$count zmeškané zisťovania',
+      one: '$count zmeškané zisťovanie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'bol $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'posledná úroveň $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'pre $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'meranie $value ignorované';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Strana $page z $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Len simulácia';
+
+  @override
   String get structured_allDay => 'Celý deň';
 
   @override

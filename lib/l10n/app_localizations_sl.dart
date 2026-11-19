@@ -5170,6 +5170,210 @@ class AppLocalizationsSl extends AppLocalizations {
   String get structured_notice => 'Obvestilo';
 
   @override
+  String get structured_repeaterStatus => 'Stanje repetitorjev';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritičen';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'zelo nizek';
+
+  @override
+  String get repeaterStatus_stateLow => 'nizek';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'čaka na svoj oglas';
+
+  @override
+  String get repeaterStatus_unreachable => 'nedosegljiv';
+
+  @override
+  String get repeaterStatus_noReading => 'ni meritve';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kritičnih',
+      few: '$count kritični',
+      two: '$count kritična',
+      one: '$count kritičen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zelo nizkih',
+      few: '$count zelo nizki',
+      two: '$count zelo nizka',
+      one: '$count zelo nizek',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nizkih',
+      few: '$count nizki',
+      two: '$count nizka',
+      one: '$count nizek',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count OK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nedosegljivih',
+      few: '$count nedosegljivi',
+      two: '$count nedosegljiva',
+      one: '$count nedosegljiv',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count brez meritve',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count čakajočih',
+      few: '$count čakajoči',
+      two: '$count čakajoča',
+      one: '$count čakajoč',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repetitorjev',
+      few: '$count repetitorji',
+      two: '$count repetitorja',
+      one: '$count repetitor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'ponavljanje vklop.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'ponavljanje izklop.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'pred $time';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'naslednje poizvedovanje čez $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zgrešenih poizvedovanj',
+      few: '$count zgrešena poizvedovanja',
+      two: '$count zgrešeni poizvedovanji',
+      one: '$count zgrešeno poizvedovanje',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'bil $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'zadnja stopnja $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'za $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'meritev $value prezrta';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Stran $page od $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Samo simulacija';
+
+  @override
   String get structured_allDay => 'Ves dan';
 
   @override

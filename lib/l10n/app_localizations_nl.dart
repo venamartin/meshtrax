@@ -5159,6 +5159,191 @@ class AppLocalizationsNl extends AppLocalizations {
   String get structured_notice => 'Mededeling';
 
   @override
+  String get structured_repeaterStatus => 'Repeaterstatus';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritiek';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'zeer laag';
+
+  @override
+  String get repeaterStatus_stateLow => 'laag';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'wacht op zijn advertentie';
+
+  @override
+  String get repeaterStatus_unreachable => 'onbereikbaar';
+
+  @override
+  String get repeaterStatus_noReading => 'geen meting';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kritiek',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zeer laag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count OK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count onbereikbaar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zonder meting',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wachtend',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repeaters',
+      one: '1 repeater',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'herhalen aan';
+
+  @override
+  String get repeaterStatus_repeatOff => 'herhalen uit';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count u';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time geleden';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'volgende peiling over $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gemiste peilingen',
+      one: '$count gemiste peiling',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'was $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'laatste stap $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'voor $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'meting $value genegeerd';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Pagina $page van $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Alleen simulatie';
+
+  @override
   String get structured_allDay => 'Hele dag';
 
   @override

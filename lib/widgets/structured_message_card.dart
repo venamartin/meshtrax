@@ -95,6 +95,9 @@ class StructuredPalette {
         ShareMessage() => (const Color(0xFF81C784), const Color(0xFF2E7D32)),
         SvgMessage() => (const Color(0xFF7BE08A), const Color(0xFF2E7D32)),
         TraxMessage() => (const Color(0xFFFF8A65), const Color(Trax.orange)),
+        // Neutral, so each repeater's battery colour carries the news.
+        RepeaterStatusMessage() =>
+          (const Color(0xFFB0BEC5), const Color(0xFF546E7A)),
       };
 
   static StructuredPalette forAccents(
@@ -253,6 +256,7 @@ class StructuredMessageCard extends StatelessWidget {
           },
         SvgMessage() => Icons.draw,
         TraxMessage() => Icons.hiking,
+        RepeaterStatusMessage() => Icons.battery_charging_full,
       };
 
   /// Cards need room for a map and a row of buttons, more than a text
@@ -287,7 +291,243 @@ class StructuredMessageCard extends StatelessWidget {
       ShareMessage m => _share(context, p, m),
       SvgMessage m => _drawing(context, p, m),
       TraxMessage m => _trax(context, p, m),
+      RepeaterStatusMessage m => _repeaterStatus(context, p, m),
     };
+  }
+
+  /// How a group of repeaters stands: a row each, the battery drawn from
+  /// the stage the sender reports. The chemistry is the sender's business,
+  /// so volts are only written.
+  Widget _repeaterStatus(
+    BuildContext context,
+    StructuredPalette p,
+    RepeaterStatusMessage m,
+  ) {
+    final l10n = context.l10n;
+    final page = m.page, pages = m.pages;
+    return _scaffold(
+      context,
+      p,
+      lead: _badge(p, Icons.battery_charging_full),
+      overline: l10n.structured_repeaterStatus,
+      title: repeaterStatusTitle(l10n, m),
+      titleSize: 18,
+      chips: [
+        if (page != null && pages != null)
+          _chip(p, l10n.repeaterStatus_page(page, pages)),
+        if (m.dryRun) _chip(p, l10n.repeaterStatus_dryRun),
+      ],
+      keyRow: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [for (final r in m.repeaters) _repeaterRow(context, p, r)],
+      ),
+    );
+  }
+
+  /// "A277 critical, A377 unreachable" for one or two repeaters, else how
+  /// many stand where, worst first: "2 critical, 3 waiting".
+  static String repeaterStatusTitle(
+    AppLocalizations l10n,
+    RepeaterStatusMessage m,
+  ) {
+    if (m.repeaters.length <= 2) {
+      return m.repeaters
+          .map((r) => r.state == RepeaterState.other
+              ? r.name
+              : l10n.repeaterStatus_named(r.name, _stateWord(l10n, r.state)))
+          .join(', ');
+    }
+    if (m.counts.isEmpty) return l10n.repeaterStatus_repeaters(m.repeaters.length);
+    return m.counts
+        .map((c) => switch (c.$1) {
+              RepeaterState.unreachable =>
+                l10n.repeaterStatus_countUnreachable(c.$2),
+              RepeaterState.crit => l10n.repeaterStatus_countCritical(c.$2),
+              RepeaterState.vlow => l10n.repeaterStatus_countVeryLow(c.$2),
+              RepeaterState.low => l10n.repeaterStatus_countLow(c.$2),
+              RepeaterState.noReading => l10n.repeaterStatus_countNoReading(c.$2),
+              RepeaterState.waiting => l10n.repeaterStatus_countWaiting(c.$2),
+              RepeaterState.ok => l10n.repeaterStatus_countOk(c.$2),
+              RepeaterState.other => '',
+            })
+        .join(', ');
+  }
+
+  static String _stateWord(AppLocalizations l10n, RepeaterState s) =>
+      switch (s) {
+        RepeaterState.unreachable => l10n.repeaterStatus_unreachable,
+        RepeaterState.crit => l10n.repeaterStatus_stateCritical,
+        RepeaterState.vlow => l10n.repeaterStatus_stateVeryLow,
+        RepeaterState.low => l10n.repeaterStatus_stateLow,
+        RepeaterState.noReading => l10n.repeaterStatus_noReading,
+        RepeaterState.waiting => l10n.repeaterStatus_waiting,
+        RepeaterState.ok => l10n.repeaterStatus_stateOk,
+        RepeaterState.other => '',
+      };
+
+  static RepeaterState _stateOfStage(RepeaterStage stage) => switch (stage) {
+        RepeaterStage.ok => RepeaterState.ok,
+        RepeaterStage.low => RepeaterState.low,
+        RepeaterStage.vlow => RepeaterState.vlow,
+        RepeaterStage.crit => RepeaterState.crit,
+      };
+
+  /// 40 min, 3 h or 2 d, in the unit it was sent in.
+  static String _duration(AppLocalizations l10n, Duration d) {
+    if (d.inDays > 0 && d.inHours % 24 == 0) {
+      return l10n.repeaterStatus_days(d.inDays);
+    }
+    if (d.inHours > 0 && d.inMinutes % 60 == 0) {
+      return l10n.repeaterStatus_hours(d.inHours);
+    }
+    return l10n.repeaterStatus_minutes(d.inMinutes);
+  }
+
+  /// A repeater's `key=value` pairs in plain words, in the order sent;
+  /// unknown keys as "key: value".
+  static List<String> _keyTexts(AppLocalizations l10n, RepeaterReport r) {
+    String stageWord(String value) => switch (RepeaterReport.stageOf(value)) {
+          final s? => _stateWord(l10n, _stateOfStage(s)),
+          null => value,
+        };
+    return [
+      for (final MapEntry(:key, :value) in r.keys.entries)
+        if (key != 'label')
+          switch (key) {
+            'was' => l10n.repeaterStatus_was(stageWord(value)),
+            'stage' => l10n.repeaterStatus_lastStage(stageWord(value)),
+            'tx' => l10n.repeaterStatus_tx(value),
+            'repeat' when value == 'on' => l10n.repeaterStatus_repeatOn,
+            'repeat' when value == 'off' => l10n.repeaterStatus_repeatOff,
+            'trend' => value.replaceAll('-', '−'),
+            'missed' when int.tryParse(value) != null =>
+              l10n.repeaterStatus_missed(int.parse(value)),
+            'next' when RepeaterReport.ageOf(value) != null =>
+              l10n.repeaterStatus_nextPoll(
+                _duration(l10n, RepeaterReport.ageOf(value)!),
+              ),
+            'for' => l10n.repeaterStatus_for(value),
+            'reading' => l10n.repeaterStatus_readingIgnored(value),
+            _ => '$key: $value',
+          },
+    ];
+  }
+
+  Widget _repeaterRow(
+    BuildContext context,
+    StructuredPalette p,
+    RepeaterReport r,
+  ) {
+    final l10n = context.l10n;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final state = r.state;
+    final (icon, colour) = switch (state) {
+      RepeaterState.ok => (
+          Icons.battery_full,
+          dark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+        ),
+      RepeaterState.low => (
+          Icons.battery_4_bar,
+          dark ? const Color(0xFFFFD54F) : const Color(0xFFF9A825),
+        ),
+      RepeaterState.vlow => (
+          Icons.battery_2_bar,
+          dark ? const Color(0xFFFFB74D) : const Color(0xFFEF6C00),
+        ),
+      RepeaterState.crit => (
+          Icons.battery_1_bar,
+          dark ? const Color(0xFFEF9A9A) : const Color(0xFFC62828),
+        ),
+      RepeaterState.unreachable => (Icons.battery_alert, Colors.grey),
+      RepeaterState.noReading ||
+      RepeaterState.waiting =>
+        (Icons.battery_unknown, Colors.grey),
+      RepeaterState.other => (Icons.cell_tower, p.muted),
+    };
+    final hasLevel = switch (state) {
+      RepeaterState.ok ||
+      RepeaterState.low ||
+      RepeaterState.vlow ||
+      RepeaterState.crit =>
+        true,
+      _ => false,
+    };
+    final word = _stateWord(l10n, state);
+    // A level reads "Critical", or the name the sender gave that stage; the
+    // grey states stay in small letters.
+    String capitalized(String s) =>
+        s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+    final stateText = switch (state) {
+      RepeaterState.other => null,
+      _ when hasLevel =>
+        capitalized(r.keys['label']?.replaceAll('-', ' ') ?? word),
+      _ => word,
+    };
+    final details = [
+      if (r.age case final age?) l10n.repeaterStatus_ago(_duration(l10n, age)),
+      ..._keyTexts(l10n, r),
+      ?r.note,
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 28 * textScale, color: colour),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    Text(
+                      r.name,
+                      style: TextStyle(
+                        color: hasLevel || state == RepeaterState.other
+                            ? p.title
+                            : p.muted,
+                        fontSize: 15 * textScale,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (r.volts case final volts?)
+                      Text(
+                        '$volts V',
+                        style: TextStyle(color: p.body, fontSize: 15 * textScale),
+                      ),
+                    if (stateText case final text?)
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: colour,
+                          fontSize: 13 * textScale,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+                if (details.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      details.join(' · '),
+                      style: TextStyle(
+                        color: p.muted,
+                        fontSize: 12 * textScale,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// A member switched to TRAX mode or is leaving it. On a private channel

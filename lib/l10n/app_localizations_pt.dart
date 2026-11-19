@@ -5184,6 +5184,195 @@ class AppLocalizationsPt extends AppLocalizations {
   String get structured_notice => 'Aviso';
 
   @override
+  String get structured_repeaterStatus => 'Estado dos repetidores';
+
+  @override
+  String get repeaterStatus_stateCritical => 'crítico';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'muito baixo';
+
+  @override
+  String get repeaterStatus_stateLow => 'baixo';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'à espera do seu anúncio';
+
+  @override
+  String get repeaterStatus_unreachable => 'inacessível';
+
+  @override
+  String get repeaterStatus_noReading => 'sem leitura';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count críticos',
+      one: '$count crítico',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count muito baixos',
+      one: '$count muito baixo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count baixos',
+      one: '$count baixo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count OK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count inacessíveis',
+      one: '$count inacessível',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sem leitura',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count à espera',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repetidores',
+      one: '1 repetidor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'repetição ligada';
+
+  @override
+  String get repeaterStatus_repeatOff => 'repetição desligada';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'há $time';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'próxima consulta em $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count consultas perdidas',
+      one: '$count consulta perdida',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'era $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'último nível $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'para $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'leitura $value ignorada';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Página $page de $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Apenas simulação';
+
+  @override
   String get structured_allDay => 'Dia inteiro';
 
   @override

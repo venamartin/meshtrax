@@ -4829,6 +4829,189 @@ class AppLocalizationsZh extends AppLocalizations {
   String get structured_notice => '公告';
 
   @override
+  String get structured_repeaterStatus => '转发节点状态';
+
+  @override
+  String get repeaterStatus_stateCritical => '危急';
+
+  @override
+  String get repeaterStatus_stateVeryLow => '极低';
+
+  @override
+  String get repeaterStatus_stateLow => '低';
+
+  @override
+  String get repeaterStatus_stateOk => '正常';
+
+  @override
+  String get repeaterStatus_waiting => '等待其广告';
+
+  @override
+  String get repeaterStatus_unreachable => '无法连接';
+
+  @override
+  String get repeaterStatus_noReading => '无读数';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '危急 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '极低 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '低 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正常 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '无法连接 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '无读数 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '等待中 $count 个',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个转发节点',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => '转发开';
+
+  @override
+  String get repeaterStatus_repeatOff => '转发关';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count 分钟';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count 小时';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count 天';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time前';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return '$time后下次查询';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 次查询未响应',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return '之前为$state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return '最后阶段：$state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return '为 $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return '已忽略读数 $value';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return '第 $page/$pages 页';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => '仅模拟';
+
+  @override
   String get structured_allDay => '全天';
 
   @override

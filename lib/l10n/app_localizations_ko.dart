@@ -4947,6 +4947,189 @@ class AppLocalizationsKo extends AppLocalizations {
   String get structured_notice => '공지';
 
   @override
+  String get structured_repeaterStatus => '리피터 상태';
+
+  @override
+  String get repeaterStatus_stateCritical => '위험';
+
+  @override
+  String get repeaterStatus_stateVeryLow => '매우 낮음';
+
+  @override
+  String get repeaterStatus_stateLow => '낮음';
+
+  @override
+  String get repeaterStatus_stateOk => '정상';
+
+  @override
+  String get repeaterStatus_waiting => '광고 대기 중';
+
+  @override
+  String get repeaterStatus_unreachable => '연결 불가';
+
+  @override
+  String get repeaterStatus_noReading => '측정값 없음';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '위험 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '매우 낮음 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '낮음 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '정상 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '연결 불가 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '측정값 없음 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '대기 중 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '리피터 $count대',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => '중계 켜짐';
+
+  @override
+  String get repeaterStatus_repeatOff => '중계 꺼짐';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count분';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count시간';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count일';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time 전';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return '$time 후 다음 확인';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '확인 실패 $count회',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return '이전: $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return '마지막 단계: $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return '$name용';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return '측정값 $value 무시됨';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return '$page/$pages페이지';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => '시뮬레이션만';
+
+  @override
   String get structured_allDay => '종일';
 
   @override

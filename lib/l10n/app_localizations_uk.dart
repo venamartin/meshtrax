@@ -5195,6 +5195,210 @@ class AppLocalizationsUk extends AppLocalizations {
   String get structured_notice => 'Оповіщення';
 
   @override
+  String get structured_repeaterStatus => 'Стан ретрансляторів';
+
+  @override
+  String get repeaterStatus_stateCritical => 'критичний';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'дуже низький';
+
+  @override
+  String get repeaterStatus_stateLow => 'низький';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'чекає на своє оголошення';
+
+  @override
+  String get repeaterStatus_unreachable => 'недоступний';
+
+  @override
+  String get repeaterStatus_noReading => 'немає показів';
+
+  @override
+  String repeaterStatus_named(String name, String state) {
+    return '$name $state';
+  }
+
+  @override
+  String repeaterStatus_countCritical(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count критичних',
+      many: '$count критичних',
+      few: '$count критичні',
+      one: '$count критичний',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countVeryLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count дуже низьких',
+      many: '$count дуже низьких',
+      few: '$count дуже низькі',
+      one: '$count дуже низький',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countLow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count низьких',
+      many: '$count низьких',
+      few: '$count низькі',
+      one: '$count низький',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countOk(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count OK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countUnreachable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count недоступних',
+      many: '$count недоступних',
+      few: '$count недоступні',
+      one: '$count недоступний',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countNoReading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count без показів',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_countWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count очікують',
+      many: '$count очікують',
+      few: '$count очікують',
+      one: '$count очікує',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_repeaters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ретранслятора',
+      many: '$count ретрансляторів',
+      few: '$count ретранслятори',
+      one: '$count ретранслятор',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'ретрансляція увімк.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'ретрансляція вимк.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count хв';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count год';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count д';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time тому';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'наступне опитування через $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count пропущеного опитування',
+      many: '$count пропущених опитувань',
+      few: '$count пропущені опитування',
+      one: '$count пропущене опитування',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'був $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'останній рівень $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'для $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'показ $value відкинуто';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Сторінка $page з $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Лише симуляція';
+
+  @override
   String get structured_allDay => 'Увесь день';
 
   @override
