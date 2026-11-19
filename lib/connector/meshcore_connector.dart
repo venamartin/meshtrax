@@ -856,6 +856,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // the second on another of Pathfinder's routes (owner, 2026-11-19).
   bool _appSendsSecondAck = false;
   final Set<String> _secondAckSent = {};
+  // Per message (contact, sender's timestamp, text type), the routes its
+  // ACKs have taken; a resend keeps all three.
+  final Map<String, Set<String>> _ackRoutesTried = {};
   bool? _pathfinderWasOn;
   static const _twoAcksKeyPrefix = 'two_acks_';
 
@@ -8982,6 +8985,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyAcked.clear();
     _appSendsSecondAck = false;
     _secondAckSent.clear();
+    _ackRoutesTried.clear();
   }
 
   /// The Multi-ACKs choice for this radio: two ACKs for each DM. The radio's
@@ -9141,7 +9145,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       scopeKey: _passingCopyScopeKey,
     );
     if (_appSendsSecondAck && _remember(_secondAckSent, id)) {
-      packets.addAll(_secondAckPackets(copy.ack, contact, byFlood: false));
+      packets.addAll(_secondAckPackets(copy, contact, byFlood: false));
     }
     _queueRawPackets(
       packets,
@@ -9177,44 +9181,66 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
     _queueRawPackets(
-      _secondAckPackets(copy.ack, contact, byFlood: packet.isFlood),
+      _secondAckPackets(copy, contact, byFlood: packet.isFlood),
       TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
     );
   }
 
-  /// The second ACK, on Pathfinder's best route TO the contact that the
-  /// radio isn't holding. The contact is read as the copy is heard, before
-  /// the keeper can move the stored route, so it names the route the radio's
-  /// own ACK took. After a flood, Pathfinder's best route (the radio's ACK
-  /// rode the flood). With one route only, that route again, as the radio's
-  /// extra ACK would. With none known, or a route the user pinned, the
-  /// radio's stored route, else a flood.
+  /// The second ACK for [copy]: on the best route TO the contact that no ACK
+  /// of this message has taken yet, the radio's stored route included (its
+  /// own ACK rode that, unless the copy came by flood). The contact is read
+  /// as the copy is heard, before the keeper can move the stored route. The
+  /// routes are Pathfinder's, or the stored route alone when Pathfinder
+  /// knows none or the user pinned one. On a message's first copy with no
+  /// such route left, the stored route again (owner: one route, the same
+  /// route); on a resend, a flood. A resend keeps the sender's timestamp, so
+  /// each one brings a new route in (the Pathfinder session's audit).
   List<Uint8List> _secondAckPackets(
-    Uint8List ack,
+    PassingCopy copy,
     Contact contact, {
     required bool byFlood,
   }) {
-    final routes = _ackRoutes(contact) ?? const <PathSelection>[];
-    PathSelection? route;
-    if (routes.isNotEmpty) {
-      route = byFlood
-          ? routes.first
-          : routes.firstWhere(
-              (r) => !_radioHolds(contact, r),
-              orElse: () => routes.first,
-            );
+    final message =
+        '${pubKeyToHex(copy.senderKey)}:${copy.timestamp}:${copy.isRoomPost}';
+    final tried = _ackRoutesTried.remove(message) ?? <String>{};
+    _ackRoutesTried[message] = tried;
+    if (_ackRoutesTried.length > 64) {
+      _ackRoutesTried.remove(_ackRoutesTried.keys.first);
     }
-    return PassingCopyOpener.ackPackets(
-      ack,
+    final firstCopy = tried.isEmpty;
+    final held = contact.pathLength >= 0
+        ? PathSelection(
+            pathBytes: contact.path,
+            hopCount: contact.pathLength,
+            hashSize: contact.pathHashSize,
+            useFlood: false,
+          )
+        : null;
+    if (!byFlood) tried.add(_ackRouteKey(held));
+    final routes = _ackRoutes(contact) ?? const <PathSelection>[];
+    final options = routes.isNotEmpty ? routes : [?held];
+    var route = options
+        .where((r) =>
+            !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)))
+        .firstOrNull;
+    if (route == null && firstCopy && !byFlood) route = held;
+    tried.add(_ackRouteKey(route));
+    return PassingCopyOpener.secondAckPackets(
+      copy.ack,
       routePathLen: route == null
-          ? PathHelper.encodePathLen(contact.pathLength, contact.pathHashSize)
+          ? 0xFF
           : PathHelper.encodePathLen(route.hopCount, route.hashSize),
-      routePath: route?.pathBytes ?? contact.path,
-      extraAck: false,
+      routePath: route?.pathBytes ?? const [],
       floodWidth: _pathHashByteWidth,
       scopeKey: _passingCopyScopeKey,
     );
   }
+
+  static String _ackRouteKey(PathSelection? r) => r == null || r.useFlood
+      ? 'flood'
+      : r.hopCount == 0
+      ? 'direct'
+      : '${r.hashSize}:${r.pathBytes.join(',')}';
 
   /// Pathfinder's routes TO [contact] for an ACK, best first: the list the
   /// DM ladder uses (planAttempts: no repeats, no weak routes), floods left
@@ -9231,17 +9257,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       graphRoutes: graph,
       floods: 0,
     ).where((r) => !r.useFlood).toList();
-  }
-
-  /// Whether the radio stores [route] for [contact]: the keeper's own test
-  /// (RadioRouteKeeper.holds), kept here so the connector imports nothing
-  /// from Pathfinder.
-  static bool _radioHolds(Contact contact, PathSelection route) {
-    if (route.useFlood) return contact.pathLength < 0;
-    if (contact.pathLength != route.hopCount) return false;
-    if (route.hopCount == 0) return true;
-    return contact.pathHashSize == route.hashSize &&
-        listEquals(contact.path, route.pathBytes);
   }
 
   Contact? _contactWithKey(Uint8List key) =>

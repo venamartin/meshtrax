@@ -585,13 +585,24 @@ the companion sends two acks or it sends one and the app sends the second"):
   ACK until the app is back.
 - **The app sends the other**, for every copy of a DM or room post to this radio that it
   can read in the RX log (it computes the exact ACK from the decrypted copy), once per
-  message, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
-  first. The route is Pathfinder's best route **to** the sender that the radio isn't
-  holding (the same list the DM ladder plans with, `planAttempts`, floods left out), read
-  when the copy is heard, before the keeper can move the stored route. After a flood
-  (the radio's ACK rode the flood) it is Pathfinder's best route. With only one route, that
-  route again. With none known, or a route the user pinned, the radio's stored route, else
-  a flood. For a passing copy the app sends both ACKs.
+  send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
+  first. For a passing copy the app sends both ACKs.
+- **Its form is the firmware's extra ACK**: MULTIPART, remaining 1 (`createMultiAck`).
+  Repeaters drop a packet they have seen, and `Packet::calculatePacketHash` leaves the path
+  out, so a plain copy of the first ACK dies at the first repeater that carried it, and on
+  the same route it never gets past the first hop. The MULTIPART one has its own hash and
+  gets a new chance at every hop (`forwardMultipartDirect`). A flooded second ACK is plain:
+  repeaters don't pass a flooded MULTIPART on.
+- **Its route** is the best route **to** the sender that no ACK of this message has taken
+  yet, the radio's stored route included (the radio's own ACK rode it, unless the copy came
+  by flood). The routes are Pathfinder's, the same list the DM ladder plans with
+  (`planAttempts`, floods left out), or the stored route alone when Pathfinder knows none or
+  the user pinned one. A message is the contact, the sender's timestamp and the text type,
+  which a resend keeps, so each resend brings a new route in: copy 1 PF2, copy 2 PF3, then
+  a flood. On a message's first copy with no such route left (one route only), the stored
+  route again. The contact is read when the copy is heard, before the keeper can move the
+  stored route. The connector reads routes through `graphRouteCandidates` and tests the
+  held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants

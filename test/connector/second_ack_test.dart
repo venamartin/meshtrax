@@ -162,10 +162,19 @@ void main() {
     return c.acks;
   }
 
-  /// An ACK frame for CMD_SEND_RAW_PACKET, routed on [route] (2-byte hops),
+  /// A plain ACK for CMD_SEND_RAW_PACKET, routed on [route] (2-byte hops),
   /// up to its random last byte.
-  List<int> routedAck(List<int> route) => [
-    cmdSendRawPacket, 0, 0x0E, 0x40 | route.length ~/ 2, ...route, ...ackHash,
+  List<int> plainAck(List<int> route, [List<int>? hash]) => [
+    cmdSendRawPacket, 0, 0x0E, 0x40 | route.length ~/ 2, ...route,
+    ...(hash ?? ackHash),
+  ];
+
+  /// The second ACK: MULTIPART, remaining 1, as the firmware's extra ACK.
+  /// Repeaters drop a packet they've seen and the hash leaves the path out,
+  /// so a plain copy of the first ACK would die at the first shared hop.
+  List<int> secondAck(List<int> route, [List<int>? hash]) => [
+    cmdSendRawPacket, 0, 0x2A, 0x40 | route.length ~/ 2, ...route, 0x13,
+    ...(hash ?? ackHash),
   ];
 
   test('the radio is set to one ACK and the app sends the second, on '
@@ -177,7 +186,7 @@ void main() {
     c.handleFrameForTest(_rxLog(dmLastCopy));
     final sent = await acks(1);
     expect(sent, hasLength(1));
-    expect(sent.single.sublist(0, 13), routedAck(pf2.pathBytes));
+    expect(sent.single.sublist(0, 14), secondAck(pf2.pathBytes));
   });
 
   test('a DM that came by flood: the second ACK on Pathfinder\'s best route',
@@ -185,24 +194,54 @@ void main() {
     await connect(routes: [pf1, pf2]);
     c.handleFrameForTest(_rxLog(dmFlood));
     final sent = await acks(1);
-    expect(sent.single.sublist(0, 15), routedAck(stored));
+    expect(sent.single.sublist(0, 16), secondAck(stored));
   });
 
   test('one route only: the second ACK on that route again', () async {
     await connect(routes: [pf1]);
     c.handleFrameForTest(_rxLog(dmLastCopy));
     final sent = await acks(1);
-    expect(sent.single.sublist(0, 15), routedAck(stored));
+    expect(sent.single.sublist(0, 16), secondAck(stored));
   });
 
-  test('a passing copy: the first ACK on the stored route, the second on '
-      'the other', () async {
+  test('a passing copy: a plain ACK on the stored route, then a MULTIPART '
+      'one on the other, so no repeater takes it for the first', () async {
     await connect(routes: [pf1, pf2]);
     c.handleFrameForTest(_rxLog(dmFromAd77));
     final sent = await acks(2);
     expect(sent, hasLength(2));
-    expect(sent[0].sublist(0, 15), routedAck(stored));
-    expect(sent[1].sublist(0, 13), routedAck(pf2.pathBytes));
+    expect(sent[0].sublist(0, 15), plainAck(stored));
+    expect(sent[1].sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('each resend brings a new route in, then a flood', () async {
+    // One DM sent three times (attempts 0-2, the same timestamp) on a
+    // zero-hop route, as the firmware made them; the radio keeps holding
+    // PF1 for the radio's own ACKs.
+    final pf3 = PathSelection(
+      pathBytes: _hex('77AA'),
+      hopCount: 1,
+      hashSize: 2,
+      useFlood: false,
+    );
+    await connect(routes: [pf1, pf2, pf3]);
+    final copies = [
+      ('0A40E7C393761A4A07DC0918917FCB35FAED48C03AC74A7423DA8746EFCDAD090FFF9B5C3935', '11D715BA00'),
+      ('0A40E7C3107AD378CE640B4D4963FBCC6609D301A6EF4A7423DA8746EFCDAD090FFF9B5C3935', '4F92885800'),
+      ('0A40E7C38F00738E228366484BCAB03084A743013F4D4A7423DA8746EFCDAD090FFF9B5C3935', '783A0F9200'),
+    ];
+    // Back to back: the route for each is chosen as its copy is heard.
+    for (final (frame, _) in copies) {
+      c.handleFrameForTest(_rxLog(_hex(frame)));
+    }
+    final sent = await acks(3);
+    expect(sent, hasLength(3));
+    expect(sent[0].sublist(0, 14), secondAck(pf2.pathBytes, _hex(copies[0].$2)));
+    expect(sent[1].sublist(0, 12), secondAck(pf3.pathBytes, _hex(copies[1].$2)));
+    // Every route tried: a plain flood (a flooded MULTIPART goes nowhere).
+    expect(sent[2].sublist(0, 9), [
+      cmdSendRawPacket, 1, 0x0D, 0x40, ..._hex(copies[2].$2),
+    ]);
   });
 
   test('every copy of one DM: one second ACK', () async {
