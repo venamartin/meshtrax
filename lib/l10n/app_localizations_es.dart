@@ -1060,7 +1060,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown en los mensajes: **negrita**, *cursiva*, ||texto oculto||, encabezados y enlaces. Otras apps de MeshCore muestran los caracteres sin formato.';
+      'Markdown en los mensajes: **negrita**, *cursiva*, ||texto oculto||, encabezados, listas y enlaces. Otras apps de MeshCore muestran los caracteres sin formato.';
 
   @override
   String get appSettings_notifications => 'Notificaciones';

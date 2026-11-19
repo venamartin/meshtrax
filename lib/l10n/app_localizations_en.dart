@@ -1045,7 +1045,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.';
+      'Markdown in messages: **bold**, *italic*, ||spoilers||, headers, lists and links. Other MeshCore apps show the raw characters.';
 
   @override
   String get appSettings_notifications => 'Notifications';

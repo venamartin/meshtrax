@@ -80,9 +80,9 @@ class _MessageTextState extends State<MessageText> {
     final formatting = context.select<AppSettingsService, bool>(
       (s) => s.settings.showTextFormatting,
     );
-    final spans = [
-      for (final run in _parsed(widget.text, formatting)) _span(context, run),
-    ];
+    final runs = _parsed(widget.text, formatting);
+    if (runs.any((r) => r.bullet)) return _withList(context, runs);
+    final spans = [for (final run in runs) _span(context, run)];
     if (PlatformInfo.isDesktop) {
       // No Copy / Select all menu of its own: a right-click opens the
       // message's menu (ContextMenuRegion). Ctrl+C still copies a selection.
@@ -92,6 +92,85 @@ class _MessageTextState extends State<MessageText> {
       );
     }
     return Text.rich(TextSpan(children: spans));
+  }
+
+  /// A message with a list, line by line: a bullet's wrapped lines line up
+  /// under its text, not under the bullet.
+  Widget _withList(BuildContext context, List<MdRun> runs) {
+    final style = widget.style;
+    final em = MediaQuery.textScalerOf(context).scale(
+      style.fontSize ?? DefaultTextStyle.of(context).style.fontSize ?? 14,
+    );
+    final children = <Widget>[];
+    // The plain lines since the last bullet, each its own list of spans.
+    var paragraph = <List<InlineSpan>>[];
+    var line = <InlineSpan>[];
+    var bullet = false;
+    InlineSpan? newline;
+
+    void endParagraph() {
+      if (paragraph.isEmpty) return;
+      children.add(
+        Text.rich(
+          TextSpan(
+            children: [
+              for (var i = 0; i < paragraph.length; i++) ...[
+                if (i > 0) newline!,
+                ...paragraph[i],
+              ],
+            ],
+          ),
+        ),
+      );
+      paragraph = [];
+    }
+
+    void endLine() {
+      if (bullet) {
+        endParagraph();
+        children.add(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              SizedBox(
+                width: em * 1.25,
+                child: Text('•', style: style, textAlign: TextAlign.center),
+              ),
+              Flexible(child: Text.rich(TextSpan(children: line))),
+            ],
+          ),
+        );
+      } else {
+        paragraph.add(line);
+      }
+      line = [];
+      bullet = false;
+    }
+
+    for (final run in runs) {
+      if (run.bullet) {
+        bullet = true;
+      } else if (run.text == '\n' && !run.code) {
+        newline ??= _span(context, run);
+        endLine();
+      } else {
+        line.add(_span(context, run));
+      }
+    }
+    endLine();
+    endParagraph();
+    final column = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+    // As SelectableText above: no menu of its own, so a right-click opens
+    // the message's.
+    return PlatformInfo.isDesktop
+        ? SelectionArea(contextMenuBuilder: null, child: column)
+        : column;
   }
 
   TextSpan _span(BuildContext context, MdRun run) {

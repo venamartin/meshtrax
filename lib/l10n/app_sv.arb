@@ -1883,7 +1883,7 @@
   "appSettings_senderNameColors": "Färgglada avsändarnamn",
   "appSettings_senderNameColorsSubtitle": "Ge varje avsändare i kanaler en egen namnfärg. Av använder temafärgen för alla.",
   "appSettings_showTextFormatting": "Visa textformatering",
-  "appSettings_showTextFormattingSubtitle": "Markdown i meddelanden: **fet**, *kursiv*, ||spoilers||, rubriker och länkar. Andra MeshCore-appar visar råtecknen.",
+  "appSettings_showTextFormattingSubtitle": "Markdown i meddelanden: **fet**, *kursiv*, ||spoilers||, rubriker, listor och länkar. Andra MeshCore-appar visar råtecknen.",
   "appSettings_maxChannelMessageRetries": "Max antal nya försök för kanalmeddelanden",
   "appSettings_maxChannelMessageRetriesSubtitle": "Försöker igen så här många gånger tills minst en upprepning hörs",
   "appSettings_heardCheck": "Kontrollera sändningar med observatörer",

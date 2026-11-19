@@ -1982,7 +1982,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_showTextFormattingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Markdown in messages: **bold**, *italic*, ||spoilers||, headers and links. Other MeshCore apps show the raw characters.'**
+  /// **'Markdown in messages: **bold**, *italic*, ||spoilers||, headers, lists and links. Other MeshCore apps show the raw characters.'**
   String get appSettings_showTextFormattingSubtitle;
 
   /// No description provided for @appSettings_notifications.

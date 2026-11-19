@@ -14,6 +14,7 @@ class MdRun {
     this.spoiler,
     this.header = 0,
     this.link,
+    this.bullet = false,
   });
 
   final String text;
@@ -22,6 +23,10 @@ class MdRun {
   final bool underline;
   final bool strike;
   final bool code;
+
+  /// The `• ` that starts a list line: the rest of the line hangs beside
+  /// it.
+  final bool bullet;
 
   /// Every run of one `||…||` shares this id, so a tap reveals all of it.
   final int? spoiler;
@@ -36,8 +41,8 @@ class MdRun {
 
 /// Markdown for chat messages: `**bold**`, `*italic*` / `_italic_`,
 /// `__underline__`, `~~strike~~`, `||spoiler||`, `` `code` ``,
-/// ```` ```blocks``` ````, `#` / `##` / `###` / `-#` lines, `[text](url)`
-/// and `\` escapes.
+/// ```` ```blocks``` ````, `#` / `##` / `###` / `-#` lines, `- ` / `* `
+/// list lines, `[text](url)` and `\` escapes.
 ///
 /// Display only: the stored and sent text is never rewritten, so reaction
 /// hashes and reply snippets keep working on the raw text.
@@ -53,6 +58,8 @@ class MarkdownHelper {
   // Link text that reads like an address would hide where the link goes.
   static final _looksLikeUrl = RegExp(r'://|[\w-]+\.[a-z]{2,}', caseSensitive: false);
   static final _header = RegExp(r'^(#{1,3}|-#) +(\S[\s\S]*)$');
+  // One level: an indented bullet is a bullet too.
+  static final _bullet = RegExp(r'^[ \t]*[-*][ \t]+(\S[\s\S]*)$');
   static const _codeLanguages = {
     'bash', 'c', 'cpp', 'cs', 'css', 'dart', 'diff', 'go', 'html', 'ini',
     'java', 'javascript', 'js', 'json', 'kotlin', 'kt', 'lua', 'md',
@@ -77,10 +84,14 @@ class MarkdownHelper {
     for (var n = 0; n < lines.length; n++) {
       if (n > 0) inline.runs.add(const MdRun('\n'));
       final h = _header.firstMatch(lines[n]);
-      if (h == null) {
-        inline.parseLine(lines[n], 0);
-      } else {
+      final b = h == null ? _bullet.firstMatch(lines[n]) : null;
+      if (h != null) {
         inline.parseLine(h.group(2)!, h.group(1) == '-#' ? 4 : h.group(1)!.length);
+      } else if (b != null) {
+        inline.runs.add(const MdRun('• ', bullet: true));
+        inline.parseLine(b.group(1)!, 0);
+      } else {
+        inline.parseLine(lines[n], 0);
       }
     }
     return inline.runs;

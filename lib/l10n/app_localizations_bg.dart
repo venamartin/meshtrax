@@ -1064,7 +1064,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown в съобщенията: **удебелен**, *курсив*, ||спойлери||, заглавия и връзки. Другите приложения за MeshCore показват символите както са.';
+      'Markdown в съобщенията: **удебелен**, *курсив*, ||спойлери||, заглавия, списъци и връзки. Другите приложения за MeshCore показват символите както са.';
 
   @override
   String get appSettings_notifications => 'Уведомления';

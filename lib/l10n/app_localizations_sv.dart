@@ -1048,7 +1048,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown i meddelanden: **fet**, *kursiv*, ||spoilers||, rubriker och länkar. Andra MeshCore-appar visar råtecknen.';
+      'Markdown i meddelanden: **fet**, *kursiv*, ||spoilers||, rubriker, listor och länkar. Andra MeshCore-appar visar råtecknen.';
 
   @override
   String get appSettings_notifications => 'Meddelanden';

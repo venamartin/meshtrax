@@ -1883,7 +1883,7 @@
   "appSettings_senderNameColors": "Farebné mená odosielateľov",
   "appSettings_senderNameColorsSubtitle": "Každý odosielateľ v kanáli dostane vlastnú farbu mena. Vypnuté znamená farbu témy pre všetkých.",
   "appSettings_showTextFormatting": "Zobraziť formátovanie textu",
-  "appSettings_showTextFormattingSubtitle": "Markdown v správach: **tučné**, *kurzíva*, ||spoilery||, nadpisy a odkazy. Iné aplikácie MeshCore zobrazujú nespracované znaky.",
+  "appSettings_showTextFormattingSubtitle": "Markdown v správach: **tučné**, *kurzíva*, ||spoilery||, nadpisy, zoznamy a odkazy. Iné aplikácie MeshCore zobrazujú nespracované znaky.",
   "appSettings_maxChannelMessageRetries": "Max. počet opakovaní správ v kanáli",
   "appSettings_maxChannelMessageRetriesSubtitle": "Opakuje toľkokrát, kým nezachytí aspoň jedno zopakovanie",
   "appSettings_heardCheck": "Kontrolovať odoslanie u pozorovateľov",

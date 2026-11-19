@@ -1911,7 +1911,7 @@
   "appSettings_senderNameColors": "Nombres de remitente en color",
   "appSettings_senderNameColorsSubtitle": "Da a cada remitente del canal su propio color de nombre. Desactivado, todos usan el color del tema.",
   "appSettings_showTextFormatting": "Mostrar formato de texto",
-  "appSettings_showTextFormattingSubtitle": "Markdown en los mensajes: **negrita**, *cursiva*, ||texto oculto||, encabezados y enlaces. Otras apps de MeshCore muestran los caracteres sin formato.",
+  "appSettings_showTextFormattingSubtitle": "Markdown en los mensajes: **negrita**, *cursiva*, ||texto oculto||, encabezados, listas y enlaces. Otras apps de MeshCore muestran los caracteres sin formato.",
   "appSettings_maxChannelMessageRetries": "Reintentos máx. de mensajes de canal",
   "appSettings_maxChannelMessageRetriesSubtitle": "Reintentará hasta este número de veces mientras no oiga al menos una repetición",
   "appSettings_heardCheck": "Comprobar envíos con observadores",

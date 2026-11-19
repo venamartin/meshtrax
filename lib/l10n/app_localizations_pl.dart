@@ -1062,7 +1062,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown w wiadomościach: **pogrubienie**, *kursywa*, ||spoilery||, nagłówki i linki. Inne aplikacje MeshCore pokazują surowe znaki.';
+      'Markdown w wiadomościach: **pogrubienie**, *kursywa*, ||spoilery||, nagłówki, listy i linki. Inne aplikacje MeshCore pokazują surowe znaki.';
 
   @override
   String get appSettings_notifications => 'Powiadomienia';

@@ -1063,7 +1063,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown nas mensagens: **negrito**, *itálico*, ||spoilers||, títulos e links. Outros apps MeshCore mostram os caracteres brutos.';
+      'Markdown nas mensagens: **negrito**, *itálico*, ||spoilers||, títulos, listas e links. Outros apps MeshCore mostram os caracteres brutos.';
 
   @override
   String get appSettings_notifications => 'Notificações';

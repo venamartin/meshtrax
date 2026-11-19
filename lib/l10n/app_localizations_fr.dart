@@ -1065,7 +1065,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown dans les messages : **gras**, *italique*, ||texte caché||, titres et liens. Les autres applications MeshCore affichent les caractères bruts.';
+      'Markdown dans les messages : **gras**, *italique*, ||texte caché||, titres, listes et liens. Les autres applications MeshCore affichent les caractères bruts.';
 
   @override
   String get appSettings_notifications => 'Notifications';

@@ -1049,7 +1049,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown v sporočilih: **krepko**, *ležeče*, ||spojlerji||, naslovi in povezave. Druge aplikacije MeshCore prikažejo surove znake.';
+      'Markdown v sporočilih: **krepko**, *ležeče*, ||spojlerji||, naslovi, seznami in povezave. Druge aplikacije MeshCore prikažejo surove znake.';
 
   @override
   String get appSettings_notifications => 'Obvestila';

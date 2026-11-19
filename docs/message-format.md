@@ -235,6 +235,7 @@ pieces still work and every markdown character is shown as typed.
 | ```` ```code block``` ```` | code block |
 | `# `, `## `, `### ` at the start of a line | large, medium, small header |
 | `-# ` at the start of a line | small subtext |
+| `- ` or `* ` at the start of a line | a bullet (•), with the text wrapping beside it |
 | `[text](https://…)` | `text` as a link |
 | `\*` | a literal `*` |
 
@@ -248,9 +249,12 @@ pieces still work and every markdown character is shown as typed.
   text does not itself look like an address, so a link can't pretend to go
   somewhere it doesn't.
 - `\` escapes any of `` \ ` * _ ~ | [ ] ( ) # - @ ``.
+- A list has one level: a bullet indented with spaces is a plain bullet.
+  The marker needs a space and text after it, so `-5` and `*italic*` stay
+  as they are, and `\-` at the start keeps a dash as typed.
 - A mention is kept whole even when the name holds markdown characters.
 - Previews, quotes and notifications show the text without markers, with a
-  spoiler as `▮▮▮`.
+  spoiler as `▮▮▮` and a bullet as `•`.
 
 ## Tappable pieces
 

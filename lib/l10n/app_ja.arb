@@ -1921,7 +1921,7 @@
   "appSettings_senderNameColors": "送信者名を色分け",
   "appSettings_senderNameColorsSubtitle": "チャンネルの送信者ごとに名前の色を変えます。オフにすると全員がテーマの色になります。",
   "appSettings_showTextFormatting": "文字の書式を表示",
-  "appSettings_showTextFormattingSubtitle": "メッセージ内のMarkdown：**太字**、*斜体*、||ネタバレ||、見出し、リンク。ほかのMeshCoreアプリでは記号がそのまま表示されます。",
+  "appSettings_showTextFormattingSubtitle": "メッセージ内のMarkdown：**太字**、*斜体*、||ネタバレ||、見出し、リスト、リンク。ほかのMeshCoreアプリでは記号がそのまま表示されます。",
   "appSettings_maxChannelMessageRetries": "チャンネルメッセージの最大再試行回数",
   "appSettings_maxChannelMessageRetriesSubtitle": "中継が1つ以上聞こえるまで、この回数だけ再試行します",
   "appSettings_heardCheck": "オブザーバーで送信を確認",

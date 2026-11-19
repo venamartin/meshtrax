@@ -1883,7 +1883,7 @@
   "appSettings_senderNameColors": "Кольорові імена відправників",
   "appSettings_senderNameColorsSubtitle": "Окремий колір імені для кожного відправника в каналі. Якщо вимкнено, у всіх колір теми.",
   "appSettings_showTextFormatting": "Показувати форматування тексту",
-  "appSettings_showTextFormattingSubtitle": "Markdown у повідомленнях: **жирний**, *курсив*, ||спойлери||, заголовки й посилання. Інші програми MeshCore показують символи як є.",
+  "appSettings_showTextFormattingSubtitle": "Markdown у повідомленнях: **жирний**, *курсив*, ||спойлери||, заголовки, списки й посилання. Інші програми MeshCore показують символи як є.",
   "appSettings_maxChannelMessageRetries": "Макс. повторів повідомлень у каналі",
   "appSettings_maxChannelMessageRetriesSubtitle": "Стільки разів повторюватиме надсилання, доки не почує хоча б один повтор",
   "appSettings_heardCheck": "Перевіряти надсилання у спостерігачів",

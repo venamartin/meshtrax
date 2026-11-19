@@ -1058,7 +1058,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in Nachrichten: **fett**, *kursiv*, ||Spoiler||, Überschriften und Links. Andere MeshCore-Apps zeigen die Rohzeichen.';
+      'Markdown in Nachrichten: **fett**, *kursiv*, ||Spoiler||, Überschriften, Listen und Links. Andere MeshCore-Apps zeigen die Rohzeichen.';
 
   @override
   String get appSettings_notifications => 'Benachrichtigungen';

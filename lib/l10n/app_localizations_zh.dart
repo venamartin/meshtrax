@@ -999,7 +999,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      '消息中的 Markdown：**粗体**、*斜体*、||剧透||、标题和链接。其他 MeshCore 应用会显示原始字符。';
+      '消息中的 Markdown：**粗体**、*斜体*、||剧透||、标题、列表和链接。其他 MeshCore 应用会显示原始字符。';
 
   @override
   String get appSettings_notifications => '通知';

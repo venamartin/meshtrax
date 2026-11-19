@@ -1054,7 +1054,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get appSettings_showTextFormattingSubtitle =>
-      'Markdown in berichten: **vet**, *cursief*, ||spoilers||, koppen en links. Andere MeshCore-apps tonen de ruwe tekens.';
+      'Markdown in berichten: **vet**, *cursief*, ||spoilers||, koppen, lijsten en links. Andere MeshCore-apps tonen de ruwe tekens.';
 
   @override
   String get appSettings_notifications => 'Notificaties';

@@ -1921,7 +1921,7 @@
   "appSettings_senderNameColors": "Kolorowe nazwy nadawców",
   "appSettings_senderNameColorsSubtitle": "Każdy nadawca na kanale dostaje własny kolor nazwy. Po wyłączeniu wszyscy mają kolor motywu.",
   "appSettings_showTextFormatting": "Pokaż formatowanie tekstu",
-  "appSettings_showTextFormattingSubtitle": "Markdown w wiadomościach: **pogrubienie**, *kursywa*, ||spoilery||, nagłówki i linki. Inne aplikacje MeshCore pokazują surowe znaki.",
+  "appSettings_showTextFormattingSubtitle": "Markdown w wiadomościach: **pogrubienie**, *kursywa*, ||spoilery||, nagłówki, listy i linki. Inne aplikacje MeshCore pokazują surowe znaki.",
   "appSettings_maxChannelMessageRetries": "Maks. ponowień wiadomości na kanale",
   "appSettings_maxChannelMessageRetriesSubtitle": "Ponawia tyle razy, aż usłyszy co najmniej jedno powtórzenie",
   "appSettings_heardCheck": "Sprawdzaj wysyłki u obserwatorów",
