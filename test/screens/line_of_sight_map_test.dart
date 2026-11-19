@@ -455,8 +455,8 @@ void main() {
     );
   });
 
-  testWidgets('radio reach: a shade on the map and who can be reached, '
-      'nearest first; a row opens that line', (tester) async {
+  testWidgets('radio reach: a shade on the map and who can be reached, who '
+      'can hear you first; a row opens that line', (tester) async {
     // Heard through Peak, with no position of its own: the map guesses.
     final heard = Contact(
       publicKey: Uint8List.fromList(List.filled(32, 7)),
@@ -503,8 +503,9 @@ void main() {
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Peak'), findsOneWidget);
     expect(find.text('Look further (19 mi)'), findsOneWidget);
-    // Everyone out to 60 mi, nearest first; a guessed position is listed
-    // with what it was heard through, and no answer.
+    // Everyone out to 60 mi: who can hear you first, nearest first within
+    // each answer. A guessed position comes last, with what it was heard
+    // through and no answer.
     expect(
       s.reachPeople.map((p) => p.name),
       containsAll(['Ana', 'Peak', 'Far']),
@@ -518,9 +519,20 @@ void main() {
           ),
         )
         .dy;
-    expect(y('Ana'), lessThan(y('Peak')));
-    expect(y('Peak'), lessThan(y('Far')));
-    expect(y('AD77'), lessThan(y('Far')));
+    final shown = [
+      for (var i = 0; i < s.reachPeople.length; i++)
+        (s.reachPeople[i].name!, s.reachAnswers[i]),
+    ]..sort((a, b) => y(a.$1).compareTo(y(b.$1)));
+    for (var i = 1; i < shown.length; i++) {
+      final (above, a) = shown[i - 1];
+      final (below, b) = shown[i];
+      expect(
+        compareReachRows(a.verdict, a.distanceM, b.verdict, b.distanceM),
+        lessThanOrEqualTo(0),
+        reason: '$above (${a.verdict.name}) shows above $below',
+      );
+    }
+    expect(y('AD77'), greaterThan(y(shown.last.$1)));
     expect(find.text('Position guessed, heard via Peak'), findsOneWidget);
     await tapInSheet(tester, find.text('Ana'));
     await answer(tester);

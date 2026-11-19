@@ -660,6 +660,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
   - **Needs the contours pack** of every region the line crosses, drawn or not. They aren't ticked by default since 2026-11-02, so the screen offers to download them where a stretch has none. US only until Canada and Mexico contours are built.
   - **360° sweep from a point:** the same check along rays all round (e.g. every 1°) out to a chosen range, shading where a node at a given height would be seen. Runs off the UI thread.
   - **Credits:** the contours pack's (USGS 3DEP, the GLO-30 notice) instead of Open-Meteo's.
+  - **Reach list order** (Martin, 2026-11-18): who can hear you first, Clear then Marginal, then Blocked, Can't tell and guessed positions; nearest first in each.
 - **Share a line of sight or a radio reach** (Martin, 2026-11-18: plan, not built). Send a reach or a line from the sheet the way a map pin is shared. The receiver taps it and sees the same reach, or the same line, centred on that position.
   - **Share the question, not the answer:**
     - A reach's shading would take many kilobytes; LoRa messages hold about 150 bytes.
