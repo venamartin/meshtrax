@@ -1467,6 +1467,72 @@ class AppLocalizationsDe extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Funkgerät von $name fragen';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Geht auch bei ausgeschaltetem Handy';
+
+  @override
+  String get radioAsk_waiting => 'Wartet auf eine andere Anfrage';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Fragt… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Prüft erneut… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Prüft erneut um $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Funkgerät von $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Keine GPS-Position';
+
+  @override
+  String get radioAsk_noFix => 'Vielleicht veraltet: kein GPS-Fix';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Vielleicht veraltet: keine Änderung in 1 Min.';
+
+  @override
+  String get radioAsk_notChecked => 'Zweite Anfrage fehlgeschlagen';
+
+  @override
+  String get radioAsk_noAnswer => 'Keine Antwort';
+
+  @override
+  String get radioAsk_showOnMap => 'Auf der Karte zeigen';
+
+  @override
+  String get radioAsk_askAgain => 'Erneut fragen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Funkgerät von $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Antwort des Funkgeräts';
+
+  @override
   String get contact_nickname => 'Spitzname';
 
   @override

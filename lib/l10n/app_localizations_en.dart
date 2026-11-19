@@ -1445,6 +1445,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contact_telemetry => 'Telemetry';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Ask $name\'s radio';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Works with their phone off';
+
+  @override
+  String get radioAsk_waiting => 'Waiting for another ask';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Asking… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Checking again… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Checking again at $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$name\'s radio · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'No GPS position';
+
+  @override
+  String get radioAsk_noFix => 'May be old: no GPS fix';
+
+  @override
+  String get radioAsk_unchanged => 'May be old: no change in 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Second ask failed';
+
+  @override
+  String get radioAsk_noAnswer => 'No answer';
+
+  @override
+  String get radioAsk_showOnMap => 'Show on map';
+
+  @override
+  String get radioAsk_askAgain => 'Ask again';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$name\'s radio · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Radio answer';
+
+  @override
   String get contact_nickname => 'Nickname';
 
   @override

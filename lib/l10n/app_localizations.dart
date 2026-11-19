@@ -2639,6 +2639,108 @@ abstract class AppLocalizations {
   /// **'Telemetry'**
   String get contact_telemetry;
 
+  /// No description provided for @radioAsk_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask {name}\'s radio'**
+  String radioAsk_title(String name);
+
+  /// No description provided for @radioAsk_menuSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Works with their phone off'**
+  String get radioAsk_menuSubtitle;
+
+  /// No description provided for @radioAsk_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for another ask'**
+  String get radioAsk_waiting;
+
+  /// No description provided for @radioAsk_asking.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking… {attempt}/{count}'**
+  String radioAsk_asking(int attempt, int count);
+
+  /// No description provided for @radioAsk_checkingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking again… {attempt}/{count}'**
+  String radioAsk_checkingAgain(int attempt, int count);
+
+  /// No description provided for @radioAsk_checkAgainAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking again at {time}'**
+  String radioAsk_checkAgainAt(String time);
+
+  /// No description provided for @radioAsk_where.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s radio · {time}'**
+  String radioAsk_where(String name, String time);
+
+  /// No description provided for @radioAsk_volts.
+  ///
+  /// In en, this message translates to:
+  /// **'{volts} V'**
+  String radioAsk_volts(String volts);
+
+  /// No description provided for @radioAsk_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS position'**
+  String get radioAsk_noPosition;
+
+  /// No description provided for @radioAsk_noFix.
+  ///
+  /// In en, this message translates to:
+  /// **'May be old: no GPS fix'**
+  String get radioAsk_noFix;
+
+  /// No description provided for @radioAsk_unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'May be old: no change in 1 min'**
+  String get radioAsk_unchanged;
+
+  /// No description provided for @radioAsk_notChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Second ask failed'**
+  String get radioAsk_notChecked;
+
+  /// No description provided for @radioAsk_noAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer'**
+  String get radioAsk_noAnswer;
+
+  /// No description provided for @radioAsk_showOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Show on map'**
+  String get radioAsk_showOnMap;
+
+  /// No description provided for @radioAsk_askAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask again'**
+  String get radioAsk_askAgain;
+
+  /// No description provided for @radioAsk_mapLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s radio · {time}'**
+  String radioAsk_mapLabel(String name, String time);
+
+  /// No description provided for @radioAsk_rowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio answer'**
+  String get radioAsk_rowLabel;
+
   /// No description provided for @contact_nickname.
   ///
   /// In en, this message translates to:

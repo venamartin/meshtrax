@@ -1450,6 +1450,71 @@ class AppLocalizationsSv extends AppLocalizations {
   String get contact_telemetry => 'Telemetri';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Fråga radion hos $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Fungerar med telefonen avstängd';
+
+  @override
+  String get radioAsk_waiting => 'Väntar på en annan fråga';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Frågar… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Kontrollerar igen… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Kontrollerar igen kl. $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Radion hos $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Ingen GPS-position';
+
+  @override
+  String get radioAsk_noFix => 'Kan vara gammal: ingen GPS-fix';
+
+  @override
+  String get radioAsk_unchanged => 'Kan vara gammal: ingen ändring på 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Andra frågan misslyckades';
+
+  @override
+  String get radioAsk_noAnswer => 'Inget svar';
+
+  @override
+  String get radioAsk_showOnMap => 'Visa på kartan';
+
+  @override
+  String get radioAsk_askAgain => 'Fråga igen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radion hos $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Radions svar';
+
+  @override
   String get contact_nickname => 'Smeknamn';
 
   @override

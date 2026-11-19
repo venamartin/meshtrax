@@ -1462,6 +1462,71 @@ class AppLocalizationsSk extends AppLocalizations {
   String get contact_telemetry => 'Telemetria';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Opýtať sa rádia $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Funguje aj pri vypnutom telefóne';
+
+  @override
+  String get radioAsk_waiting => 'Čaká sa na inú otázku';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Pýta sa… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Znova overuje… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Znova overí o $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Rádio $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Bez polohy GPS';
+
+  @override
+  String get radioAsk_noFix => 'Môže byť stará: bez GPS fixu';
+
+  @override
+  String get radioAsk_unchanged => 'Môže byť stará: bez zmeny za 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Druhá otázka zlyhala';
+
+  @override
+  String get radioAsk_noAnswer => 'Žiadna odpoveď';
+
+  @override
+  String get radioAsk_showOnMap => 'Zobraziť na mape';
+
+  @override
+  String get radioAsk_askAgain => 'Opýtať sa znova';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Rádio $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Odpoveď rádia';
+
+  @override
   String get contact_nickname => 'Prezývka';
 
   @override

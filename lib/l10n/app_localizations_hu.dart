@@ -1471,6 +1471,72 @@ class AppLocalizationsHu extends AppLocalizations {
   String get contact_telemetry => 'Adatvisszaadás';
 
   @override
+  String radioAsk_title(String name) {
+    return '$name rádiójának lekérdezése';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Kikapcsolt telefonnal is működik';
+
+  @override
+  String get radioAsk_waiting => 'Várakozás egy másik lekérdezésre';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Lekérdezés… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Újra ellenőrzés… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Újra ellenőrzés: $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$name rádiója · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Nincs GPS-pozíció';
+
+  @override
+  String get radioAsk_noFix => 'Lehet, hogy régi: nincs GPS-jel';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Lehet, hogy régi: 1 perc alatt nem változott';
+
+  @override
+  String get radioAsk_notChecked => 'A második lekérdezés nem sikerült';
+
+  @override
+  String get radioAsk_noAnswer => 'Nincs válasz';
+
+  @override
+  String get radioAsk_showOnMap => 'Megjelenítés a térképen';
+
+  @override
+  String get radioAsk_askAgain => 'Újra lekérdezés';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$name rádiója · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'A rádió válasza';
+
+  @override
   String get contact_nickname => 'Becenév';
 
   @override

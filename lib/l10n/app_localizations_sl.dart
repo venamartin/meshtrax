@@ -1455,6 +1455,71 @@ class AppLocalizationsSl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrija';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Vprašaj radio $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Deluje tudi z izklopljenim telefonom';
+
+  @override
+  String get radioAsk_waiting => 'Čaka na drugo vprašanje';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Sprašuje… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Znova preverja… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Znova preveri ob $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Radio $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Ni GPS-položaja';
+
+  @override
+  String get radioAsk_noFix => 'Morda je star: ni GPS-signala';
+
+  @override
+  String get radioAsk_unchanged => 'Morda je star: brez spremembe v 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Drugo vprašanje ni uspelo';
+
+  @override
+  String get radioAsk_noAnswer => 'Ni odgovora';
+
+  @override
+  String get radioAsk_showOnMap => 'Pokaži na zemljevidu';
+
+  @override
+  String get radioAsk_askAgain => 'Vprašaj znova';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Odgovor radia';
+
+  @override
   String get contact_nickname => 'Vzdevek';
 
   @override

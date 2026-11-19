@@ -1461,6 +1461,71 @@ class AppLocalizationsNl extends AppLocalizations {
   String get contact_telemetry => 'Telemetrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Radio van $name vragen';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Werkt ook als hun telefoon uit staat';
+
+  @override
+  String get radioAsk_waiting => 'Wacht op een andere vraag';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Vragen… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Opnieuw controleren… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Controleert opnieuw om $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Radio van $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Geen gps-positie';
+
+  @override
+  String get radioAsk_noFix => 'Misschien oud: geen gps-fix';
+
+  @override
+  String get radioAsk_unchanged => 'Misschien oud: geen verandering in 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Tweede vraag mislukt';
+
+  @override
+  String get radioAsk_noAnswer => 'Geen antwoord';
+
+  @override
+  String get radioAsk_showOnMap => 'Op de kaart tonen';
+
+  @override
+  String get radioAsk_askAgain => 'Opnieuw vragen';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio van $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Antwoord van de radio';
+
+  @override
   String get contact_nickname => 'Bijnaam';
 
   @override

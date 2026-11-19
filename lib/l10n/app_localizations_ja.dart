@@ -1402,6 +1402,71 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contact_telemetry => 'テレメトリー';
 
   @override
+  String radioAsk_title(String name) {
+    return '$nameの無線機に問い合わせ';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => '相手の電話がオフでも使えます';
+
+  @override
+  String get radioAsk_waiting => '別の問い合わせを待っています';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return '問い合わせ中… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return '再確認中… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return '$timeに再確認';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$nameの無線機 · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'GPS位置なし';
+
+  @override
+  String get radioAsk_noFix => '古い可能性：GPS測位なし';
+
+  @override
+  String get radioAsk_unchanged => '古い可能性：1分間変化なし';
+
+  @override
+  String get radioAsk_notChecked => '2回目の問い合わせに失敗';
+
+  @override
+  String get radioAsk_noAnswer => '応答なし';
+
+  @override
+  String get radioAsk_showOnMap => '地図に表示';
+
+  @override
+  String get radioAsk_askAgain => '再度問い合わせ';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$nameの無線機 · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => '無線機の応答';
+
+  @override
   String get contact_nickname => 'ニックネーム';
 
   @override

@@ -1468,6 +1468,71 @@ class AppLocalizationsEs extends AppLocalizations {
   String get contact_telemetry => 'Telemetría';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Preguntar a la radio de $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Funciona con su teléfono apagado';
+
+  @override
+  String get radioAsk_waiting => 'Esperando otra consulta';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Preguntando… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Comprobando otra vez… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Comprobará otra vez a las $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Sin posición GPS';
+
+  @override
+  String get radioAsk_noFix => 'Puede ser antigua: sin señal GPS';
+
+  @override
+  String get radioAsk_unchanged => 'Puede ser antigua: sin cambios en 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Falló la segunda consulta';
+
+  @override
+  String get radioAsk_noAnswer => 'Sin respuesta';
+
+  @override
+  String get radioAsk_showOnMap => 'Ver en el mapa';
+
+  @override
+  String get radioAsk_askAgain => 'Preguntar otra vez';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Respuesta de la radio';
+
+  @override
   String get contact_nickname => 'Apodo';
 
   @override

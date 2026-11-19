@@ -1467,6 +1467,72 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contact_telemetry => 'Телеметрия';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Спросить радио $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Работает и при выключенном телефоне';
+
+  @override
+  String get radioAsk_waiting => 'Ожидание другого запроса';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Запрос… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Повторная проверка… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Повторная проверка в $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Радио $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts В';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Нет GPS-позиции';
+
+  @override
+  String get radioAsk_noFix => 'Может быть устаревшей: нет GPS-привязки';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Может быть устаревшей: без изменений за 1 мин';
+
+  @override
+  String get radioAsk_notChecked => 'Второй запрос не удался';
+
+  @override
+  String get radioAsk_noAnswer => 'Нет ответа';
+
+  @override
+  String get radioAsk_showOnMap => 'Показать на карте';
+
+  @override
+  String get radioAsk_askAgain => 'Спросить снова';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Радио $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Ответ радио';
+
+  @override
   String get contact_nickname => 'Прозвище';
 
   @override

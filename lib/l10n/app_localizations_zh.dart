@@ -1378,6 +1378,71 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contact_telemetry => '遥测数据';
 
   @override
+  String radioAsk_title(String name) {
+    return '询问 $name 的电台';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => '对方手机关机也可用';
+
+  @override
+  String get radioAsk_waiting => '正在等待另一个询问';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return '正在询问… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return '正在再次确认… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return '将于 $time 再次确认';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$name 的电台 · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => '无 GPS 位置';
+
+  @override
+  String get radioAsk_noFix => '可能已过时：无 GPS 定位';
+
+  @override
+  String get radioAsk_unchanged => '可能已过时：1 分钟内无变化';
+
+  @override
+  String get radioAsk_notChecked => '第二次询问失败';
+
+  @override
+  String get radioAsk_noAnswer => '无应答';
+
+  @override
+  String get radioAsk_showOnMap => '在地图上显示';
+
+  @override
+  String get radioAsk_askAgain => '再次询问';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$name 的电台 · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => '电台应答';
+
+  @override
   String get contact_nickname => '昵称';
 
   @override

@@ -14,6 +14,7 @@ import '../utils/platform_info.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/date_time_helper.dart';
+import '../helpers/link_handler.dart';
 import '../helpers/mention_helper.dart';
 import '../helpers/message_facts.dart';
 import '../widgets/share_contact_dialog.dart';
@@ -46,6 +47,7 @@ import 'repeater_hub_screen.dart';
 import '../utils/chat_colors.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/telemetry_dialog.dart';
+import '../widgets/radio_ask_sheet.dart';
 import '../widgets/reaction_picker_sheet.dart';
 import '../widgets/gif_message.dart';
 import '../widgets/gif_picker.dart';
@@ -992,6 +994,13 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                       ),
                     );
                   }
+                  if (value == 'askRadio') {
+                    RadioAskSheet.show(
+                      context,
+                      _resolveContact(connector),
+                      onShowOnMap: (p) => LinkHandler.openMapAt(context, p),
+                    );
+                  }
                   if (value == 'commandLine') {
                     Navigator.push(
                       context,
@@ -1046,6 +1055,22 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                       ],
                     ),
                   ),
+                  if (widget.contact.type == advTypeChat &&
+                      connector.isConnected)
+                    PopupMenuItem(
+                      value: 'askRadio',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.settings_input_antenna, size: 20),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              context.l10n.radioAsk_title(widget.contact.name),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     value: 'settings',
                     child: Row(

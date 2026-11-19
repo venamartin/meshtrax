@@ -1470,6 +1470,71 @@ class AppLocalizationsBg extends AppLocalizations {
   String get contact_telemetry => 'Телеметрия';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Попитай радиото на $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Работи и при изключен телефон';
+
+  @override
+  String get radioAsk_waiting => 'Изчаква друга заявка';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Пита… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Проверява отново… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Нова проверка в $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Радиото на $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Няма GPS позиция';
+
+  @override
+  String get radioAsk_noFix => 'Може да е стара: без GPS сигнал';
+
+  @override
+  String get radioAsk_unchanged => 'Може да е стара: без промяна за 1 мин';
+
+  @override
+  String get radioAsk_notChecked => 'Втората заявка не успя';
+
+  @override
+  String get radioAsk_noAnswer => 'Няма отговор';
+
+  @override
+  String get radioAsk_showOnMap => 'Покажи на картата';
+
+  @override
+  String get radioAsk_askAgain => 'Попитай отново';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Радиото на $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Отговор на радиото';
+
+  @override
   String get contact_nickname => 'Прякор';
 
   @override

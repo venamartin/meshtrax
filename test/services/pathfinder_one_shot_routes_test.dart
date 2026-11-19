@@ -129,12 +129,23 @@ void main() {
           ['flood', 'flood', 'flood']);
     });
 
-    test('Pathfinder off or unable to route: the radio\'s route every try', () {
+    // A route learned through a repeater at home never gets through where
+    // there is none: the ladder ends in floods, as a message's does.
+    test('Pathfinder off or unable to route: the radio\'s route, then floods',
+        () {
       expect(kinds(c.planRequestAttempts(_repeater(), 3)),
-          ['firmware be41', 'firmware be41', 'firmware be41']);
+          ['firmware be41', 'flood', 'flood']);
+      expect(kinds(c.planRequestAttempts(_repeater(), 4)),
+          ['firmware be41', 'firmware be41', 'flood', 'flood']);
       c.graphRouteCandidates = (_) => null;
       expect(kinds(c.planRequestAttempts(_repeater(), 2)),
-          ['firmware be41', 'firmware be41']);
+          ['firmware be41', 'flood']);
+    });
+
+    test('flood only: every try floods, whatever the routes', () {
+      c.graphRouteCandidates = (_) => [_g1, _g2];
+      expect(kinds(c.planRequestAttempts(_repeater(), 3, floodOnly: true)),
+          ['flood', 'flood', 'flood']);
     });
 
     test('a user override wins over Pathfinder', () {

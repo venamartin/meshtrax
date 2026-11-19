@@ -1473,6 +1473,72 @@ class AppLocalizationsFr extends AppLocalizations {
   String get contact_telemetry => 'Télémétrie';
 
   @override
+  String radioAsk_title(String name) {
+    return 'Interroger la radio de $name';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => 'Fonctionne téléphone éteint';
+
+  @override
+  String get radioAsk_waiting => 'En attente d\'une autre demande';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return 'Demande… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return 'Nouvelle vérification… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return 'Nouvelle vérification à $time';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'Pas de position GPS';
+
+  @override
+  String get radioAsk_noFix => 'Peut-être ancienne : pas de signal GPS';
+
+  @override
+  String get radioAsk_unchanged =>
+      'Peut-être ancienne : aucun changement en 1 min';
+
+  @override
+  String get radioAsk_notChecked => 'Échec de la seconde demande';
+
+  @override
+  String get radioAsk_noAnswer => 'Pas de réponse';
+
+  @override
+  String get radioAsk_showOnMap => 'Voir sur la carte';
+
+  @override
+  String get radioAsk_askAgain => 'Redemander';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return 'Radio de $name · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => 'Réponse de la radio';
+
+  @override
   String get contact_nickname => 'Surnom';
 
   @override

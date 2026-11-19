@@ -1402,6 +1402,71 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact_telemetry => '텔레메트리';
 
   @override
+  String radioAsk_title(String name) {
+    return '$name의 무전기에 묻기';
+  }
+
+  @override
+  String get radioAsk_menuSubtitle => '상대 휴대폰이 꺼져 있어도 됩니다';
+
+  @override
+  String get radioAsk_waiting => '다른 요청을 기다리는 중';
+
+  @override
+  String radioAsk_asking(int attempt, int count) {
+    return '묻는 중… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkingAgain(int attempt, int count) {
+    return '다시 확인 중… $attempt/$count';
+  }
+
+  @override
+  String radioAsk_checkAgainAt(String time) {
+    return '$time에 다시 확인';
+  }
+
+  @override
+  String radioAsk_where(String name, String time) {
+    return '$name의 무전기 · $time';
+  }
+
+  @override
+  String radioAsk_volts(String volts) {
+    return '$volts V';
+  }
+
+  @override
+  String get radioAsk_noPosition => 'GPS 위치 없음';
+
+  @override
+  String get radioAsk_noFix => '오래된 위치일 수 있음: GPS 신호 없음';
+
+  @override
+  String get radioAsk_unchanged => '오래된 위치일 수 있음: 1분 동안 변화 없음';
+
+  @override
+  String get radioAsk_notChecked => '두 번째 요청 실패';
+
+  @override
+  String get radioAsk_noAnswer => '응답 없음';
+
+  @override
+  String get radioAsk_showOnMap => '지도에 표시';
+
+  @override
+  String get radioAsk_askAgain => '다시 묻기';
+
+  @override
+  String radioAsk_mapLabel(String name, String time) {
+    return '$name의 무전기 · $time';
+  }
+
+  @override
+  String get radioAsk_rowLabel => '무전기 응답';
+
+  @override
   String get contact_nickname => '닉네임';
 
   @override
