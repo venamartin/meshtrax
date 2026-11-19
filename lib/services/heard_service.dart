@@ -222,8 +222,13 @@ class HeardService extends ChangeNotifier {
       '${sightings.map((s) => s.observer).join(', ')}',
       tag: 'Heard',
     );
+    // An ear starts the row again: a resend still waiting on its own ear
+    // isn't a miss after it.
     _misses = 0;
-    _missTimers.remove(messageId)?.cancel();
+    for (final timer in _missTimers.values) {
+      timer.cancel();
+    }
+    _missTimers.clear();
     final radio = _radioKey;
     if (radio != null) {
       _lastEar[radio] = DateTime.now();

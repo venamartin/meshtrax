@@ -127,6 +127,21 @@ void main() {
     });
   });
 
+  test('an ear on another message starts the row again', () async {
+    await attach(lastEar: {_self: const Duration(minutes: 1)});
+    fakeAsync((async) {
+      radio.onResentAfterOneRepeater!('m1');
+      async.elapse(const Duration(seconds: 30));
+      ear('m2');
+      async.elapse(const Duration(seconds: 61));
+      for (final id in ['m3', 'm4']) {
+        radio.onResentAfterOneRepeater!(id);
+        async.elapse(const Duration(seconds: 91));
+      }
+      expect(allowed(), isTrue, reason: 'm1 went unheard before the ear');
+    });
+  });
+
   test('a resend an observer heard is not a miss', () async {
     await attach(lastEar: {_self: const Duration(minutes: 1)});
     fakeAsync((async) {

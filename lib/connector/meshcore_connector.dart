@@ -6868,7 +6868,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Set<String> repeaters,
   ) {
     if (!_oneRepeaterResendAllowed()) return;
-    final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join();
+    final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join(', ');
     appLogger.info(
       'Only $by carried $messageId and no observer heard it: sending it '
       'once more',
