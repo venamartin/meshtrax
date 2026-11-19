@@ -3254,6 +3254,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get channelPath_directPath => 'Közvetlen';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Útközben fogadva, még hátravolt: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0-ból $total';
   }

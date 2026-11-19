@@ -1700,6 +1700,15 @@
   "channelPath_unknownPath": "Unknown",
   "channelPath_floodPath": "Flood",
   "channelPath_directPath": "Direct",
+  "channelPath_pickedUpOnItsWay": "Picked up on its way, {hops} still to go",
+  "@channelPath_pickedUpOnItsWay": {
+    "description": "Path line of a DM the app opened from a copy still on its route; hops = the repeaters it still had to pass, e.g. BEEF or AD77,BEEF",
+    "placeholders": {
+      "hops": {
+        "type": "String"
+      }
+    }
+  },
   "channelPath_observedZeroOf": "0 of {total} hops",
   "@channelPath_observedZeroOf": {
     "placeholders": {

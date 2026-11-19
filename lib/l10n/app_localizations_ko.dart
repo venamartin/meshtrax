@@ -3109,6 +3109,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channelPath_directPath => '직접';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return '도중에 수신, 남은 경로: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '$total 중 0개';
   }

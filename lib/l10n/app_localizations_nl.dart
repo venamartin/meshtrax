@@ -3232,6 +3232,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get channelPath_directPath => 'Direct';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Onderweg opgevangen, nog te gaan: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 van $total sprongen';
   }

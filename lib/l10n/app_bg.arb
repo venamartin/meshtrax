@@ -1203,6 +1203,7 @@
   "channelPath_unknownPath": "Неизвестно",
   "channelPath_floodPath": "Поливане",
   "channelPath_directPath": "Директно",
+  "channelPath_pickedUpOnItsWay": "Получено по пътя, оставаше: {hops}",
   "channelPath_observedZeroOf": "0 от {total} скокове",
   "@channelPath_observedZeroOf": {
     "placeholders": {

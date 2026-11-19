@@ -2537,6 +2537,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
         builder: (context) => ChannelMessagePathScreen(
           message: pathMessage,
           channelMessage: !message.isOutgoing,
+          passingCopyHopsLeft: message.passingCopyHopsLeft,
         ),
       ),
     );

@@ -3253,6 +3253,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get channelPath_directPath => 'Bezpośrednio';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Odebrane po drodze, pozostało: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 z $total skoków';
   }

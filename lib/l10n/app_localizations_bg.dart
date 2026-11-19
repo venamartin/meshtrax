@@ -3249,6 +3249,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get channelPath_directPath => 'Директно';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Получено по пътя, оставаше: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 от $total скокове';
   }

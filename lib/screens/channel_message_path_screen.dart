@@ -27,10 +27,14 @@ import '../widgets/pull_down_card.dart';
 class ChannelMessagePathScreen extends StatelessWidget {
   final ChannelMessage message;
   final bool channelMessage;
+  // A DM the app opened from a copy still on its route: the hops it still
+  // had to go (Message.passingCopyHopsLeft).
+  final String? passingCopyHopsLeft;
   const ChannelMessagePathScreen({
     super.key,
     required this.message,
     this.channelMessage = false,
+    this.passingCopyHopsLeft,
   });
 
   @override
@@ -161,10 +165,9 @@ class ChannelMessagePathScreen extends StatelessWidget {
               ),
             _buildDetailRow(
               l10n.channelPath_pathLabelTitle,
-              _formatPathLabel(
-                message.pathLength,
-                l10n,
-              ),
+              passingCopyHopsLeft != null
+                  ? l10n.channelPath_pickedUpOnItsWay(passingCopyHopsLeft!)
+                  : _formatPathLabel(message.pathLength, l10n),
             ),
           ],
         ),

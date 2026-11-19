@@ -3036,6 +3036,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelPath_directPath => '直连';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return '途中收到，剩余：$hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 / $total 跳';
   }

@@ -1213,6 +1213,7 @@
   "channelPath_unknownPath": "Nieznane",
   "channelPath_floodPath": "Zalew",
   "channelPath_directPath": "Bezpośrednio",
+  "channelPath_pickedUpOnItsWay": "Odebrane po drodze, pozostało: {hops}",
   "channelPath_observedZeroOf": "0 z {total} skoków",
   "@channelPath_observedZeroOf": {
     "placeholders": {

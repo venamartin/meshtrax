@@ -3248,6 +3248,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get channelPath_directPath => 'Salvar';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Captado no caminho, faltava: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 de $total saltos';
   }

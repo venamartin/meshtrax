@@ -1203,6 +1203,7 @@
   "channelPath_unknownPath": "Neznáme",
   "channelPath_floodPath": "Povodňová",
   "channelPath_directPath": "Priamo",
+  "channelPath_pickedUpOnItsWay": "Zachytené cestou, zostávalo: {hops}",
   "channelPath_observedZeroOf": "0 z {total} skokov",
   "@channelPath_observedZeroOf": {
     "placeholders": {

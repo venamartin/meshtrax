@@ -3242,6 +3242,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get channelPath_directPath => 'Прямий';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Отримано дорогою, лишалося: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 з $total стрибків';
   }

@@ -3105,6 +3105,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelPath_directPath => '直接';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return '途中で受信、残り: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '$total個のホップ';
   }

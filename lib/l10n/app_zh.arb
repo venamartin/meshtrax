@@ -1259,6 +1259,7 @@
   "channelPath_unknownPath": "未知",
   "channelPath_floodPath": "泛洪",
   "channelPath_directPath": "直连",
+  "channelPath_pickedUpOnItsWay": "途中收到，剩余：{hops}",
   "channelPath_observedZeroOf": "0 / {total} 跳",
   "@channelPath_observedZeroOf": {
     "placeholders": {

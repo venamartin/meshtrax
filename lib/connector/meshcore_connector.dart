@@ -24,6 +24,7 @@ import '../helpers/advert_signature.dart';
 import '../helpers/cayenne_lpp.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
+import '../helpers/passing_copy.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
@@ -845,6 +846,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   int _telemetryModeEnv = 0;
   int _advertLocPolicy = 0;
   int _multiAcks = 1; // Extra ACKs: 1 = 2 ACKs sent. Replaced by the radio's value.
+  // Opens the routed DMs and room posts the firmware drops while they still
+  // have hops to go (see PassingCopy). It holds the radio's private key, in
+  // memory only, from the first full sync until the link goes.
+  PassingCopyOpener? _passingCopyOpener;
+  Uint8List? _passingCopyScopeKey;
+  final Set<String> _passingCopyAcked = {};
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
@@ -4096,6 +4103,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _traceTagTimer?.cancel();
     _pendingTraceTag = null;
     _forgetFloodedTexts();
+    _forgetPassingCopies();
 
     final transportAtDisconnect = _activeTransport;
     final tcpSessionWasEstablished = _tcpSessionEstablished;
@@ -6948,6 +6956,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @visibleForTesting
   void handleFrameForTest(List<int> data) => _handleFrame(data);
 
+  /// What the first full sync runs to start opening passing copies.
+  @visibleForTesting
+  Future<void> preparePassingCopiesForTest() => _preparePassingCopies();
+
   void _handleFrame(List<int> data) {
     // Synchronous, so this is pure UI-thread time per radio frame.
     final sw = Stopwatch()..start();
@@ -8084,6 +8096,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List frame, {
     bool replay = false,
     Contact? unlisted,
+    String? passingCopyHopsLeft,
   }) {
     if (_selfPublicKey == null) return;
 
@@ -8100,6 +8113,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     var message = _parseContactMessage(frame, unlisted: unlisted);
+    if (message != null && passingCopyHopsLeft != null) {
+      message = message.copyWith(passingCopyHopsLeft: passingCopyHopsLeft);
+    }
 
     if (message == null && unlisted == null && !_senderIsListed(frame)) {
       if (_absentSenders.contains(_senderPrefixHex(frame))) {
@@ -8149,7 +8165,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         (c) => c?.publicKeyHex == message!.senderKeyHex,
         orElse: () => unlisted,
       );
-      if (contact != null) {
+      // A passing copy is no evidence for Pathfinder: the route it was on
+      // never finished, and the SNR is of a hop before its last.
+      if (contact != null && passingCopyHopsLeft == null) {
         final layout = parseContactMsgLayout(frame);
         if (layout != null) {
           final snrByte =
@@ -8892,6 +8910,136 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return path;
   }
 
+  /// After the first full sync: the radio's private key, so the app can open
+  /// the routed DMs and room posts the firmware drops while they still have
+  /// hops to go (see PassingCopy), and the default flood scope for the ACKs
+  /// it then sends. A radio built without key export leaves this off.
+  Future<void> _preparePassingCopies() async {
+    final self = _selfPublicKey;
+    if (self == null || _passingCopyOpener != null) return;
+    final key = await exportPrivateKey();
+    if (key == null || !isConnected || !listEquals(_selfPublicKey, self)) {
+      return;
+    }
+    Uint8List? scope;
+    if (firmwareSupports(
+      RadioSetting.floodScope,
+      _firmwareVerCode,
+      _firmwareVersion,
+    )) {
+      try {
+        scope = (await getDefaultFloodScope())?.key;
+      } on StateError {
+        scope = null;
+      }
+    }
+    _passingCopyScopeKey = scope;
+    _passingCopyOpener = PassingCopyOpener(privateKey: key, selfKey: self);
+  }
+
+  void _forgetPassingCopies() {
+    _passingCopyOpener = null;
+    _passingCopyScopeKey = null;
+    _passingCopyAcked.clear();
+  }
+
+  /// A routed DM or room post to this radio that still has hops to go. The
+  /// firmware drops that copy unopened and opens only the last repeater's
+  /// (Mesh.cpp onRecvPacket), so the app opens it and hands it to the usual
+  /// intake the way the radio hands over one it opened (queueMessage: a V3
+  /// frame, path_len 0xFF for routed). The radio's own copy, if it still
+  /// comes, is then the same message and is dropped as a repeat.
+  void _openPassingCopy(_RawPacket packet, int snrByte) {
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+      return;
+    }
+    final copy = opener.open(
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: packet.pathBytes,
+      payload: packet.payload,
+      contactKeys: _contacts.map((c) => c.publicKey),
+    );
+    if (copy == null) return;
+    final ts = copy.timestamp;
+    final head = <int>[
+      respCodeContactMsgRecvV3,
+      snrByte & 0xFF,
+      0,
+      0,
+      ...copy.senderKey.sublist(0, 6),
+      0xFF,
+      copy.isRoomPost ? txtTypeSigned : txtTypePlain,
+      ts & 0xFF,
+      (ts >> 8) & 0xFF,
+      (ts >> 16) & 0xFF,
+      (ts >> 24) & 0xFF,
+      ...?copy.authorPrefix,
+    ];
+    // queueMessage cuts the text to fit the frame the same way.
+    final room = math.max(0, maxFrameSize - head.length);
+    final text = copy.textBytes.length > room
+        ? copy.textBytes.sublist(0, room)
+        : copy.textBytes;
+    _handleIncomingMessage(
+      Uint8List.fromList([...head, ...text]),
+      replay: true,
+      passingCopyHopsLeft: copy.hopsLeftHex,
+    );
+    _sendPassingCopyAck(
+      copy,
+      2 + packet.pathBytes.length + packet.payload.length,
+    );
+  }
+
+  /// The ACK the firmware would have sent for a passing copy: once per
+  /// message, however many of its copies were heard, and held until the hops
+  /// it still had to go have passed it on. It needs CMD_SEND_RAW_PACKET
+  /// (companion 1.16, code 13); without it the sender retries until a copy
+  /// the radio opens itself, and the radio ACKs that one.
+  void _sendPassingCopyAck(PassingCopy copy, int packetBytes) {
+    if ((_firmwareVerCode ?? 0) < 13) return;
+    if (!_passingCopyAcked.add(pubKeyToHex(copy.ack.sublist(0, 4)))) return;
+    if (_passingCopyAcked.length > 64) {
+      _passingCopyAcked.remove(_passingCopyAcked.first);
+    }
+    final contact = _contacts
+        .where((c) => listEquals(c.publicKey, copy.senderKey))
+        .firstOrNull;
+    if (contact == null) return;
+    final routePathLen = PathHelper.encodePathLen(
+      contact.pathLength,
+      contact.pathHashSize,
+    );
+    final packets = PassingCopyOpener.ackPackets(
+      copy.ack,
+      routePathLen: routePathLen,
+      routePath: contact.path,
+      extraAck: _multiAcks > 0,
+      floodWidth: _pathHashByteWidth,
+      scopeKey: _passingCopyScopeKey,
+    );
+    // sendDirect queues a routed ACK at priority 0, sendFlood a flood at 1.
+    final priority = PathHelper.pathLenHops(routePathLen) >= 0 ? 0 : 1;
+    var delay = TimeoutHelper.passingCopyAckDelayMs(
+      _estimateAirtimeMs(packetBytes),
+      copy.hopsLeftCount,
+    );
+    for (final packet in packets) {
+      Timer(Duration(milliseconds: delay), () {
+        if (!isConnected) return;
+        unawaited(
+          sendFrame(
+            Uint8List.fromList([cmdSendRawPacket, priority, ...packet]),
+            expectsGenericAck: true,
+          ).catchError((Object _) {}),
+        );
+      });
+      delay += TimeoutHelper.extraAckGapMs;
+    }
+  }
+
   void _handleLogRxData(Uint8List frame) {
     if (frame.length < 4) return;
     try {
@@ -8934,6 +9082,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payload[1] != me[0]) {
           _rememberFloodedText(packet, frame[1].toSigned(8));
         }
+      }
+      if (!packet.isFlood && packet.payloadType == _payloadTypeTxtMsg) {
+        _openPassingCopy(packet, frame[1]);
+        return;
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
 
@@ -11752,6 +11904,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       tag: 'Connection',
     );
     _forgetFloodedTexts();
+    _forgetPassingCopies();
     _stopBatteryPolling();
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
@@ -12015,6 +12168,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
       unawaited(_probeWifi());
+      unawaited(_preparePassingCopies());
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
         _appDebugLogService?.info(

@@ -3243,6 +3243,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get channelPath_directPath => 'Прямой';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Получено по пути, оставалось: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 из $total хопов';
   }

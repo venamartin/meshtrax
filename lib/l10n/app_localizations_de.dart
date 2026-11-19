@@ -3252,6 +3252,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get channelPath_directPath => 'Direkt';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Unterwegs aufgefangen, noch ausstehend: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 von $total Sprüngen';
   }

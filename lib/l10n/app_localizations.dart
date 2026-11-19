@@ -5680,6 +5680,12 @@ abstract class AppLocalizations {
   /// **'Direct'**
   String get channelPath_directPath;
 
+  /// Path line of a DM the app opened from a copy still on its route; hops = the repeaters it still had to pass, e.g. BEEF or AD77,BEEF
+  ///
+  /// In en, this message translates to:
+  /// **'Picked up on its way, {hops} still to go'**
+  String channelPath_pickedUpOnItsWay(String hops);
+
   /// No description provided for @channelPath_observedZeroOf.
   ///
   /// In en, this message translates to:

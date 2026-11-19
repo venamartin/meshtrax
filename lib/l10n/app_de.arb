@@ -1203,6 +1203,7 @@
   "channelPath_unknownPath": "Unbekannt",
   "channelPath_floodPath": "Geflutet",
   "channelPath_directPath": "Direkt",
+  "channelPath_pickedUpOnItsWay": "Unterwegs aufgefangen, noch ausstehend: {hops}",
   "channelPath_observedZeroOf": "0 von {total} Sprüngen",
   "@channelPath_observedZeroOf": {
     "placeholders": {

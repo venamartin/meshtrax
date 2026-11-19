@@ -3262,6 +3262,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get channelPath_directPath => 'Afficher';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Capté en chemin, il restait : $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 de $total sauts';
   }

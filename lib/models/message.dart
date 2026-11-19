@@ -55,6 +55,10 @@ class Message {
   // queue read gave up, when believable: it stands at its arrival, so a
   // "sent 14:00 by its clock" line tells its age. Null otherwise.
   final DateTime? claimedAt;
+  // Incoming, opened by the app from a copy the radio heard while it still
+  // had these hops to go ("BEEF", "AD77,BEEF"). The firmware drops such a
+  // copy unopened, even one addressed to it. Null for what the radio opened.
+  final String? passingCopyHopsLeft;
 
   Message({
     required this.senderKey,
@@ -84,6 +88,7 @@ class Message {
     this.deliveredLate = false,
     this.waitingForRepeater = false,
     this.claimedAt,
+    this.passingCopyHopsLeft,
   }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
        pathBytes = pathBytes ?? Uint8List(0),
@@ -118,6 +123,7 @@ class Message {
     Map<String, MessageStatus>? reactionStatuses,
     Uint8List? fourByteRoomContactKey,
     DateTime? claimedAt,
+    String? passingCopyHopsLeft,
   }) {
     return Message(
       senderKey: senderKey,
@@ -148,6 +154,7 @@ class Message {
       fourByteRoomContactKey:
           fourByteRoomContactKey ?? this.fourByteRoomContactKey,
       claimedAt: claimedAt ?? this.claimedAt,
+      passingCopyHopsLeft: passingCopyHopsLeft ?? this.passingCopyHopsLeft,
     );
   }
 

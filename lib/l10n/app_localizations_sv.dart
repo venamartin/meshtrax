@@ -3215,6 +3215,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get channelPath_directPath => 'Direkt';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Uppfångat på vägen, kvar: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 av $total hopp';
   }

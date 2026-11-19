@@ -522,6 +522,54 @@ instead of flooding.
 - The companion also caches paths from adverts of non-contact nodes in a 16-entry "recently
   heard" table, queryable via `CMD_GET_ADVERT_PATH` (42).
 
+### Who opens a routed packet (`Mesh.cpp`, `onRecvPacket`)
+Each repeater on a direct route takes its own hash off the front of the path before it passes
+the packet on, so a copy's path lists only the hops still to go. While any are left, the
+packet belongs to the hop named next: every other radio drops it with `ACTION_RELEASE`
+before it checks who the packet is for. Companions run the same code as repeaters here;
+the companion's `allowPacketForward` (its client-repeat setting) only decides forwarding.
+So the recipient opens a routed DM, request or room post only from the **last** repeater's
+copy, or the sender's on a zero-hop route. A copy it hears straight from the sender, or from
+an earlier repeater, is dropped unopened even though it is addressed to it. Exceptions:
+routed ACKs are checked at every hop ("early received ACK", `Mesh.cpp` 79-87), and floods
+are opened from the first copy heard.
+
+Proven 2026-11-19 by MeshCore's own code compiled on a PC with a simulated radio, and on two
+radios on 920.000: a routed DM heard directly at +12.5 dB SNR, one fake hop still to go, was
+neither opened nor ACKed by a 1.18.0 companion; the same DM with a zero-hop route was.
+
+### Passing copies: MeshTrax opens what the firmware drops
+The raw RX log (0x88) still shows those copies. When one is a routed TXT_MSG to this radio
+with hops left, from a contact, MeshTrax opens it itself (`lib/helpers/passing_copy.dart`,
+the connector's `_openPassingCopy`):
+- **Key.** After the first full sync of each connection the app reads the radio's private
+  key with `CMD_EXPORT_PRIVATE_KEY` (the export a full backup uses) and keeps it in memory
+  only. The shared secret is the firmware's `ed25519_key_exchange`: X25519 of the key's
+  clamped first 32 bytes and the contact's key in Montgomery form. A radio built without
+  key export answers `RESP_CODE_DISABLED`, and nothing is opened.
+- **Open.** `Utils::MACThenDecrypt`: a 2-byte HMAC-SHA256 keyed with the 32-byte secret over
+  the ciphertext, then AES-128-ECB with its first 16 bytes. DMs (`TXT_TYPE_PLAIN`) and room
+  posts (`TXT_TYPE_SIGNED_PLAIN`, 4-byte author prefix) only.
+- **Store.** The app builds the V3 frame the radio would have queued (`queueMessage`,
+  path_len 0xFF for routed) and runs it through the usual intake, so the message id,
+  notifications and duplicates behave as for any DM. If the radio later opens the last copy
+  itself, that is the same message and is dropped as a repeat. Pathfinder is not told:
+  the route never finished. The Packet Path screen shows "Picked up on its way, BEEF
+  still to go" (`Message.passingCopyHopsLeft`).
+- **ACK.** Built as `BaseChatMesh::onPeerDataRecv` builds it: for a DM, 4 bytes of
+  SHA-256 over the plaintext and the sender's key, the extended attempt byte and one random
+  byte; for a room post, 4 bytes of SHA-256 over the plaintext and this radio's own key.
+  Sent as `BaseChatMesh::sendAckTo` sends it: on the radio's stored route to the sender
+  (an extra MULTIPART copy first when multi-acks are on, 300 ms apart), or else one flood,
+  carrying the default flood scope's transport code when one is set. Once per message,
+  however many copies are heard, through `CMD_SEND_RAW_PACKET` (65, companion 1.16+), and
+  held until the hops still to go have passed the DM on
+  (`TimeoutHelper.passingCopyAckDelayMs`). Older firmware gets the message but no ACK; the
+  sender retries until a copy the radio opens, and the radio ACKs that one.
+- **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
+  a long DM, or a shorter one on a long route, is never seen. A scope set by another app
+  with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.
+
 ### ADV_TYPE constants
 | Value | Meaning |
 |-------|---------|
