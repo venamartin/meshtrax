@@ -452,8 +452,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_isOff => 'TRAXモードはオフです';
 
   @override
-  String get trax_intro =>
-      '無線機をグループのオフグリッド周波数に切り替えます。そこではすべての無線機がほかの無線機のために中継します。モードを終了するまで、通常のメッシュでは誰にも聞こえません。';
+  String get trax_intro => '無線機をグループの周波数に切り替えます。終了するまで通常のメッシュでは聞こえません。';
 
   @override
   String get trax_now => '現在';
@@ -465,7 +464,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_repeatOn => '「オフグリッド（電力網から孤立した状態）の繰り返し」オン';
 
   @override
-  String get trax_savedNote => '無線機の設定はこの電話に保存され、「TRAXを終了」で元に戻ります。';
+  String get trax_savedNote => '「TRAXを終了」で設定が元に戻ります。';
 
   @override
   String trax_until(String time) {
@@ -482,8 +481,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_noChannel => 'TRAX設定で旅のチャンネルを選ぶか、「グループに知らせる」をオフにしてください。';
 
   @override
-  String get trax_trailhead =>
-      '登山口など出発地点で、無線機がGPSで位置を取得してから切り替えてください。無線機は新しい設定と一緒に現在地を保存します。';
+  String get trax_trailhead => '登山口で、無線機がGPSで位置を取得してから切り替えてください。';
 
   @override
   String get trax_settings => 'TRAX設定';
@@ -542,8 +540,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get trax_unconfirmed =>
-      '無線機がTRAXメッセージの送信を確認できませんでした。別の方法でグループに知らせてください。';
+  String get trax_unconfirmed => 'TRAXメッセージが確認されていません。別の方法でグループに知らせてください。';
 
   @override
   String get trax_preset => 'プリセット';
@@ -555,8 +552,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_presetLongRange => '長距離';
 
   @override
-  String get trax_presetLongRangeHint =>
-      '少し遠くまで届きますが、メッセージの送信に2.5〜3倍の時間がかかります。';
+  String get trax_presetLongRangeHint => '少し遠くまで届きますが、送信に約3倍かかります。';
 
   @override
   String get trax_tripChannel => '旅のチャンネル';
@@ -577,8 +573,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_tellGroup => 'グループに知らせる';
 
   @override
-  String get trax_tellGroupHint =>
-      '切り替えや終了の前に、旅のチャンネルにTRAXメッセージを投稿します。各メンバーはワンタップで続きます。勝手に切り替わることはありません。';
+  String get trax_tellGroupHint => '旅のチャンネルに投稿します。ほかの人はワンタップで続きます。';
 
   @override
   String trax_followBody(String name, String time) {
@@ -587,7 +582,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return '無線機は$settingsに切り替わり、「オフグリッド（電力網から孤立した状態）の繰り返し」がオンになります。モードを終了するまで、通常のメッシュでは誰にも聞こえません。';
+    return '無線機を$settingsに切り替えます。終了するまで通常のメッシュでは聞こえません。';
   }
 
   @override
@@ -605,7 +600,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_leaveToo => '終了する';
 
   @override
-  String get trax_stillOn => '無線機はまだTRAXモードです。通常のメッシュでは聞こえません。終了しますか？';
+  String get trax_stillOn => 'まだTRAXモードです。終了しますか？';
 
   @override
   String get trax_pickPreset => 'どのプリセットに戻しますか？';
@@ -642,7 +637,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_endedTitle => '旅が終了しました';
 
   @override
-  String get trax_endedText => '無線機はまだTRAXモードです。通常のメッシュでは聞こえません。';
+  String get trax_endedText => 'まだTRAXモードです。通常のメッシュでは聞こえません。';
 
   @override
   String get settings_deviceInfo => 'デバイス情報';
@@ -2100,7 +2095,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get map_noNodesWithLocation => '位置情報データを持つノードは存在しません';
 
   @override
-  String get map_nodesNeedGps => 'ノードは、地図上に表示されるために、GPS座標を共有する必要があります。';
+  String get map_nodesNeedGps => 'GPSを共有するノードだけが地図に表示されます';
 
   @override
   String map_nodesCount(int count) {
@@ -2220,7 +2215,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return '現在、$channelLabel で位置情報を共有する準備をしています。このチャンネルは公開されており、PSK を持つ誰でも閲覧できます。';
+    return '$channelLabel で位置を共有しますか？公開チャンネルなので誰でも見られます。';
   }
 
   @override
@@ -4824,8 +4819,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gps_onHint => '無線機はGPSで位置を更新します。';
 
   @override
-  String get gps_offHint =>
-      'オフにすると無線機のバッテリーを節約できます。オンにすると、位置がわかるまで数分かかることがあります。';
+  String get gps_offHint => 'オフでバッテリーを節約します。位置の取得に数分かかることがあります。';
 
   @override
   String get gps_asking => '無線機に問い合わせ中...';
@@ -4848,7 +4842,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gps_turnOnTitle => 'GPSをオンにしますか？';
 
   @override
-  String get gps_turnOnBody => '無線機のGPSはオフです。オンにすると、位置がわかるまで数分かかることがあります。';
+  String get gps_turnOnBody => '無線機のGPSはオフです。位置の取得に数分かかることがあります。';
 
   @override
   String get gps_turnOn => 'オンにする';
@@ -5022,8 +5016,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navigate_noRoutingHere => 'この地域のオフラインルートはまだありません。';
 
   @override
-  String get navigate_noPosition =>
-      'MeshTrax は現在地を知りません：無線機に GPS 位置がありません。地図で出発地を選ぶか、別のアプリを使ってください。';
+  String get navigate_noPosition => 'GPS位置がありません。地図で出発地を選ぶか、別のアプリを使ってください。';
 
   @override
   String get structured_channel => 'チャンネル';
@@ -5116,7 +5109,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sos_alsoPublic => 'Publicにも送信';
 
   @override
-  String get sos_alsoPublicHint => '範囲内の誰でも読めます。位置も含まれます。そこへ送るのは最初のメッセージだけです。';
+  String get sos_alsoPublicHint => '範囲内の誰でも内容と位置を読めます。送信は1回です。';
 
   @override
   String get sos_askingRadio => '無線機に位置を問い合わせています…';
@@ -5128,24 +5121,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return '無線機から新しい位置が届きませんでした。最後にわかった位置（$time、$age）です。';
+    return '新しい位置はありません。最後にわかった位置：$time（$age）。';
   }
 
   @override
-  String get sos_positionAgeUnknown => '最後にわかった位置です。無線機はいつの位置か伝えていません。';
+  String get sos_positionAgeUnknown => '最後にわかった位置です（時刻不明）。';
 
   @override
   String get sos_positionTyped => '自分で入力した位置：毎回の再送でこの位置を送ります。';
 
   @override
-  String get sos_repeats => '取り消すまで2分ごとに無線機の最新位置で再送します。最初の「了解」の後は5分ごとです。';
+  String get sos_repeats => '取り消すまで2分ごとに位置付きで再送します。「了解」の後は5分ごとです。';
 
   @override
-  String get sos_publicOnce => 'PublicではSOSは1回だけ送信されます。他のチャンネルでは取り消すまで再送されます。';
+  String get sos_publicOnce => 'Publicでは1回だけ送信されます。';
 
   @override
-  String get sos_traxOnly =>
-      'TRAXモードはオンです。このSOSはTRAXモードの無線機にしか届きません。Publicでも同じです。';
+  String get sos_traxOnly => 'TRAXモード：TRAXの無線機にだけ届きます。';
 
   @override
   String sos_replacesOther(String chat) {
@@ -6210,8 +6202,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get search_hint => '場所・住所・座標を検索';
 
   @override
-  String get search_noPlaces =>
-      '地域の「スポット情報」をダウンロードすると、その地域の場所を検索できます。座標の検索にはダウンロードは不要です。';
+  String get search_noPlaces => '場所の検索には「スポット情報」をダウンロードしてください。座標はなくても使えます。';
 
   @override
   String get search_noResults => '一致なし';
@@ -6518,7 +6509,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get route_noStart => '出発地がわかりません。地図を長押しして「ここからの道順」を選んでください。';
 
   @override
-  String get route_noData => 'ここで道順を調べるには、「オフライン地図」でこの地域の「道順検索」をダウンロードしてください。';
+  String get route_noData => '「オフライン地図」でこの地域の「道順検索」をダウンロードしてください。';
 
   @override
   String get route_pin => 'ドロップしたピン';
@@ -6904,23 +6895,21 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get los_downloadBeforeTrip =>
-      '出発前にこの地域の等高線をダウンロードしてください。インターネット接続が必要です。';
+  String get los_downloadBeforeTrip => '出発前にここの等高線をダウンロードしてください（インターネットが必要）。';
 
   @override
-  String get los_spotBelowLowest => 'この地点は最も低い等高線より下（海面下）にあるため、高さがわかりません。';
+  String get los_spotBelowLowest => '海面下のため高さが不明です。';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$nameは最も低い等高線より下（海面下）にいるため、その場所の高さがわかりません。';
+    return '$nameは海面下のため高さが不明です。';
   }
 
   @override
-  String get los_youBelowLowest =>
-      '現在地は最も低い等高線より下（海面下）にあるため、その場所の高さがわかりません。無線機のGPSがオンなら、その高度を使います。';
+  String get los_youBelowLowest => '現在地は海面下のため高さが不明です。GPSがオンなら無線機の高度を使います。';
 
   @override
-  String get los_noLinesNear => '線のこちらの端の近くに等高線がないため、その場所の高さがわかりません。';
+  String get los_noLinesNear => 'この端の近くに等高線がないため、高さが不明です。';
 
   @override
   String get los_from => '始点';
@@ -6969,7 +6958,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get los_raisedLabel => '地面からの高さ';
 
   @override
-  String get los_terrainOnly => 'ダウンロードした等高線による地形のみです。';
+  String get los_terrainOnly => '等高線による地形のみです。';
 
   @override
   String los_credits(String credits) {
@@ -6985,11 +6974,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return '色付きの範囲：$distance以内で、そこにいる手持ち無線機との間を地形が遮っていません。';
+    return '色付きの範囲：手持ち無線機まで地形が遮りません（$distanceまで）。';
   }
 
   @override
-  String get los_reachUnknownPart => '海面下など、ここには計算できない地形があり、その部分は色付けされていません。';
+  String get los_reachUnknownPart => '計算できない地形（海面下）は色付けされません。';
 
   @override
   String get los_reachTapHint => '地図か名前をタップすると、そこまでの見通しを表示します。';

@@ -100,7 +100,7 @@ void main() {
     await settle(tester);
     expect(radio.gpsSets, [false]);
     expect(find.text('36.9558, -121.7293'), findsNothing);
-    expect(find.textContaining('saves the radio'), findsOneWidget);
+    expect(find.textContaining('Off saves battery'), findsOneWidget);
 
     await tester.tap(find.text('Close'));
     await settle(tester);

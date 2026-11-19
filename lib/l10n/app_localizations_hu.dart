@@ -470,7 +470,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'A rádióját a csoport hálózaton kívüli frekvenciájára állítja, ahol minden rádió továbbít a többieknek. A szokásos mesh hálózaton senki sem hallja, amíg ki nem lép a módból.';
+      'A rádióját a csoport frekvenciájára állítja. A szokásos mesh hálózat nem hallja, amíg ki nem lép.';
 
   @override
   String get trax_now => 'Most';
@@ -483,7 +483,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_savedNote =>
-      'A rádió beállításai erre a telefonra mentődnek, a „Kilépés a TRAX-ból” pedig visszaállítja őket.';
+      'A „Kilépés a TRAX-ból” visszaállítja a beállításait.';
 
   @override
   String trax_until(String time) {
@@ -502,7 +502,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'A kiindulópontnál váltson, amikor a rádiónak van GPS-pozíciója: a rádió az új beállításokkal együtt elmenti, hol van.';
+      'A kiindulópontnál váltson, amint a rádiónak van GPS-pozíciója.';
 
   @override
   String get trax_settings => 'TRAX beállítások';
@@ -565,7 +565,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'A rádió nem erősítette meg, hogy elküldte a TRAX üzenetet: szóljon a csoportnak más módon.';
+      'A TRAX üzenet nincs megerősítve. Szóljon a csoportnak más módon.';
 
   @override
   String get trax_preset => 'Előbeállítás';
@@ -578,7 +578,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Valamivel messzebbre ér, de minden üzenet elküldése 2,5–3-szor tovább tart.';
+      'Valamivel messzebbre ér; az üzenetek ~3× tovább tartanak.';
 
   @override
   String get trax_tripChannel => 'Túracsatorna';
@@ -600,7 +600,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Váltás vagy kilépés előtt TRAX üzenetet tesz közzé a túracsatornán. Minden tag egy koppintással követi; semmi sem vált magától.';
+      'Közzéteszi a túracsatornán; a többiek egy koppintással követik.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -609,7 +609,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'A rádiója erre vált: $settings, bekapcsolt „Autonóm rendszer újra” mellett. A szokásos mesh hálózaton senki sem hallja, amíg ki nem lép a módból.';
+    return 'A rádióját erre állítja: $settings. A szokásos mesh hálózat nem hallja, amíg ki nem lép.';
   }
 
   @override
@@ -627,8 +627,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_leaveToo => 'Én is kilépek';
 
   @override
-  String get trax_stillOn =>
-      'A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja. Kilép?';
+  String get trax_stillOn => 'Még TRAX módban van. Kilép?';
 
   @override
   String get trax_pickPreset => 'Melyik előbeállításra térjen vissza?';
@@ -668,7 +667,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'A rádiója még TRAX módban van: a szokásos mesh hálózat nem hallja.';
+      'Még TRAX módban van: a szokásos mesh hálózat nem hallja.';
 
   @override
   String get settings_deviceInfo => 'A készülék információi';
@@ -2193,7 +2192,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get map_nodesNeedGps =>
-      'A pontoknak meg kell osztaniuk GPS koordinátáikat, hogy megjelenjenek a térképen.';
+      'Csak a GPS-t megosztó csomópontok jelennek meg a térképen';
 
   @override
   String map_nodesCount(int count) {
@@ -2315,7 +2314,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Most egy helyszínt megosztasz a $channelLabel csatornán. Ez a csatorna nyilvános, és bárki, aki rendelkezik a PSK-val, megtekintheti.';
+    return 'Helyszín megosztása itt: $channelLabel? Nyilvános: bárki láthatja.';
   }
 
   @override
@@ -5073,7 +5072,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Kikapcsolva kíméli a rádió akkumulátorát. Bekapcsolás után néhány percig is tarthat, amíg megtalálja a pozícióját.';
+      'Kikapcsolva kíméli az akkumulátort. A pozíció megtalálása néhány percig tarthat.';
 
   @override
   String get gps_asking => 'A rádió lekérdezése...';
@@ -5098,7 +5097,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'A rádió GPS-e ki van kapcsolva. Bekapcsolás után néhány percig is tarthat, amíg megtalálja a pozícióját.';
+      'A rádió GPS-e ki van kapcsolva. A pozíció megtalálása néhány percig tarthat.';
 
   @override
   String get gps_turnOn => 'Bekapcsolás';
@@ -5276,7 +5275,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'A MeshTrax nem tudja, hol vagy: a rádiódnak nincs GPS-pozíciója. Válassz kezdőpontot a térképen, vagy használj másik alkalmazást.';
+      'Nincs GPS-pozíció. Válasszon kezdőpontot a térképen, vagy használjon másik alkalmazást.';
 
   @override
   String get structured_channel => 'Csatorna';
@@ -5371,7 +5370,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Hatótávon belül bárki elolvashatja, a pozícióját is. Csak az első üzenet megy oda.';
+      'Hatótávon belül bárki elolvashatja, a pozíciójával együtt. Egyszer megy el.';
 
   @override
   String get sos_askingRadio => 'A rádió pozíciójának lekérése…';
@@ -5383,27 +5382,25 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'A rádió nem adott új pozíciót. Utolsó ismert pozíció: $time ($age).';
+    return 'Nincs új pozíció. Utolsó ismert: $time ($age).';
   }
 
   @override
   String get sos_positionAgeUnknown =>
-      'Utolsó ismert pozíció. A rádió nem közölte, milyen régi.';
+      'Utolsó ismert pozíció, kora ismeretlen.';
 
   @override
   String get sos_positionTyped => 'Saját pozíció: minden ismétlés ezt küldi.';
 
   @override
   String get sos_repeats =>
-      '2 percenként újra elküldi a rádió legfrissebb pozíciójával, amíg vissza nem vonja, az első „Megkaptam” után 5 percenként.';
+      '2 percenként ismétlődik a pozíciójával, amíg vissza nem vonja; egy „Megkaptam” után 5 percenként.';
 
   @override
-  String get sos_publicOnce =>
-      'A Public csatornán az SOS egyszer megy el. Más csatornán újra elküldi, amíg vissza nem vonja.';
+  String get sos_publicOnce => 'A Public csatornán egyszer megy el.';
 
   @override
-  String get sos_traxOnly =>
-      'A TRAX mód be van kapcsolva: ezt az SOS-t csak a TRAX módban lévő rádiók hallják, a Public csatornán is.';
+  String get sos_traxOnly => 'TRAX mód: csak a TRAX rádiók hallják.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5442,11 +5439,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS visszavonva. Az üzenet elmegy, amint a rádió csatlakozik.';
+      'SOS visszavonva. Elmegy, amint a rádió csatlakozik.';
 
   @override
   String sos_stopped(String time) {
-    return 'Az SOS leállt, amikor a MeshTrax bezárult. Utoljára elküldve: $time.';
+    return 'Az SOS a MeshTrax bezárásakor leállt. Utoljára elküldve: $time.';
   }
 
   @override
@@ -6519,7 +6516,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'A helyek kereséséhez töltse le egy régióhoz az Érdekes helyeket. Koordinátákra enélkül is kereshet.';
+      'A helyek kereséséhez töltse le az Érdekes helyeket. Koordinátákra enélkül is kereshet.';
 
   @override
   String get search_noResults => 'Nincs találat';
@@ -6839,7 +6836,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Töltse le ehhez a régióhoz a Terepi útvonaltervezést az Offline térképek alatt, hogy itt útvonalat tervezhessen.';
+      'Töltse le ehhez a régióhoz a Terepi útvonaltervezést az Offline térképek alatt.';
 
   @override
   String get route_pin => 'Kijelölt pont';
@@ -7253,24 +7250,23 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Töltse le a terület szintvonalait az út előtt. Ehhez internetkapcsolat kell.';
+      'Töltse le itt a szintvonalakat a túra előtt (internet kell).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Ez a pont a legalsó szintvonal alatt van (tengerszint alatt), ezért a magassága nem ismert.';
+  String get los_spotBelowLowest => 'Tengerszint alatt: a magasság ismeretlen.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name a legalsó szintvonal alatt van (tengerszint alatt), ezért az ottani magasság nem ismert.';
+    return '$name tengerszint alatt van: a magasság ismeretlen.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Ön a legalsó szintvonal alatt van (tengerszint alatt), ezért az ottani magasság nem ismert. Ha a rádió GPS-e be van kapcsolva, az alkalmazás az általa mért magasságot használja.';
+      'Ön tengerszint alatt van: a magasság ismeretlen. Bekapcsolt GPS mellett a rádió magasságát használja.';
 
   @override
   String get los_noLinesNear =>
-      'A vonal ezen végének közelében nincsenek szintvonalak, ezért az ottani magasság nem ismert.';
+      'E vég közelében nincs szintvonal: a magasság ismeretlen.';
 
   @override
   String get los_from => 'Honnan';
@@ -7319,8 +7315,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get los_raisedLabel => 'Magasság a talaj felett';
 
   @override
-  String get los_terrainOnly =>
-      'Csak a terep, a letöltött szintvonalak alapján.';
+  String get los_terrainOnly => 'Csak terep, a letöltött szintvonalakból.';
 
   @override
   String los_credits(String credits) {
@@ -7336,12 +7331,12 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Színezett: ott a terep nem takarja el a kézi rádiót, legfeljebb $distance távolságig.';
+    return 'Színezett: a terep nem takarja a kézi rádiót, $distance távolságig.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Itt a terep egy része nem számítható ki, például a tengerszint alatt, ezért nincs színezve.';
+      'A terep egy része nem számítható ki (tengerszint alatt), ezért nincs színezve.';
 
   @override
   String get los_reachTapHint =>

@@ -470,7 +470,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Zet je radio op de off-grid frequentie van de groep, waar elke radio voor de anderen doorgeeft. Niemand op het gewone mesh hoort je tot je de modus verlaat.';
+      'Zet je radio op de frequentie van de groep. Het gewone mesh hoort je niet tot je TRAX verlaat.';
 
   @override
   String get trax_now => 'Nu';
@@ -482,8 +482,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trax_repeatOn => 'Off-Grid Herhalen aan';
 
   @override
-  String get trax_savedNote =>
-      'De instellingen van je radio worden op deze telefoon bewaard, en ‘TRAX verlaten’ zet ze terug.';
+  String get trax_savedNote => '‘TRAX verlaten’ zet je instellingen terug.';
 
   @override
   String trax_until(String time) {
@@ -503,7 +502,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Wissel bij het startpunt, als de radio een GPS-positie heeft: de radio bewaart met de nieuwe instellingen waar hij is.';
+      'Wissel bij het startpunt, zodra de radio een GPS-positie heeft.';
 
   @override
   String get trax_settings => 'TRAX-instellingen';
@@ -565,7 +564,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'De radio bevestigde niet dat hij het TRAX-bericht verstuurde: laat het de groep op een andere manier weten.';
+      'TRAX-bericht niet bevestigd. Laat het de groep op een andere manier weten.';
 
   @override
   String get trax_preset => 'Voorinstelling';
@@ -578,7 +577,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Reikt iets verder, maar elk bericht doet er 2,5 tot 3 keer zo lang over om te versturen.';
+      'Reikt iets verder; berichten duren ~3× zo lang.';
 
   @override
   String get trax_tripChannel => 'Tochtkanaal';
@@ -600,7 +599,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Plaatst een TRAX-bericht in het tochtkanaal voor het wisselen of verlaten. Elk lid volgt met één tik; niets wisselt vanzelf.';
+      'Plaatst een bericht in het tochtkanaal; anderen volgen met één tik.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -609,7 +608,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Je radio gaat naar $settings met Off-Grid Herhalen aan. Niemand op het gewone mesh hoort je tot je de modus verlaat.';
+    return 'Zet je radio op $settings. Het gewone mesh hoort je niet tot je TRAX verlaat.';
   }
 
   @override
@@ -627,8 +626,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trax_leaveToo => 'Ook verlaten';
 
   @override
-  String get trax_stillOn =>
-      'Je radio staat nog in TRAX-modus: het gewone mesh hoort je niet. Verlaten?';
+  String get trax_stillOn => 'Nog in TRAX-modus. Verlaten?';
 
   @override
   String get trax_pickPreset => 'Terug naar welke voorinstelling?';
@@ -668,7 +666,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Je radio staat nog in TRAX-modus: het gewone mesh hoort je niet.';
+      'Nog in TRAX-modus: het gewone mesh hoort je niet.';
 
   @override
   String get settings_deviceInfo => 'Apparateninformatie';
@@ -2175,8 +2173,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_noNodesWithLocation => 'Geen nodes met locatiegegevens';
 
   @override
-  String get map_nodesNeedGps =>
-      'Nodes moeten hun GPS-coördinaten delen\nom op de kaart te verschijnen';
+  String get map_nodesNeedGps => 'Alleen nodes die GPS delen staan op de kaart';
 
   @override
   String map_nodesCount(int count) {
@@ -2298,7 +2295,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'U gaat een locatie delen in $channelLabel. Deze kanaal is openbaar en iedereen met de PSK kan het zien.';
+    return 'Locatie delen in $channelLabel? Het is openbaar: iedereen kan het zien.';
   }
 
   @override
@@ -5041,7 +5038,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Uit spaart de batterij van de radio. Na het aanzetten kan het een paar minuten duren voordat je positie gevonden is.';
+      'Uit spaart batterij. Een positie vinden kan een paar minuten duren.';
 
   @override
   String get gps_asking => 'Radio wordt gevraagd...';
@@ -5066,7 +5063,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'De GPS van de radio staat uit. Na het aanzetten kan het een paar minuten duren voordat je positie gevonden is.';
+      'De GPS van de radio staat uit. Een positie vinden kan een paar minuten duren.';
 
   @override
   String get gps_turnOn => 'Aanzetten';
@@ -5243,7 +5240,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax weet niet waar je bent: je radio heeft geen GPS-positie. Kies een start op de kaart of gebruik een andere app.';
+      'Geen GPS-positie. Kies een start op de kaart of gebruik een andere app.';
 
   @override
   String get structured_channel => 'Kanaal';
@@ -5338,7 +5335,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Iedereen binnen bereik kan het lezen, ook je positie. Alleen het eerste bericht gaat daarheen.';
+      'Iedereen binnen bereik kan het lezen, ook je positie. Eén keer verstuurd.';
 
   @override
   String get sos_askingRadio => 'De radio wordt om zijn positie gevraagd…';
@@ -5350,12 +5347,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'De radio gaf geen nieuwe positie. Laatst bekende positie van $time ($age).';
+    return 'Geen nieuwe positie. Laatst bekend $time ($age).';
   }
 
   @override
   String get sos_positionAgeUnknown =>
-      'Laatst bekende positie. De radio zei niet hoe oud die is.';
+      'Laatst bekende positie, tijdstip onbekend.';
 
   @override
   String get sos_positionTyped =>
@@ -5363,15 +5360,13 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Wordt elke 2 minuten opnieuw verstuurd met de nieuwste positie van de radio tot je het annuleert, elke 5 minuten na het eerste ‘Begrepen’.';
+      'Herhaalt elke 2 min met je positie tot je annuleert; elke 5 min na een ‘Begrepen’.';
 
   @override
-  String get sos_publicOnce =>
-      'In Public gaat een SOS één keer weg. In een ander kanaal wordt het opnieuw verstuurd tot je het annuleert.';
+  String get sos_publicOnce => 'In Public gaat het één keer weg.';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX-modus staat aan: alleen radio\'s in TRAX-modus horen deze SOS, ook in Public.';
+  String get sos_traxOnly => 'TRAX-modus: alleen TRAX-radio\'s horen het.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5410,11 +5405,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS geannuleerd. Het bericht gaat weg zodra de radio verbonden is.';
+      'SOS geannuleerd. Gaat weg zodra de radio verbonden is.';
 
   @override
   String sos_stopped(String time) {
-    return 'Je SOS stopte toen MeshTrax sloot. Laatst verstuurd $time.';
+    return 'SOS gestopt toen MeshTrax sloot. Laatst verstuurd $time.';
   }
 
   @override
@@ -6484,7 +6479,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Download Interessante plaatsen voor een regio om daar plaatsen te zoeken. Coördinaten werken ook zonder.';
+      'Download Interessante plaatsen om plaatsen te zoeken. Coördinaten werken ook zonder.';
 
   @override
   String get search_noResults => 'Geen resultaten';
@@ -6804,7 +6799,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Download Routeplanner voor deze regio via Offline kaarten om hier routes te vinden.';
+      'Download Routeplanner voor deze regio via Offline kaarten.';
 
   @override
   String get route_pin => 'Geplaatste speld';
@@ -7215,24 +7210,23 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Download de hoogtelijnen voor dit gebied vóór je reis. Daarvoor is een internetverbinding nodig.';
+      'Download hier de hoogtelijnen vóór je reis (internet nodig).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Deze plek ligt onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte is niet bekend.';
+  String get los_spotBelowLowest => 'Onder zeeniveau: hoogte onbekend.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name bevindt zich onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte daar is niet bekend.';
+    return '$name is onder zeeniveau: hoogte onbekend.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Je bevindt je onder de laagste hoogtelijn (onder zeeniveau), dus de hoogte daar is niet bekend. Als de GPS van de radio aan staat, wordt de hoogte daarvan gebruikt.';
+      'Je bent onder zeeniveau: hoogte onbekend. Met GPS aan wordt de hoogte van de radio gebruikt.';
 
   @override
   String get los_noLinesNear =>
-      'Er zijn geen hoogtelijnen bij dit uiteinde van de lijn, dus de hoogte daar is niet bekend.';
+      'Geen hoogtelijnen bij dit uiteinde: hoogte onbekend.';
 
   @override
   String get los_from => 'Van';
@@ -7281,8 +7275,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get los_raisedLabel => 'Hoogte boven de grond';
 
   @override
-  String get los_terrainOnly =>
-      'Alleen terrein, uit de hoogtelijnen die je hebt gedownload.';
+  String get los_terrainOnly => 'Alleen terrein, uit je hoogtelijnen.';
 
   @override
   String los_credits(String credits) {
@@ -7298,12 +7291,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Ingekleurd: daar zit het terrein niet in de weg naar een portofoon, tot $distance.';
+    return 'Ingekleurd: vrij terrein naar een portofoon, tot $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Een deel van het terrein hier is niet te berekenen, zoals onder zeeniveau, en is daarom niet ingekleurd.';
+      'Sommig terrein is niet te berekenen (onder zeeniveau) en dus niet ingekleurd.';
 
   @override
   String get los_reachTapHint =>

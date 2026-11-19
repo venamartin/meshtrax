@@ -447,8 +447,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_isOff => 'TRAX 模式已关闭';
 
   @override
-  String get trax_intro =>
-      '将电台切换到小组的离网频率，在那里每台电台都会为其他电台转发。在退出之前，常规网状网络上的人都听不到你。';
+  String get trax_intro => '将电台切换到小组的频率。退出前，常规网状网络听不到你。';
 
   @override
   String get trax_now => '当前';
@@ -460,7 +459,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_repeatOn => '“离网重复”已开启';
 
   @override
-  String get trax_savedNote => '电台的设置会保存在这部手机上，“退出 TRAX”会将其恢复。';
+  String get trax_savedNote => '“退出 TRAX”会恢复你的设置。';
 
   @override
   String trax_until(String time) {
@@ -477,7 +476,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_noChannel => '请在 TRAX 设置中选择行程频道，或关闭“通知小组”。';
 
   @override
-  String get trax_trailhead => '请在出发点、电台获得 GPS 定位后再切换：电台会连同新设置一起保存当前位置。';
+  String get trax_trailhead => '请在出发点、电台获得 GPS 定位后切换。';
 
   @override
   String get trax_settings => 'TRAX 设置';
@@ -535,7 +534,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get trax_unconfirmed => '电台未确认已发送 TRAX 消息：请通过其他方式通知小组。';
+  String get trax_unconfirmed => 'TRAX 消息未确认。请通过其他方式通知小组。';
 
   @override
   String get trax_preset => '预设';
@@ -547,7 +546,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_presetLongRange => '远距离';
 
   @override
-  String get trax_presetLongRangeHint => '能传得更远一些，但每条消息的发送时间是原来的 2.5 到 3 倍。';
+  String get trax_presetLongRangeHint => '传得稍远；消息耗时约 3 倍。';
 
   @override
   String get trax_tripChannel => '行程频道';
@@ -568,8 +567,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_tellGroup => '通知小组';
 
   @override
-  String get trax_tellGroupHint =>
-      '在切换或退出之前，在行程频道发布一条 TRAX 消息。每位成员轻点一下即可跟随；不会自动切换。';
+  String get trax_tellGroupHint => '在行程频道发布消息；其他人轻点一下即可跟随。';
 
   @override
   String trax_followBody(String name, String time) {
@@ -578,7 +576,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return '你的电台将切换到 $settings，并开启“离网重复”。在退出之前，常规网状网络上的人都听不到你。';
+    return '将电台切换到 $settings。退出前，常规网状网络听不到你。';
   }
 
   @override
@@ -596,7 +594,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_leaveToo => '我也退出';
 
   @override
-  String get trax_stillOn => '你的电台仍处于 TRAX 模式：常规网状网络听不到你。要退出吗？';
+  String get trax_stillOn => '仍处于 TRAX 模式。要退出吗？';
 
   @override
   String get trax_pickPreset => '恢复到哪个预设？';
@@ -633,7 +631,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_endedTitle => '你的行程已结束';
 
   @override
-  String get trax_endedText => '你的电台仍处于 TRAX 模式：常规网状网络听不到你。';
+  String get trax_endedText => '仍处于 TRAX 模式：常规网状网络听不到你。';
 
   @override
   String get settings_deviceInfo => '设备信息';
@@ -2067,7 +2065,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get map_noNodesWithLocation => '没有包含位置信息的节点';
 
   @override
-  String get map_nodesNeedGps => '节点需要共享 GPS 坐标才能在地图上显示';
+  String get map_nodesNeedGps => '只有共享 GPS 的节点才会显示在地图上';
 
   @override
   String map_nodesCount(int count) {
@@ -2187,7 +2185,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return '您即将在 $channelLabel 上分享一个位置。此频道是公开的，任何拥有 PSK 的人都可以看到。';
+    return '在 $channelLabel 分享位置？这是公开频道：任何人都能看到。';
   }
 
   @override
@@ -4713,7 +4711,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gps_onHint => '电台通过 GPS 更新其位置。';
 
   @override
-  String get gps_offHint => '关闭可节省电台电量。开启后可能需要几分钟才能定位。';
+  String get gps_offHint => '关闭可省电。定位可能需要几分钟。';
 
   @override
   String get gps_asking => '正在询问电台...';
@@ -4736,7 +4734,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gps_turnOnTitle => '开启 GPS？';
 
   @override
-  String get gps_turnOnBody => '电台的 GPS 已关闭。开启后可能需要几分钟才能定位。';
+  String get gps_turnOnBody => '电台的 GPS 已关闭。定位可能需要几分钟。';
 
   @override
   String get gps_turnOn => '开启';
@@ -4910,8 +4908,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navigate_noRoutingHere => '该地区还没有离线路线。';
 
   @override
-  String get navigate_noPosition =>
-      'MeshTrax 不知道你的位置：你的电台没有 GPS 位置。请在地图上选择起点，或使用其他应用。';
+  String get navigate_noPosition => '没有 GPS 位置。请在地图上选择起点，或使用其他应用。';
 
   @override
   String get structured_channel => '频道';
@@ -5004,7 +5001,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sos_alsoPublic => '同时发送到 Public';
 
   @override
-  String get sos_alsoPublicHint => '范围内的任何人都能读到，包括您的位置。只有第一条消息会发到那里。';
+  String get sos_alsoPublicHint => '范围内任何人都能读到它和您的位置。只发一次。';
 
   @override
   String get sos_askingRadio => '正在向电台询问位置…';
@@ -5016,24 +5013,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return '电台没有给出新位置。最后已知位置（$time，$age）。';
+    return '没有新位置。最后已知 $time（$age）。';
   }
 
   @override
-  String get sos_positionAgeUnknown => '最后已知位置。电台没有说明它有多旧。';
+  String get sos_positionAgeUnknown => '最后已知位置，时间未知。';
 
   @override
   String get sos_positionTyped => '您自己输入的位置：每次重发都会发送它。';
 
   @override
-  String get sos_repeats => '在您取消之前，每 2 分钟用电台的最新位置重发一次；收到第一个“收到”后改为每 5 分钟一次。';
+  String get sos_repeats => '每 2 分钟附带位置重发，直到您取消；有人点“收到”后改为每 5 分钟。';
 
   @override
-  String get sos_publicOnce => '在 Public 中 SOS 只发送一次。在其他频道中会重复发送，直到您取消。';
+  String get sos_publicOnce => '在 Public 中只发一次。';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX 模式已开启：只有处于 TRAX 模式的电台能收到此 SOS，在 Public 中也是如此。';
+  String get sos_traxOnly => 'TRAX 模式：只有 TRAX 电台能收到。';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5071,11 +5067,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sos_keep => '保留 SOS';
 
   @override
-  String get sos_cancelPending => 'SOS 已取消。电台连接后会发出。';
+  String get sos_cancelPending => 'SOS 已取消。电台连接后发出。';
 
   @override
   String sos_stopped(String time) {
-    return 'MeshTrax 关闭时您的 SOS 已停止。上次发送 $time。';
+    return 'MeshTrax 关闭时 SOS 已停止。上次发送 $time。';
   }
 
   @override
@@ -6094,7 +6090,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search_hint => '搜索地点、地址或坐标';
 
   @override
-  String get search_noPlaces => '下载某个地区的“兴趣点”后，即可搜索其中的地点。坐标无需下载即可搜索。';
+  String get search_noPlaces => '下载“兴趣点”即可搜索地点。坐标无需下载。';
 
   @override
   String get search_noResults => '无匹配结果';
@@ -6400,7 +6396,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get route_noStart => '没有起点。请长按地图并选择“从这里出发”。';
 
   @override
-  String get route_noData => '请在“离线地图”中下载此地区的“步道路线规划”，即可在这里规划路线。';
+  String get route_noData => '请在“离线地图”中下载此地区的“步道路线规划”。';
 
   @override
   String get route_pin => '已放置的标记';
@@ -6783,22 +6779,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get los_downloadBeforeTrip => '请在出行前下载此区域的等高线。下载需要联网。';
+  String get los_downloadBeforeTrip => '出行前请在此下载等高线（需联网）。';
 
   @override
-  String get los_spotBelowLowest => '此地点低于最低的等高线（低于海平面），因此高度未知。';
+  String get los_spotBelowLowest => '低于海平面：高度未知。';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name 所在位置低于最低的等高线（低于海平面），因此那里的高度未知。';
+    return '$name 低于海平面：高度未知。';
   }
 
   @override
-  String get los_youBelowLowest =>
-      '您所在位置低于最低的等高线（低于海平面），因此那里的高度未知。如果电台的 GPS 已开启，将使用它测得的海拔。';
+  String get los_youBelowLowest => '您所在处低于海平面：高度未知。开启 GPS 时改用电台的海拔。';
 
   @override
-  String get los_noLinesNear => '这条线的这一端附近没有等高线，因此那里的高度未知。';
+  String get los_noLinesNear => '这一端附近没有等高线：高度未知。';
 
   @override
   String get los_from => '起点';
@@ -6847,7 +6842,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get los_raisedLabel => '离地高度';
 
   @override
-  String get los_terrainOnly => '仅考虑地形，依据您下载的等高线。';
+  String get los_terrainOnly => '仅考虑地形，依据您的等高线。';
 
   @override
   String los_credits(String credits) {
@@ -6863,11 +6858,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return '着色区域：在 $distance 以内，地形不会挡住与该处手持电台之间的视线。';
+    return '着色：$distance 以内，与手持电台间无地形遮挡。';
   }
 
   @override
-  String get los_reachUnknownPart => '此处部分地形无法计算（例如低于海平面的地方），因此未着色。';
+  String get los_reachUnknownPart => '部分地形无法计算（低于海平面），因此未着色。';
 
   @override
   String get los_reachTapHint => '点按地图或名称，查看到那里的视线。';

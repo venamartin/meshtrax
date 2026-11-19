@@ -108,7 +108,7 @@ void main() {
     return (trax, questions);
   }
 
-  final stillOn = find.textContaining('still in TRAX mode');
+  final stillOn = find.textContaining('Still in TRAX mode');
   final ago = DateTime.now().subtract(const Duration(minutes: 1));
 
   testWidgets('the trip\'s end reminder asks again, never on top of itself', (

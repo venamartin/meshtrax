@@ -468,7 +468,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Flyttar din radio till gruppens frekvens utanför nätet, där varje radio vidarebefordrar åt de andra. Ingen på det vanliga meshet hör dig förrän du lämnar läget.';
+      'Flyttar din radio till gruppens frekvens. Det vanliga meshet hör dig inte förrän du lämnar TRAX.';
 
   @override
   String get trax_now => 'Nu';
@@ -480,8 +480,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_repeatOn => '”Upprepa utan elnät” på';
 
   @override
-  String get trax_savedNote =>
-      'Radions inställningar sparas på den här telefonen, och ”Lämna TRAX” återställer dem.';
+  String get trax_savedNote => '”Lämna TRAX” återställer inställningarna.';
 
   @override
   String trax_until(String time) {
@@ -500,7 +499,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Byt vid startpunkten, när radion har GPS-position: radion sparar var den är med sina nya inställningar.';
+      'Byt vid startpunkten, när radion har GPS-position.';
 
   @override
   String get trax_settings => 'TRAX-inställningar';
@@ -563,7 +562,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'Radion bekräftade inte att den skickade TRAX-meddelandet: säg till gruppen på annat sätt.';
+      'TRAX-meddelandet bekräftades inte. Säg till gruppen på annat sätt.';
 
   @override
   String get trax_preset => 'Förinställning';
@@ -576,7 +575,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Når lite längre, men varje meddelande tar 2,5 till 3 gånger så lång tid att skicka.';
+      'Når lite längre; meddelanden tar ~3× så lång tid.';
 
   @override
   String get trax_tripChannel => 'Turkanal';
@@ -598,7 +597,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Postar ett TRAX-meddelande i turkanalen innan du byter eller lämnar. Varje medlem följer med ett tryck; inget byter av sig självt.';
+      'Postar i turkanalen; de andra följer med ett tryck.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -607,7 +606,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Din radio flyttar till $settings med ”Upprepa utan elnät” på. Ingen på det vanliga meshet hör dig förrän du lämnar läget.';
+    return 'Flyttar din radio till $settings. Det vanliga meshet hör dig inte förrän du lämnar TRAX.';
   }
 
   @override
@@ -625,8 +624,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_leaveToo => 'Lämna också';
 
   @override
-  String get trax_stillOn =>
-      'Din radio är fortfarande i TRAX-läge: det vanliga meshet hör dig inte. Lämna?';
+  String get trax_stillOn => 'Fortfarande i TRAX-läge. Lämna?';
 
   @override
   String get trax_pickPreset => 'Tillbaka till vilken förinställning?';
@@ -666,7 +664,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Din radio är fortfarande i TRAX-läge: det vanliga meshet hör dig inte.';
+      'Fortfarande i TRAX-läge: det vanliga meshet hör dig inte.';
 
   @override
   String get settings_deviceInfo => 'Enhetens information';
@@ -2163,8 +2161,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get map_noNodesWithLocation => 'Inga noder med platsinformation';
 
   @override
-  String get map_nodesNeedGps =>
-      'Noder måste dela sina GPS-koordinater\nför att visas på kartan';
+  String get map_nodesNeedGps => 'Bara noder som delar GPS visas på kartan';
 
   @override
   String map_nodesCount(int count) {
@@ -2286,7 +2283,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Du håller på att dela en plats i $channelLabel. Denna kanal är offentlig och alla med PSK kan se den.';
+    return 'Dela en plats i $channelLabel? Kanalen är offentlig: alla kan se den.';
   }
 
   @override
@@ -5018,7 +5015,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Av sparar radions batteri. När den slås på kan det ta några minuter att hitta din position.';
+      'Av sparar batteri. Positionen kan dröja några minuter.';
 
   @override
   String get gps_asking => 'Frågar radion...';
@@ -5043,7 +5040,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'Radions GPS är avstängd. När den slås på kan det ta några minuter att hitta din position.';
+      'Radions GPS är avstängd. Positionen kan dröja några minuter.';
 
   @override
   String get gps_turnOn => 'Slå på';
@@ -5220,7 +5217,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax vet inte var du är: din radio har ingen GPS-position. Välj en start på kartan eller använd en annan app.';
+      'Ingen GPS-position. Välj en start på kartan eller använd en annan app.';
 
   @override
   String get structured_channel => 'Kanal';
@@ -5315,7 +5312,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Alla inom räckvidd kan läsa det, även din position. Bara det första meddelandet går dit.';
+      'Alla inom räckvidd kan läsa det och din position. Skickas en gång.';
 
   @override
   String get sos_askingRadio => 'Frågar radion efter dess position…';
@@ -5327,12 +5324,11 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'Radion gav ingen ny position. Senast kända position från $time ($age).';
+    return 'Ingen ny position. Senast känd $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown =>
-      'Senast kända position. Radion sa inte hur gammal den är.';
+  String get sos_positionAgeUnknown => 'Senast kända position, ålder okänd.';
 
   @override
   String get sos_positionTyped =>
@@ -5340,15 +5336,13 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Skickas igen varannan minut med radions senaste position tills du avbryter, var femte minut efter första ”Uppfattat”.';
+      'Upprepas varannan minut med din position tills du avbryter; var 5:e minut efter ett ”Uppfattat”.';
 
   @override
-  String get sos_publicOnce =>
-      'I Public skickas ett SOS en gång. I en annan kanal skickas det igen tills du avbryter.';
+  String get sos_publicOnce => 'I Public skickas det en gång.';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX-läget är på: bara radioapparater i TRAX-läge hör detta SOS, även i Public.';
+  String get sos_traxOnly => 'TRAX-läge: bara TRAX-radioapparater hör det.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5386,12 +5380,11 @@ class AppLocalizationsSv extends AppLocalizations {
   String get sos_keep => 'Behåll SOS';
 
   @override
-  String get sos_cancelPending =>
-      'SOS avbrutet. Meddelandet går ut när radion är ansluten.';
+  String get sos_cancelPending => 'SOS avbrutet. Skickas när radion ansluter.';
 
   @override
   String sos_stopped(String time) {
-    return 'Ditt SOS stoppades när MeshTrax stängdes. Senast skickat $time.';
+    return 'SOS stoppades när MeshTrax stängdes. Senast skickat $time.';
   }
 
   @override
@@ -6458,7 +6451,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Ladda ner Intressanta platser för en region för att söka bland dess platser. Koordinater fungerar ändå.';
+      'Ladda ner Intressanta platser för att söka platser. Koordinater fungerar ändå.';
 
   @override
   String get search_noResults => 'Inga träffar';
@@ -6777,7 +6770,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Ladda ner Färdvägsplanering för den här regionen i Offlinekartor för att hitta färdvägar här.';
+      'Ladda ner Färdvägsplanering för den här regionen i Offlinekartor.';
 
   @override
   String get route_pin => 'Utplacerad nål';
@@ -7182,24 +7175,23 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Ladda ner höjdkurvorna för det här området före resan. Det kräver en internetanslutning.';
+      'Ladda ner höjdkurvor här före resan (kräver internet).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Den här platsen ligger under den lägsta höjdkurvan (under havsnivån), så dess höjd är okänd.';
+  String get los_spotBelowLowest => 'Under havsnivån: höjd okänd.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd.';
+    return '$name är under havsnivån: höjd okänd.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Du är under den lägsta höjdkurvan (under havsnivån), så höjden där är okänd. Med radions GPS påslagen används dess höjd.';
+      'Du är under havsnivån: höjd okänd. Med GPS på används radions höjd.';
 
   @override
   String get los_noLinesNear =>
-      'Det finns inga höjdkurvor nära den här änden av linjen, så höjden där är okänd.';
+      'Inga höjdkurvor nära den här änden: höjd okänd.';
 
   @override
   String get los_from => 'Från';
@@ -7248,8 +7240,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get los_raisedLabel => 'Höjd över marken';
 
   @override
-  String get los_terrainOnly =>
-      'Bara terrängen, från höjdkurvorna du har laddat ner.';
+  String get los_terrainOnly => 'Bara terrängen, från dina höjdkurvor.';
 
   @override
   String los_credits(String credits) {
@@ -7265,12 +7256,12 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Skuggat: där är marken inte i vägen till en handburen radio, upp till $distance.';
+    return 'Skuggat: marken skymmer inte en handburen radio, upp till $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'En del av marken här går inte att räkna ut, till exempel under havsytan, så den är inte skuggad.';
+      'En del mark går inte att räkna ut (under havsnivån), så den är inte skuggad.';
 
   @override
   String get los_reachTapHint =>

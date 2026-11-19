@@ -730,7 +730,7 @@ void main() {
         expect(note.title, 'Your trip has ended');
         expect(
           note.body,
-          "Your radio is still in TRAX mode: the regular mesh can't hear you.",
+          "Still in TRAX mode: the regular mesh can't hear you.",
         );
         expect(note.payload, NotificationService.traxEndedPayload);
         expect(prompts.single, isA<TraxStillOnPrompt>());
