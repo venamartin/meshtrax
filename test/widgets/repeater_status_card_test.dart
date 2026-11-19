@@ -10,7 +10,8 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/structured_message_card.dart';
 
 // The repeater status card the owner approved from a mock-up, 2026-11-19:
-// one row per repeater, the battery drawn from the stage.
+// one row per repeater, the battery drawn from the stage, under a one-line
+// header (his pick after seeing the first build).
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -43,8 +44,9 @@ void main() {
       'Repeater: A277 3.52V crit 2m | A377 3.41V crit 40m missed=1 | '
       'AD77 waiting | A477 waiting | AA77 waiting',
     );
-    expect(find.text('REPEATER STATUS'), findsOneWidget);
-    expect(find.text('2 critical, 3 waiting'), findsOneWidget);
+    expect(find.text('Repeater status'), findsOneWidget);
+    expect(find.text('2 critical, 3 waiting'), findsNothing,
+        reason: 'the rows say it; no summary above them (owner, 11-19)');
     expect(find.text('3.52 V'), findsOneWidget);
     expect(find.text('Critical'), findsNWidgets(2));
     expect(find.text('2 min ago'), findsOneWidget);
@@ -60,7 +62,6 @@ void main() {
       'Repeater: A277 3.52V crit 2m tx=22 repeat=off trend=-12mV/h '
       'next=40m restore waits for daylight',
     );
-    expect(find.text('A277 critical'), findsOneWidget);
     expect(
       find.text('2 min ago · TX 22 · repeat off · −12mV/h · '
           'next poll in 40 min · restore waits for daylight'),
@@ -74,9 +75,6 @@ void main() {
       'Repeater: A277 3.48V crit was=vlow | A377 unreachable missed=2 | '
       'A477 no reading reading=0.00V sensor fault | dryrun=yes | page=2/4',
     );
-    expect(find.text('1 unreachable, 1 critical, 1 with no reading'),
-        findsOneWidget,
-        reason: 'counts worst first, unreachable before critical');
     expect(find.text('was very low'), findsOneWidget);
     expect(find.text('unreachable'), findsOneWidget);
     expect(find.byIcon(Icons.battery_alert), findsOneWidget);

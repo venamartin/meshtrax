@@ -8830,60 +8830,6 @@ abstract class AppLocalizations {
   /// **'no reading'**
   String get repeaterStatus_noReading;
 
-  /// No description provided for @repeaterStatus_named.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} {state}'**
-  String repeaterStatus_named(String name, String state);
-
-  /// No description provided for @repeaterStatus_countCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} critical}}'**
-  String repeaterStatus_countCritical(int count);
-
-  /// No description provided for @repeaterStatus_countVeryLow.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} very low}}'**
-  String repeaterStatus_countVeryLow(int count);
-
-  /// No description provided for @repeaterStatus_countLow.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} low}}'**
-  String repeaterStatus_countLow(int count);
-
-  /// No description provided for @repeaterStatus_countOk.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} OK}}'**
-  String repeaterStatus_countOk(int count);
-
-  /// No description provided for @repeaterStatus_countUnreachable.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} unreachable}}'**
-  String repeaterStatus_countUnreachable(int count);
-
-  /// No description provided for @repeaterStatus_countNoReading.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} with no reading}}'**
-  String repeaterStatus_countNoReading(int count);
-
-  /// No description provided for @repeaterStatus_countWaiting.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, other{{count} waiting}}'**
-  String repeaterStatus_countWaiting(int count);
-
-  /// No description provided for @repeaterStatus_repeaters.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 repeater} other{{count} repeaters}}'**
-  String repeaterStatus_repeaters(int count);
-
   /// No description provided for @repeaterStatus_tx.
   ///
   /// In en, this message translates to:

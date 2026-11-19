@@ -295,9 +295,10 @@ class StructuredMessageCard extends StatelessWidget {
     };
   }
 
-  /// How a group of repeaters stands: a row each, the battery drawn from
-  /// the stage the sender reports. The chemistry is the sender's business,
-  /// so volts are only written.
+  /// How a group of repeaters stands: a one-line header, then a row each,
+  /// the battery drawn from the stage the sender reports. The rows say it
+  /// all, so nothing above them sums them up (the owner, 2026-11-19). The
+  /// chemistry is the sender's business, so volts are only written.
   Widget _repeaterStatus(
     BuildContext context,
     StructuredPalette p,
@@ -305,52 +306,67 @@ class StructuredMessageCard extends StatelessWidget {
   ) {
     final l10n = context.l10n;
     final page = m.page, pages = m.pages;
-    return _scaffold(
-      context,
-      p,
-      lead: _badge(p, Icons.battery_charging_full),
-      overline: l10n.structured_repeaterStatus,
-      title: repeaterStatusTitle(l10n, m),
-      titleSize: 18,
-      chips: [
-        if (page != null && pages != null)
-          _chip(p, l10n.repeaterStatus_page(page, pages)),
-        if (m.dryRun) _chip(p, l10n.repeaterStatus_dryRun),
+    final chips = [
+      if (page != null && pages != null)
+        _chip(p, l10n.repeaterStatus_page(page, pages)),
+      if (m.dryRun) _chip(p, l10n.repeaterStatus_dryRun),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 30 * textScale,
+              height: 30 * textScale,
+              decoration: BoxDecoration(color: p.accent, shape: BoxShape.circle),
+              child: Icon(
+                Icons.battery_charging_full,
+                size: 17 * textScale,
+                color: p.onAccent,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.structured_repeaterStatus,
+                style: TextStyle(
+                  color: p.title,
+                  fontSize: 15 * textScale,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (chips.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 4, children: chips),
+        ],
+        for (final r in m.repeaters) _repeaterRow(context, p, r),
+        for (final line in m.extraText)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: MessageText(
+              text: line,
+              style: TextStyle(
+                color: p.body,
+                fontSize: 14 * textScale,
+                height: 1.3,
+              ),
+            ),
+          ),
+        for (final e in m.extensions.entries)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '${e.key}: ${e.value}',
+              style: TextStyle(color: p.muted, fontSize: 12 * textScale),
+            ),
+          ),
       ],
-      keyRow: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [for (final r in m.repeaters) _repeaterRow(context, p, r)],
-      ),
     );
-  }
-
-  /// "A277 critical, A377 unreachable" for one or two repeaters, else how
-  /// many stand where, worst first: "2 critical, 3 waiting".
-  static String repeaterStatusTitle(
-    AppLocalizations l10n,
-    RepeaterStatusMessage m,
-  ) {
-    if (m.repeaters.length <= 2) {
-      return m.repeaters
-          .map((r) => r.state == RepeaterState.other
-              ? r.name
-              : l10n.repeaterStatus_named(r.name, _stateWord(l10n, r.state)))
-          .join(', ');
-    }
-    if (m.counts.isEmpty) return l10n.repeaterStatus_repeaters(m.repeaters.length);
-    return m.counts
-        .map((c) => switch (c.$1) {
-              RepeaterState.unreachable =>
-                l10n.repeaterStatus_countUnreachable(c.$2),
-              RepeaterState.crit => l10n.repeaterStatus_countCritical(c.$2),
-              RepeaterState.vlow => l10n.repeaterStatus_countVeryLow(c.$2),
-              RepeaterState.low => l10n.repeaterStatus_countLow(c.$2),
-              RepeaterState.noReading => l10n.repeaterStatus_countNoReading(c.$2),
-              RepeaterState.waiting => l10n.repeaterStatus_countWaiting(c.$2),
-              RepeaterState.ok => l10n.repeaterStatus_countOk(c.$2),
-              RepeaterState.other => '',
-            })
-        .join(', ');
   }
 
   static String _stateWord(AppLocalizations l10n, RepeaterState s) =>
