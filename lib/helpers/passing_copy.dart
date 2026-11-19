@@ -101,8 +101,40 @@ class PassingCopyOpener {
     required List<int> payload,
     required Iterable<Uint8List> contactKeys,
   }) {
+    if (PathHelper.pathLenHops(pathLenRaw) <= 0) return null;
+    return _open(pathLenRaw, pathBytes, payload, contactKeys);
+  }
+
+  /// Any copy of a DM or room post to this radio, the ones the radio opens
+  /// itself too (the last routed copy, any flood), read for the ACK the app
+  /// sends beside the radio's. A flood's path is the hops it travelled, not
+  /// hops to go, so its hops left read as none.
+  PassingCopy? openAny({
+    required bool flood,
+    required int pathLenRaw,
+    required List<int> pathBytes,
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (flood) {
+      final none = PathHelper.encodePathLen(
+        0,
+        PathHelper.pathLenWidth(pathLenRaw),
+      );
+      return _open(none, const [], payload, contactKeys);
+    }
+    if (PathHelper.pathLenHops(pathLenRaw) < 0) return null;
+    return _open(pathLenRaw, pathBytes, payload, contactKeys);
+  }
+
+  PassingCopy? _open(
+    int pathLenRaw,
+    List<int> pathBytes,
+    List<int> payload,
+    Iterable<Uint8List> contactKeys,
+  ) {
     final width = PathHelper.pathLenWidth(pathLenRaw);
-    if (PathHelper.pathLenHops(pathLenRaw) <= 0 || width > 3) return null;
+    if (width > 3) return null;
     if (pathBytes.length != PathHelper.pathLenBytes(pathLenRaw)) return null;
     if (payload.length < 2 + _macSize + _blockSize) return null;
     if (payload[0] != _selfKey[0]) return null;

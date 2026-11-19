@@ -569,6 +569,30 @@ the connector's `_openPassingCopy`):
 - **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
   a long DM, or a shorter one on a long route, is never seen. A scope set by another app
   with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.
+- **Pathfinder** hears of each passing copy on its own hook, `onPassingCopyHeard` (contact,
+  hops left, width, SNR, the payload as heard), never as a delivered message: the route
+  never finished.
+
+### The second ACK, from MeshTrax on another route
+With Multi-ACKs on, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy) on the
+**same** stored route as the first, and a DM that arrived by flood gets only the flooded
+PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19: "either
+the companion sends two acks or it sends one and the app sends the second"):
+- **The radio sends one.** While the app is connected, has the radio's key and the firmware
+  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. The Multi-ACKs switch
+  keeps the user's choice per radio (`MeshCoreConnector.twoAcks`), so it stays on. A
+  manual disconnect sets the radio back to 1; after a link that drops, the radio sends one
+  ACK until the app is back.
+- **The app sends the other**, for every copy of a DM or room post to this radio that it
+  can read in the RX log (it computes the exact ACK from the decrypted copy), once per
+  message, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
+  first. The route is Pathfinder's best route **to** the sender that the radio isn't
+  holding (the same list the DM ladder plans with, `planAttempts`, floods left out), read
+  when the copy is heard, before the keeper can move the stored route. After a flood
+  (the radio's ACK rode the flood) it is Pathfinder's best route. With only one route, that
+  route again. With none known, or a route the user pinned, the radio's stored route, else
+  a flood. For a passing copy the app sends both ACKs.
+- Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants
 | Value | Meaning |

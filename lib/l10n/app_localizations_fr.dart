@@ -808,7 +808,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Envoie un second accusé de réception lorsqu\'un message privé vous parvient par un itinéraire, afin que l\'expéditeur ait plus de chances de l\'entendre.';
+      'Envoie un second accusé de réception lorsqu\'un message privé vous parvient par un itinéraire, afin que l\'expéditeur ait plus de chances de l\'entendre. Avec Pathfinder activé, MeshTrax l\'envoie par un autre itinéraire.';
 
   @override
   String get settings_telemetryModeUpdated =>

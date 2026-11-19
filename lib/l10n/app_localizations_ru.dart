@@ -802,7 +802,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Отправлять второе подтверждение, когда личное сообщение приходит к вам по маршруту, чтобы отправитель с большей вероятностью его услышал.';
+      'Отправлять второе подтверждение, когда личное сообщение приходит к вам по маршруту, чтобы отправитель с большей вероятностью его услышал. Если Pathfinder включён, MeshTrax отправляет его по другому маршруту.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим телеметрии обновлен';

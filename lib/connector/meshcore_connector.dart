@@ -852,6 +852,12 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   PassingCopyOpener? _passingCopyOpener;
   Uint8List? _passingCopyScopeKey;
   final Set<String> _passingCopyAcked = {};
+  // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
+  // the second on another of Pathfinder's routes (owner, 2026-11-19).
+  bool _appSendsSecondAck = false;
+  final Set<String> _secondAckSent = {};
+  bool? _pathfinderWasOn;
+  static const _twoAcksKeyPrefix = 'two_acks_';
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
@@ -1853,6 +1859,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }) {
     _retryService = retryService;
     _appSettingsService = appSettingsService;
+    _pathfinderWasOn = appSettingsService?.settings.pathGraphEnabled;
+    appSettingsService?.addListener(_onAppSettingsChanged);
     _bleDebugLogService = bleDebugLogService;
     _appDebugLogService = appDebugLogService;
     _backgroundService = backgroundService;
@@ -4112,6 +4120,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool skipBleDeviceDisconnect = false,
   }) async {
     if (_state == MeshCoreConnectionState.disconnecting) return;
+
+    // The app was sending every second ACK: the radio gets its own second
+    // ACK back before the link goes. A link that drops can't do this; the
+    // radio then sends one until the app is back.
+    if (manual && _appSendsSecondAck && isConnected) {
+      _appSendsSecondAck = false;
+      try {
+        await _setRadioMultiAcks(1).timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
 
     _discoverTimer?.cancel();
     _isDiscovering = false;
@@ -6974,9 +6992,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @visibleForTesting
   void handleFrameForTest(List<int> data) => _handleFrame(data);
 
-  /// What the first full sync runs to start opening passing copies.
+  /// What the first full sync runs to start opening passing copies and to
+  /// decide who sends the second ACK.
   @visibleForTesting
-  Future<void> preparePassingCopiesForTest() => _preparePassingCopies();
+  Future<void> preparePassingCopiesForTest() =>
+      _preparePassingCopies().then((_) => _applyAckMode());
 
   void _handleFrame(List<int> data) {
     // Synchronous, so this is pure UI-thread time per radio frame.
@@ -8960,7 +8980,83 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyOpener = null;
     _passingCopyScopeKey = null;
     _passingCopyAcked.clear();
+    _appSendsSecondAck = false;
+    _secondAckSent.clear();
   }
+
+  /// The Multi-ACKs choice for this radio: two ACKs for each DM. The radio's
+  /// own setting can read one: while the app sends the second ACK, the radio
+  /// is set to send one.
+  bool get twoAcks {
+    final self = _selfPublicKey;
+    if (self == null) return _multiAcks != 0;
+    try {
+      return PrefsManager.instance
+              .getBool('$_twoAcksKeyPrefix${pubKeyToHex(self)}') ??
+          _multiAcks != 0;
+    } catch (_) {
+      return _multiAcks != 0;
+    }
+  }
+
+  Future<void> setTwoAcks(bool value) async {
+    await _storeTwoAcks(value);
+    await _applyAckMode();
+    notifyListeners();
+  }
+
+  Future<void> _storeTwoAcks(bool value) async {
+    final self = _selfPublicKey;
+    if (self == null) return;
+    try {
+      await PrefsManager.instance
+          .setBool('$_twoAcksKeyPrefix${pubKeyToHex(self)}', value);
+    } catch (_) {}
+  }
+
+  bool get _pathfinderOn =>
+      (_appSettingsService?.settings.pathGraphEnabled ?? false) &&
+      graphRouteCandidates != null;
+
+  void _onAppSettingsChanged() {
+    final on = _appSettingsService?.settings.pathGraphEnabled;
+    if (on == _pathfinderWasOn) return;
+    _pathfinderWasOn = on;
+    unawaited(_applyAckMode());
+  }
+
+  /// Who sends the second ACK. With two wanted, Pathfinder on, the radio's
+  /// key read and firmware 1.16 or later, the app does: the radio is set to
+  /// one and the app sends the other on another of Pathfinder's routes
+  /// (owner, 2026-11-19). Otherwise the radio sends what the switch says.
+  /// The choice is stored first, so it outlives the radio's one.
+  Future<void> _applyAckMode() async {
+    if (!isConnected || _selfPublicKey == null) return;
+    if (!firmwareSupports(
+      RadioSetting.multiAcks,
+      _firmwareVerCode,
+      _firmwareVersion,
+    )) {
+      return;
+    }
+    final wanted = twoAcks;
+    await _storeTwoAcks(wanted);
+    final app = wanted &&
+        _pathfinderOn &&
+        _passingCopyOpener != null &&
+        (_firmwareVerCode ?? 0) >= 13;
+    _appSendsSecondAck = app;
+    final radio = app ? 0 : (wanted ? 1 : 0);
+    if ((_multiAcks != 0) != (radio != 0)) await _setRadioMultiAcks(radio);
+  }
+
+  Future<void> _setRadioMultiAcks(int value) => setTelemetryModeBase(
+    _telemetryModeBase,
+    _telemetryModeLoc,
+    _telemetryModeEnv,
+    _advertLocPolicy,
+    value,
+  );
 
   /// A routed DM or room post to this radio that still has hops to go. The
   /// firmware drops that copy unopened and opens only the last repeater's
@@ -9019,40 +9115,153 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  /// The ACK the firmware would have sent for a passing copy: once per
-  /// message, however many of its copies were heard, and held until the hops
-  /// it still had to go have passed it on. It needs CMD_SEND_RAW_PACKET
+  /// The ACKs for a passing copy, which the radio never opened: the one the
+  /// firmware would have sent, on the radio's stored route (with its extra
+  /// MULTIPART copy when the radio sends two), and, when the app sends every
+  /// second ACK, that one on another of Pathfinder's routes. Once per
+  /// message, however many of its copies were heard, held until the hops it
+  /// still had to go have passed it on. It needs CMD_SEND_RAW_PACKET
   /// (companion 1.16, code 13); without it the sender retries until a copy
   /// the radio opens itself, and the radio ACKs that one.
   void _sendPassingCopyAck(PassingCopy copy, int packetBytes) {
     if ((_firmwareVerCode ?? 0) < 13) return;
-    if (!_passingCopyAcked.add(pubKeyToHex(copy.ack.sublist(0, 4)))) return;
-    if (_passingCopyAcked.length > 64) {
-      _passingCopyAcked.remove(_passingCopyAcked.first);
-    }
-    final contact = _contacts
-        .where((c) => listEquals(c.publicKey, copy.senderKey))
-        .firstOrNull;
+    final id = pubKeyToHex(copy.ack.sublist(0, 4));
+    if (!_remember(_passingCopyAcked, id)) return;
+    final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
-    final routePathLen = PathHelper.encodePathLen(
-      contact.pathLength,
-      contact.pathHashSize,
-    );
     final packets = PassingCopyOpener.ackPackets(
       copy.ack,
-      routePathLen: routePathLen,
+      routePathLen: PathHelper.encodePathLen(
+        contact.pathLength,
+        contact.pathHashSize,
+      ),
       routePath: contact.path,
       extraAck: _multiAcks > 0,
       floodWidth: _pathHashByteWidth,
       scopeKey: _passingCopyScopeKey,
     );
-    // sendDirect queues a routed ACK at priority 0, sendFlood a flood at 1.
-    final priority = PathHelper.pathLenHops(routePathLen) >= 0 ? 0 : 1;
-    var delay = TimeoutHelper.passingCopyAckDelayMs(
-      _estimateAirtimeMs(packetBytes),
-      copy.hopsLeftCount,
+    if (_appSendsSecondAck && _remember(_secondAckSent, id)) {
+      packets.addAll(_secondAckPackets(copy.ack, contact, byFlood: false));
+    }
+    _queueRawPackets(
+      packets,
+      TimeoutHelper.passingCopyAckDelayMs(
+        _estimateAirtimeMs(packetBytes),
+        copy.hopsLeftCount,
+      ),
     );
+  }
+
+  /// A copy of a DM or room post to this radio that the radio opens itself
+  /// (the last routed copy, or a flood). The radio sends one ACK; when the
+  /// app sends every second ACK, it sends the other, as the radio's extra
+  /// ACK would follow its first.
+  void _sendSecondAckFor(_RawPacket packet) {
+    if (!_appSendsSecondAck) return;
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+      return;
+    }
+    final copy = opener.openAny(
+      flood: packet.isFlood,
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: packet.pathBytes,
+      payload: packet.payload,
+      contactKeys: _contacts.map((c) => c.publicKey),
+    );
+    if (copy == null) return;
+    if (!_remember(_secondAckSent, pubKeyToHex(copy.ack.sublist(0, 4)))) {
+      return;
+    }
+    final contact = _contactWithKey(copy.senderKey);
+    if (contact == null) return;
+    _queueRawPackets(
+      _secondAckPackets(copy.ack, contact, byFlood: packet.isFlood),
+      TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
+    );
+  }
+
+  /// The second ACK, on Pathfinder's best route TO the contact that the
+  /// radio isn't holding. The contact is read as the copy is heard, before
+  /// the keeper can move the stored route, so it names the route the radio's
+  /// own ACK took. After a flood, Pathfinder's best route (the radio's ACK
+  /// rode the flood). With one route only, that route again, as the radio's
+  /// extra ACK would. With none known, or a route the user pinned, the
+  /// radio's stored route, else a flood.
+  List<Uint8List> _secondAckPackets(
+    Uint8List ack,
+    Contact contact, {
+    required bool byFlood,
+  }) {
+    final routes = _ackRoutes(contact) ?? const <PathSelection>[];
+    PathSelection? route;
+    if (routes.isNotEmpty) {
+      route = byFlood
+          ? routes.first
+          : routes.firstWhere(
+              (r) => !_radioHolds(contact, r),
+              orElse: () => routes.first,
+            );
+    }
+    return PassingCopyOpener.ackPackets(
+      ack,
+      routePathLen: route == null
+          ? PathHelper.encodePathLen(contact.pathLength, contact.pathHashSize)
+          : PathHelper.encodePathLen(route.hopCount, route.hashSize),
+      routePath: route?.pathBytes ?? contact.path,
+      extraAck: false,
+      floodWidth: _pathHashByteWidth,
+      scopeKey: _passingCopyScopeKey,
+    );
+  }
+
+  /// Pathfinder's routes TO [contact] for an ACK, best first: the list the
+  /// DM ladder uses (planAttempts: no repeats, no weak routes), floods left
+  /// out. Empty when the user pinned a route; null when Pathfinder can't
+  /// route.
+  List<PathSelection>? _ackRoutes(Contact contact) {
+    if (contact.pathOverride != null) return const [];
+    final graph = graphRouteCandidates?.call(contact);
+    if (graph == null || graph.isEmpty) return graph;
+    return planAttempts(
+      contact,
+      radioWidth: _pathHashByteWidth,
+      budget: graph.length,
+      graphRoutes: graph,
+      floods: 0,
+    ).where((r) => !r.useFlood).toList();
+  }
+
+  /// Whether the radio stores [route] for [contact]: the keeper's own test
+  /// (RadioRouteKeeper.holds), kept here so the connector imports nothing
+  /// from Pathfinder.
+  static bool _radioHolds(Contact contact, PathSelection route) {
+    if (route.useFlood) return contact.pathLength < 0;
+    if (contact.pathLength != route.hopCount) return false;
+    if (route.hopCount == 0) return true;
+    return contact.pathHashSize == route.hashSize &&
+        listEquals(contact.path, route.pathBytes);
+  }
+
+  Contact? _contactWithKey(Uint8List key) =>
+      _contacts.where((c) => listEquals(c.publicKey, key)).firstOrNull;
+
+  /// Adds [id] to [seen], which keeps the last 64; false when it was there.
+  static bool _remember(Set<String> seen, String id) {
+    if (!seen.add(id)) return false;
+    if (seen.length > 64) seen.remove(seen.first);
+    return true;
+  }
+
+  /// Hands raw packets to the radio (CMD_SEND_RAW_PACKET) from [delayMs] on,
+  /// [TimeoutHelper.extraAckGapMs] apart, the way sendAckTo spaces its two
+  /// ACKs. The radio queues a routed packet at priority 0 (sendDirect) and a
+  /// flood at 1 (sendFlood).
+  void _queueRawPackets(List<Uint8List> packets, int delayMs) {
+    var delay = delayMs;
     for (final packet in packets) {
+      final priority = (packet[0] & 0x03) == 0x02 ? 0 : 1;
       Timer(Duration(milliseconds: delay), () {
         if (!isConnected) return;
         unawaited(
@@ -9109,8 +9318,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _rememberFloodedText(packet, frame[1].toSigned(8));
         }
       }
-      if (!packet.isFlood && packet.payloadType == _payloadTypeTxtMsg) {
-        _openPassingCopy(packet, frame[1]);
+      if (packet.payloadType == _payloadTypeTxtMsg) {
+        if (!packet.isFlood && packet.hopCount > 0) {
+          _openPassingCopy(packet, frame[1]);
+        } else {
+          _sendSecondAckFor(packet);
+        }
         return;
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
@@ -12194,7 +12407,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
       unawaited(_probeWifi());
-      unawaited(_preparePassingCopies());
+      unawaited(_preparePassingCopies().then((_) => _applyAckMode()));
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
         _appDebugLogService?.info(
@@ -12210,6 +12423,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   @override
   void dispose() {
     if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
+    _appSettingsService?.removeListener(_onAppSettingsChanged);
     _contactNotesSub?.cancel();
     _contactPersistTimer?.cancel();
     _scanSubscription?.cancel();

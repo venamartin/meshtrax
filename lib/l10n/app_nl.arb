@@ -1849,7 +1849,7 @@
   "chat_sendMessage": "Verzend bericht",
   "repeater_guest": "Informatie over herhalingsapparatuur",
   "settings_multiAck": "Meerdere bevestigingen",
-  "settings_multiAckSubtitle": "Stuur een tweede bevestiging wanneer een direct bericht je via een route bereikt, zodat de afzender die eerder hoort.",
+  "settings_multiAckSubtitle": "Stuur een tweede bevestiging wanneer een direct bericht je via een route bereikt, zodat de afzender die eerder hoort. Met Pathfinder aan stuurt MeshTrax die via een andere route.",
   "chat_resendingByRoute": "Opnieuw verzenden via de ingestelde route",
   "room_mute": "Ruimte dempen",
   "room_unmute": "Dempen van ruimte opheffen",

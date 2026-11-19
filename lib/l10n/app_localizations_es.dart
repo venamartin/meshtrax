@@ -804,7 +804,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Envía una segunda confirmación cuando un mensaje directo te llega por una ruta, para que el remitente tenga más probabilidades de oírla.';
+      'Envía una segunda confirmación cuando un mensaje directo te llega por una ruta, para que el remitente tenga más probabilidades de oírla. Con Pathfinder activado, MeshTrax la envía por otra ruta.';
 
   @override
   String get settings_telemetryModeUpdated => 'Modo de telemetría actualizado';

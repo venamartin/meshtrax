@@ -806,7 +806,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt.';
+      'Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt. Bekapcsolt Pathfinderrel a MeshTrax másik útvonalon küldi.';
 
   @override
   String get settings_telemetryModeUpdated => 'A telemetriamód frissítve';

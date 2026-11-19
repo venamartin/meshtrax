@@ -582,7 +582,9 @@ class AppSettingsScreen extends StatelessWidget {
             secondary: const Icon(Icons.done_all),
             title: Text(context.l10n.settings_multiAck),
             subtitle: Text(context.l10n.settings_multiAckSubtitle),
-            value: connector.multiAcks != 0,
+            // The choice, not the radio's own setting: while MeshTrax sends
+            // the second ACK, the radio is set to send one.
+            value: connector.twoAcks,
             onChanged:
                 connector.isConnected &&
                     firmwareSupports(
@@ -590,15 +592,7 @@ class AppSettingsScreen extends StatelessWidget {
                       connector.firmwareVerCode,
                       connector.firmwareVersion,
                     )
-                ? (value) async {
-                    await connector.setTelemetryModeBase(
-                      connector.telemetryModeBase,
-                      connector.telemetryModeLoc,
-                      connector.telemetryModeEnv,
-                      connector.advertLocationPolicy,
-                      value ? 1 : 0,
-                    );
-                  }
+                ? (value) => connector.setTwoAcks(value)
                 : null,
           ),
           const Divider(height: 1),

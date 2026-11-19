@@ -797,7 +797,7 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den.';
+      'Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den. Med Pathfinder på skickar MeshTrax den via en annan rutt.';
 
   @override
   String get settings_telemetryModeUpdated => 'Telemetri-läge uppdaterat';

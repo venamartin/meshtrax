@@ -800,7 +800,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul.';
+      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul. So zapnutým Pathfinderom ho MeshTrax pošle inou trasou.';
 
   @override
   String get settings_telemetryModeUpdated =>

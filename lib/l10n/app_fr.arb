@@ -1849,7 +1849,7 @@
   "room_guest": "Informations sur le serveur",
   "repeater_guest": "Informations sur les répéteurs",
   "settings_multiAck": "Plusieurs accusés de réception",
-  "settings_multiAckSubtitle": "Envoie un second accusé de réception lorsqu'un message privé vous parvient par un itinéraire, afin que l'expéditeur ait plus de chances de l'entendre.",
+  "settings_multiAckSubtitle": "Envoie un second accusé de réception lorsqu'un message privé vous parvient par un itinéraire, afin que l'expéditeur ait plus de chances de l'entendre. Avec Pathfinder activé, MeshTrax l'envoie par un autre itinéraire.",
   "chat_resendingByRoute": "Renvoi via l'itinéraire défini",
   "room_mute": "Désactiver les notifications de la room",
   "room_unmute": "Réactiver les notifications de la room",

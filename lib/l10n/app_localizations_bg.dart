@@ -807,7 +807,7 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Изпраща второ потвърждение, когато лично съобщение стигне до вас по маршрут, за да може подателят по-вероятно да го чуе.';
+      'Изпраща второ потвърждение, когато лично съобщение стигне до вас по маршрут, за да може подателят по-вероятно да го чуе. С включен Pathfinder MeshTrax го изпраща по друг маршрут.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим на телеметрията е обновен';
