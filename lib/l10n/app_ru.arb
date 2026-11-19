@@ -2031,6 +2031,8 @@
   "poiKind_hut": "Хижина",
   "poiKind_shelter": "Укрытие",
   "poiKind_drinkingWater": "Питьевая вода",
+  "poiCaveat_spring": "Может пересохнуть или быть небезопасным",
+  "poiCaveat_drinkingWater": "Может быть перекрыта",
   "poiKind_toilets": "Туалет",
   "poiKind_viewpoint": "Смотровая площадка",
   "poiKind_attraction": "Достопримечательность",

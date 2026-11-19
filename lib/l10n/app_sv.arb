@@ -2663,6 +2663,8 @@
   "poiKind_hut": "Stuga",
   "poiKind_shelter": "Vindskydd",
   "poiKind_drinkingWater": "Dricksvatten",
+  "poiCaveat_spring": "Kan vara torr eller osäker",
+  "poiCaveat_drinkingWater": "Kan vara avstängd",
   "poiKind_toilets": "Toaletter",
   "poiKind_viewpoint": "Utsiktsplats",
   "poiKind_attraction": "Sevärdhet",

@@ -6530,6 +6530,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get poiKind_drinkingWater => 'Питьевая вода';
 
   @override
+  String get poiCaveat_spring => 'Может пересохнуть или быть небезопасным';
+
+  @override
+  String get poiCaveat_drinkingWater => 'Может быть перекрыта';
+
+  @override
   String get poiKind_toilets => 'Туалет';
 
   @override

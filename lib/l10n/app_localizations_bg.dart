@@ -6507,6 +6507,12 @@ class AppLocalizationsBg extends AppLocalizations {
   String get poiKind_drinkingWater => 'Питейна вода';
 
   @override
+  String get poiCaveat_spring => 'Може да е пресъхнал или опасен';
+
+  @override
+  String get poiCaveat_drinkingWater => 'Може да е спряна';
+
+  @override
   String get poiKind_toilets => 'Тоалетна';
 
   @override

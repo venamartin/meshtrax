@@ -6232,6 +6232,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get poiKind_drinkingWater => '식수';
 
   @override
+  String get poiCaveat_spring => '말라 있거나 안전하지 않을 수 있습니다';
+
+  @override
+  String get poiCaveat_drinkingWater => '잠겨 있을 수 있습니다';
+
+  @override
   String get poiKind_toilets => '화장실';
 
   @override

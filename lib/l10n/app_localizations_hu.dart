@@ -6523,6 +6523,12 @@ class AppLocalizationsHu extends AppLocalizations {
   String get poiKind_drinkingWater => 'Ivóvíz';
 
   @override
+  String get poiCaveat_spring => 'Kiszáradhatott vagy nem biztonságos';
+
+  @override
+  String get poiCaveat_drinkingWater => 'Elzárhatták';
+
+  @override
   String get poiKind_toilets => 'Mosdó';
 
   @override

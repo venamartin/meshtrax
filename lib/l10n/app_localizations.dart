@@ -11152,6 +11152,18 @@ abstract class AppLocalizations {
   /// **'Drinking water'**
   String get poiKind_drinkingWater;
 
+  /// Under a spring in search results and on its place sheet. Desert springs are often dry or unsafe to drink untreated
+  ///
+  /// In en, this message translates to:
+  /// **'May be dry or unsafe'**
+  String get poiCaveat_spring;
+
+  /// Under a drinking-water tap or water point in search results and on its place sheet. Taps out in parks are often turned off
+  ///
+  /// In en, this message translates to:
+  /// **'May be turned off'**
+  String get poiCaveat_drinkingWater;
+
   /// No description provided for @poiKind_toilets.
   ///
   /// In en, this message translates to:

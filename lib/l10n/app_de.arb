@@ -2691,6 +2691,8 @@
   "poiKind_hut": "Hütte",
   "poiKind_shelter": "Schutzhütte",
   "poiKind_drinkingWater": "Trinkwasser",
+  "poiCaveat_spring": "Kann trocken oder unsicher sein",
+  "poiCaveat_drinkingWater": "Kann abgestellt sein",
   "poiKind_toilets": "Toiletten",
   "poiKind_viewpoint": "Aussichtspunkt",
   "poiKind_attraction": "Sehenswürdigkeit",

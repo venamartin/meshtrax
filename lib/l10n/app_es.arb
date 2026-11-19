@@ -2691,6 +2691,8 @@
   "poiKind_hut": "Refugio de montaña",
   "poiKind_shelter": "Refugio",
   "poiKind_drinkingWater": "Agua potable",
+  "poiCaveat_spring": "Puede estar seco o no ser seguro",
+  "poiCaveat_drinkingWater": "Puede estar cerrada",
   "poiKind_toilets": "Aseos",
   "poiKind_viewpoint": "Mirador",
   "poiKind_attraction": "Atracción turística",

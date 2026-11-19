@@ -6418,6 +6418,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get poiKind_drinkingWater => 'Drinking water';
 
   @override
+  String get poiCaveat_spring => 'May be dry or unsafe';
+
+  @override
+  String get poiCaveat_drinkingWater => 'May be turned off';
+
+  @override
   String get poiKind_toilets => 'Toilets';
 
   @override

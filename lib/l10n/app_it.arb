@@ -2663,6 +2663,8 @@
   "poiKind_hut": "Rifugio",
   "poiKind_shelter": "Riparo",
   "poiKind_drinkingWater": "Acqua potabile",
+  "poiCaveat_spring": "Può essere secca o non sicura",
+  "poiCaveat_drinkingWater": "Può essere chiusa",
   "poiKind_toilets": "Bagni",
   "poiKind_viewpoint": "Punto panoramico",
   "poiKind_attraction": "Attrazione",

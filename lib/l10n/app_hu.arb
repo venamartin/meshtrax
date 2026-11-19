@@ -2701,6 +2701,8 @@
   "poiKind_hut": "Menedékház",
   "poiKind_shelter": "Menedékhely",
   "poiKind_drinkingWater": "Ivóvíz",
+  "poiCaveat_spring": "Kiszáradhatott vagy nem biztonságos",
+  "poiCaveat_drinkingWater": "Elzárhatták",
   "poiKind_toilets": "Mosdó",
   "poiKind_viewpoint": "Kilátópont",
   "poiKind_attraction": "Látnivaló",

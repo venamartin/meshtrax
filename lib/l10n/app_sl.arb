@@ -2663,6 +2663,8 @@
   "poiKind_hut": "Koča",
   "poiKind_shelter": "Zavetje",
   "poiKind_drinkingWater": "Pitna voda",
+  "poiCaveat_spring": "Lahko je presahnjen ali nevaren",
+  "poiCaveat_drinkingWater": "Lahko je zaprta",
   "poiKind_toilets": "Stranišča",
   "poiKind_viewpoint": "Razgledišče",
   "poiKind_attraction": "Znamenitost",

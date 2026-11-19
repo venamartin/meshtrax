@@ -2668,6 +2668,8 @@
   "poiKind_hut": "山屋",
   "poiKind_shelter": "避难所",
   "poiKind_drinkingWater": "饮用水",
+  "poiCaveat_spring": "可能已干涸或不安全",
+  "poiCaveat_drinkingWater": "可能已关闭",
   "poiKind_toilets": "厕所",
   "poiKind_viewpoint": "观景点",
   "poiKind_attraction": "景点",

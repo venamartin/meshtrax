@@ -6099,6 +6099,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get poiKind_drinkingWater => '饮用水';
 
   @override
+  String get poiCaveat_spring => '可能已干涸或不安全';
+
+  @override
+  String get poiCaveat_drinkingWater => '可能已关闭';
+
+  @override
   String get poiKind_toilets => '厕所';
 
   @override

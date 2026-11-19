@@ -2663,6 +2663,8 @@
   "poiKind_hut": "Horská chata",
   "poiKind_shelter": "Prístrešok",
   "poiKind_drinkingWater": "Pitná voda",
+  "poiCaveat_spring": "Môže byť vyschnutý alebo nebezpečný",
+  "poiCaveat_drinkingWater": "Môže byť zastavená",
   "poiKind_toilets": "Toalety",
   "poiKind_viewpoint": "Vyhliadka",
   "poiKind_attraction": "Atrakcia",
