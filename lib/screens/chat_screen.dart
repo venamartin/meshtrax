@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:meshtrax/screens/path_trace_map.dart';
 import 'package:provider/provider.dart';
@@ -2783,6 +2784,17 @@ class _MessageBubble extends StatelessWidget {
     final displayMetaColor = structured != null
         ? StructuredPalette.of(context, structured).muted
         : displayTextColor.withValues(alpha: 0.7);
+    // Grey like the observer ear: MeshTrax opened this from a copy the
+    // radio dropped, picked out of the air while it still had hops to go.
+    final pickedUp = isOutgoing || message.passingCopyHopsLeft == null
+        ? null
+        : Icon(
+            Symbols.airwave,
+            size: 12,
+            color: Colors.grey[600],
+            semanticLabel: context.l10n
+                .channelPath_pickedUpOnItsWay(message.passingCopyHopsLeft!),
+          );
     final bodyFontSize = isJumboEmoji ? 48.0 : 14.0;
 
     return Padding(
@@ -3017,6 +3029,13 @@ class _MessageBubble extends StatelessWidget {
                                   ),
                                 ),
                               ],
+                              if (!enableTracing && pickedUp != null) ...[
+                                const SizedBox(width: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: pickedUp,
+                                ),
+                              ],
                             ],
                           ),
                         // Held by the radio past a failed read: it stands
@@ -3132,7 +3151,7 @@ class _MessageBubble extends StatelessWidget {
                               ],
                             ],
                             status: !isOutgoing
-                                ? null
+                                ? pickedUp
                                 : enableTracing
                                     ? _buildStatusIcon(displayMetaColor)
                                     : MessageStatusIcon(
@@ -3171,6 +3190,7 @@ class _MessageBubble extends StatelessWidget {
                                       color: displayMetaColor,
                                     ),
                                   ),
+                                ?pickedUp,
                                 if (isOutgoing) ...[
                                   const SizedBox(width: 4),
                                   _buildStatusIcon(displayMetaColor),
