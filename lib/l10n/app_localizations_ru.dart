@@ -471,7 +471,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Переводит радио на автономную частоту группы, где каждое радио ретранслирует для остальных. В обычной сети mesh вас никто не слышит, пока вы не выйдете из режима.';
+      'Переводит радио на частоту группы. Обычная сеть mesh вас не слышит, пока вы не выйдете.';
 
   @override
   String get trax_now => 'Сейчас';
@@ -483,8 +483,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_repeatOn => '«Повторение \"вне сети\"» включено';
 
   @override
-  String get trax_savedNote =>
-      'Настройки радио сохраняются на этом телефоне, а «Выйти из TRAX» возвращает их.';
+  String get trax_savedNote => '«Выйти из TRAX» вернёт ваши настройки.';
 
   @override
   String trax_until(String time) {
@@ -503,7 +502,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Переключайтесь в начале маршрута, когда у радио есть GPS-позиция: радио сохраняет своё местоположение вместе с новыми настройками.';
+      'Переключайтесь в начале маршрута, когда у радио есть GPS-позиция.';
 
   @override
   String get trax_settings => 'Настройки TRAX';
@@ -565,7 +564,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'Радио не подтвердило отправку сообщения TRAX: сообщите группе другим способом.';
+      'Сообщение TRAX не подтверждено. Сообщите группе другим способом.';
 
   @override
   String get trax_preset => 'Пресет';
@@ -578,7 +577,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Достаёт немного дальше, но каждое сообщение отправляется в 2,5–3 раза дольше.';
+      'Достаёт чуть дальше; сообщения идут ~3× дольше.';
 
   @override
   String get trax_tripChannel => 'Канал поездки';
@@ -600,7 +599,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Публикует сообщение TRAX в канале поездки перед переключением или выходом. Каждый участник присоединяется одним касанием; само по себе ничего не переключается.';
+      'Публикует в канале поездки; остальные присоединяются одним касанием.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -609,7 +608,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Ваше радио перейдёт на $settings с включённым «Повторение \"вне сети\"». В обычной сети mesh вас никто не слышит, пока вы не выйдете из режима.';
+    return 'Переводит радио на $settings. Обычная сеть mesh вас не слышит, пока вы не выйдете.';
   }
 
   @override
@@ -627,8 +626,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_leaveToo => 'Тоже выйти';
 
   @override
-  String get trax_stillOn =>
-      'Ваше радио всё ещё в режиме TRAX: обычная сеть mesh вас не слышит. Выйти?';
+  String get trax_stillOn => 'Всё ещё в режиме TRAX. Выйти?';
 
   @override
   String get trax_pickPreset => 'К какому пресету вернуться?';
@@ -668,7 +666,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Ваше радио всё ещё в режиме TRAX: обычная сеть mesh вас не слышит.';
+      'Всё ещё в режиме TRAX: обычная сеть mesh вас не слышит.';
 
   @override
   String get settings_deviceInfo => 'Информация об устройстве';
@@ -2118,8 +2116,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_noNodesWithLocation => 'Нет нод с данными о местоположении';
 
   @override
-  String get map_nodesNeedGps =>
-      'Ноды должны передавать свои GPS-координаты, чтобы отображаться на карте';
+  String get map_nodesNeedGps => 'На карте видны только ноды, передающие GPS';
 
   @override
   String map_nodesCount(int count) {
@@ -2223,7 +2220,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Вы собираетесь поделиться местоположением в $channelLabel. Этот канал публичный, и любой, у кого есть PSK, сможет его увидеть.';
+    return 'Поделиться местоположением в $channelLabel? Канал публичный: его увидит любой.';
   }
 
   @override
@@ -4986,7 +4983,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Выключенный GPS экономит батарею радио. После включения поиск местоположения может занять несколько минут.';
+      'Выключение экономит батарею. Определение позиции может занять несколько минут.';
 
   @override
   String get gps_asking => 'Запрос к радио...';
@@ -5011,7 +5008,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'GPS радио выключен. После включения поиск местоположения может занять несколько минут.';
+      'GPS радио выключен. Определение позиции может занять несколько минут.';
 
   @override
   String get gps_turnOn => 'Включить';
@@ -5192,7 +5189,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax не знает, где вы: у вашей рации нет GPS-позиции. Выберите старт на карте или используйте другое приложение.';
+      'Нет GPS-позиции. Выберите старт на карте или используйте другое приложение.';
 
   @override
   String get structured_channel => 'Канал';
@@ -5287,7 +5284,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Любой в зоне досягаемости сможет его прочитать, и вашу позицию тоже. Туда уходит только первое сообщение.';
+      'Любой в зоне связи прочтёт его и вашу позицию. Уходит один раз.';
 
   @override
   String get sos_askingRadio => 'Запрашиваем позицию у рации…';
@@ -5299,12 +5296,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'Рация не дала новой позиции. Последняя известная позиция от $time ($age).';
+    return 'Новой позиции нет. Последняя известная от $time ($age).';
   }
 
   @override
   String get sos_positionAgeUnknown =>
-      'Последняя известная позиция. Рация не сообщила, насколько она старая.';
+      'Последняя известная позиция, время неизвестно.';
 
   @override
   String get sos_positionTyped =>
@@ -5312,15 +5309,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Отправляется повторно каждые 2 минуты с последней позицией рации, пока вы не отмените, а после первого «Принято» — каждые 5 минут.';
+      'Повтор каждые 2 мин с вашей позицией, пока вы не отмените; после «Принято» — каждые 5 мин.';
 
   @override
-  String get sos_publicOnce =>
-      'В Public SOS уходит один раз. В другом канале он отправляется повторно, пока вы его не отмените.';
+  String get sos_publicOnce => 'В Public уходит один раз.';
 
   @override
-  String get sos_traxOnly =>
-      'Режим TRAX включён: этот SOS слышат только радио в режиме TRAX, и в Public тоже.';
+  String get sos_traxOnly => 'Режим TRAX: его слышат только радио TRAX.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5359,11 +5354,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS отменён. Сообщение уйдёт, когда рация подключится.';
+      'SOS отменён. Уйдёт, когда рация подключится.';
 
   @override
   String sos_stopped(String time) {
-    return 'Ваш SOS остановился, когда MeshTrax закрылся. Последняя отправка $time.';
+    return 'SOS остановлен, когда MeshTrax закрылся. Последняя отправка $time.';
   }
 
   @override
@@ -6438,7 +6433,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Скачайте «Точки интереса» для региона, чтобы искать в нём места. Поиск по координатам работает и без них.';
+      'Скачайте «Точки интереса», чтобы искать места. Координаты работают и без них.';
 
   @override
   String get search_noResults => 'Ничего не найдено';
@@ -6751,7 +6746,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Скачайте «Построение маршрутов» для этого региона в разделе «Офлайн-карты», чтобы строить здесь маршруты.';
+      'Скачайте «Построение маршрутов» для этого региона в разделе «Офлайн-карты».';
 
   @override
   String get route_pin => 'Точка на карте';
@@ -7165,24 +7160,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Скачайте горизонтали для этой области до поездки. Для этого нужно подключение к интернету.';
+      'Скачайте здесь горизонтали до поездки (нужен интернет).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Эта точка ниже самой нижней горизонтали (ниже уровня моря), поэтому её высота неизвестна.';
+  String get los_spotBelowLowest => 'Ниже уровня моря: высота неизвестна.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name находится ниже самой нижней горизонтали (ниже уровня моря), поэтому высота там неизвестна.';
+    return '$name ниже уровня моря: высота неизвестна.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Вы находитесь ниже самой нижней горизонтали (ниже уровня моря), поэтому высота там неизвестна. Если GPS рации включён, используется её высота.';
+      'Вы ниже уровня моря: высота неизвестна. При включённом GPS используется высота рации.';
 
   @override
   String get los_noLinesNear =>
-      'Рядом с этим концом линии нет горизонталей, поэтому высота там неизвестна.';
+      'У этого конца нет горизонталей: высота неизвестна.';
 
   @override
   String get los_from => 'Откуда';
@@ -7247,12 +7241,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Закрашено: там рельеф не мешает связи с рацией в руке, до $distance.';
+    return 'Закрашено: рельеф не мешает связи с рацией в руке, до $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Часть рельефа здесь не удаётся рассчитать, например ниже уровня моря, поэтому она не закрашена.';
+      'Часть рельефа не удаётся рассчитать (ниже уровня моря), поэтому она не закрашена.';
 
   @override
   String get los_reachTapHint =>

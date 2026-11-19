@@ -453,8 +453,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_isOff => 'TRAX 모드 꺼짐';
 
   @override
-  String get trax_intro =>
-      '무전기를 그룹의 오프그리드 주파수로 옮깁니다. 그곳에서는 모든 무전기가 서로를 위해 중계합니다. 모드를 나갈 때까지 일반 메시에서는 아무도 내 소리를 듣지 못합니다.';
+  String get trax_intro => '무전기를 그룹의 주파수로 옮깁니다. 나갈 때까지 일반 메시에서는 내 소리를 듣지 못합니다.';
 
   @override
   String get trax_now => '현재';
@@ -466,7 +465,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_repeatOn => '‘오프그리드 반복’ 켜짐';
 
   @override
-  String get trax_savedNote => '무전기 설정은 이 휴대폰에 저장되며, ‘TRAX 나가기’로 되돌립니다.';
+  String get trax_savedNote => '‘TRAX 나가기’로 설정을 되돌립니다.';
 
   @override
   String trax_until(String time) {
@@ -483,8 +482,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_noChannel => 'TRAX 설정에서 여행 채널을 고르거나 ‘그룹에 알리기’를 끄세요.';
 
   @override
-  String get trax_trailhead =>
-      '출발 지점에서 무전기가 GPS 위치를 잡은 뒤에 전환하세요. 무전기는 새 설정과 함께 현재 위치를 저장합니다.';
+  String get trax_trailhead => '출발 지점에서 무전기가 GPS 위치를 잡은 뒤 전환하세요.';
 
   @override
   String get trax_settings => 'TRAX 설정';
@@ -543,8 +541,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get trax_unconfirmed =>
-      '무전기가 TRAX 메시지를 보냈는지 확인하지 못했습니다. 다른 방법으로 그룹에 알리세요.';
+  String get trax_unconfirmed => 'TRAX 메시지가 확인되지 않았습니다. 다른 방법으로 그룹에 알리세요.';
 
   @override
   String get trax_preset => '프리셋';
@@ -556,8 +553,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_presetLongRange => '장거리';
 
   @override
-  String get trax_presetLongRangeHint =>
-      '조금 더 멀리 닿지만, 메시지마다 보내는 데 2.5~3배 더 걸립니다.';
+  String get trax_presetLongRangeHint => '조금 더 멀리 닿지만, 메시지가 약 3배 오래 걸립니다.';
 
   @override
   String get trax_tripChannel => '여행 채널';
@@ -578,8 +574,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_tellGroup => '그룹에 알리기';
 
   @override
-  String get trax_tellGroupHint =>
-      '전환하거나 나가기 전에 여행 채널에 TRAX 메시지를 올립니다. 각 구성원은 한 번 탭으로 따라옵니다. 저절로 전환되는 것은 없습니다.';
+  String get trax_tellGroupHint => '여행 채널에 올립니다. 다른 사람은 한 번 탭으로 따라옵니다.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -588,7 +583,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return '무전기가 $settings(으)로 바뀌고 ‘오프그리드 반복’이 켜집니다. 모드를 나갈 때까지 일반 메시에서는 아무도 내 소리를 듣지 못합니다.';
+    return '무전기를 $settings(으)로 옮깁니다. 나갈 때까지 일반 메시에서는 내 소리를 듣지 못합니다.';
   }
 
   @override
@@ -606,8 +601,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_leaveToo => '함께 나가기';
 
   @override
-  String get trax_stillOn =>
-      '무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다. 나갈까요?';
+  String get trax_stillOn => '아직 TRAX 모드입니다. 나갈까요?';
 
   @override
   String get trax_pickPreset => '어느 프리셋으로 돌아갈까요?';
@@ -646,7 +640,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_endedTitle => '여행이 종료되었습니다';
 
   @override
-  String get trax_endedText => '무전기가 아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.';
+  String get trax_endedText => '아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.';
 
   @override
   String get settings_deviceInfo => '장치 정보';
@@ -2035,7 +2029,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get map_noNodesWithLocation => '위치 정보가 있는 노드가 없습니다.';
 
   @override
-  String get map_nodesNeedGps => '노드는 지도에 표시되려면 GPS 좌표를 공유해야 합니다.';
+  String get map_nodesNeedGps => 'GPS를 공유하는 노드만 지도에 표시됩니다';
 
   @override
   String map_nodesCount(int count) {
@@ -2136,7 +2130,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return '현재 $channelLabel 채널에서 위치 정보를 공유하려고 합니다. 이 채널은 공개되어 있으며, PSK를 가진 모든 사용자가 이 위치 정보를 볼 수 있습니다.';
+    return '$channelLabel에서 위치를 공유할까요? 공개 채널이라 누구나 볼 수 있습니다.';
   }
 
   @override
@@ -4748,7 +4742,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gps_onHint => '무전기가 GPS로 위치를 업데이트합니다.';
 
   @override
-  String get gps_offHint => '끄면 무전기 배터리를 아낄 수 있습니다. 켜면 위치를 찾는 데 몇 분 걸릴 수 있습니다.';
+  String get gps_offHint => '끄면 배터리를 아낍니다. 위치를 잡는 데 몇 분 걸릴 수 있습니다.';
 
   @override
   String get gps_asking => '무전기에 묻는 중...';
@@ -4771,7 +4765,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gps_turnOnTitle => 'GPS를 켤까요?';
 
   @override
-  String get gps_turnOnBody => '무전기의 GPS가 꺼져 있습니다. 켜면 위치를 찾는 데 몇 분 걸릴 수 있습니다.';
+  String get gps_turnOnBody => '무전기의 GPS가 꺼져 있습니다. 위치를 잡는 데 몇 분 걸릴 수 있습니다.';
 
   @override
   String get gps_turnOn => '켜기';
@@ -4946,7 +4940,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax가 현재 위치를 모릅니다: 무전기에 GPS 위치가 없습니다. 지도에서 출발지를 선택하거나 다른 앱을 사용하세요.';
+      'GPS 위치가 없습니다. 지도에서 출발지를 선택하거나 다른 앱을 사용하세요.';
 
   @override
   String get structured_channel => '채널';
@@ -5039,8 +5033,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sos_alsoPublic => 'Public에도 보내기';
 
   @override
-  String get sos_alsoPublicHint =>
-      '범위 안의 누구나 읽을 수 있으며 위치도 보입니다. 첫 메시지만 그곳으로 갑니다.';
+  String get sos_alsoPublicHint => '범위 안의 누구나 내용과 위치를 볼 수 있습니다. 한 번만 보냅니다.';
 
   @override
   String get sos_askingRadio => '무전기에 위치를 묻는 중…';
@@ -5052,27 +5045,23 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return '무전기가 새 위치를 주지 않았습니다. $time의 마지막으로 알려진 위치입니다 ($age).';
+    return '새 위치가 없습니다. 마지막으로 알려진 위치: $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown =>
-      '마지막으로 알려진 위치입니다. 무전기가 언제 위치인지 알려 주지 않았습니다.';
+  String get sos_positionAgeUnknown => '마지막으로 알려진 위치입니다(시점 알 수 없음).';
 
   @override
   String get sos_positionTyped => '직접 입력한 위치: 반복할 때마다 이 위치를 보냅니다.';
 
   @override
-  String get sos_repeats =>
-      '취소할 때까지 2분마다 무전기의 최신 위치로 다시 보냅니다. 첫 \"확인\" 이후에는 5분마다 보냅니다.';
+  String get sos_repeats => '취소할 때까지 2분마다 위치와 함께 다시 보내고, \"확인\" 후에는 5분마다 보냅니다.';
 
   @override
-  String get sos_publicOnce =>
-      'Public에서는 SOS를 한 번만 보냅니다. 다른 채널에서는 취소할 때까지 다시 보냅니다.';
+  String get sos_publicOnce => 'Public에서는 한 번만 보냅니다.';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX 모드 켜짐: 이 SOS는 TRAX 모드인 무전기만 받습니다. Public에서도 마찬가지입니다.';
+  String get sos_traxOnly => 'TRAX 모드: TRAX 무전기만 받습니다.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -6139,8 +6128,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get search_hint => '장소, 주소 또는 좌표 검색';
 
   @override
-  String get search_noPlaces =>
-      '장소를 검색하려면 해당 지역의 \'관심 지점\'을 다운로드하세요. 좌표는 다운로드 없이도 검색할 수 있습니다.';
+  String get search_noPlaces => '장소를 검색하려면 \'관심 지점\'을 다운로드하세요. 좌표는 없어도 검색됩니다.';
 
   @override
   String get search_noResults => '검색 결과 없음';
@@ -6441,8 +6429,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get route_noStart => '출발 위치가 없습니다. 지도를 길게 누르고 \'여기서 출발\'을 선택하세요.';
 
   @override
-  String get route_noData =>
-      '여기서 길을 찾으려면 \'오프라인 지도\'에서 이 지역의 \'탐방로 길찾기\'를 다운로드하세요.';
+  String get route_noData => '\'오프라인 지도\'에서 이 지역의 \'탐방로 길찾기\'를 다운로드하세요.';
 
   @override
   String get route_pin => '지정한 위치';
@@ -6831,24 +6818,22 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get los_downloadBeforeTrip =>
-      '여행 전에 이 지역의 등고선을 다운로드하세요. 인터넷 연결이 필요합니다.';
+  String get los_downloadBeforeTrip => '여행 전에 이곳의 등고선을 다운로드하세요(인터넷 필요).';
 
   @override
-  String get los_spotBelowLowest =>
-      '이 지점은 가장 낮은 등고선보다 아래(해수면 아래)에 있어 높이를 알 수 없습니다.';
+  String get los_spotBelowLowest => '해수면 아래라 높이를 알 수 없습니다.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name의 위치는 가장 낮은 등고선보다 아래(해수면 아래)라서 그곳의 높이를 알 수 없습니다.';
+    return '$name의 위치가 해수면 아래라 높이를 알 수 없습니다.';
   }
 
   @override
   String get los_youBelowLowest =>
-      '내 위치가 가장 낮은 등고선보다 아래(해수면 아래)라서 그곳의 높이를 알 수 없습니다. 무전기 GPS가 켜져 있으면 그 고도를 사용합니다.';
+      '내 위치가 해수면 아래라 높이를 알 수 없습니다. GPS가 켜져 있으면 무전기 고도를 사용합니다.';
 
   @override
-  String get los_noLinesNear => '선의 이쪽 끝 근처에 등고선이 없어 그곳의 높이를 알 수 없습니다.';
+  String get los_noLinesNear => '이쪽 끝 근처에 등고선이 없어 높이를 알 수 없습니다.';
 
   @override
   String get los_from => '출발';
@@ -6897,7 +6882,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get los_raisedLabel => '지면에서의 높이';
 
   @override
-  String get los_terrainOnly => '다운로드한 등고선에 따른 지형만 반영합니다.';
+  String get los_terrainOnly => '등고선 기준 지형만 반영합니다.';
 
   @override
   String los_credits(String credits) {
@@ -6913,12 +6898,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return '색칠된 곳: 그곳의 휴대용 무전기까지 지형이 가로막지 않습니다(최대 $distance).';
+    return '색칠된 곳: 휴대용 무전기까지 지형이 가로막지 않습니다(최대 $distance).';
   }
 
   @override
-  String get los_reachUnknownPart =>
-      '해수면 아래처럼 계산할 수 없는 지형이 있어 그 부분은 색칠되지 않습니다.';
+  String get los_reachUnknownPart => '계산할 수 없는 지형(해수면 아래)은 색칠되지 않습니다.';
 
   @override
   String get los_reachTapHint => '지도나 이름을 탭하면 그곳까지의 가시선을 볼 수 있습니다.';

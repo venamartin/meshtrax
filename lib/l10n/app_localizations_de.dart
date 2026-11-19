@@ -472,7 +472,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Stellt Ihr Funkgerät auf die netzunabhängige Frequenz der Gruppe, auf der jedes Funkgerät für die anderen weiterleitet. Im normalen Mesh hört Sie niemand, bis Sie den Modus verlassen.';
+      'Stellt Ihr Funkgerät auf die Frequenz der Gruppe. Das normale Mesh hört Sie nicht, bis Sie TRAX verlassen.';
 
   @override
   String get trax_now => 'Jetzt';
@@ -485,7 +485,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_savedNote =>
-      'Die Einstellungen Ihres Funkgeräts werden auf diesem Telefon gespeichert, und „TRAX verlassen“ stellt sie wieder her.';
+      '„TRAX verlassen“ stellt Ihre Einstellungen wieder her.';
 
   @override
   String trax_until(String time) {
@@ -505,7 +505,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Wechseln Sie am Ausgangspunkt, wenn das Funkgerät einen GPS-Fix hat: Es speichert mit den neuen Einstellungen, wo es gerade ist.';
+      'Wechseln Sie am Ausgangspunkt, sobald das Funkgerät einen GPS-Fix hat.';
 
   @override
   String get trax_settings => 'TRAX-Einstellungen';
@@ -568,7 +568,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'Das Funkgerät hat nicht bestätigt, dass es die TRAX-Nachricht gesendet hat: Sagen Sie der Gruppe auf anderem Weg Bescheid.';
+      'TRAX-Nachricht nicht bestätigt. Sagen Sie der Gruppe auf anderem Weg Bescheid.';
 
   @override
   String get trax_preset => 'Voreinstellung';
@@ -581,7 +581,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Reicht etwas weiter, aber jede Nachricht braucht 2,5- bis 3-mal so lange zum Senden.';
+      'Reicht etwas weiter; Nachrichten brauchen ~3× so lange.';
 
   @override
   String get trax_tripChannel => 'Tour-Kanal';
@@ -603,7 +603,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Postet vor dem Wechseln oder Verlassen eine TRAX-Nachricht im Tour-Kanal. Jedes Mitglied folgt mit einem Tippen; nichts wechselt von selbst.';
+      'Postet im Tour-Kanal; die anderen folgen mit einem Tippen.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -612,7 +612,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Ihr Funkgerät wechselt auf $settings, mit „Wiederholung, ohne Stromanschluss“ an. Im normalen Mesh hört Sie niemand, bis Sie den Modus verlassen.';
+    return 'Stellt Ihr Funkgerät auf $settings. Das normale Mesh hört Sie nicht, bis Sie TRAX verlassen.';
   }
 
   @override
@@ -630,8 +630,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trax_leaveToo => 'Auch verlassen';
 
   @override
-  String get trax_stillOn =>
-      'Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören. Verlassen?';
+  String get trax_stillOn => 'Noch im TRAX-Modus. Verlassen?';
 
   @override
   String get trax_pickPreset => 'Zu welcher Voreinstellung zurück?';
@@ -671,7 +670,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Ihr Funkgerät ist noch im TRAX-Modus: Das normale Mesh kann Sie nicht hören.';
+      'Noch im TRAX-Modus: Das normale Mesh hört Sie nicht.';
 
   @override
   String get settings_deviceInfo => 'Geräteinformationen';
@@ -2122,7 +2121,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get map_nodesNeedGps =>
-      'Knoten müssen ihre GPS-Koordinaten teilen,\num auf der Karte zu erscheinen.';
+      'Nur Knoten, die GPS teilen, erscheinen auf der Karte';
 
   @override
   String map_nodesCount(int count) {
@@ -2226,7 +2225,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Sie werden kurz darauf einen Ort in $channelLabel teilen. Dieser Kanal ist öffentlich und jeder mit dem PSK kann ihn sehen.';
+    return 'Einen Ort in $channelLabel teilen? Er ist öffentlich: Jeder kann ihn sehen.';
   }
 
   @override
@@ -4984,7 +4983,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Aus schont den Akku des Funkgeräts. Nach dem Einschalten kann es einige Minuten dauern, bis Ihre Position gefunden ist.';
+      'Aus schont den Akku. Ein Fix kann einige Minuten dauern.';
 
   @override
   String get gps_asking => 'Funkgerät wird abgefragt...';
@@ -5009,7 +5008,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'Das GPS des Funkgeräts ist aus. Nach dem Einschalten kann es einige Minuten dauern, bis Ihre Position gefunden ist.';
+      'Das GPS des Funkgeräts ist aus. Ein Fix kann einige Minuten dauern.';
 
   @override
   String get gps_turnOn => 'Einschalten';
@@ -5187,7 +5186,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax weiß nicht, wo du bist: Dein Funkgerät hat keine GPS-Position. Wähle einen Start auf der Karte oder nutze eine andere App.';
+      'Keine GPS-Position. Wählen Sie einen Start auf der Karte oder nutzen Sie eine andere App.';
 
   @override
   String get structured_channel => 'Kanal';
@@ -5282,7 +5281,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Jeder in Reichweite kann es lesen, auch Ihre Position. Nur die erste Nachricht geht dorthin.';
+      'Jeder in Reichweite kann es samt Ihrer Position lesen. Wird einmal gesendet.';
 
   @override
   String get sos_askingRadio => 'Funkgerät wird nach seiner Position gefragt …';
@@ -5294,12 +5293,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'Das Funkgerät hat keine neue Position geliefert. Letzte bekannte Position von $time ($age).';
+    return 'Keine neue Position. Letzte bekannte: $time ($age).';
   }
 
   @override
   String get sos_positionAgeUnknown =>
-      'Letzte bekannte Position. Das Funkgerät sagt nicht, wie alt sie ist.';
+      'Letzte bekannte Position, Alter unbekannt.';
 
   @override
   String get sos_positionTyped =>
@@ -5307,15 +5306,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Wird alle 2 Minuten mit der neuesten Position des Funkgeräts erneut gesendet, bis Sie es abbrechen, nach dem ersten „Verstanden“ alle 5 Minuten.';
+      'Wiederholt sich alle 2 Min. mit Ihrer Position, bis Sie abbrechen; nach einem „Verstanden“ alle 5 Min.';
 
   @override
-  String get sos_publicOnce =>
-      'In Public geht ein SOS einmal raus. In einem anderen Kanal wird es erneut gesendet, bis Sie es abbrechen.';
+  String get sos_publicOnce => 'In Public geht es einmal raus.';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX-Modus ist an: Nur Funkgeräte im TRAX-Modus hören dieses SOS, auch in Public.';
+  String get sos_traxOnly => 'TRAX-Modus: Nur TRAX-Funkgeräte hören es.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5354,11 +5351,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS abgebrochen. Die Nachricht geht raus, sobald das Funkgerät verbunden ist.';
+      'SOS abgebrochen. Wird gesendet, sobald das Funkgerät verbunden ist.';
 
   @override
   String sos_stopped(String time) {
-    return 'Ihr SOS wurde beendet, als MeshTrax geschlossen wurde. Zuletzt gesendet $time.';
+    return 'SOS beendet, als MeshTrax geschlossen wurde. Zuletzt gesendet $time.';
   }
 
   @override
@@ -6438,7 +6435,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Laden Sie „Interessante Orte“ für eine Region herunter, um dort nach Orten zu suchen. Koordinaten funktionieren auch ohne diesen Download.';
+      'Laden Sie „Interessante Orte“ herunter, um Orte zu suchen. Koordinaten gehen auch ohne.';
 
   @override
   String get search_noResults => 'Keine Treffer';
@@ -6751,7 +6748,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Laden Sie unter Offline-Karten „Routenplanung“ für diese Region herunter, um hier Routen zu finden.';
+      'Laden Sie „Routenplanung“ für diese Region unter Offline-Karten herunter.';
 
   @override
   String get route_pin => 'Markierter Ort';
@@ -7167,24 +7164,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Laden Sie die Höhenlinien für dieses Gebiet vor Ihrer Reise herunter. Dafür ist eine Internetverbindung nötig.';
+      'Laden Sie hier vor der Tour Höhenlinien herunter (braucht Internet).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Dieser Punkt liegt unter der niedrigsten Höhenlinie (unter dem Meeresspiegel), daher ist seine Höhe nicht bekannt.';
+  String get los_spotBelowLowest => 'Unter dem Meeresspiegel: Höhe unbekannt.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name befindet sich unter der niedrigsten Höhenlinie (unter dem Meeresspiegel), daher ist die Höhe dort nicht bekannt.';
+    return '$name ist unter dem Meeresspiegel: Höhe unbekannt.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Sie befinden sich unter der niedrigsten Höhenlinie (unter dem Meeresspiegel), daher ist die Höhe dort nicht bekannt. Ist das GPS des Funkgeräts eingeschaltet, wird dessen Höhe verwendet.';
+      'Sie sind unter dem Meeresspiegel: Höhe unbekannt. Bei eingeschaltetem GPS gilt die Höhe des Funkgeräts.';
 
   @override
   String get los_noLinesNear =>
-      'In der Nähe dieses Endes der Strecke gibt es keine Höhenlinien, daher ist die Höhe dort nicht bekannt.';
+      'Keine Höhenlinien nahe diesem Ende: Höhe unbekannt.';
 
   @override
   String get los_from => 'Von';
@@ -7233,8 +7229,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get los_raisedLabel => 'Höhe über dem Boden';
 
   @override
-  String get los_terrainOnly =>
-      'Nur Gelände, aus den heruntergeladenen Höhenlinien.';
+  String get los_terrainOnly => 'Nur Gelände, aus Ihren Höhenlinien.';
 
   @override
   String los_credits(String credits) {
@@ -7250,12 +7245,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Schattiert: Dort ist kein Gelände im Weg zu einem Handgerät, bis $distance.';
+    return 'Schattiert: kein Gelände im Weg zu einem Handgerät, bis $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Manches Gelände hier lässt sich nicht berechnen, etwa unter dem Meeresspiegel, und ist darum nicht schattiert.';
+      'Manches Gelände ist nicht berechenbar (unter dem Meeresspiegel), daher nicht schattiert.';
 
   @override
   String get los_reachTapHint =>

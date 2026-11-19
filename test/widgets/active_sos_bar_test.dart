@@ -88,7 +88,7 @@ void main() {
     expect(
       find.textContaining(
         RegExp(
-          r'^Your SOS stopped when MeshTrax closed\. Last sent 9:20\sAM\.$',
+          r'^SOS stopped when MeshTrax closed\. Last sent 9:20\sAM\.$',
         ),
       ),
       findsOneWidget,
@@ -102,7 +102,7 @@ void main() {
   ) async {
     await pump(tester, sos(phase: SosPhase.cancelling));
     expect(
-      find.text('SOS cancelled. It goes out when the radio is connected.'),
+      find.text('SOS cancelled. Sends when the radio connects.'),
       findsOneWidget,
     );
     expect(find.byType(FilledButton), findsNothing);

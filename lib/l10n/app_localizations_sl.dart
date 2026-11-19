@@ -467,7 +467,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Premakne vaš radio na skupinsko frekvenco zunaj omrežja, kjer vsak radio posreduje za druge. Nihče v običajnem omrežju mesh vas ne sliši, dokler načina ne zapustite.';
+      'Premakne vaš radio na frekvenco skupine. Običajno omrežje mesh vas ne sliši, dokler TRAX ne zapustite.';
 
   @override
   String get trax_now => 'Zdaj';
@@ -479,8 +479,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trax_repeatOn => '»Neovadno ponavljanje« vklopljeno';
 
   @override
-  String get trax_savedNote =>
-      'Nastavitve radia se shranijo v ta telefon, »Zapusti TRAX« pa jih povrne.';
+  String get trax_savedNote => '»Zapusti TRAX« povrne nastavitve.';
 
   @override
   String trax_until(String time) {
@@ -499,7 +498,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Preklopite na izhodišču, ko ima radio položaj GPS: radio z novimi nastavitvami shrani, kje je.';
+      'Preklopite na izhodišču, ko ima radio položaj GPS.';
 
   @override
   String get trax_settings => 'Nastavitve TRAX';
@@ -562,7 +561,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'Radio ni potrdil, da je poslal sporočilo TRAX: skupini sporočite drugače.';
+      'Sporočilo TRAX ni potrjeno. Skupini sporočite drugače.';
 
   @override
   String get trax_preset => 'Prednastavitev';
@@ -575,7 +574,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Seže malo dlje, a pošiljanje vsakega sporočila traja 2,5- do 3-krat dlje.';
+      'Seže malo dlje; sporočila trajajo ~3× dlje.';
 
   @override
   String get trax_tripChannel => 'Kanal izleta';
@@ -597,7 +596,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Pred preklopom ali izhodom objavi sporočilo TRAX v kanalu izleta. Vsak član sledi z enim dotikom; nič ne preklopi samo.';
+      'Objavi sporočilo v kanalu izleta; drugi sledijo z enim dotikom.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -606,7 +605,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Vaš radio preide na $settings z vklopljenim »Neovadno ponavljanje«. Nihče v običajnem omrežju mesh vas ne sliši, dokler načina ne zapustite.';
+    return 'Premakne vaš radio na $settings. Običajno omrežje mesh vas ne sliši, dokler TRAX ne zapustite.';
   }
 
   @override
@@ -624,8 +623,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trax_leaveToo => 'Zapusti tudi jaz';
 
   @override
-  String get trax_stillOn =>
-      'Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši. Zapustim?';
+  String get trax_stillOn => 'Še vedno v načinu TRAX. Zapustim?';
 
   @override
   String get trax_pickPreset => 'Na katero prednastavitev se vrniti?';
@@ -665,7 +663,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Vaš radio je še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.';
+      'Še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.';
 
   @override
   String get settings_deviceInfo => 'Informacije o napravei';
@@ -2103,7 +2101,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get map_nodesNeedGps =>
-      'Omrežje morajo deliti svoje GPS koordinate,\nda se prikazao na zemljeobrazniku.';
+      'Na zemljevidu so prikazane le naprave, ki delijo GPS';
 
   @override
   String map_nodesCount(int count) {
@@ -2206,7 +2204,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Kljubite boste delili lokacijo v $channelLabel. Ta kanal je javno dostopen in vsak, ki ima PSK, ga lahko vidi.';
+    return 'Deliti lokacijo v $channelLabel? Kanal je javen: vidi jo lahko vsak.';
   }
 
   @override
@@ -4964,7 +4962,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Izklopljen varčuje z baterijo radia. Po vklopu lahko iskanje položaja traja nekaj minut.';
+      'Izklopljen varčuje z baterijo. Določitev položaja lahko traja nekaj minut.';
 
   @override
   String get gps_asking => 'Spraševanje radia...';
@@ -4989,7 +4987,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'GPS radia je izklopljen. Po vklopu lahko iskanje položaja traja nekaj minut.';
+      'GPS radia je izklopljen. Določitev položaja lahko traja nekaj minut.';
 
   @override
   String get gps_turnOn => 'Vklopi';
@@ -5170,7 +5168,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax ne ve, kje ste: vaš radio nima položaja GPS. Izberite začetek na zemljevidu ali uporabite drugo aplikacijo.';
+      'Ni položaja GPS. Izberite začetek na zemljevidu ali uporabite drugo aplikacijo.';
 
   @override
   String get structured_channel => 'Kanal';
@@ -5265,7 +5263,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Vsak v dosegu ga lahko prebere, tudi vaš položaj. Tja gre samo prvo sporočilo.';
+      'Vsak v dosegu ga lahko prebere, tudi vaš položaj. Pošlje se enkrat.';
 
   @override
   String get sos_askingRadio => 'Radio sprašujemo za položaj…';
@@ -5277,12 +5275,11 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'Radio ni dal novega položaja. Zadnji znani položaj od $time ($age).';
+    return 'Ni novega položaja. Zadnji znani $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown =>
-      'Zadnji znani položaj. Radio ni povedal, kako star je.';
+  String get sos_positionAgeUnknown => 'Zadnji znani položaj, čas neznan.';
 
   @override
   String get sos_positionTyped =>
@@ -5290,15 +5287,13 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Pošlje se znova vsaki 2 minuti z najnovejšim položajem radia, dokler ga ne prekličete, po prvem »Razumem« vsakih 5 minut.';
+      'Ponavlja se vsaki 2 min z vašim položajem, dokler ga ne prekličete; po »Razumem« vsakih 5 min.';
 
   @override
-  String get sos_publicOnce =>
-      'V Public gre SOS enkrat. V drugem kanalu se pošilja znova, dokler ga ne prekličete.';
+  String get sos_publicOnce => 'V Public gre enkrat.';
 
   @override
-  String get sos_traxOnly =>
-      'Način TRAX je vklopljen: ta SOS slišijo le radii v načinu TRAX, tudi v Public.';
+  String get sos_traxOnly => 'Način TRAX: slišijo ga le radii TRAX.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5337,11 +5332,11 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS preklican. Sporočilo gre, ko bo radio povezan.';
+      'SOS preklican. Pošlje se, ko se radio poveže.';
 
   @override
   String sos_stopped(String time) {
-    return 'Vaš SOS se je ustavil, ko se je MeshTrax zaprl. Nazadnje poslano $time.';
+    return 'SOS se je ustavil, ko se je MeshTrax zaprl. Nazadnje poslano $time.';
   }
 
   @override
@@ -6411,7 +6406,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Prenesite »Zanimive točke« za regijo, da boste lahko iskali njene kraje. Koordinate delujejo tudi brez tega.';
+      'Za iskanje krajev prenesite »Zanimive točke«. Koordinate delujejo tudi brez njih.';
 
   @override
   String get search_noResults => 'Ni zadetkov';
@@ -6725,7 +6720,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Prenesite »Načrtovanje poti« za to regijo v razdelku »Zemljevidi brez povezave«, da boste lahko tu iskali poti.';
+      'Prenesite »Načrtovanje poti« za to regijo v razdelku »Zemljevidi brez povezave«.';
 
   @override
   String get route_pin => 'Označena točka';
@@ -7139,24 +7134,22 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Pred potovanjem prenesite plastnice za to območje. Za to potrebujete internetno povezavo.';
+      'Pred potovanjem tu prenesite plastnice (potreben je internet).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Ta točka je pod najnižjo plastnico (pod morsko gladino), zato njena višina ni znana.';
+  String get los_spotBelowLowest => 'Pod morsko gladino: višina neznana.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name je pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana.';
+    return '$name je pod morsko gladino: višina neznana.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Ste pod najnižjo plastnico (pod morsko gladino), zato višina tam ni znana. Če je GPS radia vklopljen, se uporabi njegova višina.';
+      'Ste pod morsko gladino: višina neznana. Z vklopljenim GPS se uporabi višina radia.';
 
   @override
-  String get los_noLinesNear =>
-      'Blizu tega konca črte ni plastnic, zato višina tam ni znana.';
+  String get los_noLinesNear => 'Blizu tega konca ni plastnic: višina neznana.';
 
   @override
   String get los_from => 'Od';
@@ -7205,7 +7198,7 @@ class AppLocalizationsSl extends AppLocalizations {
   String get los_raisedLabel => 'Višina nad tlemi';
 
   @override
-  String get los_terrainOnly => 'Samo teren, iz prenesenih plastnic.';
+  String get los_terrainOnly => 'Samo teren, iz vaših plastnic.';
 
   @override
   String los_credits(String credits) {
@@ -7221,12 +7214,12 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Osenčeno: tam teren ne ovira povezave z ročnim radiem, do $distance.';
+    return 'Osenčeno: teren ne ovira zveze z ročnim radiem, do $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Dela terena tukaj ni mogoče izračunati, na primer pod morsko gladino, zato ni osenčen.';
+      'Dela terena ni mogoče izračunati (pod morsko gladino), zato ni osenčen.';
 
   @override
   String get los_reachTapHint =>

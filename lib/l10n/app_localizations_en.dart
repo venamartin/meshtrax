@@ -465,7 +465,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Moves your radio to the group\'s off-grid frequency, where every radio relays for the others. Nobody on the regular mesh hears you until you leave.';
+      'Moves your radio to the group\'s frequency. The regular mesh can\'t hear you until you leave.';
 
   @override
   String get trax_now => 'Now';
@@ -477,8 +477,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_repeatOn => 'Off-Grid Repeat on';
 
   @override
-  String get trax_savedNote =>
-      'Your radio\'s settings are saved on this phone, and Leave puts them back.';
+  String get trax_savedNote => 'Leave puts your settings back.';
 
   @override
   String trax_until(String time) {
@@ -497,7 +496,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.';
+      'Switch at the trailhead, once the radio has a GPS fix.';
 
   @override
   String get trax_settings => 'TRAX settings';
@@ -560,7 +559,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'The radio didn\'t confirm it sent the TRAX message: tell the group another way.';
+      'TRAX message not confirmed. Tell the group another way.';
 
   @override
   String get trax_preset => 'Preset';
@@ -573,7 +572,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Reaches a little further, but each message takes 2.5 to 3 times as long to send.';
+      'Reaches a bit further; messages take ~3× as long.';
 
   @override
   String get trax_tripChannel => 'Trip channel';
@@ -595,7 +594,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Posts a TRAX message on the trip channel before switching or leaving. Each member follows with one tap; nothing switches by itself.';
+      'Posts on the trip channel; others follow with one tap.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -604,7 +603,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Your radio moves to $settings with Off-Grid Repeat on. Nobody on the regular mesh hears you until you leave.';
+    return 'Moves your radio to $settings. The regular mesh can\'t hear you until you leave.';
   }
 
   @override
@@ -622,8 +621,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_leaveToo => 'Leave too';
 
   @override
-  String get trax_stillOn =>
-      'Your radio is still in TRAX mode: the regular mesh can\'t hear you. Leave?';
+  String get trax_stillOn => 'Still in TRAX mode. Leave?';
 
   @override
   String get trax_pickPreset => 'Return to which preset?';
@@ -663,7 +661,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Your radio is still in TRAX mode: the regular mesh can\'t hear you.';
+      'Still in TRAX mode: the regular mesh can\'t hear you.';
 
   @override
   String get settings_deviceInfo => 'Device Info';
@@ -2086,8 +2084,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_noNodesWithLocation => 'No nodes with location data';
 
   @override
-  String get map_nodesNeedGps =>
-      'Nodes need to share their GPS coordinates\nto appear on the map';
+  String get map_nodesNeedGps => 'Only nodes that share GPS show on the map';
 
   @override
   String map_nodesCount(int count) {
@@ -2189,7 +2186,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'You are about to share a location in $channelLabel. This channel is public and anyone with the PSK can see it.';
+    return 'Share a location in $channelLabel? It\'s public: anyone can see it.';
   }
 
   @override
@@ -4892,8 +4889,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gps_onHint => 'The radio updates its position from the GPS.';
 
   @override
-  String get gps_offHint =>
-      'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.';
+  String get gps_offHint => 'Off saves battery. A fix can take a few minutes.';
 
   @override
   String get gps_asking => 'Asking the radio...';
@@ -4918,7 +4914,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.';
+      'The radio\'s GPS is off. A fix can take a few minutes.';
 
   @override
   String get gps_turnOn => 'Turn on';
@@ -5094,7 +5090,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax doesn\'t know where you are: your radio has no GPS position. Pick a start on the map, or use another app.';
+      'No GPS position. Pick a start on the map, or use another app.';
 
   @override
   String get structured_channel => 'Channel';
@@ -5189,7 +5185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Anyone in range can read it, your position too. Only the first message goes there.';
+      'Anyone in range can read it and your position. Sent once.';
 
   @override
   String get sos_askingRadio => 'Asking the radio for its position…';
@@ -5201,27 +5197,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'The radio gave no new position. Last known position from $time ($age).';
+    return 'No new position. Last known $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown =>
-      'Last known position. The radio didn\'t say how old it is.';
+  String get sos_positionAgeUnknown => 'Last known position, age unknown.';
 
   @override
   String get sos_positionTyped => 'Your own position: every repeat sends it.';
 
   @override
   String get sos_repeats =>
-      'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.';
+      'Repeats every 2 min with your position until you cancel; every 5 min after a Got it.';
 
   @override
-  String get sos_publicOnce =>
-      'In Public an SOS goes once. In another channel it is sent again until you cancel it.';
+  String get sos_publicOnce => 'In Public it goes once.';
 
   @override
-  String get sos_traxOnly =>
-      'TRAX mode is on: only radios in TRAX mode hear this SOS, in Public too.';
+  String get sos_traxOnly => 'TRAX mode: only TRAX radios hear it.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5260,11 +5253,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sos_cancelPending =>
-      'SOS cancelled. It goes out when the radio is connected.';
+      'SOS cancelled. Sends when the radio connects.';
 
   @override
   String sos_stopped(String time) {
-    return 'Your SOS stopped when MeshTrax closed. Last sent $time.';
+    return 'SOS stopped when MeshTrax closed. Last sent $time.';
   }
 
   @override
@@ -6326,7 +6319,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Download Points of interest for a region to search its places. Coordinates work without it.';
+      'Download Points of interest to search places. Coordinates work without it.';
 
   @override
   String get search_noResults => 'No matches';
@@ -6638,7 +6631,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Download Trail routing for this region in Offline maps to find routes here.';
+      'Download Trail routing for this region in Offline maps.';
 
   @override
   String get route_pin => 'Dropped pin';
@@ -7042,24 +7035,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Download the contours for this area before your trip. It needs an internet connection.';
+      'Download contours here before your trip (needs internet).';
 
   @override
-  String get los_spotBelowLowest =>
-      'This spot is below the lowest contour line (below sea level), so its height isn\'t known.';
+  String get los_spotBelowLowest => 'Below sea level: height unknown.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name is below the lowest contour line (below sea level), so the height there isn\'t known.';
+    return '$name is below sea level: height unknown.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'You are below the lowest contour line (below sea level), so the height there isn\'t known. With the radio\'s GPS on, its altitude is used.';
+      'You\'re below sea level: height unknown. With GPS on, the radio\'s altitude is used.';
 
   @override
   String get los_noLinesNear =>
-      'There are no contour lines near this end of the line, so its height isn\'t known.';
+      'No contour lines near this end: height unknown.';
 
   @override
   String get los_from => 'From';
@@ -7108,8 +7100,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get los_raisedLabel => 'Height above the ground';
 
   @override
-  String get los_terrainOnly =>
-      'Terrain only, from the contour lines you downloaded.';
+  String get los_terrainOnly => 'Terrain only, from your contours.';
 
   @override
   String los_credits(String credits) {
@@ -7125,12 +7116,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Shaded: the ground isn\'t in the way to a hand-held there, up to $distance.';
+    return 'Shaded: clear ground to a hand-held, up to $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.';
+      'Some ground can\'t be worked out (below sea level), so it isn\'t shaded.';
 
   @override
   String get los_reachTapHint =>

@@ -428,10 +428,7 @@ void main() {
     await tapMap(tester, nevada);
     expect(find.text('Can\'t tell'), findsOneWidget);
     expect(
-      find.text(
-        'Download the contours for this area before your trip. It needs an '
-        'internet connection.',
-      ),
+      find.text('Download contours here before your trip (needs internet).'),
       findsOneWidget,
     );
     expect(find.textContaining('Download Nevada'), findsNothing);
@@ -447,10 +444,7 @@ void main() {
     await tapMap(tester, badwater);
     expect(find.text('Can\'t tell'), findsOneWidget);
     expect(
-      find.text(
-        'This spot is below the lowest contour line (below sea level), so '
-        'its height isn\'t known.',
-      ),
+      find.text('Below sea level: height unknown.'),
       findsOneWidget,
     );
   });
@@ -488,8 +482,8 @@ void main() {
     expect(
       find.textContaining(
         RegExp(
-          r"^Shaded: the ground isn't in the way .*\. Tap the map or a "
-          r'name for the line of sight to it\.$',
+          r'^Shaded: clear ground to a hand-held, up to .*\. Tap the map or '
+          r'a name for the line of sight to it\.$',
         ),
       ),
       findsOneWidget,
@@ -497,7 +491,7 @@ void main() {
     // The valley floor is below sea level: not shaded, and it says why.
     expect(s.reach!.share(const {Verdict.unknown}), greaterThan(0.1));
     expect(
-      find.textContaining('Some ground here can\'t be worked out'),
+      find.textContaining('Some ground can\'t be worked out'),
       findsOneWidget,
     );
     expect(find.text('Ana'), findsOneWidget);

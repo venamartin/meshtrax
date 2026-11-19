@@ -950,7 +950,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_intro.
   ///
   /// In en, this message translates to:
-  /// **'Moves your radio to the group\'s off-grid frequency, where every radio relays for the others. Nobody on the regular mesh hears you until you leave.'**
+  /// **'Moves your radio to the group\'s frequency. The regular mesh can\'t hear you until you leave.'**
   String get trax_intro;
 
   /// No description provided for @trax_now.
@@ -974,7 +974,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_savedNote.
   ///
   /// In en, this message translates to:
-  /// **'Your radio\'s settings are saved on this phone, and Leave puts them back.'**
+  /// **'Leave puts your settings back.'**
   String get trax_savedNote;
 
   /// No description provided for @trax_until.
@@ -1004,7 +1004,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_trailhead.
   ///
   /// In en, this message translates to:
-  /// **'Switch at the trailhead, after the radio has a GPS fix: the radio saves where it is with its new settings.'**
+  /// **'Switch at the trailhead, once the radio has a GPS fix.'**
   String get trax_trailhead;
 
   /// No description provided for @trax_settings.
@@ -1100,7 +1100,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_unconfirmed.
   ///
   /// In en, this message translates to:
-  /// **'The radio didn\'t confirm it sent the TRAX message: tell the group another way.'**
+  /// **'TRAX message not confirmed. Tell the group another way.'**
   String get trax_unconfirmed;
 
   /// No description provided for @trax_preset.
@@ -1124,7 +1124,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_presetLongRangeHint.
   ///
   /// In en, this message translates to:
-  /// **'Reaches a little further, but each message takes 2.5 to 3 times as long to send.'**
+  /// **'Reaches a bit further; messages take ~3× as long.'**
   String get trax_presetLongRangeHint;
 
   /// No description provided for @trax_tripChannel.
@@ -1166,7 +1166,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_tellGroupHint.
   ///
   /// In en, this message translates to:
-  /// **'Posts a TRAX message on the trip channel before switching or leaving. Each member follows with one tap; nothing switches by itself.'**
+  /// **'Posts on the trip channel; others follow with one tap.'**
   String get trax_tellGroupHint;
 
   /// No description provided for @trax_followBody.
@@ -1178,7 +1178,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_followDetail.
   ///
   /// In en, this message translates to:
-  /// **'Your radio moves to {settings} with Off-Grid Repeat on. Nobody on the regular mesh hears you until you leave.'**
+  /// **'Moves your radio to {settings}. The regular mesh can\'t hear you until you leave.'**
   String trax_followDetail(String settings);
 
   /// No description provided for @trax_switchToo.
@@ -1208,7 +1208,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_stillOn.
   ///
   /// In en, this message translates to:
-  /// **'Your radio is still in TRAX mode: the regular mesh can\'t hear you. Leave?'**
+  /// **'Still in TRAX mode. Leave?'**
   String get trax_stillOn;
 
   /// No description provided for @trax_pickPreset.
@@ -1274,7 +1274,7 @@ abstract class AppLocalizations {
   /// No description provided for @trax_endedText.
   ///
   /// In en, this message translates to:
-  /// **'Your radio is still in TRAX mode: the regular mesh can\'t hear you.'**
+  /// **'Still in TRAX mode: the regular mesh can\'t hear you.'**
   String get trax_endedText;
 
   /// No description provided for @settings_deviceInfo.
@@ -3770,7 +3770,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_nodesNeedGps.
   ///
   /// In en, this message translates to:
-  /// **'Nodes need to share their GPS coordinates\nto appear on the map'**
+  /// **'Only nodes that share GPS show on the map'**
   String get map_nodesNeedGps;
 
   /// No description provided for @map_nodesCount.
@@ -3950,7 +3950,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_publicLocationShareConfirm.
   ///
   /// In en, this message translates to:
-  /// **'You are about to share a location in {channelLabel}. This channel is public and anyone with the PSK can see it.'**
+  /// **'Share a location in {channelLabel}? It\'s public: anyone can see it.'**
   String map_publicLocationShareConfirm(String channelLabel);
 
   /// No description provided for @map_connectToShareMarkers.
@@ -8425,7 +8425,7 @@ abstract class AppLocalizations {
   /// No description provided for @gps_offHint.
   ///
   /// In en, this message translates to:
-  /// **'Off saves the radio\'s battery. Turning it on can take a few minutes to find your position.'**
+  /// **'Off saves battery. A fix can take a few minutes.'**
   String get gps_offHint;
 
   /// No description provided for @gps_asking.
@@ -8467,7 +8467,7 @@ abstract class AppLocalizations {
   /// No description provided for @gps_turnOnBody.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s GPS is off. Turning it on can take a few minutes to find your position.'**
+  /// **'The radio\'s GPS is off. A fix can take a few minutes.'**
   String get gps_turnOnBody;
 
   /// No description provided for @gps_turnOn.
@@ -8767,7 +8767,7 @@ abstract class AppLocalizations {
   /// No description provided for @navigate_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'MeshTrax doesn\'t know where you are: your radio has no GPS position. Pick a start on the map, or use another app.'**
+  /// **'No GPS position. Pick a start on the map, or use another app.'**
   String get navigate_noPosition;
 
   /// No description provided for @structured_channel.
@@ -8953,7 +8953,7 @@ abstract class AppLocalizations {
   /// No description provided for @sos_alsoPublicHint.
   ///
   /// In en, this message translates to:
-  /// **'Anyone in range can read it, your position too. Only the first message goes there.'**
+  /// **'Anyone in range can read it and your position. Sent once.'**
   String get sos_alsoPublicHint;
 
   /// No description provided for @sos_askingRadio.
@@ -8971,13 +8971,13 @@ abstract class AppLocalizations {
   /// No description provided for @sos_positionNotNew.
   ///
   /// In en, this message translates to:
-  /// **'The radio gave no new position. Last known position from {time} ({age}).'**
+  /// **'No new position. Last known {time} ({age}).'**
   String sos_positionNotNew(String time, String age);
 
   /// No description provided for @sos_positionAgeUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Last known position. The radio didn\'t say how old it is.'**
+  /// **'Last known position, age unknown.'**
   String get sos_positionAgeUnknown;
 
   /// No description provided for @sos_positionTyped.
@@ -8989,19 +8989,19 @@ abstract class AppLocalizations {
   /// No description provided for @sos_repeats.
   ///
   /// In en, this message translates to:
-  /// **'Sent again every 2 minutes with the radio\'s latest position until you cancel it, every 5 minutes after the first Got it.'**
+  /// **'Repeats every 2 min with your position until you cancel; every 5 min after a Got it.'**
   String get sos_repeats;
 
   /// No description provided for @sos_publicOnce.
   ///
   /// In en, this message translates to:
-  /// **'In Public an SOS goes once. In another channel it is sent again until you cancel it.'**
+  /// **'In Public it goes once.'**
   String get sos_publicOnce;
 
   /// No description provided for @sos_traxOnly.
   ///
   /// In en, this message translates to:
-  /// **'TRAX mode is on: only radios in TRAX mode hear this SOS, in Public too.'**
+  /// **'TRAX mode: only TRAX radios hear it.'**
   String get sos_traxOnly;
 
   /// No description provided for @sos_replacesOther.
@@ -9061,13 +9061,13 @@ abstract class AppLocalizations {
   /// No description provided for @sos_cancelPending.
   ///
   /// In en, this message translates to:
-  /// **'SOS cancelled. It goes out when the radio is connected.'**
+  /// **'SOS cancelled. Sends when the radio connects.'**
   String get sos_cancelPending;
 
   /// No description provided for @sos_stopped.
   ///
   /// In en, this message translates to:
-  /// **'Your SOS stopped when MeshTrax closed. Last sent {time}.'**
+  /// **'SOS stopped when MeshTrax closed. Last sent {time}.'**
   String sos_stopped(String time);
 
   /// No description provided for @sos_sendAgain.
@@ -10975,7 +10975,7 @@ abstract class AppLocalizations {
   /// No description provided for @search_noPlaces.
   ///
   /// In en, this message translates to:
-  /// **'Download Points of interest for a region to search its places. Coordinates work without it.'**
+  /// **'Download Points of interest to search places. Coordinates work without it.'**
   String get search_noPlaces;
 
   /// No description provided for @search_noResults.
@@ -11557,7 +11557,7 @@ abstract class AppLocalizations {
   /// No description provided for @route_noData.
   ///
   /// In en, this message translates to:
-  /// **'Download Trail routing for this region in Offline maps to find routes here.'**
+  /// **'Download Trail routing for this region in Offline maps.'**
   String get route_noData;
 
   /// No description provided for @route_pin.
@@ -12235,31 +12235,31 @@ abstract class AppLocalizations {
   /// No description provided for @los_downloadBeforeTrip.
   ///
   /// In en, this message translates to:
-  /// **'Download the contours for this area before your trip. It needs an internet connection.'**
+  /// **'Download contours here before your trip (needs internet).'**
   String get los_downloadBeforeTrip;
 
   /// No description provided for @los_spotBelowLowest.
   ///
   /// In en, this message translates to:
-  /// **'This spot is below the lowest contour line (below sea level), so its height isn\'t known.'**
+  /// **'Below sea level: height unknown.'**
   String get los_spotBelowLowest;
 
   /// No description provided for @los_nameBelowLowest.
   ///
   /// In en, this message translates to:
-  /// **'{name} is below the lowest contour line (below sea level), so the height there isn\'t known.'**
+  /// **'{name} is below sea level: height unknown.'**
   String los_nameBelowLowest(String name);
 
   /// No description provided for @los_youBelowLowest.
   ///
   /// In en, this message translates to:
-  /// **'You are below the lowest contour line (below sea level), so the height there isn\'t known. With the radio\'s GPS on, its altitude is used.'**
+  /// **'You\'re below sea level: height unknown. With GPS on, the radio\'s altitude is used.'**
   String get los_youBelowLowest;
 
   /// No description provided for @los_noLinesNear.
   ///
   /// In en, this message translates to:
-  /// **'There are no contour lines near this end of the line, so its height isn\'t known.'**
+  /// **'No contour lines near this end: height unknown.'**
   String get los_noLinesNear;
 
   /// No description provided for @los_from.
@@ -12349,7 +12349,7 @@ abstract class AppLocalizations {
   /// No description provided for @los_terrainOnly.
   ///
   /// In en, this message translates to:
-  /// **'Terrain only, from the contour lines you downloaded.'**
+  /// **'Terrain only, from your contours.'**
   String get los_terrainOnly;
 
   /// No description provided for @los_credits.
@@ -12373,13 +12373,13 @@ abstract class AppLocalizations {
   /// No description provided for @los_reachShaded.
   ///
   /// In en, this message translates to:
-  /// **'Shaded: the ground isn\'t in the way to a hand-held there, up to {distance}.'**
+  /// **'Shaded: clear ground to a hand-held, up to {distance}.'**
   String los_reachShaded(String distance);
 
   /// No description provided for @los_reachUnknownPart.
   ///
   /// In en, this message translates to:
-  /// **'Some ground here can\'t be worked out, such as ground below sea level, so it isn\'t shaded.'**
+  /// **'Some ground can\'t be worked out (below sea level), so it isn\'t shaded.'**
   String get los_reachUnknownPart;
 
   /// No description provided for @los_reachTapHint.

@@ -157,8 +157,7 @@ void main() {
     expect(
       find.textContaining(
         RegExp(
-          r'^The radio gave no new position\. Last known position from '
-          r'.+ \(22m ago\)\.$',
+          r'^No new position\. Last known .+ \(22m ago\)\.$',
         ),
       ),
       findsOneWidget,
@@ -170,7 +169,7 @@ void main() {
     final radio = _Radio(lat: 36.46, lon: -116.87, asks: false);
     await open(tester, radio);
     expect(
-      find.text("Last known position. The radio didn't say how old it is."),
+      find.text('Last known position, age unknown.'),
       findsOneWidget,
     );
     expect(radio.viewers, 0, reason: 'a radio that cannot answer is not asked');
@@ -185,10 +184,7 @@ void main() {
     expect(box.value, isTrue);
     expect(find.text('Also send to Public'), findsOneWidget);
     expect(
-      find.text(
-        'Anyone in range can read it, your position too. Only the '
-        'first message goes there.',
-      ),
+      find.text('Anyone in range can read it and your position. Sent once.'),
       findsOneWidget,
     );
     await tester.enterText(
@@ -257,15 +253,12 @@ void main() {
     );
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(
-      find.text(
-        'In Public an SOS goes once. In another channel it is sent '
-        'again until you cancel it.',
-      ),
+      find.text('In Public it goes once.'),
       findsOneWidget,
     );
-    expect(find.textContaining('Sent again every 2 minutes'), findsNothing);
+    expect(find.textContaining('Repeats every 2 min'), findsNothing);
     expect(
-      find.text("Last known position. The radio didn't say how old it is."),
+      find.text('Last known position, age unknown.'),
       findsOneWidget,
       reason: 'the position age stays',
     );
@@ -281,15 +274,13 @@ void main() {
       replaces: 'camp',
     );
     expect(find.text('This cancels your SOS in camp.'), findsOneWidget);
-    expect(find.textContaining('Sent again every 2 minutes'), findsOneWidget);
+    expect(find.textContaining('Repeats every 2 min'), findsOneWidget);
   });
 
   // Martin, 2026-11-18: in TRAX mode only the group's radios are on that
   // frequency, so an SOS (its Public copy too) reaches nobody else.
   testWidgets('in TRAX mode it says only TRAX radios hear it', (tester) async {
-    const only =
-        'TRAX mode is on: only radios in TRAX mode hear this SOS, '
-        'in Public too.';
+    const only = 'TRAX mode: only TRAX radios hear it.';
     await open(tester, _Radio(lat: 36.46, lon: -116.87, asks: false));
     expect(find.text(only), findsNothing);
     await tester.tap(find.widgetWithText(TextButton, 'Cancel'));

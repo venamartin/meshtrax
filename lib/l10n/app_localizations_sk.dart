@@ -471,7 +471,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_intro =>
-      'Presunie vaše rádio na mimosieťovú frekvenciu skupiny, kde každé rádio preposiela pre ostatných. Nikto v bežnej sieti mesh vás nepočuje, kým režim neopustíte.';
+      'Presunie vaše rádio na frekvenciu skupiny. Bežná sieť mesh vás nepočuje, kým TRAX neopustíte.';
 
   @override
   String get trax_now => 'Teraz';
@@ -484,8 +484,7 @@ class AppLocalizationsSk extends AppLocalizations {
       '„Opätovné použitie bez elektrickej siete“ zapnuté';
 
   @override
-  String get trax_savedNote =>
-      'Nastavenia rádia sa uložia v tomto telefóne a „Opustiť TRAX“ ich vráti.';
+  String get trax_savedNote => '„Opustiť TRAX“ vráti nastavenia.';
 
   @override
   String trax_until(String time) {
@@ -504,7 +503,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_trailhead =>
-      'Prepnite na začiatku trasy, keď má rádio polohu z GPS: rádio si s novými nastaveniami uloží, kde je.';
+      'Prepnite na začiatku trasy, keď má rádio polohu z GPS.';
 
   @override
   String get trax_settings => 'Nastavenia TRAX';
@@ -567,7 +566,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_unconfirmed =>
-      'Rádio nepotvrdilo, že správu TRAX odoslalo: oznámte to skupine inak.';
+      'Správa TRAX nepotvrdená. Oznámte to skupine inak.';
 
   @override
   String get trax_preset => 'Predvoľba';
@@ -580,7 +579,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_presetLongRangeHint =>
-      'Siaha o niečo ďalej, ale odoslanie každej správy trvá 2,5- až 3-krát dlhšie.';
+      'Siaha o niečo ďalej; správy trvajú ~3× dlhšie.';
 
   @override
   String get trax_tripChannel => 'Kanál výletu';
@@ -602,7 +601,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_tellGroupHint =>
-      'Pred prepnutím alebo opustením uverejní správu TRAX v kanáli výletu. Každý člen sa pridá jedným ťuknutím; nič sa neprepne samo.';
+      'Uverejní správu v kanáli výletu; ostatní sa pridajú jedným ťuknutím.';
 
   @override
   String trax_followBody(String name, String time) {
@@ -611,7 +610,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String trax_followDetail(String settings) {
-    return 'Vaše rádio prejde na $settings so zapnutým „Opätovné použitie bez elektrickej siete“. Nikto v bežnej sieti mesh vás nepočuje, kým režim neopustíte.';
+    return 'Presunie vaše rádio na $settings. Bežná sieť mesh vás nepočuje, kým TRAX neopustíte.';
   }
 
   @override
@@ -629,8 +628,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trax_leaveToo => 'Opustiť aj ja';
 
   @override
-  String get trax_stillOn =>
-      'Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje. Opustiť?';
+  String get trax_stillOn => 'Stále v režime TRAX. Opustiť?';
 
   @override
   String get trax_pickPreset => 'Na ktorú predvoľbu sa vrátiť?';
@@ -670,7 +668,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_endedText =>
-      'Vaše rádio je stále v režime TRAX: bežná sieť mesh vás nepočuje.';
+      'Stále v režime TRAX: bežná sieť mesh vás nepočuje.';
 
   @override
   String get settings_deviceInfo => 'Informácie o zariadení';
@@ -2111,7 +2109,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get map_nodesNeedGps =>
-      'Uholníky musia zdieľať svoje GPS súradnice, aby sa zobrazili na mape.';
+      'Na mape sa zobrazia len uzly, ktoré zdieľajú GPS';
 
   @override
   String map_nodesCount(int count) {
@@ -2214,7 +2212,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String map_publicLocationShareConfirm(String channelLabel) {
-    return 'Čoskoro budete zdieľať polohu v $channelLabel. Tento kanál je verejný a môže ho vidieť každý s PSK.';
+    return 'Zdieľať polohu v $channelLabel? Kanál je verejný: uvidí ju každý.';
   }
 
   @override
@@ -4964,7 +4962,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get gps_offHint =>
-      'Vypnuté šetrí batériu rádia. Po zapnutí môže nájdenie polohy trvať niekoľko minút.';
+      'Vypnuté šetrí batériu. Určenie polohy môže trvať niekoľko minút.';
 
   @override
   String get gps_asking => 'Pýtam sa rádia...';
@@ -4989,7 +4987,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get gps_turnOnBody =>
-      'GPS rádia je vypnuté. Po zapnutí môže nájdenie polohy trvať niekoľko minút.';
+      'GPS rádia je vypnuté. Určenie polohy môže trvať niekoľko minút.';
 
   @override
   String get gps_turnOn => 'Zapnúť';
@@ -5170,7 +5168,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'MeshTrax nevie, kde ste: vaše rádio nemá polohu GPS. Vyberte štart na mape alebo použite inú aplikáciu.';
+      'Žiadna poloha GPS. Vyberte štart na mape alebo použite inú aplikáciu.';
 
   @override
   String get structured_channel => 'Kanál';
@@ -5265,7 +5263,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Ktokoľvek v dosahu si ho môže prečítať, aj vašu polohu. Ide tam len prvá správa.';
+      'Ktokoľvek v dosahu ho môže prečítať, aj vašu polohu. Pošle sa raz.';
 
   @override
   String get sos_askingRadio => 'Zisťuje sa poloha z rádia…';
@@ -5277,12 +5275,11 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'Rádio neposlalo novú polohu. Posledná známa poloha z $time ($age).';
+    return 'Žiadna nová poloha. Posledná známa $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown =>
-      'Posledná známa poloha. Rádio neuviedlo, aká je stará.';
+  String get sos_positionAgeUnknown => 'Posledná známa poloha, čas neznámy.';
 
   @override
   String get sos_positionTyped =>
@@ -5290,15 +5287,13 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get sos_repeats =>
-      'Posiela sa znova každé 2 minúty s najnovšou polohou rádia, kým ho nezrušíte, po prvom „Rozumiem“ každých 5 minút.';
+      'Opakuje sa každé 2 min s vašou polohou, kým ho nezrušíte; po „Rozumiem“ každých 5 min.';
 
   @override
-  String get sos_publicOnce =>
-      'V Public ide SOS raz. V inom kanáli sa posiela znova, kým ho nezrušíte.';
+  String get sos_publicOnce => 'V Public ide raz.';
 
   @override
-  String get sos_traxOnly =>
-      'Režim TRAX je zapnutý: toto SOS počujú iba rádiá v režime TRAX, aj v Public.';
+  String get sos_traxOnly => 'Režim TRAX: počujú ho iba rádiá TRAX.';
 
   @override
   String sos_replacesOther(String chat) {
@@ -5336,12 +5331,11 @@ class AppLocalizationsSk extends AppLocalizations {
   String get sos_keep => 'Ponechať SOS';
 
   @override
-  String get sos_cancelPending =>
-      'SOS zrušené. Správa odíde, keď bude rádio pripojené.';
+  String get sos_cancelPending => 'SOS zrušené. Odošle sa po pripojení rádia.';
 
   @override
   String sos_stopped(String time) {
-    return 'Vaše SOS sa zastavilo, keď sa MeshTrax zatvoril. Naposledy odoslané $time.';
+    return 'SOS sa zastavilo, keď sa MeshTrax zatvoril. Naposledy odoslané $time.';
   }
 
   @override
@@ -6410,7 +6404,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get search_noPlaces =>
-      'Ak chcete hľadať miesta v regióne, stiahnite si preň „Zaujímavé miesta“. Súradnice fungujú aj bez nich.';
+      'Na hľadanie miest si stiahnite „Zaujímavé miesta“. Súradnice fungujú aj bez nich.';
 
   @override
   String get search_noResults => 'Žiadne výsledky';
@@ -6723,7 +6717,7 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get route_noData =>
-      'Ak tu chcete hľadať trasy, stiahnite si pre tento región „Plánovanie trás“ v Offline mapách.';
+      'Stiahnite si pre tento región „Plánovanie trás“ v Offline mapách.';
 
   @override
   String get route_pin => 'Umiestnený špendlík';
@@ -7135,24 +7129,23 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get los_downloadBeforeTrip =>
-      'Stiahnite si vrstevnice pre túto oblasť pred cestou. Potrebujete na to pripojenie k internetu.';
+      'Pred cestou si tu stiahnite vrstevnice (treba internet).';
 
   @override
-  String get los_spotBelowLowest =>
-      'Toto miesto je pod najnižšou vrstevnicou (pod hladinou mora), preto jeho výška nie je známa.';
+  String get los_spotBelowLowest => 'Pod hladinou mora: výška neznáma.';
 
   @override
   String los_nameBelowLowest(String name) {
-    return '$name je pod najnižšou vrstevnicou (pod hladinou mora), preto výška na tom mieste nie je známa.';
+    return '$name je pod hladinou mora: výška neznáma.';
   }
 
   @override
   String get los_youBelowLowest =>
-      'Ste pod najnižšou vrstevnicou (pod hladinou mora), preto výška na tom mieste nie je známa. Keď má rádio zapnuté GPS, použije sa jeho nadmorská výška.';
+      'Ste pod hladinou mora: výška neznáma. So zapnutým GPS sa použije nadmorská výška rádia.';
 
   @override
   String get los_noLinesNear =>
-      'Pri tomto konci čiary nie sú žiadne vrstevnice, preto výška na tom mieste nie je známa.';
+      'Pri tomto konci nie sú vrstevnice: výška neznáma.';
 
   @override
   String get los_from => 'Od';
@@ -7201,7 +7194,7 @@ class AppLocalizationsSk extends AppLocalizations {
   String get los_raisedLabel => 'Výška nad zemou';
 
   @override
-  String get los_terrainOnly => 'Len terén, podľa stiahnutých vrstevníc.';
+  String get los_terrainOnly => 'Len terén, podľa vašich vrstevníc.';
 
   @override
   String los_credits(String credits) {
@@ -7217,12 +7210,12 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String los_reachShaded(String distance) {
-    return 'Vyfarbené: tam terén neprekáža spojeniu s ručným rádiom, do $distance.';
+    return 'Vyfarbené: terén neprekáža spojeniu s ručným rádiom, do $distance.';
   }
 
   @override
   String get los_reachUnknownPart =>
-      'Časť terénu tu nemožno vypočítať, napríklad pod úrovňou mora, preto nie je vyfarbená.';
+      'Časť terénu nemožno vypočítať (pod hladinou mora), preto nie je vyfarbená.';
 
   @override
   String get los_reachTapHint =>
