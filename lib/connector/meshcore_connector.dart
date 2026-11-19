@@ -2085,6 +2085,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void Function(Contact, int ackHash)? onAckHeard;
   List<PathSelection>? Function(Contact contact)? graphRouteCandidates;
 
+  /// Whether repeater code [hop] ([width] bytes) is one the user told
+  /// Pathfinder moves: someone's car repeater, or one riding with this
+  /// radio. Null while Pathfinder is off.
+  bool Function(List<int> hop, int width)? isCarRepeater;
+
   /// Pathfinder's current distance to a contact in hops, or null when it
   /// has nothing recent (see [estimatedHopsTo]).
   int? Function(Contact contact)? graphDistanceTo;
