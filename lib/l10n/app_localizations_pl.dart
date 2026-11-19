@@ -2202,6 +2202,25 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Start: Twoja pozycja o $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Zaczyna się $distance od punktu startu, poza zmapowanymi drogami';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax nie wie o zamknięciach, podmyciach ani o tym, które drogi wymagają 4x4. Przed wyjazdem sprawdź aktualne warunki.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Dane mapy z $date';
+  }
+
+  @override
   String get gps_lastKnown =>
       'Twoja ostatnia znana pozycja, może być nieaktualna';
 

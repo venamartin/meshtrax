@@ -105,6 +105,20 @@ class RoutingService extends ChangeNotifier {
 
   bool get hasRoutingData => store.tileFile != null;
 
+  /// The day the routing data on the device was built, from its build's
+  /// name (`2026110501` is the first build of 5 November 2026).
+  DateTime? get dataDate {
+    final b = store.build;
+    if (b == null || b.length < 8) return null;
+    final (y, m, d) = (
+      int.tryParse(b.substring(0, 4)),
+      int.tryParse(b.substring(4, 6)),
+      int.tryParse(b.substring(6, 8)),
+    );
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d);
+  }
+
   /// Whether routing is on offer at [point]: data is on the device (a
   /// route may still stop short of it), or the catalogue has it for the
   /// region there, to download.

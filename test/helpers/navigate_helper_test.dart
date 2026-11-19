@@ -4,8 +4,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:meshtrax/helpers/navigate_helper.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/app_settings.dart';
+import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 import 'package:meshtrax/widgets/route_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxroute/traxroute.dart';
 
 // Navigate on a card handed every point to another app; it now routes in
@@ -125,15 +127,41 @@ void main() {
   });
 
   group('route sheet', () {
-    Widget sheet({VoidCallback? onOtherApp}) => RouteSheet(
-          destination: 'Ridge trailhead',
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      PrefsManager.reset();
+      await PrefsManager.initialize();
+    });
+
+    const route = RouteResult(
+      pathType: PathType.hiking,
+      points: [(lat: 36.5, lon: -117.0), (lat: 36.51, lon: -117.0)],
+      elevations: [],
+      elevationIntervalM: 30,
+      km: 1.1,
+      seconds: 900,
+      maneuvers: [],
+      kmShortOfDestination: 0,
+    );
+    const conditions =
+        "MeshTrax doesn't know closures, washouts or which roads need 4x4. "
+        'Check current conditions before you go.';
+
+    Widget sheet({
+      VoidCallback? onOtherApp,
+      RouteResult? result,
+      DateTime? dataDate,
+      String destination = 'Ridge trailhead',
+    }) => RouteSheet(
+          destination: destination,
           start: null,
+          dataDate: dataDate,
           onUseMyPosition: () {},
           pathType: PathType.hiking,
           onPathType: (_) {},
           options: const RouteOptions(),
           onOptions: (_) {},
-          result: null,
+          result: result,
           loading: false,
           error: null,
           units: UnitSystem.metric,
@@ -152,6 +180,40 @@ void main() {
     testWidgets('no button without somewhere to hand it', (tester) async {
       await pump(tester, sheet());
       expect(find.byTooltip('Open in another app'), findsNothing);
+    });
+
+    testWidgets('says how old the data is, in one line', (tester) async {
+      await pump(tester, sheet(result: route, dataDate: DateTime(2026, 11, 5)));
+      expect(find.text('Map data from Nov 5, 2026'), findsOneWidget);
+    });
+
+    testWidgets('the first route ever says what the data can\'t know, once', (
+      tester,
+    ) async {
+      await pump(tester, sheet(dataDate: DateTime(2026, 11, 5)));
+      await tester.pumpAndSettle();
+      expect(find.text(conditions), findsNothing);
+
+      await pump(tester, sheet(result: route, dataDate: DateTime(2026, 11, 5)));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text(conditions), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(PrefsManager.instance.getBool(RouteSheet.conditionsToldKey), isTrue);
+
+      await pump(tester, sheet(result: route, destination: 'Spring camp'));
+      await tester.pumpAndSettle();
+      await pump(tester, const SizedBox());
+      await pump(tester, sheet(result: route));
+      await tester.pumpAndSettle();
+      expect(find.text(conditions), findsNothing);
+    });
+
+    testWidgets('nothing to say before a route is asked for', (tester) async {
+      await pump(tester, sheet(dataDate: DateTime(2026, 11, 5)));
+      expect(find.textContaining('Map data from'), findsNothing);
     });
   });
 }

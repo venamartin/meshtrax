@@ -2169,6 +2169,25 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Från där du var kl. $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Börjar $distance från din startpunkt, utanför alla kartlagda vägar';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax känner inte till avstängningar, bortspolade vägar eller vilka vägar som kräver fyrhjulsdrift. Kolla aktuella förhållanden innan du åker.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Kartdata från $date';
+  }
+
+  @override
   String get gps_lastKnown => 'Din senast kända position, kan vara gammal';
 
   @override

@@ -186,6 +186,10 @@ class _Routing extends RoutingService {
   /// Holds routes back until it completes.
   Completer<void>? gate;
 
+  /// Where routes begin instead of at their start: the nearest path, off
+  /// any path from the start.
+  LatLon? snapStart;
+
   @override
   bool get available => true;
   @override
@@ -202,13 +206,14 @@ class _Routing extends RoutingService {
     await gate?.future;
     return RouteResult(
       pathType: type,
-      points: [from, to],
+      points: [snapStart ?? from, to],
       elevations: elevations,
       elevationIntervalM: 30,
       km: 1.1,
       seconds: 900,
       maneuvers: steps,
       kmShortOfDestination: 0,
+      kmFromStart: snapStart == null ? 0 : kmBetween(from, snapStart!),
     );
   }
 }
@@ -235,7 +240,8 @@ void main() {
     // Times as a US phone writes them, whatever machine runs the tests.
     DateTimeHelper.systemFormats = () => null;
     addTearDown(() => DateTimeHelper.systemFormats = systemFormats);
-    SharedPreferences.setMockInitialValues({});
+    // The first route's one-time popup has its own tests.
+    SharedPreferences.setMockInitialValues({RouteSheet.conditionsToldKey: true});
     PrefsManager.reset();
     await PrefsManager.initialize();
     tmp = await Directory.systemTemp.createTemp('mapscreen');
@@ -521,8 +527,11 @@ void main() {
       Widget screen = const MapScreen(),
       Size view = const Size(800, 900),
       _FakeConnector? radio,
+      LatLon? snapStart,
     }) async {
-      routing = _Routing(maps, elevations: heights, steps: steps)..gate = gate;
+      routing = _Routing(maps, elevations: heights, steps: steps)
+        ..gate = gate
+        ..snapStart = snapStart;
       await showMap(tester, screen: screen, view: view, radio: radio);
       await longPress(tester, const LatLng(41.8, -71.4));
       await tap(tester, find.text('Route here'));
@@ -561,6 +570,29 @@ void main() {
 
       await tap(tester, find.text('Paved'));
       expect(find.text('No heights for this area.'), findsOneWidget);
+    });
+
+    testWidgets('the first route ever says what the data can\'t know, once', (
+      tester,
+    ) async {
+      await PrefsManager.instance.remove(RouteSheet.conditionsToldKey);
+      await showRoute(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+          "MeshTrax doesn't know closures, washouts or which roads need 4x4. "
+          'Check current conditions before you go.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+
+      await tap(tester, find.text('Paved'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.textContaining("doesn't know closures"), findsNothing);
     });
 
     testWidgets('slides between a bar, open and the whole map', (tester) async {
@@ -606,7 +638,7 @@ void main() {
       expect(height(tester), lessThan(100));
       expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
 
-      await tester.drag(header, const Offset(0, -120));
+      await tester.drag(header, const Offset(0, -200));
       await settle(tester);
       expect(height(tester), open);
     });
@@ -818,6 +850,64 @@ void main() {
       );
     });
 
+    testWidgets('a start off any path: a dotted line to where the route '
+        'begins, and the distance counts it', (tester) async {
+      // About 2.2 km north of your position.
+      await showRoute(tester, snapStart: (lat: 41.83, lon: -71.42));
+      expect(
+        overlay<MapLine>(tester, 'route-start-gap').points,
+        [const LatLng(41.81, -71.42), const LatLng(41.83, -71.42)],
+      );
+      expect(
+        overlay<MapLine>(tester, 'route-start-gap').pattern,
+        MapLinePattern.dotted,
+      );
+      expect(
+        find.text('Starts 2.2 km from where you start, off any mapped path'),
+        findsOneWidget,
+      );
+      // 1.1 km of route and 2.2 km to reach it.
+      expect(find.textContaining('3.3 km'), findsOneWidget);
+    });
+
+    testWidgets('a start on a path: no gap', (tester) async {
+      await showRoute(tester);
+      expect(
+        tester
+            .widget<AppMap>(find.byType(AppMap))
+            .overlays
+            .where((o) => o.id == 'route-start-gap'),
+        isEmpty,
+      );
+      expect(find.textContaining('off any mapped path'), findsNothing);
+    });
+
+    testWidgets('moved away from where the route was found: it starts from '
+        'where you were', (tester) async {
+      final radio = _FakeConnector(
+        nodes: const [],
+        self: const ll.LatLng(41.81, -71.42),
+        gps: '1',
+      );
+      await showRoute(tester, steps: steps, radio: radio);
+      await tap(tester, find.text('Directions'));
+      expect(shown('From your position'), findsOneWidget);
+
+      // 50 m on: still from your position.
+      radio.moveSelf(const ll.LatLng(41.8104, -71.42));
+      await settle(tester);
+      expect(shown('From your position'), findsOneWidget);
+
+      // 250 m on: the route stays where it was found.
+      radio.moveSelf(const ll.LatLng(41.8123, -71.42));
+      await settle(tester);
+      expect(
+        find.textContaining(RegExp(r'^From where you were at ')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(routing.requests, hasLength(1));
+    });
+
     testWidgets('the long-press sheet says what is set already', (
       tester,
     ) async {
@@ -916,7 +1006,7 @@ void main() {
           )
           .elevation;
       await tap(tester, find.text('Directions'));
-      await tester.drag(find.text('Step 5'), const Offset(0, -300));
+      await tester.drag(find.text('Step 5'), const Offset(0, -400));
       await settle(tester);
       expect(shown('Step 0'), findsNothing);
       expect(barElevation(), 0);

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:traxroute/traxroute.dart';
@@ -10,6 +12,7 @@ import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
+import '../storage/prefs_manager.dart';
 import 'elevation_profile.dart';
 import 'route_options.dart';
 
@@ -55,6 +58,13 @@ class RouteSheet extends StatefulWidget {
   /// last known at [positionKnownAt] when that is known.
   final bool positionMayBeOld;
   final DateTime? positionKnownAt;
+
+  /// When the route was found from your position, if you have since moved
+  /// more than 100 m from there: it doesn't follow you.
+  final DateTime? youWereAt;
+
+  /// The day the routing data was built.
+  final DateTime? dataDate;
   final VoidCallback onUseMyPosition;
   final PathType pathType;
   final ValueChanged<PathType> onPathType;
@@ -80,12 +90,17 @@ class RouteSheet extends StatefulWidget {
   /// How wide the panel at the side of a wide screen is.
   static const sideWidth = 360.0;
 
+  /// Set once the first route has said what the data can't know.
+  static const conditionsToldKey = 'route_conditions_told';
+
   const RouteSheet({
     super.key,
     required this.destination,
     required this.start,
     this.positionMayBeOld = false,
     this.positionKnownAt,
+    this.youWereAt,
+    this.dataDate,
     required this.onUseMyPosition,
     required this.pathType,
     required this.onPathType,
@@ -135,9 +150,42 @@ class RouteSheetState extends State<RouteSheet> {
   _Stop? _to = _Stop.rest;
 
   @override
+  void initState() {
+    super.initState();
+    _tellConditionsOnce();
+  }
+
+  @override
   void didUpdateWidget(RouteSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.destination != widget.destination) _to = _Stop.rest;
+    _tellConditionsOnce();
+  }
+
+  /// The data can't say what a road or trail is like today (safety review
+  /// CH-17): the first route ever says so, once.
+  void _tellConditionsOnce() {
+    final prefs = PrefsManager.instance;
+    if (widget.result == null ||
+        (prefs.getBool(RouteSheet.conditionsToldKey) ?? false)) {
+      return;
+    }
+    unawaited(prefs.setBool(RouteSheet.conditionsToldKey, true));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: Text(context.l10n.route_conditionsCaveat),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.common_ok),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   @override
@@ -301,6 +349,7 @@ class RouteSheetState extends State<RouteSheet> {
       :side,
     ) = widget;
     final r = result;
+    final youWereAt = widget.youWereAt;
     final changed = !options.isDefaultFor(pathType);
     final hasSteps = r != null && r.maneuvers.isNotEmpty;
 
@@ -393,7 +442,16 @@ class RouteSheetState extends State<RouteSheet> {
                           Expanded(
                             child: Text(
                               [
-                                GeoFormat.distanceText(r.km * 1000, units),
+                                // A start off any path is walked or driven
+                                // too, so it counts.
+                                GeoFormat.distanceText(
+                                  (r.km +
+                                          (r.startsOffPath
+                                              ? r.kmFromStart
+                                              : 0)) *
+                                      1000,
+                                  units,
+                                ),
                                 routeDuration(context, r.seconds),
                                 if (r.elevations.isNotEmpty)
                                   '↑ ${GeoFormat.heightText(r.climb.up, units)}',
@@ -446,6 +504,15 @@ class RouteSheetState extends State<RouteSheet> {
                       style: theme.textTheme.bodySmall,
                     ),
                   ),
+                if (r != null && r.startsOffPath) ...[
+                  _Gap(
+                    icon: Icons.trip_origin,
+                    text: l10n.route_startsOffPath(
+                      GeoFormat.distanceText(r.kmFromStart * 1000, units),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (r != null && !r.reachesDestination) ...[
                   _EndsShort(result: r, destination: destination, units: units),
                   const SizedBox(height: 12),
@@ -461,6 +528,22 @@ class RouteSheetState extends State<RouteSheet> {
                   )
                 else if (loading && r == null)
                   const SizedBox(height: 64),
+                // There from the start of the search, so the sheet keeps
+                // its height.
+                if (widget.dataDate case final date? when r != null || loading)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      l10n.route_dataDate(
+                        DateFormat.yMMMd(
+                          Localizations.localeOf(context).toString(),
+                        ).format(date),
+                      ),
+                      style: theme.textTheme.bodySmall!.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -577,6 +660,10 @@ class RouteSheetState extends State<RouteSheet> {
                           title: Text(
                             start != null
                                 ? l10n.route_from(start)
+                                : youWereAt != null
+                                ? l10n.route_fromWhereYouWere(
+                                    DateTimeHelper.time(context, youWereAt),
+                                  )
                                 : !positionMayBeOld
                                 ? l10n.route_fromYou
                                 : positionKnownAt == null
@@ -636,7 +723,6 @@ class _EndsShort extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     final distance = GeoFormat.distanceText(
       result.kmShortOfDestination * 1000,
       units,
@@ -646,6 +732,20 @@ class _EndsShort extends StatelessWidget {
       PathType.dirt => l10n.route_endsShortDirt(distance, destination),
       PathType.hiking => l10n.route_endsShortHiking(distance, destination),
     };
+    return _Gap(icon: Icons.flag_outlined, text: text);
+  }
+}
+
+/// A stretch at either end of the route that no mapped path covers.
+class _Gap extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _Gap({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -655,7 +755,7 @@ class _EndsShort extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.flag_outlined, color: scheme.onTertiaryContainer),
+          Icon(icon, color: scheme.onTertiaryContainer),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

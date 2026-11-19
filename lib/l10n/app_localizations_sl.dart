@@ -2173,6 +2173,25 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Začetek: kjer ste bili ob $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Začne se $distance od začetne točke, zunaj kartiranih poti';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax ne ve za zapore, odnesene ceste ali katere ceste zahtevajo 4x4. Pred odhodom preverite trenutne razmere.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Podatki zemljevida z dne $date';
+  }
+
+  @override
   String get gps_lastKnown => 'Vaš zadnji znani položaj, morda je star';
 
   @override

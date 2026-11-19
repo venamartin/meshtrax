@@ -3887,6 +3887,30 @@ abstract class AppLocalizations {
   /// **'From your last known position ({time}), may be old'**
   String route_fromLastKnownAt(String time);
 
+  /// No description provided for @route_fromWhereYouWere.
+  ///
+  /// In en, this message translates to:
+  /// **'From where you were at {time}'**
+  String route_fromWhereYouWere(String time);
+
+  /// No description provided for @route_startsOffPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {distance} from where you start, off any mapped path'**
+  String route_startsOffPath(String distance);
+
+  /// No description provided for @route_conditionsCaveat.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax doesn\'t know closures, washouts or which roads need 4x4. Check current conditions before you go.'**
+  String get route_conditionsCaveat;
+
+  /// No description provided for @route_dataDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Map data from {date}'**
+  String route_dataDate(String date);
+
   /// No description provided for @gps_lastKnown.
   ///
   /// In en, this message translates to:

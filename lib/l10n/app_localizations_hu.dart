@@ -2197,6 +2197,25 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Kiindulópont: ahol ekkor volt: $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Az útvonal a kiindulóponttól $distance távolságra kezdődik, térképezett úton kívül';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'A MeshTrax nem tud a lezárásokról, a kimosott utakról, és arról, mely utakhoz kell 4x4. Indulás előtt ellenőrizze az aktuális állapotot.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Térképadatok: $date';
+  }
+
+  @override
   String get gps_lastKnown => 'Az Ön utolsó ismert helyzete, lehet, hogy régi';
 
   @override

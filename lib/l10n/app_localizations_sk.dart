@@ -2181,6 +2181,25 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
+  String route_fromWhereYouWere(String time) {
+    return 'Začiatok: kde ste boli o $time';
+  }
+
+  @override
+  String route_startsOffPath(String distance) {
+    return 'Začína $distance od miesta štartu, mimo zmapovaných ciest';
+  }
+
+  @override
+  String get route_conditionsCaveat =>
+      'MeshTrax nevie o uzávierkach, vymytých cestách ani o tom, ktoré cesty vyžadujú 4x4. Pred odchodom si overte aktuálny stav.';
+
+  @override
+  String route_dataDate(String date) {
+    return 'Mapové údaje z $date';
+  }
+
+  @override
   String get gps_lastKnown => 'Vaša naposledy známa poloha, môže byť stará';
 
   @override

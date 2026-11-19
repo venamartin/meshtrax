@@ -19,6 +19,8 @@ typedef MapRoute = ({
   LatLng to,
   LatLng? from,
   RouteResult? result,
+  LatLng? foundFrom,
+  DateTime? foundAt,
 });
 
 class UiViewStateService extends ChangeNotifier {
