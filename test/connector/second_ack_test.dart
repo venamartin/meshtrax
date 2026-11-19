@@ -103,14 +103,16 @@ Uint8List _deviceInfo() {
   return f;
 }
 
-Uint8List _contactFrame() {
+/// Contact A as the radio holds it: with the stored route back, or none.
+Uint8List _contactFrame({bool routeBack = true}) {
   final w = BytesBuilder();
   w.addByte(respCodeContact);
   w.add(aPub);
   w.addByte(advTypeChat);
   w.addByte(0);
-  w.addByte(0x43);
-  w.add(Uint8List(maxPathSize)..setRange(0, stored.length, stored));
+  w.addByte(routeBack ? 0x43 : 0xFF);
+  w.add(Uint8List(maxPathSize)
+    ..setRange(0, routeBack ? stored.length : 0, stored));
   w.add(Uint8List(maxNameSize)..setRange(0, 1, 'A'.codeUnits));
   w.add(Uint8List.fromList([1, 0, 0, 0]));
   w.add(Uint8List(8));
@@ -137,6 +139,7 @@ void main() {
   Future<void> connect({
     bool pathfinder = true,
     List<PathSelection> routes = const [],
+    bool routeBack = true,
   }) async {
     final settings = AppSettingsService();
     await settings.setPathGraphEnabled(pathfinder);
@@ -150,7 +153,7 @@ void main() {
     c.handleFrameForTest(_selfInfo());
     await c.getContacts();
     c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
-    c.handleFrameForTest(_contactFrame());
+    c.handleFrameForTest(_contactFrame(routeBack: routeBack));
     c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
     await c.preparePassingCopiesForTest();
   }
@@ -242,6 +245,14 @@ void main() {
     expect(sent[2].sublist(0, 9), [
       cmdSendRawPacket, 1, 0x0D, 0x40, ..._hex(copies[2].$2),
     ]);
+  });
+
+  test('no route back and none known: no second ACK, it would be the '
+      "radio's flood again", () async {
+    await connect(routes: const [], routeBack: false);
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    expect(c.acks, isEmpty);
   });
 
   test('every copy of one DM: one second ACK', () async {

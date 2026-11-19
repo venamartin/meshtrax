@@ -9224,7 +9224,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)))
         .firstOrNull;
     if (route == null && firstCopy && !byFlood) route = held;
+    // No route at all, and the first ACK was a plain flood: a plain flood
+    // second ACK would be the same packet, and every repeater that carried
+    // the first would drop it.
+    if (route == null && held == null && !byFlood) return const [];
     tried.add(_ackRouteKey(route));
+    _appDebugLogService?.info(
+      'Second ACK to ${contact.name}: '
+      '${route == null ? 'flood' : PathHelper.formatPathHex(route.pathBytes, stride: route.hashSize)}',
+      tag: 'Connector',
+    );
     return PassingCopyOpener.secondAckPackets(
       copy.ack,
       routePathLen: route == null
