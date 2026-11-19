@@ -2272,15 +2272,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
   /// A routed DM or room post to this radio that the app opened from a copy
   /// still on its way (see PassingCopy): the contact it came from, the hops
-  /// it still had to go at [hopWidth] bytes each, and the copy's signed SNR
-  /// byte. The radio never opened it, and the route it was on never
-  /// finished, so the message hooks above don't fire for it. The path graph
-  /// hook: Pathfinder decides what, if anything, it proves.
+  /// it still had to go at [hopWidth] bytes each, the copy's signed SNR
+  /// byte, and its payload as heard, still encrypted (every copy of one send
+  /// carries the same bytes; a resend, with its new attempt, does not). The
+  /// radio never opened it, and the route it was on never finished, so the
+  /// message hooks above don't fire for it. The path graph hook: Pathfinder
+  /// decides what, if anything, it proves.
   void Function(
     String contactPubkeyHex,
     List<int> hopsLeft,
     int hopWidth,
     int snrByte,
+    Uint8List payload,
   )? onPassingCopyHeard;
 
   void _updateMessage(Message message) {
@@ -8981,6 +8984,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       copy.hopsLeft,
       copy.hopWidth,
       snrByte.toSigned(8),
+      Uint8List.fromList(packet.payload),
     );
     final ts = copy.timestamp;
     final head = <int>[

@@ -170,21 +170,23 @@ void main() {
   test('opens a DM the radio drops, and sends the ACK on the route back',
       () async {
     await connect();
-    final pathfinderHeard = <(String, List<int>, int, int)>[];
+    final pathfinderHeard = <(String, List<int>, int, int, Uint8List)>[];
     var messageHooks = 0;
-    c.onPassingCopyHeard = (key, hopsLeft, width, snr) =>
-        pathfinderHeard.add((key, hopsLeft, width, snr));
+    c.onPassingCopyHeard = (key, hopsLeft, width, snr, payload) =>
+        pathfinderHeard.add((key, hopsLeft, width, snr, payload));
     c.onContactMessageHeard = (_, _, _) => messageHooks++;
     c.handleFrameForTest(_rxLog(dmFromAd77));
 
     final m = (await rows()).single;
     // Pathfinder hears of it on its own hook, never as a delivered message.
     expect(pathfinderHeard, hasLength(1));
-    final (key, hopsLeft, width, snr) = pathfinderHeard.single;
+    final (key, hopsLeft, width, snr, payload) = pathfinderHeard.single;
     expect(key, pubKeyToHex(aPub));
     expect(hopsLeft, [0xBE, 0xEF]);
     expect(width, 2);
     expect(snr, 0x30);
+    // The payload as heard, still encrypted: the bytes after the path.
+    expect(payload, dmFromAd77.sublist(4));
     expect(messageHooks, 0);
     expect(m.text, 'hello B');
     expect(m.isOutgoing, isFalse);
