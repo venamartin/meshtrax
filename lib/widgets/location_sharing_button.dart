@@ -10,6 +10,7 @@ import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../screens/settings_screen.dart';
 import '../utils/telemetry_dialog.dart';
+import 'app_bar.dart';
 
 /// The top bar's location icon, after the GPS icon: blue while someone can
 /// see the radio's position, grey while nobody can. Tapping it opens
@@ -26,13 +27,13 @@ class LocationSharingButton extends StatelessWidget {
     if (!shown) return const SizedBox.shrink();
     final l10n = context.l10n;
     return IconButton(
+      style: topBarIconStyle,
       tooltip: visible
           ? l10n.locationSharing_someone
           : l10n.locationSharing_nobody,
       onPressed: () => showLocationSharingDialog(context),
       icon: Icon(
         Icons.share_location,
-        size: 20,
         color: visible ? Theme.of(context).colorScheme.primary : Colors.grey,
       ),
     );

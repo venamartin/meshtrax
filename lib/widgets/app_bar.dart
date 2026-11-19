@@ -7,6 +7,17 @@ import 'package:provider/provider.dart';
 
 import 'snr_indicator.dart';
 
+/// The top bars' icon buttons: one icon size, 36 dp apart and the bar's
+/// height to tap. Four 48 dp buttons left a phone too little room for the
+/// radio's name, with wide, uneven gaps (owner, 2026-11-18).
+const topBarIconStyle = ButtonStyle(
+  minimumSize: WidgetStatePropertyAll(Size(36, 48)),
+  padding: WidgetStatePropertyAll(EdgeInsets.zero),
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  iconSize: WidgetStatePropertyAll(topBarIconSize),
+);
+const topBarIconSize = 22.0;
+
 /// The top bar's title with the radio's battery and signal readouts after
 /// it. The title has first claim on the width; the readouts fit into what
 /// is left and give way in a fixed order when the bar is narrow (owner,
@@ -55,21 +66,33 @@ class AppBarTitle extends StatelessWidget {
         final showSubtitle =
             connector.isConnected && selfName != null && subtitle;
 
-        // What the readouts need, full and cut down.
+        // What the readouts need, full and cut down, in the font they are
+        // drawn in.
+        final batteryStyle = titleStyle.merge(BatteryIndicator.textStyle);
         final battery = showBatteryIndicator && indicators
             ? BatteryIndicator.textsFor(connector)
             : const <String>[];
         final batteryFull = battery.isEmpty
             ? 0.0
             : BatteryIndicator.width(
-                battery.map((t) => width(t, BatteryIndicator.textStyle)).reduce(math.max),
+                battery.map((t) => width(t, batteryStyle)).reduce(math.max),
               );
         final batteryIcon = battery.isEmpty ? 0.0 : BatteryIndicator.width(0);
         final signal = SNRIndicator.textsFor(connector);
-        final signalShort = SNRIndicator.width(width(signal.text, SNRIndicator.textStyle));
+        final signalShort = SNRIndicator.width(
+          width(signal.text, titleStyle.merge(SNRIndicator.textStyle)),
+        );
         final signalFull = signal.repeaters == null
             ? signalShort
-            : math.max(signalShort, SNRIndicator.width(width(signal.repeaters!, SNRIndicator.repeatersStyle)));
+            : math.max(
+                signalShort,
+                SNRIndicator.width(
+                  width(
+                    signal.repeaters!,
+                    titleStyle.merge(SNRIndicator.repeatersStyle),
+                  ),
+                ),
+              );
 
         // The title's claim: what its lines need, leaving the battery and
         // the signal's dB in full; a long name shortens instead (owner,
