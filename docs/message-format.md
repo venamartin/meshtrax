@@ -536,8 +536,9 @@ Repeater: A277 3.52V crit 2m | A377 3.48V vlow 40m missed=1 | AD77 waiting
 The card draws each repeater's battery from its stage: full and green for
 `ok`, then amber, orange and red for `crit`. Volts are only written, as
 the pack's chemistry is the sender's business. Waiting, unreachable and
-no-reading rows are grey. The title names one or two repeaters, else says
-how many stand where, worst first: "2 critical, 3 waiting".
+no-reading rows are grey. A one-line "Repeater status" header sits above
+the rows; notifications and reply previews sum them up instead: "Repeater
+status: 2 critical, 3 waiting".
 
 A field like `A277 3.52V crit 2m` takes about 18 bytes, so 4 to 6
 repeaters fit one channel message.
