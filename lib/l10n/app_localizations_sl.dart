@@ -797,7 +797,7 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši.';
+      'Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši. Ko je Pathfinder vklopljen, ga MeshTrax pošlje po drugi poti.';
 
   @override
   String get settings_telemetryModeUpdated => 'Način telemetrije posodobljen';

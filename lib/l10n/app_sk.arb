@@ -1718,7 +1718,7 @@
   "appSettings_maxMessageRetriesSubtitle": "Počet pokusov o odošleť pred označením správy ako neúspešnej",
   "settings_telemetryModeUpdated": "Režim telemetrie bol aktualizovaný",
   "settings_multiAck": "Viaceré ACK",
-  "settings_multiAckSubtitle": "Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul.",
+  "settings_multiAckSubtitle": "Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul. So zapnutým Pathfinderom ho MeshTrax pošle inou trasou.",
   "map_showOverlaps": "Prekrývanie opakovača kľúča",
   "map_runTraceWithReturnPath": "Vráťte sa späť po tej istej ceste.",
   "@radioStats_noiseFloor": {

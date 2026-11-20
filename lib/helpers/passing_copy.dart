@@ -101,8 +101,40 @@ class PassingCopyOpener {
     required List<int> payload,
     required Iterable<Uint8List> contactKeys,
   }) {
+    if (PathHelper.pathLenHops(pathLenRaw) <= 0) return null;
+    return _open(pathLenRaw, pathBytes, payload, contactKeys);
+  }
+
+  /// Any copy of a DM or room post to this radio, the ones the radio opens
+  /// itself too (the last routed copy, any flood), read for the ACK the app
+  /// sends beside the radio's. A flood's path is the hops it travelled, not
+  /// hops to go, so its hops left read as none.
+  PassingCopy? openAny({
+    required bool flood,
+    required int pathLenRaw,
+    required List<int> pathBytes,
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (flood) {
+      final none = PathHelper.encodePathLen(
+        0,
+        PathHelper.pathLenWidth(pathLenRaw),
+      );
+      return _open(none, const [], payload, contactKeys);
+    }
+    if (PathHelper.pathLenHops(pathLenRaw) < 0) return null;
+    return _open(pathLenRaw, pathBytes, payload, contactKeys);
+  }
+
+  PassingCopy? _open(
+    int pathLenRaw,
+    List<int> pathBytes,
+    List<int> payload,
+    Iterable<Uint8List> contactKeys,
+  ) {
     final width = PathHelper.pathLenWidth(pathLenRaw);
-    if (PathHelper.pathLenHops(pathLenRaw) <= 0 || width > 3) return null;
+    if (width > 3) return null;
     if (pathBytes.length != PathHelper.pathLenBytes(pathLenRaw)) return null;
     if (payload.length < 2 + _macSize + _blockSize) return null;
     if (payload[0] != _selfKey[0]) return null;
@@ -253,6 +285,41 @@ class PassingCopyOpener {
         0,
         0,
         pathLen,
+        ...ack,
+      ]),
+    ];
+  }
+
+  /// The second ACK, in the form of the firmware's own extra ACK
+  /// (sendAckTo's createMultiAck, remaining 1): a MULTIPART packet on
+  /// [routePath]. Repeaters drop a packet they have seen, and the packet
+  /// hash leaves the path out (Packet::calculatePacketHash), so a plain copy
+  /// of the first ACK would die at the first repeater that carried it; the
+  /// MULTIPART one gets a new chance at every hop. With no route, a plain
+  /// flood: repeaters don't pass a flooded MULTIPART on (Mesh.cpp).
+  static List<Uint8List> secondAckPackets(
+    Uint8List ack, {
+    required int routePathLen,
+    required List<int> routePath,
+    required int floodWidth,
+    Uint8List? scopeKey,
+  }) {
+    if (PathHelper.pathLenHops(routePathLen) < 0) {
+      return ackPackets(
+        ack,
+        routePathLen: 0xFF,
+        routePath: const [],
+        extraAck: false,
+        floodWidth: floodWidth,
+        scopeKey: scopeKey,
+      );
+    }
+    return [
+      Uint8List.fromList([
+        (payloadTypeMULTIPART << 2) | _routeDirect,
+        routePathLen & 0xFF,
+        ...routePath.sublist(0, PathHelper.pathLenBytes(routePathLen)),
+        (1 << 4) | payloadTypeACK,
         ...ack,
       ]),
     ];

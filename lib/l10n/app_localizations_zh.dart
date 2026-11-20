@@ -754,7 +754,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_multiAck => '多重ACK';
 
   @override
-  String get settings_multiAckSubtitle => '当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。';
+  String get settings_multiAckSubtitle =>
+      '当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。开启 Pathfinder 时，MeshTrax 会经另一条路由发送。';
 
   @override
   String get settings_telemetryModeUpdated => '遥测模式已更新';

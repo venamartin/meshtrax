@@ -806,7 +806,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Invia un secondo ACK quando un messaggio diretto ti raggiunge tramite un percorso, così il mittente ha più probabilità di riceverlo.';
+      'Invia un secondo ACK quando un messaggio diretto ti raggiunge tramite un percorso, così il mittente ha più probabilità di riceverlo. Con Pathfinder attivo, MeshTrax lo invia su un altro percorso.';
 
   @override
   String get settings_telemetryModeUpdated => 'Modalità telemetria aggiornata';

@@ -569,6 +569,41 @@ the connector's `_openPassingCopy`):
 - **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
   a long DM, or a shorter one on a long route, is never seen. A scope set by another app
   with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.
+- **Pathfinder** hears of each passing copy on its own hook, `onPassingCopyHeard` (contact,
+  hops left, width, SNR, the payload as heard), never as a delivered message: the route
+  never finished.
+
+### The second ACK, from MeshTrax on another route
+With Multi-ACKs on, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy) on the
+**same** stored route as the first, and a DM that arrived by flood gets only the flooded
+PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19: "either
+the companion sends two acks or it sends one and the app sends the second"):
+- **The radio sends one.** While the app is connected, has the radio's key and the firmware
+  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. The Multi-ACKs switch
+  keeps the user's choice per radio (`MeshCoreConnector.twoAcks`), so it stays on. A
+  manual disconnect sets the radio back to 1; after a link that drops, the radio sends one
+  ACK until the app is back.
+- **The app sends the other**, for every copy of a DM or room post to this radio that it
+  can read in the RX log (it computes the exact ACK from the decrypted copy), once per
+  send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
+  first. For a passing copy the app sends both ACKs.
+- **Its form is the firmware's extra ACK**: MULTIPART, remaining 1 (`createMultiAck`).
+  Repeaters drop a packet they have seen, and `Packet::calculatePacketHash` leaves the path
+  out, so a plain copy of the first ACK dies at the first repeater that carried it, and on
+  the same route it never gets past the first hop. The MULTIPART one has its own hash and
+  gets a new chance at every hop (`forwardMultipartDirect`). A flooded second ACK is plain:
+  repeaters don't pass a flooded MULTIPART on.
+- **Its route** is the best route **to** the sender that no ACK of this message has taken
+  yet, the radio's stored route included (the radio's own ACK rode it, unless the copy came
+  by flood). The routes are Pathfinder's, the same list the DM ladder plans with
+  (`planAttempts`, floods left out), or the stored route alone when Pathfinder knows none or
+  the user pinned one. A message is the contact, the sender's timestamp and the text type,
+  which a resend keeps, so each resend brings a new route in: copy 1 PF2, copy 2 PF3, then
+  a flood. On a message's first copy with no such route left (one route only), the stored
+  route again. The contact is read when the copy is heard, before the keeper can move the
+  stored route. The connector reads routes through `graphRouteCandidates` and tests the
+  held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
+- Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants
 | Value | Meaning |

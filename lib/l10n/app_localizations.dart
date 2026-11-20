@@ -1520,7 +1520,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_multiAckSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it.'**
+  /// **'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it. With Pathfinder on, MeshTrax sends it on another route.'**
   String get settings_multiAckSubtitle;
 
   /// No description provided for @settings_telemetryModeUpdated.

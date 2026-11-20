@@ -1877,7 +1877,7 @@
   "chat_sendMessage": "Nachricht senden",
   "room_guest": "Informationen zum Room Server",
   "settings_multiAck": "Mehrere Bestätigungen",
-  "settings_multiAckSubtitle": "Eine zweite Bestätigung senden, wenn eine Direktnachricht Sie über eine Route erreicht, damit der Absender sie eher hört.",
+  "settings_multiAckSubtitle": "Eine zweite Bestätigung senden, wenn eine Direktnachricht Sie über eine Route erreicht, damit der Absender sie eher hört. Mit Pathfinder sendet MeshTrax sie über eine andere Route.",
   "chat_resendingByRoute": "Erneutes Senden über die festgelegte Route",
   "room_mute": "Raum stummschalten",
   "room_unmute": "Stummschaltung des Raums aufheben",

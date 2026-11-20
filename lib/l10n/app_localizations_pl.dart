@@ -807,7 +807,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Wysyłaj drugie potwierdzenie, gdy wiadomość prywatna dotrze do Ciebie trasą, aby nadawca miał większą szansę je usłyszeć.';
+      'Wysyłaj drugie potwierdzenie, gdy wiadomość prywatna dotrze do Ciebie trasą, aby nadawca miał większą szansę je usłyszeć. Gdy Pathfinder jest włączony, MeshTrax wysyła je inną trasą.';
 
   @override
   String get settings_telemetryModeUpdated =>

@@ -50,6 +50,24 @@ class PathSelection {
 
   /// How many of the route's links are splice guesses.
   int get guessedHops => guessedLinks.where((g) => g).length;
+
+  /// Whether [contact], as the radio holds it, stores this route: what the
+  /// radio's own sends and ACKs to that contact go out on.
+  bool heldBy(Contact contact) {
+    if (useFlood) return contact.pathLength < 0;
+    if (contact.pathLength != hopCount) return false;
+    if (hopCount == 0) return true;
+    return contact.pathHashSize == hashSize &&
+        _sameBytes(contact.path, pathBytes);
+  }
+
+  static bool _sameBytes(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 /// The route a send to [contact] goes out on. Every route carries the width

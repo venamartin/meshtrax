@@ -110,13 +110,8 @@ class RadioRouteKeeper {
 
   /// Whether [contact], as the radio holds it, already stores [route].
   @visibleForTesting
-  static bool holds(Contact contact, PathSelection route) {
-    if (route.useFlood) return contact.pathLength < 0;
-    if (contact.pathLength != route.hopCount) return false;
-    if (route.hopCount == 0) return true;
-    return contact.pathHashSize == route.hashSize &&
-        listEquals(contact.path, route.pathBytes);
-  }
+  static bool holds(Contact contact, PathSelection route) =>
+      route.heldBy(contact);
 
   /// A DM or room post from [contact] that arrived while connected.
   void onCopy(Contact contact, int senderTimestamp, int txtType, String text,

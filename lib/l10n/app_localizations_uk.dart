@@ -798,7 +798,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settings_multiAckSubtitle =>
-      'Надсилати друге підтвердження, коли особисте повідомлення надходить до вас маршрутом, щоб відправник імовірніше його почув.';
+      'Надсилати друге підтвердження, коли особисте повідомлення надходить до вас маршрутом, щоб відправник імовірніше його почув. Коли Pathfinder увімкнено, MeshTrax надсилає його іншим маршрутом.';
 
   @override
   String get settings_telemetryModeUpdated => 'Режим телеметрії оновлено';
