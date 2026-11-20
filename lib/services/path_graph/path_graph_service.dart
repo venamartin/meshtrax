@@ -322,6 +322,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onSendAttemptStarted = _onAttemptStarted;
     connector.onAckHeard = _onAckHeard;
     connector.graphRouteCandidates = candidatesFor;
+    connector.isCarRepeater = isCarRepeater;
     connector.graphDistanceTo = distanceTo;
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
@@ -578,6 +579,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onSendAttemptStarted = null;
     _connector?.onAckHeard = null;
     _connector?.graphRouteCandidates = null;
+    _connector?.isCarRepeater = null;
     _connector?.graphDistanceTo = null;
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
@@ -977,6 +979,24 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (!delivered) _considerDiscover(contact.publicKeyHex);
     _notifySoon();
+  }
+
+  /// Whether repeater code [hop] ([width] bytes) is one the user said moves
+  /// ("Does it move?": it moves, or it travels with me). Only the user's
+  /// word counts, never a detector's guess. Pathfinder keeps the tag on the
+  /// code at the graph's width, so a wider code is cut to it and a narrower
+  /// one names nobody. Repeaters sharing a code are one to Pathfinder: a
+  /// tag on the code covers them all.
+  bool isCarRepeater(List<int> hop, int width) {
+    final graph = _graph;
+    if (graph == null || width < graph.hashWidthBytes || hop.length != width) {
+      return false;
+    }
+    final code = PathHelper.firstHopHex(hop, stride: width)
+        ?.substring(0, graph.hashWidthBytes * 2);
+    final reason = code == null ? null : graph.movingStatus(code)?.reason;
+    return reason == MovingReason.manual ||
+        reason == MovingReason.manualWithMe;
   }
 
   /// Pathfinder's ranked routes to [contact] for the retry ladder, best
