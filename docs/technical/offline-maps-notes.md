@@ -122,13 +122,20 @@ traxmap moved into this repository.
 
 ### Pack downloads (background_downloader, 2026-10-16)
 
-Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s; Android and iOS still need a phone.
+Tested on the Pi (Linux desktop) against traxmapmaker's dev server at 8 MB/s. iPhone and Mac were measured on 2026-11-20 (below); Android still needs a phone.
 
 - **Resuming needs `Accept-Ranges: bytes` and a strong `ETag` on the first, full response.** Without them the plugin decides the download can't resume: `pause()` turns into a retry, and the download starts over from byte 0, while still reporting progress from the pause point. traxmapmaker's dev server (`viewer/serve.py`) now sends both. R2 does. A rebuilt pack has a new ETag, so the download restarts, and the SHA-256 check guards the install either way.
 - **Scoped downloaders don't track custom groups.** `FileDownloader.scoped('traxmap').start()` tracks only `traxmap.default`. Tasks in our `packs` group were never written to the database, so nothing could be restored after a kill. Fix: `trackTasksInGroup('packs')` before `start()`.
 - **The 5-second `rescheduleKilledTasks` timer in `start()`** re-queued the task, but its updates never reached our listener. `restore()` now calls `start(doRescheduleKilledTasks: false)` and then `rescheduleKilledTasks()` itself.
 - **Measured (90.6 MB charts pack):** pause at 32%, resume with one 206 range request, then verify and install in 21 s. The integration test was `traxmap/example/integration_test/pack_download_test.dart`; it left with the example app, and its source is kept in MeshTrax's `packages/traxmap/HISTORY.md`.
-- **Hard kill on desktop:** the download restarts from 0% on the next launch, then finishes and installs (checksum identical). The plugin leaves its partial file (85–130 MB per kill) in `/tmp`; it's cleared on reboot. Phones should keep the transfer in the OS, except after a swipe-away; still to measure.
+- **Hard kill on desktop:** the download restarts from 0% on the next launch, then finishes and installs (checksum identical). The plugin leaves its partial file (85–130 MB per kill) in `/tmp`; it's cleared on reboot.
+- **iPhone and Mac, measured 2026-11-20:** an 875 MB file (a `DownloadFile`) through master's downloader, over Wi-Fi at about 45 MB/s on the phone and 95 MB/s on the Mac.
+  - **iPhone XS locked at 5%:** the download kept going and was at 100% on unlock. The handover and install ran when the app woke.
+  - **iPhone swiped away at 75%:** the download stops. At the next open, `restore()` queued it again by itself, but the file started over from 0% after a stall of about 40 s. Files already installed stayed.
+  - **Mac quit at 30%** (a normal quit or SIGTERM): nothing downloads while the app is closed. The next launch starts it again from 0%.
+  - **SHA-256 of the 875 MB file:** 6–29 s.
+  - **Android** (swipe-away, force stop): still to measure.
+- **Resume data is written only on pause**, so a download that was killed or quit can't resume; it starts over. An untested idea: pause running downloads when the app quits, and resume them at the next launch.
 - **SHA-256 of a 207 MB pack** took about 10 s on the Pi in Dart. Phones may need it off the UI isolate for multi-GB packs.
 - **No Android SDK on the Pi,** so the Android build (Kotlin 2.4, POST_NOTIFICATIONS, UIDT) is untested.
 

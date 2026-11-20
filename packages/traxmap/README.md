@@ -160,9 +160,14 @@ await downloads.start(indexEntry);          // pause(id), resume(id), cancel(id)
   sets translated titles; call it once the app knows its locale.
 - **Restore:** `restore()` re-queues downloads the app was killed during, and
   installs ones that finished while it was closed.
-  - **Desktop:** a killed download restarts from 0%, and the plugin leaves
-    its partial file in the system temp folder.
-  - **Phones:** the OS keeps the transfer, except after a swipe-away.
+  - **Linux, Windows and macOS:** nothing downloads while the app is
+    closed. At the next launch the download starts over from 0%; on macOS
+    that happens after a normal quit too. On Linux the plugin leaves its
+    partial file in the system temp folder.
+  - **iOS:** keeps going while the phone is locked or the app is in the
+    background. After a swipe-away it starts over from 0% at the next
+    open.
+  - **Android:** not measured yet.
 - **App setup:**
   - **Android:** `INTERNET` and `POST_NOTIFICATIONS` permissions, Kotlin
     2.1+.
