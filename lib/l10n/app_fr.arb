@@ -1207,6 +1207,7 @@
   "channelPath_unknownPath": "Inconnu",
   "channelPath_floodPath": "Tout le réseau",
   "channelPath_directPath": "Afficher",
+  "channelPath_pickedUpOnItsWay": "Capté en chemin, il restait : {hops}",
   "channelPath_observedZeroOf": "0 de {total} sauts",
   "@channelPath_observedZeroOf": {
     "placeholders": {

@@ -1398,6 +1398,7 @@
   "channelPath_unknownPath": "Megfejt",
   "channelPath_floodPath": "Árvíz",
   "channelPath_directPath": "Közvetlen",
+  "channelPath_pickedUpOnItsWay": "Útközben fogadva, még hátravolt: {hops}",
   "channelPath_observedZeroOf": "0-ból {total}",
   "@channelPath_observedZeroOf": {
     "placeholders": {

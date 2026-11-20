@@ -3280,6 +3280,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelPath_directPath => 'Direct';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Picked up on its way, $hops still to go';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 of $total hops';
   }

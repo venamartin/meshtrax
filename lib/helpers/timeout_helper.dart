@@ -56,6 +56,31 @@ class TimeoutHelper {
     return wait.round().clamp(floor, math.max(floor, attemptTimeoutMs));
   }
 
+  /// direct_tx_delay_factor (simple_repeater NodePrefs default): a repeater
+  /// passing on a routed packet waits a random share of this many airtimes
+  /// (getDirectRetransmitDelay, 0 to 5 x airtime x factor).
+  static const double repeaterDirectTxDelayFactor = 0.3;
+
+  /// TXT_ACK_DELAY (BaseChatMesh.cpp): a companion waits this long before
+  /// it sends the ACK for a message it opened.
+  static const int ackDelayMs = 200;
+
+  /// BaseChatMesh::sendAckTo sends its extra MULTIPART ACK first and the
+  /// plain ACK this much later.
+  static const int extraAckGapMs = 300;
+
+  /// How long the app holds the ACK for a DM it opened from a copy that
+  /// still had [hopsLeft] hops to go: until the last of those repeaters has
+  /// passed the DM on (each waits at most its direct retransmit delay, then
+  /// sends for one airtime), so the ACK doesn't talk over them; then the
+  /// companion's own ACK delay. ~1 s for one hop left at 0.3 s airtime.
+  static int passingCopyAckDelayMs(int airtimeMs, int hopsLeft) =>
+      (hopsLeft *
+                  airtimeMs *
+                  (1 + retransmitDelaySpan * repeaterDirectTxDelayFactor))
+              .round() +
+          ackDelayMs;
+
   /// Floor for the final attempt of a retry ladder on a fast path.
   static const int lastAttemptFloorMs = 8000;
 

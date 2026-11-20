@@ -1207,6 +1207,7 @@
   "channelPath_unknownPath": "Desconhecido",
   "channelPath_floodPath": "Inundação",
   "channelPath_directPath": "Salvar",
+  "channelPath_pickedUpOnItsWay": "Captado no caminho, faltava: {hops}",
   "channelPath_observedZeroOf": "0 de {total} saltos",
   "@channelPath_observedZeroOf": {
     "placeholders": {

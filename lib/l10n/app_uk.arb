@@ -1208,6 +1208,7 @@
   "channelPath_unknownPath": "Невідомий",
   "channelPath_floodPath": "На всю мережу",
   "channelPath_directPath": "Прямий",
+  "channelPath_pickedUpOnItsWay": "Отримано дорогою, лишалося: {hops}",
   "channelPath_observedZeroOf": "0 з {total} стрибків",
   "@channelPath_observedZeroOf": {
     "placeholders": {

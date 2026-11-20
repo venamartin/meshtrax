@@ -736,6 +736,7 @@
   "channelPath_unknownPath": "Неизвестный",
   "channelPath_floodPath": "Рассылка",
   "channelPath_directPath": "Прямой",
+  "channelPath_pickedUpOnItsWay": "Получено по пути, оставалось: {hops}",
   "channelPath_observedZeroOf": "0 из {total} хопов",
   "channelPath_observedSomeOf": "{observed} из {total} хопов",
   "channelPath_mapTitle": "Карта пути",

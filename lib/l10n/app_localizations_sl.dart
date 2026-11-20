@@ -3309,6 +3309,11 @@ class AppLocalizationsSl extends AppLocalizations {
   String get channelPath_directPath => 'Neposredni';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Prejeto na poti, preostalo: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 iz $total skokov';
   }

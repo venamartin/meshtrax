@@ -1207,6 +1207,7 @@
   "channelPath_unknownPath": "Okänt",
   "channelPath_floodPath": "Översvämning",
   "channelPath_directPath": "Direkt",
+  "channelPath_pickedUpOnItsWay": "Uppfångat på vägen, kvar: {hops}",
   "channelPath_observedZeroOf": "0 av {total} hopp",
   "@channelPath_observedZeroOf": {
     "placeholders": {

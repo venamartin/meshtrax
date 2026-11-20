@@ -3331,6 +3331,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get channelPath_directPath => 'Guardar';
 
   @override
+  String channelPath_pickedUpOnItsWay(String hops) {
+    return 'Captado en camino, faltaba: $hops';
+  }
+
+  @override
   String channelPath_observedZeroOf(int total) {
     return '0 de $total saltos';
   }

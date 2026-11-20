@@ -1398,6 +1398,7 @@
   "channelPath_unknownPath": "알 수 없음",
   "channelPath_floodPath": "홍수",
   "channelPath_directPath": "직접",
+  "channelPath_pickedUpOnItsWay": "도중에 수신, 남은 경로: {hops}",
   "channelPath_observedZeroOf": "{total} 중 0개",
   "@channelPath_observedZeroOf": {
     "placeholders": {

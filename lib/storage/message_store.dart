@@ -820,6 +820,8 @@ class MessageStore {
       'fourByteRoomContactKey': base64Encode(msg.fourByteRoomContactKey),
       if (msg.claimedAt != null)
         'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
+      if (msg.passingCopyHopsLeft != null)
+        'passingCopyHopsLeft': msg.passingCopyHopsLeft,
     };
   }
 
@@ -883,6 +885,7 @@ class MessageStore {
       claimedAt: json['claimedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
           : null,
+      passingCopyHopsLeft: json['passingCopyHopsLeft'] as String?,
     );
   }
 }

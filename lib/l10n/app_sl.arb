@@ -1207,6 +1207,7 @@
   "channelPath_unknownPath": "Neznano",
   "channelPath_floodPath": "Prebivalstvo",
   "channelPath_directPath": "Neposredni",
+  "channelPath_pickedUpOnItsWay": "Prejeto na poti, preostalo: {hops}",
   "channelPath_observedZeroOf": "0 iz {total} skokov",
   "@channelPath_observedZeroOf": {
     "placeholders": {

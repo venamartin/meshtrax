@@ -1207,6 +1207,7 @@
   "channelPath_unknownPath": "Onbekend",
   "channelPath_floodPath": "Flood",
   "channelPath_directPath": "Direct",
+  "channelPath_pickedUpOnItsWay": "Onderweg opgevangen, nog te gaan: {hops}",
   "channelPath_observedZeroOf": "0 van {total} sprongen",
   "@channelPath_observedZeroOf": {
     "placeholders": {
