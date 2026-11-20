@@ -164,6 +164,14 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/map_layers/
+    - assets/fonts/JetBrainsMono-OFL.txt
+
+  # Code text in messages, the same on every platform. SIL Open Font
+  # License 1.1, registered in main.dart's licenses.
+  fonts:
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
 
 flutter_launcher_icons:
   android: true
