@@ -5192,6 +5192,107 @@ class AppLocalizationsRu extends AppLocalizations {
   String get structured_notice => 'Объявление';
 
   @override
+  String get structured_repeaterStatus => 'Состояние репитеров';
+
+  @override
+  String get repeaterStatus_stateCritical => 'критический';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'очень низкий';
+
+  @override
+  String get repeaterStatus_stateLow => 'низкий';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'ждёт своего объявления';
+
+  @override
+  String get repeaterStatus_unreachable => 'недоступен';
+
+  @override
+  String get repeaterStatus_noReading => 'нет показаний';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'ретрансляция вкл.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'ретрансляция выкл.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count мин';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count ч';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count д';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time назад';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'следующий опрос через $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count пропущенного опроса',
+      many: '$count пропущенных опросов',
+      few: '$count пропущенных опроса',
+      one: '$count пропущенный опрос',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'был $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'последний уровень $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'для $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'показание $value отброшено';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Страница $page из $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Только симуляция';
+
+  @override
   String get structured_allDay => 'Весь день';
 
   @override

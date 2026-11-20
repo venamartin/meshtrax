@@ -5170,6 +5170,107 @@ class AppLocalizationsSl extends AppLocalizations {
   String get structured_notice => 'Obvestilo';
 
   @override
+  String get structured_repeaterStatus => 'Stanje repetitorjev';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritičen';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'zelo nizek';
+
+  @override
+  String get repeaterStatus_stateLow => 'nizek';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'čaka na svoj oglas';
+
+  @override
+  String get repeaterStatus_unreachable => 'nedosegljiv';
+
+  @override
+  String get repeaterStatus_noReading => 'ni meritve';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'ponavljanje vklop.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'ponavljanje izklop.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'pred $time';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'naslednje poizvedovanje čez $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zgrešenih poizvedovanj',
+      few: '$count zgrešena poizvedovanja',
+      two: '$count zgrešeni poizvedovanji',
+      one: '$count zgrešeno poizvedovanje',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'bil $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'zadnja stopnja $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'za $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'meritev $value prezrta';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Stran $page od $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Samo simulacija';
+
+  @override
   String get structured_allDay => 'Ves dan';
 
   @override

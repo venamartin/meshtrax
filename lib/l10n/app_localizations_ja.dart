@@ -4937,6 +4937,104 @@ class AppLocalizationsJa extends AppLocalizations {
   String get structured_notice => 'お知らせ';
 
   @override
+  String get structured_repeaterStatus => 'リピーターの状態';
+
+  @override
+  String get repeaterStatus_stateCritical => '危険';
+
+  @override
+  String get repeaterStatus_stateVeryLow => '非常に低い';
+
+  @override
+  String get repeaterStatus_stateLow => '低い';
+
+  @override
+  String get repeaterStatus_stateOk => '正常';
+
+  @override
+  String get repeaterStatus_waiting => '広告待ち';
+
+  @override
+  String get repeaterStatus_unreachable => '到達不能';
+
+  @override
+  String get repeaterStatus_noReading => '測定値なし';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => '中継オン';
+
+  @override
+  String get repeaterStatus_repeatOff => '中継オフ';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count分';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count時間';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count日';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time前';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return '次の確認まで$time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '確認失敗 $count回',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return '以前は$state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return '最後の段階：$state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return '$nameのため';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return '測定値 $value を無視';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return '$page/$pagesページ';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'シミュレーションのみ';
+
+  @override
   String get structured_allDay => '終日';
 
   @override

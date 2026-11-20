@@ -314,6 +314,8 @@ field
    mention markup (`@[Name]`, a quoted `>` line) may come before it. An
    unknown type word is ordinary text. `SVG:` is a keyword too, but what
    follows it is path data rather than fields; see [Drawings](#drawings).
+   `Repeater:` starts a [repeater status](#repeater-status), whose fields
+   have a shape of their own.
 2. **Separator.** Fields are separated by line breaks or by `|`; both are
    accepted. MeshTrax sends one field per line. Free text never contains
    `|` (it becomes `/`) or a line break (it becomes a space).
@@ -484,6 +486,62 @@ SOS cancelled
   its time, until you dismiss it or its sender cancels it. On the map, an
   SOS is a red pin that moves with the repeats until you remove it; a
   cancelled one turns grey.
+
+## Repeater status
+
+How a group of repeaters stands, for example their batteries, from
+whatever watches them. MeshTrax reads these and never sends one.
+
+```
+Repeater: A277 3.52V crit 2m | A377 3.48V vlow 40m missed=1 | AD77 waiting
+```
+
+- **One field per repeater**, separated by `|` or line breaks. A field
+  starts with the repeater's name, one word, then, in this order:
+  - **Volts**: the last reading, e.g. `3.52V`.
+  - **Stage**: `ok`, `low`, `vlow` or `crit`.
+  - **Age** of the reading: `2m`, `3h` or `2d`.
+  - **`key=value` pairs** with lowercase keys.
+  - **A note**: any other words.
+
+  Any part may be missing. Volts, stage and age count only before the note
+  starts; a `key=value` may also stand among the note's words.
+- **Instead of a reading**, `waiting` (not heard yet), `unreachable` or
+  `no reading` may follow the name.
+- **Keys shown in words:**
+  - `tx`: TX power.
+  - `repeat`: `on` or `off`.
+  - `trend`: e.g. `-12mV/h`.
+  - `missed`: polls with no answer.
+  - `next`: time to the next poll, written like an age.
+  - `was`: the stage before.
+  - `stage`: the last stage of an unreachable repeater.
+  - `for`: another repeater's name.
+  - `reading`: a rejected sensor value, never drawn as a level.
+  - `label`: the sender's own name for the stage, hyphens for spaces.
+
+  Other keys show as `key: value`.
+- **Fields on their own:**
+  - `page=k/n` when a status takes several messages. Each page is a card
+    of its own, marked "Page k of n".
+  - `dryrun=yes` when the sender only simulates what it reports, marked
+    "Simulation only".
+
+  Any other `key=value` field shows below the card. A field that starts
+  with anything but a letter or digit, such as `+2 more`, shows as a line
+  of text.
+- **Required shape:** at least one field about a repeater. Without one,
+  the message is ordinary text.
+
+The card draws each repeater's battery from its stage: full and green for
+`ok`, then amber, orange and red for `crit`. Volts are only written, as
+the pack's chemistry is the sender's business. Waiting, unreachable and
+no-reading rows are grey. A one-line "Repeater status" header sits above
+the rows; notifications and reply previews sum them up instead: "Repeater
+status: 2 critical, 3 waiting".
+
+A field like `A277 3.52V crit 2m` takes about 18 bytes, so 4 to 6
+repeaters fit one channel message.
 
 ## What MeshTrax also reads without the keyword
 

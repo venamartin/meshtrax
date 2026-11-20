@@ -5204,6 +5204,107 @@ class AppLocalizationsPl extends AppLocalizations {
   String get structured_notice => 'Ogłoszenie';
 
   @override
+  String get structured_repeaterStatus => 'Stan przekaźników';
+
+  @override
+  String get repeaterStatus_stateCritical => 'krytyczny';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'bardzo niski';
+
+  @override
+  String get repeaterStatus_stateLow => 'niski';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'czeka na swoje ogłoszenie';
+
+  @override
+  String get repeaterStatus_unreachable => 'nieosiągalny';
+
+  @override
+  String get repeaterStatus_noReading => 'brak odczytu';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'przekazywanie wł.';
+
+  @override
+  String get repeaterStatus_repeatOff => 'przekazywanie wył.';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count godz.';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count dn.';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time temu';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'następny odczyt za $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nieudanego odczytu',
+      many: '$count nieudanych odczytów',
+      few: '$count nieudane odczyty',
+      one: '$count nieudany odczyt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'był $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'ostatni poziom $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'dla $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'odczyt $value pominięty';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Strona $page z $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Tylko symulacja';
+
+  @override
   String get structured_allDay => 'Cały dzień';
 
   @override

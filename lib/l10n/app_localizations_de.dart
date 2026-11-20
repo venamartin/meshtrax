@@ -5192,6 +5192,105 @@ class AppLocalizationsDe extends AppLocalizations {
   String get structured_notice => 'Hinweis';
 
   @override
+  String get structured_repeaterStatus => 'Repeater-Status';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritisch';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'sehr niedrig';
+
+  @override
+  String get repeaterStatus_stateLow => 'niedrig';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'wartet auf seine Anzeige';
+
+  @override
+  String get repeaterStatus_unreachable => 'nicht erreichbar';
+
+  @override
+  String get repeaterStatus_noReading => 'kein Messwert';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'Weiterleiten an';
+
+  @override
+  String get repeaterStatus_repeatOff => 'Weiterleiten aus';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count Min.';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count Std.';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count T.';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'vor $time';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'nächste Abfrage in $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Abfragen verpasst',
+      one: '1 Abfrage verpasst',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'war $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'letzte Stufe $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'für $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'Messwert $value verworfen';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Seite $page von $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Nur Simulation';
+
+  @override
   String get structured_allDay => 'Ganztägig';
 
   @override

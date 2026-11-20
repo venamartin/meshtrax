@@ -2661,6 +2661,116 @@
   "structured_sos": "SOS",
   "structured_event": "Event",
   "structured_notice": "Notice",
+  "structured_repeaterStatus": "Repeater status",
+  "repeaterStatus_stateCritical": "critical",
+  "repeaterStatus_stateVeryLow": "very low",
+  "repeaterStatus_stateLow": "low",
+  "repeaterStatus_stateOk": "OK",
+  "repeaterStatus_waiting": "waiting for its advert",
+  "repeaterStatus_unreachable": "unreachable",
+  "repeaterStatus_noReading": "no reading",
+  "repeaterStatus_tx": "TX {value}",
+  "@repeaterStatus_tx": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_repeatOn": "repeat on",
+  "repeaterStatus_repeatOff": "repeat off",
+  "repeaterStatus_minutes": "{count} min",
+  "@repeaterStatus_minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repeaterStatus_hours": "{count} h",
+  "@repeaterStatus_hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repeaterStatus_days": "{count} d",
+  "@repeaterStatus_days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repeaterStatus_ago": "{time} ago",
+  "@repeaterStatus_ago": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_nextPoll": "next poll in {time}",
+  "@repeaterStatus_nextPoll": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_missed": "{count, plural, =1{1 missed poll} other{{count} missed polls}}",
+  "@repeaterStatus_missed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repeaterStatus_was": "was {state}",
+  "@repeaterStatus_was": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_lastStage": "last stage {state}",
+  "@repeaterStatus_lastStage": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_for": "for {name}",
+  "@repeaterStatus_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_readingIgnored": "reading {value} ignored",
+  "@repeaterStatus_readingIgnored": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "repeaterStatus_page": "Page {page} of {pages}",
+  "@repeaterStatus_page": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "repeaterStatus_dryRun": "Simulation only",
   "structured_allDay": "All day",
   "structured_calendarFailed": "Could not open the calendar",
   "structured_today": "Today",

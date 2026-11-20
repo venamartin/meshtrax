@@ -5096,6 +5096,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String get structured_notice => 'Notice';
 
   @override
+  String get structured_repeaterStatus => 'Repeater status';
+
+  @override
+  String get repeaterStatus_stateCritical => 'critical';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'very low';
+
+  @override
+  String get repeaterStatus_stateLow => 'low';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'waiting for its advert';
+
+  @override
+  String get repeaterStatus_unreachable => 'unreachable';
+
+  @override
+  String get repeaterStatus_noReading => 'no reading';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'repeat on';
+
+  @override
+  String get repeaterStatus_repeatOff => 'repeat off';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time ago';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'next poll in $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count missed polls',
+      one: '1 missed poll',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'was $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'last stage $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'for $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'reading $value ignored';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Page $page of $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Simulation only';
+
+  @override
   String get structured_allDay => 'All day';
 
   @override

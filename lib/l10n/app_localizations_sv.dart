@@ -5136,6 +5136,105 @@ class AppLocalizationsSv extends AppLocalizations {
   String get structured_notice => 'Notis';
 
   @override
+  String get structured_repeaterStatus => 'Repeaterstatus';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritisk';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'mycket låg';
+
+  @override
+  String get repeaterStatus_stateLow => 'låg';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'väntar på sin annons';
+
+  @override
+  String get repeaterStatus_unreachable => 'onåbar';
+
+  @override
+  String get repeaterStatus_noReading => 'inget mätvärde';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'repetering på';
+
+  @override
+  String get repeaterStatus_repeatOff => 'repetering av';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count d';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return 'för $time sedan';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'nästa avläsning om $time';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count missade avläsningar',
+      one: '$count missad avläsning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'var $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'senaste steg $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return 'för $name';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return 'mätvärde $value ignorerat';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return 'Sida $page av $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Endast simulering';
+
+  @override
   String get structured_allDay => 'Heldag';
 
   @override

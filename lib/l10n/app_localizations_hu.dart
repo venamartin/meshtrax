@@ -5194,6 +5194,104 @@ class AppLocalizationsHu extends AppLocalizations {
   String get structured_notice => 'Közlemény';
 
   @override
+  String get structured_repeaterStatus => 'Átjátszók állapota';
+
+  @override
+  String get repeaterStatus_stateCritical => 'kritikus';
+
+  @override
+  String get repeaterStatus_stateVeryLow => 'nagyon alacsony';
+
+  @override
+  String get repeaterStatus_stateLow => 'alacsony';
+
+  @override
+  String get repeaterStatus_stateOk => 'OK';
+
+  @override
+  String get repeaterStatus_waiting => 'a hirdetésére vár';
+
+  @override
+  String get repeaterStatus_unreachable => 'nem elérhető';
+
+  @override
+  String get repeaterStatus_noReading => 'nincs mérés';
+
+  @override
+  String repeaterStatus_tx(String value) {
+    return 'TX $value';
+  }
+
+  @override
+  String get repeaterStatus_repeatOn => 'továbbítás be';
+
+  @override
+  String get repeaterStatus_repeatOff => 'továbbítás ki';
+
+  @override
+  String repeaterStatus_minutes(int count) {
+    return '$count perc';
+  }
+
+  @override
+  String repeaterStatus_hours(int count) {
+    return '$count óra';
+  }
+
+  @override
+  String repeaterStatus_days(int count) {
+    return '$count nap';
+  }
+
+  @override
+  String repeaterStatus_ago(String time) {
+    return '$time ezelőtt';
+  }
+
+  @override
+  String repeaterStatus_nextPoll(String time) {
+    return 'következő lekérdezés $time múlva';
+  }
+
+  @override
+  String repeaterStatus_missed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kihagyott lekérdezés',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String repeaterStatus_was(String state) {
+    return 'korábban $state';
+  }
+
+  @override
+  String repeaterStatus_lastStage(String state) {
+    return 'utolsó szint $state';
+  }
+
+  @override
+  String repeaterStatus_for(String name) {
+    return '$name miatt';
+  }
+
+  @override
+  String repeaterStatus_readingIgnored(String value) {
+    return '$value mérés figyelmen kívül hagyva';
+  }
+
+  @override
+  String repeaterStatus_page(int page, int pages) {
+    return '$page. oldal / $pages';
+  }
+
+  @override
+  String get repeaterStatus_dryRun => 'Csak szimuláció';
+
+  @override
   String get structured_allDay => 'Egész nap';
 
   @override
