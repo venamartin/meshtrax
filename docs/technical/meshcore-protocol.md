@@ -531,8 +531,8 @@ the companion's `allowPacketForward` (its client-repeat setting) only decides fo
 So the recipient opens a routed DM, request or room post only from the **last** repeater's
 copy, or the sender's on a zero-hop route. A copy it hears straight from the sender, or from
 an earlier repeater, is dropped unopened even though it is addressed to it. Exceptions:
-routed ACKs are checked at every hop ("early received ACK", `Mesh.cpp` 79-87), and floods
-are opened from the first copy heard.
+routed plain ACKs are checked at every hop ("early received ACK", `Mesh.cpp` 79-87; MULTIPART
+ACKs are not, see below), and floods are opened from the first copy heard.
 
 Proven 2026-11-19 by MeshCore's own code compiled on a PC with a simulated radio, and on two
 radios on 920.000: a routed DM heard directly at +12.5 dB SNR, one fake hop still to go, was
@@ -604,6 +604,28 @@ the companion sends two acks or it sends one and the app sends the second"):
   stored route. The connector reads routes through `graphRouteCandidates` and tests the
   held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
+
+### ACKs the radio misses, counted by MeshTrax
+A companion counts an ACK for its own send through `processAck`, which pushes
+`PUSH_CODE_SEND_CONFIRMED`. Two kinds of ACK it hears never get there:
+- **A MULTIPART ACK with hops to go.** Only plain ACKs are checked on their way (`Mesh.cpp`
+  78-87). A MULTIPART one counts only once its path is used up (300-319), so the extra ACK
+  Multi-ACKs sends, and MeshTrax's second ACK, are dropped when heard from the ACKing radio
+  or an earlier repeater. Each repeater that passes one on also sends a plain ACK
+  (`forwardMultipartDirect` → `routeDirectRecvAcks`), so this is rare.
+- **An ACK for a send the radio no longer waits on.** `expected_ack_table` holds the last 8
+  sends (`EXPECTED_ACK_TABLE_SIZE`, overwritten in a circle, emptied on a restart), and
+  MeshTrax's retries each take a slot.
+
+The RX log still shows them. For each plain ACK, MULTIPART ACK, or path reply to this radio
+carrying an ACK (opened with the passing-copy key, `PassingCopyOpener.pathReplyAck`), the
+connector (`_noteAckHeard`) checks the code against the DMs still waiting
+(`MessageRetryService.waitingForAck`) and the repeater commands it tracks. A match gets
+`TimeoutHelper.heardAckGraceMs` (1 s): the radio pushes the RX log line just before it
+handles the packet, so its own confirmation comes first when it counts the ACK. A send still
+waiting after that is confirmed as if the radio had, with the trip time measured from its
+`RESP_CODE_SENT`, and the log says "The radio missed ACK …". The ACK code is in the clear,
+so plain and MULTIPART ACKs need no key.
 
 ### ADV_TYPE constants
 | Value | Meaning |

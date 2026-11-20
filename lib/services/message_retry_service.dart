@@ -1125,6 +1125,16 @@ class MessageRetryService extends ChangeNotifier {
     return false;
   }
 
+  /// How long ago the attempt [ackHash] belongs to went out, while its DM
+  /// still waits for an ACK; null when nothing waits for that hash.
+  Duration? waitingForAck(int ackHash) {
+    final mapping = _ackHashToMessageId[ackHash.toRadixString(16).padLeft(8, '0')];
+    if (mapping == null || !_pendingMessages.containsKey(mapping.messageId)) {
+      return null;
+    }
+    return DateTime.now().difference(mapping.timestamp);
+  }
+
   void handleAckReceived(int ackHash, int tripTimeMs) {
     final config = _config;
     String? matchedMessageId;
