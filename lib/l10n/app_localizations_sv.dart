@@ -667,6 +667,68 @@ class AppLocalizationsSv extends AppLocalizations {
       'Fortfarande i TRAX-läge: det vanliga meshet hör dig inte.';
 
   @override
+  String get trip_members => 'Turens medlemmar';
+
+  @override
+  String get trip_pickChannel =>
+      'Välj en turkanal: alla som skriver där är medlemmar.';
+
+  @override
+  String get trip_noPosts => 'Ingen har skrivit på turkanalen än.';
+
+  @override
+  String get trip_notContact => 'Inte en kontakt på den här radion';
+
+  @override
+  String get trip_canAsk => 'Kan fråga din radio';
+
+  @override
+  String get trip_addMember => 'Lägg till en medlem';
+
+  @override
+  String get trip_askMyRadio => 'Medlemmar får fråga min radio';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Var den är, och dess batteri. Slår på GPS. Slutar när du lämnar TRAX efter turen.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting är av: medlemmar kan inte fråga.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'I TRAX-läge. Alla inom räckhåll kan läsa den.';
+
+  @override
+  String get trip_sosTitle => 'Ska ett SOS höras även i Stör ej?';
+
+  @override
+  String get trip_sosBody =>
+      'Öppna inställningarna och tillåt Åsidosätt Stör ej.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on av $total på TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: inte hörd än';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: frågar radion…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: inget svar';
+  }
+
+  @override
   String get settings_deviceInfo => 'Enhetens information';
 
   @override

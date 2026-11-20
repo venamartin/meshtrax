@@ -4,9 +4,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
+import '../models/contact.dart';
 import '../models/trax.dart';
 import '../screens/trax_settings_screen.dart';
+import '../services/radio_ask_service.dart';
 import '../services/trax_service.dart';
+import '../services/trip_service.dart';
 import 'trax_dialogs.dart';
 
 Future<void> showTraxSheet(BuildContext context) => showModalBottomSheet<void>(
@@ -43,6 +46,7 @@ class _TraxSheetState extends State<TraxSheet> {
     final outcome = await trax.start();
     if (!mounted) return;
     setState(() => _error = traxOutcomeText(l10n, outcome, preset: preset));
+    if (trax.isOn) await offerSosThroughDnd(context);
   }
 
   Future<void> _leave(TraxService trax) async {
@@ -165,7 +169,11 @@ class _TraxSheetState extends State<TraxSheet> {
         _row(
           context,
           l10n.trax_inTrax,
-          '${planned.label}\n${l10n.trax_repeatOn}',
+          [
+            planned.label,
+            l10n.trax_repeatOn,
+            if (setup.advertPosition) l10n.locationSharing_adverts,
+          ].join('\n'),
           strong: true,
         ),
       _row(
@@ -191,6 +199,13 @@ class _TraxSheetState extends State<TraxSheet> {
     final now = trax.current;
     final end = trax.until;
     final heard = trax.heard;
+    final trip = context.watch<TripService>();
+    final asks = context.watch<RadioAskService>();
+    final members = trip.memberContacts;
+    final notHeard = [
+      for (final m in members)
+        if (!trip.onTrax(m)) m,
+    ];
     return [
       if (end != null)
         Text(
@@ -204,10 +219,18 @@ class _TraxSheetState extends State<TraxSheet> {
       const Divider(height: 32),
       Text(l10n.trax_groupCheck, style: theme.textTheme.titleSmall),
       const SizedBox(height: 4),
-      Text(
-        l10n.trax_heard(heard.length, heard.map((c) => c.name).join(', ')),
-        style: theme.textTheme.bodyLarge,
-      ),
+      if (members.isEmpty)
+        Text(
+          l10n.trax_heard(heard.length, heard.map((c) => c.name).join(', ')),
+          style: theme.textTheme.bodyLarge,
+        )
+      else ...[
+        Text(
+          l10n.trip_onTrax(members.length - notHeard.length, members.length),
+          style: theme.textTheme.bodyLarge,
+        ),
+        for (final m in notHeard) _notHeard(context, m, asks.askFor(m)),
+      ],
       const SizedBox(height: 8),
       OutlinedButton.icon(
         onPressed: trax.busy ? null : () => _check(trax),
@@ -219,6 +242,22 @@ class _TraxSheetState extends State<TraxSheet> {
         _note(Icons.restore, l10n.trax_noSaved),
       ],
     ];
+  }
+
+  /// A member not heard on TRAX, and where their radio's ask stands.
+  Widget _notHeard(BuildContext context, Contact member, RadioAsk? ask) {
+    final l10n = context.l10n;
+    final error = Theme.of(context).colorScheme.error;
+    final (text, color) = switch (ask?.phase) {
+      RadioAskPhase.waiting ||
+      RadioAskPhase.asking => (l10n.trip_asking(member.name), null),
+      RadioAskPhase.noAnswer => (l10n.trip_noAnswer(member.name), error),
+      _ => (l10n.trip_notHeardYet(member.name), null),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(text, style: TextStyle(color: color)),
+    );
   }
 
   /// A label over its value, so a long radio setting wraps at its own

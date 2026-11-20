@@ -669,6 +669,69 @@ class AppLocalizationsNl extends AppLocalizations {
       'Nog in TRAX-modus: het gewone mesh hoort je niet.';
 
   @override
+  String get trip_members => 'Tochtleden';
+
+  @override
+  String get trip_pickChannel =>
+      'Kies een tochtkanaal: wie daar iets plaatst, is lid.';
+
+  @override
+  String get trip_noPosts =>
+      'Nog niemand heeft iets op het tochtkanaal geplaatst.';
+
+  @override
+  String get trip_notContact => 'Geen contact op deze radio';
+
+  @override
+  String get trip_canAsk => 'Kan je radio vragen';
+
+  @override
+  String get trip_addMember => 'Lid toevoegen';
+
+  @override
+  String get trip_askMyRadio => 'Leden mogen mijn radio vragen';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Waar hij is, en zijn batterij. Zet gps aan. Stopt als je TRAX na de tocht verlaat.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting staat uit: leden kunnen niet vragen.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'In TRAX-modus. Iedereen binnen bereik kan hem lezen.';
+
+  @override
+  String get trip_sosTitle => 'Een SOS laten klinken ondanks Niet storen?';
+
+  @override
+  String get trip_sosBody =>
+      'Open de instellingen en sta Niet storen negeren toe.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on van $total op TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: nog niet gehoord';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: radio wordt gevraagd…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: geen antwoord';
+  }
+
+  @override
   String get settings_deviceInfo => 'Apparateninformatie';
 
   @override

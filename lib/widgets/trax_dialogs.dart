@@ -12,6 +12,7 @@ import '../models/radio_settings.dart';
 import '../models/trax.dart';
 import '../services/notification_service.dart';
 import '../services/trax_service.dart';
+import '../storage/prefs_manager.dart';
 
 /// "Sunday 18:00": a trip's end in this phone's time zone.
 String traxTimeText(BuildContext context, DateTime t) =>
@@ -40,6 +41,38 @@ String traxStepText(AppLocalizations l10n, TraxStep step) => switch (step) {
   TraxStep.checking => l10n.trax_stepChecking,
   TraxStep.leaving => l10n.trax_stepLeaving,
 };
+
+const _sosOfferedKey = 'trip_sos_dnd_offered';
+
+/// Once per phone, where Do Not Disturb would silence an SOS (Android):
+/// offer the setting that lets it ring. The app can't switch it itself.
+Future<void> offerSosThroughDnd(BuildContext context) async {
+  final prefs = PrefsManager.instance;
+  if (prefs.getBool(_sosOfferedKey) == true) return;
+  final state = await NotificationService().sosAlertState();
+  if (state != SosAlertState.silencedByDnd || !context.mounted) return;
+  await prefs.setBool(_sosOfferedKey, true);
+  if (!context.mounted) return;
+  final l10n = context.l10n;
+  final open = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(l10n.trip_sosTitle),
+      content: Text(l10n.trip_sosBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialog, false),
+          child: Text(l10n.trax_notNow),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialog, true),
+          child: Text(l10n.batterySleep_openSettings),
+        ),
+      ],
+    ),
+  );
+  if (open == true) await NotificationService().openSosSettings();
+}
 
 void _report(BuildContext context, String? text) {
   if (text == null || !context.mounted) return;
@@ -142,9 +175,9 @@ Future<void> showTraxFollowDialog(
   required String sender,
   required TraxMessage message,
   required Channel channel,
-}) {
+}) async {
   final l10n = context.l10n;
-  return _showActionDialog(
+  await _showActionDialog(
     context,
     trax,
     body: l10n.trax_followBody(sender, traxTimeText(context, message.until!)),
@@ -155,6 +188,7 @@ Future<void> showTraxFollowDialog(
       return traxOutcomeText(l10n, outcome, preset: message.preset);
     },
   );
+  if (context.mounted && trax.isOn) await offerSosThroughDnd(context);
 }
 
 /// What TRAX mode asks when it happens: a member switched or is leaving,

@@ -160,6 +160,60 @@
   "trax_notificationText": "Bežná sieť mesh vás nepočuje. Otvorte MeshTrax a režim opustite.",
   "trax_endedTitle": "Váš výlet sa skončil",
   "trax_endedText": "Stále v režime TRAX: bežná sieť mesh vás nepočuje.",
+  "trip_members": "Členovia výletu",
+  "trip_pickChannel": "Vyberte kanál výletu: kto tam píše, je člen.",
+  "trip_noPosts": "Na kanáli výletu zatiaľ nikto nepísal.",
+  "trip_notContact": "Nie je kontaktom v tomto rádiu",
+  "trip_canAsk": "Môže sa opýtať vášho rádia",
+  "trip_addMember": "Pridať člena",
+  "trip_askMyRadio": "Členovia sa môžu opýtať môjho rádia",
+  "trip_askMyRadioHint": "Kde je a jeho batéria. Zapne GPS. Skončí, keď po výlete opustíte TRAX.",
+  "trip_shareOff": "„{setting}“ je vypnuté: členovia sa nemôžu pýtať.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "V režime TRAX. Môže ju prečítať ktokoľvek v dosahu.",
+  "trip_sosTitle": "Má SOS zvoniť aj v režime Nerušiť?",
+  "trip_sosBody": "Otvorte nastavenia a povoľte prepísanie režimu Nerušiť.",
+  "trip_onTrax": "{on} z {total} na TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: zatiaľ nepočuť",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: pýtam sa jeho rádia…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: žiadna odpoveď",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informácie o zariadení",
   "settings_appSettings": "Nastavenia aplikácie",
   "settings_appSettingsSubtitle": "Upozornenia, správy a nastavenia mapy",

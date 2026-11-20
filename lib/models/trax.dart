@@ -24,11 +24,27 @@ class TraxSetup {
   /// Post a TRAX message on the trip channel before switching or leaving.
   final bool tellGroup;
 
+  /// Trip members may ask this radio where it is (Trip setup).
+  final bool askMyRadio;
+
+  /// TRAX mode puts the radio's position in its adverts; Leave stops it.
+  final bool advertPosition;
+
+  /// Members by contact key, beyond those who post on the trip channel.
+  final Set<String> added;
+
+  /// Posters on the trip channel who aren't members, by contact key.
+  final Set<String> removed;
+
   const TraxSetup({
     this.preset = TraxPresetKind.mesh,
     this.channelKey,
     this.until,
     this.tellGroup = true,
+    this.askMyRadio = true,
+    this.advertPosition = false,
+    this.added = const {},
+    this.removed = const {},
   });
 
   TraxSetup copyWith({
@@ -36,11 +52,19 @@ class TraxSetup {
     String? Function()? channelKey,
     DateTime? Function()? until,
     bool? tellGroup,
+    bool? askMyRadio,
+    bool? advertPosition,
+    Set<String>? added,
+    Set<String>? removed,
   }) => TraxSetup(
     preset: preset ?? this.preset,
     channelKey: channelKey == null ? this.channelKey : channelKey(),
     until: until == null ? this.until : until(),
     tellGroup: tellGroup ?? this.tellGroup,
+    askMyRadio: askMyRadio ?? this.askMyRadio,
+    advertPosition: advertPosition ?? this.advertPosition,
+    added: added ?? this.added,
+    removed: removed ?? this.removed,
   );
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +72,10 @@ class TraxSetup {
     'channel': ?channelKey,
     'until': ?until?.millisecondsSinceEpoch,
     'tell': tellGroup,
+    'ask': askMyRadio,
+    'advert': advertPosition,
+    if (added.isNotEmpty) 'added': added.toList(),
+    if (removed.isNotEmpty) 'removed': removed.toList(),
   };
 
   static TraxSetup fromJson(Map<String, dynamic> json) => TraxSetup(
@@ -62,7 +90,14 @@ class TraxSetup {
       _ => null,
     },
     tellGroup: json['tell'] as bool? ?? true,
+    askMyRadio: json['ask'] as bool? ?? true,
+    advertPosition: json['advert'] as bool? ?? false,
+    added: _keys(json['added']),
+    removed: _keys(json['removed']),
   );
+
+  static Set<String> _keys(Object? json) =>
+      json is List ? {...json.whereType<String>()} : const {};
 }
 
 /// A radio's settings from before TRAX mode, as it reported them: [cr] in
@@ -138,16 +173,29 @@ class TraxSession {
   final DateTime switchedAt;
   final DateTime? until;
 
+  /// TRAX mode turned on the position in adverts, so Leave turns it off.
+  final bool advertSet;
+
   const TraxSession({
     required this.saved,
     required this.switchedAt,
     this.until,
+    this.advertSet = false,
   });
+
+  TraxSession copyWith({DateTime? Function()? until, bool? advertSet}) =>
+      TraxSession(
+        saved: saved,
+        switchedAt: switchedAt,
+        until: until == null ? this.until : until(),
+        advertSet: advertSet ?? this.advertSet,
+      );
 
   Map<String, dynamic> toJson() => {
     'saved': saved.toJson(),
     'switched_at': switchedAt.millisecondsSinceEpoch,
     'until': ?until?.millisecondsSinceEpoch,
+    if (advertSet) 'advert_set': true,
   };
 
   static TraxSession? fromJson(Object? json) {
@@ -160,6 +208,7 @@ class TraxSession {
       saved: saved,
       switchedAt: DateTime.fromMillisecondsSinceEpoch(at),
       until: until is int ? DateTime.fromMillisecondsSinceEpoch(until) : null,
+      advertSet: json['advert_set'] == true,
     );
   }
 }

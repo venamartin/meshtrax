@@ -643,6 +643,64 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_endedText => '아직 TRAX 모드입니다. 일반 메시에서는 내 소리를 듣지 못합니다.';
 
   @override
+  String get trip_members => '여행 멤버';
+
+  @override
+  String get trip_pickChannel => '여행 채널을 고르세요. 그 채널에 글을 쓴 사람이 멤버가 됩니다.';
+
+  @override
+  String get trip_noPosts => '여행 채널에 아직 아무도 글을 쓰지 않았습니다.';
+
+  @override
+  String get trip_notContact => '이 무전기의 연락처가 아님';
+
+  @override
+  String get trip_canAsk => '내 무전기에 물어볼 수 있음';
+
+  @override
+  String get trip_addMember => '멤버 추가';
+
+  @override
+  String get trip_askMyRadio => '멤버가 내 무전기에 물어볼 수 있음';
+
+  @override
+  String get trip_askMyRadioHint => '위치와 배터리. GPS를 켭니다. 여행 후 TRAX를 나가면 끝납니다.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting이(가) 꺼져 있어 멤버가 물어볼 수 없습니다.';
+  }
+
+  @override
+  String get trip_advertsHint => 'TRAX 모드에서. 범위 안의 누구나 읽을 수 있습니다.';
+
+  @override
+  String get trip_sosTitle => '방해 금지 모드에서도 SOS가 울리게 할까요?';
+
+  @override
+  String get trip_sosBody => '설정을 열고 방해 금지 무시를 허용하세요.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return 'TRAX에 $on/$total';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: 아직 들리지 않음';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: 무전기에 묻는 중…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: 응답 없음';
+  }
+
+  @override
   String get settings_deviceInfo => '장치 정보';
 
   @override

@@ -670,6 +670,68 @@ class AppLocalizationsBg extends AppLocalizations {
       'Все още в режим TRAX: обичайната mesh мрежа не ви чува.';
 
   @override
+  String get trip_members => 'Членове на пътуването';
+
+  @override
+  String get trip_pickChannel =>
+      'Изберете канал на пътуването: всеки, който пише там, е член.';
+
+  @override
+  String get trip_noPosts => 'Още никой не е писал в канала на пътуването.';
+
+  @override
+  String get trip_notContact => 'Не е контакт в това радио';
+
+  @override
+  String get trip_canAsk => 'Може да пита радиото ви';
+
+  @override
+  String get trip_addMember => 'Добави член';
+
+  @override
+  String get trip_askMyRadio => 'Членовете могат да питат радиото ми';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Къде е и батерията му. Включва GPS. Спира, когато излезете от TRAX след пътуването.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '„$setting“ е изключено: членовете не могат да питат.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'В режим TRAX. Всеки в обхват може да го прочете.';
+
+  @override
+  String get trip_sosTitle => 'SOS да звъни и при „Не безпокойте“?';
+
+  @override
+  String get trip_sosBody =>
+      'Отворете настройките и разрешете игнориране на „Не безпокойте“.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on от $total в TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: още не е чут';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: питане на радиото…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: няма отговор';
+  }
+
+  @override
   String get settings_deviceInfo => 'Информация за устройството';
 
   @override

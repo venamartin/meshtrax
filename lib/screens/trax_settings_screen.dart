@@ -3,16 +3,24 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../connector/meshcore_connector.dart';
+import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
+import '../models/contact.dart';
 import '../models/radio_settings.dart';
 import '../models/trax.dart';
+import '../services/app_settings_service.dart';
 import '../services/trax_service.dart';
+import '../services/trip_service.dart';
+import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/trax_dialogs.dart';
+import 'app_settings_screen.dart';
 
-/// TRAX settings: the preset, the trip channel, the trip's end and Tell
-/// the group. One set per phone.
+/// TRAX settings: the preset, the trip channel, the trip's end, Tell the
+/// group, and Trip setup: the trip members and what they may do. One set
+/// per phone.
 class TraxSettingsScreen extends StatelessWidget {
   const TraxSettingsScreen({super.key});
 
@@ -109,10 +117,129 @@ class TraxSettingsScreen extends StatelessWidget {
               value: setup.tellGroup,
               onChanged: (on) => save(setup.copyWith(tellGroup: on)),
             ),
+            const Divider(),
+            ..._tripSetup(context, trax),
           ],
         ),
       ),
     );
+  }
+
+  /// The trip members, found on the trip channel, and what TRAX settings
+  /// let them do: nothing else to set up.
+  List<Widget> _tripSetup(BuildContext context, TraxService trax) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final error = theme.colorScheme.error;
+    final trip = context.watch<TripService>();
+    final connector = context.watch<MeshCoreConnector>();
+    final setup = trax.setup;
+    final members = trip.members;
+    void save(TraxSetup next) => unawaited(trax.updateSetup(next));
+    return [
+      _header(context, l10n.trip_members),
+      if (trax.tripChannel == null)
+        _hint(context, l10n.trip_pickChannel)
+      else ...[
+        if (members.isEmpty) _hint(context, l10n.trip_noPosts),
+        for (final m in members)
+          ListTile(
+            leading: Icon(
+              m.contact == null ? Icons.person_off_outlined : Icons.person,
+              color: m.contact == null ? error : null,
+            ),
+            title: Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: m.contact == null
+                ? Text(l10n.trip_notContact, style: TextStyle(color: error))
+                : trip.active &&
+                      connector.telemetryGrantedTo(m.contact!).location
+                ? Text(l10n.trip_canAsk)
+                : null,
+            trailing: m.contact == null
+                ? null
+                : IconButton(
+                    tooltip: l10n.common_remove,
+                    icon: const Icon(Icons.close),
+                    onPressed: () => trip.removeMember(m.contact!),
+                  ),
+          ),
+        ListTile(
+          leading: const Icon(Icons.person_add_alt),
+          title: Text(l10n.trip_addMember),
+          onTap: () => _addMember(context, trip),
+        ),
+      ],
+      SwitchListTile(
+        secondary: const Icon(Icons.share_location),
+        title: Text(l10n.trip_askMyRadio),
+        subtitle: Text(
+          [
+            l10n.trip_askMyRadioHint,
+            if (setup.askMyRadio && trip.active && trip.blockedBySharing)
+              l10n.trip_shareOff(l10n.locationSharing_share),
+          ].join('\n'),
+        ),
+        value: setup.askMyRadio,
+        onChanged: (on) => save(setup.copyWith(askMyRadio: on)),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.cell_tower),
+        title: Text(l10n.locationSharing_adverts),
+        subtitle: Text(l10n.trip_advertsHint),
+        value: setup.advertPosition,
+        onChanged: (on) => save(setup.copyWith(advertPosition: on)),
+      ),
+      if (PlatformInfo.isMobile || PlatformInfo.isMacOS)
+        SosAlertsTile(
+          enabled: context
+              .watch<AppSettingsService>()
+              .settings
+              .notificationsEnabled,
+        ),
+    ];
+  }
+
+  Widget _hint(BuildContext context, String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    ),
+  );
+
+  Future<void> _addMember(BuildContext context, TripService trip) async {
+    final l10n = context.l10n;
+    final taken = {for (final c in trip.memberContacts) c.publicKeyHex};
+    final offered = [
+      for (final c in context.read<MeshCoreConnector>().contacts)
+        if (c.type == advTypeChat && !taken.contains(c.publicKeyHex)) c,
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final picked = await showDialog<Contact>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.trip_addMember),
+        contentPadding: const EdgeInsets.only(top: 12),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: offered.length,
+            itemBuilder: (context, i) => ListTile(
+              title: Text(offered[i].name),
+              onTap: () => Navigator.pop(context, offered[i]),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.common_cancel),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) trip.addMember(picked);
   }
 
   Widget? _subtitle(List<String?> lines) {
@@ -168,6 +295,9 @@ class TraxSettingsScreen extends StatelessWidget {
     await trax.updateSetup(
       trax.setup.copyWith(channelKey: () => picked.$1?.idKey),
     );
+    if (picked.$1 != null && context.mounted) {
+      await offerSosThroughDnd(context);
+    }
   }
 
   Future<void> _pickEnd(BuildContext context, TraxService trax) async {

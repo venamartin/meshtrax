@@ -664,6 +664,67 @@ class AppLocalizationsEn extends AppLocalizations {
       'Still in TRAX mode: the regular mesh can\'t hear you.';
 
   @override
+  String get trip_members => 'Trip members';
+
+  @override
+  String get trip_pickChannel =>
+      'Pick a trip channel: everyone who posts there is a member.';
+
+  @override
+  String get trip_noPosts => 'Nobody has posted on the trip channel yet.';
+
+  @override
+  String get trip_notContact => 'Not a contact on this radio';
+
+  @override
+  String get trip_canAsk => 'Can ask your radio';
+
+  @override
+  String get trip_addMember => 'Add a member';
+
+  @override
+  String get trip_askMyRadio => 'Members can ask my radio';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Where it is, and its battery. Turns GPS on. Ends when you leave TRAX after the trip.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting is off: members can\'t ask.';
+  }
+
+  @override
+  String get trip_advertsHint => 'In TRAX mode. Anyone in range can read it.';
+
+  @override
+  String get trip_sosTitle => 'Let an SOS ring through Do Not Disturb?';
+
+  @override
+  String get trip_sosBody =>
+      'Open settings, then allow Override Do Not Disturb.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on of $total on TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: not heard yet';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: asking their radio…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: no answer';
+  }
+
+  @override
   String get settings_deviceInfo => 'Device Info';
 
   @override
