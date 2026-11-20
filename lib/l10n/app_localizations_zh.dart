@@ -4395,10 +4395,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => '仅在 Wi‑Fi 下下载地图';
+  String get appSettings_mapDownloadsWifiOnly => '仅在 Wi‑Fi 下下载';
 
   @override
-  String get appSettings_mapDownloadsWifiOnlySubtitle => '地图下载会等待 Wi‑Fi 连接';
+  String get appSettings_mapDownloadsWifiOnlySubtitle => '下载会等待 Wi‑Fi 连接';
 
   @override
   String get offlineMaps_title => '离线地图';
@@ -4653,13 +4653,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineMaps_notInCatalogue => '此地区不可用';
 
   @override
-  String get offlineMaps_notificationRunning => '正在下载地图';
+  String get offlineMaps_notificationRunning => '正在下载';
 
   @override
-  String get offlineMaps_notificationPaused => '地图下载已暂停';
+  String get offlineMaps_notificationPaused => '下载已暂停';
 
   @override
-  String get offlineMaps_notificationFailed => '地图下载失败';
+  String get offlineMaps_notificationFailed => '下载失败';
 
   @override
   String get map_notForNavigation => '不可用于导航';
