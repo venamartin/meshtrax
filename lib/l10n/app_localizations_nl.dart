@@ -4709,12 +4709,11 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Kaarten alleen via wifi downloaden';
+  String get appSettings_mapDownloadsWifiOnly => 'Alleen via wifi downloaden';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Kaartdownloads wachten op een wifiverbinding';
+      'Downloads wachten op wifi';
 
   @override
   String get offlineMaps_title => 'Offline kaarten';
@@ -4976,13 +4975,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Niet beschikbaar voor deze regio';
 
   @override
-  String get offlineMaps_notificationRunning => 'Kaart downloaden';
+  String get offlineMaps_notificationRunning => 'Downloaden';
 
   @override
-  String get offlineMaps_notificationPaused => 'Kaartdownload gepauzeerd';
+  String get offlineMaps_notificationPaused => 'Download gepauzeerd';
 
   @override
-  String get offlineMaps_notificationFailed => 'Kaartdownload mislukt';
+  String get offlineMaps_notificationFailed => 'Download mislukt';
 
   @override
   String get map_notForNavigation => 'Niet voor navigatie';

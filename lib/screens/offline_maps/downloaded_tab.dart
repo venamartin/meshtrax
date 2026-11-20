@@ -275,15 +275,15 @@ class _DownloadRow extends StatelessWidget {
     final maps = context.read<MapPacksService>();
     final item = download.item;
     final region = item.region;
-    // "Massachusetts · NOAA charts", or the pack's own name ("… (NOAA
-    // charts)") alone when its chart area isn't known.
+    // "Massachusetts · NOAA charts", or the item's own name ("… (NOAA
+    // charts)") alone when it has no region or its chart area isn't known.
     final title =
-        item is PackIndexEntry &&
-            item.kind == PackKind.charts &&
-            (region == null || maps.chartAreas?.byPackRegion(region) == null)
+        region == null ||
+            (item is PackIndexEntry &&
+                item.kind == PackKind.charts &&
+                maps.chartAreas?.byPackRegion(region) == null)
         ? item.name
-        : '${region == null ? item.name : _regionName(maps, region)}'
-              ' · ${itemLabel(l10n, item)}';
+        : '${_regionName(maps, region)} · ${itemLabel(l10n, item)}';
     final state = download.state;
     final failed = state == PackDownloadState.failed;
     // Checking the file, or (routing and places) installing it.

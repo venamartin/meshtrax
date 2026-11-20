@@ -205,6 +205,37 @@ void main() {
     expect(maps.downloader.drive.downloads, isEmpty);
   });
 
+  /// A file the app installs itself, which no drive has.
+  final extra = DownloadFile(
+    id: 'extra',
+    name: 'Extra data',
+    url: Uri.parse('https://maps.meshtrax.io/v1/files/extra.bin'),
+    bytes: 1000,
+    sha256: '0' * 64,
+    kind: 'extra',
+  );
+
+  test("what the drive doesn't have comes from the server", () async {
+    await maps.start();
+    index([pack('ri-osm', 'osm', _ri)]);
+    await maps.useDrive(IoMapDrive(stick));
+
+    await maps.download([...maps.index!.packs, extra]);
+    await installed('ri-osm');
+    expect(network.started, [extra]);
+    expect(maps.downloader.drive.owns('extra'), isFalse);
+  });
+
+  test("a drive that went away doesn't hold up the server's", () async {
+    await maps.start();
+    index([pack('ri-osm', 'osm', _ri)]);
+    await maps.useDrive(IoMapDrive(stick));
+    stick.deleteSync(recursive: true);
+
+    await maps.download([extra]);
+    expect(network.started, [extra]);
+  });
+
   test('a drive never offers an older build than the one installed', () async {
     await maps.start();
     index([pack('ri-osm', 'osm', _ri, date: '2026-11-07')]);
