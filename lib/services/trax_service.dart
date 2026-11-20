@@ -136,10 +136,12 @@ class TraxService extends ChangeNotifier {
   late final StreamSubscription<({ChannelMessage message, bool fromBacklog})>
   _messages;
   final _prompts = StreamController<TraxPrompt>.broadcast();
+  final _left = StreamController<DateTime?>.broadcast();
 
   String? _radioKey;
   RepeatRanges? _allowed;
   DateTime? _heardSince;
+  DateTime? _checkedAt;
   TraxStep? _step;
   Object? _shown;
 
@@ -153,6 +155,15 @@ class TraxService extends ChangeNotifier {
 
   TraxSetup get setup => _setup;
   Stream<TraxPrompt> get prompts => _prompts.stream;
+
+  /// Each Leave this phone made, with the trip's end it had.
+  Stream<DateTime?> get left => _left.stream;
+
+  /// When TRAX mode began for this radio, while it is on.
+  DateTime? get heardSince => isOn ? _heardSince : null;
+
+  /// The latest group check this phone sent, while TRAX mode is on.
+  DateTime? get checkedAt => isOn ? _checkedAt : null;
   TraxStep? get step => _step;
   bool get busy => _step != null;
 
@@ -261,11 +272,7 @@ class TraxService extends ChangeNotifier {
     if (moved && isOn && session != null) {
       await _saveSession(
         _connector.selfPublicKeyHex,
-        TraxSession(
-          saved: session.saved,
-          switchedAt: session.switchedAt,
-          until: setup.until,
-        ),
+        session.copyWith(until: () => setup.until),
       );
     }
     _syncEndTimer();
@@ -291,7 +298,8 @@ class TraxService extends ChangeNotifier {
 
   /// One tap: save the radio's settings on this phone, tell the group and
   /// wait until the radio has sent it, move the radio in one settings
-  /// write with repeat on, then send one flood advert for the group check.
+  /// write with repeat on, put its position in adverts if TRAX settings say
+  /// so, then send one flood advert for the group check.
   /// [preset] and [until] come from a member's TRAX message when following.
   Future<TraxOutcome> start({
     LoRaParams? preset,
@@ -384,9 +392,23 @@ class TraxService extends ChangeNotifier {
         'TRAX mode on: ${saved.params} -> $target, repeat on',
         tag: 'Trax',
       );
+      if (_setup.advertPosition && c.advertLocationPolicy == 0) {
+        await c.waitForRadio();
+        await _setAdvertPosition(true);
+        await _saveSession(
+          key,
+          TraxSession(
+            saved: saved,
+            switchedAt: switchedAt,
+            until: end,
+            advertSet: true,
+          ),
+        );
+      }
       _setStep(TraxStep.checking);
       await c.waitForRadio();
       await c.sendSelfAdvert(flood: true);
+      _checkedAt = _clock();
       unawaited(c.refreshRadioSettings());
       return confirmed ? TraxOutcome.ok : TraxOutcome.sentUnconfirmed;
     } finally {
@@ -424,6 +446,7 @@ class TraxService extends ChangeNotifier {
     _setStep(TraxStep.checking);
     try {
       await _connector.sendSelfAdvert(flood: true);
+      _checkedAt = _clock();
     } finally {
       _setStep(null);
     }
@@ -444,16 +467,19 @@ class TraxService extends ChangeNotifier {
   }
 
   /// Tells the group first, if set up, then puts back the saved settings
-  /// with repeat off. With nothing saved on this phone, [returnTo] says
-  /// where to go ([TraxOutcome.needPreset] until it does).
+  /// with repeat off, and stops the position in adverts if TRAX mode
+  /// started it. With nothing saved on this phone, [returnTo] says where to
+  /// go ([TraxOutcome.needPreset] until it does).
   Future<TraxOutcome> leave({TraxSavedRadio? returnTo, bool? tellGroup}) async {
     final c = _connector;
     if (busy) return TraxOutcome.busy;
     if (!c.isConnected) return TraxOutcome.notConnected;
     if (!isOn) return TraxOutcome.ok;
     final key = c.selfPublicKeyHex;
+    final session = this.session;
     final target = returnTo ?? session?.saved;
     if (target == null) return TraxOutcome.needPreset;
+    final end = until;
     final trip = (tellGroup ?? _setup.tellGroup) ? tripChannel : null;
     _setStep(TraxStep.leaving);
     try {
@@ -493,10 +519,16 @@ class TraxService extends ChangeNotifier {
         txPower: tx,
         clientRepeat: false,
       );
+      if (session?.advertSet == true && c.advertLocationPolicy != 0) {
+        await c.waitForRadio();
+        await _setAdvertPosition(false);
+      }
       await PrefsManager.instance.remove(sessionKeyFor(key));
       _heardSince = null;
+      _checkedAt = null;
       appLogger.info('TRAX mode off: back on ${target.params}', tag: 'Trax');
       unawaited(c.refreshRadioSettings());
+      _left.add(end);
       return confirmed ? TraxOutcome.ok : TraxOutcome.sentUnconfirmed;
     } finally {
       _setStep(null);
@@ -531,6 +563,14 @@ class TraxService extends ChangeNotifier {
     );
     return false;
   }
+
+  Future<void> _setAdvertPosition(bool on) => _connector.setTelemetryModeBase(
+    _connector.telemetryModeBase,
+    _connector.telemetryModeLoc,
+    _connector.telemetryModeEnv,
+    on ? 1 : 0,
+    _connector.multiAcks,
+  );
 
   Future<void> _saveSession(String radioKey, TraxSession session) =>
       PrefsManager.instance.setString(
@@ -623,6 +663,7 @@ class TraxService extends ChangeNotifier {
       _radioKey = null;
       _allowed = null;
       _heardSince = null;
+      _checkedAt = null;
       _latest.clear();
     } else {
       final key = c.selfPublicKeyHex;
@@ -733,6 +774,7 @@ class TraxService extends ChangeNotifier {
     _connector.removeListener(_onConnector);
     unawaited(_messages.cancel());
     unawaited(_prompts.close());
+    unawaited(_left.close());
     super.dispose();
   }
 }

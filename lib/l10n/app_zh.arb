@@ -161,6 +161,60 @@
   "trax_notificationText": "常规网状网络听不到你。打开 MeshTrax 即可退出。",
   "trax_endedTitle": "你的行程已结束",
   "trax_endedText": "仍处于 TRAX 模式：常规网状网络听不到你。",
+  "trip_members": "行程成员",
+  "trip_pickChannel": "选择一个行程频道：在该频道发言的人都是成员。",
+  "trip_noPosts": "还没有人在行程频道发言。",
+  "trip_notContact": "不是此电台的联系人",
+  "trip_canAsk": "可以询问您的电台",
+  "trip_addMember": "添加成员",
+  "trip_askMyRadio": "成员可以询问我的电台",
+  "trip_askMyRadioHint": "它的位置和电量。会打开 GPS。行程结束后退出 TRAX 时停止。",
+  "trip_shareOff": "“{setting}”已关闭：成员无法询问。",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "在 TRAX 模式下。范围内任何人都能读取。",
+  "trip_sosTitle": "让 SOS 在勿扰模式下也响铃？",
+  "trip_sosBody": "打开设置，然后允许“覆盖勿扰模式”。",
+  "trip_onTrax": "TRAX 上 {on}/{total}",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}：尚未听到",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}：正在询问其电台…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}：无应答",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "设备信息",
   "settings_appSettings": "应用设置",
   "settings_appSettingsSubtitle": "通知、消息和地图偏好",

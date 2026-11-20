@@ -160,6 +160,60 @@
   "trax_notificationText": "La malla habitual no te oye. Abre MeshTrax para salir.",
   "trax_endedTitle": "Tu salida ha terminado",
   "trax_endedText": "Sigues en modo TRAX: la malla habitual no te oye.",
+  "trip_members": "Miembros de la salida",
+  "trip_pickChannel": "Elige un canal de la salida: quien escriba en él es miembro.",
+  "trip_noPosts": "Nadie ha escrito aún en el canal de la salida.",
+  "trip_notContact": "No es un contacto en esta radio",
+  "trip_canAsk": "Puede preguntar a tu radio",
+  "trip_addMember": "Añadir un miembro",
+  "trip_askMyRadio": "Los miembros pueden preguntar a mi radio",
+  "trip_askMyRadioHint": "Dónde está, y su batería. Activa el GPS. Termina al salir de TRAX después de la salida.",
+  "trip_shareOff": "{setting} está desactivado: los miembros no pueden preguntar.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "En modo TRAX. Cualquiera a su alcance puede leerla.",
+  "trip_sosTitle": "¿Que un SOS suene aunque esté No molestar?",
+  "trip_sosBody": "Abre los ajustes y permite Ignorar No molestar.",
+  "trip_onTrax": "{on} de {total} en TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: aún no se le oye",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: preguntando a su radio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: sin respuesta",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Información del dispositivo",
   "settings_appSettings": "Configuración de la App",
   "settings_appSettingsSubtitle": "Notificaciones, mensajes y preferencias de mapa",

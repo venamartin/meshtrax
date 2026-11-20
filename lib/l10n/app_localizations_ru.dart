@@ -669,6 +669,68 @@ class AppLocalizationsRu extends AppLocalizations {
       'Всё ещё в режиме TRAX: обычная сеть mesh вас не слышит.';
 
   @override
+  String get trip_members => 'Участники поездки';
+
+  @override
+  String get trip_pickChannel =>
+      'Выберите канал поездки: каждый, кто пишет в нём, — участник.';
+
+  @override
+  String get trip_noPosts => 'В канале поездки пока никто не писал.';
+
+  @override
+  String get trip_notContact => 'Нет в контактах этого радио';
+
+  @override
+  String get trip_canAsk => 'Может запросить ваше радио';
+
+  @override
+  String get trip_addMember => 'Добавить участника';
+
+  @override
+  String get trip_askMyRadio => 'Участники могут запрашивать моё радио';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Где оно и его батарея. Включает GPS. Прекращается, когда вы выходите из TRAX после поездки.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '«$setting» выключено: участники не могут запрашивать.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'В режиме TRAX. Его может прочитать любой в зоне приёма.';
+
+  @override
+  String get trip_sosTitle => 'Чтобы SOS звучал даже в режиме «Не беспокоить»?';
+
+  @override
+  String get trip_sosBody =>
+      'Откройте настройки и разрешите игнорировать «Не беспокоить».';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on из $total на TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: пока не слышно';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: запрос к радио…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: нет ответа';
+  }
+
+  @override
   String get settings_deviceInfo => 'Информация об устройстве';
 
   @override

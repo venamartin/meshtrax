@@ -634,6 +634,64 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_endedText => '仍处于 TRAX 模式：常规网状网络听不到你。';
 
   @override
+  String get trip_members => '行程成员';
+
+  @override
+  String get trip_pickChannel => '选择一个行程频道：在该频道发言的人都是成员。';
+
+  @override
+  String get trip_noPosts => '还没有人在行程频道发言。';
+
+  @override
+  String get trip_notContact => '不是此电台的联系人';
+
+  @override
+  String get trip_canAsk => '可以询问您的电台';
+
+  @override
+  String get trip_addMember => '添加成员';
+
+  @override
+  String get trip_askMyRadio => '成员可以询问我的电台';
+
+  @override
+  String get trip_askMyRadioHint => '它的位置和电量。会打开 GPS。行程结束后退出 TRAX 时停止。';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '“$setting”已关闭：成员无法询问。';
+  }
+
+  @override
+  String get trip_advertsHint => '在 TRAX 模式下。范围内任何人都能读取。';
+
+  @override
+  String get trip_sosTitle => '让 SOS 在勿扰模式下也响铃？';
+
+  @override
+  String get trip_sosBody => '打开设置，然后允许“覆盖勿扰模式”。';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return 'TRAX 上 $on/$total';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name：尚未听到';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name：正在询问其电台…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name：无应答';
+  }
+
+  @override
   String get settings_deviceInfo => '设备信息';
 
   @override

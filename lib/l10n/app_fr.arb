@@ -160,6 +160,60 @@
   "trax_notificationText": "Le maillage habituel ne vous entend pas. Ouvrez MeshTrax pour en sortir.",
   "trax_endedTitle": "Votre sortie est terminée",
   "trax_endedText": "Toujours en mode TRAX : le maillage habituel ne vous entend pas.",
+  "trip_members": "Membres de la sortie",
+  "trip_pickChannel": "Choisissez un canal de la sortie : quiconque y écrit en est membre.",
+  "trip_noPosts": "Personne n'a encore écrit sur le canal de la sortie.",
+  "trip_notContact": "Pas un contact sur cette radio",
+  "trip_canAsk": "Peut interroger votre radio",
+  "trip_addMember": "Ajouter un membre",
+  "trip_askMyRadio": "Les membres peuvent interroger ma radio",
+  "trip_askMyRadioHint": "Où elle est, et sa batterie. Active le GPS. Prend fin quand vous quittez TRAX après la sortie.",
+  "trip_shareOff": "{setting} est désactivé : les membres ne peuvent pas interroger.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "En mode TRAX. Quiconque à portée peut la lire.",
+  "trip_sosTitle": "Faire sonner un SOS même en mode Ne pas déranger ?",
+  "trip_sosBody": "Ouvrez les paramètres, puis autorisez Ignorer Ne pas déranger.",
+  "trip_onTrax": "{on} sur {total} sur TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name} : pas encore entendu",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name} : interrogation de sa radio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name} : pas de réponse",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informations du périphérique",
   "settings_appSettings": "Paramètres de l'application",
   "settings_appSettingsSubtitle": "Notifications, messagerie et préférences de carte",

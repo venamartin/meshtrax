@@ -133,6 +133,60 @@
   "trax_notificationText": "Обычная сеть mesh вас не слышит. Откройте MeshTrax, чтобы выйти.",
   "trax_endedTitle": "Ваша поездка закончилась",
   "trax_endedText": "Всё ещё в режиме TRAX: обычная сеть mesh вас не слышит.",
+  "trip_members": "Участники поездки",
+  "trip_pickChannel": "Выберите канал поездки: каждый, кто пишет в нём, — участник.",
+  "trip_noPosts": "В канале поездки пока никто не писал.",
+  "trip_notContact": "Нет в контактах этого радио",
+  "trip_canAsk": "Может запросить ваше радио",
+  "trip_addMember": "Добавить участника",
+  "trip_askMyRadio": "Участники могут запрашивать моё радио",
+  "trip_askMyRadioHint": "Где оно и его батарея. Включает GPS. Прекращается, когда вы выходите из TRAX после поездки.",
+  "trip_shareOff": "«{setting}» выключено: участники не могут запрашивать.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "В режиме TRAX. Его может прочитать любой в зоне приёма.",
+  "trip_sosTitle": "Чтобы SOS звучал даже в режиме «Не беспокоить»?",
+  "trip_sosBody": "Откройте настройки и разрешите игнорировать «Не беспокоить».",
+  "trip_onTrax": "{on} из {total} на TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: пока не слышно",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: запрос к радио…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: нет ответа",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Информация об устройстве",
   "settings_appSettings": "Настройки приложения",
   "settings_appSettingsSubtitle": "Уведомления, сообщения и настройки карты",

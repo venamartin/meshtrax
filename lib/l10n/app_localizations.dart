@@ -1277,6 +1277,102 @@ abstract class AppLocalizations {
   /// **'Still in TRAX mode: the regular mesh can\'t hear you.'**
   String get trax_endedText;
 
+  /// No description provided for @trip_members.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip members'**
+  String get trip_members;
+
+  /// No description provided for @trip_pickChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a trip channel: everyone who posts there is a member.'**
+  String get trip_pickChannel;
+
+  /// No description provided for @trip_noPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has posted on the trip channel yet.'**
+  String get trip_noPosts;
+
+  /// No description provided for @trip_notContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a contact on this radio'**
+  String get trip_notContact;
+
+  /// No description provided for @trip_canAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Can ask your radio'**
+  String get trip_canAsk;
+
+  /// No description provided for @trip_addMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a member'**
+  String get trip_addMember;
+
+  /// No description provided for @trip_askMyRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can ask my radio'**
+  String get trip_askMyRadio;
+
+  /// No description provided for @trip_askMyRadioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Where it is, and its battery. Turns GPS on. Ends when you leave TRAX after the trip.'**
+  String get trip_askMyRadioHint;
+
+  /// No description provided for @trip_shareOff.
+  ///
+  /// In en, this message translates to:
+  /// **'{setting} is off: members can\'t ask.'**
+  String trip_shareOff(String setting);
+
+  /// No description provided for @trip_advertsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In TRAX mode. Anyone in range can read it.'**
+  String get trip_advertsHint;
+
+  /// No description provided for @trip_sosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let an SOS ring through Do Not Disturb?'**
+  String get trip_sosTitle;
+
+  /// No description provided for @trip_sosBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings, then allow Override Do Not Disturb.'**
+  String get trip_sosBody;
+
+  /// No description provided for @trip_onTrax.
+  ///
+  /// In en, this message translates to:
+  /// **'{on} of {total} on TRAX'**
+  String trip_onTrax(int on, int total);
+
+  /// No description provided for @trip_notHeardYet.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: not heard yet'**
+  String trip_notHeardYet(String name);
+
+  /// No description provided for @trip_asking.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: asking their radio…'**
+  String trip_asking(String name);
+
+  /// No description provided for @trip_noAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: no answer'**
+  String trip_noAnswer(String name);
+
   /// No description provided for @settings_deviceInfo.
   ///
   /// In en, this message translates to:

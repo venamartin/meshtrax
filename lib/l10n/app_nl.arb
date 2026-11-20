@@ -160,6 +160,60 @@
   "trax_notificationText": "Het gewone mesh hoort je niet. Open MeshTrax om de modus te verlaten.",
   "trax_endedTitle": "Je tocht is afgelopen",
   "trax_endedText": "Nog in TRAX-modus: het gewone mesh hoort je niet.",
+  "trip_members": "Tochtleden",
+  "trip_pickChannel": "Kies een tochtkanaal: wie daar iets plaatst, is lid.",
+  "trip_noPosts": "Nog niemand heeft iets op het tochtkanaal geplaatst.",
+  "trip_notContact": "Geen contact op deze radio",
+  "trip_canAsk": "Kan je radio vragen",
+  "trip_addMember": "Lid toevoegen",
+  "trip_askMyRadio": "Leden mogen mijn radio vragen",
+  "trip_askMyRadioHint": "Waar hij is, en zijn batterij. Zet gps aan. Stopt als je TRAX na de tocht verlaat.",
+  "trip_shareOff": "{setting} staat uit: leden kunnen niet vragen.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "In TRAX-modus. Iedereen binnen bereik kan hem lezen.",
+  "trip_sosTitle": "Een SOS laten klinken ondanks Niet storen?",
+  "trip_sosBody": "Open de instellingen en sta Niet storen negeren toe.",
+  "trip_onTrax": "{on} van {total} op TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: nog niet gehoord",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: radio wordt gevraagd…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: geen antwoord",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Apparateninformatie",
   "settings_appSettings": "App Instellingen",
   "settings_appSettingsSubtitle": "Notificaties, berichten en kaartinstellingen",

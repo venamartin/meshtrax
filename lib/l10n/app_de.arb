@@ -160,6 +160,60 @@
   "trax_notificationText": "Das normale Mesh kann Sie nicht hören. Öffnen Sie MeshTrax, um den Modus zu verlassen.",
   "trax_endedTitle": "Ihre Tour ist zu Ende",
   "trax_endedText": "Noch im TRAX-Modus: Das normale Mesh hört Sie nicht.",
+  "trip_members": "Tour-Mitglieder",
+  "trip_pickChannel": "Wählen Sie einen Tour-Kanal: Wer dort schreibt, ist Mitglied.",
+  "trip_noPosts": "Im Tour-Kanal hat noch niemand geschrieben.",
+  "trip_notContact": "Kein Kontakt auf diesem Funkgerät",
+  "trip_canAsk": "Kann Ihr Funkgerät fragen",
+  "trip_addMember": "Mitglied hinzufügen",
+  "trip_askMyRadio": "Mitglieder dürfen mein Funkgerät fragen",
+  "trip_askMyRadioHint": "Wo es ist, und sein Akku. Schaltet GPS ein. Endet, wenn Sie TRAX nach der Tour verlassen.",
+  "trip_shareOff": "„{setting}“ ist aus: Mitglieder können nicht fragen.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "Im TRAX-Modus. Jeder in Reichweite kann ihn lesen.",
+  "trip_sosTitle": "Soll ein SOS trotz „Bitte nicht stören“ klingeln?",
+  "trip_sosBody": "Einstellungen öffnen, dann „Bitte nicht stören“ ignorieren erlauben.",
+  "trip_onTrax": "{on} von {total} auf TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: noch nicht gehört",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: Funkgerät wird gefragt…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: keine Antwort",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Geräteinformationen",
   "settings_appSettings": "App-Einstellungen",
   "settings_appSettingsSubtitle": "Benachrichtigungen, Messaging und Kartenwahrnehmung",

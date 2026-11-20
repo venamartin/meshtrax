@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/trax.dart';
+import 'package:meshtrax/services/radio_ask_service.dart';
 import 'package:meshtrax/services/trax_service.dart';
+import 'package:meshtrax/services/trip_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
 
@@ -49,12 +51,20 @@ void main() {
 
   Future<TraxService> pump(WidgetTester tester, _Radio radio) async {
     final trax = TraxService(radio);
-    addTearDown(trax.dispose);
+    final asks = RadioAskService(radio);
+    final trip = TripService(radio, trax, asks);
+    addTearDown(() {
+      trip.dispose();
+      asks.dispose();
+      trax.dispose();
+    });
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
           ChangeNotifierProvider.value(value: trax),
+          ChangeNotifierProvider.value(value: asks),
+          ChangeNotifierProvider.value(value: trip),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

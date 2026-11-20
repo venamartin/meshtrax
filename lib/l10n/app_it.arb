@@ -160,6 +160,60 @@
   "trax_notificationText": "La mesh abituale non ti sente. Apri MeshTrax per uscire.",
   "trax_endedTitle": "La tua uscita è terminata",
   "trax_endedText": "Ancora in modalità TRAX: la mesh abituale non ti sente.",
+  "trip_members": "Membri dell'uscita",
+  "trip_pickChannel": "Scegli un canale dell'uscita: chi ci scrive è un membro.",
+  "trip_noPosts": "Nessuno ha ancora scritto nel canale dell'uscita.",
+  "trip_notContact": "Non è un contatto su questa radio",
+  "trip_canAsk": "Può interrogare la tua radio",
+  "trip_addMember": "Aggiungi un membro",
+  "trip_askMyRadio": "I membri possono interrogare la mia radio",
+  "trip_askMyRadioHint": "Dov'è, e la sua batteria. Accende il GPS. Finisce quando esci da TRAX dopo l'uscita.",
+  "trip_shareOff": "{setting} è disattivato: i membri non possono interrogare.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "In modalità TRAX. Chiunque sia a portata può leggerla.",
+  "trip_sosTitle": "Far suonare un SOS anche con Non disturbare?",
+  "trip_sosBody": "Apri le impostazioni, poi consenti Ignora Non disturbare.",
+  "trip_onTrax": "{on} su {total} su TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: non ancora sentito",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: interrogo la sua radio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: nessuna risposta",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informazioni Dispositivo",
   "settings_appSettings": "Impostazioni App",
   "settings_appSettingsSubtitle": "Notifiche, messaggi e preferenze della mappa",

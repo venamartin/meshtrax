@@ -448,6 +448,54 @@ void main() {
     },
   );
 
+  test('Location in adverts, when ticked, goes on with TRAX mode before the '
+      'group check, and off at Leave, which says the trip\'s end', () async {
+    await trax.updateSetup(trax.setup.copyWith(advertPosition: true));
+    await connect(keyA);
+    final left = <DateTime?>[];
+    final sub = trax.left.listen(left.add);
+    expect(radio.advertLocationPolicy, 0);
+
+    expect(await trax.start(), TraxOutcome.ok);
+    expect(radio.advertLocationPolicy, 1);
+    expect(trax.session?.advertSet, isTrue);
+    expect(trax.checkedAt, isNotNull);
+    final cmds = radio.commands();
+    expect(
+      cmds.indexOf(cmdSetOtherParams),
+      allOf(
+        greaterThan(cmds.indexOf(cmdSetRadioParams)),
+        lessThan(cmds.lastIndexOf(cmdSendSelfAdvert)),
+      ),
+      reason: 'the group check\'s advert carries the position',
+    );
+
+    expect(await trax.leave(), TraxOutcome.ok);
+    expect(radio.advertLocationPolicy, 0);
+    expect(trax.checkedAt, isNull);
+    await _settle();
+    expect(left.map((t) => t?.millisecondsSinceEpoch), [
+      end.millisecondsSinceEpoch,
+    ]);
+    await sub.cancel();
+  });
+
+  test('Location in adverts on before TRAX mode stays on at Leave', () async {
+    await trax.updateSetup(trax.setup.copyWith(advertPosition: true));
+    await connect(keyA);
+    await radio.setTelemetryModeBase(
+      radio.telemetryModeBase,
+      radio.telemetryModeLoc,
+      radio.telemetryModeEnv,
+      1,
+      radio.multiAcks,
+    );
+    expect(await trax.start(), TraxOutcome.ok);
+    expect(trax.session?.advertSet, isFalse);
+    expect(await trax.leave(), TraxOutcome.ok);
+    expect(radio.advertLocationPolicy, 1);
+  });
+
   test(
     'a radio another phone switched asks which preset to return to',
     () async {
