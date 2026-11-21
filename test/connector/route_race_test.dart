@@ -13,11 +13,12 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Simulator, 2026-11-21: the ladder's route was written, the DM waited a
-// few seconds for a quiet radio, and the PATH his radio sent in that time
-// replaced the route on the radio (BaseChatMesh::onContactPathRecv). The
-// DM went out on the route just learned while the route chosen before got
-// the delivery: AA77 was credited with reaching him in Santa Cruz.
+// Mesh simulator, 2026-11-21: the ladder's route was written, the DM
+// waited a few seconds for a quiet radio, and the PATH the contact's radio
+// sent in that time replaced the route on the radio
+// (BaseChatMesh::onContactPathRecv). The DM went out on the route just
+// learned while the route chosen before got the delivery: a home doorstep
+// was credited with reaching someone 30 km away.
 
 String _hex(List<int> b) =>
     b.map((x) => x.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
@@ -192,7 +193,7 @@ void main() {
     var routes = [_planned];
     c.graphRouteCandidates = (_) => routes;
     // His DM just came in: the reply waits for the air to clear.
-    c.handleFrameForTest(_dm(bobKey, 'Test from SC'));
+    c.handleFrameForTest(_dm(bobKey, 'hello'));
     unawaited(c.sendMessage(bob, 're: test'));
     await until(() => c.stored[_hex(bobKey)]?.isNotEmpty ?? false);
     expect(_hex(c.stored[_hex(bobKey)]!), _hex(_planned.pathBytes),
@@ -218,7 +219,7 @@ void main() {
     c.handleFrameForTest(_contactFrame(bobKey, 'Bob', known));
     bob = c.contacts.firstWhere((x) => x.name == 'Bob');
 
-    c.handleFrameForTest(_dm(bobKey, 'Test from SC'));
+    c.handleFrameForTest(_dm(bobKey, 'hello'));
     unawaited(c.sendMessage(bob, 're: test'));
     await Future<void>.delayed(const Duration(milliseconds: 500));
     c.learn(bobKey, _learned.pathBytes);
