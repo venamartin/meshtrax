@@ -110,12 +110,13 @@ void main() {
         echo(a277);
       }
       echo(beef);
-      // Bob has two doorsteps: 1312 off A277, 2000 off BEEF.
-      bobVia(r1312);
+      // Bob has two doorsteps: 1312 off A277, newest, and 2000 off BEEF,
+      // left as a fallback.
       bobVia(r2000);
+      bobVia(r1312);
       corridor(a277, r1312);
       corridor(beef, r2000);
-      expect(firstHop(), 'a277', reason: 'the heavier doorstep starts');
+      expect(firstHop(), 'a277', reason: 'his newest doorstep is off A277');
 
       // Two failures gate both ends of that route: my A277 and his 1312.
       failed([...a277, ...r1312]);

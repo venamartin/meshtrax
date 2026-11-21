@@ -21,6 +21,7 @@ class PathGraphConfig {
     this.egressProvenDecayFactor = 4,
     this.ingressHalfLifeHours = 12,
     this.contactSupersedeFactor = 0.5,
+    this.contactFallbackWeight = 0.06,
     this.contactMoveWipeKm = 60,
     this.selfProofStaleMinutes = 15,
     this.selfSupersedeFactor = 0.5,
@@ -160,18 +161,32 @@ class PathGraphConfig {
   /// out-transmitted by the repeater, so a repeater that heard them
   /// almost always reaches them — the heard-from row is a route end.
   /// The list must therefore forget fast: an unrefreshed row fades in
-  /// hours, every fresh sighting slashes the others
-  /// ([contactSupersedeFactor]), and a sighting through a repeater far
+  /// hours, the newest first hop of their own packets leads
+  /// ([contactFallbackWeight]), and a sighting through a repeater far
   /// from the current top one wipes the list outright
   /// ([contactMoveWipeKm]) — Watsonville to San Francisco in one
   /// message, not three days.
   final double ingressHalfLifeHours;
 
-  /// Every attributed first-hop sighting multiplies the contact's other
-  /// doorstep rows by this. Alternating between two repeaters that both
-  /// hear them keeps both alive; a move buries the old one in two or
-  /// three messages.
+  /// A first-hop sighting matched to them only by a channel message's
+  /// sender name multiplies their other doorstep rows by this: a name can
+  /// be someone else's.
   final double contactSupersedeFactor;
+
+  /// Newest first (owner, 2026-11-21: use the repeater that heard them).
+  /// A packet that is surely theirs — a DM, room post, PATH reply, flooded
+  /// ACK, discovery answer or advert — puts its first hop ahead of every
+  /// other doorstep of theirs: the others drop to this weight, as decay
+  /// sees it at that moment, just above the 0.05 cutoff, and stay only as
+  /// fallbacks. Halving them was not enough: AA77, a contact's home
+  /// doorstep with 45 sightings, kept every route after they moved 35 km
+  /// while their DMs came in through F4D5 and FD33, two failed sends until
+  /// the fail gate closed it. In the mesh simulator's round on that graph
+  /// (2026-11-21, the contact moving to several places and back, around
+  /// home and on a drive, with this radio's floods lost) this rule alone
+  /// ended every route at a repeater that hears them from the first send,
+  /// where halving failed up to 15 sends; nothing got worse.
+  final double contactFallbackWeight;
 
   /// When repeater advert positions are known: a new first hop farther
   /// than this from the contact's current top doorstep wipes their list
@@ -327,6 +342,7 @@ class PathGraphConfig {
         egressProvenDecayFactor: egressProvenDecayFactor,
         ingressHalfLifeHours: ingressHalfLifeHours,
         contactSupersedeFactor: contactSupersedeFactor,
+        contactFallbackWeight: contactFallbackWeight,
         contactMoveWipeKm: contactMoveWipeKm,
         selfProofStaleMinutes: selfProofStaleMinutes,
         selfSupersedeFactor: selfSupersedeFactor,

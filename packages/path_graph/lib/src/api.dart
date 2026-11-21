@@ -931,7 +931,9 @@ class PathGraph {
   /// them first. Their doorstep list answers "who hears them now", so
   /// the sighting first pushes the rest of the list down — wiped when
   /// advert positions show [hash] is too far from their current top
-  /// doorstep to be the same place, slashed otherwise — and then counts.
+  /// doorstep to be the same place; for a packet surely theirs, left only
+  /// as fallbacks behind [hash] ([PathGraphConfig.contactFallbackWeight]);
+  /// halved for a channel message matched by name — and then counts.
   void _creditContactDoorstep(String pk, String hash,
       {required bool confirmed, required int arrival}) {
     final top = _evidence
@@ -940,6 +942,9 @@ class PathGraph {
         .firstOrNull;
     if (top != null && top.repeaterHash != hash && _movedFar(top.repeaterHash, hash)) {
       _evidence.wipeContact(pk);
+    } else if (confirmed) {
+      _evidence.demoteContact(pk,
+          except: hash, weight: config.contactFallbackWeight, now: arrival);
     } else {
       _evidence.supersedeContact(pk,
           except: hash, factor: config.contactSupersedeFactor);

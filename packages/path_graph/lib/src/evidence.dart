@@ -289,6 +289,21 @@ class EvidenceStore {
     }
   }
 
+  /// A packet surely theirs came in through [except] first: every other
+  /// doorstep of theirs (DIRECT included) drops to at most [weight], as
+  /// decay sees it at [now], and stays only as a fallback. Proof markers
+  /// and tallies stay; only the ranking weight moves.
+  void demoteContact(String owner,
+      {required String except, required double weight, required int now}) {
+    for (final entry in entries.entries) {
+      if (entry.key.$1 != owner || entry.key.$2 == except) continue;
+      final seen = _decayedWeight(owner, entry.value, now, false);
+      if (seen <= weight) continue;
+      entry.value.weight *= weight / seen;
+      _dirty.add(entry.key);
+    }
+  }
+
   /// They moved out of range of everything known: drop every doorstep
   /// row of theirs.
   void wipeContact(String owner) {

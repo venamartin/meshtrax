@@ -58,6 +58,25 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-21 — newest first.** Field: a contact moved about 35 km
+  from home. Their DMs came in through F4D5 and FD33 with AA77, their
+  home doorstep, four hops down the paths, yet every send went
+  A277,AA77: AA77's history (45 sightings, 32 deliveries) outweighed one
+  new sighting, which only halved it, and the corridor to F4D5 was
+  known. Two sends failed before the fail gate closed AA77. Owner: use
+  the repeater that heard them. Fix: a packet surely theirs (DM, room
+  post, PATH reply, flooded ACK, discovery answer, advert) puts its
+  first hop ahead of every other doorstep of theirs; the others drop to
+  `PathGraphConfig.contactFallbackWeight` (0.06, as decay sees it then,
+  just above the 0.05 cutoff) and stay only as fallbacks, history and
+  proofs kept. A channel message matched by sender name still only
+  halves them (`contactSupersedeFactor`). Tested before any code in the
+  mesh simulator on that graph (the contact moving to several places and
+  back, around home, and on a drive, with this radio's floods lost): the
+  rule alone ended every route at a repeater that hears them from the
+  first send, where the old rule failed up to 15 sends; a gate that
+  lifts on their return and the hop-order and weight-ceiling ideas added
+  nothing on top of it, and nothing got worse.
 * **2026-09-25 (b) — doorstep strength dominates.** Field: the router
   offered `1000,FACE` to a contact although 1000 had heard this radio
   weakly once or twice — a doorstep's `−log(confidence)` gap (≈0.9 nat
@@ -116,7 +135,9 @@ me and who hears my contact, what path bytes should this DM use?*
   delivery has confirmed it, and hearing them at zero hops is a fresh
   DIRECT. **The list must forget fast**: contact half-life 72 h → 12 h;
   every attributed sighting slashes the contact's other rows
-  (`contactSupersedeFactor` 0.5, DIRECT included); and when advert
+  (`contactSupersedeFactor` 0.5, DIRECT included; since 2026-11-21 only
+  for a channel message matched by name, a packet surely theirs leaving
+  the others as fallbacks — see "newest first" above); and when advert
   positions show the new first hop is farther than `contactMoveWipeKm`
   (60) from their current top doorstep, the list is wiped outright —
   Watsonville to San Francisco in one message. **Channel messages feed

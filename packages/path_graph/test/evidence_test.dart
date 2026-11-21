@@ -178,23 +178,24 @@ void main() {
     expect(graph.counters.droppedNarrow, narrow + 1);
   });
 
-  test('every sighting slashes the other doorsteps: a move buries the old',
-      () {
+  test('a packet surely theirs puts its first hop first: the old doorstep '
+      'is only a fallback', () {
     for (var i = 0; i < 3; i++) {
       graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
           const ObservationOrigin.pubkeyConfirmed(bobPk));
     }
     expect(graph.ingressCandidates(bobPk).single.weight, 9.0);
 
-    for (var i = 0; i < 3; i++) {
-      graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
-          const ObservationOrigin.pubkeyConfirmed(bobPk));
-    }
+    // One message through another repeater, not three, moves the lead
+    // (field 2026-11-21: his home doorstep kept every route after he left).
+    graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk));
     final ranked = graph.ingressCandidates(bobPk);
-    expect(ranked.first.repeaterHash, '5CBB');
-    expect(ranked.first.weight, 9.0);
-    expect(ranked.last.repeaterHash, 'A277');
-    expect(ranked.last.weight, closeTo(1.125, 1e-9), reason: '9 × 0.5³');
+    expect(ranked.map((c) => c.repeaterHash), ['5CBB', 'A277']);
+    expect(ranked.first.weight, 3.0);
+    expect(ranked.last.weight, closeTo(0.06, 1e-9),
+        reason: 'kept just above the cutoff, as a fallback');
+    expect(ranked.last.finalCount, 3, reason: 'its history stays');
   });
 
   test('a first hop far from the current top doorstep wipes the list', () {
@@ -214,15 +215,16 @@ void main() {
     expect(after.single.weight, 3.0);
   });
 
-  test('without positions a far move is only a slash', () {
+  test('a channel message matched by name only halves the others', () {
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
+    // A name can be someone else's.
     graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
-        const ObservationOrigin.pubkeyConfirmed(bobPk));
+        const ObservationOrigin.uniqueName(bobPk));
     final byHash = {
       for (final c in graph.ingressCandidates(bobPk)) c.repeaterHash: c.weight
     };
-    expect(byHash, {'5CBB': 3.0, 'A277': 1.5});
+    expect(byHash, {'A277': 1.5, '5CBB': 1.0});
   });
 
   test('an unrefreshed contact doorstep fades in hours, not days', () {

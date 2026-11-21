@@ -48,13 +48,14 @@ void main() {
   test('return alternatives: the best corridor first, then one avoiding it',
       () {
     // Bob was heard through two doorsteps, each with a corridor seen
-    // to 1312, the repeater I hear last.
+    // to 1312, the repeater I hear last. The second sighting is a channel
+    // message matched by name, which leaves the first doorstep in play.
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
     graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
     graph.observePath(path([0x22, 0x22, 0x13, 0x12]), 2,
-        const ObservationOrigin.pubkeyConfirmed(bobPk));
+        const ObservationOrigin.uniqueName(bobPk));
     graph.observePath(path([0x13, 0x12, 0x22, 0x22]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
 
