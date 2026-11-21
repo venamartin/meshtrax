@@ -271,9 +271,17 @@ void main() {
         await settings.setMaxMessageRetries(maxRetries);
       }
     }
-    blog('attempt budget from settings: ${settings.settings.maxMessageRetries}');
+    blog('attempt budget from settings: ${settings.settings.maxMessageRetries} · '
+        'Pathfinder setting ${settings.settings.pathGraphEnabled ? 'on' : 'off'}');
 
     radio.connector = await buildConnector(appSettings: settings);
+    // REPLY: Pathfinder runs before the radio connects, as the app starts it
+    // at launch, so the ACK mode chosen at the connect sees it on and the
+    // app sends the second ACK.
+    if (only == 'REPLY' && !noPathfinder) {
+      blog('starting the real PathGraphService on an in-memory graph…');
+      await service.start(radio.connector, database: NativeDatabase.memory());
+    }
     blog('connecting to $host:$port…');
     await radio.connector.connectTcp(host: host, port: port);
     await waitConnectedVerified(radio);
@@ -329,8 +337,10 @@ void main() {
     if (noPathfinder) {
       blog('NO_PATHFINDER: Pathfinder stays OFF — the radio routes on its own');
     } else {
-      blog('starting the real PathGraphService on an in-memory graph…');
-      await service.start(c, database: NativeDatabase.memory());
+      if (service.graph == null) {
+        blog('starting the real PathGraphService on an in-memory graph…');
+        await service.start(c, database: NativeDatabase.memory());
+      }
       await waitUntil(() => service.graph?.selfPubkey != null,
           'graph knows the radio identity');
     }
