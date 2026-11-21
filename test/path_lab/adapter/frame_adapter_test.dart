@@ -805,6 +805,21 @@ void main() {
       expect(graph.ingressCandidates(twin), isEmpty);
     });
 
+    test('nor from a copy the app opened: it may be my own DM to them, '
+        'heard back', () {
+      final twin = 'ab' * 31 + 'cd';
+      // The secret is the same both ways, so my flood to them opens as
+      // theirs to me, and its first repeater heard me.
+      adapter.attributeOpenedCopy(
+          twin,
+          Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]),
+          2,
+          32,
+          Uint8List.fromList([0xAB, 0xAB, 0x11, 0x22, 1, 2, 3]));
+      expect(graph.ingressCandidates(twin), isEmpty);
+      expect(adapter.messagesAttributed, 0);
+    });
+
     test('a weak signal (negative SNR) still matches', () {
       adapter.handleFrame(dm(path: [0xA2, 0x77, 0x13, 0x12], snrQuarterDb: 0xE8));
       adapter.attributeContactMessage(sender, 0x42, -24);

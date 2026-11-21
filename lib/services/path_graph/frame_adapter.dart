@@ -957,6 +957,15 @@ class PathLabAdapter {
   /// change nothing.
   void attributeOpenedCopy(String contactPubkeyHex, Uint8List pathBytes,
       int stride, int snrByte, Uint8List payload) {
+    // From a contact sharing my first key byte it reads exactly like my own
+    // DM to them heard back, whose first repeater heard me, not them: the
+    // same rule as [_rememberFloodMessage].
+    final self = graph.selfPubkey;
+    if (self == null ||
+        contactPubkeyHex.substring(0, 2).toLowerCase() ==
+            self.substring(0, 2).toLowerCase()) {
+      return;
+    }
     final now = DateTime.now();
     _openedCopies
         .removeWhere((_, at) => now.difference(at) > _floodMessageWindow);
