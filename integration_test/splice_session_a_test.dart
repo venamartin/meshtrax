@@ -11,13 +11,16 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
+import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/app_debug_log_service.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/path_graph/frame_adapter.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/app_logger.dart';
 import 'package:path_graph/path_graph.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'harness/bench.dart';
 import 'harness/bench_config.dart';
@@ -40,6 +43,10 @@ import 'harness/bench_config.dart';
 /// on the normal DM ladder (the setting's attempt budget). Message texts
 /// are short labels so they stay small on the air.
 ///
+///   R1  (ONLY=REPLY) the owner's side of a conversation: each DM from
+///       DM_CONTACT gets one reply on the normal ladder, for the mesh
+///       simulator's moving-contact runs
+///
 ///   flutter test integration_test/splice_session_a_test.dart -d windows \
 ///     --dart-define=MT_HOST=192.168.4.116 \
 ///     --dart-define=SESSION_FILE=C:/Users/venam/Downloads/path-graph-2026-10-23.json \
@@ -48,6 +55,21 @@ import 'harness/bench_config.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
+
+  // APP_DATA_DIR=<folder>: the bench keeps its own data, so nothing lands in
+  // the owner's app storage. Preferences live in memory and the app
+  // database is a file in that folder; Pathfinder's graph is in memory
+  // already.
+  const appDataDir = String.fromEnvironment('APP_DATA_DIR');
+  if (appDataDir.isNotEmpty) {
+    Directory(appDataDir).createSync(recursive: true);
+    SharedPreferences.setMockInitialValues({});
+    AppDatabase.useFileForTesting(
+        '$appDataDir${Platform.pathSeparator}meshtrax.sqlite');
+  }
+  // MAX_RETRIES=<n>: the attempt budget, as the phone has it. Set only with
+  // APP_DATA_DIR, so the owner's own setting is never changed.
+  const maxRetries = int.fromEnvironment('MAX_RETRIES');
 
   const host = String.fromEnvironment('MT_HOST', defaultValue: '192.168.4.116');
   const port = int.fromEnvironment('MT_TCP_PORT', defaultValue: 5000);
@@ -58,11 +80,15 @@ void main() {
   // ONLY=A3 runs the bring-up and the keeper window alone (no room A RF);
   // ONLY=A12 runs the room A steps and skips the keeper window.
   const only = String.fromEnvironment('ONLY');
-  const skipRoomA = only == 'A3' || only == 'DM' || only == 'PAIR';
-  const skipRoomB = only == 'A12' || only == 'DM' || only == 'PAIR';
+  // ONLY=REPLY needs no rooms.
+  const useRooms = only != 'REPLY';
+  const skipRoomA = only == 'A3' || only == 'DM' || only == 'PAIR' || !useRooms;
+  const skipRoomB = only == 'A12' || only == 'DM' || only == 'PAIR' || !useRooms;
   // ONLY=DM: two DMs to the chat contact named DM_CONTACT (name prefix,
   // case-blind), on the normal ladder, with a dump before and after.
   const dmContactName = String.fromEnvironment('DM_CONTACT', defaultValue: 'RedTail1');
+  // ONLY=REPLY: how long DMs from DM_CONTACT are answered, in seconds.
+  const replyFor = int.fromEnvironment('REPLY_FOR', defaultValue: 600);
   // NO_USB_POSTER=1: A3 never opens the COM14 radio; it logs in and waits a
   // short window for pushes that something else (the owner, or a simulated
   // member) makes the room send. The mesh simulator runs A3 this way.
@@ -229,7 +255,8 @@ void main() {
         final e = entries[i];
         if (e.level != AppDebugLogLevel.info ||
             e.tag == 'PathGraph' ||
-            e.tag == 'AckHash') {
+            e.tag == 'AckHash' ||
+            e.message.startsWith('Second ACK')) {
           blog('[${e.tag}] ${e.message}');
         }
       }
@@ -237,6 +264,13 @@ void main() {
     });
 
     await settings.loadSettings();
+    if (maxRetries > 0) {
+      if (appDataDir.isEmpty) {
+        blog('MAX_RETRIES ignored: it is set only with APP_DATA_DIR');
+      } else {
+        await settings.setMaxMessageRetries(maxRetries);
+      }
+    }
     blog('attempt budget from settings: ${settings.settings.maxMessageRetries}');
 
     radio.connector = await buildConnector(appSettings: settings);
@@ -266,10 +300,12 @@ void main() {
       return hits.single;
     }
 
-    roomA = findRoom(roomAName);
-    roomB = findRoom(roomBName);
-    blog('room A: ${roomA!.name} (${roomA!.publicKeyHex.substring(0, 12)}…) · '
-        'room B: ${roomB!.name} (${roomB!.publicKeyHex.substring(0, 12)}…)');
+    if (useRooms) {
+      roomA = findRoom(roomAName);
+      roomB = findRoom(roomBName);
+      blog('room A: ${roomA!.name} (${roomA!.publicKeyHex.substring(0, 12)}…) · '
+          'room B: ${roomB!.name} (${roomB!.publicKeyHex.substring(0, 12)}…)');
+    }
 
     tap = c.receivedFrames.listen((frame) {
       if (frame.isEmpty) return;
@@ -321,10 +357,12 @@ void main() {
           '${answered.isEmpty ? "(none)" : answered.map((r) => '${hex(r.pubkeyPrefix).replaceAll(" ", "")}${r.name == null ? "" : " ${r.name}"} '
               'hears me ${r.uplinkSnr!.toStringAsFixed(1)} dB / I hear it ${r.snr.toStringAsFixed(1)} dB').join(' | ')}');
     }
-    for (final r in [roomA!, roomB!]) {
-      await clearRoute(r);
+    if (useRooms) {
+      for (final r in [roomA!, roomB!]) {
+        await clearRoute(r);
+      }
+      dump('at start', roomA!);
     }
-    dump('at start', roomA!);
     ready = true;
   });
 
@@ -415,6 +453,151 @@ void main() {
     final w = live(who);
     blog('radio route to ${who.name} now: pathLength=${w.pathLength} path="${w.pathIdList}"');
     dump('after the DMs', who);
+  });
+
+  // ONLY=REPLY: each DM from DM_CONTACT gets one reply, "re: <their text>",
+  // on the normal ladder, for REPLY_FOR seconds; ladders still running then
+  // get up to five more minutes. Every arrival, attempt and outcome is
+  // logged with the contact's doorsteps. The lines "reply N sent" and
+  // "ladder N ended delivered=…" stay the same for the simulator to wait on.
+  testWidgets('R1 reply: answer each DM from a chat contact on the normal ladder',
+      skip: only != 'REPLY', (tester) async {
+    if (!ready) fail('Bench not ready — see the first failure above.');
+    await beginScenario(tester, 'R1 replies to $dmContactName');
+    final c = radio.connector;
+    final hits = c.contacts
+        .where((x) =>
+            x.type == advTypeChat &&
+            x.name.trim().toLowerCase().startsWith(dmContactName.toLowerCase()))
+        .toList();
+    expect(hits, hasLength(1), reason: 'need exactly one contact named like that');
+    final who = hits.single;
+    final pk = who.publicKeyHex;
+
+    String doorsteps() {
+      final graph = service.graph;
+      if (graph == null) return '(Pathfinder off)';
+      final rows = graph.ingressCandidates(pk);
+      if (rows.isEmpty) return '(none)';
+      return rows
+          .map((d) => '${d.repeaterHash} w=${d.weight.toStringAsFixed(2)} '
+              '${d.tier.name} '
+              'conf=${(graph.doorstepConfidence(d) * 100).toStringAsFixed(0)}% '
+              'fails=${d.failedSinceProof}'
+              '${graph.doorstepFailsThem(d) ? ' GATED' : ''}')
+          .join(' | ');
+    }
+
+    void routes(String when) {
+      final graph = service.graph;
+      if (graph == null) return;
+      final found = graph.findRoutes(pk);
+      blog('routes $when: best ${fmtRoute(graph, found.best)}');
+      for (final (i, alt) in found.alternatives.indexed) {
+        blog('   alternative ${i + 1}: ${fmtRoute(graph, alt)}');
+      }
+    }
+
+    String arrival(Message m) {
+      final hops = m.pathLength;
+      final how = hops == null
+          ? 'route unknown'
+          : hops < 0
+              ? 'routed'
+              : hops == 0
+                  ? 'direct, no repeater'
+                  : 'flood, $hops hops, path '
+                      '${m.pathFromPacket ? PathHelper.formatPathHex(m.pathBytes, stride: m.pathHashSize ?? c.pathHashByteWidth) : 'not recorded'}';
+      final opener = m.passingCopyHopsLeft == null
+          ? 'opened by the radio'
+          : 'opened by the sniffer from a passing copy '
+              '(${m.passingCopyHopsLeft} to go)';
+      return '$how · $opener';
+    }
+
+    String fmtSelection(PathSelection s) => s.useFlood
+        ? 'flood'
+        : s.hopCount == 0
+            ? 'direct'
+            : '${PathHelper.formatPathHex(s.pathBytes, stride: s.hashSize)}'
+                '${s.estDelivery == null ? '' : ' (${(s.estDelivery! * 100).toStringAsFixed(0)}%)'}';
+
+    String fmtSent(Message m) => (m.pathLength ?? -1) < 0
+        ? 'flood'
+        : m.pathLength == 0
+            ? 'direct'
+            : PathHelper.formatPathHex(m.pathBytes,
+                stride: m.pathHashSize ?? c.pathHashByteWidth);
+
+    final seen = {
+      for (final m in await c.loadMessagesFor(who))
+        if (!m.isOutgoing) m.messageId,
+    };
+    final replies = <_Reply>[];
+    final answerUntil = DateTime.now().add(const Duration(seconds: replyFor));
+    final hardStop = answerUntil.add(const Duration(minutes: 5));
+    blog('answering every DM from ${who.name} for $replyFor s, '
+        '${settings.settings.maxMessageRetries} attempts each');
+    blog('doorsteps at start: ${doorsteps()}');
+    routes('at start');
+    while (DateTime.now().isBefore(answerUntil) ||
+        (replies.any((r) => !r.done) && DateTime.now().isBefore(hardStop))) {
+      final rows = await c.loadMessagesFor(live(who));
+      for (final m in rows) {
+        if (m.isOutgoing || !seen.add(m.messageId)) continue;
+        blog('DM in from ${who.name}: "${m.text}" · ${arrival(m)}');
+        blog('doorsteps after the DM: ${doorsteps()}');
+        routes('after the DM');
+        if (!DateTime.now().isBefore(answerUntil)) continue;
+        final n = replies.length + 1;
+        final text =
+            're: ${m.text.length > 40 ? m.text.substring(0, 40) : m.text}';
+        final target = live(who);
+        final graphRoutes = c.graphRouteCandidates?.call(target);
+        blog('reply $n plan at the send: ${graphRoutes == null ? 'the firmware ladder' : planAttempts(target, radioWidth: c.pathHashByteWidth, budget: settings.settings.maxMessageRetries, graphRoutes: graphRoutes).map(fmtSelection).join(' | ')}');
+        replies.add(_Reply(n, text, DateTime.now()));
+        await c.sendMessage(target, text);
+        blog('reply $n sent: "$text"');
+      }
+      for (final r in replies.where((r) => !r.done)) {
+        final row = rows
+            .where((m) =>
+                m.isOutgoing &&
+                m.text == r.text &&
+                !m.timestamp.isBefore(r.sentAt.subtract(const Duration(seconds: 2))))
+            .lastOrNull;
+        if (row == null) continue;
+        final route = fmtSent(row);
+        if (row.retryCount != r.attempt || route != r.route) {
+          if (r.attempt >= 0 && row.retryCount > r.attempt) {
+            blog('doorsteps after reply ${r.n} attempt ${r.attempt + 1} '
+                'went unanswered: ${doorsteps()}');
+          }
+          r.attempt = row.retryCount;
+          r.route = route;
+          blog('reply ${r.n} attempt ${row.retryCount + 1}: $route · '
+              '${row.routeSource.name}'
+              '${row.guessedHops > 0 ? ' · ${row.guessedHops} guessed' : ''}');
+        }
+        if (row.status != r.status) {
+          r.status = row.status;
+          blog('reply ${r.n} status ${row.status.name}');
+        }
+        if (row.status == MessageStatus.delivered ||
+            row.status == MessageStatus.failed) {
+          r.done = true;
+          blog('ladder ${r.n} ended delivered=${row.status == MessageStatus.delivered} · '
+              'attempts ${row.retryCount + 1} · trip ${row.tripTimeMs ?? '-'} ms');
+          blog('doorsteps after ladder ${r.n}: ${doorsteps()}');
+          routes('after ladder ${r.n}');
+        }
+      }
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    blog('R1 done: ${replies.length} replies, '
+        '${replies.where((r) => r.status == MessageStatus.delivered).length} delivered, '
+        '${replies.where((r) => !r.done).length} still running at the stop');
+    dump('after the replies', who);
   });
 
   // ONLY=PAIR: a sanity check that DMs work at all tonight. The COM14 bench
@@ -632,4 +815,17 @@ void main() {
       } catch (_) {}
     }
   });
+}
+
+/// One R1 reply and what its ladder has done so far.
+class _Reply {
+  _Reply(this.n, this.text, this.sentAt);
+
+  final int n;
+  final String text;
+  final DateTime sentAt;
+  int attempt = -1;
+  String route = '';
+  MessageStatus? status;
+  bool done = false;
 }
