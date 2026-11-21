@@ -861,9 +861,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   PassingCopyOpener? _passingCopyOpener;
   Uint8List? _passingCopyScopeKey;
   final Set<String> _passingCopyAcked = {};
-  // By ACK code, the app's queued stand-ins for the radio's ACK to a copy it
-  // picked up on its way: dropped if the radio opens its own copy first.
-  final Map<String, List<Timer>> _standInAcks = {};
   // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
   // the second on another of Pathfinder's routes (owner, 2026-11-19).
   bool _appSendsSecondAck = false;
@@ -871,6 +868,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Per message (contact, sender's timestamp, text type), the routes its
   // ACKs have taken; a resend keeps all three.
   final Map<String, Set<String>> _ackRoutesTried = {};
+  // By ACK code, the app's queued stand-ins for the radio's ACK to a copy it
+  // picked up on its way: dropped if the radio opens its own copy first.
+  final Map<String, List<Timer>> _standInAcks = {};
   bool? _pathfinderWasOn;
   static const _twoAcksKeyPrefix = 'two_acks_';
 
