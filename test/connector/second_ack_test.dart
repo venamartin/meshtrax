@@ -310,6 +310,47 @@ void main() {
     expect(sent[1].sublist(0, 14), secondAck(pf2.pathBytes));
   });
 
+  test("a passing copy, then the radio's own copy: the radio's ACK is the "
+      'first, and the app sends only its second', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // The last repeater's copy comes while the app still holds its ACKs.
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test("the radio's copy after the app's ACKs went out: nothing more from "
+      'the app', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    await acks(2);
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    expect(c.acks, hasLength(2));
+  });
+
+  test("Pathfinder off: the radio sends both ACKs to its own copy, so the "
+      "app's stand-ins are dropped", () async {
+    await connect(pathfinder: false);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(c.acks, isEmpty);
+  });
+
+  test("Pathfinder off, no copy from the radio: the app's stand-ins go, "
+      'both of them, as the radio would send them', () async {
+    await connect(pathfinder: false);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    final sent = await acks(2);
+    expect(sent, hasLength(2));
+    expect(sent[0].sublist(0, 16), secondAck(stored));
+    expect(sent[1].sublist(0, 15), plainAck(stored));
+  });
+
   test('each resend brings a new route in, then a flood', () async {
     // One DM sent three times (attempts 0-2, the same timestamp) on a
     // zero-hop route, as the firmware made them; the radio keeps holding
