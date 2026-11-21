@@ -7224,4 +7224,91 @@ class AppLocalizationsJa extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'リージョン: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle => 'このリピーターが中継するリージョン';
+
+  @override
+  String get repeaterRegions_reading => 'リピーターのリージョンを読み込んでいます…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'このリピーターのファームウェアは古すぎて、ここでリージョンを管理できません。1.15以降が必要です。';
+
+  @override
+  String get repeaterRegions_noAnswer => 'リピーターが応答しませんでした。もう一度お試しください。';
+
+  @override
+  String get repeaterRegions_noRegion => 'リージョンなしのメッセージを中継';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      '多くの人はリージョンなしで送信します。オフにすると、このリピーターはそれらのメッセージを中継しなくなります。';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => 'リージョンなしのメッセージの中継をやめますか?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'リージョンを使っていない近くの人は、このリピーターで中継されなくなります。';
+
+  @override
+  String get repeaterRegions_turnOff => 'オフにする';
+
+  @override
+  String get repeaterRegions_own => 'リピーター自身のリージョン';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'アドバートで使われ、要求がどのリージョンで届いたか分からないときの返信にも使われます。';
+
+  @override
+  String get repeaterRegions_onRepeater => 'このリピーターのリージョン';
+
+  @override
+  String get repeaterRegions_empty =>
+      'まだリージョンがありません。リージョン付きのメッセージは、そのリージョンを追加して初めてここで中継されます。';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'リピーターのリストが長く返信が途中で切れたため、ここに表示されていないリージョンがあるかもしれません。';
+
+  @override
+  String get repeaterRegions_repeated => '中継する';
+
+  @override
+  String get repeaterRegions_notRepeated => '中継しない';
+
+  @override
+  String get repeaterRegions_move => '移動先…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return '$name の移動先';
+  }
+
+  @override
+  String get repeaterRegions_top => '最上位';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '$name をリピーターから削除しますか?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren => '先にその下のリージョンを移動または削除してください。';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'リピーターの返答: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => '親リージョン';
+
+  @override
+  String get repeaterRegions_fromYours => 'あなたのリージョンから';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'すでにこのリピーターにあります。';
 }

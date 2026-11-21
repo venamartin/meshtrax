@@ -4,7 +4,7 @@
 >
 > **Who it's for:** developers working on MeshTrax.
 >
-> **Status:** active plan. Phase 1 is built on `feat/regions` and waits for a test on the radios; all region work lives in that one PR.
+> **Status:** active plan. Phases 1 and 4 are built on `feat/regions` and wait for a test on the radios; all region work lives in that one PR.
  The firmware facts are from MeshCore `dev` (November 2026) and hold for companion and repeater 1.18.0.
 >
 > New to the terms? See the [glossary](../glossary.md).
@@ -102,9 +102,13 @@ Asked for by the owner on 2026-11-21: an easy way to set up the regions of a rep
 - **Saving:** each change is followed by `region save`, so nothing is lost if the repeater restarts. (`region default` saves itself.)
 - **Reading:** `region` gives the tree, with `F` marking regions it repeats and `^` the home region. The reply is cut at 160 bytes, so a long list is read with `region list allowed` and `region list denied` as well, and the screen says when the list may be incomplete.
 
-**Firmware:** repeater 1.15+ has every command above; older repeaters get the entry hidden. `region home` only changes a mark in the listing today, so the screen leaves it out.
+**Firmware:** repeater 1.15+ has every command above; an older repeater gets a message saying so.
+ `region home` only changes a mark in the listing today, so the screen leaves it out.
 
 **Tests:** a fake repeater answering the `region` commands as the firmware does (including the 160-byte cut and "Err - not empty"), and the screen at phone size.
+
+**Built:** `lib/models/repeater_regions.dart` reads the replies, `lib/services/repeater_regions_controller.dart` runs the commands (a refusal partway through a batch still saves what went through), and `lib/screens/repeater_regions_screen.dart` is the screen. A repeater too old for `region list` (it answers `Err - ??`, `??` or `Unknown command`) gets a message saying it needs 1.15 or newer, rather than a hidden entry, since the app doesn't know a repeater's version before asking. The entry shows for repeaters only, not room servers.
+
 
 
 ## Pitfalls

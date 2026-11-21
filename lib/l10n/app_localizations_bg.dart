@@ -7570,4 +7570,95 @@ class AppLocalizationsBg extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Регион: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Кои региони предава този ретранслатор';
+
+  @override
+  String get repeaterRegions_reading => 'Четене на регионите на ретранслатора…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Фърмуерът на този ретранслатор е твърде стар, за да се управляват регионите му тук. Нужна е 1.15 или по-нова.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Ретранслаторът не отговори. Опитайте пак.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Повтаряне на съобщения без регион';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Повечето хора изпращат без регион. Изключено, този ретранслатор спира да предава техните съобщения.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Да спре ли повтарянето на съобщения без регион?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Никой наблизо, който не използва регион, вече няма да бъде повтарян от този ретранслатор.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Изключване';
+
+  @override
+  String get repeaterRegions_own => 'Собствен регион на ретранслатора';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Използват го неговите адверти, а и отговорите му, когато не знае в кой регион е дошла заявката.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Региони на този ретранслатор';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Все още няма региони. Съобщение с регион се повтаря тук едва след като регионът му бъде добавен.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Списъкът на ретранслатора е дълъг и отговорът му е отрязан, затова тук може да липсват региони.';
+
+  @override
+  String get repeaterRegions_repeated => 'Повтаря се';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Не се повтаря';
+
+  @override
+  String get repeaterRegions_move => 'Преместване под…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Преместване на $name под';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Най-горно ниво';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Премахване на $name от ретранслатора?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Първо преместете или премахнете регионите под него.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Ретранслаторът отговори: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Под';
+
+  @override
+  String get repeaterRegions_fromYours => 'От вашите региони';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Вече е на този ретранслатор.';
 }

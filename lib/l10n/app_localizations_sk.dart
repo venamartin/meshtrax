@@ -7569,4 +7569,95 @@ class AppLocalizationsSk extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Región: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Ktoré regióny tento opakovač odovzdáva';
+
+  @override
+  String get repeaterRegions_reading => 'Čítanie regiónov opakovača…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Firmvér tohto opakovača je príliš starý na správu jeho regiónov tu. Potrebuje 1.15 alebo novší.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Opakovač neodpovedal. Skúste to znova.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Opakovať správy bez regiónu';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Väčšina posiela bez regiónu. Po vypnutí tento opakovač prestane odovzdávať ich správy.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Prestať opakovať správy bez regiónu?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Nikoho v okolí, kto nepoužíva región, už tento opakovač nebude opakovať.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Vypnúť';
+
+  @override
+  String get repeaterRegions_own => 'Vlastný región opakovača';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Používajú ho jeho adverty a aj jeho odpovede, keď nevie, v ktorom regióne prišla požiadavka.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regióny na tomto opakovači';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Zatiaľ žiadne regióny. Správa s regiónom sa tu opakuje, až keď sa jej región pridá.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Zoznam opakovača je dlhý a jeho odpoveď bola orezaná, takže tu môžu chýbať regióny.';
+
+  @override
+  String get repeaterRegions_repeated => 'Opakuje sa';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Neopakuje sa';
+
+  @override
+  String get repeaterRegions_move => 'Presunúť pod…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Presunúť $name pod';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Najvyššia úroveň';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Odstrániť $name z opakovača?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Najprv presuňte alebo odstráňte regióny pod ním.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Opakovač odpovedal: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Pod';
+
+  @override
+  String get repeaterRegions_fromYours => 'Z vašich regiónov';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Už je na tomto opakovači.';
 }

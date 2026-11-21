@@ -7107,4 +7107,85 @@ class AppLocalizationsZh extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return '区域:$name';
   }
+
+  @override
+  String get repeaterRegions_subtitle => '此中继器转发哪些区域';
+
+  @override
+  String get repeaterRegions_reading => '正在读取中继器的区域…';
+
+  @override
+  String get repeaterRegions_tooOld => '此中继器的固件太旧,无法在这里管理它的区域。需要 1.15 或更新版本。';
+
+  @override
+  String get repeaterRegions_noAnswer => '中继器没有应答。请重试。';
+
+  @override
+  String get repeaterRegions_noRegion => '转发无区域的消息';
+
+  @override
+  String get repeaterRegions_noRegionHelp => '大多数人发送时不带区域。关闭后,此中继器不再转发他们的消息。';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => '停止转发无区域的消息?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody => '附近不使用区域的人将不再由此中继器转发。';
+
+  @override
+  String get repeaterRegions_turnOff => '关闭';
+
+  @override
+  String get repeaterRegions_own => '中继器自己的区域';
+
+  @override
+  String get repeaterRegions_ownHelp => '它的广播使用此区域;当它无法判断请求来自哪个区域时,回复也使用此区域。';
+
+  @override
+  String get repeaterRegions_onRepeater => '此中继器上的区域';
+
+  @override
+  String get repeaterRegions_empty => '还没有区域。带区域的消息只有在添加其区域后才会在这里转发。';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete => '中继器的列表很长,回复被截断,因此这里可能缺少一些区域。';
+
+  @override
+  String get repeaterRegions_repeated => '转发';
+
+  @override
+  String get repeaterRegions_notRepeated => '不转发';
+
+  @override
+  String get repeaterRegions_move => '移到…之下';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return '将 $name 移到';
+  }
+
+  @override
+  String get repeaterRegions_top => '最上层';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '从中继器移除 $name?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren => '请先移动或移除它下面的区域。';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return '中继器回复:$reply';
+  }
+
+  @override
+  String get repeaterRegions_under => '上级区域';
+
+  @override
+  String get repeaterRegions_fromYours => '来自你的区域';
+
+  @override
+  String get repeaterRegions_alreadyThere => '已在此中继器上。';
 }

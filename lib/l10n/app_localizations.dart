@@ -12891,6 +12891,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Region: {name}'**
   String channelRegion_qrLine(String name);
+
+  /// No description provided for @repeaterRegions_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which regions this repeater passes on'**
+  String get repeaterRegions_subtitle;
+
+  /// No description provided for @repeaterRegions_reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the repeater\'s regions…'**
+  String get repeaterRegions_reading;
+
+  /// No description provided for @repeaterRegions_tooOld.
+  ///
+  /// In en, this message translates to:
+  /// **'This repeater\'s firmware is too old to manage its regions here. It needs 1.15 or newer.'**
+  String get repeaterRegions_tooOld;
+
+  /// No description provided for @repeaterRegions_noAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The repeater didn\'t answer. Try again.'**
+  String get repeaterRegions_noAnswer;
+
+  /// No description provided for @repeaterRegions_noRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat messages with no region'**
+  String get repeaterRegions_noRegion;
+
+  /// No description provided for @repeaterRegions_noRegionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Most people send without a region. Turned off, this repeater stops passing their messages on.'**
+  String get repeaterRegions_noRegionHelp;
+
+  /// No description provided for @repeaterRegions_noRegionOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop repeating messages with no region?'**
+  String get repeaterRegions_noRegionOffTitle;
+
+  /// No description provided for @repeaterRegions_noRegionOffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone nearby who doesn\'t use a region will no longer be repeated by this repeater.'**
+  String get repeaterRegions_noRegionOffBody;
+
+  /// No description provided for @repeaterRegions_turnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get repeaterRegions_turnOff;
+
+  /// No description provided for @repeaterRegions_own.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater\'s own region'**
+  String get repeaterRegions_own;
+
+  /// No description provided for @repeaterRegions_ownHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Its adverts use it, and so do its replies when it can\'t tell which region a request came in.'**
+  String get repeaterRegions_ownHelp;
+
+  /// No description provided for @repeaterRegions_onRepeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions on this repeater'**
+  String get repeaterRegions_onRepeater;
+
+  /// No description provided for @repeaterRegions_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No regions yet. A message with a region is repeated here only once its region is added.'**
+  String get repeaterRegions_empty;
+
+  /// No description provided for @repeaterRegions_mayBeIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The repeater\'s list is long and its reply was cut, so some regions may be missing here.'**
+  String get repeaterRegions_mayBeIncomplete;
+
+  /// No description provided for @repeaterRegions_repeated.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeated'**
+  String get repeaterRegions_repeated;
+
+  /// No description provided for @repeaterRegions_notRepeated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not repeated'**
+  String get repeaterRegions_notRepeated;
+
+  /// No description provided for @repeaterRegions_move.
+  ///
+  /// In en, this message translates to:
+  /// **'Move under…'**
+  String get repeaterRegions_move;
+
+  /// No description provided for @repeaterRegions_moveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {name} under'**
+  String repeaterRegions_moveTitle(String name);
+
+  /// No description provided for @repeaterRegions_top.
+  ///
+  /// In en, this message translates to:
+  /// **'Top level'**
+  String get repeaterRegions_top;
+
+  /// No description provided for @repeaterRegions_removeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from the repeater?'**
+  String repeaterRegions_removeTitle(String name);
+
+  /// No description provided for @repeaterRegions_hasChildren.
+  ///
+  /// In en, this message translates to:
+  /// **'Move or remove the regions under it first.'**
+  String get repeaterRegions_hasChildren;
+
+  /// No description provided for @repeaterRegions_refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The repeater said: {reply}'**
+  String repeaterRegions_refused(String reply);
+
+  /// No description provided for @repeaterRegions_under.
+  ///
+  /// In en, this message translates to:
+  /// **'Under'**
+  String get repeaterRegions_under;
+
+  /// No description provided for @repeaterRegions_fromYours.
+  ///
+  /// In en, this message translates to:
+  /// **'From your regions'**
+  String get repeaterRegions_fromYours;
+
+  /// No description provided for @repeaterRegions_alreadyThere.
+  ///
+  /// In en, this message translates to:
+  /// **'Already on this repeater.'**
+  String get repeaterRegions_alreadyThere;
 }
 
 class _AppLocalizationsDelegate

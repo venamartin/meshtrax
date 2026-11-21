@@ -7241,4 +7241,91 @@ class AppLocalizationsKo extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return '지역: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle => '이 리피터가 전달하는 지역';
+
+  @override
+  String get repeaterRegions_reading => '리피터의 지역을 읽는 중…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      '이 리피터의 펌웨어가 너무 오래되어 여기서 지역을 관리할 수 없습니다. 1.15 이상이 필요합니다.';
+
+  @override
+  String get repeaterRegions_noAnswer => '리피터가 응답하지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get repeaterRegions_noRegion => '지역 없는 메시지 반복';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      '대부분은 지역 없이 보냅니다. 끄면 이 리피터는 그 메시지를 더 이상 전달하지 않습니다.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => '지역 없는 메시지 반복을 멈출까요?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      '지역을 쓰지 않는 주변 사람은 더 이상 이 리피터로 반복되지 않습니다.';
+
+  @override
+  String get repeaterRegions_turnOff => '끄기';
+
+  @override
+  String get repeaterRegions_own => '리피터 자체 지역';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      '리피터의 광고에 쓰이고, 요청이 어느 지역으로 왔는지 모를 때 응답에도 쓰입니다.';
+
+  @override
+  String get repeaterRegions_onRepeater => '이 리피터의 지역';
+
+  @override
+  String get repeaterRegions_empty =>
+      '아직 지역이 없습니다. 지역이 있는 메시지는 그 지역이 추가되어야 여기서 반복됩니다.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      '리피터의 목록이 길어 응답이 잘렸으므로 여기에 빠진 지역이 있을 수 있습니다.';
+
+  @override
+  String get repeaterRegions_repeated => '반복함';
+
+  @override
+  String get repeaterRegions_notRepeated => '반복 안 함';
+
+  @override
+  String get repeaterRegions_move => '다음 아래로 이동…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return '$name을(를) 다음 아래로 이동';
+  }
+
+  @override
+  String get repeaterRegions_top => '최상위';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '$name을(를) 리피터에서 제거할까요?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren => '먼저 그 아래의 지역을 이동하거나 제거하세요.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return '리피터 응답: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => '상위 지역';
+
+  @override
+  String get repeaterRegions_fromYours => '내 지역에서';
+
+  @override
+  String get repeaterRegions_alreadyThere => '이미 이 리피터에 있습니다.';
 }

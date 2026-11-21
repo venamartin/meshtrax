@@ -7518,4 +7518,95 @@ class AppLocalizationsSv extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Region: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Vilka regioner den här repeatern skickar vidare';
+
+  @override
+  String get repeaterRegions_reading => 'Läser repeaterns regioner…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Repeaterns firmware är för gammal för att hantera dess regioner här. Den behöver 1.15 eller nyare.';
+
+  @override
+  String get repeaterRegions_noAnswer => 'Repeatern svarade inte. Försök igen.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Upprepa meddelanden utan region';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'De flesta skickar utan region. Avstängt slutar den här repeatern skicka vidare deras meddelanden.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Sluta upprepa meddelanden utan region?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Alla i närheten som inte använder en region upprepas inte längre av den här repeatern.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Stäng av';
+
+  @override
+  String get repeaterRegions_own => 'Repeaterns egen region';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Dess adverts använder den, och även dess svar när den inte vet i vilken region en förfrågan kom.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regioner på den här repeatern';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Inga regioner än. Ett meddelande med en region upprepas här först när dess region har lagts till.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Repeaterns lista är lång och svaret klipptes, så regioner kan saknas här.';
+
+  @override
+  String get repeaterRegions_repeated => 'Upprepas';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Upprepas inte';
+
+  @override
+  String get repeaterRegions_move => 'Flytta under…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Flytta $name under';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Översta nivån';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Ta bort $name från repeatern?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Flytta eller ta bort regionerna under den först.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Repeatern svarade: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Under';
+
+  @override
+  String get repeaterRegions_fromYours => 'Från dina regioner';
+
+  @override
+  String get repeaterRegions_alreadyThere =>
+      'Finns redan på den här repeatern.';
 }

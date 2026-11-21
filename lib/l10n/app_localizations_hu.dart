@@ -7592,4 +7592,95 @@ class AppLocalizationsHu extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Régió: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Mely régiókat adja tovább ez a jelismétlő';
+
+  @override
+  String get repeaterRegions_reading => 'A jelismétlő régióinak olvasása…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Ennek a jelismétlőnek a firmware-e túl régi ahhoz, hogy itt kezeld a régióit. 1.15 vagy újabb kell.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'A jelismétlő nem válaszolt. Próbáld újra.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Régió nélküli üzenetek ismétlése';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'A legtöbben régió nélkül küldenek. Kikapcsolva ez a jelismétlő nem adja tovább az üzeneteiket.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Leállítod a régió nélküli üzenetek ismétlését?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'A közelben senkit, aki nem használ régiót, nem ismétel többé ez a jelismétlő.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Kikapcsolás';
+
+  @override
+  String get repeaterRegions_own => 'A jelismétlő saját régiója';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'A hirdetései ezt használják, és a válaszai is, ha nem tudja, melyik régióban jött egy kérés.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Régiók ezen a jelismétlőn';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Még nincs régió. Egy régióval küldött üzenetet itt csak akkor ismétel, ha a régióját hozzáadtad.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'A jelismétlő listája hosszú, és a válaszát levágta, ezért itt hiányozhatnak régiók.';
+
+  @override
+  String get repeaterRegions_repeated => 'Ismétli';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Nem ismétli';
+
+  @override
+  String get repeaterRegions_move => 'Áthelyezés ez alá…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return '$name áthelyezése ez alá';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Legfelső szint';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Eltávolítod $name régiót a jelismétlőről?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Előbb helyezd át vagy távolítsd el az alatta lévő régiókat.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'A jelismétlő válasza: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Alatta';
+
+  @override
+  String get repeaterRegions_fromYours => 'A te régióidból';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Már szerepel ezen a jelismétlőn.';
 }

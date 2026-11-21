@@ -7611,4 +7611,95 @@ class AppLocalizationsPl extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Region: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Które regiony ten przekaźnik przekazuje';
+
+  @override
+  String get repeaterRegions_reading => 'Odczytywanie regionów przekaźnika…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Oprogramowanie tego przekaźnika jest za stare, by zarządzać tu jego regionami. Potrzebna jest wersja 1.15 lub nowsza.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Przekaźnik nie odpowiedział. Spróbuj ponownie.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Powtarzaj wiadomości bez regionu';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Większość osób wysyła bez regionu. Po wyłączeniu ten przekaźnik przestaje przekazywać ich wiadomości.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Przestać powtarzać wiadomości bez regionu?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Nikt w pobliżu, kto nie używa regionu, nie będzie już powtarzany przez ten przekaźnik.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Wyłącz';
+
+  @override
+  String get repeaterRegions_own => 'Własny region przekaźnika';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Używają go jego adverty, a także jego odpowiedzi, gdy nie wie, w jakim regionie przyszło zapytanie.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regiony na tym przekaźniku';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Nie ma jeszcze regionów. Wiadomość z regionem jest tu powtarzana dopiero po dodaniu jej regionu.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Lista przekaźnika jest długa i jego odpowiedź została ucięta, więc może tu brakować regionów.';
+
+  @override
+  String get repeaterRegions_repeated => 'Powtarzany';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Niepowtarzany';
+
+  @override
+  String get repeaterRegions_move => 'Przenieś pod…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Przenieś $name pod';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Najwyższy poziom';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Usunąć $name z przekaźnika?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Najpierw przenieś lub usuń regiony pod nim.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Przekaźnik odpowiedział: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Pod';
+
+  @override
+  String get repeaterRegions_fromYours => 'Z twoich regionów';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Już jest na tym przekaźniku.';
 }

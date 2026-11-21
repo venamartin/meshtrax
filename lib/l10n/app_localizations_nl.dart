@@ -7554,4 +7554,95 @@ class AppLocalizationsNl extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Regio: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Welke regio\'s deze repeater doorgeeft';
+
+  @override
+  String get repeaterRegions_reading => 'Regio\'s van de repeater lezen…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'De firmware van deze repeater is te oud om zijn regio\'s hier te beheren. Hij heeft 1.15 of nieuwer nodig.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'De repeater gaf geen antwoord. Probeer het opnieuw.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Berichten zonder regio herhalen';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'De meeste mensen versturen zonder regio. Uitgeschakeld geeft deze repeater hun berichten niet meer door.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Berichten zonder regio niet meer herhalen?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Iedereen in de buurt die geen regio gebruikt, wordt niet meer door deze repeater herhaald.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Uitschakelen';
+
+  @override
+  String get repeaterRegions_own => 'Eigen regio van de repeater';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Zijn adverts gebruiken hem, en ook zijn antwoorden als hij niet weet in welke regio een verzoek binnenkwam.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regio\'s op deze repeater';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Nog geen regio\'s. Een bericht met een regio wordt hier pas herhaald als zijn regio is toegevoegd.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'De lijst van de repeater is lang en zijn antwoord werd afgekapt, dus hier kunnen regio\'s ontbreken.';
+
+  @override
+  String get repeaterRegions_repeated => 'Wordt herhaald';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Wordt niet herhaald';
+
+  @override
+  String get repeaterRegions_move => 'Verplaatsen onder…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return '$name verplaatsen onder';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Bovenste niveau';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '$name van de repeater verwijderen?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Verplaats of verwijder eerst de regio\'s eronder.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'De repeater zei: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Onder';
+
+  @override
+  String get repeaterRegions_fromYours => 'Uit je regio\'s';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Staat al op deze repeater.';
 }

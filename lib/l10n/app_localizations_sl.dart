@@ -7575,4 +7575,94 @@ class AppLocalizationsSl extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Regija: $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle => 'Katere regije ta repetitor posreduje';
+
+  @override
+  String get repeaterRegions_reading => 'Branje regij repetitorja…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Strojna programska oprema tega repetitorja je prestara za upravljanje njegovih regij tukaj. Potrebuje 1.15 ali novejšo.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Repetitor ni odgovoril. Poskusite znova.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Ponavljaj sporočila brez regije';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Večina pošilja brez regije. Izklopljen ta repetitor neha posredovati njihova sporočila.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Nehaj ponavljati sporočila brez regije?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Nikogar v bližini, ki ne uporablja regije, ta repetitor ne bo več ponavljal.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Izklopi';
+
+  @override
+  String get repeaterRegions_own => 'Lastna regija repetitorja';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Uporabljajo jo njegovi oglasi in tudi njegovi odgovori, ko ne ve, v kateri regiji je prišla zahteva.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regije na tem repetitorju';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Še ni regij. Sporočilo z regijo se tu ponovi šele, ko je njegova regija dodana.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Seznam repetitorja je dolg in njegov odgovor je bil odrezan, zato tu morda manjkajo regije.';
+
+  @override
+  String get repeaterRegions_repeated => 'Se ponavlja';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Se ne ponavlja';
+
+  @override
+  String get repeaterRegions_move => 'Premakni pod…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Premakni $name pod';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Najvišja raven';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Odstranim $name z repetitorja?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Najprej premaknite ali odstranite regije pod njo.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Repetitor je odgovoril: $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Pod';
+
+  @override
+  String get repeaterRegions_fromYours => 'Iz vaših regij';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Že na tem repetitorju.';
 }

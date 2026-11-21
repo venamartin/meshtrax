@@ -7627,4 +7627,94 @@ class AppLocalizationsFr extends AppLocalizations {
   String channelRegion_qrLine(String name) {
     return 'Région : $name';
   }
+
+  @override
+  String get repeaterRegions_subtitle => 'Les régions que ce répéteur transmet';
+
+  @override
+  String get repeaterRegions_reading => 'Lecture des régions du répéteur…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Le firmware de ce répéteur est trop ancien pour gérer ses régions ici. Il faut la 1.15 ou plus récente.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Le répéteur n\'a pas répondu. Réessayez.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Répéter les messages sans région';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'La plupart des gens envoient sans région. Désactivé, ce répéteur ne transmet plus leurs messages.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Ne plus répéter les messages sans région ?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Personne aux alentours qui n\'utilise pas de région ne sera plus répété par ce répéteur.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Désactiver';
+
+  @override
+  String get repeaterRegions_own => 'Région propre du répéteur';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Ses annonces l\'utilisent, ainsi que ses réponses quand il ne sait pas dans quelle région une demande est arrivée.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Régions sur ce répéteur';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Aucune région pour l\'instant. Un message avec une région n\'est répété ici qu\'une fois sa région ajoutée.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'La liste du répéteur est longue et sa réponse a été coupée : des régions peuvent manquer ici.';
+
+  @override
+  String get repeaterRegions_repeated => 'Répétée';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Non répétée';
+
+  @override
+  String get repeaterRegions_move => 'Déplacer sous…';
+
+  @override
+  String repeaterRegions_moveTitle(String name) {
+    return 'Déplacer $name sous';
+  }
+
+  @override
+  String get repeaterRegions_top => 'Niveau supérieur';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Retirer $name du répéteur ?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'Déplacez ou retirez d\'abord les régions qui sont dessous.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Le répéteur a répondu : $reply';
+  }
+
+  @override
+  String get repeaterRegions_under => 'Sous';
+
+  @override
+  String get repeaterRegions_fromYours => 'Parmi vos régions';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Déjà sur ce répéteur.';
 }
