@@ -7136,4 +7136,109 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '내 연락처';
+
+  @override
+  String get regions_title => '지역';
+
+  @override
+  String get regions_settingsSubtitle => '채널 메시지를 한 지역 안에 두기';
+
+  @override
+  String get regions_intro =>
+      '지역은 채널의 메시지를 한 지역을 맡은 리피터에만 머물게 합니다. 그 지역을 모르는 리피터는 메시지를 전달하지 않으므로, 내 지역 리피터가 쓰는 이름을 사용하세요.';
+
+  @override
+  String get regions_yourRegions => '내 지역';
+
+  @override
+  String get regions_empty => '아직 지역이 없습니다. 내 지역 리피터가 쓰는 이름을 추가하세요.';
+
+  @override
+  String get regions_add => '지역 추가';
+
+  @override
+  String get regions_nameLabel => '지역 이름';
+
+  @override
+  String get regions_nameHelp => '대소문자를 구분합니다: SF와 sf는 서로 다른 지역입니다.';
+
+  @override
+  String get regions_nameBadCharacter => '공백, 마침표, 쉼표와 대부분의 문장 부호는 쓸 수 없습니다.';
+
+  @override
+  String get regions_nameTooLong => '너무 깁니다: 최대 30바이트입니다.';
+
+  @override
+  String get regions_nameExists => '이미 목록에 있습니다.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '채널 $count개가 사용 중',
+      zero: '사용하는 채널 없음',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '$name을(를) 삭제할까요?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '채널 $count개가 이 지역을 사용합니다. 지역 없음으로 돌아갑니다.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '무전기 기본 지역';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '무전기에 저장됩니다. 자체 지역이 없는 채널, 개인 메시지, 광고가 어느 앱에서든 이를 사용합니다.';
+
+  @override
+  String get regions_none => '없음';
+
+  @override
+  String get regions_radioNoAnswer => '무전기가 변경을 받아들이지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get regions_inQr => '채널 QR 코드에 지역 넣기';
+
+  @override
+  String get regions_inQrSubtitle =>
+      '켜면 채널의 QR 코드에 지역이 들어가고, 스캔한 코드의 지역이 설정됩니다.';
+
+  @override
+  String get regions_unsupported => '이 무전기의 펌웨어는 지역을 쓰기에 너무 오래되었습니다.';
+
+  @override
+  String get channelRegion_title => '지역';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return '없음 (무전기 기본: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => '어디서나 (지역 없음)';
+
+  @override
+  String get channelRegion_help => '이 채널의 메시지는 그 지역을 아는 리피터로만 전달됩니다.';
+
+  @override
+  String get channelRegion_manage => '지역 관리';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return '지역: $name';
+  }
 }

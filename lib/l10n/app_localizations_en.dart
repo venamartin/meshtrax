@@ -7357,4 +7357,118 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'My contact';
+
+  @override
+  String get regions_title => 'Regions';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Keep a channel\'s messages to one area';
+
+  @override
+  String get regions_intro =>
+      'A region keeps a channel\'s messages to the repeaters that serve one area. A repeater that doesn\'t know the region won\'t pass the message on, so use the names your area\'s repeaters use.';
+
+  @override
+  String get regions_yourRegions => 'Your regions';
+
+  @override
+  String get regions_empty =>
+      'No regions yet. Add the name your area\'s repeaters use.';
+
+  @override
+  String get regions_add => 'Add region';
+
+  @override
+  String get regions_nameLabel => 'Region name';
+
+  @override
+  String get regions_nameHelp =>
+      'Capitals count: SF and sf are two different regions.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Spaces, dots, commas and most punctuation aren\'t allowed.';
+
+  @override
+  String get regions_nameTooLong => 'Too long: 30 bytes at most.';
+
+  @override
+  String get regions_nameExists => 'Already in your list.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Used by $count channels',
+      one: 'Used by 1 channel',
+      zero: 'No channel uses it',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count channels use this region. They go back to no region.',
+      one: '1 channel uses this region. It goes back to no region.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Radio default region';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Saved on the radio. Channels without a region of their own, direct messages and adverts use it, whichever app sends them.';
+
+  @override
+  String get regions_none => 'None';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'The radio didn\'t take the change. Try again.';
+
+  @override
+  String get regions_inQr => 'Region in channel QR codes';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'When on, a channel\'s QR code carries its region, and scanning a code sets the region it carries.';
+
+  @override
+  String get regions_unsupported =>
+      'This radio\'s firmware is too old for regions.';
+
+  @override
+  String get channelRegion_title => 'Region';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'None (radio default: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Everywhere (no region)';
+
+  @override
+  String get channelRegion_help =>
+      'Messages on this channel go only through repeaters that know its region.';
+
+  @override
+  String get channelRegion_manage => 'Manage regions';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Region: $name';
+  }
 }

@@ -7003,4 +7003,108 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '我的联系人';
+
+  @override
+  String get regions_title => '区域';
+
+  @override
+  String get regions_settingsSubtitle => '让频道消息只在一个地区传递';
+
+  @override
+  String get regions_intro =>
+      '区域让频道的消息只经过服务某一地区的中继器。不认识该区域的中继器不会转发消息,所以请使用你所在地区中继器使用的名称。';
+
+  @override
+  String get regions_yourRegions => '你的区域';
+
+  @override
+  String get regions_empty => '还没有区域。添加你所在地区中继器使用的名称。';
+
+  @override
+  String get regions_add => '添加区域';
+
+  @override
+  String get regions_nameLabel => '区域名称';
+
+  @override
+  String get regions_nameHelp => '区分大小写:SF 和 sf 是两个不同的区域。';
+
+  @override
+  String get regions_nameBadCharacter => '不允许空格、句点、逗号和大多数标点。';
+
+  @override
+  String get regions_nameTooLong => '太长:最多 30 字节。';
+
+  @override
+  String get regions_nameExists => '已在你的列表中。';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个频道在使用',
+      zero: '没有频道使用',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '删除 $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个频道使用此区域。它们将恢复为无区域。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '电台默认区域';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '保存在电台上。没有自己区域的频道、私信和广播都会使用它,无论哪个应用发送。';
+
+  @override
+  String get regions_none => '无';
+
+  @override
+  String get regions_radioNoAnswer => '电台没有接受更改。请重试。';
+
+  @override
+  String get regions_inQr => '在频道二维码中包含区域';
+
+  @override
+  String get regions_inQrSubtitle => '开启后,频道的二维码会带上它的区域,扫描二维码会设置其中的区域。';
+
+  @override
+  String get regions_unsupported => '此电台的固件太旧,不支持区域。';
+
+  @override
+  String get channelRegion_title => '区域';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return '无(电台默认:$name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => '所有地方(无区域)';
+
+  @override
+  String get channelRegion_help => '此频道的消息只经过认识其区域的中继器。';
+
+  @override
+  String get channelRegion_manage => '管理区域';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return '区域:$name';
+  }
 }

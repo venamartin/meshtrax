@@ -7457,4 +7457,122 @@ class AppLocalizationsSl extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Moj stik';
+
+  @override
+  String get regions_title => 'Regije';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Sporočila kanala samo na enem območju';
+
+  @override
+  String get regions_intro =>
+      'Regija drži sporočila kanala pri repetitorjih, ki pokrivajo eno območje. Repetitor, ki regije ne pozna, sporočila ne posreduje, zato uporabite imena, ki jih uporabljajo repetitorji na vašem območju.';
+
+  @override
+  String get regions_yourRegions => 'Vaše regije';
+
+  @override
+  String get regions_empty =>
+      'Še ni regij. Dodajte ime, ki ga uporabljajo repetitorji na vašem območju.';
+
+  @override
+  String get regions_add => 'Dodaj regijo';
+
+  @override
+  String get regions_nameLabel => 'Ime regije';
+
+  @override
+  String get regions_nameHelp =>
+      'Velike črke štejejo: SF in sf sta dve različni regiji.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Presledki, pike, vejice in večina ločil niso dovoljeni.';
+
+  @override
+  String get regions_nameTooLong => 'Predolgo: največ 30 bajtov.';
+
+  @override
+  String get regions_nameExists => 'Že na vašem seznamu.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Uporablja jo $count kanalov',
+      few: 'Uporabljajo jo $count kanali',
+      two: 'Uporabljata jo $count kanala',
+      one: 'Uporablja jo 1 kanal',
+      zero: 'Noben kanal je ne uporablja',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Izbrišem $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kanalov uporablja to regijo. Ostali bodo brez regije.',
+      few: '$count kanali uporabljajo to regijo. Ostali bodo brez regije.',
+      two: '$count kanala uporabljata to regijo. Ostala bosta brez regije.',
+      one: '1 kanal uporablja to regijo. Ostal bo brez regije.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Privzeta regija radia';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Shranjena v radiu. Uporabljajo jo kanali brez lastne regije, neposredna sporočila in oglasi, iz katere koli aplikacije.';
+
+  @override
+  String get regions_none => 'Brez';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'Radio spremembe ni sprejel. Poskusite znova.';
+
+  @override
+  String get regions_inQr => 'Regija v QR-kodah kanalov';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Vklopljeno: QR-koda kanala nosi njegovo regijo, skenirana koda pa nastavi regijo, ki jo nosi.';
+
+  @override
+  String get regions_unsupported =>
+      'Strojna programska oprema tega radia je prestara za regije.';
+
+  @override
+  String get channelRegion_title => 'Regija';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Brez (privzeto v radiu: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Povsod (brez regije)';
+
+  @override
+  String get channelRegion_help =>
+      'Sporočila tega kanala gredo samo prek repetitorjev, ki poznajo njegovo regijo.';
+
+  @override
+  String get channelRegion_manage => 'Upravljaj regije';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Regija: $name';
+  }
 }

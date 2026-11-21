@@ -5,6 +5,7 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../helpers/meshcore_qr.dart';
+import '../services/region_service.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_scanner_widget.dart';
 import '../helpers/snack_bar_builder.dart';
@@ -82,6 +83,8 @@ class _ChannelQrScannerScreenState extends State<ChannelQrScannerScreen> {
     ChannelQrData channelData,
   ) async {
     final connector = context.read<MeshCoreConnector>();
+    final regions = context.read<RegionService?>();
+    final takeRegion = regions?.regionsInQr == true ? channelData.region : null;
 
     final result = await showDialog<bool>(
       context: context,
@@ -105,6 +108,10 @@ class _ChannelQrScannerScreenState extends State<ChannelQrScannerScreen> {
                 color: Colors.grey[600],
               ),
             ),
+            if (takeRegion != null) ...[
+              const SizedBox(height: 8),
+              Text(context.l10n.channelRegion_qrLine(takeRegion)),
+            ],
           ],
         ),
         actions: [
@@ -123,7 +130,12 @@ class _ChannelQrScannerScreenState extends State<ChannelQrScannerScreen> {
     if (result == true && context.mounted) {
       final nextIndex = _findNextAvailableChannelIndex(connector);
       if (nextIndex != null) {
+        if (takeRegion != null) {
+          await regions!.setChannelRegion(channelData.pskHex, takeRegion);
+          if (!context.mounted) return;
+        }
         connector.setChannel(nextIndex, channelData.name, hex2Uint8List(channelData.pskHex));
+
         showDismissibleSnackBar(
           context,
           content: Text(context.l10n.channels_channelAddedSuccess),

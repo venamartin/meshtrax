@@ -12729,6 +12729,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'My contact'**
   String get shareContact_myContact;
+
+  /// No description provided for @regions_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions'**
+  String get regions_title;
+
+  /// No description provided for @regions_settingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a channel\'s messages to one area'**
+  String get regions_settingsSubtitle;
+
+  /// No description provided for @regions_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'A region keeps a channel\'s messages to the repeaters that serve one area. A repeater that doesn\'t know the region won\'t pass the message on, so use the names your area\'s repeaters use.'**
+  String get regions_intro;
+
+  /// No description provided for @regions_yourRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'Your regions'**
+  String get regions_yourRegions;
+
+  /// No description provided for @regions_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No regions yet. Add the name your area\'s repeaters use.'**
+  String get regions_empty;
+
+  /// No description provided for @regions_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add region'**
+  String get regions_add;
+
+  /// No description provided for @regions_nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Region name'**
+  String get regions_nameLabel;
+
+  /// No description provided for @regions_nameHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Capitals count: SF and sf are two different regions.'**
+  String get regions_nameHelp;
+
+  /// No description provided for @regions_nameBadCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces, dots, commas and most punctuation aren\'t allowed.'**
+  String get regions_nameBadCharacter;
+
+  /// No description provided for @regions_nameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Too long: 30 bytes at most.'**
+  String get regions_nameTooLong;
+
+  /// No description provided for @regions_nameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in your list.'**
+  String get regions_nameExists;
+
+  /// No description provided for @regions_usedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No channel uses it} =1{Used by 1 channel} other{Used by {count} channels}}'**
+  String regions_usedBy(int count);
+
+  /// No description provided for @regions_deleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String regions_deleteTitle(String name);
+
+  /// No description provided for @regions_deleteInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 channel uses this region. It goes back to no region.} other{{count} channels use this region. They go back to no region.}}'**
+  String regions_deleteInUse(int count);
+
+  /// No description provided for @regions_radioDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio default region'**
+  String get regions_radioDefault;
+
+  /// No description provided for @regions_radioDefaultHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on the radio. Channels without a region of their own, direct messages and adverts use it, whichever app sends them.'**
+  String get regions_radioDefaultHelp;
+
+  /// No description provided for @regions_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get regions_none;
+
+  /// No description provided for @regions_radioNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio didn\'t take the change. Try again.'**
+  String get regions_radioNoAnswer;
+
+  /// No description provided for @regions_inQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Region in channel QR codes'**
+  String get regions_inQr;
+
+  /// No description provided for @regions_inQrSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When on, a channel\'s QR code carries its region, and scanning a code sets the region it carries.'**
+  String get regions_inQrSubtitle;
+
+  /// No description provided for @regions_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio\'s firmware is too old for regions.'**
+  String get regions_unsupported;
+
+  /// No description provided for @channelRegion_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Region'**
+  String get channelRegion_title;
+
+  /// No description provided for @channelRegion_noneWithDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'None (radio default: {name})'**
+  String channelRegion_noneWithDefault(String name);
+
+  /// No description provided for @channelRegion_everywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Everywhere (no region)'**
+  String get channelRegion_everywhere;
+
+  /// No description provided for @channelRegion_help.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages on this channel go only through repeaters that know its region.'**
+  String get channelRegion_help;
+
+  /// No description provided for @channelRegion_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage regions'**
+  String get channelRegion_manage;
+
+  /// No description provided for @channelRegion_qrLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Region: {name}'**
+  String channelRegion_qrLine(String name);
 }
 
 class _AppLocalizationsDelegate

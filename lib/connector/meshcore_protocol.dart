@@ -1236,6 +1236,20 @@ Uint8List buildSetDefaultFloodScopeFrame(String? name, Uint8List? key) {
   return writer.toBytes();
 }
 
+// Build CMD_SET_FLOOD_SCOPE_KEY frames (v8+): the region the radio's next
+// floods carry, held until cleared or the radio reboots. It applies to every
+// flood the radio sends, its own ACKs too, so set it just around one send.
+// Format: [cmd][0][key x16] sets it, [cmd][0] clears it, and [cmd][1] sends
+// with no region even when a default is set (v12+).
+Uint8List buildSetFloodScopeKeyFrame(Uint8List key) =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 0, ...key]);
+
+Uint8List buildClearFloodScopeFrame() =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 0]);
+
+Uint8List buildFloodUnscopedFrame() =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 1]);
+
 // Build CMD_GET_ALLOWED_REPEAT_FREQ frame (v9+)
 // Format: [cmd]
 // Reply: [RESP_ALLOWED_REPEAT_FREQ] then (lower u32 LE, upper u32 LE) pairs,

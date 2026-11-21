@@ -35,6 +35,7 @@ import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/trax_service.dart';
 import 'services/radio_ask_service.dart';
+import 'services/region_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
@@ -157,6 +158,10 @@ void main() async {
   // The user's own SOS outlives every screen, and a restart picks it up.
   final sosService = SosService(connector);
   await sosService.restore();
+
+  final regionService = RegionService();
+  await regionService.load();
+  connector.regionService = regionService;
   // A repeat of an SOS stops alerting once its pin is dismissed.
   connector.isPinDismissed = (chatId, messageId) =>
       uiViewStateService.dismissedPins(chatId).contains(messageId);
@@ -180,6 +185,7 @@ void main() async {
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
       sosService: sosService,
+      regionService: regionService,
     ),
   );
 }
@@ -220,6 +226,7 @@ class MeshTraxApp extends StatefulWidget {
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
   final SosService sosService;
+  final RegionService regionService;
 
   const MeshTraxApp({
     super.key,
@@ -237,6 +244,7 @@ class MeshTraxApp extends StatefulWidget {
     required this.chatTextScaleService,
     required this.uiViewStateService,
     required this.sosService,
+    required this.regionService,
   });
 
   @override
@@ -379,6 +387,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.chatTextScaleService),
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         ChangeNotifierProvider.value(value: widget.sosService),
+        ChangeNotifierProvider.value(value: widget.regionService),
+
         ChangeNotifierProvider(
           create: (_) => RadioAskService(
             widget.connector,

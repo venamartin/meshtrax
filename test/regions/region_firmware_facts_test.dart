@@ -1,50 +1,24 @@
 // Firmware facts for regions (flood scopes), read from MeshCore dev
 // (src/helpers/RegionMap.cpp, TransportKeyStore.cpp, CommonCLI.cpp,
 // examples/simple_repeater/MyMesh.cpp, examples/companion_radio/MyMesh.cpp).
-//
-// The reference functions below are the spec. When the app gets its own
-// region helper, point these tests at it and delete the references.
-// Vectors were made with Python's hashlib/hmac, not with this code.
+// Vectors were made with Python's hashlib/hmac, not with the app's code.
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel.dart';
 
 String _hex(List<int> b) =>
     b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
-// TransportKeyStore::getAutoKeyFor with RegionMap::getTransportKeysFor:
-// first 16 bytes of SHA256("#" + name), the name exactly as written.
-Uint8List _regionKey(String name) {
-  final n = name.startsWith('#') ? name : '#$name';
-  return Uint8List.fromList(
-    crypto.sha256.convert(utf8.encode(n)).bytes.sublist(0, 16),
-  );
-}
+Uint8List _regionKey(String name) => RegionHelper.keyFor(name);
 
-// TransportKey::calcTransportCode: HMAC-SHA256(key, type || payload), the
-// first 2 bytes as a little-endian uint16; 0000 and FFFF are reserved.
-int _transportCode(Uint8List key, int payloadType, Uint8List payload) {
-  final mac = crypto.Hmac(crypto.sha256, key)
-      .convert([payloadType, ...payload]).bytes;
-  final code = mac[0] | (mac[1] << 8);
-  if (code == 0) return 1;
-  if (code == 0xFFFF) return 0xFFFE;
-  return code;
-}
+int _transportCode(Uint8List key, int payloadType, Uint8List payload) =>
+    RegionHelper.transportCode(key, payloadType, payload);
 
-// RegionMap::is_name_char, applied to each UTF-8 byte.
-bool _validRegionName(String name) {
-  final bytes = utf8.encode(name);
-  if (bytes.isEmpty || bytes.length > 30) return false;
-  return bytes.every(
-    (c) => c == 0x2D || c == 0x24 || c == 0x23 || (c >= 0x30 && c <= 0x39) ||
-        c >= 0x41,
-  );
-}
+bool _validRegionName(String name) => RegionHelper.check(name) == null;
 
 // Repeater reply to ANON_REQ_TYPE_REGIONS: [tag u32][repeater clock u32]
 // then the names that allow flood, comma separated, '*' when un-scoped
@@ -104,10 +78,16 @@ void main() {
   group('region name rules', () {
     test('accepts what the firmware accepts', () {
       for (final ok in ['sf', 'SF', 'au-nsw', 'bay_area', 'zürich', '#sf',
-          '\$private', 'a' * 30]) {
+          'a' * 30, '#${'a' * 30}']) {
         expect(_validRegionName(ok), isTrue, reason: ok);
       }
     });
+
+    test('refuses private \$ regions, which need a key store the firmware '
+        "hasn't built", () {
+      expect(_validRegionName('\$private'), isFalse);
+    });
+
 
     test('refuses spaces, dots, commas and over 30 bytes', () {
       for (final bad in ['', 'bay area', 'sf.ca', 'a,b', 'a/b', '*',

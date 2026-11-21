@@ -7119,4 +7119,109 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '自分の連絡先';
+
+  @override
+  String get regions_title => 'リージョン';
+
+  @override
+  String get regions_settingsSubtitle => 'チャンネルのメッセージを1つの地域にとどめる';
+
+  @override
+  String get regions_intro =>
+      'リージョンは、チャンネルのメッセージを1つの地域を受け持つリピーターにとどめます。そのリージョンを知らないリピーターはメッセージを中継しないので、地域のリピーターが使っている名前を使ってください。';
+
+  @override
+  String get regions_yourRegions => 'あなたのリージョン';
+
+  @override
+  String get regions_empty => 'まだリージョンがありません。地域のリピーターが使っている名前を追加してください。';
+
+  @override
+  String get regions_add => 'リージョンを追加';
+
+  @override
+  String get regions_nameLabel => 'リージョン名';
+
+  @override
+  String get regions_nameHelp => '大文字と小文字は区別されます。SF と sf は別のリージョンです。';
+
+  @override
+  String get regions_nameBadCharacter => 'スペース、ピリオド、カンマ、ほとんどの記号は使えません。';
+
+  @override
+  String get regions_nameTooLong => '長すぎます。最大30バイトです。';
+
+  @override
+  String get regions_nameExists => 'すでにリストにあります。';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count個のチャンネルが使用中',
+      zero: '使っているチャンネルはありません',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '$name を削除しますか?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count個のチャンネルがこのリージョンを使っています。リージョンなしに戻ります。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '無線機の既定リージョン';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '無線機に保存されます。自分のリージョンがないチャンネル、ダイレクトメッセージ、アドバートが、どのアプリからでもこれを使います。';
+
+  @override
+  String get regions_none => 'なし';
+
+  @override
+  String get regions_radioNoAnswer => '無線機が変更を受け付けませんでした。もう一度お試しください。';
+
+  @override
+  String get regions_inQr => 'チャンネルQRコードにリージョンを入れる';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'オン:チャンネルのQRコードにリージョンが入り、読み取ったコードのリージョンが設定されます。';
+
+  @override
+  String get regions_unsupported => 'この無線機のファームウェアはリージョンには古すぎます。';
+
+  @override
+  String get channelRegion_title => 'リージョン';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'なし(無線機の既定: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'どこでも(リージョンなし)';
+
+  @override
+  String get channelRegion_help => 'このチャンネルのメッセージは、そのリージョンを知っているリピーターだけを通ります。';
+
+  @override
+  String get channelRegion_manage => 'リージョンを管理';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'リージョン: $name';
+  }
 }

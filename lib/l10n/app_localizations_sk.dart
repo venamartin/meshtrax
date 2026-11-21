@@ -7453,4 +7453,120 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Môj kontakt';
+
+  @override
+  String get regions_title => 'Regióny';
+
+  @override
+  String get regions_settingsSubtitle => 'Správy kanála len v jednej oblasti';
+
+  @override
+  String get regions_intro =>
+      'Región drží správy kanála pri opakovačoch, ktoré obsluhujú jednu oblasť. Opakovač, ktorý región nepozná, správu neodovzdá ďalej, preto používajte názvy, ktoré používajú opakovače vo vašej oblasti.';
+
+  @override
+  String get regions_yourRegions => 'Vaše regióny';
+
+  @override
+  String get regions_empty =>
+      'Zatiaľ žiadne regióny. Pridajte názov, ktorý používajú opakovače vo vašej oblasti.';
+
+  @override
+  String get regions_add => 'Pridať región';
+
+  @override
+  String get regions_nameLabel => 'Názov regiónu';
+
+  @override
+  String get regions_nameHelp =>
+      'Na veľkosti písmen záleží: SF a sf sú dva rôzne regióny.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Medzery, bodky, čiarky a väčšina interpunkcie nie sú povolené.';
+
+  @override
+  String get regions_nameTooLong => 'Príliš dlhý: najviac 30 bajtov.';
+
+  @override
+  String get regions_nameExists => 'Už je vo vašom zozname.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Používa ho $count kanálov',
+      many: 'Používa ho $count kanála',
+      few: 'Používajú ho $count kanály',
+      one: 'Používa ho 1 kanál',
+      zero: 'Nepoužíva ho žiadny kanál',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Odstrániť $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kanálov používa tento región. Zostanú bez regiónu.',
+      many: '$count kanála používa tento región. Zostanú bez regiónu.',
+      few: '$count kanály používajú tento región. Zostanú bez regiónu.',
+      one: '1 kanál používa tento región. Zostane bez regiónu.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Predvolený región rádia';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Uložený v rádiu. Používajú ho kanály bez vlastného regiónu, priame správy a adverty, z akejkoľvek aplikácie.';
+
+  @override
+  String get regions_none => 'Žiadny';
+
+  @override
+  String get regions_radioNoAnswer => 'Rádio zmenu neprijalo. Skúste to znova.';
+
+  @override
+  String get regions_inQr => 'Región v QR kódoch kanálov';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Zapnuté: QR kód kanála nesie jeho región a naskenovaný kód nastaví región, ktorý nesie.';
+
+  @override
+  String get regions_unsupported =>
+      'Firmvér tohto rádia je pre regióny príliš starý.';
+
+  @override
+  String get channelRegion_title => 'Región';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Žiadny (predvolený v rádiu: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Všade (bez regiónu)';
+
+  @override
+  String get channelRegion_help =>
+      'Správy tohto kanála idú len cez opakovače, ktoré poznajú jeho región.';
+
+  @override
+  String get channelRegion_manage => 'Spravovať regióny';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Región: $name';
+  }
 }

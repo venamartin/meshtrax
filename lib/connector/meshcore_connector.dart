@@ -28,6 +28,7 @@ import '../helpers/passing_copy.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
+import '../helpers/region_helper.dart';
 import '../helpers/smaz.dart';
 import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
@@ -42,6 +43,7 @@ import '../services/storage_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
 import '../services/notification_service.dart';
+import '../services/region_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
 import '../storage/arrival_clock.dart';
@@ -4267,6 +4269,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
+    _radioDefaultRegion = null;
+    _radioDefaultRegionKnown = false;
     _firmwareVersion = null;
     _hasWifi = null;
     _resetSecondApp();
@@ -4381,6 +4385,78 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (!isConnected) {
       throw Exception("Not connected to a MeshCore device");
     }
+    final region = _regionFrameFor(data);
+    if (region == null) {
+      // Kept out of a send in a region: between its set and clear, anything
+      // the radio floods carries that channel's region.
+      while (_regionSend != null) {
+        await _regionSend;
+      }
+      return _writeFrame(
+        data,
+        channelSendQueueId: channelSendQueueId,
+        expectsGenericAck: expectsGenericAck,
+      );
+    }
+    while (_regionSend != null) {
+      await _regionSend;
+    }
+    final done = Completer<void>();
+    _regionSend = done.future;
+    try {
+      await _writeFrame(region, expectsGenericAck: true);
+      try {
+        await _writeFrame(
+          data,
+          channelSendQueueId: channelSendQueueId,
+          expectsGenericAck: expectsGenericAck,
+        );
+      } finally {
+        await _writeFrame(buildClearFloodScopeFrame(), expectsGenericAck: true)
+            .catchError((Object _) {});
+      }
+    } finally {
+      _regionSend = null;
+      done.complete();
+    }
+  }
+
+  /// Set while a channel send in a region is on its way to the radio.
+  Future<void>? _regionSend;
+
+  /// Holds the region store; set at startup.
+  RegionService? regionService;
+
+  /// Firmware 8+ takes a region for the next floods (CMD_SET_FLOOD_SCOPE_KEY).
+  bool get supportsRegions => (_firmwareVerCode ?? 0) >= 8;
+
+  /// Firmware 12+ can send with no region while a default is set.
+  bool get supportsRegionEverywhere => (_firmwareVerCode ?? 0) >= 12;
+
+  /// Firmware 11+ keeps a default region.
+  bool get supportsRadioDefaultRegion => (_firmwareVerCode ?? 0) >= 11;
+
+  /// The frame that puts the radio in the region of the channel [data] sends
+  /// to; null for any other frame, or a channel with no region of its own.
+  Uint8List? _regionFrameFor(Uint8List data) {
+    final regions = regionService;
+    if (regions == null || !supportsRegions) return null;
+    if (data.length < 3 || data[0] != cmdSendChannelTxtMsg) return null;
+    final index = data[2];
+    final channel = _channels.where((c) => c.index == index).firstOrNull;
+    final region = channel == null ? null : regions.regionOf(channel.idKey);
+    if (region == null) return null;
+    if (region == RegionHelper.everywhere) {
+      return supportsRegionEverywhere ? buildFloodUnscopedFrame() : null;
+    }
+    return buildSetFloodScopeKeyFrame(RegionHelper.keyFor(region));
+  }
+
+  Future<void> _writeFrame(
+    Uint8List data, {
+    String? channelSendQueueId,
+    bool expectsGenericAck = false,
+  }) async {
     _bleDebugLogService?.logFrame(data, outgoing: true);
 
     // Register the pending ack BEFORE writing, with no await in between. On fast
@@ -12534,6 +12610,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
       unawaited(_probeWifi());
+      unawaited(_clearLeftoverRegion());
       unawaited(_preparePassingCopies().then((_) => _applyAckMode()));
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
@@ -12769,6 +12846,55 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       throw StateError('Radio did not report its default flood scope');
     }
     return parseDefaultFloodScopeFrame(frame);
+  }
+
+  /// The radio's default region, null when it has none. Read once per
+  /// connection by [loadRadioDefaultRegion]; see [radioDefaultRegionKnown].
+  String? get radioDefaultRegion => _radioDefaultRegion;
+  bool get radioDefaultRegionKnown => _radioDefaultRegionKnown;
+  String? _radioDefaultRegion;
+  bool _radioDefaultRegionKnown = false;
+
+  Future<void> loadRadioDefaultRegion() async {
+    if (!supportsRadioDefaultRegion || _radioDefaultRegionKnown) return;
+    try {
+      final scope = await getDefaultFloodScope();
+      _radioDefaultRegion =
+          scope == null ? null : RegionHelper.normalize(scope.name);
+      _radioDefaultRegionKnown = true;
+      notifyListeners();
+    } on StateError {
+      // No answer: stays unknown, and the next look asks again.
+    }
+  }
+
+  /// Saves [name] as the radio's default region, null for none. False when
+  /// the radio refused or didn't answer.
+  Future<bool> setRadioDefaultRegion(String? name) async {
+    final region = name == null ? null : RegionHelper.normalize(name);
+    final ok = await _sendAndWaitForAck(
+      buildSetDefaultFloodScopeFrame(
+        region,
+        region == null ? null : RegionHelper.keyFor(region),
+      ),
+      expectsGenericAck: true,
+    );
+    if (ok) {
+      _radioDefaultRegion = region;
+      _radioDefaultRegionKnown = true;
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  /// A region set for a send stays on the radio until it reboots, so a send
+  /// cut short (app killed, link lost) could leave it set for every flood.
+  Future<void> _clearLeftoverRegion() async {
+    if (!supportsRegions || regionService?.anyChannelHasRegion != true) return;
+    await _sendAndWaitForAck(
+      buildClearFloodScopeFrame(),
+      expectsGenericAck: true,
+    );
   }
 
   /// Re-reads CMD_GET_AUTOADD_CONFIG so a backup never relies on the

@@ -7484,4 +7484,118 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Il mio contatto';
+
+  @override
+  String get regions_title => 'Regioni';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Tenere i messaggi di un canale in una zona';
+
+  @override
+  String get regions_intro =>
+      'Una regione tiene i messaggi di un canale sui ripetitori che servono una zona. Un ripetitore che non conosce la regione non inoltra il messaggio, quindi usa i nomi usati dai ripetitori della tua zona.';
+
+  @override
+  String get regions_yourRegions => 'Le tue regioni';
+
+  @override
+  String get regions_empty =>
+      'Ancora nessuna regione. Aggiungi il nome usato dai ripetitori della tua zona.';
+
+  @override
+  String get regions_add => 'Aggiungi regione';
+
+  @override
+  String get regions_nameLabel => 'Nome della regione';
+
+  @override
+  String get regions_nameHelp =>
+      'Le maiuscole contano: SF e sf sono due regioni diverse.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Spazi, punti, virgole e quasi tutta la punteggiatura non sono ammessi.';
+
+  @override
+  String get regions_nameTooLong => 'Troppo lungo: al massimo 30 byte.';
+
+  @override
+  String get regions_nameExists => 'Già nella tua lista.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Usata da $count canali',
+      one: 'Usata da 1 canale',
+      zero: 'Nessun canale la usa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Eliminare $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count canali usano questa regione. Resteranno senza regione.',
+      one: '1 canale usa questa regione. Resterà senza regione.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Regione predefinita della radio';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Salvata sulla radio. La usano i canali senza una regione propria, i messaggi diretti e gli annunci, da qualsiasi app.';
+
+  @override
+  String get regions_none => 'Nessuna';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'La radio non ha accettato la modifica. Riprova.';
+
+  @override
+  String get regions_inQr => 'Regione nei codici QR dei canali';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Se attivo, il codice QR di un canale porta la sua regione, e scansionare un codice imposta la regione che porta.';
+
+  @override
+  String get regions_unsupported =>
+      'Il firmware di questa radio è troppo vecchio per le regioni.';
+
+  @override
+  String get channelRegion_title => 'Regione';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Nessuna (predefinita della radio: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Ovunque (nessuna regione)';
+
+  @override
+  String get channelRegion_help =>
+      'I messaggi di questo canale passano solo dai ripetitori che conoscono la sua regione.';
+
+  @override
+  String get channelRegion_manage => 'Gestisci regioni';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Regione: $name';
+  }
 }

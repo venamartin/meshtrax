@@ -1,9 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
+import '../services/region_service.dart';
 import '../helpers/meshcore_qr.dart';
+import '../helpers/region_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_code_display.dart';
@@ -16,8 +19,19 @@ class ChannelShareScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final qrData = MeshCoreQr.encodeChannel(channel.name, channel.pskHex);
-    
+    final regions = context.watch<RegionService?>();
+    final region = regions?.regionOf(channel.idKey);
+    final shared = regions?.regionsInQr == true &&
+            region != null &&
+            region != RegionHelper.everywhere
+        ? region
+        : null;
+    final qrData = MeshCoreQr.encodeChannel(
+      channel.name,
+      channel.pskHex,
+      region: shared,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: AdaptiveAppBarTitle(context.l10n.channels_shareChannel),
@@ -37,8 +51,13 @@ class ChannelShareScreen extends StatelessWidget {
                 instructions: context.l10n.channels_shareChannelInstructions,
                 padding: EdgeInsets.zero,
               ),
+              if (shared != null) ...[
+                const SizedBox(height: 16),
+                Text(context.l10n.channelRegion_qrLine(shared)),
+              ],
               const SizedBox(height: 32),
               _buildSecretKeyCard(context, channel.pskHex),
+
               const SizedBox(height: 16),
               _buildUriCard(context, qrData),
               const SizedBox(height: 16),

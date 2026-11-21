@@ -4,7 +4,8 @@
 >
 > **Who it's for:** developers working on MeshTrax.
 >
-> **Status:** active plan. Phase 1 is being built on `feat/regions`, and all region work lives in that one PR. The firmware facts are from MeshCore `dev` (November 2026) and hold for companion and repeater 1.18.0.
+> **Status:** active plan. Phase 1 is built on `feat/regions` and waits for a test on the radios; all region work lives in that one PR.
+ The firmware facts are from MeshCore `dev` (November 2026) and hold for companion and repeater 1.18.0.
 >
 > New to the terms? See the [glossary](../glossary.md).
 
@@ -56,6 +57,7 @@ Made by the owner on 2026-11-21:
 2. **The app asks nearby repeaters for their regions after Discover**, once per repeater per day, only the repeaters that answered.
 3. **Names are kept exactly as typed**, like the firmware. When a nearby repeater has the same name with different capitals, the app offers the repeater's spelling.
 4. **A channel's region belongs to the channel** (its key), so it is the same on every radio you connect.
+5. **Channel QR codes leave the region out** unless "Region in channel QR codes" is switched on in Settings → Regions. Off, a scanned code's region is ignored too.
 
 ## The plan
 
@@ -68,7 +70,7 @@ Made by the owner on 2026-11-21:
 - **On screen:** when a channel has its own region, a small pin and the name under the channel name in the chat header, and on its row in Chats. Nothing otherwise.
 - **Sending:** every channel send (text, reactions, channel data, retries, queued sends) goes through one place that sets the region, sends, and clears it. No other frame goes to the radio in between, so a direct message can't pick up the channel's region. The app also clears any leftover region when it connects.
 - **Old radios:** radios without command 54 don't show any of this.
-- **Channel QR codes:** written with `region_scope` when the channel has a region. When a scanned code has one, the region is added and set on the channel.
+- **Channel QR codes:** only while "Region in channel QR codes" is on (off by default): written with `region_scope` when the channel has a region, and a scanned code's region is added and set on the channel.
 - **App backup:** includes the region list and the channel regions.
 
 ### Phase 2: repeaters tell you their regions

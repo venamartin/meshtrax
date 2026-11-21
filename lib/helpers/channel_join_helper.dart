@@ -5,6 +5,7 @@ import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../screens/channel_chat_screen.dart';
+import '../services/region_service.dart';
 import 'meshcore_qr.dart';
 import 'snack_bar_builder.dart';
 
@@ -31,15 +32,25 @@ class ChannelJoinHelper {
       );
       return;
     }
-    await joinChannel(context, name: data.name, pskHex: data.pskHex);
+    await joinChannel(
+      context,
+      name: data.name,
+      pskHex: data.pskHex,
+      region: data.region,
+    );
   }
 
+  /// [region] comes from the link; it is used only while the regions
+  /// setting lets channel QR codes carry one.
   static Future<void> joinChannel(
     BuildContext context, {
     required String name,
     required String pskHex,
+    String? region,
   }) async {
     final connector = context.read<MeshCoreConnector>();
+    final regions = context.read<RegionService?>();
+    final takeRegion = regions?.regionsInQr == true ? region : null;
     final l10n = context.l10n;
     final wanted = pskHex.toLowerCase();
     final existing = connector.channels
@@ -76,6 +87,10 @@ class ChannelJoinHelper {
               'Secret: ${pskHex.substring(0, 8)}...',
               style: TextStyle(fontFamily: 'monospace', color: Colors.grey[600]),
             ),
+            if (takeRegion != null) ...[
+              const SizedBox(height: 8),
+              Text(l10n.channelRegion_qrLine(takeRegion)),
+            ],
           ],
         ),
         actions: [
@@ -102,7 +117,9 @@ class ChannelJoinHelper {
       return;
     }
     final psk = hex2Uint8List(pskHex);
+    if (takeRegion != null) await regions!.setChannelRegion(pskHex, takeRegion);
     await connector.setChannel(slot, name, psk);
+
     final channel = await connector.awaitChannelByPsk(psk);
     if (!context.mounted) return;
     showDismissibleSnackBar(

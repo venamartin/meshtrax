@@ -29,6 +29,7 @@ import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/heard_service.dart';
 import '../services/notification_service.dart';
+import '../services/region_service.dart';
 import '../services/sos_service.dart';
 import '../services/trax_service.dart';
 import '../services/ui_view_state_service.dart';
@@ -56,6 +57,8 @@ import '../widgets/pinned_messages_bar.dart';
 import '../widgets/structured_message_card.dart';
 import '../widgets/structured_message_dialogs.dart';
 import '../widgets/reaction_details_sheet.dart';
+import '../widgets/region_dialogs.dart';
+import '../widgets/region_label.dart';
 import '../widgets/wavy_divider.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
@@ -1097,9 +1100,27 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                widget.channel.displayName,
-                style: const TextStyle(fontSize: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.channel.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  if (context
+                          .watch<RegionService?>()
+                          ?.regionOf(widget.channel.idKey)
+                      case final region?)
+
+                    InkWell(
+                      onTap: () =>
+                          showChannelRegionDialog(context, widget.channel),
+                      child: RegionLabel(region),
+                    ),
+                ],
               ),
             ),
           ],
@@ -1150,7 +1171,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'clearChat') {
+              if (value == 'region') {
+                showChannelRegionDialog(context, widget.channel);
+              } else if (value == 'clearChat') {
                 final connector = context.read<MeshCoreConnector>();
                 ClearChatDialog.show(context).then((choice) {
                   if (choice == null) return;
@@ -1162,8 +1185,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               }
             },
             itemBuilder: (context) => [
+              if (context.read<MeshCoreConnector>().supportsRegions)
+                PopupMenuItem(
+                  value: 'region',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.place_outlined, size: 20),
+                      const SizedBox(width: 12),
+                      Text(context.l10n.channelRegion_title),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'clearChat',
+
                 child: Row(
                   children: [
                     const Icon(Icons.cleaning_services, size: 20, color: Colors.orange),
