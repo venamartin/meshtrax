@@ -4715,12 +4715,11 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Prenašaj zemljevide samo prek Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnly => 'Prenašaj samo prek Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Prenosi zemljevidov čakajo na povezavo Wi‑Fi';
+      'Prenosi čakajo na Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Zemljevidi brez povezave';
@@ -4986,14 +4985,13 @@ class AppLocalizationsSl extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Ni na voljo za to regijo';
 
   @override
-  String get offlineMaps_notificationRunning => 'Prenašanje zemljevida';
+  String get offlineMaps_notificationRunning => 'Prenašanje';
 
   @override
-  String get offlineMaps_notificationPaused =>
-      'Prenos zemljevida začasno ustavljen';
+  String get offlineMaps_notificationPaused => 'Prenos začasno ustavljen';
 
   @override
-  String get offlineMaps_notificationFailed => 'Prenos zemljevida ni uspel';
+  String get offlineMaps_notificationFailed => 'Prenos ni uspel';
 
   @override
   String get map_notForNavigation => 'Ni za navigacijo';

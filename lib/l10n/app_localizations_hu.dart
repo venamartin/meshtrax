@@ -4742,11 +4742,11 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Térképletöltés csak Wi‑Fi-n';
+  String get appSettings_mapDownloadsWifiOnly => 'Letöltés csak Wi‑Fi-n';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'A térképletöltések Wi‑Fi-kapcsolatra várnak';
+      'A letöltések Wi‑Fi-re várnak';
 
   @override
   String get offlineMaps_title => 'Offline térképek';
@@ -5010,13 +5010,13 @@ class AppLocalizationsHu extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Ehhez a régióhoz nem érhető el';
 
   @override
-  String get offlineMaps_notificationRunning => 'Térkép letöltése';
+  String get offlineMaps_notificationRunning => 'Letöltés';
 
   @override
-  String get offlineMaps_notificationPaused => 'Térképletöltés szüneteltetve';
+  String get offlineMaps_notificationPaused => 'Letöltés szüneteltetve';
 
   @override
-  String get offlineMaps_notificationFailed => 'Sikertelen térképletöltés';
+  String get offlineMaps_notificationFailed => 'Sikertelen letöltés';
 
   @override
   String get map_notForNavigation => 'Navigációra nem alkalmas';

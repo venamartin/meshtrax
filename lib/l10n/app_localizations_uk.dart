@@ -4743,11 +4743,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get appSettings_mapDownloadsWifiOnly =>
-      'Завантажувати карти лише через Wi‑Fi';
+      'Завантажувати лише через Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Завантаження карт чекає на підключення до Wi‑Fi';
+      'Завантаження чекають на Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Офлайн-карти';
@@ -5012,13 +5012,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Недоступно для цього регіону';
 
   @override
-  String get offlineMaps_notificationRunning => 'Завантаження карти';
+  String get offlineMaps_notificationRunning => 'Завантаження';
 
   @override
-  String get offlineMaps_notificationPaused => 'Завантаження карти призупинено';
+  String get offlineMaps_notificationPaused => 'Завантаження призупинено';
 
   @override
-  String get offlineMaps_notificationFailed => 'Не вдалося завантажити карту';
+  String get offlineMaps_notificationFailed => 'Не вдалося завантажити';
 
   @override
   String get map_notForNavigation => 'Не для навігації';

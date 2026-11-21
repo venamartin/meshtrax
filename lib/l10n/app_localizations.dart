@@ -8035,13 +8035,13 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_mapDownloadsWifiOnly.
   ///
   /// In en, this message translates to:
-  /// **'Download maps on Wi‑Fi only'**
+  /// **'Download on Wi‑Fi only'**
   String get appSettings_mapDownloadsWifiOnly;
 
   /// No description provided for @appSettings_mapDownloadsWifiOnlySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Map downloads wait for a Wi‑Fi connection'**
+  /// **'Downloads wait for Wi‑Fi'**
   String get appSettings_mapDownloadsWifiOnlySubtitle;
 
   /// No description provided for @offlineMaps_title.
@@ -8443,19 +8443,19 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_notificationRunning.
   ///
   /// In en, this message translates to:
-  /// **'Downloading map'**
+  /// **'Downloading'**
   String get offlineMaps_notificationRunning;
 
   /// No description provided for @offlineMaps_notificationPaused.
   ///
   /// In en, this message translates to:
-  /// **'Map download paused'**
+  /// **'Download paused'**
   String get offlineMaps_notificationPaused;
 
   /// No description provided for @offlineMaps_notificationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Map download failed'**
+  /// **'Download failed'**
   String get offlineMaps_notificationFailed;
 
   /// No description provided for @map_notForNavigation.
