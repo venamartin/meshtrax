@@ -165,8 +165,18 @@ class MessageRetryService extends ChangeNotifier {
   // Every send the radio took for each ACK code: the firmware hashes only
   // an attempt's low two bits into its ACK (composeMsgPacket), so attempts
   // 0 and 4 of one DM share a code, as a rung and its resends do.
-  final Map<String, List<({int rung, int wire, bool flood})>> _sendsByAck =
-      {};
+  // [blind]: the receiver's ACK names no attempt for this send (see
+  // _blindAttemptByte).
+  final Map<String, List<({int rung, int wire, bool flood, bool blind})>>
+      _sendsByAck = {};
+
+  /// Whether the receiver's ACK carries no attempt byte worth reading for a
+  /// send of [textBytes] (as sent) at attempt [wire]: at 0-3 the byte comes
+  /// after the text, and when the 5 header bytes plus the text fill their
+  /// AES blocks exactly there is no padding there, so the receiver reads
+  /// past its decrypted bytes (Mesh.cpp, `data[MAX_PACKET_PAYLOAD]`).
+  static bool _blindAttemptByte(int wire, int textBytes) =>
+      wire <= 3 && (5 + textBytes) % 16 == 0;
 
   /// Sends a parked message gets on repeaters coming into range, outside
   /// Max Message Retries; after that its ladder moves on.
@@ -707,10 +717,14 @@ class MessageRetryService extends ChangeNotifier {
     final wire = _wireAttempts[messageId] ?? message.retryCount;
     final sends = _sendsByAck[ackHashHex] ??= [];
     if (!sends.any((s) => s.rung == message.retryCount && s.wire == wire)) {
+      final sentText =
+          config.prepareContactOutboundText?.call(contact, message.text) ??
+              message.text;
       sends.add((
         rung: message.retryCount,
         wire: wire,
         flood: isFlood ?? (message.pathLength ?? -1) < 0,
+        blind: _blindAttemptByte(wire, utf8.encode(sentText).length),
       ));
     }
 
@@ -1155,8 +1169,10 @@ class MessageRetryService extends ChangeNotifier {
   /// from what the app saw of it: a path reply answers a flooded copy, a
   /// plain or MULTIPART ACK a routed one (BaseChatMesh::onPeerDataRecv);
   /// and the byte the receiver copies from the DM's tail is the attempt
-  /// number above 3, 0 at or below. Null while more than one rung fits.
-  static int? _rungAcked(List<({int rung, int wire, bool flood})> sends,
+  /// number above 3, 0 at or below, except for a [_blindAttemptByte] send,
+  /// which any byte fits. Null while more than one rung fits.
+  static int? _rungAcked(
+      List<({int rung, int wire, bool flood, bool blind})> sends,
       {bool? viaPathReply, int? wireAttempt}) {
     var fit = sends;
     if (viaPathReply != null) {
@@ -1165,7 +1181,9 @@ class MessageRetryService extends ChangeNotifier {
     if (wireAttempt != null && {for (final s in fit) s.rung}.length > 1) {
       fit = [
         for (final s in fit)
-          if (wireAttempt > 3 ? s.wire == wireAttempt : s.wire <= 3) s,
+          if (s.blind ||
+              (wireAttempt > 3 ? s.wire == wireAttempt : s.wire <= 3))
+            s,
       ];
     }
     final rungs = {for (final s in fit) s.rung};
