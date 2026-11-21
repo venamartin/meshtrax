@@ -656,7 +656,10 @@ attempt (a route) and the fifth (a flood). The ACK itself tells them apart
   (and MULTIPART) ACK;
 - the 6-byte ACK's fifth byte is copied from the DM's tail: the attempt number when above 3
   (`composeMsgPacket` hides it there), else 0. In a path reply the padding is zeroes too, so
-  only a number above 3 is trusted there.
+  only a number above 3 is trusted there. And at attempts 0-3, when the 5 header bytes plus
+  the text (as sent) fill their AES blocks exactly, there is no padding: the receiver reads
+  that byte past its decrypted data, from an uninitialized buffer (`Mesh.cpp`), so for such a
+  send any byte fits (`_blindAttemptByte`).
 
 The connector keeps what it saw of each ACK in the RX log (`HeardAck`) for the grace, and
 `MessageRetryService.handleAckReceived` picks the attempt it fits (`_rungAcked`). When it

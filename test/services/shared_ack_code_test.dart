@@ -31,7 +31,7 @@ String _hex(List<int> b) =>
     b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
 class _Rig {
-  _Rig() {
+  _Rig({this.graph = const []}) {
     svc.initialize(RetryServiceConfig(
       sendMessage: (_, text, attempt, ts) =>
           sends.add((text: text, attempt: attempt, ts: ts)),
@@ -42,7 +42,7 @@ class _Rig {
       calculateTimeout: (_, _, {contact}) => _timeoutMs,
       getSelfPublicKey: () => selfKey,
       pathHashByteWidth: () => 2,
-      graphRoutes: (_) => [_g1, _g2, _g3],
+      graphRoutes: (_) => graph.isEmpty ? [_g1, _g2, _g3] : graph,
       onAttemptStarted: (_, sel, _) => routes.add(sel),
       onAttemptResult: (_, sel, delivered, _) => reported.add((
         route: sel.useFlood ? 'flood' : _hex(sel.pathBytes),
@@ -55,6 +55,7 @@ class _Rig {
     svc.setMaxRetries(5);
   }
 
+  final List<PathSelection> graph;
   final selfKey = Uint8List.fromList(List.generate(32, (i) => 0x42 + i));
   final sends = <({String text, int attempt, int ts})>[];
   final routes = <PathSelection>[];
@@ -66,8 +67,8 @@ class _Rig {
       sends[i].ts, sends[i].attempt, sends[i].text, selfKey);
 
   /// Sends the DM and lets every attempt go out, the first four timing out.
-  void sendAllFive(FakeAsync async) {
-    svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+  void sendAllFive(FakeAsync async, {String text = 'hi'}) {
+    svc.sendMessageWithRetry(contact: _bob, text: text);
     async.flushMicrotasks();
     for (var i = 0; i < 5; i++) {
       svc.updateMessageFromSent(ackFor(i), 0, isFlood: routes[i].useFlood);
@@ -137,6 +138,29 @@ void main() {
       r.svc.handleAckReceived(r.ackFor(0), 9000, wireAttempt: 0);
       async.flushMicrotasks();
       expect(r.delivered, [_hex(_g1.pathBytes)]);
+    });
+  });
+
+  test('a send whose text fills its blocks is never ruled out by the byte',
+      () {
+    // Every attempt floods: the path reply can't tell them apart, only the
+    // attempt byte can. At 11 bytes of text (5 + 11 = 16) the first
+    // attempt's byte is whatever the receiver's stack held.
+    final flood = PathSelection.flood(2);
+    fakeAsync((async) {
+      final r = _Rig(graph: [flood])..sendAllFive(async, text: 'hello world');
+      expect(r.routes.every((s) => s.useFlood), isTrue);
+      r.svc.handleAckReceived(r.ackFor(0), 900,
+          viaPathReply: true, wireAttempt: 4);
+      async.flushMicrotasks();
+      expect(r.floodsDelivered, 0, reason: "can't tell which flood it was");
+    });
+    fakeAsync((async) {
+      final r = _Rig(graph: [flood])..sendAllFive(async, text: 'hello');
+      r.svc.handleAckReceived(r.ackFor(0), 900,
+          viaPathReply: true, wireAttempt: 4);
+      async.flushMicrotasks();
+      expect(r.floodsDelivered, 1, reason: 'the byte names the fifth');
     });
   });
 
