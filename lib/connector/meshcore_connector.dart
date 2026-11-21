@@ -871,6 +871,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // By ACK code, the app's queued stand-ins for the radio's ACK to a copy it
   // picked up on its way: dropped if the radio opens its own copy first.
   final Map<String, List<Timer>> _standInAcks = {};
+  // Every raw packet still held for sending (_queueRawPackets).
+  final Set<Timer> _rawPacketTimers = {};
   bool? _pathfinderWasOn;
   static const _twoAcksKeyPrefix = 'two_acks_';
 
@@ -9093,6 +9095,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyOpener = null;
     _passingCopyScopeKey = null;
     _passingCopyAcked.clear();
+    // ACKs still held go nowhere: the link they were meant for is gone.
+    for (final t in _rawPacketTimers) {
+      t.cancel();
+    }
+    _rawPacketTimers.clear();
     _standInAcks.clear();
     _appSendsSecondAck = false;
     _secondAckSent.clear();
@@ -9266,7 +9273,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       ),
     );
     _standInAcks.removeWhere((_, held) => !held.any((t) => t.isActive));
-    _standInAcks[id] = timers.sublist(0, standIn.length);
+    // With repeat on, the radio passes on a copy whose next hop is its own
+    // hash and marks it seen (Mesh.cpp onRecvPacket, allowPacketForward), so
+    // it never opens the last repeater's copy and sends no ACK: then the
+    // stand-in is the ACK, and stays.
+    final me = _selfPublicKey;
+    final radioPassesItOn = _clientRepeat == true &&
+        me != null &&
+        PathHelper.firstHopHex(copy.hopsLeft, stride: copy.hopWidth) ==
+            PathHelper.hopHex(
+              PathHelper.pubKeyPrefix(me, stride: copy.hopWidth),
+            );
+    if (!radioPassesItOn) {
+      _standInAcks[id] = timers.sublist(0, standIn.length);
+    }
   }
 
   /// The radio opens its own copy of a DM or room post the app picked up on
@@ -9464,6 +9484,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }));
       delay += TimeoutHelper.extraAckGapMs;
     }
+    _rawPacketTimers
+      ..removeWhere((t) => !t.isActive)
+      ..addAll(timers);
     return timers;
   }
 

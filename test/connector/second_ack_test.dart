@@ -94,13 +94,14 @@ Uint8List _selfInfo() {
   return w.toBytes();
 }
 
-Uint8List _deviceInfo() {
+Uint8List _deviceInfo({bool clientRepeat = false}) {
   final f = Uint8List(82);
   f[0] = respCodeDeviceInfo;
   f[1] = 14;
   f[2] = 175;
   f[3] = 40;
   f.setRange(60, 67, utf8.encode('v1.18.0'));
+  f[80] = clientRepeat ? 1 : 0;
   f[81] = 1;
   return f;
 }
@@ -120,6 +121,9 @@ Uint8List _contactFrame({bool routeBack = true}) {
   w.add(Uint8List(8));
   return w.toBytes();
 }
+
+bool _same(List<int> a, List<int> b) =>
+    a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
 
 Uint8List _rxLog(Uint8List packet) =>
     Uint8List.fromList([pushCodeLogRxData, 0x30, 0xEC, ...packet]);
@@ -142,6 +146,7 @@ void main() {
     bool pathfinder = true,
     List<PathSelection> routes = const [],
     bool routeBack = true,
+    bool clientRepeat = false,
   }) async {
     final settings = AppSettingsService();
     await settings.setPathGraphEnabled(pathfinder);
@@ -151,7 +156,7 @@ void main() {
         appSettingsService: settings,
       );
     if (pathfinder) c.graphRouteCandidates = (_) => routes;
-    c.handleFrameForTest(_deviceInfo());
+    c.handleFrameForTest(_deviceInfo(clientRepeat: clientRepeat));
     c.handleFrameForTest(_selfInfo());
     await c.getContacts();
     c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
@@ -330,6 +335,43 @@ void main() {
     c.handleFrameForTest(_rxLog(dmLastCopy));
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(c.acks, hasLength(2));
+  });
+
+  test("the radio's copy of another message leaves this one's stand-in",
+      () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // Another DM from A, the copy the radio opens itself.
+    c.handleFrameForTest(_rxLog(_hex(
+        '0A40E7C393761A4A07DC0918917FCB35FAED48C03AC74A7423DA8746EFCDAD090FFF9B5C3935')));
+    final sent = await acks(3);
+    expect(sent, hasLength(3));
+    expect(sent.where((f) => _same(f.sublist(0, 15), plainAck(stored))), hasLength(1),
+        reason: 'the stand-in for the first DM still goes');
+  });
+
+  test("the radio's flood copy of the message takes over the first ACK too",
+      () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    c.handleFrameForTest(_rxLog(dmFlood));
+    await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('with repeat on, a copy the radio passes on itself keeps its stand-in',
+      () async {
+    // The next hop is this radio's own hash: it forwards the copy and marks
+    // it seen, so it never opens the last repeater's copy (Mesh.cpp).
+    await connect(routes: [pf1, pf2], clientRepeat: true);
+    c.handleFrameForTest(_rxLog(Uint8List.fromList(
+        [0x0A, 0x41, bPub[0], bPub[1], ...payload])));
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    final sent = await acks(2);
+    expect(sent, hasLength(2));
+    expect(sent[0].sublist(0, 15), plainAck(stored));
   });
 
   test("Pathfinder off: the radio sends both ACKs to its own copy, so the "

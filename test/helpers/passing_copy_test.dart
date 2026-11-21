@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pointycastle/export.dart';
 
 import 'package:meshtrax/helpers/passing_copy.dart';
 
@@ -104,6 +106,25 @@ void main() {
     test('a copy whose MAC fails', () {
       final bad = Uint8List.fromList(dmFromAd77)..[dmFromAd77.length - 1] ^= 1;
       expect(_open(bad, [aPub]), isNull);
+    });
+
+    test("a contact sharing this radio's first key byte: it reads the same as "
+        'my own DM to them, echoed back', () {
+      // A contact keyed like this radio itself shares its first byte, and
+      // the copy below opens with their shared secret: without the rule it
+      // would be taken for a DM from them.
+      final secret = _opener().sharedSecret(bPub)!;
+      final plain = Uint8List(16)..setAll(0, [0x10, 0x20, 0x30, 0x40, 0x00, 0x68, 0x69]);
+      final aes = AESEngine()..init(true, KeyParameter(secret.sublist(0, 16)));
+      final enc = Uint8List(16);
+      aes.processBlock(plain, 0, enc, 0);
+      final mac = crypto.Hmac(crypto.sha256, secret).convert(enc).bytes;
+      final macAndData = Uint8List.fromList([mac[0], mac[1], ...enc]);
+      expect(PassingCopyOpener.macThenDecrypt(secret, macAndData), isNotNull,
+          reason: 'the copy is readable');
+      final copy = Uint8List.fromList(
+          [0x0A, 0x41, 0xBE, 0xEF, bPub[0], bPub[0], ...macAndData]);
+      expect(_open(copy, [bPub]), isNull);
     });
   });
 

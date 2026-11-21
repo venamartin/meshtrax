@@ -139,6 +139,13 @@ class PassingCopyOpener {
     if (payload.length < 2 + _macSize + _blockSize) return null;
     if (payload[0] != _selfKey[0]) return null;
     final srcHash = payload[1];
+    // From a contact who shares this radio's first key byte, a copy reads
+    // the same as this radio's own DM to them echoed back: the secret is the
+    // same both ways and the text names no direction (BaseChatMesh
+    // composeMsgPacket). The radio marks its own sends seen and opens
+    // theirs itself (Mesh.cpp onRecvPacket), so the app leaves these alone,
+    // as the path graph does.
+    if (srcHash == _selfKey[0]) return null;
     final macAndData = Uint8List.fromList(payload.sublist(2));
     for (final key in contactKeys) {
       if (key.length != pubKeySize || key[0] != srcHash) continue;
