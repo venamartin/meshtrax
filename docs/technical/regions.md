@@ -86,9 +86,26 @@ Made by the owner on 2026-11-21:
 
 Match the code in the raw packet log against the known regions and show "Region: sf" on the Packet Path screen. Codes that match nothing mean there are regions you don't know.
 
-### Phase 4 (optional, later)
+### Phase 4: manage a repeater's regions when logged in
 
-Edit a repeater's regions when logged in, using its `region` commands.
+Asked for by the owner on 2026-11-21: an easy way to set up the regions of a repeater you run, with no command line.
+
+**Where:** a **Regions** entry in the repeater's management tools (beside Status, Command line, Neighbors and Settings), shown only when logged in as admin. It is built on the repeater's `region` commands, sent the way the Command line screen sends them.
+
+**The screen:**
+
+- **Messages with no region:** a switch (`region allowf *` / `region denyf *`). Turning it off asks first: everyone nearby who doesn't use a region stops being repeated.
+- **The repeater's regions:** each with a switch for "Repeats messages in this region" (`region allowf` / `region denyf`), indented under its parent. Tapping a region offers: change its parent (`region put <name> <parent>`; the firmware turns repeating back on when it moves a region, so the screen sends `region denyf` again if it was off), or remove it
+ (`region remove`; the firmware refuses while it has child regions, and the screen says so).
+- **Add region:** a name (same rules and checks as the app's Add region), an optional parent, and a list of the app's own regions to tick in one go (`region put`; a new region is repeated straight away).
+- **The repeater's own region:** the region its adverts and its flood replies use when it can't tell the asker's (`region default <name>` / `region default <null>`). The firmware turns flood on for it.
+- **Saving:** each change is followed by `region save`, so nothing is lost if the repeater restarts. (`region default` saves itself.)
+- **Reading:** `region` gives the tree, with `F` marking regions it repeats and `^` the home region. The reply is cut at 160 bytes, so a long list is read with `region list allowed` and `region list denied` as well, and the screen says when the list may be incomplete.
+
+**Firmware:** repeater 1.15+ has every command above; older repeaters get the entry hidden. `region home` only changes a mark in the listing today, so the screen leaves it out.
+
+**Tests:** a fake repeater answering the `region` commands as the firmware does (including the 160-byte cut and "Err - not empty"), and the screen at phone size.
+
 
 ## Pitfalls
 
