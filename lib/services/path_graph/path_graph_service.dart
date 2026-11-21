@@ -327,6 +327,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
+    connector.onFloodCopyOpened = _onFloodCopyOpened;
     final keeper = _keeper = RadioRouteKeeper(
       // Not during a download: a contact the radio dropped is still listed, and
       // writing its route would add it back and evict another.
@@ -584,6 +585,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
+    _connector?.onFloodCopyOpened = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
     _connector?.onSendOutcome = null;
@@ -1069,6 +1071,17 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         _narrowSenders.add(pubkeyHex.toLowerCase())) {
       notifyListeners();
     }
+    _notifySoon();
+  }
+
+  /// The app opened a flooded DM or room post itself, ahead of the radio's
+  /// decoded message: the sender's doorstep is credited now, so the second
+  /// ACK, whose route is chosen next, goes by the repeater that just heard
+  /// them.
+  void _onFloodCopyOpened(String pubkeyHex, Uint8List pathBytes, int width,
+      int snrByte, Uint8List payload) {
+    if (_onOtherMesh) return;
+    _adapter?.attributeOpenedCopy(pubkeyHex, pathBytes, width, snrByte, payload);
     _notifySoon();
   }
 

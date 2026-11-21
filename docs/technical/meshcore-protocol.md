@@ -603,6 +603,13 @@ the companion sends two acks or it sends one and the app sends the second"):
   route again. The contact is read when the copy is heard, before the keeper can move the
   stored route. The connector reads routes through `graphRouteCandidates` and tests the
   held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
+- **A flooded copy tells Pathfinder who heard the sender first.** A flood's path is the way
+  it came, and its first repeater heard the sender. The radio hands the decoded message
+  over only a sync round-trip later, too late for this ACK, so the connector raises
+  `onFloodCopyOpened` before it asks for the routes, and Pathfinder credits that repeater
+  at once (`PathLabAdapter.attributeOpenedCopy`; the decoded message then finds it done).
+  Without it the first DM after a contact moved got its second ACK by where they were
+  heard before (mesh simulator, 2026-11-21).
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants

@@ -769,6 +769,34 @@ void main() {
       expect(adapter.packetLog.first.verdict, contains('no logged packet'));
     });
 
+    test('a copy the app opened itself is credited at once, and the decoded '
+        'message does not credit it again', () {
+      final frame = dm(path: [0xA2, 0x77, 0x13, 0x12]);
+      final payload = Uint8List.fromList([0xAB, 0x5B, 0x11, 0x22, 1, 2, 3]);
+      adapter.attributeOpenedCopy(
+          sender, Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2, 32, payload);
+
+      final row = graph.ingressCandidates(sender).single;
+      expect(row.repeaterHash, 'A277');
+      expect(row.weight, closeTo(3.0, 0.01));
+      expect(adapter.messagesAttributed, 1);
+      expect(adapter.packetLog.first.verdict, contains('heard by A277'));
+
+      // The radio's log line reaches the adapter next, then its decoded
+      // message, a sync round-trip later.
+      adapter.handleFrame(frame);
+      adapter.attributeContactMessage(sender, 0x42, 32);
+      expect(weightOf('A277'), closeTo(3.0, 0.01),
+          reason: 'one message, one sighting');
+      expect(graph.ingressCandidates(sender).single.finalCount, 1);
+      expect(adapter.messagesAttributed, 1);
+
+      // A later copy of the same send, by another first repeater.
+      adapter.attributeOpenedCopy(
+          sender, Uint8List.fromList([0x5C, 0xBB, 0x13, 0x12]), 2, 20, payload);
+      expect(graph.ingressCandidates(sender).single.repeaterHash, 'A277');
+    });
+
     test('a sender sharing my first byte is not credited from [X][X]', () {
       final twin = 'ab' * 31 + 'cd';
       // Could be my own echo to them, or theirs to me: not kept.

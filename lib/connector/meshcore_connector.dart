@@ -2322,6 +2322,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     Uint8List payload,
   )? onPassingCopyHeard;
 
+  /// A flooded DM or room post to this radio that the app opened itself
+  /// from the copy the radio logged, a sync round-trip before the radio
+  /// hands over the decoded message: the contact it came from, the
+  /// repeaters that copy crossed at [hopWidth] bytes each (the first one
+  /// heard the sender), its signed SNR byte, and its payload as heard.
+  /// Raised for the first copy of each send, before the second ACK's route
+  /// is chosen. The path graph hook: Pathfinder then ranks the repeater
+  /// that just heard them ([onContactMessageHeard] comes too late for that
+  /// ACK).
+  void Function(
+    String contactPubkeyHex,
+    Uint8List pathBytes,
+    int hopWidth,
+    int snrByte,
+    Uint8List payload,
+  )? onFloodCopyOpened;
+
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
     unawaited(() async {
@@ -9249,8 +9266,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// A copy of a DM or room post to this radio that the radio opens itself
   /// (the last routed copy, or a flood). The radio sends one ACK; when the
   /// app sends every second ACK, it sends the other, as the radio's extra
-  /// ACK would follow its first.
-  void _sendSecondAckFor(_RawPacket packet) {
+  /// ACK would follow its first. A flood's path is the way it came, so
+  /// Pathfinder is told who heard the sender first ([onFloodCopyOpened]):
+  /// the ACK then goes by that repeater, not by where they were heard
+  /// before (simulator 2026-11-21: the first DM after a move got its second
+  /// ACK on the old ranking, and that was the one ACK that could arrive).
+  void _sendSecondAckFor(_RawPacket packet, int snrByte) {
     if (!_appSendsSecondAck) return;
     final opener = _passingCopyOpener;
     final me = _selfPublicKey;
@@ -9270,6 +9291,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
+    if (packet.isFlood) {
+      onFloodCopyOpened?.call(
+        contact.publicKeyHex,
+        packet.pathBytes,
+        packet.hashSize,
+        snrByte.toSigned(8),
+        packet.payload,
+      );
+    }
     _queueRawPackets(
       _secondAckPackets(copy, contact, byFlood: packet.isFlood),
       TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
@@ -9436,7 +9466,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (!packet.isFlood && packet.hopCount > 0) {
           _openPassingCopy(packet, frame[1]);
         } else {
-          _sendSecondAckFor(packet);
+          _sendSecondAckFor(packet, frame[1]);
         }
         return;
       }

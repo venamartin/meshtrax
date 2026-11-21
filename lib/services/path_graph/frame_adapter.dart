@@ -353,6 +353,10 @@ class PathLabAdapter {
   static const int _floodMessageCap = 32;
   static const Duration _floodMessageWindow = Duration(seconds: 60);
 
+  /// Flooded DMs and room posts the app opened itself and credited at once
+  /// ([attributeOpenedCopy]), by payload fingerprint, and when.
+  final Map<String, DateTime> _openedCopies = {};
+
   /// Per contact (lowercase pubkey hex): how many hops their last flooded
   /// DM or post took to reach me, and when. The decoded message's own
   /// path_len byte, so it is known even when no raw packet matched.
@@ -944,6 +948,39 @@ class PathLabAdapter {
         tag: 'PathGraph');
   }
 
+  /// The app opened a flooded DM or room post from [contactPubkeyHex] (full
+  /// key) itself, from the copy the radio logged on [pathBytes] with the
+  /// signed SNR byte [snrByte]: the MAC proved the sender, and the path is
+  /// that very copy's, so its first repeater heard them. Credited at once,
+  /// a sync round-trip before the radio's decoded message, which then finds
+  /// it done ([attributeContactMessage]). Later copies of the same send
+  /// change nothing.
+  void attributeOpenedCopy(String contactPubkeyHex, Uint8List pathBytes,
+      int stride, int snrByte, Uint8List payload) {
+    final now = DateTime.now();
+    _openedCopies
+        .removeWhere((_, at) => now.difference(at) > _floodMessageWindow);
+    final fingerprint = payloadFingerprint(payload);
+    if (_openedCopies.containsKey(fingerprint)) return;
+    _openedCopies[fingerprint] = now;
+    final who = contactPubkeyHex.substring(0, 12).toUpperCase();
+    if (!graph.observeContactSender(contactPubkeyHex, pathBytes, stride,
+        confirmed: true)) {
+      _log('dm', _fmtHops(pathBytes, stride),
+          'from $who — ${_notFiled(pathBytes, stride)}', snrByte / 4.0);
+      return;
+    }
+    messagesAttributed++;
+    _log(
+        'dm',
+        _fmtHops(pathBytes, stride),
+        pathBytes.isEmpty
+            ? 'attributed — $who reached me with no repeater between us'
+            : 'attributed — $who heard by '
+                '${PathHelper.firstHopHex(pathBytes, stride: stride)}',
+        snrByte / 4.0);
+  }
+
   /// The radio decoded a DM or room post from [contactPubkeyHex] (full
   /// key) that arrived with the raw path_len byte [pathLenRaw] and the
   /// signed SNR byte [snrByte] (null on the pre-V3 frame). Finds the
@@ -974,6 +1011,14 @@ class PathLabAdapter {
             m.pathBytes.length ~/ width == hops &&
             (snrByte == null || m.snrByte == snrByte))
         .toList();
+    // The app opened this message's copy itself: its doorstep is credited.
+    final opened = matches
+        .where((m) => _openedCopies.containsKey(payloadFingerprint(m.payload)))
+        .toList();
+    if (opened.isNotEmpty) {
+      _floodMessages.removeWhere(opened.contains);
+      return;
+    }
     if (matches.isEmpty) {
       _log('dm', '',
           'from $who — no logged packet to match (decoded while the app '
