@@ -864,6 +864,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // ACKs seen in the RX log for my sends, each left to the radio for a
   // moment before the app counts it (see _noteAckHeard).
   final Map<int, Timer> _heardAckTimers = {};
+  final Map<int, HeardAck> _heardAcks = {};
   // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
   // the second on another of Pathfinder's routes (owner, 2026-11-19).
   bool _appSendsSecondAck = false;
@@ -9222,21 +9223,23 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// Plain ACKs, MULTIPART ACKs and the ACK in a path reply all count. The
   /// radio gets [TimeoutHelper.heardAckGraceMs] first; a send still waiting
   /// after that is confirmed as if the radio had.
+  /// What the app saw of the ACK is kept for that moment too: it tells
+  /// apart the attempts of one DM that share an ACK code.
   void _noteAckHeard(_RawPacket packet) {
-    var code = PassingCopyOpener.ackCode(packet.payloadType, packet.payload);
-    if (code == null && packet.payloadType == payloadTypePATH) {
+    var heard = PassingCopyOpener.heardAck(packet.payloadType, packet.payload);
+    if (heard == null && packet.payloadType == payloadTypePATH) {
       final opener = _passingCopyOpener;
       final me = _selfPublicKey;
       if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
         return;
       }
-      code = opener.pathReplyAck(
+      heard = opener.pathReplyAck(
         payload: packet.payload,
         contactKeys: _contacts.map((c) => c.publicKey),
       );
     }
-    if (code == null || _heardAckTimers.containsKey(code)) return;
-    final ack = code;
+    if (heard == null || _heardAckTimers.containsKey(heard.code)) return;
+    final ack = heard.code;
     final waited = _retryService?.waitingForAck(ack);
     if (waited == null && !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
       return;
@@ -9245,12 +9248,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final how = packet.isFlood
         ? 'by flood'
         : '${math.max(0, packet.hopCount)} hops to go';
+    _heardAcks[ack] = heard;
     _heardAckTimers[ack] = Timer(
       const Duration(milliseconds: TimeoutHelper.heardAckGraceMs),
       () {
         _heardAckTimers.remove(ack);
         if (_retryService?.waitingForAck(ack) == null &&
             !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
+          _heardAcks.remove(ack);
           return;
         }
         appLogger.info(
@@ -9267,6 +9272,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
               .buffer
               .asUint8List(),
         ]));
+        _heardAcks.remove(ack);
       },
     );
   }
@@ -9913,7 +9919,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       // Handle ACK in retry service
       if (_retryService != null) {
-        _retryService!.handleAckReceived(ackHash, tripTimeMs);
+        final heard = _heardAcks[ackHash];
+        _retryService!.handleAckReceived(ackHash, tripTimeMs,
+            viaPathReply: heard?.pathReply, wireAttempt: heard?.attempt);
       }
     } catch (e) {
       // Nothing is marked delivered: the newest sent DM may be anyone's,

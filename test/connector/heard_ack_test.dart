@@ -106,12 +106,12 @@ List<int> _plainOnItsWay(int ack) =>
 
 /// A's path reply to my flooded DM, carrying the ACK (createPathReturn:
 /// path length, path, extra type, extra), flooded through A277.
-List<int> _pathReply(int ack) {
+List<int> _pathReply(int ack, {int attempt = 0}) {
   // B's secret with A is A's with B; read it from B's side.
   final shared = PassingCopyOpener(privateKey: bPrivateExport, selfKey: bPub)
       .sharedSecret(aPub)!;
   final data = Uint8List(16)
-    ..setAll(0, [0x00, payloadTypeACK, ..._u32(ack), 0x00, 0x7F]);
+    ..setAll(0, [0x00, payloadTypeACK, ..._u32(ack), attempt, 0x7F]);
   final aes = AESEngine()..init(true, KeyParameter(shared.sublist(0, 16)));
   final enc = Uint8List(16);
   aes.processBlock(data, 0, enc, 0);
@@ -211,6 +211,26 @@ void main() {
     c.handleFrameForTest(_rxLog(_pathReply(ack)));
     await pastGrace();
     expect((await mine('four')).status, MessageStatus.delivered);
+  });
+
+  test('a heard ACK says how it came and which attempt it answers', () {
+    final plain = PassingCopyOpener.heardAck(
+        payloadTypeACK, [..._u32(7), 4, 0x7F])!;
+    expect((plain.code, plain.pathReply, plain.attempt), (7, false, 4));
+    final multi = PassingCopyOpener.heardAck(payloadTypeMULTIPART,
+        [0x10 | payloadTypeACK, ..._u32(7), 0, 0x7F])!;
+    expect((multi.code, multi.pathReply, multi.attempt), (7, false, 0));
+    expect(PassingCopyOpener.heardAck(payloadTypeACK, _u32(7))!.attempt,
+        isNull, reason: "an older receiver's 4-byte ACK");
+
+    final opener = PassingCopyOpener(privateKey: bPrivateExport, selfKey: bPub);
+    HeardAck? reply(int attempt) => opener.pathReplyAck(
+        payload: _pathReply(7, attempt: attempt).sublist(4),
+        contactKeys: [aPub]);
+    expect((reply(4)!.code, reply(4)!.pathReply, reply(4)!.attempt),
+        (7, true, 4));
+    expect(reply(0)!.attempt, isNull,
+        reason: 'a zero may be padding after a 4-byte ACK');
   });
 
   test("someone else's ACK changes nothing", () async {

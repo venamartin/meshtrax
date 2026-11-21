@@ -627,6 +627,22 @@ waiting after that is confirmed as if the radio had, with the trip time measured
 `RESP_CODE_SENT`, and the log says "The radio missed ACK …". The ACK code is in the clear,
 so plain and MULTIPART ACKs need no key.
 
+### Attempts that share an ACK code
+`composeMsgPacket` hashes only `attempt & 3` into the ACK, so attempts 0 and 4 of one DM (and
+a parked rung's resends, by design) share a code: with Max Message Retries at 5, the first
+attempt (a route) and the fifth (a flood). The ACK itself tells them apart
+(`BaseChatMesh::onPeerDataRecv`):
+- a flooded copy is answered with a path reply carrying the ACK, a routed copy with a plain
+  (and MULTIPART) ACK;
+- the 6-byte ACK's fifth byte is copied from the DM's tail: the attempt number when above 3
+  (`composeMsgPacket` hides it there), else 0. In a path reply the padding is zeroes too, so
+  only a number above 3 is trusted there.
+
+The connector keeps what it saw of each ACK in the RX log (`HeardAck`) for the grace, and
+`MessageRetryService.handleAckReceived` picks the attempt it fits (`_rungAcked`). When it
+can't tell (the ACK wasn't seen), no route is credited or failed for those attempts, and no
+flood is counted delivered; the DM is still delivered.
+
 ### ADV_TYPE constants
 | Value | Meaning |
 |-------|---------|
