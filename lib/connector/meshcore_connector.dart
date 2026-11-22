@@ -2088,6 +2088,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         );
         return;
       }
+      await _rechooseIfRouteChanged(contact, timestampSeconds, text);
       final outboundText = prepareContactOutboundText(contact, text);
       await sendFrame(
         buildSendTextMsgFrame(
@@ -2168,6 +2169,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool wroteContactPath(Contact contact) =>
       _appWrittenPath[contact.publicKeyHex] ==
       _writtenKey(contact.pathHashSize, contact.path);
+
+  /// Routes the radio learned from each contact (their PATH replies, which
+  /// the firmware stores over any route this app wrote), counted, and the
+  /// contact refresh each one started.
+  final Map<String, int> _routesLearned = {};
+  final Map<String, Future<void>> _routeRefreshes = {};
+
+  /// The route [sendOnRoute] put on the radio for the send it is running,
+  /// and how many routes the radio had learned from that contact then.
+  ({String key, int learned, PathSelection selection})? _routeOnRadio;
 
   /// Channel sends this app put on air (channel, wire stamp, exact text, and
   /// the row sent from, none for a reaction): only an echo of one of these
@@ -5134,24 +5145,71 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     Future<void> Function() send,
   ) =>
       withPathLock(() async {
-        final live = _contacts.cast<Contact?>().firstWhere(
-                  (c) => c!.publicKeyHex == contact.publicKeyHex,
-                  orElse: () => null,
-                ) ??
-            contact;
-        if (selection.useFlood) {
-          if (live.pathLength >= 0) await clearContactPath(contact);
-        } else if (selection.source != RouteSource.firmware) {
-          final bytes = Uint8List.fromList(selection.pathBytes);
-          final written = _appWrittenPath[contact.publicKeyHex] ==
-              _writtenKey(selection.hashSize, bytes);
-          if (!written || !wroteContactPath(live)) {
-            await setContactPath(contact, bytes, selection.hopCount,
-                hashSize: selection.hashSize);
-          }
+        await _putRoute(contact, selection);
+        final outer = _routeOnRadio;
+        final key = contact.publicKeyHex;
+        _routeOnRadio = (
+          key: key,
+          learned: _routesLearned[key] ?? 0,
+          selection: selection,
+        );
+        try {
+          await send();
+        } finally {
+          _routeOnRadio = outer;
         }
-        await send();
       });
+
+  Future<void> _putRoute(Contact contact, PathSelection selection) async {
+    final live = _contacts.cast<Contact?>().firstWhere(
+              (c) => c!.publicKeyHex == contact.publicKeyHex,
+              orElse: () => null,
+            ) ??
+        contact;
+    if (selection.useFlood) {
+      if (live.pathLength >= 0) await clearContactPath(contact);
+    } else if (selection.source != RouteSource.firmware) {
+      final bytes = Uint8List.fromList(selection.pathBytes);
+      final written = _appWrittenPath[contact.publicKeyHex] ==
+          _writtenKey(selection.hashSize, bytes);
+      if (!written || !wroteContactPath(live)) {
+        await setContactPath(contact, bytes, selection.hopCount,
+            hashSize: selection.hashSize);
+      }
+    }
+  }
+
+  /// The radio learned a route from [contact] while this DM waited for a
+  /// quiet radio, and stored it over the one [sendOnRoute] wrote: the DM
+  /// would go out on it, and its outcome would be credited to the route
+  /// chosen before. The ladder chooses this attempt's route again from what
+  /// is known now (Pathfinder ranks the route just learned first while it
+  /// is live), and that route is written and recorded.
+  Future<void> _rechooseIfRouteChanged(
+      Contact contact, int timestampSeconds, String text) async {
+    final onRadio = _routeOnRadio;
+    final key = contact.publicKeyHex;
+    if (onRadio == null ||
+        onRadio.key != key ||
+        (_routesLearned[key] ?? 0) == onRadio.learned) {
+      return;
+    }
+    // The radio's new route reaches the contact list and Pathfinder only
+    // once the contact is read back.
+    await _routeRefreshes[key]
+        ?.timeout(const Duration(seconds: 4), onTimeout: () {});
+    final live =
+        _contacts.where((c) => c.publicKeyHex == key).firstOrNull ?? contact;
+    final next = _retryService?.rechooseRoute(live, timestampSeconds, text) ??
+        onRadio.selection;
+    appLogger.info(
+      "${contact.name}'s route changed while the DM waited: it goes "
+      '${next.useFlood ? 'as a flood' : next.hopCount == 0 ? 'direct' : 'on ${PathHelper.formatPathHex(next.pathBytes, stride: next.hashSize)}'}'
+      '${next.source == RouteSource.firmware ? " (the radio's route)" : ''}',
+      tag: 'AckHash',
+    );
+    await _putRoute(contact, next);
+  }
 
   /// The route each of [attempts] tries of a one-shot request (login,
   /// repeater command, status, telemetry) goes out on: the DM ladder's own
@@ -7453,8 +7511,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // that can occur when using refreshContactsSinceLastmod(). The
         // reply is the route the firmware just learned — Pathfinder's one
         // true source of firmware proof.
-        unawaited(_fetchContactSnapshotFromDevice(pubKey).then((snapshot) {
+        final key = pubKeyToHex(pubKey);
+        _routesLearned[key] = (_routesLearned[key] ?? 0) + 1;
+        final refresh =
+            _fetchContactSnapshotFromDevice(pubKey).then((snapshot) {
           if (snapshot != null) onFirmwarePathLearned?.call(snapshot);
+        });
+        _routeRefreshes[key] = refresh;
+        unawaited(refresh.whenComplete(() {
+          if (_routeRefreshes[key] == refresh) _routeRefreshes.remove(key);
         }));
       }
     }

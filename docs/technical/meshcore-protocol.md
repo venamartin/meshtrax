@@ -805,6 +805,18 @@ direct after the first flood login.
 
 Previously debugged issues. Check here before touching related code.
 
+### Bug (fixed 2026-11): a route learned while a DM waited carried it, the planned one got the credit
+**File:** `lib/connector/meshcore_connector.dart` (`sendOnRoute`, `_sendMessageDirect`)
+**Symptom:** a reply sent right after a contact's flooded DM went out on the route their PATH
+had just named, while Pathfinder was told the route the ladder planned had delivered it (mesh
+simulator, 2026-11-21: a home doorstep credited with reaching someone 30 km away).
+**Cause:** the route is written, then the DM waits seconds for a quiet radio; a PATH from the
+contact in that wait replaces the stored route (`BaseChatMesh::onContactPathRecv`). The path
+lock stops only the app's own writes.
+**Rule:** when the radio learned a route from the contact during the wait
+(`PUSH_CODE_PATH_UPDATED`), the attempt's route is chosen again (`rechooseRoute`) and written
+just before the frame, and the attempt is recorded on it.
+
 ### Bug (fixed 2026-10): USB/TCP decoder dropped 173–176-byte frames
 **File:** `lib/services/usb_serial_frame_codec.dart`
 **Symptom:** over USB or WiFi/TCP, a DM with 157–160 text bytes, long channel messages and big
