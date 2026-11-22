@@ -99,6 +99,19 @@ nothing about coverage where the radio is now.
 - **The proof is kept per radio** and survives a restart. Picking another
   server starts over: what one server's observers heard says nothing
   about another's.
+- **Regions** (owner, 2026-11-21). A message sent in a channel's region
+  only travels through repeaters that carry that region, so observers
+  that hear the radio may never hear it. The proof is kept per radio and
+  region: an ear on a message in `sf` proves `sf`, and nothing else.
+  - **Unknown regions are learned from the sends:** a send in a region is
+    checked as usual. After 3 sends in a row in that region that no
+    observer heard, the region counts as having no observer for a day.
+    Its channels then get no observer check (no ear) and no resend after
+    one repeater.
+  - **After the day,** the next send there is checked again. An ear clears
+    the region; no ear makes it quiet for another day.
+  - **Nothing shows on screen:** the ear just doesn't appear on those
+    channels. A "Nearby only" channel (zero hop) is never checked.
 
 **What it costs:**
 - **Airtime:** a resend is a full flood. The one-resend cap and the back-off
@@ -108,9 +121,10 @@ nothing about coverage where the radio is now.
   Other apps may show the message twice. MeshTrax shows it once.
 
 **Who owns what:**
-- **HeardService** answers the connector's `mayResendAfterOneRepeater`:
-  an ear for this radio in the last 2 hours, and fewer than 3 misses in a
-  row. The connector reports each of these resends through
+- **HeardService** answers the connector's
+  `mayResendAfterOneRepeater(messageId)`: an ear for this radio, in that
+  message's region if it has one, in the last 2 hours; the region isn't
+  quiet; and fewer than 3 misses in a row. The connector reports each of these resends through
   `onResentAfterOneRepeater`, so HeardService can count the misses.
 - **Pathfinder** answers `isCarRepeater(hop, width)`, which is true for a
   repeater code marked "Moves" or "Moves with me". The hook is null while

@@ -119,7 +119,7 @@ void main() {
     carRepeaters = {};
     c.onChannelSendStamped = (s) =>
         stamped.add((messageId: s.messageId, secs: s.secs, text: s.text));
-    c.mayResendAfterOneRepeater = () => observersHearUs;
+    c.mayResendAfterOneRepeater = (_) => observersHearUs;
     c.onResentAfterOneRepeater = resent.add;
     c.isCarRepeater = (hop, width) =>
         carRepeaters.contains(PathHelper.hopHex(hop));

@@ -2196,12 +2196,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         key != null &&
         name != null &&
         !_isNearbyOnly(sentOn!.idKey)) {
+      final region = regionService?.regionOf(sentOn.idKey);
       onChannelSendStamped?.call((
         messageId: messageId,
         channelKey: key,
         senderName: name,
         text: text,
         secs: secs,
+        region: RegionHelper.isRegionName(region) ? region : null,
       ));
     }
   }
@@ -2209,6 +2211,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// A channel message of mine went on air, first send or resend, with all
   /// that decides its packet's hash: the radio sends `name: text` under
   /// this timestamp, sealed with the channel key (the observer-server hook).
+  /// [region] is the channel's own region, which decides which observers
+  /// can hear it; null for none.
   void Function(
     ({
       String messageId,
@@ -2216,6 +2220,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       String senderName,
       String text,
       int secs,
+      String? region,
     }) send,
   )? onChannelSendStamped;
 
@@ -2223,11 +2228,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// the packet it came in.
   void Function(String messageId, String packetHash)? onOwnChannelEcho;
 
-  /// Whether a channel message of mine that only one repeater carried, and
-  /// no observer heard, may go out once more: observers hear this radio
-  /// lately (the observer-server hook). Null or false: one repeat is
-  /// enough.
-  bool Function()? mayResendAfterOneRepeater;
+  /// Whether channel message [messageId] of mine, which only one repeater
+  /// carried and no observer heard, may go out once more: observers hear
+  /// this radio lately, in that message's region (the observer-server
+  /// hook). Null or false: one repeat is enough.
+  bool Function(String messageId)? mayResendAfterOneRepeater;
 
   /// A channel message of mine went out once more after only one repeater
   /// carried it.
@@ -7005,16 +7010,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// One more send for a channel message only one repeater carried: never
   /// with channel retries set to 0, and only while observers hear this
   /// radio (traxheard's README).
-  bool _oneRepeaterResendAllowed() =>
+  bool _oneRepeaterResendAllowed(String messageId) =>
       (_appSettingsService?.settings.maxChannelMessageRetries ?? 1) > 0 &&
-      mayResendAfterOneRepeater?.call() == true;
+      mayResendAfterOneRepeater?.call(messageId) == true;
 
   /// Whether my channel message [messageId], just heard back as [copy],
   /// keeps waiting for a second repeater. Repeaters count by their codes
   /// over all the copies, and a car repeater doesn't count.
   bool _waitForSecondRepeater(String messageId, ChannelMessage copy) {
     if (!_channelRepeatTimers.containsKey(messageId) ||
-        !_oneRepeaterResendAllowed()) {
+        !_oneRepeaterResendAllowed(messageId)) {
       return false;
     }
     final heard = _repeatersHeard.putIfAbsent(messageId, () => <String>{});
@@ -7034,7 +7039,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String messageId,
     Set<String> repeaters,
   ) {
-    if (!_oneRepeaterResendAllowed()) return;
+    if (!_oneRepeaterResendAllowed(messageId)) return;
     final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join(', ');
     appLogger.info(
       'Only $by carried $messageId and no observer heard it: sending it '

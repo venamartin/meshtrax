@@ -4,7 +4,7 @@
 >
 > **Who it's for:** developers working on MeshTrax.
 >
-> **Status:** active plan. Phases 1 and 4 are built on `feat/regions` and wait for a test on the radios; all region work lives in that one PR.
+> **Status:** active plan. Phases 1, 4, 5 and 6 are built on `feat/regions`; 2 and 3 are not started. All region work lives in that one PR.
  The firmware facts are from MeshCore `dev` (November 2026) and hold for companion and repeater 1.18.0.
 >
 > New to the terms? See the [glossary](../glossary.md).
@@ -120,6 +120,17 @@ Asked for by the owner on 2026-11-21: a channel whose messages don't go through 
 **How it's sent:** the radio has no zero-hop channel send, so the app builds the channel text exactly as the radio does (`BaseChatMesh::sendGroupMessage`: timestamp, a 0, `name: text` cut at 160 bytes, sealed with the channel key behind its 1-byte hash) and hands it over with `CMD_SEND_RAW_PACKET` (companion firmware 13+, `lib/helpers/channel_packet.dart`). A test checks its hash against traxheard's, which matched real heard copies. Older firmware doesn't offer the choice; a channel already set to it sends normally there.
 
 **No retries:** the radio's OK settles the message as Sent. There is no wait for a repeat, no "one more send", no retry when no repeat is heard, and no observer check.
+
+### Phase 6: observers per region
+
+Asked for by the owner on 2026-11-21: the observer check (traxheard) must know whether a region has observers, and leave a region's channels alone when it has none. A message in a region only travels through that region's repeaters, so observers that hear the radio may never hear it, and with no ear the app would send it once more every time.
+
+**No server says which regions its observers cover**, so the app learns it from its own sends (`lib/services/heard_service.dart`):
+
+- An ear proves observers hear this radio **in that message's region** only (the proof is kept per radio and region).
+- A send in a region nobody has learned yet is checked as usual. **3 unheard sends in a row** there, and the region counts as having no observer for a day: its channels get no observer check and no resend after one repeater.
+- After the day, one send is checked again: an ear clears it, no ear means another quiet day.
+- Nothing shows on screen (owner's choice). Picking another observer server starts over. "Nearby only" channels are never checked.
 
 ## Pitfalls
 

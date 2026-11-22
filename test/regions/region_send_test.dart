@@ -247,6 +247,21 @@ void main() {
     });
   });
 
+  test('the observer check hears which region a send went out in', () async {
+    final regionsSeen = <String?>[];
+    c.onChannelSendStamped = (s) => regionsSeen.add(s.region);
+    await regions.setChannelRegion(channel.idKey, 'sf');
+    await send();
+    await regions.setChannelRegion(channel.idKey, RegionHelper.everywhere);
+    await send();
+    await regions.setChannelRegion(channel.idKey, null);
+    await send();
+    await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);
+    await send();
+    expect(regionsSeen, ['sf', null, null],
+        reason: 'Nearby only is not checked at all');
+  });
+
   group('a region left on the radio is cleared on connect', () {
     Future<List<Uint8List>> clears() async {
       unawaited(c.clearLeftoverRegionForTest());

@@ -65,7 +65,7 @@ void main() {
     HeardService.instance.attach(radio);
   }
 
-  bool allowed() => radio.mayResendAfterOneRepeater!();
+  bool allowed() => radio.mayResendAfterOneRepeater!('m0');
 
   void ear(String messageId) => HeardService.instance
       .heardForTest(messageId, const [Sighting(observer: 'Ridge')]);
