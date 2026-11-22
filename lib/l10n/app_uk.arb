@@ -2116,7 +2116,6 @@
   "chat_kindDirect": "напряму",
   "chat_kindRoute": "маршрут ({count} {count, plural, one{стрибок} few{стрибки} many{стрибків} other{стрибків}})",
   "chat_statusQueued": "У черзі",
-  "chat_statusNoRepeaterHeard": "Жоден ретранслятор вас не почув. Спробуємо знову, коли якийсь буде поруч.",
   "chat_channelNoSign": "Надіслано · не видно, хто отримав",
   "chat_sentByItsClock": "надіслано {time} за годинником відправника",
   "chat_narrowHashNotice": "Радіо {name} надсилає короткі коди ретрансляторів (1 байт). Pathfinder не зможе вивчити маршрути до цього контакту, доки його радіо не перейде на 2-байтові коди.",

@@ -2121,7 +2121,6 @@
   "chat_kindDirect": "直连",
   "chat_kindRoute": "路由（{count} {count, plural, =1{跳} other{跳}}）",
   "chat_statusQueued": "排队中",
-  "chat_statusNoRepeaterHeard": "没有转发节点听到您。有转发节点进入范围时会再试。",
   "chat_channelNoSign": "已发送 · 不知道谁收到了",
   "chat_sentByItsClock": "按发送方时钟 {time} 发送",
   "chat_narrowHashNotice": "{name} 的电台发送的是短转发节点代码（1 字节）。在对方电台改用 2 字节代码之前，Pathfinder 无法学习到对方的路由。",

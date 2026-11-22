@@ -4729,10 +4729,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chat_statusQueued => 'W kolejce';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Żaden przekaźnik Cię nie usłyszał. Ponowna próba, gdy któryś będzie w zasięgu.';
-
-  @override
   String get chat_channelNoSign => 'Wysłano · brak znaku, kto odebrał';
 
   @override

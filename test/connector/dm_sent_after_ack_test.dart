@@ -247,8 +247,8 @@ void main() {
     expect(resendAttempts(ackDuringWait: false), [0, 4]);
   });
 
-  // The chat reads only stored rows: the "No repeater heard you" line
-  // shows only if the parked state is stored with the message.
+  // The chat reads only stored rows: a parked DM keeps to its wait icon
+  // only if the parked state is stored with the message.
   group('a parked DM in the chat', () {
     Message? row(FakeAsync async) {
       Message? found;

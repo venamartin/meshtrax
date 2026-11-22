@@ -2116,7 +2116,6 @@
   "chat_kindDirect": "direct",
   "chat_kindRoute": "route ({count} {count, plural, =1{hop} other{hops}})",
   "chat_statusQueued": "In wachtrij",
-  "chat_statusNoRepeaterHeard": "Geen repeater heeft je gehoord. Er wordt opnieuw geprobeerd zodra er een binnen bereik is.",
   "chat_channelNoSign": "Verzonden · geen teken wie het kreeg",
   "chat_sentByItsClock": "verzonden {time} volgens de klok van de afzender",
   "chat_narrowHashNotice": "De radio van {name} stuurt korte repeatercodes (1 byte). Pathfinder kan geen routes naar hen leren tot hun radio 2-byte-codes gebruikt.",

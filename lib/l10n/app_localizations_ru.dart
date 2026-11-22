@@ -4720,10 +4720,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chat_statusQueued => 'В очереди';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Ни один репитер вас не услышал. Попробуем снова, когда какой-нибудь окажется в зоне.';
-
-  @override
   String get chat_channelNoSign => 'Отправлено · не видно, кто получил';
 
   @override

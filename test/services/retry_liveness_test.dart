@@ -11,7 +11,7 @@ import 'package:meshtrax/services/message_retry_service.dart';
 
 // Drive 2026-10-17: 29 of 77 DMs were heard by no repeater and burned the
 // whole ladder before showing "failed". A flood nobody echoes is parked
-// with "No repeater heard you" and sent again when a repeater is heard.
+// (the chat shows only its wait icon) and sent again when a repeater is heard.
 // Fail fast (Martin, 2026-11-16): it parks only when a repeater was heard
 // in the last 10 minutes, and a park that hears none for 10 minutes fails,
 // so the messages queued behind it to the same contact can go.

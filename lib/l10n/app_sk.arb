@@ -2116,7 +2116,6 @@
   "chat_kindDirect": "priamo",
   "chat_kindRoute": "trasou ({count} {count, plural, one{skok} few{skoky} many{skoku} other{skokov}})",
   "chat_statusQueued": "Vo fronte",
-  "chat_statusNoRepeaterHeard": "Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.",
   "chat_channelNoSign": "Odoslané · nevidno, kto to dostal",
   "chat_sentByItsClock": "odoslané {time} podľa hodín odosielateľa",
   "chat_narrowHashNotice": "Rádio {name} posiela krátke kódy opakovačov (1 bajt). Pathfinder sa nemôže naučiť trasy k tomuto kontaktu, kým jeho rádio nebude používať 2-bajtové kódy.",

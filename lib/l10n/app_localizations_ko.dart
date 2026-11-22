@@ -4515,10 +4515,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chat_statusQueued => '대기 중';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      '내 신호를 들은 리피터가 없습니다. 범위 안에 리피터가 들어오면 다시 시도합니다.';
-
-  @override
   String get chat_channelNoSign => '보냄 · 누가 받았는지 알 수 없음';
 
   @override

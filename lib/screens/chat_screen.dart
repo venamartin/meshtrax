@@ -3609,8 +3609,10 @@ class _MessageBubble extends StatelessWidget {
             : l10n.chat_statusFailedShort;
       case MessageStatus.pending:
       case MessageStatus.sent:
-        if (m.waitingForRepeater) return l10n.chat_statusNoRepeaterHeard;
-        if (!detailed) return null;
+        // Waiting for a repeater says nothing, only the wait icon: "No
+        // repeater heard you" confused people standing next to theirs
+        // (owner, 2026-11-21).
+        if (m.waitingForRepeater || !detailed) return null;
         // Selected, not read: the list is no longer rebuilt on every
         // notify, and the queue moves without the row changing.
         if (context.select<MessageRetryService, bool>(
@@ -3633,7 +3635,7 @@ class _MessageBubble extends StatelessWidget {
         icon = Icons.access_time;
         break;
       case MessageStatus.sent:
-        icon = message.waitingForRepeater ? Icons.cell_tower : Icons.schedule;
+        icon = Icons.schedule;
         break;
       case MessageStatus.delivered:
         icon = Icons.check;

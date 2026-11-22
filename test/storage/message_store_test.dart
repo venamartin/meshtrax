@@ -71,7 +71,7 @@ void main() {
     expect(byId['o1']!.pathHashSize, isNull);
   });
 
-  // A DM parked for lack of a repeater shows "No repeater heard you" in
+  // A DM parked for lack of a repeater shows only its wait icon in
   // the chat, which reads only stored rows.
   test('keeps a parked DM waiting for a repeater; a row without the key, '
       'as every earlier row is, is not waiting', () async {

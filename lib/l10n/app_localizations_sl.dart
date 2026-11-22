@@ -4700,10 +4700,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chat_statusQueued => 'V čakalni vrsti';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Noben ponovitelj vas ni slišal. Ponovni poskus, ko bo kateri v dosegu.';
-
-  @override
   String get chat_channelNoSign => 'Poslano · ni znaka, kdo je prejel';
 
   @override

@@ -149,7 +149,7 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _onAir = {};
   // Attempts already reported to Pathfinder as failed, at their timeout.
   final Map<String, Set<int>> _reported = {};
-  // "No repeater heard you": the watch for a repeater's copy of a flood
+  // Waiting for a repeater: the watch for a repeater's copy of a flood
   // in flight, how long it was, when a message was parked for lack of one,
   // and how often it has been sent again on a repeater coming into range.
   final Map<String, Timer> _echoTimers = {};

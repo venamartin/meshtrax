@@ -4748,10 +4748,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chat_statusQueued => 'En file d\'attente';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Aucun répéteur ne vous a entendu. Nouvel essai dès qu\'un répéteur sera à portée.';
-
-  @override
   String get chat_channelNoSign => 'Envoyé · aucun signe de qui l\'a reçu';
 
   @override
