@@ -199,6 +199,39 @@ void main() {
     expect(sent.single.sublist(0, 14), secondAck(pf2.pathBytes));
   });
 
+  // The owner, 2026-11-22: Pathfinder ranks a contact's doorsteps by their
+  // record, so its best route can end where they were heard before. An ACK
+  // has one shot, and the flood copy's first repeater heard them seconds
+  // ago.
+  test('a DM that came by flood: the second ACK ends at the repeater that '
+      'heard it, when Pathfinder has a route there', () async {
+    final elsewhere = PathSelection(
+      pathBytes: _hex('BEEF1000'),
+      hopCount: 2,
+      hashSize: 2,
+      useFlood: false,
+    );
+    await connect(routes: [elsewhere, pf2]);
+    c.handleFrameForTest(_rxLog(dmFlood)); // heard first by A277
+    final sent = await acks(1);
+    expect(sent.single.sublist(0, 14), secondAck(pf2.pathBytes),
+        reason: 'pf2 ends at A277; the best route does not');
+  });
+
+  test('a DM that came by flood, with no route to the repeater that heard '
+      'it: the second ACK on Pathfinder\'s best route', () async {
+    final elsewhere = PathSelection(
+      pathBytes: _hex('BEEF1000'),
+      hopCount: 2,
+      hashSize: 2,
+      useFlood: false,
+    );
+    await connect(routes: [elsewhere]);
+    c.handleFrameForTest(_rxLog(dmFlood));
+    final sent = await acks(1);
+    expect(sent.single.sublist(0, 14), secondAck(elsewhere.pathBytes));
+  });
+
   test('a DM that came by flood: the second ACK on Pathfinder\'s best route',
       () async {
     await connect(routes: [pf1, pf2]);

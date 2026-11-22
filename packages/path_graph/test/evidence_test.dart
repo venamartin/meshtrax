@@ -197,7 +197,10 @@ void main() {
     expect(ranked.last.weight, closeTo(1.125, 1e-9), reason: '9 × 0.5³');
   });
 
-  test('a first hop far from the current top doorstep wipes the list', () {
+  test('a first hop far from a doorstep halves it like any other: nothing '
+      'is erased', () {
+    // The list used to be wiped here. A far doorstep now comes last in the
+    // route order instead (doorstep_ladder_test), and keeps its record.
     graph.ingestNode('A277', lat: 36.97, lon: -121.73); // Watsonville
     graph.ingestNode('5CBB', lat: 37.77, lon: -122.42); // San Francisco
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
@@ -208,10 +211,12 @@ void main() {
 
     graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
-    final after = graph.ingressCandidates(bobPk);
-    expect(after.map((c) => c.repeaterHash), ['5CBB'],
-        reason: 'one message from 100 km away replaces everything');
-    expect(after.single.weight, 3.0);
+    final byHash = {
+      for (final c in graph.ingressCandidates(bobPk)) c.repeaterHash: c.weight
+    };
+    expect(byHash['5CBB'], 3.0);
+    expect(byHash['A277'], closeTo(1.5, 1e-9),
+        reason: 'halved, as by any sighting, and still there');
   });
 
   test('without positions a far move is only a slash', () {

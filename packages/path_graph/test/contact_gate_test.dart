@@ -33,22 +33,22 @@ void main() {
 
   tearDown(() => graph.dispose());
 
-  /// F5EE and A277 both hear me (proven). The room's reply came via F5EE
-  /// (its doorstep, heard-only) and A277→BEEF is a known corridor to the
-  /// room's other doorstep BEEF.
+  /// F5EE and A277 both hear me (proven). The room's advert came via BEEF,
+  /// its replies since via F5EE (its doorstep now, heard-only, BEEF left
+  /// as a fallback), and A277→BEEF is a known corridor to BEEF.
   void setupMesh() {
     graph.reportSendResult(path(f5ee), true);
     graph.reportSendResult(path(a277), true);
-    for (final id in ['reply', 'post']) {
-      graph.observePath(path(f5ee), 2,
-          const ObservationOrigin.pubkeyConfirmed(roomPk),
-          messageId: id);
-    }
     graph.observePath(path([...a277, ...beef]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
     graph.observePath(path(beef), 2,
         const ObservationOrigin.pubkeyConfirmed(roomPk),
         messageId: 'advert');
+    for (final id in ['reply', 'post']) {
+      graph.observePath(path(f5ee), 2,
+          const ObservationOrigin.pubkeyConfirmed(roomPk),
+          messageId: id);
+    }
   }
 
   List<int> bytesOf(PathResult r) => (r as RouteResult).pathBytes;

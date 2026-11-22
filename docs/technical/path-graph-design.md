@@ -58,6 +58,66 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-22 — one doorstep per attempt; their own packets overrule a
+  record; nothing stored is erased.** Two field failures on 2026-11-21
+  had one root: every route attempt of a message was bet on one doorstep,
+  and then it flooded. Morning: a contact 35 km from home was sent to
+  through the home doorstep AA77 by three corridors while AA77 stood
+  fourth in the path of both of their DMs, and the known route to F4D5,
+  which had heard them, was never tried. Evening: a trial rule that put
+  the newest sighting first and erased the records ("newest first", never
+  merged) sent contacts who had not moved to one-off repeaters, then to
+  floods. Owner: use the repeater that heard them, and "why are we
+  storing all this information if we don't even use it". Three changes,
+  all in the package:
+  * **The ladder.** After the best route, `findRoutes` gives
+    (`_routesAfter`): the first choice of the other order when it is
+    another doorstep (with the record first, a doorstep that heard their
+    latest packet); then other corridors to the doorstep tried first, as
+    before, since a first attempt can fail by bad luck; and in the last
+    place a doorstep with a delivery record that none of those end at,
+    overruled or not, when it is at least as likely as the route it
+    displaces. The app takes them in order, so what is stored is used
+    before any flood.
+  * **Their own packets overrule a record** (`_noteOwnPacket`, memory
+    only). A doorstep seen passing one of their packets on did not hear
+    them: a repeater forwards the first copy it hears (`Mesh.cpp`
+    `onRecvPacket`, seen table), so it would have been the first hop of
+    its own copy. One that missed `contactMissesBeforeLast` (2) of their
+    packets in a row has stopped hearing them. One farther than
+    `contactFarKm` (60, was `contactMoveWipeKm`) from the repeater that
+    just heard them cannot hear them now. Such a doorstep is tried after
+    their others (`_ingressTiers`) until it hears them first again; its
+    weight and proofs are untouched. The 60 km rule used to wipe the
+    list.
+  * **Copies of one packet are one sighting** (`observeContactSender`'s
+    `messageId`): each copy's first hop counts and none halves another's.
+    Every flood copy of a verified advert is attributed, and the last
+    copy used to push the others down.
+  Otherwise doorsteps rank by their record, as before ("record first").
+  `PathGraphConfig.newestBeforeRecord` is the switch to the other order
+  (the doorsteps that heard their latest packet before any that missed
+  it); with the ladder, either order's second choice is the very next
+  attempt. The mesh simulator found two flaws in that first version, which
+  lost two messages that master delivered:
+  * **A failure through a second opinion is theirs** (`_secondOpinion`).
+    A second opinion is a doorstep of theirs that heard their latest
+    packet and has never delivered to them. A send that fails on a route
+    ending at one is held against their end only, not against my first
+    hop. With one doorstep on my end, two failed route attempts of one
+    message used to close every route (`selfFailGate`) before the
+    ladder's last route attempt.
+  * **A failed record gives way** (`_ingressTiers`). When their doorstep
+    with the best record missed their latest packet and has failed a send
+    since its last proof, the doorsteps that heard that packet and have
+    not failed go first, until they fail too. A re-plan after a failed
+    attempt used to try another way to the doorstep that had just failed.
+  Replayed on the owner's graph with the app's three route slots: the
+  morning's first reply goes A277,5B98,F4D5, then A277,BEEF,A477,1000,F4D5,
+  then A277,AA77, before any flood. A contact at home keeps A277,AA77
+  first through a two-copy advert and through a one-off sighting, with
+  the other repeater as the next attempt. After a restart the records
+  alone order the doorsteps, until their next packets.
 * **2026-09-25 (b) — doorstep strength dominates.** Field: the router
   offered `1000,FACE` to a contact although 1000 had heard this radio
   weakly once or twice — a doorstep's `−log(confidence)` gap (≈0.9 nat
@@ -119,7 +179,9 @@ me and who hears my contact, what path bytes should this DM use?*
   (`contactSupersedeFactor` 0.5, DIRECT included); and when advert
   positions show the new first hop is farther than `contactMoveWipeKm`
   (60) from their current top doorstep, the list is wiped outright —
-  Watsonville to San Francisco in one message. **Channel messages feed
+  Watsonville to San Francisco in one message (since 2026-11-22 the far
+  doorsteps come last and keep their records, see above). **Channel
+  messages feed
   it**: the app already decrypts every raw `GRP_TXT` packet and shows
   its paths under the message, so the connector raises
   `onChannelPacketHeard(name, path, stride)` from that handler and the

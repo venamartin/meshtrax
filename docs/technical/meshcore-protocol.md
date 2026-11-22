@@ -617,6 +617,12 @@ the companion sends two acks or it sends one and the app sends the second"):
   at once (`PathLabAdapter.attributeOpenedCopy`; the decoded message then finds it done).
   Without it the first DM after a contact moved got its second ACK by where they were
   heard before (mesh simulator, 2026-11-21).
+- **For a flood copy, the ACK goes back by the repeater that heard it.** Pathfinder ranks a
+  contact's doorsteps by their record, so its best route for a message can end where they
+  were heard before. An ACK has one shot and the copy's first repeater heard them seconds
+  ago: of the routes left, the second ACK takes the first that ends at that repeater
+  (`_secondAckPackets`, `heardBy`; same hash width only), and the first one left when none
+  does.
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants
