@@ -868,6 +868,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Per message (contact, sender's timestamp, text type), the routes its
   // ACKs have taken; a resend keeps all three.
   final Map<String, Set<String>> _ackRoutesTried = {};
+  // By ACK code, the app's queued stand-ins for the radio's ACK to a copy it
+  // picked up on its way: dropped if the radio opens its own copy first.
+  final Map<String, List<Timer>> _standInAcks = {};
+  // Every raw packet still held for sending (_queueRawPackets).
+  final Set<Timer> _rawPacketTimers = {};
   bool? _pathfinderWasOn;
   static const _twoAcksKeyPrefix = 'two_acks_';
 
@@ -2332,6 +2337,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     int snrByte,
     Uint8List payload,
   )? onPassingCopyHeard;
+
+  /// A flooded DM or room post to this radio that the app opened itself
+  /// from the copy the radio logged, a sync round-trip before the radio
+  /// hands over the decoded message: the contact it came from, the
+  /// repeaters that copy crossed at [hopWidth] bytes each (the first one
+  /// heard the sender), its signed SNR byte, and its payload as heard.
+  /// Raised for the first copy of each send, before the second ACK's route
+  /// is chosen. The path graph hook: Pathfinder then ranks the repeater
+  /// that just heard them ([onContactMessageHeard] comes too late for that
+  /// ACK).
+  void Function(
+    String contactPubkeyHex,
+    Uint8List pathBytes,
+    int hopWidth,
+    int snrByte,
+    Uint8List payload,
+  )? onFloodCopyOpened;
 
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
@@ -9138,6 +9160,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyOpener = null;
     _passingCopyScopeKey = null;
     _passingCopyAcked.clear();
+    // ACKs still held go nowhere: the link they were meant for is gone.
+    for (final t in _rawPacketTimers) {
+      t.cancel();
+    }
+    _rawPacketTimers.clear();
+    _standInAcks.clear();
     _appSendsSecondAck = false;
     _secondAckSent.clear();
     _ackRoutesTried.clear();
@@ -9288,7 +9316,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (!_remember(_passingCopyAcked, id)) return;
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
-    final packets = PassingCopyOpener.ackPackets(
+    final standIn = PassingCopyOpener.ackPackets(
       copy.ack,
       routePathLen: PathHelper.encodePathLen(
         contact.pathLength,
@@ -9299,23 +9327,81 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       floodWidth: _pathHashByteWidth,
       scopeKey: _passingCopyScopeKey,
     );
-    if (_appSendsSecondAck && _remember(_secondAckSent, id)) {
-      packets.addAll(_secondAckPackets(copy, contact, byFlood: false));
-    }
-    _queueRawPackets(
-      packets,
+    final second = _appSendsSecondAck && _remember(_secondAckSent, id)
+        ? _secondAckPackets(copy, contact, byFlood: false)
+        : const <Uint8List>[];
+    final timers = _queueRawPackets(
+      [...standIn, ...second],
       TimeoutHelper.passingCopyAckDelayMs(
         _estimateAirtimeMs(packetBytes),
         copy.hopsLeftCount,
       ),
+    );
+    _standInAcks.removeWhere((_, held) => !held.any((t) => t.isActive));
+    // With repeat on, the radio passes on a copy whose next hop is its own
+    // hash and marks it seen (Mesh.cpp onRecvPacket, allowPacketForward), so
+    // it never opens the last repeater's copy and sends no ACK: then the
+    // stand-in is the ACK, and stays.
+    final me = _selfPublicKey;
+    final radioPassesItOn = _clientRepeat == true &&
+        me != null &&
+        PathHelper.firstHopHex(copy.hopsLeft, stride: copy.hopWidth) ==
+            PathHelper.hopHex(
+              PathHelper.pubKeyPrefix(me, stride: copy.hopWidth),
+            );
+    if (!radioPassesItOn) {
+      _standInAcks[id] = timers.sublist(0, standIn.length);
+    }
+  }
+
+  /// The radio opens its own copy of a DM or room post the app picked up on
+  /// its way (the last repeater's copy, or a flood) and sends that ACK
+  /// itself. The app's stand-in for it, if still held, is dropped, so the
+  /// message gets no more ACKs than the radio's and the app's second, on
+  /// another route (owner, 2026-11-21: the radio's ACK is the one we can't
+  /// control, the second is the good one). A stand-in already sent can't be
+  /// called back, and the firmware always ACKs a DM it opens.
+  void _dropStandInAck(_RawPacket packet) {
+    if (_standInAcks.isEmpty) return;
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+      return;
+    }
+    final copy = opener.openAny(
+      flood: packet.isFlood,
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: packet.pathBytes,
+      payload: packet.payload,
+      contactKeys: _contacts.map((c) => c.publicKey),
+    );
+    if (copy == null) return;
+    final held = [
+      for (final t in _standInAcks.remove(pubKeyToHex(copy.ack.sublist(0, 4))) ??
+          const <Timer>[])
+        if (t.isActive) t,
+    ];
+    if (held.isEmpty) return;
+    for (final t in held) {
+      t.cancel();
+    }
+    final from = _contactWithKey(copy.senderKey)?.name;
+    appLogger.info(
+      'The radio opened its own copy of a message${from == null ? '' : ' from $from'} '
+      "picked up on its way: it sends that ACK, the app's stand-in is dropped",
+      tag: 'Connector',
     );
   }
 
   /// A copy of a DM or room post to this radio that the radio opens itself
   /// (the last routed copy, or a flood). The radio sends one ACK; when the
   /// app sends every second ACK, it sends the other, as the radio's extra
-  /// ACK would follow its first.
-  void _sendSecondAckFor(_RawPacket packet) {
+  /// ACK would follow its first. A flood's path is the way it came, so
+  /// Pathfinder is told who heard the sender first ([onFloodCopyOpened]):
+  /// the ACK then goes by that repeater, not by where they were heard
+  /// before (simulator 2026-11-21: the first DM after a move got its second
+  /// ACK on the old ranking, and that was the one ACK that could arrive).
+  void _sendSecondAckFor(_RawPacket packet, int snrByte) {
     if (!_appSendsSecondAck) return;
     final opener = _passingCopyOpener;
     final me = _selfPublicKey;
@@ -9335,6 +9421,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
+    if (packet.isFlood) {
+      onFloodCopyOpened?.call(
+        contact.publicKeyHex,
+        packet.pathBytes,
+        packet.hashSize,
+        snrByte.toSigned(8),
+        packet.payload,
+      );
+    }
     _queueRawPackets(
       _secondAckPackets(copy, contact, byFlood: packet.isFlood),
       TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
@@ -9437,11 +9532,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// [TimeoutHelper.extraAckGapMs] apart, the way sendAckTo spaces its two
   /// ACKs. The radio queues a routed packet at priority 0 (sendDirect) and a
   /// flood at 1 (sendFlood).
-  void _queueRawPackets(List<Uint8List> packets, int delayMs) {
+  /// The timers are returned in the packets' order.
+  List<Timer> _queueRawPackets(List<Uint8List> packets, int delayMs) {
+    final timers = <Timer>[];
     var delay = delayMs;
     for (final packet in packets) {
       final priority = (packet[0] & 0x03) == 0x02 ? 0 : 1;
-      Timer(Duration(milliseconds: delay), () {
+      timers.add(Timer(Duration(milliseconds: delay), () {
         if (!isConnected) return;
         unawaited(
           sendFrame(
@@ -9449,9 +9546,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             expectsGenericAck: true,
           ).catchError((Object _) {}),
         );
-      });
+      }));
       delay += TimeoutHelper.extraAckGapMs;
     }
+    _rawPacketTimers
+      ..removeWhere((t) => !t.isActive)
+      ..addAll(timers);
+    return timers;
   }
 
   void _handleLogRxData(Uint8List frame) {
@@ -9498,10 +9599,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
       }
       if (packet.payloadType == _payloadTypeTxtMsg) {
+        if (packet.isFlood || packet.hopCount == 0) _dropStandInAck(packet);
         if (!packet.isFlood && packet.hopCount > 0) {
           _openPassingCopy(packet, frame[1]);
         } else {
-          _sendSecondAckFor(packet);
+          _sendSecondAckFor(packet, frame[1]);
         }
         return;
       }

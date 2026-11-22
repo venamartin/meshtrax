@@ -566,6 +566,12 @@ the connector's `_openPassingCopy`):
   held until the hops still to go have passed the DM on
   (`TimeoutHelper.passingCopyAckDelayMs`). Older firmware gets the message but no ACK; the
   sender retries until a copy the radio opens, and the radio ACKs that one.
+- **The radio's own copy wins.** If the last repeater's copy (or a flood) reaches this radio
+  while the app still holds those ACKs, the radio opens it and sends that ACK itself; the
+  firmware always ACKs a DM it opens, and `multi_acks` only drops its extra copy. So the app
+  drops its stand-in for the radio's ACK, and its second ACK (below) still goes: the radio's
+  ACK is the one nobody controls, and the app's second is the one on a good route (owner,
+  2026-11-21). A stand-in already sent can't be called back, so then the message gets three.
 - **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
   a long DM, or a shorter one on a long route, is never seen. A scope set by another app
   with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.
@@ -586,7 +592,8 @@ the companion sends two acks or it sends one and the app sends the second"):
 - **The app sends the other**, for every copy of a DM or room post to this radio that it
   can read in the RX log (it computes the exact ACK from the decrypted copy), once per
   send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
-  first. For a passing copy the app sends both ACKs.
+  first. For a passing copy the app sends both ACKs, unless the radio opens its own copy
+  first (above): then the radio's ACK and the app's second.
 - **Its form is the firmware's extra ACK**: MULTIPART, remaining 1 (`createMultiAck`).
   Repeaters drop a packet they have seen, and `Packet::calculatePacketHash` leaves the path
   out, so a plain copy of the first ACK dies at the first repeater that carried it, and on
@@ -603,6 +610,13 @@ the companion sends two acks or it sends one and the app sends the second"):
   route again. The contact is read when the copy is heard, before the keeper can move the
   stored route. The connector reads routes through `graphRouteCandidates` and tests the
   held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
+- **A flooded copy tells Pathfinder who heard the sender first.** A flood's path is the way
+  it came, and its first repeater heard the sender. The radio hands the decoded message
+  over only a sync round-trip later, too late for this ACK, so the connector raises
+  `onFloodCopyOpened` before it asks for the routes, and Pathfinder credits that repeater
+  at once (`PathLabAdapter.attributeOpenedCopy`; the decoded message then finds it done).
+  Without it the first DM after a contact moved got its second ACK by where they were
+  heard before (mesh simulator, 2026-11-21).
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
 
 ### ADV_TYPE constants

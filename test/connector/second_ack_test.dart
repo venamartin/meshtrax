@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
+import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,13 +94,14 @@ Uint8List _selfInfo() {
   return w.toBytes();
 }
 
-Uint8List _deviceInfo() {
+Uint8List _deviceInfo({bool clientRepeat = false}) {
   final f = Uint8List(82);
   f[0] = respCodeDeviceInfo;
   f[1] = 14;
   f[2] = 175;
   f[3] = 40;
   f.setRange(60, 67, utf8.encode('v1.18.0'));
+  f[80] = clientRepeat ? 1 : 0;
   f[81] = 1;
   return f;
 }
@@ -118,6 +121,9 @@ Uint8List _contactFrame({bool routeBack = true}) {
   w.add(Uint8List(8));
   return w.toBytes();
 }
+
+bool _same(List<int> a, List<int> b) =>
+    a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
 
 Uint8List _rxLog(Uint8List packet) =>
     Uint8List.fromList([pushCodeLogRxData, 0x30, 0xEC, ...packet]);
@@ -140,6 +146,7 @@ void main() {
     bool pathfinder = true,
     List<PathSelection> routes = const [],
     bool routeBack = true,
+    bool clientRepeat = false,
   }) async {
     final settings = AppSettingsService();
     await settings.setPathGraphEnabled(pathfinder);
@@ -149,7 +156,7 @@ void main() {
         appSettingsService: settings,
       );
     if (pathfinder) c.graphRouteCandidates = (_) => routes;
-    c.handleFrameForTest(_deviceInfo());
+    c.handleFrameForTest(_deviceInfo(clientRepeat: clientRepeat));
     c.handleFrameForTest(_selfInfo());
     await c.getContacts();
     c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
@@ -200,6 +207,97 @@ void main() {
     expect(sent.single.sublist(0, 16), secondAck(stored));
   });
 
+  // Simulator, 2026-11-21: the radio hands the decoded DM over a sync
+  // round-trip after it logs the copy, so the first DM after a contact
+  // moved got its second ACK by where they were heard before.
+  test('a flooded DM tells Pathfinder who heard the sender before the '
+      'second ACK picks its route', () async {
+    await connect(routes: [pf1]);
+    // Pathfinder's ranking, which changes once it knows of the sighting.
+    var routes = [pf1];
+    c.graphRouteCandidates = (_) => routes;
+    final opened = <({String contact, List<int> path, int width, int snr})>[];
+    c.onFloodCopyOpened = (contact, path, width, snr, heard) {
+      opened.add((contact: contact, path: path, width: width, snr: snr));
+      expect(heard, payload);
+      routes = [pf2, pf1];
+    };
+
+    c.handleFrameForTest(_rxLog(dmFlood));
+    c.handleFrameForTest(_rxLog(dmFlood)); // another copy of the same send
+    final sent = await acks(1);
+    expect(opened, hasLength(1));
+    expect(_hex(opened.single.contact), aPub);
+    expect(opened.single.path, [0xA2, 0x77, 0xAD, 0x77],
+        reason: 'the way the copy came: A277 heard the sender');
+    expect(opened.single.width, 2);
+    expect(opened.single.snr, 0x30);
+    expect(sent.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('a routed copy says nothing about who heard the sender', () async {
+    await connect(routes: [pf1, pf2]);
+    var opened = 0;
+    c.onFloodCopyOpened = (_, _, _, _, _) => opened++;
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await acks(1);
+    expect(opened, 0);
+  });
+
+  test('with Pathfinder itself: the second ACK goes by the repeater that '
+      'just heard the sender, and the sighting counts once', () async {
+    final settings = AppSettingsService();
+    await settings.setPathGraphEnabled(true);
+    c = _Connector()
+      ..initialize(
+        retryService: MessageRetryService(),
+        appSettingsService: settings,
+      );
+    c.handleFrameForTest(_deviceInfo());
+    c.handleFrameForTest(_selfInfo());
+    final service = PathGraphService();
+    await service.start(c, openDatabase: (_) => NativeDatabase.memory());
+    addTearDown(service.stop);
+    for (var i = 0; i < 100 && service.graph?.selfPubkey == null; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    final graph = service.graph!;
+    // SELF_INFO's load of the empty store would replace the list below.
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await c.getContacts();
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame());
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    await c.preparePassingCopiesForTest();
+    // AD77 hears this radio and reaches A277, and nothing says yet who
+    // hears A: Pathfinder has no route, only the radio's stored one.
+    graph.reportSendResult(_hex('AD77A277'), true);
+    final a = pubKeyToHex(aPub);
+    expect(graph.ingressCandidates(a), isEmpty);
+
+    c.handleFrameForTest(_rxLog(dmFlood)); // A's flood came A277, AD77
+    final sent = await acks(1);
+    expect(sent.single.sublist(0, 14), secondAck(_hex('AD77A277')),
+        reason: 'A277 just heard A; the stored route is BEEF,AD77,A277');
+
+    // The radio's decoded message, a sync round-trip later.
+    c.handleFrameForTest(Uint8List.fromList([
+      respCodeContactMsgRecvV3, 0x30, 0, 0,
+      ...aPub.sublist(0, 6),
+      0x42, // by flood, two 2-byte hops
+      txtTypePlain,
+      ...(ByteData(4)..setUint32(0, 1795283000, Endian.little))
+          .buffer
+          .asUint8List(),
+      ...utf8.encode('hello'),
+    ]));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    final doorstep = graph.ingressCandidates(a).single;
+    expect(doorstep.repeaterHash, 'A277');
+    expect(doorstep.finalCount, 1, reason: 'one message, one sighting');
+    expect(doorstep.weight, closeTo(3.0, 0.01));
+  });
+
   test('one route only: the second ACK on that route again', () async {
     await connect(routes: [pf1]);
     c.handleFrameForTest(_rxLog(dmLastCopy));
@@ -215,6 +313,84 @@ void main() {
     expect(sent, hasLength(2));
     expect(sent[0].sublist(0, 15), plainAck(stored));
     expect(sent[1].sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test("a passing copy, then the radio's own copy: the radio's ACK is the "
+      'first, and the app sends only its second', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // The last repeater's copy comes while the app still holds its ACKs.
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test("the radio's copy after the app's ACKs went out: nothing more from "
+      'the app', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    await acks(2);
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    expect(c.acks, hasLength(2));
+  });
+
+  test("the radio's copy of another message leaves this one's stand-in",
+      () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // Another DM from A, the copy the radio opens itself.
+    c.handleFrameForTest(_rxLog(_hex(
+        '0A40E7C393761A4A07DC0918917FCB35FAED48C03AC74A7423DA8746EFCDAD090FFF9B5C3935')));
+    final sent = await acks(3);
+    expect(sent, hasLength(3));
+    expect(sent.where((f) => _same(f.sublist(0, 15), plainAck(stored))), hasLength(1),
+        reason: 'the stand-in for the first DM still goes');
+  });
+
+  test("the radio's flood copy of the message takes over the first ACK too",
+      () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    c.handleFrameForTest(_rxLog(dmFlood));
+    await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('with repeat on, a copy the radio passes on itself keeps its stand-in',
+      () async {
+    // The next hop is this radio's own hash: it forwards the copy and marks
+    // it seen, so it never opens the last repeater's copy (Mesh.cpp).
+    await connect(routes: [pf1, pf2], clientRepeat: true);
+    c.handleFrameForTest(_rxLog(Uint8List.fromList(
+        [0x0A, 0x41, bPub[0], bPub[1], ...payload])));
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    final sent = await acks(2);
+    expect(sent, hasLength(2));
+    expect(sent[0].sublist(0, 15), plainAck(stored));
+  });
+
+  test("Pathfinder off: the radio sends both ACKs to its own copy, so the "
+      "app's stand-ins are dropped", () async {
+    await connect(pathfinder: false);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(c.acks, isEmpty);
+  });
+
+  test("Pathfinder off, no copy from the radio: the app's stand-ins go, "
+      'both of them, as the radio would send them', () async {
+    await connect(pathfinder: false);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    final sent = await acks(2);
+    expect(sent, hasLength(2));
+    expect(sent[0].sublist(0, 16), secondAck(stored));
+    expect(sent[1].sublist(0, 15), plainAck(stored));
   });
 
   test('each resend brings a new route in, then a flood', () async {
