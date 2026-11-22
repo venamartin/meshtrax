@@ -3023,5 +3023,6 @@
   "regions_heardNearby": "Usłyszane od przekaźników w pobliżu",
   "regions_nearbySpelling": "Przekaźniki w pobliżu piszą go {name}",
   "regions_useSpelling": "Użyj",
-  "channelPath_regionUnknown": "Nieznany ci (kod {code})"
+  "channelPath_regionUnknown": "Nieznany ci (kod {code})",
+  "chat_channelNoSignRegion": "Wysłano w {region} · brak śladu, kto to dostał. Przekaźniki, które nie znają {region}, je odrzucają."
 }

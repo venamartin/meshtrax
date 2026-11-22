@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Počuté od opakovačov v blízkosti",
   "regions_nearbySpelling": "Opakovače v blízkosti ho píšu {name}",
   "regions_useSpelling": "Použiť",
-  "channelPath_regionUnknown": "Neznámy pre vás (kód {code})"
+  "channelPath_regionUnknown": "Neznámy pre vás (kód {code})",
+  "chat_channelNoSignRegion": "Odoslané v {region} · žiadna stopa, kto to dostal. Opakovače, ktoré nepoznajú {region}, to zahodia."
 }

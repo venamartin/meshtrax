@@ -7726,4 +7726,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'Neznámy pre vás (kód $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Odoslané v $region · žiadna stopa, kto to dostal. Opakovače, ktoré nepoznajú $region, to zahodia.';
+  }
 }

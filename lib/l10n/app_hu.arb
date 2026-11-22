@@ -3023,5 +3023,6 @@
   "regions_heardNearby": "Közeli jelismétlőktől hallva",
   "regions_nearbySpelling": "A közeli jelismétlők így írják: {name}",
   "regions_useSpelling": "Ezt használom",
-  "channelPath_regionUnknown": "Egy, amit nem ismersz (kód {code})"
+  "channelPath_regionUnknown": "Egy, amit nem ismersz (kód {code})",
+  "chat_channelNoSignRegion": "Elküldve itt: {region} · semmi jel arra, ki kapta meg. Azok a jelismétlők, amelyek nem ismerik ezt: {region}, eldobják."
 }

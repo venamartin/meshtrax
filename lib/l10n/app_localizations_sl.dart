@@ -7730,4 +7730,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'Taka, ki je ne poznate (koda $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Poslano v $region · ni znaka, kdo ga je dobil. Repetitorji, ki ne poznajo $region, ga zavržejo.';
+  }
 }

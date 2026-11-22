@@ -90,7 +90,7 @@ Built. The owner, 2026-11-22: only after a Discover the user starts (never an au
 - The channel's Region dialog: under each region, "✓ 3 nearby repeaters" or "⚠ No nearby repeater carries it".
 - Settings → Regions: a "Heard from nearby repeaters" section, with + to add a name to your list. Add region offers the spelling repeaters use when yours differs only in capitals.
 - Two health check findings: nearby repeaters that refuse messages with no region, and a channel whose region no nearby repeater carries.
-- Not built: a hint on a channel message that wasn't repeated.
+- The hint on a channel message of yours that got no repeat (a long press on its amber check): "Sent in sf · no sign of who got it. Repeaters that don't know sf drop it." (owner's pick). A Nearby only channel never shows the amber check, since no repeat is expected there.
 
 ### Phase 3: region of incoming messages
 

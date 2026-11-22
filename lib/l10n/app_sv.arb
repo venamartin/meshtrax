@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Hörda från repeatrar i närheten",
   "regions_nearbySpelling": "Repeatrar i närheten stavar den {name}",
   "regions_useSpelling": "Använd den",
-  "channelPath_regionUnknown": "En du inte känner (kod {code})"
+  "channelPath_regionUnknown": "En du inte känner (kod {code})",
+  "chat_channelNoSignRegion": "Skickat i {region} · inget tecken på vem som fick det. Repeatrar som inte känner {region} släpper det."
 }

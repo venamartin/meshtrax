@@ -7625,4 +7625,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'One you don\'t know (code $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Sent in $region · no sign of who got it. Repeaters that don\'t know $region drop it.';
+  }
 }

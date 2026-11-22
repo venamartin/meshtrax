@@ -7759,4 +7759,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'Неизвестный вам (код $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Отправлено в $region · нет признаков, кто получил. Ретрансляторы, не знающие $region, его отбрасывают.';
+  }
 }

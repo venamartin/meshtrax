@@ -7247,4 +7247,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return '你不认识的区域(代码 $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '已在 $region 发送 · 不知道谁收到了。不认识 $region 的中继器会丢弃它。';
+  }
 }

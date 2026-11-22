@@ -7388,4 +7388,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return '모르는 지역 (코드 $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '$region에서 보냄 · 누가 받았는지 알 수 없음. $region을(를) 모르는 리피터는 버립니다.';
+  }
 }

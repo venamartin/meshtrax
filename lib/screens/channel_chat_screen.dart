@@ -29,6 +29,7 @@ import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/heard_service.dart';
 import '../services/notification_service.dart';
+import '../helpers/region_helper.dart';
 import '../services/region_service.dart';
 import '../services/sos_service.dart';
 import '../services/trax_service.dart';
@@ -2013,14 +2014,29 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       );
 
   /// Sent, the wait for a repeat is over, and neither a radio nor an
-  /// observer repeated it: nothing says anyone got it.
+  /// observer repeated it: nothing says anyone got it. Never on a Nearby
+  /// only channel, where no repeat is ever expected.
   bool _isUnheard(BuildContext context, ChannelMessage message) =>
       message.isOutgoing &&
       message.status == ChannelMessageStatus.sent &&
       message.repeatCount == 0 &&
+      _channelRegion(context) != RegionHelper.nearbyOnly &&
       !context.select<MeshCoreConnector, bool>(
         (c) => c.isChannelMessageRetrying(message.messageId),
       );
+
+  String? _channelRegion(BuildContext context) =>
+      Provider.of<RegionService?>(context, listen: false)
+          ?.regionOf(widget.channel.idKey);
+
+  /// The long-press text of the amber check: in a region, which one, and
+  /// that repeaters that don't know it drop the message.
+  String? _unheardHint(BuildContext context) {
+    final region = _channelRegion(context);
+    return RegionHelper.isRegionName(region)
+        ? context.l10n.chat_channelNoSignRegion(region!)
+        : null;
+  }
 
   static bool _observerHeard(ChannelMessage message) =>
       HeardService.instance.heardBy(message.messageId)?.isNotEmpty ?? false;
@@ -2037,6 +2053,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           isDelivered: message.status == ChannelMessageStatus.delivered,
           isFailed: message.status == ChannelMessageStatus.failed,
           isUnheard: unheard && !_observerHeard(message),
+          unheardHint: _unheardHint(context),
         ),
       ),
     );
@@ -2055,6 +2072,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               isAcked: true,
               isFailed: failed,
               isUnheard: true,
+              unheardHint: _unheardHint(context),
             );
           }
           return Icon(

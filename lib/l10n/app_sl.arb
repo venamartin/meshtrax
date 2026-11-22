@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Slišano od repetitorjev v bližini",
   "regions_nearbySpelling": "Repetitorji v bližini jo pišejo {name}",
   "regions_useSpelling": "Uporabi",
-  "channelPath_regionUnknown": "Taka, ki je ne poznate (koda {code})"
+  "channelPath_regionUnknown": "Taka, ki je ne poznate (koda {code})",
+  "chat_channelNoSignRegion": "Poslano v {region} · ni znaka, kdo ga je dobil. Repetitorji, ki ne poznajo {region}, ga zavržejo."
 }

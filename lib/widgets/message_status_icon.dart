@@ -8,6 +8,10 @@ class MessageStatusIcon extends StatelessWidget {
   final bool isDelivered;
   final bool isFailed;
   final bool isUnheard;
+
+  /// The long-press text of the amber check; the plain "no sign" text when
+  /// null.
+  final String? unheardHint;
   final double size;
 
   const MessageStatusIcon({
@@ -16,6 +20,7 @@ class MessageStatusIcon extends StatelessWidget {
     this.isDelivered = false,
     this.isFailed = false,
     this.isUnheard = false,
+    this.unheardHint,
     this.size = 14,
   });
 
@@ -27,7 +32,7 @@ class MessageStatusIcon extends StatelessWidget {
 
     if (isUnheard) {
       return Tooltip(
-        message: context.l10n.chat_channelNoSign,
+        message: unheardHint ?? context.l10n.chat_channelNoSign,
         child: Icon(Icons.check, size: size, color: Colors.amber[700]),
       );
     }

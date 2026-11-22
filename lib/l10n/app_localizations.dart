@@ -13125,6 +13125,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'One you don\'t know (code {code})'**
   String channelPath_regionUnknown(String code);
+
+  /// No description provided for @chat_channelNoSignRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent in {region} · no sign of who got it. Repeaters that don\'t know {region} drop it.'**
+  String chat_channelNoSignRegion(String region);
 }
 
 class _AppLocalizationsDelegate

@@ -7747,4 +7747,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'Egy, amit nem ismersz (kód $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Elküldve itt: $region · semmi jel arra, ki kapta meg. Azok a jelismétlők, amelyek nem ismerik ezt: $region, eldobják.';
+  }
 }

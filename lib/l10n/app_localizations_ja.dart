@@ -7370,4 +7370,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return '知らないリージョン (コード $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '$region で送信 · 誰が受け取ったか分かりません。$region を知らないリピーターは破棄します。';
+  }
 }

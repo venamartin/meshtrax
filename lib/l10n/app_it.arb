@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Sentite dai ripetitori vicini",
   "regions_nearbySpelling": "I ripetitori vicini la scrivono {name}",
   "regions_useSpelling": "Usala",
-  "channelPath_regionUnknown": "Una che non conosci (codice {code})"
+  "channelPath_regionUnknown": "Una che non conosci (codice {code})",
+  "chat_channelNoSignRegion": "Inviato in {region} · nessun segno di chi l'ha ricevuto. I ripetitori che non conoscono {region} lo scartano."
 }

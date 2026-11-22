@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Gehoord van repeaters in de buurt",
   "regions_nearbySpelling": "Repeaters in de buurt schrijven het als {name}",
   "regions_useSpelling": "Gebruiken",
-  "channelPath_regionUnknown": "Een die je niet kent (code {code})"
+  "channelPath_regionUnknown": "Een die je niet kent (code {code})",
+  "chat_channelNoSignRegion": "Verzonden in {region} · geen teken van wie het kreeg. Repeaters die {region} niet kennen, laten het vallen."
 }

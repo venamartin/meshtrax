@@ -2990,5 +2990,6 @@
   "regions_heardNearby": "从附近中继器得知",
   "regions_nearbySpelling": "附近的中继器写作 {name}",
   "regions_useSpelling": "使用",
-  "channelPath_regionUnknown": "你不认识的区域(代码 {code})"
+  "channelPath_regionUnknown": "你不认识的区域(代码 {code})",
+  "chat_channelNoSignRegion": "已在 {region} 发送 · 不知道谁收到了。不认识 {region} 的中继器会丢弃它。"
 }

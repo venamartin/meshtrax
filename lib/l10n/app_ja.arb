@@ -3023,5 +3023,6 @@
   "regions_heardNearby": "近くのリピーターから",
   "regions_nearbySpelling": "近くのリピーターの表記は {name}",
   "regions_useSpelling": "これを使う",
-  "channelPath_regionUnknown": "知らないリージョン (コード {code})"
+  "channelPath_regionUnknown": "知らないリージョン (コード {code})",
+  "chat_channelNoSignRegion": "{region} で送信 · 誰が受け取ったか分かりません。{region} を知らないリピーターは破棄します。"
 }

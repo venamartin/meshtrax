@@ -7768,4 +7768,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String channelPath_regionUnknown(String code) {
     return 'Nieznany ci (kod $code)';
   }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Wysłano w $region · brak śladu, kto to dostał. Przekaźniki, które nie znają $region, je odrzucają.';
+  }
 }

@@ -3719,5 +3719,7 @@
   "@regions_nearbySpelling": {"placeholders": {"name": {"type": "String"}}},
   "regions_useSpelling": "Use it",
   "channelPath_regionUnknown": "One you don't know (code {code})",
-  "@channelPath_regionUnknown": {"placeholders": {"code": {"type": "String"}}}
+  "@channelPath_regionUnknown": {"placeholders": {"code": {"type": "String"}}},
+  "chat_channelNoSignRegion": "Sent in {region} · no sign of who got it. Repeaters that don't know {region} drop it.",
+  "@chat_channelNoSignRegion": {"placeholders": {"region": {"type": "String"}}}
 }

@@ -3013,5 +3013,6 @@
   "regions_heardNearby": "Von Repeatern in der Nähe gehört",
   "regions_nearbySpelling": "Repeater in der Nähe schreiben es {name}",
   "regions_useSpelling": "Übernehmen",
-  "channelPath_regionUnknown": "Eine, die du nicht kennst (Code {code})"
+  "channelPath_regionUnknown": "Eine, die du nicht kennst (Code {code})",
+  "chat_channelNoSignRegion": "In {region} gesendet · kein Zeichen, wer es bekam. Repeater, die {region} nicht kennen, verwerfen es."
 }

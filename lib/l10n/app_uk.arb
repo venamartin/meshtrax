@@ -2985,5 +2985,6 @@
   "regions_heardNearby": "Почуті від ретрансляторів поблизу",
   "regions_nearbySpelling": "Ретранслятори поблизу пишуть його як {name}",
   "regions_useSpelling": "Використати",
-  "channelPath_regionUnknown": "Невідомий вам (код {code})"
+  "channelPath_regionUnknown": "Невідомий вам (код {code})",
+  "chat_channelNoSignRegion": "Надіслано в {region} · немає ознак, хто отримав. Ретранслятори, які не знають {region}, його відкидають."
 }
