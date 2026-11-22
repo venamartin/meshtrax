@@ -437,7 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.place_outlined),
+            leading: const Icon(Icons.hexagon_outlined),
             title: Text(l10n.regions_title),
             subtitle: Text(l10n.regions_settingsSubtitle),
             trailing: const Icon(Icons.chevron_right),

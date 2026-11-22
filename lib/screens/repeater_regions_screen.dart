@@ -407,7 +407,7 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
                       start: 16.0 + region.depth * 20,
                       end: 4,
                     ),
-                    leading: const Icon(Icons.place_outlined),
+                    leading: const Icon(Icons.hexagon_outlined),
                     title: Text(region.name),
                     subtitle: Text(
                       region.repeats

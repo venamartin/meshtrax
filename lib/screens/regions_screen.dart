@@ -130,7 +130,7 @@ class _RegionsScreenState extends State<RegionsScreen> {
                   children: [
                     for (final region in regions.regions)
                       ListTile(
-                        leading: const Icon(Icons.place_outlined),
+                        leading: const Icon(Icons.hexagon_outlined),
                         title: Text(region),
                         subtitle: Text(
                           l10n.regions_usedBy(regions.channelsUsing(region)),

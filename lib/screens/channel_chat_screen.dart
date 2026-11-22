@@ -1190,7 +1190,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                   value: 'region',
                   child: Row(
                     children: [
-                      const Icon(Icons.place_outlined, size: 20),
+                      const Icon(Icons.hexagon_outlined, size: 20),
                       const SizedBox(width: 12),
                       Text(context.l10n.channelRegion_title),
                     ],

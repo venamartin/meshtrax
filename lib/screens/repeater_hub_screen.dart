@@ -309,7 +309,7 @@ class RepeaterHubScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildManagementCard(
                 context,
-                icon: Icons.place_outlined,
+                icon: Icons.hexagon_outlined,
                 title: l10n.regions_title,
                 subtitle: l10n.repeaterRegions_subtitle,
                 color: Colors.cyan,

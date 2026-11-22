@@ -20,7 +20,7 @@ class RegionLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.place_outlined, size: fontSize + 2, color: color),
+        Icon(Icons.hexagon_outlined, size: fontSize + 2, color: color),
         const SizedBox(width: 2),
         Flexible(
           child: Text(
