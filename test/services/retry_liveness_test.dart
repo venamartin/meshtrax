@@ -305,6 +305,44 @@ void main() {
     });
   });
 
+  test('a flood rung the radio sent on its stored route never parks: no '
+      'flood echo can come back', () {
+    fakeAsync((async) {
+      final r = _Rig(async, budget: 3, graph: const []); // the plan floods
+      r.svc.noteRepeaterHeard();
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      // "was asked to go as a flood but the radio sent it on its stored
+      // route": the radio held a route the contact row didn't show.
+      r.svc.updateMessageFromSent(r.ackFor(0), 0, isFlood: false);
+      async.elapse(Duration(milliseconds: _echoWait + 1));
+      expect(r.last.waitingForRepeater, isFalse);
+      async.elapse(const Duration(milliseconds: _timeoutMs));
+      async.flushMicrotasks();
+      expect(r.sends, hasLength(2), reason: 'the ladder timed out as usual');
+    });
+  });
+
+  test('a route rung the radio flooded for want of a route is watched like '
+      'any flood', () {
+    fakeAsync((async) {
+      final route = PathSelection(
+          pathBytes: const [0xA2, 0x77],
+          hopCount: 1,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: 0.9);
+      final r = _Rig(async, budget: 3, graph: [route]);
+      r.svc.noteRepeaterHeard();
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      r.svc.updateMessageFromSent(r.ackFor(0), 0, isFlood: true);
+      async.elapse(Duration(milliseconds: _echoWait + 1));
+      expect(r.last.waitingForRepeater, isTrue);
+    });
+  });
+
   group('fail fast', () {
     for (final heardAgo in [null, const Duration(minutes: 11)]) {
       test('with no repeater heard in the last 10 minutes '

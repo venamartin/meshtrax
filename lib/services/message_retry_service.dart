@@ -803,21 +803,27 @@ class MessageRetryService extends ChangeNotifier {
     config.updateMessage(updatedMessage);
 
     _startTimeoutTimer(messageId, actualTimeout);
-    _armEchoWatch(messageId, contact, updatedMessage, actualTimeout);
+    _armEchoWatch(messageId, contact, updatedMessage, actualTimeout,
+        isFlood: isFlood);
     return true;
   }
 
   /// A flood just left the radio: if a repeater's copy of it can be seen
   /// at all, wait the firmware-anchored echo window for one; none means
   /// no repeater heard this radio, and the message is parked when one was
-  /// heard within [repeaterHeardWindow].
+  /// heard within [repeaterHeardWindow]. [isFlood] is how the radio says it
+  /// sent it (RESP_CODE_SENT), which wins over the plan: a rung planned as a
+  /// flood that the radio sent on a route it still held can never come back
+  /// as a flood echo, so waiting for one parked it next to a repeater; and
+  /// a rung the radio flooded for want of a route can.
   void _armEchoWatch(
-      String messageId, Contact contact, Message message, int attemptTimeoutMs) {
+      String messageId, Contact contact, Message message, int attemptTimeoutMs,
+      {bool? isFlood}) {
     final config = _config;
     final airtime = config?.estimateAirtime;
     final selection = _attemptRoutes[messageId]?[message.retryCount];
     if (config == null || airtime == null || selection == null) return;
-    if (!selection.useFlood) return;
+    if (!(isFlood ?? selection.useFlood)) return;
     final outboundText =
         config.prepareContactOutboundText?.call(contact, message.text) ??
             message.text;
