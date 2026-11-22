@@ -1165,6 +1165,8 @@ class ChannelMessageStore {
         'sosCancelledAt': at.millisecondsSinceEpoch,
       if (msg.claimedAt != null)
         'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
+      'regionCode': ?msg.regionCode,
+      'region': ?msg.region,
     };
   }
 
@@ -1228,6 +1230,8 @@ class ChannelMessageStore {
       claimedAt: json['claimedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
           : null,
+      regionCode: json['regionCode'] as int?,
+      region: json['region'] as String?,
     );
   }
 

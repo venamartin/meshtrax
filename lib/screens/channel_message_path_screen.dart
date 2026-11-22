@@ -169,6 +169,15 @@ class ChannelMessagePathScreen extends StatelessWidget {
                   ? l10n.channelPath_pickedUpOnItsWay(passingCopyHopsLeft!)
                   : _formatPathLabel(message.pathLength, l10n),
             ),
+            if (message.region case final region?)
+              _buildDetailRow(l10n.channelRegion_title, region)
+            else if (message.regionCode case final code?)
+              _buildDetailRow(
+                l10n.channelRegion_title,
+                l10n.channelPath_regionUnknown(
+                  code.toRadixString(16).padLeft(4, '0').toUpperCase(),
+                ),
+              ),
           ],
         ),
       ),
