@@ -12889,8 +12889,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// A region set for a send stays on the radio until it reboots, so a send
   /// cut short (app killed, link lost) could leave it set for every flood.
+  /// Cleared whenever the app has used regions at all: the channel that
+  /// set it may have gone back to no region since.
+  @visibleForTesting
+  Future<void> clearLeftoverRegionForTest() => _clearLeftoverRegion();
+
   Future<void> _clearLeftoverRegion() async {
-    if (!supportsRegions || regionService?.anyChannelHasRegion != true) return;
+
+    final regions = regionService;
+    if (!supportsRegions || regions == null) return;
+    if (!regions.anyChannelHasRegion && regions.regions.isEmpty) return;
+
     await _sendAndWaitForAck(
       buildClearFloodScopeFrame(),
       expectsGenericAck: true,

@@ -202,7 +202,28 @@ void main() {
     expect(c.written.length, before + 1);
   });
 
+  group('a region left on the radio is cleared on connect', () {
+    Future<List<Uint8List>> clears() async {
+      unawaited(c.clearLeftoverRegionForTest());
+      await pumpEventQueue();
+      return c.written.where((f) => f[0] == cmdSetFloodScopeKey).toList();
+    }
+
+    test('even after the channel went back to no region', () async {
+      await regions.setChannelRegion(channel.idKey, 'test-a');
+      await regions.setChannelRegion(channel.idKey, null);
+      expect(await clears(), [
+        [cmdSetFloodScopeKey, 0],
+      ]);
+    });
+
+    test('not when the app never used regions', () async {
+      expect(await clears(), isEmpty);
+    });
+  });
+
   test('the radio default region is read once and can be set', () async {
+
     unawaited(c.loadRadioDefaultRegion());
     await pumpEventQueue();
     expect(
