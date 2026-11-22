@@ -7684,15 +7684,14 @@ class AppLocalizationsNl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count repeaters in de buurt',
-      one: '✓ 1 repeater in de buurt',
+      other: '$count repeaters in de buurt',
+      one: '1 repeater in de buurt',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier =>
-      '⚠ Geen repeater in de buurt draagt hem';
+  String get channelRegion_noCarrier => 'Geen repeater in de buurt draagt hem';
 
   @override
   String get regions_heardNearby => 'Gehoord van repeaters in de buurt';

@@ -13093,13 +13093,13 @@ abstract class AppLocalizations {
   /// No description provided for @channelRegion_carriers.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{✓ 1 nearby repeater} other{✓ {count} nearby repeaters}}'**
+  /// **'{count, plural, =1{1 nearby repeater} other{{count} nearby repeaters}}'**
   String channelRegion_carriers(int count);
 
   /// No description provided for @channelRegion_noCarrier.
   ///
   /// In en, this message translates to:
-  /// **'⚠ No nearby repeater carries it'**
+  /// **'No nearby repeater carries it'**
   String get channelRegion_noCarrier;
 
   /// No description provided for @regions_heardNearby.

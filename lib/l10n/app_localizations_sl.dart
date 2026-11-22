@@ -7704,17 +7704,16 @@ class AppLocalizationsSl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count repetitorjev v bližini',
-      few: '✓ $count repetitorji v bližini',
-      two: '✓ $count repetitorja v bližini',
-      one: '✓ 1 repetitor v bližini',
+      other: '$count repetitorjev v bližini',
+      few: '$count repetitorji v bližini',
+      two: '$count repetitorja v bližini',
+      one: '1 repetitor v bližini',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier =>
-      '⚠ Noben repetitor v bližini je ne nosi';
+  String get channelRegion_noCarrier => 'Noben repetitor v bližini je ne nosi';
 
   @override
   String get regions_heardNearby => 'Slišano od repetitorjev v bližini';

@@ -7733,14 +7733,14 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count Repeater in der Nähe',
-      one: '✓ 1 Repeater in der Nähe',
+      other: '$count Repeater in der Nähe',
+      one: '1 Repeater in der Nähe',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ Kein Repeater in der Nähe trägt sie';
+  String get channelRegion_noCarrier => 'Kein Repeater in der Nähe trägt sie';
 
   @override
   String get regions_heardNearby => 'Von Repeatern in der Nähe gehört';

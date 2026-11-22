@@ -7723,14 +7723,14 @@ class AppLocalizationsHu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count közeli jelismétlő',
-      one: '✓ 1 közeli jelismétlő',
+      other: '$count közeli jelismétlő',
+      one: '1 közeli jelismétlő',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ Egy közeli jelismétlő sem viszi';
+  String get channelRegion_noCarrier => 'Egy közeli jelismétlő sem viszi';
 
   @override
   String get regions_heardNearby => 'Közeli jelismétlőktől hallva';

@@ -7347,13 +7347,13 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ 近くのリピーター $count 台',
+      other: '近くのリピーター $count 台',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ これを中継する近くのリピーターはありません';
+  String get channelRegion_noCarrier => 'これを中継する近くのリピーターはありません';
 
   @override
   String get regions_heardNearby => '近くのリピーターから';

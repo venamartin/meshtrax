@@ -7757,15 +7757,15 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count répéteurs à proximité',
-      one: '✓ 1 répéteur à proximité',
+      other: '$count répéteurs à proximité',
+      one: '1 répéteur à proximité',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Aucun répéteur à proximité ne la porte';
+      'Aucun répéteur à proximité ne la porte';
 
   @override
   String get regions_heardNearby => 'Entendues des répéteurs à proximité';

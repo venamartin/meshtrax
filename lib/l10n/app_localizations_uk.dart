@@ -7739,17 +7739,17 @@ class AppLocalizationsUk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count ретранслятора поблизу',
-      many: '✓ $count ретрансляторів поблизу',
-      few: '✓ $count ретранслятори поблизу',
-      one: '✓ $count ретранслятор поблизу',
+      other: '$count ретранслятора поблизу',
+      many: '$count ретрансляторів поблизу',
+      few: '$count ретранслятори поблизу',
+      one: '$count ретранслятор поблизу',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Жоден ретранслятор поблизу його не передає';
+      'Жоден ретранслятор поблизу його не передає';
 
   @override
   String get regions_heardNearby => 'Почуті від ретрансляторів поблизу';

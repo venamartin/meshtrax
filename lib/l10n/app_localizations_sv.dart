@@ -7648,14 +7648,14 @@ class AppLocalizationsSv extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count repeatrar i närheten',
-      one: '✓ 1 repeater i närheten',
+      other: '$count repeatrar i närheten',
+      one: '1 repeater i närheten',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ Ingen repeater i närheten bär den';
+  String get channelRegion_noCarrier => 'Ingen repeater i närheten bär den';
 
   @override
   String get regions_heardNearby => 'Hörda från repeatrar i närheten';

@@ -7741,17 +7741,17 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count przekaźnika w pobliżu',
-      many: '✓ $count przekaźników w pobliżu',
-      few: '✓ $count przekaźniki w pobliżu',
-      one: '✓ 1 przekaźnik w pobliżu',
+      other: '$count przekaźnika w pobliżu',
+      many: '$count przekaźników w pobliżu',
+      few: '$count przekaźniki w pobliżu',
+      one: '1 przekaźnik w pobliżu',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Żaden przekaźnik w pobliżu go nie obsługuje';
+      'Żaden przekaźnik w pobliżu go nie obsługuje';
 
   @override
   String get regions_heardNearby => 'Usłyszane od przekaźników w pobliżu';

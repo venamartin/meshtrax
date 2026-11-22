@@ -7699,17 +7699,17 @@ class AppLocalizationsSk extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count opakovačov v blízkosti',
-      many: '✓ $count opakovača v blízkosti',
-      few: '✓ $count opakovače v blízkosti',
-      one: '✓ 1 opakovač v blízkosti',
+      other: '$count opakovačov v blízkosti',
+      many: '$count opakovača v blízkosti',
+      few: '$count opakovače v blízkosti',
+      one: '1 opakovač v blízkosti',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Žiadny opakovač v blízkosti ho nenesie';
+      'Žiadny opakovač v blízkosti ho nenesie';
 
   @override
   String get regions_heardNearby => 'Počuté od opakovačov v blízkosti';

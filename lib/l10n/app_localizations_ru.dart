@@ -7732,17 +7732,17 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count ретранслятора рядом',
-      many: '✓ $count ретрансляторов рядом',
-      few: '✓ $count ретранслятора рядом',
-      one: '✓ $count ретранслятор рядом',
+      other: '$count ретранслятора рядом',
+      many: '$count ретрансляторов рядом',
+      few: '$count ретранслятора рядом',
+      one: '$count ретранслятор рядом',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Ни один ретранслятор рядом его не передаёт';
+      'Ни один ретранслятор рядом его не передаёт';
 
   @override
   String get regions_heardNearby => 'Услышаны от ретрансляторов рядом';

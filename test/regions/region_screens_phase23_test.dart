@@ -109,8 +109,8 @@ void main() {
           tester, opener((c) => showChannelRegionDialog(c, _channel)));
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      expect(find.text('✓ 2 nearby repeaters'), findsOneWidget);
-      expect(find.text('⚠ No nearby repeater carries it'), findsOneWidget);
+      expect(find.text('2 nearby repeaters'), findsOneWidget);
+      expect(find.text('No nearby repeater carries it'), findsOneWidget);
     });
 
     testWidgets('Settings lists names heard from repeaters, to add',

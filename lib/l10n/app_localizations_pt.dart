@@ -7710,14 +7710,14 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count repetidores perto',
-      one: '✓ 1 repetidor perto',
+      other: '$count repetidores perto',
+      one: '1 repetidor perto',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ Nenhum repetidor perto a leva';
+  String get channelRegion_noCarrier => 'Nenhum repetidor perto a leva';
 
   @override
   String get regions_heardNearby => 'Ouvidas de repetidores perto';

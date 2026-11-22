@@ -7365,13 +7365,13 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ 근처 리피터 $count개',
+      other: '근처 리피터 $count개',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ 이 지역을 전달하는 근처 리피터가 없습니다';
+  String get channelRegion_noCarrier => '이 지역을 전달하는 근처 리피터가 없습니다';
 
   @override
   String get regions_heardNearby => '근처 리피터에게서 들음';

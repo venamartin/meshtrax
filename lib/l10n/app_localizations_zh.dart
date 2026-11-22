@@ -7224,13 +7224,13 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ 附近 $count 个中继器',
+      other: '附近 $count 个中继器',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ 附近没有中继器转发它';
+  String get channelRegion_noCarrier => '附近没有中继器转发它';
 
   @override
   String get regions_heardNearby => '从附近中继器得知';

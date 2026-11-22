@@ -7601,14 +7601,14 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count nearby repeaters',
-      one: '✓ 1 nearby repeater',
+      other: '$count nearby repeaters',
+      one: '1 nearby repeater',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelRegion_noCarrier => '⚠ No nearby repeater carries it';
+  String get channelRegion_noCarrier => 'No nearby repeater carries it';
 
   @override
   String get regions_heardNearby => 'Heard from nearby repeaters';

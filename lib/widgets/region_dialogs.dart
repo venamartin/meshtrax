@@ -6,11 +6,11 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../helpers/region_helper.dart';
 import '../helpers/snack_bar_builder.dart';
-import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../screens/regions_screen.dart';
 import '../services/region_service.dart';
+import 'region_label.dart';
 
 /// Asks for a new region name and adds it. The added name, or null.
 Future<String?> showAddRegionDialog(BuildContext context) =>
@@ -137,7 +137,7 @@ class _ChannelRegionDialog extends StatelessWidget {
                     RadioListTile<String?>(
                       title: Text(region),
                       subtitle: regions.hasRepeaterReports
-                          ? Text(_carriersText(l10n, regions, region))
+                          ? RegionCarriers(regions.carriersOf(region))
                           : null,
                       value: region,
                     ),
@@ -172,18 +172,6 @@ class _ChannelRegionDialog extends StatelessWidget {
       ],
     );
   }
-}
-
-/// How many nearby repeaters said lately that they carry [region].
-String _carriersText(
-  AppLocalizations l10n,
-  RegionService regions,
-  String region,
-) {
-  final count = regions.carriersOf(region);
-  return count == 0
-      ? l10n.channelRegion_noCarrier
-      : l10n.channelRegion_carriers(count);
 }
 
 class _AddRegionDialog extends StatefulWidget {

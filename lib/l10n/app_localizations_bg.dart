@@ -7700,15 +7700,15 @@ class AppLocalizationsBg extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '✓ $count ретранслатора наблизо',
-      one: '✓ 1 ретранслатор наблизо',
+      other: '$count ретранслатора наблизо',
+      one: '1 ретранслатор наблизо',
     );
     return '$_temp0';
   }
 
   @override
   String get channelRegion_noCarrier =>
-      '⚠ Никой ретранслатор наблизо не го предава';
+      'Никой ретранслатор наблизо не го предава';
 
   @override
   String get regions_heardNearby => 'Чути от ретранслатори наблизо';

@@ -7,6 +7,7 @@ import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../services/region_service.dart';
 import '../widgets/region_dialogs.dart';
+import '../widgets/region_label.dart';
 
 /// Settings → Regions: the user's regions, the radio's default region, and
 /// whether channel QR codes carry a region.
@@ -166,11 +167,7 @@ class _RegionsScreenState extends State<RegionsScreen> {
                       ListTile(
                         leading: const Icon(Icons.hexagon_outlined),
                         title: Text(region),
-                        subtitle: Text(
-                          l10n.channelRegion_carriers(
-                            regions.carriersOf(region),
-                          ),
-                        ),
+                        subtitle: RegionCarriers(regions.carriersOf(region)),
                         trailing: IconButton(
                           icon: const Icon(Icons.add),
                           tooltip: l10n.common_add,
