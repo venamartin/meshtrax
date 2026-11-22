@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Ретранслаторът отговори: {reply}",
   "repeaterRegions_under": "Под",
   "repeaterRegions_fromYours": "От вашите региони",
-  "repeaterRegions_alreadyThere": "Вече е на този ретранслатор."
+  "repeaterRegions_alreadyThere": "Вече е на този ретранслатор.",
+  "channelRegion_qrInclude": "Включване на региона {name}"
 }

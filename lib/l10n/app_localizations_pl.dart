@@ -7702,4 +7702,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Już jest na tym przekaźniku.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Dołącz region $name';
+  }
 }

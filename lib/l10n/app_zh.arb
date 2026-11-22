@@ -2976,5 +2976,6 @@
   "repeaterRegions_refused": "中继器回复:{reply}",
   "repeaterRegions_under": "上级区域",
   "repeaterRegions_fromYours": "来自你的区域",
-  "repeaterRegions_alreadyThere": "已在此中继器上。"
+  "repeaterRegions_alreadyThere": "已在此中继器上。",
+  "channelRegion_qrInclude": "包含区域 {name}"
 }

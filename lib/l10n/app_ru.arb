@@ -2339,5 +2339,6 @@
   "repeaterRegions_refused": "Ретранслятор ответил: {reply}",
   "repeaterRegions_under": "Внутри",
   "repeaterRegions_fromYours": "Из ваших регионов",
-  "repeaterRegions_alreadyThere": "Уже есть на этом ретрансляторе."
+  "repeaterRegions_alreadyThere": "Уже есть на этом ретрансляторе.",
+  "channelRegion_qrInclude": "Включить регион {name}"
 }

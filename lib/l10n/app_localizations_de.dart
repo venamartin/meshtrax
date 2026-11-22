@@ -7694,4 +7694,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Schon auf diesem Repeater.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Region $name mit aufnehmen';
+  }
 }

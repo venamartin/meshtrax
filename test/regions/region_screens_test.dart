@@ -6,6 +6,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/screens/channel_share_screen.dart';
 import 'package:meshtrax/screens/regions_screen.dart';
 import 'package:meshtrax/services/region_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -237,7 +238,41 @@ void main() {
     });
   });
 
+  group("the channel's QR screen", () {
+    testWidgets('a switch puts the region in this QR, setting off',
+        (tester) async {
+      await regions.setChannelRegion(_channel.idKey, 'test-a');
+      await _pump(tester, _Connector(), regions,
+          ChannelShareScreen(channel: _channel));
+      final link = find.textContaining('region_scope=test-a');
+      expect(link, findsNothing);
+      await tester.tap(find.text('Include the region test-a'));
+      await tester.pump();
+      expect(link, findsOneWidget);
+    });
+
+    testWidgets('the setting on: in by default, and can be left out',
+        (tester) async {
+      await regions.setChannelRegion(_channel.idKey, 'test-a');
+      await regions.setRegionsInQr(true);
+      await _pump(tester, _Connector(), regions,
+          ChannelShareScreen(channel: _channel));
+      final link = find.textContaining('region_scope=test-a');
+      expect(link, findsOneWidget);
+      await tester.tap(find.text('Include the region test-a'));
+      await tester.pump();
+      expect(link, findsNothing);
+    });
+
+    testWidgets('no switch for a channel with no region', (tester) async {
+      await _pump(tester, _Connector(), regions,
+          ChannelShareScreen(channel: _channel));
+      expect(find.byType(SwitchListTile), findsNothing);
+    });
+  });
+
   testWidgets('the label reads everywhere for a channel stepping out',
+
       (tester) async {
     await _pump(
       tester,

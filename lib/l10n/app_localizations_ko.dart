@@ -7328,4 +7328,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => '이미 이 리피터에 있습니다.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return '지역 $name 포함';
+  }
 }

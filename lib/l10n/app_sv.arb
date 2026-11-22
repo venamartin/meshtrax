@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Repeatern svarade: {reply}",
   "repeaterRegions_under": "Under",
   "repeaterRegions_fromYours": "Från dina regioner",
-  "repeaterRegions_alreadyThere": "Finns redan på den här repeatern."
+  "repeaterRegions_alreadyThere": "Finns redan på den här repeatern.",
+  "channelRegion_qrInclude": "Ta med regionen {name}"
 }

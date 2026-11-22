@@ -2999,5 +2999,6 @@
   "repeaterRegions_refused": "Der Repeater sagt: {reply}",
   "repeaterRegions_under": "Unter",
   "repeaterRegions_fromYours": "Aus deinen Regionen",
-  "repeaterRegions_alreadyThere": "Schon auf diesem Repeater."
+  "repeaterRegions_alreadyThere": "Schon auf diesem Repeater.",
+  "channelRegion_qrInclude": "Region {name} mit aufnehmen"
 }

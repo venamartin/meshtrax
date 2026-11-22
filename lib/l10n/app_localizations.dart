@@ -13041,6 +13041,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already on this repeater.'**
   String get repeaterRegions_alreadyThere;
+
+  /// No description provided for @channelRegion_qrInclude.
+  ///
+  /// In en, this message translates to:
+  /// **'Include the region {name}'**
+  String channelRegion_qrInclude(String name);
 }
 
 class _AppLocalizationsDelegate

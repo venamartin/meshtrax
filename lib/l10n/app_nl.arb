@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "De repeater zei: {reply}",
   "repeaterRegions_under": "Onder",
   "repeaterRegions_fromYours": "Uit je regio's",
-  "repeaterRegions_alreadyThere": "Staat al op deze repeater."
+  "repeaterRegions_alreadyThere": "Staat al op deze repeater.",
+  "channelRegion_qrInclude": "Regio {name} meenemen"
 }

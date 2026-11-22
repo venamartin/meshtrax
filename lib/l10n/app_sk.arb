@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Opakovač odpovedal: {reply}",
   "repeaterRegions_under": "Pod",
   "repeaterRegions_fromYours": "Z vašich regiónov",
-  "repeaterRegions_alreadyThere": "Už je na tomto opakovači."
+  "repeaterRegions_alreadyThere": "Už je na tomto opakovači.",
+  "channelRegion_qrInclude": "Zahrnúť región {name}"
 }

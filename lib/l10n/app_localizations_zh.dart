@@ -7188,4 +7188,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => '已在此中继器上。';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return '包含区域 $name';
+  }
 }

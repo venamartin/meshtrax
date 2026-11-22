@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "O repetidor disse: {reply}",
   "repeaterRegions_under": "Por baixo de",
   "repeaterRegions_fromYours": "Das suas regiões",
-  "repeaterRegions_alreadyThere": "Já está neste repetidor."
+  "repeaterRegions_alreadyThere": "Já está neste repetidor.",
+  "channelRegion_qrInclude": "Incluir a região {name}"
 }

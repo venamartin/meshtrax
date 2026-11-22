@@ -3009,5 +3009,6 @@
   "repeaterRegions_refused": "リピーターの返答: {reply}",
   "repeaterRegions_under": "親リージョン",
   "repeaterRegions_fromYours": "あなたのリージョンから",
-  "repeaterRegions_alreadyThere": "すでにこのリピーターにあります。"
+  "repeaterRegions_alreadyThere": "すでにこのリピーターにあります。",
+  "channelRegion_qrInclude": "リージョン {name} を含める"
 }

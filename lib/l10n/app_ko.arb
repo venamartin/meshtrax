@@ -3009,5 +3009,6 @@
   "repeaterRegions_refused": "리피터 응답: {reply}",
   "repeaterRegions_under": "상위 지역",
   "repeaterRegions_fromYours": "내 지역에서",
-  "repeaterRegions_alreadyThere": "이미 이 리피터에 있습니다."
+  "repeaterRegions_alreadyThere": "이미 이 리피터에 있습니다.",
+  "channelRegion_qrInclude": "지역 {name} 포함"
 }

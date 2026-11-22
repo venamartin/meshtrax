@@ -3699,5 +3699,7 @@
   "@repeaterRegions_refused": {"placeholders": {"reply": {"type": "String"}}},
   "repeaterRegions_under": "Under",
   "repeaterRegions_fromYours": "From your regions",
-  "repeaterRegions_alreadyThere": "Already on this repeater."
+  "repeaterRegions_alreadyThere": "Already on this repeater.",
+  "channelRegion_qrInclude": "Include the region {name}",
+  "@channelRegion_qrInclude": {"placeholders": {"name": {"type": "String"}}}
 }

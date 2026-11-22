@@ -3009,5 +3009,6 @@
   "repeaterRegions_refused": "A jelismétlő válasza: {reply}",
   "repeaterRegions_under": "Alatta",
   "repeaterRegions_fromYours": "A te régióidból",
-  "repeaterRegions_alreadyThere": "Már szerepel ezen a jelismétlőn."
+  "repeaterRegions_alreadyThere": "Már szerepel ezen a jelismétlőn.",
+  "channelRegion_qrInclude": "A(z) {name} régió belefoglalása"
 }

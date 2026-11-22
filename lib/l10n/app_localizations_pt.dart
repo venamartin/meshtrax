@@ -7671,4 +7671,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Já está neste repetidor.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Incluir a região $name';
+  }
 }

@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Ретранслятор відповів: {reply}",
   "repeaterRegions_under": "Усередині",
   "repeaterRegions_fromYours": "З ваших регіонів",
-  "repeaterRegions_alreadyThere": "Вже є на цьому ретрансляторі."
+  "repeaterRegions_alreadyThere": "Вже є на цьому ретрансляторі.",
+  "channelRegion_qrInclude": "Додати регіон {name}"
 }

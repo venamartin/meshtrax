@@ -7661,4 +7661,9 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Вече е на този ретранслатор.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Включване на региона $name';
+  }
 }

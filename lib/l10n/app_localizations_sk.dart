@@ -7660,4 +7660,9 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Už je na tomto opakovači.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Zahrnúť región $name';
+  }
 }

@@ -7609,4 +7609,9 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get repeaterRegions_alreadyThere =>
       'Finns redan på den här repeatern.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Ta med regionen $name';
+  }
 }

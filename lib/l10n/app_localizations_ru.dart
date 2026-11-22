@@ -7693,4 +7693,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Уже есть на этом ретрансляторе.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Включить регион $name';
+  }
 }

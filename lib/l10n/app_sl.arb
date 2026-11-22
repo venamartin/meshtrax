@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Repetitor je odgovoril: {reply}",
   "repeaterRegions_under": "Pod",
   "repeaterRegions_fromYours": "Iz vaših regij",
-  "repeaterRegions_alreadyThere": "Že na tem repetitorju."
+  "repeaterRegions_alreadyThere": "Že na tem repetitorju.",
+  "channelRegion_qrInclude": "Vključi regijo {name}"
 }

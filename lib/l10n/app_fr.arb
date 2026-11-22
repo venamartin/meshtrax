@@ -2971,5 +2971,6 @@
   "repeaterRegions_refused": "Le répéteur a répondu : {reply}",
   "repeaterRegions_under": "Sous",
   "repeaterRegions_fromYours": "Parmi vos régions",
-  "repeaterRegions_alreadyThere": "Déjà sur ce répéteur."
+  "repeaterRegions_alreadyThere": "Déjà sur ce répéteur.",
+  "channelRegion_qrInclude": "Inclure la région {name}"
 }

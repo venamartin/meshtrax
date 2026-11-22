@@ -7683,4 +7683,9 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Már szerepel ezen a jelismétlőn.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'A(z) $name régió belefoglalása';
+  }
 }

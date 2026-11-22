@@ -7311,4 +7311,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'すでにこのリピーターにあります。';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'リージョン $name を含める';
+  }
 }

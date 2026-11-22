@@ -7645,4 +7645,9 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get repeaterRegions_alreadyThere => 'Staat al op deze repeater.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Regio $name meenemen';
+  }
 }
