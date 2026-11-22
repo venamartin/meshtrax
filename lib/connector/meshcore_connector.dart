@@ -9430,8 +9430,17 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         packet.payload,
       );
     }
+    final heardBy = packet.isFlood
+        ? PathHelper.firstHopHex(packet.pathBytes, stride: packet.hashSize)
+        : null;
     _queueRawPackets(
-      _secondAckPackets(copy, contact, byFlood: packet.isFlood),
+      _secondAckPackets(
+        copy,
+        contact,
+        byFlood: packet.isFlood,
+        heardBy:
+            heardBy == null ? null : (hop: heardBy, width: packet.hashSize),
+      ),
       TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
     );
   }
@@ -9445,10 +9454,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// such route left, the stored route again (owner: one route, the same
   /// route); on a resend, a flood. A resend keeps the sender's timestamp, so
   /// each one brings a new route in (the Pathfinder session's audit).
+  /// [heardBy] is the first repeater of a flood copy: it heard them seconds
+  /// ago, so of the routes left the ACK takes the first that ends there,
+  /// whichever doorstep Pathfinder ranks first for a message.
   List<Uint8List> _secondAckPackets(
     PassingCopy copy,
     Contact contact, {
     required bool byFlood,
+    ({String hop, int width})? heardBy,
   }) {
     final message =
         '${pubKeyToHex(copy.senderKey)}:${copy.timestamp}:${copy.isRoomPost}';
@@ -9469,10 +9482,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (!byFlood) tried.add(_ackRouteKey(held));
     final routes = _ackRoutes(contact) ?? const <PathSelection>[];
     final options = routes.isNotEmpty ? routes : [?held];
-    var route = options
-        .where((r) =>
-            !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)))
-        .firstOrNull;
+    final left = options.where((r) =>
+        !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)));
+    var route = left
+            .where((r) =>
+                heardBy != null &&
+                r.hashSize == heardBy.width &&
+                PathHelper.lastHopHex(r.pathBytes, stride: r.hashSize) ==
+                    heardBy.hop)
+            .firstOrNull ??
+        left.firstOrNull;
     if (route == null && firstCopy && !byFlood) route = held;
     // No route at all, and the first ACK was a plain flood: a plain flood
     // second ACK would be the same packet, and every repeater that carried

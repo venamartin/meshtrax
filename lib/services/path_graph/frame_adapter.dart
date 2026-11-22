@@ -1179,8 +1179,11 @@ class PathLabAdapter {
     } else if (advert.type == _advTypeChat && advert.name != null) {
       graph.ingestContact(advert.pubkeyHex, advert.name!);
     }
+    // Every flood copy of one advert comes here: one sighting, heard by
+    // each copy's first hop.
     graph.observeContactSender(
-        advert.pubkeyHex, packet.pathBytes, packet.stride, confirmed: true);
+        advert.pubkeyHex, packet.pathBytes, packet.stride,
+        confirmed: true, messageId: payloadFingerprint(packet.payload));
   }
 
   static bool _sameBytes(List<int> a, List<int> b) {

@@ -21,7 +21,9 @@ class PathGraphConfig {
     this.egressProvenDecayFactor = 4,
     this.ingressHalfLifeHours = 12,
     this.contactSupersedeFactor = 0.5,
-    this.contactMoveWipeKm = 60,
+    this.contactFarKm = 60,
+    this.contactMissesBeforeLast = 2,
+    this.newestBeforeRecord = false,
     this.selfProofStaleMinutes = 15,
     this.selfSupersedeFactor = 0.5,
     this.selfWeightCap = 12,
@@ -161,22 +163,55 @@ class PathGraphConfig {
   /// almost always reaches them — the heard-from row is a route end.
   /// The list must therefore forget fast: an unrefreshed row fades in
   /// hours, every fresh sighting slashes the others
-  /// ([contactSupersedeFactor]), and a sighting through a repeater far
-  /// from the current top one wipes the list outright
-  /// ([contactMoveWipeKm]) — Watsonville to San Francisco in one
-  /// message, not three days.
+  /// ([contactSupersedeFactor]), and a doorstep far from the repeater
+  /// that just heard them comes last at once ([contactFarKm]) —
+  /// Watsonville to San Francisco in one message, not three days.
   final double ingressHalfLifeHours;
 
   /// Every attributed first-hop sighting multiplies the contact's other
   /// doorstep rows by this. Alternating between two repeaters that both
   /// hear them keeps both alive; a move buries the old one in two or
-  /// three messages.
+  /// three messages. Copies of one packet are one sighting.
   final double contactSupersedeFactor;
 
-  /// When repeater advert positions are known: a new first hop farther
-  /// than this from the contact's current top doorstep wipes their list
-  /// (they cannot be inside both footprints).
-  final double contactMoveWipeKm;
+  /// When repeater advert positions are known: a doorstep of theirs
+  /// farther than this from the repeater that just heard them cannot hear
+  /// them now (they cannot be inside both footprints). It is tried last at
+  /// once, as [contactMissesBeforeLast] has it, and keeps its record: the
+  /// list used to be wiped here, and one fluke through a far repeater
+  /// erased a home doorstep's whole history (owner, 2026-11-22: nothing
+  /// stored is erased).
+  final double contactFarKm;
+
+  /// A contact's own packets can overrule a doorstep's record (owner,
+  /// 2026-11-22). A doorstep that passed one of their packets on from
+  /// another repeater did not hear them, and one that was not a first hop
+  /// of this many of their packets in a row has stopped hearing them: it is
+  /// tried only after their other doorsteps, until it hears them first
+  /// again. Its weight and proofs stay as they are. Field 2026-11-21: a
+  /// contact 35 km from home was sent to through the home doorstep on every
+  /// route attempt, while that doorstep stood fourth in the path of both of
+  /// their DMs.
+  final int contactMissesBeforeLast;
+
+  /// THE SWITCH between the two orders for a contact's doorsteps (owner,
+  /// 2026-11-22: "record first", and be able to swap).
+  ///
+  /// false, record first: doorsteps rank by their record (sightings and
+  /// deliveries, the weight), as they always have, so a one-off sighting
+  /// through another repeater changes nothing. The first reply after a move
+  /// can go to the old doorstep once, when their packet's path gives no
+  /// sign of the move.
+  ///
+  /// true, newest first: the doorsteps that heard their latest packet come
+  /// before any that missed it, whatever the records. A move costs nothing;
+  /// every one-off sighting costs one failed attempt.
+  ///
+  /// Either way nothing stored is changed, the doorsteps their own packets
+  /// overruled come last ([contactMissesBeforeLast]), and each route
+  /// attempt of one message ends at a different doorstep, so the other
+  /// order's choice is the very next attempt. To swap, set this to true.
+  final bool newestBeforeRecord;
 
   /// My own end's move rule, no position needed (field finding
   /// 2026-10-14: home doorstep A277 kept every route after a 20-mile
@@ -310,7 +345,8 @@ class PathGraphConfig {
           double? newCodeConfirmMinutes,
           double? mobileFreshMinutes,
           bool? mobileAutoTagsRoute,
-          bool? allowInferredEndpoints}) =>
+          bool? allowInferredEndpoints,
+          bool? newestBeforeRecord}) =>
       PathGraphConfig(
         beta: beta ?? this.beta,
         trafficHalfLifeHours: trafficHalfLifeHours,
@@ -327,7 +363,9 @@ class PathGraphConfig {
         egressProvenDecayFactor: egressProvenDecayFactor,
         ingressHalfLifeHours: ingressHalfLifeHours,
         contactSupersedeFactor: contactSupersedeFactor,
-        contactMoveWipeKm: contactMoveWipeKm,
+        contactFarKm: contactFarKm,
+        contactMissesBeforeLast: contactMissesBeforeLast,
+        newestBeforeRecord: newestBeforeRecord ?? this.newestBeforeRecord,
         selfProofStaleMinutes: selfProofStaleMinutes,
         selfSupersedeFactor: selfSupersedeFactor,
         selfWeightCap: selfWeightCap,
