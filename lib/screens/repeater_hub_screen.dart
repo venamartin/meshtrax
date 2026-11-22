@@ -326,7 +326,6 @@ class RepeaterHubScreen extends StatelessWidget {
             ],
             if (isAdmin) const SizedBox(height: 12),
             // Settings button
-
             if (isAdmin)
               _buildManagementCard(
                 context,

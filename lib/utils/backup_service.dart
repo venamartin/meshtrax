@@ -65,7 +65,6 @@ class BackupService {
     'regions_',
   ];
 
-
   static bool _isBackupSettingsKey(String key) =>
       _settingsKeys.contains(key) || _settingsPrefixes.any(key.startsWith);
 

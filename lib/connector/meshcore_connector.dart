@@ -12895,8 +12895,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Future<void> clearLeftoverRegionForTest() => _clearLeftoverRegion();
 
   Future<void> _clearLeftoverRegion() async {
-
     final regions = regionService;
+
     if (!supportsRegions || regions == null) return;
     if (!regions.anyChannelHasRegion && regions.regions.isEmpty) return;
 

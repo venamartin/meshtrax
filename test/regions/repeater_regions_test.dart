@@ -171,7 +171,6 @@ void main() {
           reason: 'the allowed list is as long as a cut reply');
     });
 
-
     test('the default and the error replies', () {
       expect(RepeaterRegions.parseDefault(' default scope is <null>'), isNull);
       expect(RepeaterRegions.parseDefault(' default scope is #sf'), 'sf');
@@ -288,7 +287,6 @@ void main() {
       expect(c.refusal, 'Err - unknown parent');
       expect(repeater.sent, isNot(contains('region save')));
     });
-
 
     test('its own region is set without a separate save', () async {
       await c.load();

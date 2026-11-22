@@ -1114,7 +1114,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                           .watch<RegionService?>()
                           ?.regionOf(widget.channel.idKey)
                       case final region?)
-
                     InkWell(
                       onTap: () =>
                           showChannelRegionDialog(context, widget.channel),
@@ -1198,7 +1197,6 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                 ),
               PopupMenuItem(
                 value: 'clearChat',
-
                 child: Row(
                   children: [
                     const Icon(Icons.cleaning_services, size: 20, color: Colors.orange),

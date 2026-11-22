@@ -162,7 +162,6 @@ class RepeaterRegionsController extends ChangeNotifier {
       onDone?.call();
       return true;
     } catch (_) {
-
       problem = RepeaterRegionsProblem.noAnswer;
       return false;
     } finally {

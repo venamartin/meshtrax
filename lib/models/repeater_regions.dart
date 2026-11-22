@@ -125,7 +125,6 @@ class RepeaterRegions {
   }
 
   /// `region default`: ` default scope is sf`, or `<null>` for none.
-
   static String? parseDefault(String reply) {
     final at = reply.lastIndexOf(' is ');
     if (at < 0) return null;

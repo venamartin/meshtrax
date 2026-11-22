@@ -119,8 +119,8 @@ class ChannelJoinHelper {
     final psk = hex2Uint8List(pskHex);
     if (takeRegion != null) await regions!.setChannelRegion(pskHex, takeRegion);
     await connector.setChannel(slot, name, psk);
-
     final channel = await connector.awaitChannelByPsk(psk);
+
     if (!context.mounted) return;
     showDismissibleSnackBar(
       context,

@@ -88,7 +88,6 @@ void main() {
       expect(_validRegionName('\$private'), isFalse);
     });
 
-
     test('refuses spaces, dots, commas and over 30 bytes', () {
       for (final bad in ['', 'bay area', 'sf.ca', 'a,b', 'a/b', '*',
           'a' * 31, 'ü' * 16]) {

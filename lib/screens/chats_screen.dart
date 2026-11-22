@@ -1127,7 +1127,6 @@ class _ChatsScreenState extends State<ChatsScreen>
                                               if (item.channel?.idKey
                                                   case final idKey?)
                                                 if (regions?.regionOf(idKey)
-
                                                     case final region?) ...[
                                                   const SizedBox(width: 6),
                                                   Flexible(
@@ -1135,7 +1134,6 @@ class _ChatsScreenState extends State<ChatsScreen>
                                                   ),
                                                 ],
                                             ],
-
                                           ),
                                         ),
                                         const SizedBox(width: 8),

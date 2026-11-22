@@ -135,7 +135,6 @@ class _ChannelQrScannerScreenState extends State<ChannelQrScannerScreen> {
           if (!context.mounted) return;
         }
         connector.setChannel(nextIndex, channelData.name, hex2Uint8List(channelData.pskHex));
-
         showDismissibleSnackBar(
           context,
           content: Text(context.l10n.channels_channelAddedSuccess),

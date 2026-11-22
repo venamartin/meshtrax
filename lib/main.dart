@@ -388,7 +388,6 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
         ChangeNotifierProvider.value(value: widget.uiViewStateService),
         ChangeNotifierProvider.value(value: widget.sosService),
         ChangeNotifierProvider.value(value: widget.regionService),
-
         ChangeNotifierProvider(
           create: (_) => RadioAskService(
             widget.connector,

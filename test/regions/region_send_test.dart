@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -105,7 +104,6 @@ void main() {
     await pumpEventQueue(times: 200);
     c.written.clear();
   });
-
 
   tearDown(() => c.connected = false);
 
@@ -223,7 +221,6 @@ void main() {
   });
 
   test('the radio default region is read once and can be set', () async {
-
     unawaited(c.loadRadioDefaultRegion());
     await pumpEventQueue();
     expect(
@@ -249,5 +246,4 @@ void main() {
     expect(c.radioDefaultRegion, isNull);
     expect(c.radioDefaultRegionKnown, isTrue);
   });
-
 }

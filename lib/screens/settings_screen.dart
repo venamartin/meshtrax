@@ -1789,7 +1789,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           await context.read<AppSettingsService>().loadSettings();
         }
         if (context.mounted) await context.read<RegionService>().load();
-
       }
     } catch (e) {
       if (context.mounted) {
