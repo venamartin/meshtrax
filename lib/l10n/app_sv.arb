@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Ta med regionen {name}",
   "channelRegion_nearbyOption": "Bara i närheten (inga repeatrar)",
   "channelRegion_nearby": "Bara i närheten",
-  "channelRegion_nearbyHelp": "Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök."
+  "channelRegion_nearbyHelp": "Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök.",
+  "nearbyRegions_withPlain": "Regioner: {names} och meddelanden utan region",
+  "nearbyRegions_only": "Regioner: bara {names}, inte meddelanden utan region",
+  "nearbyRegions_noneButPlain": "Inga regioner; upprepar meddelanden utan region",
+  "nearbyRegions_nothing": "Upprepar ingenting: inga regioner och inga meddelanden utan region",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 repeater i närheten} other{✓ {count} repeatrar i närheten}}",
+  "channelRegion_noCarrier": "⚠ Ingen repeater i närheten bär den",
+  "regions_heardNearby": "Hörda från repeatrar i närheten",
+  "regions_nearbySpelling": "Repeatrar i närheten stavar den {name}",
+  "regions_useSpelling": "Använd den",
+  "channelPath_regionUnknown": "En du inte känner (kod {code})"
 }

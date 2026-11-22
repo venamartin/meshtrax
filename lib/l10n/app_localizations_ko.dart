@@ -7343,4 +7343,49 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       '범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return '지역: $names, 그리고 지역 없는 메시지';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return '지역: $names만, 지역 없는 메시지는 아님';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => '지역 없음. 지역 없는 메시지를 반복';
+
+  @override
+  String get nearbyRegions_nothing => '아무것도 반복 안 함: 지역도, 지역 없는 메시지도';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ 근처 리피터 $count개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ 이 지역을 전달하는 근처 리피터가 없습니다';
+
+  @override
+  String get regions_heardNearby => '근처 리피터에게서 들음';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '근처 리피터는 $name(으)로 씁니다';
+  }
+
+  @override
+  String get regions_useSpelling => '사용';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '모르는 지역 (코드 $code)';
+  }
 }

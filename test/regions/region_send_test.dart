@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/channel_packet.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
@@ -260,6 +261,54 @@ void main() {
     await send();
     expect(regionsSeen, ['sf', null, null],
         reason: 'Nearby only is not checked at all');
+  });
+
+  group('the region a message came in', () {
+    /// Bob's channel text as the radio logs it, flooded in [region].
+    Uint8List heardIn(String region, String text) {
+      final payload = ChannelPacket.zeroHopText(
+        channelKey: _psk,
+        senderName: 'Bob',
+        text: Uint8List.fromList(utf8.encode(text)),
+        timestampSecs: 1795306877,
+      ).sublist(2);
+      final code = RegionHelper.transportCode(
+        RegionHelper.keyFor(region),
+        0x05,
+        payload,
+      );
+      return Uint8List.fromList([
+        pushCodeLogRxData, 40, 0xA0,
+        0x05 << 2, // group text, TRANSPORT_FLOOD
+        code & 0xFF, code >> 8, 0, 0,
+        1, 0xA2, // one hop
+        ...payload,
+      ]);
+    }
+
+    test('a region the app knows is named', () async {
+      await regions.add('sf');
+      c.handleFrameForTest(heardIn('sf', 'Trail is clear'));
+      await pumpEventQueue(times: 200);
+      final row = (await c.loadChannelMessagesFor(channel)).single;
+      expect(row.region, 'sf');
+      expect(row.regionCode, isNotNull);
+    });
+
+    test('an unknown one keeps its code only', () async {
+      c.handleFrameForTest(heardIn('elsewhere', 'Trail is clear'));
+      await pumpEventQueue(times: 200);
+      final row = (await c.loadChannelMessagesFor(channel)).single;
+      expect(row.region, isNull);
+      expect(row.regionCode, isNotNull);
+    });
+
+    test('a name nearby repeaters said they carry is known too', () async {
+      await regions.saveReport('00' * 32, ['*', 'marin']);
+      c.handleFrameForTest(heardIn('marin', 'Trail is clear'));
+      await pumpEventQueue(times: 200);
+      expect((await c.loadChannelMessagesFor(channel)).single.region, 'marin');
+    });
   });
 
   group('a region left on the radio is cleared on connect', () {

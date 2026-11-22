@@ -7325,4 +7325,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelRegion_nearbyHelp => '届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'リージョン: $names、リージョンなしのメッセージも';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'リージョン: $names のみ、リージョンなしのメッセージは中継しない';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => 'リージョンなし。リージョンなしのメッセージを中継';
+
+  @override
+  String get nearbyRegions_nothing => '何も中継しない: リージョンも、リージョンなしのメッセージも';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ 近くのリピーター $count 台',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ これを中継する近くのリピーターはありません';
+
+  @override
+  String get regions_heardNearby => '近くのリピーターから';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '近くのリピーターの表記は $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'これを使う';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '知らないリージョン (コード $code)';
+  }
 }

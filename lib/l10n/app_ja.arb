@@ -3013,5 +3013,15 @@
   "channelRegion_qrInclude": "リージョン {name} を含める",
   "channelRegion_nearbyOption": "近くだけ(リピーターなし)",
   "channelRegion_nearby": "近くだけ",
-  "channelRegion_nearbyHelp": "届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。"
+  "channelRegion_nearbyHelp": "届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。",
+  "nearbyRegions_withPlain": "リージョン: {names}、リージョンなしのメッセージも",
+  "nearbyRegions_only": "リージョン: {names} のみ、リージョンなしのメッセージは中継しない",
+  "nearbyRegions_noneButPlain": "リージョンなし。リージョンなしのメッセージを中継",
+  "nearbyRegions_nothing": "何も中継しない: リージョンも、リージョンなしのメッセージも",
+  "channelRegion_carriers": "{count, plural, other{✓ 近くのリピーター {count} 台}}",
+  "channelRegion_noCarrier": "⚠ これを中継する近くのリピーターはありません",
+  "regions_heardNearby": "近くのリピーターから",
+  "regions_nearbySpelling": "近くのリピーターの表記は {name}",
+  "regions_useSpelling": "これを使う",
+  "channelPath_regionUnknown": "知らないリージョン (コード {code})"
 }

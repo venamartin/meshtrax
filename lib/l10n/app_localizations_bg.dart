@@ -7676,4 +7676,53 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Региони: $names и съобщения без регион';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Региони: само $names, без съобщения без регион';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Без региони; повтаря съобщения без регион';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Не повтаря нищо: нито региони, нито съобщения без регион';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count ретранслатора наблизо',
+      one: '✓ 1 ретранслатор наблизо',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Никой ретранслатор наблизо не го предава';
+
+  @override
+  String get regions_heardNearby => 'Чути от ретранслатори наблизо';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Ретранслаторите наблизо го пишат $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Използване';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Непознат за вас (код $code)';
+  }
 }

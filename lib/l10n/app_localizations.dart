@@ -13065,6 +13065,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only radios in range hear it. Sent once, with no retries.'**
   String get channelRegion_nearbyHelp;
+
+  /// No description provided for @nearbyRegions_withPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions: {names}, and messages with no region'**
+  String nearbyRegions_withPlain(String names);
+
+  /// No description provided for @nearbyRegions_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions: {names} only, not messages with no region'**
+  String nearbyRegions_only(String names);
+
+  /// No description provided for @nearbyRegions_noneButPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'No regions; repeats messages with no region'**
+  String get nearbyRegions_noneButPlain;
+
+  /// No description provided for @nearbyRegions_nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats nothing: no regions, and not messages with no region'**
+  String get nearbyRegions_nothing;
+
+  /// No description provided for @channelRegion_carriers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{✓ 1 nearby repeater} other{✓ {count} nearby repeaters}}'**
+  String channelRegion_carriers(int count);
+
+  /// No description provided for @channelRegion_noCarrier.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠ No nearby repeater carries it'**
+  String get channelRegion_noCarrier;
+
+  /// No description provided for @regions_heardNearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard from nearby repeaters'**
+  String get regions_heardNearby;
+
+  /// No description provided for @regions_nearbySpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby repeaters spell it {name}'**
+  String regions_nearbySpelling(String name);
+
+  /// No description provided for @regions_useSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it'**
+  String get regions_useSpelling;
+
+  /// No description provided for @channelPath_regionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'One you don\'t know (code {code})'**
+  String channelPath_regionUnknown(String code);
 }
 
 class _AppLocalizationsDelegate

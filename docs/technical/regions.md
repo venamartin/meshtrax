@@ -4,7 +4,7 @@
 >
 > **Who it's for:** developers working on MeshTrax.
 >
-> **Status:** active plan. Phases 1, 4, 5 and 6 are built on `feat/regions`; 2 and 3 are not started. All region work lives in that one PR.
+> **Status:** active plan. Phases 1 to 6 are built on `feat/regions`. All region work lives in that one PR.
  The firmware facts are from MeshCore `dev` (November 2026) and hold for companion and repeater 1.18.0.
 >
 > New to the terms? See the [glossary](../glossary.md).
@@ -75,16 +75,26 @@ Made by the owner on 2026-11-21:
 
 ### Phase 2: repeaters tell you their regions
 
-- After Discover, ask each repeater that answered, straight to it, without changing its saved route.
-- Show the list in the Nearby repeaters dialog and the repeater's info sheet ("Regions: sf, bayarea, everywhere").
-- In Settings → Regions, a "Heard from nearby repeaters" section with + to add.
-- In the channel's region dialog, "✓ 3 nearby repeaters" or "⚠ no nearby repeater carries it".
-- A health check when nearby repeaters refuse messages with no region.
-- When a channel message with a region isn't repeated, the hint says the region may not be carried here.
+Built. The owner, 2026-11-22: only after a Discover the user starts (never an automatic one).
+
+**Asking** (`lib/services/nearby_regions_asker.dart`): when a Discover the user started closes, each repeater that answered it is asked, one at a time, with `CMD_SEND_ANON_REQ` and sub-type `ANON_REQ_TYPE_REGIONS`, its answer coming back zero-hop. The firmware sets the rules:
+
+- The question must arrive DIRECT. A repeater with a route on the radio is asked on that route. One without is asked on a zero-hop route, which the app writes the way it writes any request's route (`sendOnRoute`); it just answered a zero-hop Discover, so that route is true.
+- A repeater not saved on the radio is skipped: asking one makes the radio add a nameless contact for it.
+- Each repeater is asked at most once a day (it answers 4 such questions every 3 minutes, from anyone). An answer counts for 7 days.
+- The radio keeps one pending request, so the questions go one after another.
+
+**Showing** (`RegionService` keeps the answers, outside the app backup):
+
+- The Nearby repeaters dialog: a line under each repeater that answered, such as "Regions: sf, and messages with no region".
+- The channel's Region dialog: under each region, "✓ 3 nearby repeaters" or "⚠ No nearby repeater carries it".
+- Settings → Regions: a "Heard from nearby repeaters" section, with + to add a name to your list. Add region offers the spelling repeaters use when yours differs only in capitals.
+- Two health check findings: nearby repeaters that refuse messages with no region, and a channel whose region no nearby repeater carries.
+- Not built: a hint on a channel message that wasn't repeated.
 
 ### Phase 3: region of incoming messages
 
-Match the code in the raw packet log against the known regions and show "Region: sf" on the Packet Path screen. Codes that match nothing mean there are regions you don't know.
+Built. The app reads the region code (first transport code) of every channel text in the radio's packet log, and keeps it on the message. It matches it against the names it knows: your regions, the radio's default, and the names nearby repeaters said they carry. The Packet Path screen shows "Region: sf", or "One you don't know (code 1A2B)". A message the radio handed over before its packet was logged has no region, and a code can't be matched later, since the packet itself isn't kept.
 
 ### Phase 4: manage a repeater's regions when logged in
 

@@ -7675,4 +7675,55 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Počujú to len rádiá v dosahu. Odošle sa raz, bez opakovaní.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regióny: $names a správy bez regiónu';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regióny: len $names, nie správy bez regiónu';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Žiadne regióny; opakuje správy bez regiónu';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Neopakuje nič: ani regióny, ani správy bez regiónu';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count opakovačov v blízkosti',
+      many: '✓ $count opakovača v blízkosti',
+      few: '✓ $count opakovače v blízkosti',
+      one: '✓ 1 opakovač v blízkosti',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Žiadny opakovač v blízkosti ho nenesie';
+
+  @override
+  String get regions_heardNearby => 'Počuté od opakovačov v blízkosti';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Opakovače v blízkosti ho píšu $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Použiť';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Neznámy pre vás (kód $code)';
+  }
 }

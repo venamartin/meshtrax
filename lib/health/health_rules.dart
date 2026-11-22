@@ -3,6 +3,7 @@ import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/device_backup.dart';
 import '../models/radio_settings.dart';
+import '../helpers/region_helper.dart';
 import '../models/trax.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
@@ -137,6 +138,20 @@ class HealthRule {
 }
 
 // Shared helpers for the radio rules.
+
+/// "#channel: region" for each channel whose own region no nearby repeater
+/// said lately that it carries; empty until some repeater answered.
+List<String> _regionsNotCarried(MeshCoreConnector connector) {
+  final regions = connector.regionService;
+  if (regions == null || !regions.hasRepeaterReports) return const [];
+  return [
+    for (final channel in connector.channels)
+      if (regions.regionOf(channel.idKey) case final region?
+          when RegionHelper.isRegionName(region) &&
+              regions.carriersOf(region) == 0)
+        '${channel.name}: $region',
+  ];
+}
 
 /// The settings a radio ships with. They are also the app's EU/UK (Narrow) and
 /// Switzerland presets, so only the user can say whether they are right.
@@ -573,6 +588,32 @@ final List<HealthRule> healthRules = [
         'warning stays until you reconnect.',
     needsRadio: true,
     check: (ctx) async => ctx.connector.secondAppSuspected,
+  ),
+  HealthRule(
+    id: 'regions_no_plain_nearby',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: 'Nearby repeaters only repeat messages in a region',
+    why:
+        "The repeaters that answered your Discover lately don't pass on "
+        'messages without a region, like Public. Put your channels in a '
+        'region they carry: Settings → Regions lists them.',
+    check: (ctx) async =>
+        ctx.connector.regionService?.nearbyRefuseNoRegion == true,
+    notes: 'From the regions repeaters told us after a Discover the user '
+        'started (RegionService.nearbyRefuseNoRegion).',
+  ),
+  HealthRule(
+    id: 'regions_channel_not_carried',
+    enabled: true,
+    severity: HealthSeverity.suggestion,
+    title: "A channel's region isn't carried nearby",
+    why:
+        "No repeater that answered your Discover lately carries these "
+        "regions, so these channels' messages go no further than radios "
+        'in range.',
+    check: (ctx) async => _regionsNotCarried(ctx.connector).isNotEmpty,
+    details: (ctx) => _regionsNotCarried(ctx.connector),
   ),
 
   // --------------------------------------------------------- App: map ------

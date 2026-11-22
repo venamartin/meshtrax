@@ -7624,4 +7624,52 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regioner: $names och meddelanden utan region';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regioner: bara $names, inte meddelanden utan region';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Inga regioner; upprepar meddelanden utan region';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Upprepar ingenting: inga regioner och inga meddelanden utan region';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count repeatrar i närheten',
+      one: '✓ 1 repeater i närheten',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ Ingen repeater i närheten bär den';
+
+  @override
+  String get regions_heardNearby => 'Hörda från repeatrar i närheten';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Repeatrar i närheten stavar den $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Använd den';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'En du inte känner (kod $code)';
+  }
 }

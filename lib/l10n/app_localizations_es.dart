@@ -7690,4 +7690,52 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regiones: $names y mensajes sin región';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regiones: solo $names, no mensajes sin región';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Sin regiones; repite mensajes sin región';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'No repite nada: ni regiones ni mensajes sin región';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count repetidores cercanos',
+      one: '✓ 1 repetidor cercano',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ Ningún repetidor cercano la lleva';
+
+  @override
+  String get regions_heardNearby => 'Oídas a repetidores cercanos';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Los repetidores cercanos la escriben $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Usarla';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Una que no conoces (código $code)';
+  }
 }

@@ -3003,5 +3003,15 @@
   "channelRegion_qrInclude": "Incluir la región {name}",
   "channelRegion_nearbyOption": "Solo cerca (sin repetidores)",
   "channelRegion_nearby": "Solo cerca",
-  "channelRegion_nearbyHelp": "Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos."
+  "channelRegion_nearbyHelp": "Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos.",
+  "nearbyRegions_withPlain": "Regiones: {names} y mensajes sin región",
+  "nearbyRegions_only": "Regiones: solo {names}, no mensajes sin región",
+  "nearbyRegions_noneButPlain": "Sin regiones; repite mensajes sin región",
+  "nearbyRegions_nothing": "No repite nada: ni regiones ni mensajes sin región",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 repetidor cercano} other{✓ {count} repetidores cercanos}}",
+  "channelRegion_noCarrier": "⚠ Ningún repetidor cercano la lleva",
+  "regions_heardNearby": "Oídas a repetidores cercanos",
+  "regions_nearbySpelling": "Los repetidores cercanos la escriben {name}",
+  "regions_useSpelling": "Usarla",
+  "channelPath_regionUnknown": "Una que no conoces (código {code})"
 }

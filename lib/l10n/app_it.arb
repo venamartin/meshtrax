@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Includi la regione {name}",
   "channelRegion_nearbyOption": "Solo vicino (senza ripetitori)",
   "channelRegion_nearby": "Solo vicino",
-  "channelRegion_nearbyHelp": "Lo sentono solo le radio a portata. Inviato una volta, senza ritentare."
+  "channelRegion_nearbyHelp": "Lo sentono solo le radio a portata. Inviato una volta, senza ritentare.",
+  "nearbyRegions_withPlain": "Regioni: {names} e messaggi senza regione",
+  "nearbyRegions_only": "Regioni: solo {names}, non i messaggi senza regione",
+  "nearbyRegions_noneButPlain": "Nessuna regione; ripete i messaggi senza regione",
+  "nearbyRegions_nothing": "Non ripete nulla: né regioni né messaggi senza regione",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 ripetitore vicino} other{✓ {count} ripetitori vicini}}",
+  "channelRegion_noCarrier": "⚠ Nessun ripetitore vicino la porta",
+  "regions_heardNearby": "Sentite dai ripetitori vicini",
+  "regions_nearbySpelling": "I ripetitori vicini la scrivono {name}",
+  "regions_useSpelling": "Usala",
+  "channelPath_regionUnknown": "Una che non conosci (codice {code})"
 }

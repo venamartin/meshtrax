@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Включване на региона {name}",
   "channelRegion_nearbyOption": "Само наблизо (без ретранслатори)",
   "channelRegion_nearby": "Само наблизо",
-  "channelRegion_nearbyHelp": "Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити."
+  "channelRegion_nearbyHelp": "Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити.",
+  "nearbyRegions_withPlain": "Региони: {names} и съобщения без регион",
+  "nearbyRegions_only": "Региони: само {names}, без съобщения без регион",
+  "nearbyRegions_noneButPlain": "Без региони; повтаря съобщения без регион",
+  "nearbyRegions_nothing": "Не повтаря нищо: нито региони, нито съобщения без регион",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 ретранслатор наблизо} other{✓ {count} ретранслатора наблизо}}",
+  "channelRegion_noCarrier": "⚠ Никой ретранслатор наблизо не го предава",
+  "regions_heardNearby": "Чути от ретранслатори наблизо",
+  "regions_nearbySpelling": "Ретранслаторите наблизо го пишат {name}",
+  "regions_useSpelling": "Използване",
+  "channelPath_regionUnknown": "Непознат за вас (код {code})"
 }

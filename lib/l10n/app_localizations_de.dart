@@ -7709,4 +7709,52 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regionen: $names und Nachrichten ohne Region';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regionen: nur $names, keine Nachrichten ohne Region';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Keine Regionen; wiederholt Nachrichten ohne Region';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Wiederholt nichts: keine Regionen und keine Nachrichten ohne Region';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count Repeater in der Nähe',
+      one: '✓ 1 Repeater in der Nähe',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ Kein Repeater in der Nähe trägt sie';
+
+  @override
+  String get regions_heardNearby => 'Von Repeatern in der Nähe gehört';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Repeater in der Nähe schreiben es $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Übernehmen';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Eine, die du nicht kennst (Code $code)';
+  }
 }

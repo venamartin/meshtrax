@@ -7680,4 +7680,55 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regije: $names in sporočila brez regije';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regije: samo $names, ne sporočila brez regije';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Brez regij; ponavlja sporočila brez regije';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Ne ponavlja ničesar: ne regij ne sporočil brez regije';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count repetitorjev v bližini',
+      few: '✓ $count repetitorji v bližini',
+      two: '✓ $count repetitorja v bližini',
+      one: '✓ 1 repetitor v bližini',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Noben repetitor v bližini je ne nosi';
+
+  @override
+  String get regions_heardNearby => 'Slišano od repetitorjev v bližini';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Repetitorji v bližini jo pišejo $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Uporabi';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Taka, ki je ne poznate (koda $code)';
+  }
 }

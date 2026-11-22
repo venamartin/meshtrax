@@ -7715,4 +7715,55 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Регіони: $names і повідомлення без регіону';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Регіони: лише $names, без повідомлень без регіону';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Регіонів немає; повторює повідомлення без регіону';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Нічого не повторює: ні регіонів, ні повідомлень без регіону';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count ретранслятора поблизу',
+      many: '✓ $count ретрансляторів поблизу',
+      few: '✓ $count ретранслятори поблизу',
+      one: '✓ $count ретранслятор поблизу',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Жоден ретранслятор поблизу його не передає';
+
+  @override
+  String get regions_heardNearby => 'Почуті від ретрансляторів поблизу';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Ретранслятори поблизу пишуть його як $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Використати';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Невідомий вам (код $code)';
+  }
 }

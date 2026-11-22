@@ -3013,5 +3013,15 @@
   "channelRegion_qrInclude": "지역 {name} 포함",
   "channelRegion_nearbyOption": "근처만 (리피터 없음)",
   "channelRegion_nearby": "근처만",
-  "channelRegion_nearbyHelp": "범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다."
+  "channelRegion_nearbyHelp": "범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.",
+  "nearbyRegions_withPlain": "지역: {names}, 그리고 지역 없는 메시지",
+  "nearbyRegions_only": "지역: {names}만, 지역 없는 메시지는 아님",
+  "nearbyRegions_noneButPlain": "지역 없음. 지역 없는 메시지를 반복",
+  "nearbyRegions_nothing": "아무것도 반복 안 함: 지역도, 지역 없는 메시지도",
+  "channelRegion_carriers": "{count, plural, other{✓ 근처 리피터 {count}개}}",
+  "channelRegion_noCarrier": "⚠ 이 지역을 전달하는 근처 리피터가 없습니다",
+  "regions_heardNearby": "근처 리피터에게서 들음",
+  "regions_nearbySpelling": "근처 리피터는 {name}(으)로 씁니다",
+  "regions_useSpelling": "사용",
+  "channelPath_regionUnknown": "모르는 지역 (코드 {code})"
 }

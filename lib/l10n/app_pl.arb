@@ -3013,5 +3013,15 @@
   "channelRegion_qrInclude": "Dołącz region {name}",
   "channelRegion_nearbyOption": "Tylko w pobliżu (bez przekaźników)",
   "channelRegion_nearby": "Tylko w pobliżu",
-  "channelRegion_nearbyHelp": "Słyszą to tylko radia w zasięgu. Wysłane raz, bez ponowień."
+  "channelRegion_nearbyHelp": "Słyszą to tylko radia w zasięgu. Wysłane raz, bez ponowień.",
+  "nearbyRegions_withPlain": "Regiony: {names} oraz wiadomości bez regionu",
+  "nearbyRegions_only": "Regiony: tylko {names}, bez wiadomości bez regionu",
+  "nearbyRegions_noneButPlain": "Brak regionów; powtarza wiadomości bez regionu",
+  "nearbyRegions_nothing": "Nic nie powtarza: ani regionów, ani wiadomości bez regionu",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 przekaźnik w pobliżu} few{✓ {count} przekaźniki w pobliżu} many{✓ {count} przekaźników w pobliżu} other{✓ {count} przekaźnika w pobliżu}}",
+  "channelRegion_noCarrier": "⚠ Żaden przekaźnik w pobliżu go nie obsługuje",
+  "regions_heardNearby": "Usłyszane od przekaźników w pobliżu",
+  "regions_nearbySpelling": "Przekaźniki w pobliżu piszą go {name}",
+  "regions_useSpelling": "Użyj",
+  "channelPath_regionUnknown": "Nieznany ci (kod {code})"
 }

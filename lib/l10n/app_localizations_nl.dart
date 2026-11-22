@@ -7660,4 +7660,53 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Alleen radio\'s binnen bereik horen het. Eén keer verzonden, zonder herhaalpogingen.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regio\'s: $names, en berichten zonder regio';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regio\'s: alleen $names, geen berichten zonder regio';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Geen regio\'s; herhaalt berichten zonder regio';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Herhaalt niets: geen regio\'s en geen berichten zonder regio';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count repeaters in de buurt',
+      one: '✓ 1 repeater in de buurt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Geen repeater in de buurt draagt hem';
+
+  @override
+  String get regions_heardNearby => 'Gehoord van repeaters in de buurt';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Repeaters in de buurt schrijven het als $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Gebruiken';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Een die je niet kent (code $code)';
+  }
 }

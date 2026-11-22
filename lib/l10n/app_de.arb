@@ -3003,5 +3003,15 @@
   "channelRegion_qrInclude": "Region {name} mit aufnehmen",
   "channelRegion_nearbyOption": "Nur in der Nähe (keine Repeater)",
   "channelRegion_nearby": "Nur in der Nähe",
-  "channelRegion_nearbyHelp": "Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen."
+  "channelRegion_nearbyHelp": "Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen.",
+  "nearbyRegions_withPlain": "Regionen: {names} und Nachrichten ohne Region",
+  "nearbyRegions_only": "Regionen: nur {names}, keine Nachrichten ohne Region",
+  "nearbyRegions_noneButPlain": "Keine Regionen; wiederholt Nachrichten ohne Region",
+  "nearbyRegions_nothing": "Wiederholt nichts: keine Regionen und keine Nachrichten ohne Region",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 Repeater in der Nähe} other{✓ {count} Repeater in der Nähe}}",
+  "channelRegion_noCarrier": "⚠ Kein Repeater in der Nähe trägt sie",
+  "regions_heardNearby": "Von Repeatern in der Nähe gehört",
+  "regions_nearbySpelling": "Repeater in der Nähe schreiben es {name}",
+  "regions_useSpelling": "Übernehmen",
+  "channelPath_regionUnknown": "Eine, die du nicht kennst (Code {code})"
 }

@@ -7733,4 +7733,53 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Seules les radios à portée l\'entendent. Envoyé une fois, sans nouvel essai.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Régions : $names, et les messages sans région';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Régions : $names seulement, pas les messages sans région';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Aucune région ; répète les messages sans région';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Ne répète rien : ni régions, ni messages sans région';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count répéteurs à proximité',
+      one: '✓ 1 répéteur à proximité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Aucun répéteur à proximité ne la porte';
+
+  @override
+  String get regions_heardNearby => 'Entendues des répéteurs à proximité';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Les répéteurs à proximité l\'écrivent $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'L\'utiliser';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Une que vous ne connaissez pas (code $code)';
+  }
 }

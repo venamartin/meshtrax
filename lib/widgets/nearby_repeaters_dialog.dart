@@ -7,11 +7,13 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/geo_format.dart';
+import '../helpers/region_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
+import '../services/region_service.dart';
 import '../screens/repeater_hub_screen.dart';
 import '../utils/app_logger.dart';
 import 'repeater_login_dialog.dart';
@@ -336,6 +338,15 @@ class _NearbyRepeatersDialogState extends State<NearbyRepeatersDialog> {
                   ],
                 ),
               if (expanded) _candidates(context, identity.candidates, small),
+              if (_regionsLine(context, repeater) case final regions?)
+                Row(
+                  children: [
+                    const SizedBox(width: 28),
+                    Icon(Icons.hexagon_outlined, size: 12, color: small?.color),
+                    const SizedBox(width: 4),
+                    Expanded(child: Text(regions, style: small)),
+                  ],
+                ),
             ],
           ),
         ),
@@ -345,6 +356,28 @@ class _NearbyRepeatersDialogState extends State<NearbyRepeatersDialog> {
 
   /// Every contact a shared code could be, nearest first. Display only,
   /// like the guess: none of them is logged into from here.
+  /// What [repeater] said it carries, once it answered a regions question
+  /// (asked after a Discover the user started). The dialog redraws every
+  /// second, so a late answer shows up.
+  String? _regionsLine(BuildContext context, DirectRepeater repeater) {
+    final key = repeater.publicKey;
+    if (key == null) return null;
+    final report = context.read<RegionService?>()?.reportOf(pubKeyToHex(key));
+    if (report == null) return null;
+    final l10n = context.l10n;
+    final plain = report.names.contains(RegionHelper.everywhere);
+    final names = [
+      for (final n in report.names)
+        if (n != RegionHelper.everywhere) n,
+    ].join(', ');
+    if (names.isEmpty) {
+      return plain ? l10n.nearbyRegions_noneButPlain : l10n.nearbyRegions_nothing;
+    }
+    return plain
+        ? l10n.nearbyRegions_withPlain(names)
+        : l10n.nearbyRegions_only(names);
+  }
+
   Widget _candidates(
     BuildContext context,
     List<Contact> candidates,

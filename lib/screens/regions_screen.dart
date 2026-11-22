@@ -56,6 +56,10 @@ class _RegionsScreenState extends State<RegionsScreen> {
     final regions = context.watch<RegionService>();
     final canSetDefault =
         connector.isConnected && connector.supportsRadioDefaultRegion;
+    final heard = [
+      for (final name in regions.heardFromRepeaters)
+        if (!regions.regions.contains(name)) name,
+    ]..sort();
     final defaultText = !canSetDefault || !connector.radioDefaultRegionKnown
         ? '—'
         : connector.radioDefaultRegion ?? l10n.regions_none;
@@ -144,6 +148,39 @@ class _RegionsScreenState extends State<RegionsScreen> {
                   ],
                 ),
               ),
+            if (heard.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+                child: Text(
+                  l10n.regions_heardNearby,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Card(
+                child: Column(
+                  children: [
+                    for (final region in heard)
+                      ListTile(
+                        leading: const Icon(Icons.hexagon_outlined),
+                        title: Text(region),
+                        subtitle: Text(
+                          l10n.channelRegion_carriers(
+                            regions.carriersOf(region),
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add),
+                          tooltip: l10n.common_add,
+                          onPressed: () => regions.add(region),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

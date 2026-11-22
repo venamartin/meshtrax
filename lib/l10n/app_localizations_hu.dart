@@ -7699,4 +7699,52 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Csak a hatótávon belüli rádiók hallják. Egyszer küldi, újrapróbálás nélkül.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Régiók: $names, és a régió nélküli üzenetek';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Régiók: csak $names, a régió nélküli üzenetek nem';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Nincs régió; a régió nélküli üzeneteket ismétli';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Semmit sem ismétel: se régiót, se régió nélküli üzenetet';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count közeli jelismétlő',
+      one: '✓ 1 közeli jelismétlő',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ Egy közeli jelismétlő sem viszi';
+
+  @override
+  String get regions_heardNearby => 'Közeli jelismétlőktől hallva';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'A közeli jelismétlők így írják: $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Ezt használom';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Egy, amit nem ismersz (kód $code)';
+  }
 }

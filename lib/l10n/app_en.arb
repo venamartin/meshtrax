@@ -3704,5 +3704,20 @@
   "@channelRegion_qrInclude": {"placeholders": {"name": {"type": "String"}}},
   "channelRegion_nearbyOption": "Nearby only (no repeaters)",
   "channelRegion_nearby": "Nearby only",
-  "channelRegion_nearbyHelp": "Only radios in range hear it. Sent once, with no retries."
+  "channelRegion_nearbyHelp": "Only radios in range hear it. Sent once, with no retries.",
+  "nearbyRegions_withPlain": "Regions: {names}, and messages with no region",
+  "@nearbyRegions_withPlain": {"placeholders": {"names": {"type": "String"}}},
+  "nearbyRegions_only": "Regions: {names} only, not messages with no region",
+  "@nearbyRegions_only": {"placeholders": {"names": {"type": "String"}}},
+  "nearbyRegions_noneButPlain": "No regions; repeats messages with no region",
+  "nearbyRegions_nothing": "Repeats nothing: no regions, and not messages with no region",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 nearby repeater} other{✓ {count} nearby repeaters}}",
+  "@channelRegion_carriers": {"placeholders": {"count": {"type": "int"}}},
+  "channelRegion_noCarrier": "⚠ No nearby repeater carries it",
+  "regions_heardNearby": "Heard from nearby repeaters",
+  "regions_nearbySpelling": "Nearby repeaters spell it {name}",
+  "@regions_nearbySpelling": {"placeholders": {"name": {"type": "String"}}},
+  "regions_useSpelling": "Use it",
+  "channelPath_regionUnknown": "One you don't know (code {code})",
+  "@channelPath_regionUnknown": {"placeholders": {"code": {"type": "String"}}}
 }

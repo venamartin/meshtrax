@@ -7704,4 +7704,52 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Lo sentono solo le radio a portata. Inviato una volta, senza ritentare.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regioni: $names e messaggi senza regione';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regioni: solo $names, non i messaggi senza regione';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Nessuna regione; ripete i messaggi senza regione';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Non ripete nulla: né regioni né messaggi senza regione';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count ripetitori vicini',
+      one: '✓ 1 ripetitore vicino',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ Nessun ripetitore vicino la porta';
+
+  @override
+  String get regions_heardNearby => 'Sentite dai ripetitori vicini';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'I ripetitori vicini la scrivono $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Usala';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Una che non conosci (codice $code)';
+  }
 }

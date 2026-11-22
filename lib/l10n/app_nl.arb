@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Regio {name} meenemen",
   "channelRegion_nearbyOption": "Alleen dichtbij (geen repeaters)",
   "channelRegion_nearby": "Alleen dichtbij",
-  "channelRegion_nearbyHelp": "Alleen radio's binnen bereik horen het. Eén keer verzonden, zonder herhaalpogingen."
+  "channelRegion_nearbyHelp": "Alleen radio's binnen bereik horen het. Eén keer verzonden, zonder herhaalpogingen.",
+  "nearbyRegions_withPlain": "Regio's: {names}, en berichten zonder regio",
+  "nearbyRegions_only": "Regio's: alleen {names}, geen berichten zonder regio",
+  "nearbyRegions_noneButPlain": "Geen regio's; herhaalt berichten zonder regio",
+  "nearbyRegions_nothing": "Herhaalt niets: geen regio's en geen berichten zonder regio",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 repeater in de buurt} other{✓ {count} repeaters in de buurt}}",
+  "channelRegion_noCarrier": "⚠ Geen repeater in de buurt draagt hem",
+  "regions_heardNearby": "Gehoord van repeaters in de buurt",
+  "regions_nearbySpelling": "Repeaters in de buurt schrijven het als {name}",
+  "regions_useSpelling": "Gebruiken",
+  "channelPath_regionUnknown": "Een die je niet kent (code {code})"
 }

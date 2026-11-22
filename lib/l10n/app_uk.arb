@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Додати регіон {name}",
   "channelRegion_nearbyOption": "Лише поблизу (без ретрансляторів)",
   "channelRegion_nearby": "Лише поблизу",
-  "channelRegion_nearbyHelp": "Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів."
+  "channelRegion_nearbyHelp": "Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів.",
+  "nearbyRegions_withPlain": "Регіони: {names} і повідомлення без регіону",
+  "nearbyRegions_only": "Регіони: лише {names}, без повідомлень без регіону",
+  "nearbyRegions_noneButPlain": "Регіонів немає; повторює повідомлення без регіону",
+  "nearbyRegions_nothing": "Нічого не повторює: ні регіонів, ні повідомлень без регіону",
+  "channelRegion_carriers": "{count, plural, one{✓ {count} ретранслятор поблизу} few{✓ {count} ретранслятори поблизу} many{✓ {count} ретрансляторів поблизу} other{✓ {count} ретранслятора поблизу}}",
+  "channelRegion_noCarrier": "⚠ Жоден ретранслятор поблизу його не передає",
+  "regions_heardNearby": "Почуті від ретрансляторів поблизу",
+  "regions_nearbySpelling": "Ретранслятори поблизу пишуть його як {name}",
+  "regions_useSpelling": "Використати",
+  "channelPath_regionUnknown": "Невідомий вам (код {code})"
 }

@@ -7202,4 +7202,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get channelRegion_nearbyHelp => '只有范围内的电台能收到。只发送一次,不重试。';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return '区域:$names,以及无区域的消息';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return '区域:仅 $names,不含无区域的消息';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => '无区域;转发无区域的消息';
+
+  @override
+  String get nearbyRegions_nothing => '什么都不转发:既无区域,也不转发无区域的消息';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ 附近 $count 个中继器',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '⚠ 附近没有中继器转发它';
+
+  @override
+  String get regions_heardNearby => '从附近中继器得知';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '附近的中继器写作 $name';
+  }
+
+  @override
+  String get regions_useSpelling => '使用';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '你不认识的区域(代码 $code)';
+  }
 }

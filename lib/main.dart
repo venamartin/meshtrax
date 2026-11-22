@@ -35,6 +35,7 @@ import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/trax_service.dart';
 import 'services/radio_ask_service.dart';
+import 'services/nearby_regions_asker.dart';
 import 'services/region_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
@@ -162,6 +163,8 @@ void main() async {
   final regionService = RegionService();
   await regionService.load();
   connector.regionService = regionService;
+  final nearbyRegions = NearbyRegionsAsker(connector, regionService);
+  connector.onManualDiscoverDone = nearbyRegions.askAll;
   // A repeat of an SOS stops alerting once its pin is dismissed.
   connector.isPinDismissed = (chatId, messageId) =>
       uiViewStateService.dismissedPins(chatId).contains(messageId);

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../helpers/region_helper.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../screens/regions_screen.dart';
@@ -133,7 +134,13 @@ class _ChannelRegionDialog extends StatelessWidget {
                       value: RegionHelper.nearbyOnly,
                     ),
                   for (final region in regions.regions)
-                    RadioListTile<String?>(title: Text(region), value: region),
+                    RadioListTile<String?>(
+                      title: Text(region),
+                      subtitle: regions.hasRepeaterReports
+                          ? Text(_carriersText(l10n, regions, region))
+                          : null,
+                      value: region,
+                    ),
                 ],
               ),
             ),
@@ -165,6 +172,18 @@ class _ChannelRegionDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+/// How many nearby repeaters said lately that they carry [region].
+String _carriersText(
+  AppLocalizations l10n,
+  RegionService regions,
+  String region,
+) {
+  final count = regions.carriersOf(region);
+  return count == 0
+      ? l10n.channelRegion_noCarrier
+      : l10n.channelRegion_carriers(count);
 }
 
 class _AddRegionDialog extends StatefulWidget {
@@ -202,6 +221,19 @@ class _AddRegionDialogState extends State<_AddRegionDialog> {
     if (await regions.add(name) && mounted) Navigator.pop(context, name);
   }
 
+  /// A name nearby repeaters use that differs from the typed one only in
+  /// capitals: offered, since the firmware tells them apart.
+  String? _repeaterSpelling(RegionService regions) {
+    final typed = RegionHelper.normalize(_controller.text);
+    if (typed.isEmpty || regions.heardFromRepeaters.contains(typed)) {
+      return null;
+    }
+    final lower = typed.toLowerCase();
+    return regions.heardFromRepeaters
+        .where((n) => n.toLowerCase() == lower)
+        .firstOrNull;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -209,23 +241,28 @@ class _AddRegionDialogState extends State<_AddRegionDialog> {
     final problem = _problem(regions);
     final canSave =
         problem == null && RegionHelper.check(_controller.text) == null;
+    final spelling = _repeaterSpelling(regions);
     return AlertDialog(
       title: Text(l10n.regions_add),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        textCapitalization: TextCapitalization.none,
-        decoration: InputDecoration(
-          labelText: l10n.regions_nameLabel,
-          helperText: l10n.regions_nameHelp,
-          helperMaxLines: 3,
-          errorText: problem,
-          errorMaxLines: 3,
-        ),
-        onChanged: (_) => setState(() {}),
-        onSubmitted: canSave ? (_) => _save(regions) : null,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _field(context, regions, problem, canSave),
+          if (spelling != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  Expanded(child: Text(l10n.regions_nearbySpelling(spelling))),
+                  TextButton(
+                    onPressed: () => setState(() => _controller.text = spelling),
+                    child: Text(l10n.regions_useSpelling),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
       actions: [
         TextButton(
@@ -237,6 +274,31 @@ class _AddRegionDialogState extends State<_AddRegionDialog> {
           child: Text(l10n.common_add),
         ),
       ],
+    );
+  }
+
+  Widget _field(
+    BuildContext context,
+    RegionService regions,
+    String? problem,
+    bool canSave,
+  ) {
+    final l10n = context.l10n;
+    return TextField(
+      controller: _controller,
+      autofocus: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      textCapitalization: TextCapitalization.none,
+      decoration: InputDecoration(
+        labelText: l10n.regions_nameLabel,
+        helperText: l10n.regions_nameHelp,
+        helperMaxLines: 3,
+        errorText: problem,
+        errorMaxLines: 3,
+      ),
+      onChanged: (_) => setState(() {}),
+      onSubmitted: canSave ? (_) => _save(regions) : null,
     );
   }
 }

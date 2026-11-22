@@ -529,6 +529,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? _foreignDiscoverHeardAt;
 
   /// Whether the last Discover was Pathfinder's own, not the user's.
+  /// A Discover the user started has closed, with the full keys of the
+  /// repeaters that answered it (the regions hook).
+  void Function(List<Uint8List> answered)? onManualDiscoverDone;
+
   bool get lastDiscoverAutomatic => _lastDiscoverAutomatic;
   bool _lastDiscoverAutomatic = false;
 
@@ -6629,10 +6633,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // Repeater firmware answers with a randomized anti-collision delay
     // (sendZeroHop with getRetransmitDelay x4, simple_repeater/MyMesh.cpp) —
     // a 10s window dropped legitimate late responses on the bench.
+    final scan = _discoverScan;
     _discoverTimer = Timer(discoverWindow, () {
       _isDiscovering = false;
       _pendingDiscoverTag = null;
       notifyListeners();
+      if (!automatic) {
+        onManualDiscoverDone?.call([
+          for (final r in _directRepeaters)
+            if (r.answeredScan == scan && r.publicKey != null) r.publicKey!,
+        ]);
+      }
     });
 
 final frame = buildRepeaterDiscoveryFrame(tag);
@@ -9613,6 +9624,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payloadType,
             packet.payload,
           );
+          final regionCode = packet.routeType == _routeTransportFlood &&
+                  (packet.regionCode ?? 0) != 0
+              ? packet.regionCode
+              : null;
 
           final message = ChannelMessage(
             senderKey: null,
@@ -9626,6 +9641,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             pathHashSize: packet.hashSize,
             channelIndex: channel.index,
             packetHash: pktHash,
+            regionCode: regionCode,
+            region: regionCode == null
+                ? null
+                : _regionNamed(regionCode, packet.payloadType, packet.payload),
           );
 
           _updateContactLastMessageAtByName(
@@ -11371,10 +11390,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final hasTransport =
           routeType == _routeTransportFlood ||
           routeType == _routeTransportDirect;
-      if (hasTransport) {
-        // Skip reserved bytes in transport header made up of two u16 fields
-        reader.skipBytes(4);
-      }
+      // Two u16 transport codes; the first is the region code.
+      final regionCode = hasTransport ? reader.readUInt16LE() : null;
+      if (hasTransport) reader.skipBytes(2);
       final pathLenRaw = reader.readByte();
       final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
@@ -11388,6 +11406,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathLenRaw: pathLenRaw,
         pathBytes: pathBytes,
         payload: payload,
+        regionCode: regionCode,
       );
     } catch (e) {
       appLogger.warn('Error parsing raw packet: $e');
@@ -12018,6 +12037,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // even though the display path adopts the longest observed route.
         heardDirect: m.heardDirect || incoming.heardDirect,
         packetHash: m.packetHash ?? incoming.packetHash,
+        regionCode: m.regionCode ?? incoming.regionCode,
+        region: m.region ?? incoming.region,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
         sentWireSecs: m.sentWireSecs.contains(incomingSecs)
             ? m.sentWireSecs
@@ -12112,8 +12133,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       replyToMessageId: replyToMessageId,
       replyToSenderName: replyToSenderName,
       replyToText: replyToText,
+      regionCode: base.regionCode,
+      region: base.region,
     );
   }
+
+  /// Which region [code] stands for, among the names the app knows: its
+  /// own regions, the radio's default, and those nearby repeaters named.
+  /// The code depends on the packet, so each name is tried in turn.
+  String? _regionNamed(int code, int payloadType, Uint8List payload) {
+    final names = <String>{
+      ...?regionService?.regions,
+      ?_radioDefaultRegion,
+      ...?regionService?.heardFromRepeaters,
+    };
+    for (final name in names) {
+      final key = _regionKeys.putIfAbsent(name, () => RegionHelper.keyFor(name));
+      if (RegionHelper.transportCode(key, payloadType, payload) == code) {
+        return name;
+      }
+    }
+    return null;
+  }
+
+  final Map<String, Uint8List> _regionKeys = {};
 
   /// How far back a reaction or reply looks for its target in a channel or
   /// room, by when rows arrived HERE, so a sender's wrong clock cannot hide
@@ -13913,6 +13956,10 @@ class _RawPacket {
   final Uint8List pathBytes;
   final Uint8List payload;
 
+  /// The first transport code: the region a scoped flood carries. Null
+  /// without transport codes; 0 counts as no region.
+  final int? regionCode;
+
   _RawPacket({
     required this.header,
     required this.routeType,
@@ -13921,6 +13968,7 @@ class _RawPacket {
     required this.pathLenRaw,
     required this.pathBytes,
     required this.payload,
+    this.regionCode,
   });
 
   bool get isFlood =>

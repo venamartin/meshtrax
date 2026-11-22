@@ -7717,4 +7717,55 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get channelRegion_nearbyHelp =>
       'Słyszą to tylko radia w zasięgu. Wysłane raz, bez ponowień.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regiony: $names oraz wiadomości bez regionu';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regiony: tylko $names, bez wiadomości bez regionu';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Brak regionów; powtarza wiadomości bez regionu';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Nic nie powtarza: ani regionów, ani wiadomości bez regionu';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '✓ $count przekaźnika w pobliżu',
+      many: '✓ $count przekaźników w pobliżu',
+      few: '✓ $count przekaźniki w pobliżu',
+      one: '✓ 1 przekaźnik w pobliżu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      '⚠ Żaden przekaźnik w pobliżu go nie obsługuje';
+
+  @override
+  String get regions_heardNearby => 'Usłyszane od przekaźników w pobliżu';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Przekaźniki w pobliżu piszą go $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Użyj';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Nieznany ci (kod $code)';
+  }
 }

@@ -2975,5 +2975,15 @@
   "channelRegion_qrInclude": "Vključi regijo {name}",
   "channelRegion_nearbyOption": "Samo v bližini (brez repetitorjev)",
   "channelRegion_nearby": "Samo v bližini",
-  "channelRegion_nearbyHelp": "Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev."
+  "channelRegion_nearbyHelp": "Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev.",
+  "nearbyRegions_withPlain": "Regije: {names} in sporočila brez regije",
+  "nearbyRegions_only": "Regije: samo {names}, ne sporočila brez regije",
+  "nearbyRegions_noneButPlain": "Brez regij; ponavlja sporočila brez regije",
+  "nearbyRegions_nothing": "Ne ponavlja ničesar: ne regij ne sporočil brez regije",
+  "channelRegion_carriers": "{count, plural, =1{✓ 1 repetitor v bližini} two{✓ {count} repetitorja v bližini} few{✓ {count} repetitorji v bližini} other{✓ {count} repetitorjev v bližini}}",
+  "channelRegion_noCarrier": "⚠ Noben repetitor v bližini je ne nosi",
+  "regions_heardNearby": "Slišano od repetitorjev v bližini",
+  "regions_nearbySpelling": "Repetitorji v bližini jo pišejo {name}",
+  "regions_useSpelling": "Uporabi",
+  "channelPath_regionUnknown": "Taka, ki je ne poznate (koda {code})"
 }

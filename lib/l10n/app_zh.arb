@@ -2980,5 +2980,15 @@
   "channelRegion_qrInclude": "包含区域 {name}",
   "channelRegion_nearbyOption": "仅附近(不经中继器)",
   "channelRegion_nearby": "仅附近",
-  "channelRegion_nearbyHelp": "只有范围内的电台能收到。只发送一次,不重试。"
+  "channelRegion_nearbyHelp": "只有范围内的电台能收到。只发送一次,不重试。",
+  "nearbyRegions_withPlain": "区域:{names},以及无区域的消息",
+  "nearbyRegions_only": "区域:仅 {names},不含无区域的消息",
+  "nearbyRegions_noneButPlain": "无区域;转发无区域的消息",
+  "nearbyRegions_nothing": "什么都不转发:既无区域,也不转发无区域的消息",
+  "channelRegion_carriers": "{count, plural, other{✓ 附近 {count} 个中继器}}",
+  "channelRegion_noCarrier": "⚠ 附近没有中继器转发它",
+  "regions_heardNearby": "从附近中继器得知",
+  "regions_nearbySpelling": "附近的中继器写作 {name}",
+  "regions_useSpelling": "使用",
+  "channelPath_regionUnknown": "你不认识的区域(代码 {code})"
 }
