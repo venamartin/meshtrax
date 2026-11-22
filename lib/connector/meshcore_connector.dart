@@ -4414,7 +4414,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         nearby ?? data,
         channelSendQueueId: channelSendQueueId,
         expectsGenericAck: expectsGenericAck,
-        ackAs: nearby == null ? null : data[0],
+        ackAs: nearby == null || nearby[0] == data[0] ? null : data[0],
       );
     }
     while (_regionSend != null) {
@@ -4462,17 +4462,38 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool _isNearbyOnly(String idKey) =>
       regionService?.regionOf(idKey) == RegionHelper.nearbyOnly;
 
-  /// The raw-packet frame that sends the channel text [data] zero-hop, when
-  /// its channel is Nearby only; null otherwise. Older firmware sends it as
-  /// a normal flood.
-  Uint8List? _nearbyPacketFor(Uint8List data) {
-    if (!supportsNearbyOnly || data.length < 7) return null;
-    if (data[0] != cmdSendChannelTxtMsg) return null;
-    final channel = _channels.where((c) => c.index == data[2]).firstOrNull;
-    final name = _selfName;
-    if (channel == null || name == null || !_isNearbyOnly(channel.idKey)) {
+  /// The channel a flooded channel send [data] goes to: a text
+  /// ([cmd][type][idx]...), or channel data with no path ([cmd][idx][0xFF]...;
+  /// one with a path goes direct and takes no region). Null for any other
+  /// frame.
+  Channel? _floodChannelOf(Uint8List data) {
+    final int index;
+    if (data.length >= 3 && data[0] == cmdSendChannelTxtMsg) {
+      index = data[2];
+    } else if (data.length >= 3 &&
+        data[0] == cmdSendChannelData &&
+        data[2] == 0xFF) {
+      index = data[1];
+    } else {
       return null;
     }
+    return _channels.where((c) => c.index == index).firstOrNull;
+  }
+
+  /// The frame that sends the channel send [data] zero-hop, when its channel
+  /// is Nearby only; null otherwise.
+  /// - Channel data: the same frame with an empty path, which the radio
+  ///   sends DIRECT with no hops (BaseChatMesh::sendGroupData).
+  /// - Channel text: the radio has no zero-hop text send, so a raw packet
+  ///   the app built (firmware 13+; older firmware floods it as usual).
+  Uint8List? _nearbyPacketFor(Uint8List data) {
+    final channel = _floodChannelOf(data);
+    if (channel == null || !_isNearbyOnly(channel.idKey)) return null;
+    if (data[0] == cmdSendChannelData) {
+      return Uint8List.fromList(data)..[2] = 0;
+    }
+    final name = _selfName;
+    if (!supportsNearbyOnly || data.length < 7 || name == null) return null;
     final packet = ChannelPacket.zeroHopText(
       channelKey: channel.psk,
       senderName: name,
@@ -4488,9 +4509,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   Uint8List? _regionFrameFor(Uint8List data) {
     final regions = regionService;
     if (regions == null || !supportsRegions) return null;
-    if (data.length < 3 || data[0] != cmdSendChannelTxtMsg) return null;
-    final index = data[2];
-    final channel = _channels.where((c) => c.index == index).firstOrNull;
+    final channel = _floodChannelOf(data);
     final region = channel == null ? null : regions.regionOf(channel.idKey);
     if (region == null || region == RegionHelper.nearbyOnly) return null;
     if (region == RegionHelper.everywhere) {

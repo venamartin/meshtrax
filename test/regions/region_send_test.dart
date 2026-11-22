@@ -202,6 +202,48 @@ void main() {
     expect(c.written.length, before + 1);
   });
 
+  group('channel data (CMD_SEND_CHANNEL_DATA)', () {
+    // [62][channel][path len, 0xFF = flood][path...][type x2][payload]
+    Uint8List data({int pathLen = 0xFF, List<int> path = const []}) =>
+        Uint8List.fromList([
+          cmdSendChannelData, channel.index, pathLen, ...path,
+          0x1C, 0xAE, 1, 2, 3, //
+        ]);
+
+    List<Uint8List> sent() => [
+          for (final f in c.written)
+            if (f[0] == cmdSetFloodScopeKey || f[0] == cmdSendChannelData) f,
+        ];
+
+    test('a flood in a region: set, send, clear, like a text', () async {
+      await regions.setChannelRegion(channel.idKey, 'sf');
+      await c.sendFrame(data(), expectsGenericAck: true);
+      final frames = sent();
+      expect(frames, hasLength(3));
+      expect(frames[0], [cmdSetFloodScopeKey, 0, ...RegionHelper.keyFor('sf')]);
+      expect(frames[1], data());
+      expect(frames[2], [cmdSetFloodScopeKey, 0]);
+    });
+
+    test('sent on a path it goes direct, so no region', () async {
+      await regions.setChannelRegion(channel.idKey, 'sf');
+      final routed = data(pathLen: 1, path: [0xA2]);
+      await c.sendFrame(routed, expectsGenericAck: true);
+      expect(sent(), [routed]);
+    });
+
+    test('Nearby only: the same frame with an empty path, zero hop',
+        () async {
+      await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);
+      await c.sendFrame(data(), expectsGenericAck: true);
+      final frame = sent().single;
+      expect(frame[2], 0, reason: 'path length 0: the radio sends it DIRECT');
+      expect(frame.sublist(3), data().sublist(3));
+      c.handleFrameForTest([respCodeOk]);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+    });
+  });
+
   group('Nearby only', () {
     final repeatWait = MeshCoreConnector.channelRepeatWait;
     setUp(() => MeshCoreConnector.channelRepeatWait =
