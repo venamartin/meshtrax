@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Onder",
   "repeaterRegions_fromYours": "Uit je regio's",
   "repeaterRegions_alreadyThere": "Staat al op deze repeater.",
-  "channelRegion_qrInclude": "Regio {name} meenemen"
+  "channelRegion_qrInclude": "Regio {name} meenemen",
+  "channelRegion_nearbyOption": "Alleen dichtbij (geen repeaters)",
+  "channelRegion_nearby": "Alleen dichtbij",
+  "channelRegion_nearbyHelp": "Alleen radio's binnen bereik horen het. Eén keer verzonden, zonder herhaalpogingen."
 }

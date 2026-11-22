@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Under",
   "repeaterRegions_fromYours": "Från dina regioner",
   "repeaterRegions_alreadyThere": "Finns redan på den här repeatern.",
-  "channelRegion_qrInclude": "Ta med regionen {name}"
+  "channelRegion_qrInclude": "Ta med regionen {name}",
+  "channelRegion_nearbyOption": "Bara i närheten (inga repeatrar)",
+  "channelRegion_nearby": "Bara i närheten",
+  "channelRegion_nearbyHelp": "Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök."
 }

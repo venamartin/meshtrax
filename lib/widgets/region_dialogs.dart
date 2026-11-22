@@ -87,6 +87,8 @@ class _ChannelRegionDialog extends StatelessWidget {
     final offerEverywhere =
         (radioDefault != null && connector.supportsRegionEverywhere) ||
         current == RegionHelper.everywhere;
+    final offerNearby =
+        connector.supportsNearbyOnly || current == RegionHelper.nearbyOnly;
 
     void pick(String? region) {
       unawaited(regions.setChannelRegion(channel.idKey, region));
@@ -123,6 +125,12 @@ class _ChannelRegionDialog extends StatelessWidget {
                     RadioListTile<String?>(
                       title: Text(l10n.channelRegion_everywhere),
                       value: RegionHelper.everywhere,
+                    ),
+                  if (offerNearby)
+                    RadioListTile<String?>(
+                      title: Text(l10n.channelRegion_nearbyOption),
+                      subtitle: Text(l10n.channelRegion_nearbyHelp),
+                      value: RegionHelper.nearbyOnly,
                     ),
                   for (final region in regions.regions)
                     RadioListTile<String?>(title: Text(region), value: region),

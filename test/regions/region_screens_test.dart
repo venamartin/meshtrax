@@ -17,10 +17,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Connector extends MeshCoreConnector {
-  _Connector({this.radioDefault, this.everywhere = true});
+  _Connector({this.radioDefault, this.everywhere = true, this.nearby = true});
 
   String? radioDefault;
   final bool everywhere;
+  final bool nearby;
   final saved = <String?>[];
 
   @override
@@ -31,6 +32,8 @@ class _Connector extends MeshCoreConnector {
   bool get supportsRegionEverywhere => everywhere;
   @override
   bool get supportsRadioDefaultRegion => true;
+  @override
+  bool get supportsNearbyOnly => nearby;
   @override
   String? get radioDefaultRegion => radioDefault;
   @override
@@ -140,6 +143,27 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(find.text('Everywhere (no region)'), findsNothing);
+    });
+
+    testWidgets('Nearby only is a choice, firmware 13+', (tester) async {
+      await _pump(tester, _Connector(), regions, _opener());
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Only radios in range hear it. Sent once, with no retries.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Nearby only (no repeaters)'));
+      await tester.pumpAndSettle();
+      expect(regions.regionOf(_channel.idKey), RegionHelper.nearbyOnly);
+      expect(regions.regions, isEmpty, reason: 'not a region');
+    });
+
+    testWidgets('no Nearby only on older firmware', (tester) async {
+      await _pump(tester, _Connector(nearby: false), regions, _opener());
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nearby only (no repeaters)'), findsNothing);
     });
 
     testWidgets('None takes the region off', (tester) async {
@@ -269,6 +293,18 @@ void main() {
           ChannelShareScreen(channel: _channel));
       expect(find.byType(SwitchListTile), findsNothing);
     });
+  });
+
+  testWidgets('the label for Nearby only has its own icon', (tester) async {
+    await _pump(
+      tester,
+      _Connector(),
+      regions,
+      const Scaffold(body: RegionLabel(RegionHelper.nearbyOnly)),
+    );
+    expect(find.text('Nearby only'), findsOneWidget);
+    expect(find.byIcon(Icons.social_distance), findsOneWidget);
+    expect(find.byIcon(Icons.hexagon_outlined), findsNothing);
   });
 
   testWidgets('the label reads everywhere for a channel stepping out',

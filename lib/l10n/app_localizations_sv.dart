@@ -7614,4 +7614,14 @@ class AppLocalizationsSv extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Ta med regionen $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Bara i närheten (inga repeatrar)';
+
+  @override
+  String get channelRegion_nearby => 'Bara i närheten';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök.';
 }

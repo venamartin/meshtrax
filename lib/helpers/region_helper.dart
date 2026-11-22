@@ -16,6 +16,14 @@ class RegionHelper {
   /// the radio has a default one. The firmware's own word for "no region".
   static const String everywhere = '*';
 
+  /// Stored in place of a name: the channel's messages go zero-hop, to the
+  /// radios in range and no further. Not a region; '!' can't start a name.
+  static const String nearbyOnly = '!nearby';
+
+  /// [value] names a real region, not [everywhere] or [nearbyOnly].
+  static bool isRegionName(String? value) =>
+      value != null && value != everywhere && value != nearbyOnly;
+
   /// [name] with one leading '#' taken off, as the firmware matches names.
   static String normalize(String name) {
     final trimmed = name.trim();

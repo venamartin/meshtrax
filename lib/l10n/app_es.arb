@@ -3000,5 +3000,8 @@
   "repeaterRegions_under": "Bajo",
   "repeaterRegions_fromYours": "De tus regiones",
   "repeaterRegions_alreadyThere": "Ya está en este repetidor.",
-  "channelRegion_qrInclude": "Incluir la región {name}"
+  "channelRegion_qrInclude": "Incluir la región {name}",
+  "channelRegion_nearbyOption": "Solo cerca (sin repetidores)",
+  "channelRegion_nearby": "Solo cerca",
+  "channelRegion_nearbyHelp": "Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos."
 }

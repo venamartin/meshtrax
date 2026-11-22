@@ -7688,4 +7688,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'A(z) $name régió belefoglalása';
   }
+
+  @override
+  String get channelRegion_nearbyOption =>
+      'Csak a közelben (jelismétlők nélkül)';
+
+  @override
+  String get channelRegion_nearby => 'Csak a közelben';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Csak a hatótávon belüli rádiók hallják. Egyszer küldi, újrapróbálás nélkül.';
 }

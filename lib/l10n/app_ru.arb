@@ -2340,5 +2340,8 @@
   "repeaterRegions_under": "Внутри",
   "repeaterRegions_fromYours": "Из ваших регионов",
   "repeaterRegions_alreadyThere": "Уже есть на этом ретрансляторе.",
-  "channelRegion_qrInclude": "Включить регион {name}"
+  "channelRegion_qrInclude": "Включить регион {name}",
+  "channelRegion_nearbyOption": "Только рядом (без ретрансляторов)",
+  "channelRegion_nearby": "Только рядом",
+  "channelRegion_nearbyHelp": "Слышат только радио в зоне досягаемости. Отправляется один раз, без повторов."
 }

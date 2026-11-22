@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Усередині",
   "repeaterRegions_fromYours": "З ваших регіонів",
   "repeaterRegions_alreadyThere": "Вже є на цьому ретрансляторі.",
-  "channelRegion_qrInclude": "Додати регіон {name}"
+  "channelRegion_qrInclude": "Додати регіон {name}",
+  "channelRegion_nearbyOption": "Лише поблизу (без ретрансляторів)",
+  "channelRegion_nearby": "Лише поблизу",
+  "channelRegion_nearbyHelp": "Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів."
 }

@@ -3010,5 +3010,8 @@
   "repeaterRegions_under": "상위 지역",
   "repeaterRegions_fromYours": "내 지역에서",
   "repeaterRegions_alreadyThere": "이미 이 리피터에 있습니다.",
-  "channelRegion_qrInclude": "지역 {name} 포함"
+  "channelRegion_qrInclude": "지역 {name} 포함",
+  "channelRegion_nearbyOption": "근처만 (리피터 없음)",
+  "channelRegion_nearby": "근처만",
+  "channelRegion_nearbyHelp": "범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다."
 }

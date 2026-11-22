@@ -3000,5 +3000,8 @@
   "repeaterRegions_under": "Unter",
   "repeaterRegions_fromYours": "Aus deinen Regionen",
   "repeaterRegions_alreadyThere": "Schon auf diesem Repeater.",
-  "channelRegion_qrInclude": "Region {name} mit aufnehmen"
+  "channelRegion_qrInclude": "Region {name} mit aufnehmen",
+  "channelRegion_nearbyOption": "Nur in der Nähe (keine Repeater)",
+  "channelRegion_nearby": "Nur in der Nähe",
+  "channelRegion_nearbyHelp": "Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen."
 }

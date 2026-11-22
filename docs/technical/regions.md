@@ -111,6 +111,16 @@ Asked for by the owner on 2026-11-21: an easy way to set up the regions of a rep
 
 
 
+### Phase 5: Nearby only
+
+Asked for by the owner on 2026-11-21: a channel whose messages don't go through repeaters at all. It is a choice in the channel's Region dialog, "Nearby only (no repeaters)", shown under the channel name as "Nearby only" with its own icon (people close together; regions use a hexagon).
+
+**Firmware:** MeshCore has no hop limit a sender sets on a channel message. It does have zero hop: a packet sent DIRECT with an empty path. Every radio in range opens a zero-hop channel text like any other (`Mesh::onRecvPacket`, the `PAYLOAD_TYPE_GRP_TXT` case), and nobody passes it on: `routeRecvPacket` forwards floods only, and a DIRECT packet goes only to the next hop in its path. A "nowhere" region would not do: older repeaters and companions with repeat on pass region messages on.
+
+**How it's sent:** the radio has no zero-hop channel send, so the app builds the channel text exactly as the radio does (`BaseChatMesh::sendGroupMessage`: timestamp, a 0, `name: text` cut at 160 bytes, sealed with the channel key behind its 1-byte hash) and hands it over with `CMD_SEND_RAW_PACKET` (companion firmware 13+, `lib/helpers/channel_packet.dart`). A test checks its hash against traxheard's, which matched real heard copies. Older firmware doesn't offer the choice; a channel already set to it sends normally there.
+
+**No retries:** the radio's OK settles the message as Sent. There is no wait for a repeat, no "one more send", no retry when no repeat is heard, and no observer check.
+
 ## Pitfalls
 
 - A name longer than 30 bytes is cut by the frame builder without a word, and the cut name no longer matches its key. Refuse such names when they are added.

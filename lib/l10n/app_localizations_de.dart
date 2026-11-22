@@ -7699,4 +7699,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Region $name mit aufnehmen';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Nur in der Nähe (keine Repeater)';
+
+  @override
+  String get channelRegion_nearby => 'Nur in der Nähe';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen.';
 }

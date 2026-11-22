@@ -3010,5 +3010,8 @@
   "repeaterRegions_under": "Alatta",
   "repeaterRegions_fromYours": "A te régióidból",
   "repeaterRegions_alreadyThere": "Már szerepel ezen a jelismétlőn.",
-  "channelRegion_qrInclude": "A(z) {name} régió belefoglalása"
+  "channelRegion_qrInclude": "A(z) {name} régió belefoglalása",
+  "channelRegion_nearbyOption": "Csak a közelben (jelismétlők nélkül)",
+  "channelRegion_nearby": "Csak a közelben",
+  "channelRegion_nearbyHelp": "Csak a hatótávon belüli rádiók hallják. Egyszer küldi, újrapróbálás nélkül."
 }

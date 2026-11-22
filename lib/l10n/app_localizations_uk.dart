@@ -7705,4 +7705,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Додати регіон $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Лише поблизу (без ретрансляторів)';
+
+  @override
+  String get channelRegion_nearby => 'Лише поблизу';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів.';
 }

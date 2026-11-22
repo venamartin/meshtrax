@@ -7666,4 +7666,14 @@ class AppLocalizationsBg extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Включване на региона $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Само наблизо (без ретранслатори)';
+
+  @override
+  String get channelRegion_nearby => 'Само наблизо';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити.';
 }

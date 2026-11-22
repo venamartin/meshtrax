@@ -7193,4 +7193,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return '包含区域 $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => '仅附近(不经中继器)';
+
+  @override
+  String get channelRegion_nearby => '仅附近';
+
+  @override
+  String get channelRegion_nearbyHelp => '只有范围内的电台能收到。只发送一次,不重试。';
 }

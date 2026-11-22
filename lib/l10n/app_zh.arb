@@ -2977,5 +2977,8 @@
   "repeaterRegions_under": "上级区域",
   "repeaterRegions_fromYours": "来自你的区域",
   "repeaterRegions_alreadyThere": "已在此中继器上。",
-  "channelRegion_qrInclude": "包含区域 {name}"
+  "channelRegion_qrInclude": "包含区域 {name}",
+  "channelRegion_nearbyOption": "仅附近(不经中继器)",
+  "channelRegion_nearby": "仅附近",
+  "channelRegion_nearbyHelp": "只有范围内的电台能收到。只发送一次,不重试。"
 }

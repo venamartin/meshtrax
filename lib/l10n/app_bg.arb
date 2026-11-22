@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Под",
   "repeaterRegions_fromYours": "От вашите региони",
   "repeaterRegions_alreadyThere": "Вече е на този ретранслатор.",
-  "channelRegion_qrInclude": "Включване на региона {name}"
+  "channelRegion_qrInclude": "Включване на региона {name}",
+  "channelRegion_nearbyOption": "Само наблизо (без ретранслатори)",
+  "channelRegion_nearby": "Само наблизо",
+  "channelRegion_nearbyHelp": "Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити."
 }

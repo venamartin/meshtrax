@@ -32,7 +32,7 @@ class _ChannelShareScreenState extends State<ChannelShareScreen> {
   Widget build(BuildContext context) {
     final regions = context.watch<RegionService?>();
     final own = regions?.regionOf(channel.idKey);
-    final region = own == RegionHelper.everywhere ? null : own;
+    final region = RegionHelper.isRegionName(own) ? own : null;
     final include =
         region != null && (_includeRegion ?? regions!.regionsInQr);
     final shared = include ? region : null;

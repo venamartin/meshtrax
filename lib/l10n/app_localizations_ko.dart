@@ -7333,4 +7333,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return '지역 $name 포함';
   }
+
+  @override
+  String get channelRegion_nearbyOption => '근처만 (리피터 없음)';
+
+  @override
+  String get channelRegion_nearby => '근처만';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      '범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.';
 }

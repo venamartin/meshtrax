@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Sous",
   "repeaterRegions_fromYours": "Parmi vos régions",
   "repeaterRegions_alreadyThere": "Déjà sur ce répéteur.",
-  "channelRegion_qrInclude": "Inclure la région {name}"
+  "channelRegion_qrInclude": "Inclure la région {name}",
+  "channelRegion_nearbyOption": "À proximité seulement (sans répéteurs)",
+  "channelRegion_nearby": "À proximité seulement",
+  "channelRegion_nearbyHelp": "Seules les radios à portée l'entendent. Envoyé une fois, sans nouvel essai."
 }

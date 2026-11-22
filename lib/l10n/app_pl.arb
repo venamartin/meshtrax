@@ -3010,5 +3010,8 @@
   "repeaterRegions_under": "Pod",
   "repeaterRegions_fromYours": "Z twoich regionów",
   "repeaterRegions_alreadyThere": "Już jest na tym przekaźniku.",
-  "channelRegion_qrInclude": "Dołącz region {name}"
+  "channelRegion_qrInclude": "Dołącz region {name}",
+  "channelRegion_nearbyOption": "Tylko w pobliżu (bez przekaźników)",
+  "channelRegion_nearby": "Tylko w pobliżu",
+  "channelRegion_nearbyHelp": "Słyszą to tylko radia w zasięgu. Wysłane raz, bez ponowień."
 }

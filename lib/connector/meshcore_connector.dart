@@ -22,6 +22,7 @@ import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
 import '../helpers/advert_signature.dart';
 import '../helpers/cayenne_lpp.dart';
+import '../helpers/channel_packet.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
 import '../helpers/passing_copy.dart';
@@ -2187,9 +2188,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (channel: channel, secs: secs, text: text, messageId: messageId),
     );
     if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
-    final key = _findChannelByIndex(channel)?.psk;
+    final sentOn = _findChannelByIndex(channel);
+    final key = sentOn?.psk;
     final name = _selfName;
-    if (messageId != null && key != null && name != null) {
+    // A Nearby only send reaches no observer server worth asking.
+    if (messageId != null &&
+        key != null &&
+        name != null &&
+        !_isNearbyOnly(sentOn!.idKey)) {
       onChannelSendStamped?.call((
         messageId: messageId,
         channelKey: key,
@@ -4392,10 +4398,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       while (_regionSend != null) {
         await _regionSend;
       }
+      // A Nearby only channel goes out zero-hop, as a packet the app built;
+      // its OK settles the message as the channel send's OK would.
+      final nearby = _nearbyPacketFor(data);
       return _writeFrame(
-        data,
+        nearby ?? data,
         channelSendQueueId: channelSendQueueId,
         expectsGenericAck: expectsGenericAck,
+        ackAs: nearby == null ? null : data[0],
       );
     }
     while (_regionSend != null) {
@@ -4436,6 +4446,34 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// Firmware 11+ keeps a default region.
   bool get supportsRadioDefaultRegion => (_firmwareVerCode ?? 0) >= 11;
 
+  /// Firmware 13+ sends a packet the app built (CMD_SEND_RAW_PACKET), which
+  /// a Nearby only channel needs: the radio has no zero-hop channel send.
+  bool get supportsNearbyOnly => (_firmwareVerCode ?? 0) >= 13;
+
+  bool _isNearbyOnly(String idKey) =>
+      regionService?.regionOf(idKey) == RegionHelper.nearbyOnly;
+
+  /// The raw-packet frame that sends the channel text [data] zero-hop, when
+  /// its channel is Nearby only; null otherwise. Older firmware sends it as
+  /// a normal flood.
+  Uint8List? _nearbyPacketFor(Uint8List data) {
+    if (!supportsNearbyOnly || data.length < 7) return null;
+    if (data[0] != cmdSendChannelTxtMsg) return null;
+    final channel = _channels.where((c) => c.index == data[2]).firstOrNull;
+    final name = _selfName;
+    if (channel == null || name == null || !_isNearbyOnly(channel.idKey)) {
+      return null;
+    }
+    final packet = ChannelPacket.zeroHopText(
+      channelKey: channel.psk,
+      senderName: name,
+      text: data.sublist(7),
+      timestampSecs: ByteData.sublistView(data, 3, 7).getUint32(0, Endian.little),
+    );
+    // Priority 0: the radio queues routed packets so (Mesh::sendDirect).
+    return Uint8List.fromList([cmdSendRawPacket, 0, ...packet]);
+  }
+
   /// The frame that puts the radio in the region of the channel [data] sends
   /// to; null for any other frame, or a channel with no region of its own.
   Uint8List? _regionFrameFor(Uint8List data) {
@@ -4445,17 +4483,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     final index = data[2];
     final channel = _channels.where((c) => c.index == index).firstOrNull;
     final region = channel == null ? null : regions.regionOf(channel.idKey);
-    if (region == null) return null;
+    if (region == null || region == RegionHelper.nearbyOnly) return null;
     if (region == RegionHelper.everywhere) {
       return supportsRegionEverywhere ? buildFloodUnscopedFrame() : null;
     }
     return buildSetFloodScopeKeyFrame(RegionHelper.keyFor(region));
   }
 
+  /// [ackAs]: the command code the radio's OK is counted for, when [data]
+  /// stands in for another command (a Nearby only channel send).
   Future<void> _writeFrame(
     Uint8List data, {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
+    int? ackAs,
   }) async {
     _bleDebugLogService?.logFrame(data, outgoing: true);
 
@@ -4464,8 +4505,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // and be dispatched on the event loop during the write/delay below — if the
     // queue entry isn't in place yet, _handleOk sees an empty queue and discards
     // the ack, leaving the message stuck 'pending' until it falsely times out.
+    final ackCode = ackAs ?? data[0];
     _trackPendingGenericAck(
-      data,
+      ackAs == null ? data : Uint8List.fromList([ackCode]),
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
     );
@@ -4474,7 +4516,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await writeToTransport(data);
     } catch (_) {
-      if (expectsGenericAck) _forgetPendingAck(data[0], channelSendQueueId);
+      if (expectsGenericAck) _forgetPendingAck(ackCode, channelSendQueueId);
       rethrow;
     }
   }
@@ -6886,7 +6928,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final retries = _channelMessageRetries[messageId] ?? 0;
     final maxRetries = _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
-    if (retries < maxRetries) {
+    // A Nearby only send isn't retried: nothing would carry it further.
+    final idKey = _findChannelByIndex(channelIndex)?.idKey;
+    if (retries < maxRetries && (idKey == null || !_isNearbyOnly(idKey))) {
       _channelMessageRetries[messageId] = retries + 1;
       unawaited(resendChannelMessageById(channelIndex, messageId));
       return;
@@ -9865,7 +9909,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ),
           _pathHashByteWidth,
         );
-        if (observable) {
+        if (_isNearbyOnly(idKey)) {
+          // Zero-hop: no repeater carries it, so there is no echo to wait
+          // for and nothing to retry. Sent is as far as it goes.
+        } else if (observable) {
           _startWaitForRepeatTimer(liveIndex, messageId);
         } else {
           appLogger.info(

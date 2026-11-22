@@ -7670,4 +7670,14 @@ class AppLocalizationsSl extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Vključi regijo $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Samo v bližini (brez repetitorjev)';
+
+  @override
+  String get channelRegion_nearby => 'Samo v bližini';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev.';
 }

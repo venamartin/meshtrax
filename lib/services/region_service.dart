@@ -36,7 +36,8 @@ class RegionService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// The channel's own region: a name, [RegionHelper.everywhere], or null.
+  /// The channel's own region: a name, [RegionHelper.everywhere],
+  /// [RegionHelper.nearbyOnly], or null.
   String? regionOf(String idKey) => _channelRegions[idKey.toLowerCase()];
 
   bool get anyChannelHasRegion => _channelRegions.isNotEmpty;
@@ -86,10 +87,10 @@ class RegionService extends ChangeNotifier {
       _channelRegions.remove(key);
       await prefs.remove('$_channelPrefix$key');
     } else {
-      final value = region == RegionHelper.everywhere
-          ? region
-          : RegionHelper.normalize(region);
-      if (value != RegionHelper.everywhere && !_regions.contains(value)) {
+      final value = RegionHelper.isRegionName(region)
+          ? RegionHelper.normalize(region)
+          : region;
+      if (RegionHelper.isRegionName(value) && !_regions.contains(value)) {
         if (!await add(value)) return;
       }
       _channelRegions[key] = value;

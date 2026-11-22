@@ -7680,4 +7680,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Incluir la región $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Solo cerca (sin repetidores)';
+
+  @override
+  String get channelRegion_nearby => 'Solo cerca';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos.';
 }

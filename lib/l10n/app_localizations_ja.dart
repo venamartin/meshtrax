@@ -7316,4 +7316,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'リージョン $name を含める';
   }
+
+  @override
+  String get channelRegion_nearbyOption => '近くだけ(リピーターなし)';
+
+  @override
+  String get channelRegion_nearby => '近くだけ';
+
+  @override
+  String get channelRegion_nearbyHelp => '届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。';
 }

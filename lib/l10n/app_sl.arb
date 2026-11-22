@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Pod",
   "repeaterRegions_fromYours": "Iz vaših regij",
   "repeaterRegions_alreadyThere": "Že na tem repetitorju.",
-  "channelRegion_qrInclude": "Vključi regijo {name}"
+  "channelRegion_qrInclude": "Vključi regijo {name}",
+  "channelRegion_nearbyOption": "Samo v bližini (brez repetitorjev)",
+  "channelRegion_nearby": "Samo v bližini",
+  "channelRegion_nearbyHelp": "Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev."
 }

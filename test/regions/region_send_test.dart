@@ -7,6 +7,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel.dart';
+import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/region_service.dart';
@@ -198,6 +199,52 @@ void main() {
     expect(c.pendingGenericAckIdsForTest, isEmpty);
     await pumpEventQueue();
     expect(c.written.length, before + 1);
+  });
+
+  group('Nearby only', () {
+    final repeatWait = MeshCoreConnector.channelRepeatWait;
+    setUp(() => MeshCoreConnector.channelRepeatWait =
+        const Duration(milliseconds: 200));
+    tearDown(() => MeshCoreConnector.channelRepeatWait = repeatWait);
+
+    List<Uint8List> raw() =>
+        c.written.where((f) => f[0] == cmdSendRawPacket).toList();
+
+    test('goes out zero-hop as a packet the app built, no region frames',
+        () async {
+      await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);
+      await send();
+      expect(codes(), isEmpty, reason: 'no channel frame, no region frame');
+      final frame = raw().single;
+      expect(frame[1], 0, reason: 'priority of a routed packet');
+      expect(frame[2], (0x05 << 2) | 0x02, reason: 'group text, DIRECT');
+      expect(frame[3], 0, reason: 'empty path: zero hop');
+    });
+
+    test("the radio's OK settles it as Sent, and nothing is retried",
+        () async {
+      await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);
+      await send();
+      expect(c.pendingGenericAckIdsForTest, hasLength(1));
+      c.handleFrameForTest([respCodeOk]);
+      await pumpEventQueue(times: 200);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+      final row = (await c.loadChannelMessagesFor(channel)).single;
+      expect(row.status, ChannelMessageStatus.sent);
+
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await pumpEventQueue(times: 200);
+      expect(raw(), hasLength(1), reason: 'no repeat heard is expected');
+    });
+
+    test('firmware older than 13 sends it as a normal channel message',
+        () async {
+      c.handleFrameForTest(_deviceInfo(12));
+      await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);
+      await send();
+      expect(raw(), isEmpty);
+      expect(codes(), [cmdSendChannelTxtMsg]);
+    });
   });
 
   group('a region left on the radio is cleared on connect', () {

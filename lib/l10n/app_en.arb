@@ -3701,5 +3701,8 @@
   "repeaterRegions_fromYours": "From your regions",
   "repeaterRegions_alreadyThere": "Already on this repeater.",
   "channelRegion_qrInclude": "Include the region {name}",
-  "@channelRegion_qrInclude": {"placeholders": {"name": {"type": "String"}}}
+  "@channelRegion_qrInclude": {"placeholders": {"name": {"type": "String"}}},
+  "channelRegion_nearbyOption": "Nearby only (no repeaters)",
+  "channelRegion_nearby": "Nearby only",
+  "channelRegion_nearbyHelp": "Only radios in range hear it. Sent once, with no retries."
 }

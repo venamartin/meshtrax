@@ -7665,4 +7665,14 @@ class AppLocalizationsSk extends AppLocalizations {
   String channelRegion_qrInclude(String name) {
     return 'Zahrnúť región $name';
   }
+
+  @override
+  String get channelRegion_nearbyOption => 'Len v blízkosti (bez opakovačov)';
+
+  @override
+  String get channelRegion_nearby => 'Len v blízkosti';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Počujú to len rádiá v dosahu. Odošle sa raz, bez opakovaní.';
 }

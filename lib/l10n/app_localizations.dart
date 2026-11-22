@@ -13047,6 +13047,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Include the region {name}'**
   String channelRegion_qrInclude(String name);
+
+  /// No description provided for @channelRegion_nearbyOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby only (no repeaters)'**
+  String get channelRegion_nearbyOption;
+
+  /// No description provided for @channelRegion_nearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby only'**
+  String get channelRegion_nearby;
+
+  /// No description provided for @channelRegion_nearbyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Only radios in range hear it. Sent once, with no retries.'**
+  String get channelRegion_nearbyHelp;
 }
 
 class _AppLocalizationsDelegate

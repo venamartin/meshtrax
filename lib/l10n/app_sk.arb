@@ -2972,5 +2972,8 @@
   "repeaterRegions_under": "Pod",
   "repeaterRegions_fromYours": "Z vašich regiónov",
   "repeaterRegions_alreadyThere": "Už je na tomto opakovači.",
-  "channelRegion_qrInclude": "Zahrnúť región {name}"
+  "channelRegion_qrInclude": "Zahrnúť región {name}",
+  "channelRegion_nearbyOption": "Len v blízkosti (bez opakovačov)",
+  "channelRegion_nearby": "Len v blízkosti",
+  "channelRegion_nearbyHelp": "Počujú to len rádiá v dosahu. Odošle sa raz, bez opakovaní."
 }
