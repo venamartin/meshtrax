@@ -74,6 +74,17 @@ class EnhancedImage {
   const EnhancedImage({required this.scores, required this.flagged, this.rgb});
 }
 
+/// How faces are covered before a photo is coded.
+enum FaceCover {
+  none,
+
+  /// Blurred and pulled towards grey; small ones get a flat tone.
+  blur,
+
+  /// Painted dark grey: when the blurred photo doesn't pass the check.
+  dark,
+}
+
 /// A photo coded for sending. [bitstream] is null when the original was
 /// flagged: a flagged photo is never encoded.
 class EncodedImage {
@@ -83,10 +94,14 @@ class EncodedImage {
   /// The rANS bitstream, payload only, or null when [flagged].
   final Uint8List? bitstream;
 
+  /// How many faces were covered before coding.
+  final int faces;
+
   const EncodedImage({
     required this.scores,
     required this.flagged,
     this.bitstream,
+    this.faces = 0,
   });
 }
 

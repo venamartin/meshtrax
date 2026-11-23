@@ -10,13 +10,13 @@
 
 ## In one paragraph
 
-The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its `ft8` level: about 400 bytes. traxpix cuts that into 2 to 6 channel-data packets of up to 157 bytes and adds one XOR repair packet. They go one at a time as MeshCore channel data, type `0x0170`, as a flood like a channel message, or zero hop. The receiving phone puts the packets back together, decodes the bitstream into the model's latents, and a decoder built on SD-Turbo draws a picture from them. A safety classifier checks every picture before it is shown. Full screen, the user can enlarge it 4× with a small Real-ESRGAN model. Everything runs on the phone, on the CPU, with Google's LiteRT 2.3.0.
+The sender's phone blurs any faces in a 512 × 512 photo, then codes it with the AEIC-SE image codec at its `ft8` level: about 400 bytes. traxpix cuts that into 2 to 6 channel-data packets of up to 157 bytes and adds one XOR repair packet. They go one at a time as MeshCore channel data, type `0x0170`, as a flood like a channel message, or zero hop. The receiving phone puts the packets back together, decodes the bitstream into the model's latents, and a decoder built on SD-Turbo draws a picture from them. A safety classifier checks every picture before it is shown. Full screen, the user can enlarge it 4× with a small Real-ESRGAN model. Everything runs on the phone, on the CPU, with Google's LiteRT 2.3.0.
 
 ## Where the code is
 
 | Part | Where | What it does |
 |---|---|---|
-| Packet format | `packages/traxpix` (pure Dart) | `photo_chunks.dart`: wire format, chunking, the repair packet, reassembly, the transport and the gaps between packets. `photo_extras.dart`: a photo's extras, the sender's tag and position. `image_codec_entropy.dart`, `rans_coder.dart`, `rans_coders.dart`, `entropy_tables.dart`: the entropy coding between latents and bitstream. |
+| Packet format | `packages/traxpix` (pure Dart) | `photo_chunks.dart`: wire format, chunking, the repair packet, reassembly, the transport and the gaps between packets. `photo_extras.dart`: a photo's extras, the sender's tag and position. `face_cover.dart`: finding and covering faces. `image_codec_entropy.dart`, `rans_coder.dart`, `rans_coders.dart`, `entropy_tables.dart`: the entropy coding between latents and bitstream. |
 | Model runtime | `packages/traxpix_litert` (Flutter plugin) | `litert_api.dart`: LiteRT's C API through FFI. `litert_codec_backend.dart`: runs the models. `image_codec_session.dart`: one worker isolate per job. `image_codec_bundle.dart`, `image_codec_files.dart`: the files and their hosted SHA-256 pins. `image_codec_memory.dart`: memory checks. `image_safety.dart`: the classifier and its thresholds. Platform folders: the LiteRT binaries. |
 | Radio side | `lib/services/photo_mesh.dart` | Sends photos, listens for photo packets, files photos in their channel's chat, decides whether the phone can do photos at all. |
 | Photos kept | `lib/services/photo_store.dart` | The records, the coded bytes, the rebuilt pictures, and the one-at-a-time queue for rebuilds and enlargements. |
@@ -31,13 +31,14 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 
 1. **Pick and crop.** The photo is cropped square and scaled to 512 × 512 RGB.
 2. **Check.** The classifier checks the original. A flagged photo is never coded or sent.
-3. **Code.** The send side of the entropy network (`aeic_side_ft8.tflite`) turns the picture into latents, and the rANS coder writes them as a bitstream of 208 to 796 bytes, about 400 on average.
-4. **Preview.** The phone rebuilds the bitstream exactly as a receiver will and checks that too, with the sender's margin (see [Safety](#safety)), so the sender sees what the others will get and they won't refuse it. If the memory isn't there, it says so, the original takes the margin instead, and the photo can still be sent.
-5. **Tag and position.** The sender may type a tag, up to 24 characters and 64 UTF-8 bytes, and turn on **Include position**, off for each new photo, at about 10 km, 600 m, 40 m or 2 m (3 to 6 bytes, 40 m to start). The position is the radio's, from its GPS or the one set in the app. Both go ahead of the bitstream as extras (`photoPayload`; see [The packet format](#the-packet-format)). The receiver shows them as text, so the AI can never change them.
-6. **Packets.** The payload is cut into blobs of up to 157 bytes (`buildImageChunks`), then the XOR repair blob is added.
-7. **Route.** Each blob goes to the radio as `CMD_SEND_CHANNEL_DATA` (62), with path length `0xFF` for a flood or `0` for zero hop. A flood goes through the radio's own scoped flood (`sendGroupData` → `sendFloodScoped`), the same call as a channel text, so it takes the radio's region. Where the connector puts a channel's sends in a region, or sends a Nearby only channel zero hop, channel data is included, so a photo follows its channel as text does.
-8. **Pacing.** One packet at a time, each handed over only after the gap (see [The gap between packets](#the-gap-between-packets)), so an SOS or a message sent meanwhile goes first.
-9. **Chat.** The photo is filed in the chat as the sender's own, with the preview as its picture.
+3. **Faces.** With **Blur faces** on (the default for each photo), MediaPipe's BlazeFace models find the faces (`face_cover.dart`, see [Faces](#faces)) and each is blurred and pulled towards grey, or under a flat tone when it's under 32 px. The AI rebuilds faces badly, so it would make them up.
+4. **Code.** The send side of the entropy network (`aeic_side_ft8.tflite`) turns the picture into latents, and the rANS coder writes them as a bitstream of 208 to 796 bytes, about 400 on average.
+5. **Preview.** The phone rebuilds the bitstream exactly as a receiver will and checks that too, with the sender's margin (see [Safety](#safety)), so the sender sees what the others will get and they won't refuse it. If the blurred photo's rebuild doesn't pass, the faces go under dark grey instead and it's coded and checked again. If the memory isn't there, it says so, the original takes the margin instead, and the photo can still be sent.
+6. **Tag and position.** The sender may type a tag, up to 24 characters and 64 UTF-8 bytes, and turn on **Include position**, off for each new photo, at about 10 km, 600 m, 40 m or 2 m (3 to 6 bytes, 40 m to start). The position is the radio's, from its GPS or the one set in the app. Both go ahead of the bitstream as extras (`photoPayload`; see [The packet format](#the-packet-format)). The receiver shows them as text, so the AI can never change them.
+7. **Packets.** The payload is cut into blobs of up to 157 bytes (`buildImageChunks`), then the XOR repair blob is added.
+8. **Route.** Each blob goes to the radio as `CMD_SEND_CHANNEL_DATA` (62), with path length `0xFF` for a flood or `0` for zero hop. A flood goes through the radio's own scoped flood (`sendGroupData` → `sendFloodScoped`), the same call as a channel text, so it takes the radio's region. Where the connector puts a channel's sends in a region, or sends a Nearby only channel zero hop, channel data is included, so a photo follows its channel as text does.
+9. **Pacing.** One packet at a time, each handed over only after the gap (see [The gap between packets](#the-gap-between-packets)), so an SOS or a message sent meanwhile goes first.
+10. **Chat.** The photo is filed in the chat as the sender's own, with the preview as its picture.
 
 ## The packet format
 
@@ -158,6 +159,13 @@ They apply on the frequencies of the presets in Radio settings, except the Off-G
 - **On Public and hashtag channels**, the first time, a longer explanation comes first: most people there won't see the photo, only MeshTrax shows photos, every repeater sends all of it again, and what's better. "Don't show this again" skips it from then on; the confirmation stays.
 - **Time limits:** one photo every 10 minutes from each radio, and one through repeaters every 30 minutes, kept per radio key (`notePhotoSent`). Zero hop is the way to send another sooner. **Ignore the photo time limits** in App settings, Messaging, Photos (off by default, for testing) lifts both on that phone.
 
+## Faces
+
+- **The models:** BlazeFace short range (128 px input, 896 anchors) and full range (192 px, 2304 anchors), from MediaPipe's Face Detector, Apache-2.0 (`assets/licenses/BlazeFace-NOTICE.txt`). About 1.3 MB together, they come with the app (`assets/models/`) and are copied to the cache folder for LiteRT, which reads models from files (`PhotoStore.sendingBundle`). Only the sender runs them.
+- **Finding faces:** the short-range model on the whole photo, kept at 0.75 or more; the full-range model on the whole photo and on four overlapping 320 px quarters, at 0.5. Overlapping boxes merge as MediaPipe's weighted suppression merges them, and a box whose six points can't be a face (the mouth not well below the eyes, or the nose above them) is dropped.
+- **Covers:** an oval fitted to the six points (tilted with the eyes, ear to ear, brow to chin) together with an oval inside the box; inside it, a Gaussian blur of the face's own pixels pulled 85 % towards grey, with a soft edge. A face under 32 px gets a flat tone instead. The fallback paints the same ovals dark grey (45).
+- **Chosen by:** tests in Python on 255 crops of trip photos, where the settings left 68 of 68 photos with faces sent and shown. The Dart port feeds the models what Pillow's bilinear resize fed them, bit for bit, and blurs as scipy does: on every crop it finds the same faces (`packages/traxpix_litert/test/face_reference_test.dart`, on a Mac with the model files), and with set boxes its covers match Python's exactly (`packages/traxpix/test/face_cover_test.dart`).
+
 ## Safety
 
 - **The classifier:** `image-safety-classifier-s`. It sees the whole picture, area-scaled to 224 × 224, never cropped. A picture is flagged when its NSFW or NSFL score is above its SFW score, the classifier author's own rule. A sender's check is stricter: SFW has to lead both by 0.3 (`ImageSafetyRule.standard`). Phones score the same rebuild a little differently (by up to 0.115 between an iPhone XS and a Mac, on 68 photos), and the margin keeps a receiver from refusing a photo its sender passed.
@@ -178,7 +186,7 @@ Deleting the model (App settings → Messaging → Photos) deletes the weight ca
 
 ## Testing
 
-- `packages/traxpix`: `dart test`. It covers the wire format, chunking and the repair packet, reassembly, the extras (tag and position), the gaps, the transport, and the entropy coder. The coder is checked against reference vectors, and the ft8 end-to-end recordings come from three public Kodak images.
+- `packages/traxpix`: `dart test`. It covers the wire format, chunking and the repair packet, reassembly, the extras (tag and position), finding and covering faces, the gaps, the transport, and the entropy coder. The coder is checked against reference vectors, and the ft8 end-to-end recordings come from three public Kodak images.
 - `packages/traxpix_litert`: `flutter test`. It covers the file pins and the classifier's input and thresholds. CI runs both.
 - `litert_reference_test.dart` needs the real files, so it runs on a Mac only, with five environment variables:
   - `TRAXPIX_LITERT_LIB`: `libCLiteRT_mac.dylib`;
@@ -188,5 +196,6 @@ Deleting the model (App settings → Messaging → Photos) deletes the weight ca
   - `TRAXPIX_LITERT_OUT`: where its output goes.
 
   It codes and decodes the 190 photos, writes `ref.txt` (each photo's bitstream and latent hash, the reference a phone's results are compared with), times the 12 rebuilds, and enlarges 3 pictures.
-- The app's tests are `test/services/photo_*` and `test/screens/photo_*`.
+- `face_reference_test.dart`, also on a Mac only, compares faces with the Python tests that chose the settings: with `TRAXPIX_LITERT_LIB` and `TRAXPIX_LITERT_DIR` as above, `TRAXPIX_FACES_DIR` (the two BlazeFace models) and `TRAXPIX_FACES_REF` (the crops, `all-faces3.tsv` and Python's covers in `blurred3/` and `dark/`).
+- The app's tests are `test/services/photo_*`, `test/screens/photo_*` and `test/widgets/photo_*`.
 - **Over the air:** two radios on 920.000 MHz on a private channel, zero hop, so nothing reaches the real mesh. On a MeshCore frequency, a couple of packets at most.

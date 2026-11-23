@@ -15,6 +15,16 @@ export 'src/image_codec_entropy.dart'
         aeicRgbToChw,
         aeicToSymbols,
         roundHalfToEven;
+export 'src/face_cover.dart'
+    show
+        FaceModelOutput,
+        FaceModelRunner,
+        FoundFace,
+        blurFaces,
+        darkenFaces,
+        findFaces,
+        kFaceSide,
+        pillowBilinear;
 export 'src/photo_chunks.dart';
 export 'src/photo_extras.dart';
 export 'src/rans_coders.dart';

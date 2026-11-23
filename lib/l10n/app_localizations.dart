@@ -239,6 +239,30 @@ abstract class AppLocalizations {
   /// **'Tag (optional)'**
   String get photo_tagTitle;
 
+  /// No description provided for @photo_blurFaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur faces'**
+  String get photo_blurFaces;
+
+  /// No description provided for @photo_blurFacesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.'**
+  String get photo_blurFacesHint;
+
+  /// No description provided for @photo_facesBlurred.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 face blurred} other{{count} faces blurred}}'**
+  String photo_facesBlurred(int count);
+
+  /// No description provided for @photo_facesDarkened.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 face covered in grey: blurred, the photo didn\'t pass the safety check} other{{count} faces covered in grey: blurred, the photo didn\'t pass the safety check}}'**
+  String photo_facesDarkened(int count);
+
   /// No description provided for @photo_includePosition.
   ///
   /// In en, this message translates to:

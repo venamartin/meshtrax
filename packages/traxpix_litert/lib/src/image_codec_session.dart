@@ -111,9 +111,16 @@ class ImageCodecSession {
     );
   }
 
-  /// Checks the photo, then codes it. A flagged photo has no bitstream.
-  Future<EncodedImage> encode(Uint8List rgbBytes) =>
-      _submit('encode', rgbBytes);
+  /// Checks the photo, covers its faces as [faces] says, then codes it. A
+  /// flagged photo has no bitstream.
+  Future<EncodedImage> encode(
+    Uint8List rgbBytes, {
+    FaceCover faces = FaceCover.none,
+  }) => _submit(switch (faces) {
+    FaceCover.none => 'encode',
+    FaceCover.blur => 'encodeBlurred',
+    FaceCover.dark => 'encodeDarkened',
+  }, rgbBytes);
 
   /// Rebuilds the photo and checks it, with [forSender] by the sender's
   /// stricter check. A flagged picture has no pixels.
@@ -232,6 +239,14 @@ Future<void> _workerMain(_Boot boot) async {
             final bytes = map['bytes'] as Uint8List;
             final Object value = switch (map['op']) {
               'encode' => await backend.checkedEncode(bytes),
+              'encodeBlurred' => await backend.checkedEncode(
+                bytes,
+                cover: FaceCover.blur,
+              ),
+              'encodeDarkened' => await backend.checkedEncode(
+                bytes,
+                cover: FaceCover.dark,
+              ),
               'rebuild' => await backend.rebuild(bytes),
               'senderRebuild' => await backend.rebuild(bytes, forSender: true),
               'decodeToLatent' => await backend.decodeToLatent(bytes),

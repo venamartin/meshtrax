@@ -36,6 +36,8 @@ class LiteRtImageCodecBackend {
   LiteRtModel? _unet;
   LiteRtModel? _vae;
   LiteRtModel? _safety;
+  LiteRtModel? _faceShort;
+  LiteRtModel? _faceFull;
 
   LiteRtImageCodecBackend(
     this.bundle,
@@ -72,16 +74,50 @@ class LiteRtImageCodecBackend {
     }
   }
 
-  Future<EncodedImage> checkedEncode(Uint8List rgbBytes) async {
+  /// Checks the original, then covers its faces as [cover] says and codes
+  /// it. The check is on the photo as taken, before any cover.
+  Future<EncodedImage> checkedEncode(
+    Uint8List rgbBytes, {
+    FaceCover cover = FaceCover.none,
+  }) async {
     final scores = classify(rgbBytes);
     if (bundle.safetyRule.flags(scores)) {
       return EncodedImage(scores: scores, flagged: true);
     }
+    final (picture, faces) = coverFaces(rgbBytes, cover);
     return EncodedImage(
       scores: scores,
       flagged: false,
-      bitstream: await encode(rgbBytes),
+      bitstream: await encode(picture),
+      faces: faces,
     );
+  }
+
+  /// [rgbBytes] with its faces covered as [cover] says, and how many.
+  (Uint8List, int) coverFaces(Uint8List rgbBytes, FaceCover cover) {
+    if (cover == FaceCover.none) return (rgbBytes, 0);
+    final faces = findFaces(rgbBytes, _runFaceModel);
+    final covered = cover == FaceCover.dark
+        ? darkenFaces(rgbBytes, faces)
+        : blurFaces(rgbBytes, faces);
+    return (covered, faces.length);
+  }
+
+  /// One of the two BlazeFace models, kept loaded once used: they're small.
+  /// Their outputs are told apart by size, 16 regressors per anchor and one
+  /// score.
+  FaceModelOutput _runFaceModel(Float32List input, {required bool fullRange}) {
+    final path = fullRange ? bundle.faceFullPath : bundle.faceShortPath;
+    if (path == null) throw StateError('This bundle has no face models.');
+    final model = fullRange
+        ? _faceFull ??= _load(path, weightCache: false)
+        : _faceShort ??= _load(path, weightCache: false);
+    final out = model.run([input]).values.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    if (out.length != 2) {
+      throw StateError('$path gave ${out.length} outputs, not 2.');
+    }
+    return (regressors: out.first, logits: out.last);
   }
 
   Future<RebuiltImage> rebuild(
@@ -244,8 +280,10 @@ class LiteRtImageCodecBackend {
   void dispose() {
     _releaseDecoder();
     _releaseEntropy();
-    _safety?.dispose();
-    _safety = null;
+    for (final model in [_safety, _faceShort, _faceFull]) {
+      model?.dispose();
+    }
+    _safety = _faceShort = _faceFull = null;
     _environment.dispose();
   }
 }

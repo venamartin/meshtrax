@@ -175,6 +175,11 @@ flutter:
     # photo model's runtime ships inside the app. Registered in main.dart.
     - assets/licenses/LiteRT-LICENSE.txt
     - assets/licenses/LiteRT-THIRD_PARTY_NOTICE.txt
+    # MediaPipe's BlazeFace models, which find faces to blur before a photo
+    # is coded (Apache-2.0, registered in main.dart).
+    - assets/models/blaze_face_short_range.tflite
+    - assets/models/blaze_face_full_range.tflite
+    - assets/licenses/BlazeFace-NOTICE.txt
 
   # Code text in messages, the same on every platform. SIL Open Font
   # License 1.1, registered in main.dart's licenses.

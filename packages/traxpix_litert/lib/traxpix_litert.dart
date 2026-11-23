@@ -3,7 +3,8 @@
 /// long-lived worker isolate. Native platforms only.
 library;
 
-export 'src/image_codec_bundle.dart' show ImageCodecBundle;
+export 'src/image_codec_bundle.dart'
+    show ImageCodecBundle, kFaceFullRangeFile, kFaceShortRangeFile;
 export 'src/image_codec_files.dart'
     show
         ImageCodecFile,
@@ -22,6 +23,7 @@ export 'src/image_safety.dart'
     show
         EncodedImage,
         EnhancedImage,
+        FaceCover,
         ImageSafetyScores,
         ImageSafetyRule,
         RebuiltImage;

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:traxmap/traxmap.dart';
@@ -13,8 +14,10 @@ import 'package:traxpix_litert/traxpix_litert.dart';
 import '../storage/prefs_manager.dart';
 import '../utils/app_logger.dart';
 
-/// The ft8 model's LiteRT files in [dir].
-ImageCodecBundle ft8Bundle(String dir) => ImageCodecBundle.inDirectory(dir);
+/// The ft8 model's LiteRT files in [dir], and the face models in
+/// [facesDir] when given.
+ImageCodecBundle ft8Bundle(String dir, {String? facesDir}) =>
+    ImageCodecBundle.inDirectory(dir, facesDir: facesDir);
 
 /// One photo in a chat.
 class PhotoRecord {
@@ -156,6 +159,30 @@ class PhotoStore extends ChangeNotifier {
   }
 
   ImageCodecBundle get bundle => ft8Bundle(_models);
+
+  /// The bundle for coding a photo to send: [bundle] and the two face models,
+  /// which come with the app. LiteRT reads models from files, so they're
+  /// copied to the cache folder, which no backup includes, whenever they
+  /// aren't there.
+  Future<ImageCodecBundle> sendingBundle() async {
+    await load();
+    final faces = '${(await getApplicationCacheDirectory()).path}/faces';
+    Directory(faces).createSync(recursive: true);
+    for (final name in [kFaceShortRangeFile, kFaceFullRangeFile]) {
+      final file = File('$faces/$name');
+      final data = await rootBundle.load('assets/models/$name');
+      if (file.existsSync() && file.lengthSync() == data.lengthInBytes) {
+        continue;
+      }
+      File('${file.path}.part')
+        ..writeAsBytesSync(
+          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+          flush: true,
+        )
+        ..renameSync(file.path);
+    }
+    return ft8Bundle(_models, facesDir: faces);
+  }
 
   /// Whether the photo model files are on this device.
   Future<bool> modelsReady() async {

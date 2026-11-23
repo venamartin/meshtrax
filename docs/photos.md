@@ -17,7 +17,7 @@ The phones that receive it rebuild a picture from that code with the same model.
 ## Sending a photo
 
 1. In a channel's chat, tap **+**, then **Photo**.
-2. Take a photo or choose one, then move and zoom until what matters fills the square.
+2. Take a photo or choose one, then move and zoom until what matters fills the square. **Blur faces** is on: your phone blurs any faces it finds before the photo is coded, because the AI can't rebuild faces and would make them up. If the blurred photo doesn't pass the safety check, the faces are covered in grey instead.
 3. Tap **Preview**. The photo is checked and coded, then rebuilt exactly as the others will see it.
 4. Type a tag if it helps, up to 24 characters, such as "Spring flowing". It travels as text, exactly as you type it, so the rebuild can't change it.
 5. To show where you are, turn on **Include position** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's position now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.

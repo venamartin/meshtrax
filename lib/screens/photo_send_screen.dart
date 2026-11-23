@@ -53,6 +53,14 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   /// channel's messages go.
   bool _zeroHop = false;
 
+  /// Faces are blurred before coding. On for each new photo.
+  bool _blurFaces = true;
+
+  /// Faces covered in the photo as coded, and whether in dark grey: the
+  /// blurred photo didn't pass the check.
+  int _faces = 0;
+  bool _darkened = false;
+
   /// The radio's position goes with the photo. Off for each new photo.
   bool _includePosition = false;
 
@@ -171,14 +179,17 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     ImageCodecSession? codec;
     try {
       final rgb = await _cropToRgb();
-      codec = await ImageCodecSession.spawn(store.bundle);
-      final sent = await codec.encode(rgb);
-      final bitstream = sent.bitstream;
+      codec = await ImageCodecSession.spawn(await store.sendingBundle());
+      final cover = _blurFaces ? FaceCover.blur : FaceCover.none;
+      var sent = await codec.encode(rgb, faces: cover);
+      var bitstream = sent.bitstream;
       if (bitstream == null) {
         setState(() => _step = _Step.flagged);
         return;
       }
       _bitstream = bitstream;
+      _faces = sent.faces;
+      _darkened = false;
       // What the receivers will see: rebuilt and checked here first.
       var room = imageCodecHasRoomToRebuild();
       if (!room) {
@@ -195,7 +206,20 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         _previewNote = l10n.photo_previewNoMemory;
       } else {
         setState(() => _working = l10n.photo_rebuildingPreview);
-        final rebuilt = await codec.rebuild(bitstream, forSender: true);
+        var rebuilt = await codec.rebuild(bitstream, forSender: true);
+        if (rebuilt.flagged && cover == FaceCover.blur && sent.faces > 0) {
+          // A blurred face can still be rebuilt as something it isn't: the
+          // faces go under dark grey instead.
+          sent = await codec.encode(rgb, faces: FaceCover.dark);
+          bitstream = sent.bitstream;
+          if (bitstream == null) {
+            setState(() => _step = _Step.flagged);
+            return;
+          }
+          _bitstream = bitstream;
+          _darkened = true;
+          rebuilt = await codec.rebuild(bitstream, forSender: true);
+        }
         if (rebuilt.flagged) {
           setState(() => _step = _Step.flagged);
           return;
@@ -505,7 +529,15 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         );
       },
     ),
-    const SizedBox(height: 16),
+    SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      secondary: const Icon(Icons.face_retouching_off),
+      title: Text(context.l10n.photo_blurFaces),
+      subtitle: Text(context.l10n.photo_blurFacesHint),
+      value: _blurFaces,
+      onChanged: (on) => setState(() => _blurFaces = on),
+    ),
+    const SizedBox(height: 8),
     FilledButton(onPressed: _preview, child: Text(context.l10n.photo_preview)),
     TextButton(
       onPressed: () => setState(() => _step = _Step.pick),
@@ -560,6 +592,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           ),
         ),
       if (_previewNote != null) Text(_previewNote!, style: quiet),
+      if (_faces > 0)
+        Text(
+          _darkened
+              ? l10n.photo_facesDarkened(_faces)
+              : l10n.photo_facesBlurred(_faces),
+          style: quiet,
+        ),
       const SizedBox(height: 16),
       TextField(
         controller: _tag,

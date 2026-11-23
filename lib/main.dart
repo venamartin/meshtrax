@@ -225,6 +225,10 @@ https://creativecommons.org/licenses/by/4.0/
         await rootBundle.loadString('assets/licenses/$file'),
       );
     }
+    yield LicenseEntryWithLineBreaks(
+      <String>['BlazeFace (MediaPipe)'],
+      await rootBundle.loadString('assets/licenses/BlazeFace-NOTICE.txt'),
+    );
   });
 }
 
