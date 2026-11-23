@@ -2451,7 +2451,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             () => DrawingComposeScreen.open(context, maxBytes: maxBytes),
           ),
         ),
-        if (photosSupported && PhotoStore.instance.photosEnabled)
+        if (photosSupported &&
+            PhotoStore.instance.photosEnabled &&
+            PhotoMesh.of(connector).radioSupportsPhotos)
           AttachTile(
             icon: Icons.photo_camera,
             label: l10n.tray_photo,
