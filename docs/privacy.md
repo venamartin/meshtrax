@@ -1,6 +1,6 @@
 # MeshTrax Privacy Policy
 
-**Last updated:** November 17, 2026
+**Last updated:** November 22, 2026
 **Applies to:** MeshTrax for Android (package `com.vena.meshtrax`), version 1.5.7 and later, MeshTrax for iOS (bundle `com.vena.meshtrax`), version 1.7.20 and later, MeshTrax for macOS (Mac App Store, bundle `com.vena.meshtrax`), version 1.10.0 and later, and MeshTrax for Windows (Microsoft Store and GitHub download)
 
 ## Introduction
@@ -12,7 +12,7 @@ The App is developed by an independent, open-source developer. You can review th
 ## Summary
 
 - The App has **no user accounts** and requires **no sign-up**.
-- There is **no MeshTrax account system or cloud backend for your data**. The only server the developer runs is a download server for offline maps (`maps.meshtrax.io`, hosted on Cloudflare R2), which serves map files, trail routing data, points of interest (place names, Wikipedia text and photos) and addresses, and receives none of your data. We receive **none** of your data automatically. The only exception is a message you explicitly choose to **report**, which is sent to the developer through your own email app (see "Content reporting").
+- There is **no MeshTrax account system or cloud backend for your data**. The developer runs two servers, both on Cloudflare: a download server for offline maps (`maps.meshtrax.io`, on Cloudflare R2), which serves map files, trail routing data, points of interest (place names, Wikipedia text and photos), addresses and the photo model, and receives none of your data; and a report inbox (`reports.meshtrax.io`), which passes a photo report you choose to send on to the developer by email. We receive **none** of your data automatically. The only exception is content you explicitly choose to **report** (see "Content reporting").
 - The App does **not** use analytics, advertising, crash reporting, or usage tracking of any kind. (On Android, the QR code scanner's Google library may send Google its own usage statistics; see "Camera and photos".)
 - Your messages, contacts, channels, and settings are stored **only on your device** and are exchanged only with your own MeshCore companion device and, through it, the LoRa mesh network.
 - Apart from the Android QR scanner's statistics noted above, the only data the App sends over the internet goes to the MeshTrax map server, to **Giphy**, which powers the optional GIF features, and, only if you turn on **Check sends with observers**, to the **observer server** you choose. What each receives is described below. The base map that comes with the App, line of sight, radio reach, trail routing and place search need no connection.
@@ -35,6 +35,10 @@ All of the following is stored locally in the App's private storage on your devi
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 | Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages (name, signal, how many repeaters), for the last 300 messages | Show the ear on a message and list the observers in its packet path |
+| Photos | For each photo sent or received in a chat: its code (the few hundred bytes that crossed the radio), its tag, and, once it has been rebuilt and passed the safety check, the rebuilt picture. A picture the safety check flags is never kept. Rebuilt pictures are kept in a cache of at most 100 MB, oldest dropped first | Show photos in the chat without rebuilding them each time |
+| Photo reports | A photo you reported, until the report inbox has the report: who sent it, when, its size, whether the safety check hid it, what you wrote, and its code only if you chose to include it | Send the report when you have internet |
+| The photo model | About 1.2 GB, downloaded only when you choose, with its licence texts | Code and rebuild photos on your device |
+| Photo send times | When this radio last sent a photo on a MeshCore frequency | Keep to one photo every 10 minutes, and one through repeaters every 30 |
 | TRAX mode | Your companion device's radio settings from before TRAX mode (frequency, bandwidth, spreading factor, coding rate, transmit power, Off-Grid Repeat), when it switched and the trip's end; your TRAX settings (preset, trip channel, trip end, Tell the group) | Put the radio back on its regular mesh when you leave TRAX mode, and remind you after the trip |
 
 **Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
@@ -43,14 +47,14 @@ All of the following is stored locally in the App's private storage on your devi
 
 **Maps from a drive:** When you choose **Use a drive** in Offline maps, the App reads the folder you pick (on a USB drive, an SD card or your device) and copies the map files you choose into its own storage. It reads nothing else there, and sends nothing anywhere.
 
-**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest and addresses are kept out of these backups.
+**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest, addresses, the photo model and rebuilt pictures are kept out of these backups; a photo's code is in them, like your messages.
 
 ## Data shared with third parties
 
 The App contacts the MeshTrax map server, one third-party service, Giphy, and, only if you turn it on, an observer server you choose, and only when you use the associated feature. In each case, because the request is made directly from your device, that service can see your device's **IP address**. We receive nothing from these interactions.
 
 ### 1. MeshTrax map server (offline maps)
-- **When:** You open the Offline maps screen, download or update a map, trail routing data, points of interest or addresses, and, while offline maps are installed, about once a day to check for updates.
+- **When:** You open the Offline maps screen, download or update a map, trail routing data, points of interest or addresses, download the photo model, and, while offline maps are installed, about once a day to check for updates.
 - **What is sent:** Requests for the list of what's available and for the files you choose, with standard HTTP headers. No personal data and no location; the region you pick shows only as which files are requested.
 - **Hosting:** The files are served by Cloudflare R2 at `maps.meshtrax.io`. Cloudflare sees your IP address and may keep standard request logs; the developer does not use them to identify you.
 - **Their policy:** https://www.cloudflare.com/privacypolicy/
@@ -79,7 +83,9 @@ The App also uses the operating system's share sheet (for exporting GPX track fi
 
 The App provides tools to moderate user-generated content. If you tap **Report** on a message, the App opens **your own email app** with a pre-filled message — containing the reported message's text, the sender's display name, and the timestamp — addressed to the developer (**venahamtrack@gmail.com**). **Nothing is sent unless you choose to send that email.** This is the only circumstance in which the developer may receive your content, and it happens entirely at your initiative. When you send a report, the developer will also see the email address you send it from.
 
-You can also **block** a sender from any message; blocked senders and their messages are then hidden from you. The list of blocked users is stored only on your device (see the table above) and is never transmitted.
+If you tap **Report** on a photo, the photo is hidden on your device straight away, for good, and the App sends a report from inside the App, over the internet, to MeshTrax's report inbox (`reports.meshtrax.io`, on Cloudflare), which passes it on to the developer by email at the same address. The report holds who sent the photo (their name as shown), when it arrived, its size, whether the safety check hid it, anything you write, the App's version and platform and, only if you tick **Include the photo**, its code (a few hundred bytes from which it can be rebuilt; not the picture). **Nothing about you is sent**: not your name, your radio's key or an email address. The inbox stores neither the report nor your internet address; it only passes the report on. Without internet, the report waits on your device and is sent when you're online, or from App settings, Messaging, Photos.
+
+You can also **block** a sender from any message; blocked senders and their messages are then hidden from you. A blocked sender's photos are not kept at all. The list of blocked users is stored only on your device (see the table above) and is never transmitted.
 
 ## Data the App does NOT collect or do
 
@@ -100,8 +106,8 @@ The App requests only the permissions needed for its stated functions.
 | Permission | Why it is needed |
 |---|---|
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
-| Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
-| Photo Library | Pick an existing image to scan a QR code from it. Images are analyzed on your device and never uploaded |
+| Camera | Scan QR codes to import contacts and configuration, and take a photo you choose to send. Photos are never saved or uploaded (see "Camera and photos") |
+| Photo Library | Pick an existing image to scan a QR code from it, or a photo to send, and add a photo to your library when you tap **Save** (the App asks only to add, not to read). Images are analyzed on your device and never uploaded |
 | Notifications | Show notifications for incoming mesh messages |
 | Calendar | Add an event from an event message to your calendar, only when you tap **Add to calendar**. On iOS 17 and later no permission is asked; on earlier versions iOS asks once. The App never reads your calendar |
 | Contacts | Not used by the App. Declared because Apple's own add-event screen can suggest locations from your contacts on iOS 16 and earlier |
@@ -117,7 +123,7 @@ iOS does not require location permission for BLE scanning; the App never request
 | Bluetooth | Discover and connect to MeshCore companion devices over Bluetooth Low Energy (BLE) |
 | Outgoing network connections | Download offline maps, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, ask the observer server you chose whether your channel messages were heard (only if you turn that on), and connect to a companion device over your local network (TCP) |
 | USB and serial ports | Connect to a companion device over a USB serial cable, through the serial port of the radio you plug in |
-| Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, an image to scan a QR code from, or a folder of offline maps on a drive to install from. The App reaches no other files outside its container |
+| Files you choose | Read or write a file only when you pick it in an Open or Save dialog: a backup to save or restore, settings or path graphs to export or import, a debug log to save, an image to scan a QR code from, a photo to send, or a folder of offline maps on a drive to install from. The App reaches no other files outside its container |
 | Camera | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
 | Notifications | Show notifications for incoming mesh messages |
 
@@ -131,7 +137,7 @@ The macOS app does not use location and does not ask for access to your calendar
 | `BLUETOOTH_SCAN` (with `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE` (Android 12+) | Scan for and communicate with your companion device. The scan is flagged so it is **not** used to derive location |
 | `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Required by the Android operating system to permit BLE scanning on Android 11 and below. The App does not read, store, or transmit your device location through these permissions |
 | `INTERNET` | Download offline maps, trail routing data, points of interest and addresses (MeshTrax map server) and GIFs (Giphy) for the optional map and GIF features, and ask the observer server you chose whether your channel messages were heard (only if you turn that on) |
-| `CAMERA` | Scan QR codes to import contacts and configuration. No photos are captured, saved, or uploaded |
+| `CAMERA` | Scan QR codes to import contacts and configuration, and take a photo you choose to send. Photos are never saved or uploaded (see "Camera and photos") |
 | `POST_NOTIFICATIONS` (Android 13+) | Show notifications for incoming mesh messages |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `WAKE_LOCK` | Keep the connection to your companion device alive while the App runs in the background |
 | `CHANGE_NETWORK_STATE` | Required by Android 14+ to keep that background connection running when your companion device is reached over the local network (TCP) only. The App does not change your network settings |
@@ -151,13 +157,22 @@ The App can also connect to a companion device over your **local network (TCP)**
 
 ## Camera and photos
 
-The camera is used **only** to scan QR codes (for importing contacts and configuration). You may alternatively pick an existing image from your gallery (on macOS, an image file) to scan a QR code from it. Any such image is analyzed **on your device** and is never uploaded. On Android, QR codes are read with Google's ML Kit barcode scanner, which runs on your device; when your phone is online, ML Kit may send Google usage statistics about the scanner (not the images or the codes in them), under Google's terms: https://developers.google.com/ml-kit/terms
+The camera is used to scan QR codes (for importing contacts and configuration) and, on phones, to take a photo you choose to send. You may alternatively pick an existing image from your gallery (on macOS, an image file) to scan a QR code from it or to send it. Any such image is analyzed **on your device** and is never uploaded.
+
+**Photos in chats** (Android, iPhone and Mac):
+- When you send a photo, the App crops it to the square you choose, checks it with an image safety classifier and codes it with the photo model, all on your device. Only the code, a few hundred bytes, goes out, over the mesh to the channel you chose (see "Mesh network communications"). The App doesn't keep the original photo.
+- When a photo arrives, the App rebuilds a picture from its code with the same model, on your device, and checks it before showing it. A picture the check flags is never shown or kept.
+- A rebuilt picture is made by AI and labelled "AI reconstructed": its fine detail is generated, not sent, so signs and text don't come through. **Enhance 4×** enlarges it on your device with another AI model; the enlarged picture is checked too, and isn't kept.
+- **Save** puts a copy of what's on screen in your photo library (on a Mac, where you choose), with "AI reconstructed" in its corner.
+- The model and the classifier run on your device. Nothing about your photos is sent to a server, except a report you choose to send (see "Content reporting"). On Android, QR codes are read with Google's ML Kit barcode scanner, which runs on your device; when your phone is online, ML Kit may send Google usage statistics about the scanner (not the images or the codes in them), under Google's terms: https://developers.google.com/ml-kit/terms
 
 ## Mesh network communications
 
 Messages and contact information are exchanged with your MeshCore companion device over Bluetooth LE, USB serial, or local-network TCP, and are then relayed over the LoRa radio mesh to other devices. This radio communication is a function of the MeshCore hardware and network, not of any MeshTrax server. Message contents on encrypted channels are protected by the channel/community keys described above.
 
 With **Tell the group** on, TRAX mode posts a short TRAX message on the trip channel you picked, before it switches and before it leaves, naming the trip's end (with your time zone's offset from UTC) and the radio settings. It goes over the mesh to that channel's members like any other message. In TRAX mode your radio also relays other radios' messages on the off-grid frequency.
+
+A **photo** goes over the mesh to the channel's members like a message: its packets are encrypted with the channel key, and every radio in the channel that hears them can rebuild it. In the Public channel, anyone in range can. Sent zero hop, only radios in direct range hear it; sent through repeaters, so can radios in the channel along the route. With **Send my position too**, a location message follows the photo.
 
 When you send a **Location** or **SOS** message, the position in it is either your companion device's position (from its GPS or the position set on it) or a point you pick on the map, never your phone's GPS, and it goes over the mesh to the people in that conversation, like any other message. It is never sent to a server.
 

@@ -1,6 +1,6 @@
 # MeshTrax — Terms of Use & Acceptable Use Policy
 
-_Last updated: July 10, 2026_
+_Last updated: November 22, 2026_
 
 MeshTrax ("the App") is a free, open-source client for MeshCore LoRa mesh
 networking devices. By installing or using the App, you agree to these Terms of
@@ -22,6 +22,8 @@ the App to create, send, or share content that:
 - is unlawful, or promotes or facilitates illegal activity;
 - is objectionable, obscene, or sexually explicit, including any child sexual
   abuse material;
+- is sexual imagery of a real person shared without their consent, including
+  images made or altered with AI;
 - harasses, threatens, bullies, defames, or incites violence against others;
 - promotes hatred or discrimination against individuals or groups;
 - infringes the intellectual-property or privacy rights of others;
@@ -33,7 +35,10 @@ the App to create, send, or share content that:
 There is **zero tolerance** for objectionable content and abusive behavior.
 
 - Any message can be **reported** to the developer (from the message's menu),
-  and any sender can be **blocked** so their messages are hidden from you.
+  and any photo (from the photo's menu, full screen), and any sender can be
+  **blocked** so their messages and photos are hidden from you.
+- Photos are checked on your device by an image safety classifier before they
+  are sent and before they are shown; a photo it flags is hidden.
 - Managing blocked users, and reviewing this policy, is available in
   **Settings → Privacy**.
 
