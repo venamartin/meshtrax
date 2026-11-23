@@ -239,6 +239,54 @@ abstract class AppLocalizations {
   /// **'Tag (optional)'**
   String get photo_tagTitle;
 
+  /// No description provided for @photo_includePosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Include position'**
+  String get photo_includePosition;
+
+  /// No description provided for @photo_positionFromRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio\'s position now, to about {distance}'**
+  String photo_positionFromRadio(String distance);
+
+  /// No description provided for @photo_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio has no position'**
+  String get photo_noPosition;
+
+  /// No description provided for @photo_distance10km.
+  ///
+  /// In en, this message translates to:
+  /// **'10 km'**
+  String get photo_distance10km;
+
+  /// No description provided for @photo_distance600m.
+  ///
+  /// In en, this message translates to:
+  /// **'600 m'**
+  String get photo_distance600m;
+
+  /// No description provided for @photo_distance40m.
+  ///
+  /// In en, this message translates to:
+  /// **'40 m'**
+  String get photo_distance40m;
+
+  /// No description provided for @photo_distance2m.
+  ///
+  /// In en, this message translates to:
+  /// **'2 m'**
+  String get photo_distance2m;
+
+  /// No description provided for @photo_positionAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{position}, to about {distance}'**
+  String photo_positionAt(String position, String distance);
+
   /// No description provided for @photo_zeroHop.
   ///
   /// In en, this message translates to:
@@ -784,6 +832,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'📷 Photo {id} couldn\'t be read'**
   String photo_unreadable(String id);
+
+  /// No description provided for @photo_needsNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} needs a newer MeshTrax'**
+  String photo_needsNewer(String id);
 
   /// No description provided for @photo_unknownSender.
   ///

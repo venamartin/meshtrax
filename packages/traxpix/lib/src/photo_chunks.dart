@@ -30,10 +30,10 @@
 /// ```
 ///
 /// Data chunk body:
-///   * chunk 0: `[meta]` + image bytes. `meta` is [ImageStreamMetadata] packed
-///     as `tag(4) | resolution(2) | rate(2)`. The tag nibble is the sender's
-///     [PhotoTag], at no extra bytes. (It once named the source photo's aspect
-///     ratio; photos are square-only now.)
+///   * chunk 0: `[meta]` + payload. `meta` is [ImageStreamMetadata] packed
+///     as `extras(1) | version(3) | resolution(2) | rate(2)`. With the extras
+///     bit set, the payload opens with the photo's extras ([photoPayload]),
+///     then the image bytes.
 ///   * others : image bytes
 ///   * at most [kImageChunkBodyBytes] bytes.
 ///
@@ -71,7 +71,7 @@ library;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'photo_tag.dart';
+import 'photo_extras.dart';
 import 'rate_point.dart';
 
 // ---------------------------------------------------------------------------
@@ -252,7 +252,9 @@ ImageCodecRatePoint? imageRatePointFromWireCode(int code) {
 const List<int> kImageResolutionCodes = <int>[512, 256, 768, 1024];
 
 /// Contents of the chunk-0 metadata byte:
-/// `tag(1) | reserved(3) | resolution(2) | rate(2)`.
+/// `extras(1) | version(3) | resolution(2) | rate(2)`. The format version is
+/// 0. A receiver refuses any other, which leaves it to signal a change no
+/// earlier release could skip; anything that can be skipped is an extra.
 class ImageStreamMetadata {
   /// Codec rate point. Reuses the UI enum — there is deliberately no second
   /// rate-point enum in this codebase.
@@ -261,14 +263,14 @@ class ImageStreamMetadata {
   /// Square edge length in pixels the sender encoded at.
   final int squareSize;
 
-  /// Whether the payload starts with the sender's tag (see
-  /// [photoPayloadWithTag]).
-  final bool hasTag;
+  /// Whether the payload starts with the photo's extras (see
+  /// [photoPayload]).
+  final bool hasExtras;
 
   const ImageStreamMetadata({
     required this.rate,
     this.squareSize = 512,
-    this.hasTag = false,
+    this.hasExtras = false,
   });
 
   /// Encodes to the single wire byte.
@@ -284,14 +286,14 @@ class ImageStreamMetadata {
         'not representable; must be one of $kImageResolutionCodes',
       );
     }
-    // tag(1) | reserved(3) | resolution(2) | rate(2).
-    return (hasTag ? 0x80 : 0) |
+    // extras(1) | version(3) | resolution(2) | rate(2), version 0.
+    return (hasExtras ? 0x80 : 0) |
         ((code & 0x03) << 2) |
         (imageRateWireCode(rate) & 0x03);
   }
 
-  /// Decodes the wire byte, or returns null if it names a rate point or
-  /// resolution this build does not know.
+  /// Decodes the wire byte, or returns null if it names a format version,
+  /// rate point or resolution this build does not know.
   ///
   /// Deliberately never falls back to a default rate: an unknown code means the
   /// sender is running a format we cannot decode, and guessing `standard` would
@@ -300,29 +302,30 @@ class ImageStreamMetadata {
   static ImageStreamMetadata? decode(int byte) {
     final rate = imageRatePointFromWireCode(byte & 0x03);
     final code = (byte >> 2) & 0x03;
+    if (byte & 0x70 != 0) return null;
     if (rate == null) return null;
     if (code >= kImageResolutionCodes.length) return null;
     return ImageStreamMetadata(
       rate: rate,
       squareSize: kImageResolutionCodes[code],
-      hasTag: byte & 0x80 != 0,
+      hasExtras: byte & 0x80 != 0,
     );
   }
 
   @override
   String toString() =>
       'ImageStreamMetadata(${rate.name}, ${squareSize}px'
-      '${hasTag ? ', tagged' : ''})';
+      '${hasExtras ? ', with extras' : ''})';
 
   @override
   bool operator ==(Object other) =>
       other is ImageStreamMetadata &&
       other.rate == rate &&
       other.squareSize == squareSize &&
-      other.hasTag == hasTag;
+      other.hasExtras == hasExtras;
 
   @override
-  int get hashCode => Object.hash(rate, squareSize, hasTag);
+  int get hashCode => Object.hash(rate, squareSize, hasExtras);
 }
 
 // ---------------------------------------------------------------------------

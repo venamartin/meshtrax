@@ -16,6 +16,6 @@ export 'src/image_codec_entropy.dart'
         aeicToSymbols,
         roundHalfToEven;
 export 'src/photo_chunks.dart';
-export 'src/photo_tag.dart';
+export 'src/photo_extras.dart';
 export 'src/rans_coders.dart';
 export 'src/rate_point.dart';

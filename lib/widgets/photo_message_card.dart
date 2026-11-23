@@ -4,9 +4,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:traxpix/traxpix.dart' show PhotoPosition;
 
+import '../helpers/link_handler.dart';
+import '../helpers/navigate_helper.dart';
+import '../helpers/position_text.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../services/app_settings_service.dart';
 import '../services/photo_mesh.dart';
@@ -48,6 +54,61 @@ class PhotoTagLabel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A position's accuracy, by its size in bytes, as the send screen offers it.
+String photoPositionDistance(AppLocalizations l10n, int bytes) =>
+    switch (bytes) {
+      3 => l10n.photo_distance10km,
+      4 => l10n.photo_distance600m,
+      5 => l10n.photo_distance40m,
+      _ => l10n.photo_distance2m,
+    };
+
+/// Where the sender sent a photo from, in the reader's coordinate format and
+/// to the accuracy the sender chose, with Map and Navigate as on a location
+/// card.
+class PhotoPositionRow extends StatelessWidget {
+  final PhotoPosition position;
+  final String label;
+
+  const PhotoPositionRow(this.position, {super.key, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final format = coordFormatOf(context.watch<AppSettingsService>().settings);
+    final at = LatLng(position.lat, position.lon);
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      children: [
+        Icon(
+          Icons.place_outlined,
+          size: 16,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        Text(
+          l10n.photo_positionAt(
+            positionLines(position.lat, position.lon, format).first,
+            photoPositionDistance(l10n, position.bytes),
+          ),
+          style: theme.textTheme.bodySmall,
+        ),
+        TextButton.icon(
+          onPressed: () => LinkHandler.openMapAt(context, at, label: label),
+          icon: const Icon(Icons.map_outlined, size: 18),
+          label: Text(l10n.structured_map),
+        ),
+        TextButton.icon(
+          onPressed: () => NavigateHelper.navigate(context, at, label: label),
+          icon: const Icon(Icons.near_me_outlined, size: 18),
+          label: Text(l10n.structured_navigate),
+        ),
+      ],
     );
   }
 }
@@ -216,11 +277,19 @@ class PhotoMessageCard extends StatelessWidget {
         if (record == null) return Text(context.l10n.photo_chatPhoto);
         final body = _body(context, record);
         final tag = record.tag;
-        if (tag == null) return body;
+        final position = record.position;
+        if (tag == null && position == null) return body;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [body, const SizedBox(height: 6), PhotoTagLabel(tag)],
+          children: [
+            body,
+            if (tag != null) ...[const SizedBox(height: 6), PhotoTagLabel(tag)],
+            if (position != null) ...[
+              const SizedBox(height: 4),
+              PhotoPositionRow(position, label: tag ?? senderName),
+            ],
+          ],
         );
       },
     );

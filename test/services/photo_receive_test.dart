@@ -51,7 +51,7 @@ void main() {
       );
     });
 
-    test('says when every packet came but the photo can\'t be read', () {
+    test('says when every packet came in a format for a newer app', () {
       expect(
         PhotoMesh.incompleteText(
           en,
@@ -60,7 +60,7 @@ void main() {
             reason: ImageReassemblyFailureReason.unsupportedFormat,
           ),
         ),
-        '📷 Photo #3a couldn\'t be read',
+        '📷 Photo #3a needs a newer MeshTrax',
       );
     });
 
@@ -110,6 +110,36 @@ void main() {
         ).tag,
         isNull,
       );
+    });
+  });
+
+  group('a photo record', () {
+    test('keeps the position exactly as it crossed the radio', () {
+      final position = PhotoPosition.at(57.64911, 10.40744, bytes: 4);
+      final back = PhotoRecord.fromJson(
+        PhotoRecord(
+          messageId: 'm1',
+          bytes: 400,
+          packets: 4,
+          outgoing: false,
+          tag: 'Camp',
+          position: position,
+        ).toJson(),
+      );
+      expect(back.position!.encode(), position.encode());
+      expect(back.position!.bytes, 4);
+      expect(back.tag, 'Camp');
+    });
+
+    test('has no position when none was sent, or in an older record', () {
+      final none = PhotoRecord(
+        messageId: 'm2',
+        bytes: 400,
+        packets: 4,
+        outgoing: true,
+      ).toJson();
+      expect(PhotoRecord.fromJson(none).position, isNull);
+      expect(PhotoRecord.fromJson(none..remove('position')).position, isNull);
     });
   });
 

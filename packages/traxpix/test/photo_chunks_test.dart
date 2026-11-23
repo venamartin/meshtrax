@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 
 import 'package:traxpix/src/photo_chunks.dart';
-import 'package:traxpix/src/photo_tag.dart';
 import 'package:traxpix/src/rate_point.dart';
 
 Uint8List payloadOf(int length, {int seed = 7}) => Uint8List.fromList(
@@ -93,21 +92,21 @@ void main() {
       );
     });
 
-    test('an unknown RATE code is what signals a format break', () {
-      // The byte is tag(1) | reserved(3) | resolution(2) | rate(2). Resolution
-      // is a closed
-      // 2-bit field: all four codes are legal. Rate is where an incompatible
-      // format shows: only ft8 (2) decodes here; codes 0, 1 and 3 are rejected
-      // instead of guessed at.
+    test('an unknown rate or format version is refused, not guessed at', () {
+      // The byte is extras(1) | version(3) | resolution(2) | rate(2).
+      // Resolution is a closed 2-bit field: all four codes are legal. Only
+      // ft8 (2) decodes; rate codes 0, 1 and 3 are refused.
       expect(ImageStreamMetadata.decode(0x00), isNull);
       expect(ImageStreamMetadata.decode(0x01), isNull);
       expect(ImageStreamMetadata.decode(0x03), isNull); // spare
-      // 0xF2 has the tag bit and all three reserved bits set, resolution 0,
-      // rate 2: still a photo; the reserved bits are ignored.
-      final legal = ImageStreamMetadata.decode(0xF2);
+      // Version 0 with the extras bit: a photo with extras.
+      final legal = ImageStreamMetadata.decode(0x82);
       expect(legal, isNotNull);
       expect(legal!.rate, ImageCodecRatePoint.ft8);
-      expect(legal.hasTag, isTrue);
+      expect(legal.hasExtras, isTrue);
+      // Any other version is a format this build doesn't know.
+      expect(ImageStreamMetadata.decode(0x12), isNull);
+      expect(ImageStreamMetadata.decode(0xF2), isNull);
     });
   });
 
@@ -1328,88 +1327,6 @@ void main() {
         r.addChunk(set.blobs[1]).status,
         ImageChunkStatus.unsupportedFormat,
       );
-    });
-  });
-
-  group('the sender\'s tag', () {
-    test('the tag bit round-trips with rate and resolution intact', () {
-      for (final tagged in [false, true]) {
-        final m = ImageStreamMetadata(
-          rate: ImageCodecRatePoint.ft8,
-          hasTag: tagged,
-        );
-        final back = ImageStreamMetadata.decode(m.encode());
-        expect(back, m);
-        expect(back!.squareSize, 512);
-      }
-    });
-
-    test('travels ahead of the bitstream as exact text', () {
-      final bitstream = payloadOf(300);
-      final payload = photoPayloadWithTag(bitstream, ' Spring flowing ');
-      expect(payload[0], 'Spring flowing'.length);
-      final parts = photoPayloadParts(payload, hasTag: true)!;
-      expect(parts.tag, 'Spring flowing');
-      expect(parts.bitstream, bitstream);
-    });
-
-    test('a blank tag adds nothing; no tag leaves the payload alone', () {
-      final bitstream = payloadOf(50);
-      expect(photoPayloadWithTag(bitstream, '  '), same(bitstream));
-      expect(photoPayloadWithTag(bitstream, null), same(bitstream));
-      final parts = photoPayloadParts(bitstream, hasTag: false)!;
-      expect(parts.tag, isNull);
-      expect(parts.bitstream, bitstream);
-    });
-
-    test('takes UTF-8 up to the byte limit, and refuses more', () {
-      final emoji = '🏕️' * 10; // 70 bytes
-      expect(
-        photoPayloadParts(
-          photoPayloadWithTag(payloadOf(10), '⛰️ Camp'),
-          hasTag: true,
-        )!.tag,
-        '⛰️ Camp',
-      );
-      expect(
-        () => photoPayloadWithTag(payloadOf(10), emoji),
-        throwsArgumentError,
-      );
-    });
-
-    test('a damaged tag length means a damaged photo', () {
-      expect(photoPayloadParts(Uint8List(0), hasTag: true), isNull);
-      expect(
-        photoPayloadParts(Uint8List.fromList([9, 1, 2]), hasTag: true),
-        isNull,
-      );
-      expect(
-        photoPayloadParts(Uint8List.fromList([200, 1, 2]), hasTag: true),
-        isNull,
-      );
-    });
-
-    test('a tagged photo arrives whole with its tag', () {
-      final bitstream = payloadOf(500);
-      final set = buildImageChunks(
-        payload: photoPayloadWithTag(bitstream, 'Road washed out'),
-        metadata: const ImageStreamMetadata(
-          rate: ImageCodecRatePoint.ft8,
-          hasTag: true,
-        ),
-        senderPrefix: senderA,
-        imgId: 3,
-      );
-      ImageReassemblyResult? got;
-      final r = ImageReassembler(selfPrefix: senderB);
-      for (final b in set.blobs) {
-        final o = r.addChunk(b);
-        if (o.isComplete) got = o.result;
-      }
-      expect(got!.metadata!.hasTag, isTrue);
-      final parts = photoPayloadParts(got.data, hasTag: true)!;
-      expect(parts.tag, 'Road washed out');
-      expect(parts.bitstream, bitstream);
     });
   });
 }

@@ -22,6 +22,7 @@ import '../services/photo_mesh.dart';
 import '../services/photo_rules.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_ai_mark.dart';
+import '../widgets/photo_message_card.dart' show photoPositionDistance;
 
 enum _Step { pick, crop, working, ready, flagged, sending }
 
@@ -51,6 +52,15 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   /// channel's messages go.
   bool _zeroHop = false;
 
+  /// The radio's position goes with the photo. Off for each new photo.
+  bool _includePosition = false;
+
+  /// The position's size in bytes, which is its accuracy.
+  int _positionBytes = 5;
+
+  /// Asked for fresh positions while the switch is on.
+  MeshCoreConnector? _positionSource;
+
   /// The sender has read why photos on Public and hashtag channels ask a lot
   /// of the mesh, and asked not to see it again.
   static const _openChannelKey = 'photo_open_channel_explained';
@@ -60,6 +70,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     _transform.dispose();
     _source?.dispose();
     _tag.dispose();
+    _positionSource?.removeSelfPositionViewer();
     super.dispose();
   }
 
@@ -212,11 +223,36 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     );
   }
 
-  /// Packets the coded photo takes with the tag as typed, the repair packet
+  /// What goes with the picture: the tag as typed and, when switched on, the
+  /// radio's position at the chosen accuracy.
+  PhotoExtras _extras(MeshCoreConnector connector) => PhotoExtras(
+    tag: _tag.text,
+    position: _includePosition && connector.hasSelfPosition
+        ? PhotoPosition.at(
+            connector.selfLatitude!,
+            connector.selfLongitude!,
+            bytes: _positionBytes,
+          )
+        : null,
+  );
+
+  /// Packets the coded photo takes with its extras, the repair packet
   /// included.
-  int get _packets =>
-      imageDataChunkCount(photoPayloadWithTag(_bitstream!, _tag.text).length) +
+  int _packets(MeshCoreConnector connector) =>
+      imageDataChunkCount(
+        photoPayload(_bitstream!, _extras(connector)).length,
+      ) +
       1;
+
+  void _watchPosition(MeshCoreConnector connector, bool on) {
+    _includePosition = on;
+    if (on && _positionSource == null) {
+      _positionSource = connector..addSelfPositionViewer();
+    } else if (!on && _positionSource != null) {
+      _positionSource!.removeSelfPositionViewer();
+      _positionSource = null;
+    }
+  }
 
   /// On a MeshCore frequency the sender confirms what the photo costs. On
   /// Public or a hashtag channel they first read why a photo there asks a lot
@@ -227,7 +263,8 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     final l10n = context.l10n;
     final airtimeMs = connector.estimatePacketAirtimeMs;
     final onAir =
-        Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes)) * _packets;
+        Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes)) *
+        _packets(connector);
     final messages = photoTextMessages(onAir, airtimeMs);
     final open = warning == PhotoWarning.openChannel;
     if (open && !(PrefsManager.instance.getBool(_openChannelKey) ?? false)) {
@@ -241,7 +278,11 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         title: Text(l10n.photo_confirmTitle),
         content: Text(
           [
-            l10n.photo_confirmAirtime(_packets, _secs(l10n, onAir), messages),
+            l10n.photo_confirmAirtime(
+              _packets(connector),
+              _secs(l10n, onAir),
+              messages,
+            ),
             if (open) l10n.photo_confirmOpenChannel(widget.channel.displayName),
             _zeroHop ? l10n.photo_confirmZeroHop : l10n.photo_confirmFlood,
           ].join('\n\n'),
@@ -329,6 +370,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         _bitstream!,
         widget.channel.index,
         tag: _tag.text,
+        position: _extras(connector).position,
         zeroHop: _zeroHop,
         previewPng: _previewPng,
         onProgress: (p) {
@@ -477,11 +519,11 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       color: theme.colorScheme.onSurfaceVariant,
     );
     final connector = context.watch<MeshCoreConnector>();
-    final packets = _packets;
+    final packets = _packets(connector);
     final airtimeMs = connector.estimatePacketAirtimeMs;
     final sendTime =
         photoGapFor(
-              photoPayloadWithTag(_bitstream!, _tag.text).length,
+              photoPayload(_bitstream!, _extras(connector)).length,
               zeroHop: _zeroHop,
               airtimeMs: airtimeMs,
               shared: photoRulesApply(connector.currentFreqHz),
@@ -532,6 +574,37 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         ),
         onChanged: (_) => setState(() {}),
       ),
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        secondary: const Icon(Icons.place_outlined),
+        title: Text(l10n.photo_includePosition),
+        subtitle: Text(
+          connector.hasSelfPosition
+              ? l10n.photo_positionFromRadio(
+                  photoPositionDistance(l10n, _positionBytes),
+                )
+              : l10n.photo_noPosition,
+        ),
+        value: _includePosition && connector.hasSelfPosition,
+        onChanged: sending || !connector.hasSelfPosition
+            ? null
+            : (on) => setState(() => _watchPosition(connector, on)),
+      ),
+      if (_includePosition && connector.hasSelfPosition)
+        SegmentedButton<int>(
+          segments: [
+            for (final size in kPhotoPositionSizes)
+              ButtonSegment(
+                value: size,
+                label: Text(photoPositionDistance(l10n, size)),
+              ),
+          ],
+          selected: {_positionBytes},
+          showSelectedIcon: false,
+          onSelectionChanged: sending
+              ? null
+              : (s) => setState(() => _positionBytes = s.first),
+        ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         secondary: const Icon(Icons.near_me_outlined),

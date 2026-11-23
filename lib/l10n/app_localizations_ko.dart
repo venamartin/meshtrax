@@ -75,6 +75,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_tagTitle => '태그 (선택 사항)';
 
   @override
+  String get photo_includePosition => 'Include position';
+
+  @override
+  String photo_positionFromRadio(String distance) {
+    return 'Your radio\'s position now, to about $distance';
+  }
+
+  @override
+  String get photo_noPosition => 'Your radio has no position';
+
+  @override
+  String get photo_distance10km => '10 km';
+
+  @override
+  String get photo_distance600m => '600 m';
+
+  @override
+  String get photo_distance40m => '40 m';
+
+  @override
+  String get photo_distance2m => '2 m';
+
+  @override
+  String photo_positionAt(String position, String distance) {
+    return '$position, to about $distance';
+  }
+
+  @override
   String get photo_zeroHop => 'Zero hop';
 
   @override
@@ -422,6 +450,11 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String photo_unreadable(String id) {
     return '📷 사진 $id을(를) 읽지 못했습니다';
+  }
+
+  @override
+  String photo_needsNewer(String id) {
+    return '📷 Photo $id needs a newer MeshTrax';
   }
 
   @override

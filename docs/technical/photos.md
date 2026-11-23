@@ -16,7 +16,7 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 
 | Part | Where | What it does |
 |---|---|---|
-| Packet format | `packages/traxpix` (pure Dart) | `photo_chunks.dart`: wire format, chunking, the repair packet, reassembly, the transport and the gaps between packets. `photo_tag.dart`: the sender's tag. `image_codec_entropy.dart`, `rans_coder.dart`, `rans_coders.dart`, `entropy_tables.dart`: the entropy coding between latents and bitstream. |
+| Packet format | `packages/traxpix` (pure Dart) | `photo_chunks.dart`: wire format, chunking, the repair packet, reassembly, the transport and the gaps between packets. `photo_extras.dart`: a photo's extras, the sender's tag and position. `image_codec_entropy.dart`, `rans_coder.dart`, `rans_coders.dart`, `entropy_tables.dart`: the entropy coding between latents and bitstream. |
 | Model runtime | `packages/traxpix_litert` (Flutter plugin) | `litert_api.dart`: LiteRT's C API through FFI. `litert_codec_backend.dart`: runs the models. `image_codec_session.dart`: one worker isolate per job. `image_codec_bundle.dart`, `image_codec_files.dart`: the files and their hosted SHA-256 pins. `image_codec_memory.dart`: memory checks. `image_safety.dart`: the classifier and its thresholds. Platform folders: the LiteRT binaries. |
 | Radio side | `lib/services/photo_mesh.dart` | Sends photos, listens for photo packets, files photos in their channel's chat, decides whether the phone can do photos at all. |
 | Photos kept | `lib/services/photo_store.dart` | The records, the coded bytes, the rebuilt pictures, and the one-at-a-time queue for rebuilds and enlargements. |
@@ -33,7 +33,7 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 2. **Check.** The classifier checks the original. A flagged photo is never coded or sent.
 3. **Code.** The send side of the entropy network (`aeic_side_ft8.tflite`) turns the picture into latents, and the rANS coder writes them as a bitstream of 208 to 796 bytes, about 400 on average.
 4. **Preview.** The phone rebuilds the bitstream exactly as a receiver will and checks that too, with the sender's margin (see [Safety](#safety)), so the sender sees what the others will get and they won't refuse it. If the memory isn't there, it says so, the original takes the margin instead, and the photo can still be sent.
-5. **Tag.** The sender may type a tag, up to 24 characters and 64 UTF-8 bytes. It goes ahead of the bitstream as a length byte and the text (`photoPayloadWithTag`), and the metadata byte says it's there. The receiver shows it as text, so the AI can never change it.
+5. **Tag and position.** The sender may type a tag, up to 24 characters and 64 UTF-8 bytes, and turn on **Include position**, off for each new photo, at about 10 km, 600 m, 40 m or 2 m (3 to 6 bytes, 40 m to start). The position is the radio's, from its GPS or the one set in the app. Both go ahead of the bitstream as extras (`photoPayload`; see [The packet format](#the-packet-format)). The receiver shows them as text, so the AI can never change them.
 6. **Packets.** The payload is cut into blobs of up to 157 bytes (`buildImageChunks`), then the XOR repair blob is added.
 7. **Route.** Each blob goes to the radio as `CMD_SEND_CHANNEL_DATA` (62), with path length `0xFF` for a flood or `0` for zero hop. A flood goes through the radio's own scoped flood (`sendGroupData` → `sendFloodScoped`), the same call as a channel text, so it takes the radio's region. Where the connector puts a channel's sends in a region, or sends a Nearby only channel zero hop, channel data is included, so a photo follows its channel as text does.
 8. **Pacing.** One packet at a time, each handed over only after the gap (see [The gap between packets](#the-gap-between-packets)), so an SOS or a message sent meanwhile goes first.
@@ -54,7 +54,8 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0xFF1C`, fro
   4    ...   body
 ```
 
-- **Chunk 0's body** starts with the metadata byte, `tag(1) | reserved(3) | resolution(2) | rate(2)`. Rate code 2 is `ft8`, the only quality; codes 0, 1 and 3 are refused, never guessed at. Resolution code 0 is 512. The tag bit says the payload starts with a tag. Chunk 0 then carries 151 bytes of payload, the others 152.
+- **Chunk 0's body** starts with the metadata byte, `extras(1) | version(3) | resolution(2) | rate(2)`. Rate code 2 is `ft8`, the only quality; codes 0, 1 and 3 are refused, never guessed at. Resolution code 0 is 512. The format version is 0, and any other is refused: it's kept for a change no earlier release could skip. The extras bit says the payload starts with extras. Chunk 0 then carries 151 bytes of payload, the others 152.
+- **Extras** are items, each a type byte (`another follows(1) | must understand(1) | number(6)`), a length byte and its data; the bitstream is everything after the last. Item 1 is the tag, in UTF-8. Item 2 is the position: a geohash's bits packed in 3 to 6 bytes, so its length is its accuracy (5 bytes are exactly an 8-character geohash). A receiver skips an item it doesn't know, and a position of a size it doesn't know, so a later release can add items and earlier ones still show the photo. An unknown item marked must-understand makes the photo "needs a newer MeshTrax". A photo with no tag or position has no extras, not a byte more.
 - **The repair chunk** is the XOR of the data bodies, with one byte for the XOR of their lengths. Any one lost data chunk can be rebuilt from it.
 - **Why 157:** a photo packet is 2 bytes of header and path length, the path, 3 of channel hash and MAC, and the ciphertext. That's whole 16-byte blocks of data type (2), length (1) and blob, so 157 makes 160 bytes of ciphertext and a 165-byte packet. The radio copies a heard packet to the app (`PUSH_CODE_LOG_RX_DATA`) only up to 173 bytes, so the sender can still hear its packets repeated with up to 8 bytes of path.
 - **No CRC of its own:** the LoRa PHY checks every packet and MeshCore checks a 2-byte MAC. A merge of two senders' photos would need the same sender prefix, image id and channel within a minute.
@@ -62,8 +63,8 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0xFF1C`, fro
 ## Receiving
 
 1. **Packets in.** Channel data arrives as `RESP_CODE_CHANNEL_DATA_RECV` (27). `PhotoMesh` hands frames of type `0xFF1C` to the `ImageReassembler`. It keys a photo by sender prefix, image id and channel, and holds it for 60 seconds (`kImageReassemblyTtl`).
-2. **Whole, or not.** With all data chunks, or all but one plus the repair chunk, the photo is complete. Otherwise, a minute after its first chunk, the chat says "Photo incomplete: x of y packets". A damaged tag length makes it "unreadable". Nothing is asked for again.
-3. **Filed.** The chat gets a line "📷 Photo #id" (with the tag if any), marked by its packet hash (`photo:…`), and `PhotoStore` keeps a record (bytes, packets, tag) and the coded bytes. A blocked sender's photos are dropped, not kept.
+2. **Whole, or not.** With all data chunks, or all but one plus the repair chunk, the photo is complete. Otherwise, a minute after its first chunk, the chat says "Photo incomplete: x of y packets". An item that runs past the end makes it "unreadable"; a format version or must-understand item this release doesn't know, "needs a newer MeshTrax". Nothing is asked for again.
+3. **Filed.** The chat gets a line "📷 Photo #id" (with the tag if any), marked by its packet hash (`photo:…`), and `PhotoStore` keeps a record (bytes, packets, tag, position) and the coded bytes. A position shows under the photo in the reader's coordinate format, with **Map** and **Navigate** as on a location card. A blocked sender's photos are dropped, not kept.
 4. **Rebuilt** when the user taps the photo, or as it arrives if "Rebuild received photos automatically" is on and the phone has the memory:
    1. the hyperprior's synthesis and the four context stages turn the bitstream back into latents (`y_hat`, 256 × 16 × 16);
    2. the decoder runs in three parts: AEIC's synthesis transform (`gs`), SD-Turbo's UNet with AEIC's LoRA merged in (`unet`), and AdcSR's pruned VAE decoder (`vae`); the picture is `vae(unet(gs₀) + gs₁)`;
@@ -177,7 +178,7 @@ Deleting the model (App settings → Messaging → Photos) deletes the weight ca
 
 ## Testing
 
-- `packages/traxpix`: `dart test`. It covers the wire format, chunking and the repair packet, reassembly, the tag, the gaps, the transport, and the entropy coder. The coder is checked against reference vectors, and the ft8 end-to-end recordings come from three public Kodak images.
+- `packages/traxpix`: `dart test`. It covers the wire format, chunking and the repair packet, reassembly, the extras (tag and position), the gaps, the transport, and the entropy coder. The coder is checked against reference vectors, and the ft8 end-to-end recordings come from three public Kodak images.
 - `packages/traxpix_litert`: `flutter test`. It covers the file pins and the classifier's input and thresholds. CI runs both.
 - `litert_reference_test.dart` needs the real files, so it runs on a Mac only, with five environment variables:
   - `TRAXPIX_LITERT_LIB`: `libCLiteRT_mac.dylib`;

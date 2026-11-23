@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:traxmap/traxmap.dart';
+import 'package:traxpix/traxpix.dart' show PhotoPosition;
 import 'package:traxpix_litert/traxpix_litert.dart';
 
 import '../storage/prefs_manager.dart';
@@ -36,6 +37,9 @@ class PhotoRecord {
   /// The few words the sender typed with it, if any; shown as text.
   final String? tag;
 
+  /// Where the sender sent it from, when they included their position.
+  final PhotoPosition? position;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -45,6 +49,7 @@ class PhotoRecord {
     this.flagged,
     this.reported = false,
     this.tag,
+    this.position,
   });
 
   Map<String, Object?> toJson() => {
@@ -56,6 +61,7 @@ class PhotoRecord {
     'flagged': flagged,
     'reported': reported,
     'tag': tag,
+    'position': position?.encode(),
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -67,6 +73,10 @@ class PhotoRecord {
     flagged: j['flagged'] as bool?,
     reported: j['reported'] as bool? ?? false,
     tag: j['tag'] as String?,
+    position: switch (j['position']) {
+      final List<Object?> b => PhotoPosition.decode(b.cast<int>()),
+      _ => null,
+    },
   );
 }
 
@@ -329,9 +339,7 @@ class PhotoStore extends ChangeNotifier {
   /// Enlarges a rebuilt photo 4x and checks it, in the same queue as the
   /// rebuilds, so the two never share the memory; frees the map's memory if
   /// short. The enlarged picture isn't kept: it's for the screen showing it.
-  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(
-    String messageId,
-  ) {
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(String messageId) {
     final done = Completer<({RebuildOutcome outcome, Uint8List? rgb})>();
     _queue = _queue.then((_) async {
       done.complete(await _enlarge(messageId));

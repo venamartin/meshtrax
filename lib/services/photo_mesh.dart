@@ -71,9 +71,8 @@ Future<void> checkPhotoMemory() async {
   if (!_platformRunsPhotos) return;
   try {
     if (Platform.isIOS) {
-      photoPhoneMemoryBytes = await const MethodChannel(
-        'meshtrax/storage',
-      ).invokeMethod<int>('physicalMemory');
+      photoPhoneMemoryBytes = await const MethodChannel('meshtrax/storage')
+          .invokeMethod<int>('physicalMemory');
     } else if (Platform.isAndroid) {
       for (final line in File('/proc/meminfo').readAsLinesSync()) {
         if (line.startsWith('MemTotal:')) {
@@ -146,7 +145,7 @@ class PhotoMesh {
     AppLocalizations l10n,
     ImageReassemblyFailure f,
   ) {
-    if (f.isCorrupt) return l10n.photo_unreadable(_id(f.key.imgId));
+    if (f.isCorrupt) return l10n.photo_needsNewer(_id(f.key.imgId));
     final got = f.receivedDataChunks + (f.hadParity ? 1 : 0);
     return l10n.photo_incomplete(_id(f.key.imgId), got, f.total + 1);
   }
@@ -230,13 +229,15 @@ class PhotoMesh {
     }
     final parts = photoPayloadParts(
       r.data,
-      hasTag: r.metadata?.hasTag ?? false,
+      hasExtras: r.metadata?.hasExtras ?? false,
     );
-    if (parts == null) {
+    if (parts == null || parts.needsNewerApp) {
       await connector.ingestPhotoMessage(
         channelIndex: r.key.channelIndex,
         senderName: sender,
-        text: _l10n.photo_unreadable(_id(r.key.imgId)),
+        text: parts == null
+            ? _l10n.photo_unreadable(_id(r.key.imgId))
+            : _l10n.photo_needsNewer(_id(r.key.imgId)),
         isOutgoing: false,
         packetHash:
             'photo-unreadable:${prefix.toRadixString(16)}:${r.key.imgId}:'
@@ -248,7 +249,7 @@ class PhotoMesh {
     final messageId = await connector.ingestPhotoMessage(
       channelIndex: r.key.channelIndex,
       senderName: sender,
-      text: _text(r.key.imgId, parts.tag),
+      text: _text(r.key.imgId, parts.extras.tag),
       isOutgoing: false,
       packetHash:
           'photo:${prefix.toRadixString(16)}:${r.key.imgId}:'
@@ -262,7 +263,8 @@ class PhotoMesh {
         packets: r.chunkCount + 1,
         outgoing: false,
         recoveredWithParity: r.recoveredWithParity,
-        tag: parts.tag,
+        tag: parts.extras.tag,
+        position: parts.extras.position,
       ),
       parts.bitstream,
     );
@@ -289,22 +291,24 @@ class PhotoMesh {
   }
 
   /// Sends a coded photo as the channel sends its messages, or zero hop, with
-  /// the sender's [tag] if any, and files it in the chat as ours, with the
-  /// sender's preview as its picture (what the receivers will see).
+  /// the sender's [tag] and [position] if any, and files it in the chat as
+  /// ours, with the sender's preview as its picture (what the receivers will
+  /// see).
   Future<void> sendPhoto(
     Uint8List bitstream,
     int channelIndex, {
     String? tag,
+    PhotoPosition? position,
     bool zeroHop = false,
     Uint8List? previewPng,
     void Function(ImageSendProgress)? onProgress,
   }) async {
-    final text = tag?.trim() ?? '';
-    final tagged = text.isEmpty ? null : text;
+    final extras = PhotoExtras(tag: tag, position: position);
+    final tagged = extras.sentTag;
     final set = await send(
       bitstream,
       channelIndex,
-      tag: tagged,
+      extras: extras,
       zeroHop: zeroHop,
       onProgress: onProgress,
     );
@@ -324,19 +328,20 @@ class PhotoMesh {
         packets: set.blobs.length,
         outgoing: true,
         tag: tagged,
+        position: position,
       ),
       bitstream,
       png: previewPng,
     );
   }
 
-  /// Sends a coded photo on [channelIndex], one chunk at a time, with [tag]
-  /// ahead of it: as a flood, the way the radio sends the channel's
+  /// Sends a coded photo on [channelIndex], one chunk at a time, with its
+  /// [extras] ahead of it: as a flood, the way the radio sends the channel's
   /// messages, or zero hop.
   Future<ImageChunkSet> send(
     Uint8List bitstream,
     int channelIndex, {
-    String? tag,
+    PhotoExtras extras = const PhotoExtras(),
     bool zeroHop = false,
     void Function(ImageSendProgress)? onProgress,
   }) async {
@@ -344,7 +349,7 @@ class PhotoMesh {
     if (transport == null) {
       throw const PhotoSendException(PhotoSendFailure.notConnected);
     }
-    final payload = photoPayloadWithTag(bitstream, tag);
+    final payload = photoPayload(bitstream, extras);
     final gap = photoGapFor(
       payload.length,
       zeroHop: zeroHop,
@@ -356,7 +361,7 @@ class PhotoMesh {
       payload: payload,
       metadata: ImageStreamMetadata(
         rate: ImageCodecRatePoint.ft8,
-        hasTag: payload.length != bitstream.length,
+        hasExtras: !extras.isEmpty,
       ),
       channelIndex: channelIndex,
       gap: gap,
