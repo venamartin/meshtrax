@@ -12,6 +12,444 @@ class AppLocalizationsBg extends AppLocalizations {
   AppLocalizationsBg([String locale = 'bg']) : super(locale);
 
   @override
+  String get tray_photo => 'Снимка';
+
+  @override
+  String get photo_settingsTitle => 'Снимки';
+
+  @override
+  String photo_enableHint(String size) {
+    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+  }
+
+  @override
+  String photo_sendTitle(String channel) {
+    return 'Снимка до $channel';
+  }
+
+  @override
+  String get photo_squareIntro =>
+      'Pick a photo, then choose the square to send.';
+
+  @override
+  String get photo_takePhoto => 'Направи снимка';
+
+  @override
+  String get photo_choosePhoto => 'Избери снимка';
+
+  @override
+  String get photo_chooseAnother => 'Избери друга снимка';
+
+  @override
+  String get photo_cropHint =>
+      'Местете и мащабирайте, докато важното не запълни квадрата.';
+
+  @override
+  String get photo_preview => 'Преглед';
+
+  @override
+  String get photo_changeCrop => 'Change crop';
+
+  @override
+  String get photo_checkingAndCoding => 'Проверка и кодиране на снимката…';
+
+  @override
+  String get photo_modelMissing =>
+      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+
+  @override
+  String get photo_previewNoMemory =>
+      'Тук няма достатъчно памет, за да се покаже какво ще видят другите. Все пак можете да я изпратите.';
+
+  @override
+  String get photo_rebuildingPreview =>
+      'Реконструиране на това, което ще видят… около 20 секунди';
+
+  @override
+  String photo_prepareFailed(String error) {
+    return 'Снимката не можа да се подготви: $error';
+  }
+
+  @override
+  String get photo_flaggedNotSent =>
+      'Тази снимка не може да бъде изпратена: проверката за безопасност я маркира.';
+
+  @override
+  String get photo_tagTitle => 'Етикет (по избор)';
+
+  @override
+  String get photo_zeroHop => 'Zero hop';
+
+  @override
+  String get photo_zeroHopHint =>
+      'Only radios in direct range; repeaters don\'t pass it on';
+
+  @override
+  String photo_sendFigures(int packets, String sendTime) {
+    return '$packets packets · about $sendTime to send';
+  }
+
+  @override
+  String photo_seconds(String seconds) {
+    return '$seconds с';
+  }
+
+  @override
+  String photo_blockedWait(int gap, int minutes) {
+    return 'На честотите на MeshCore едно радио изпраща по една снимка на всеки $gap минути. Можете да изпратите следваща след $minutes мин.';
+  }
+
+  @override
+  String photo_blockedWaitRepeaters(int gap, int minutes) {
+    return 'На честотите на MeshCore едно радио изпраща по една снимка през повторители на всеки $gap минути. Можете да изпратите следваща през повторители след $minutes мин или една без скок още сега.';
+  }
+
+  @override
+  String get photo_send => 'Изпрати';
+
+  @override
+  String get photo_sending => 'Изпращане…';
+
+  @override
+  String photo_sendingPacket(int sent, int total) {
+    return 'Пакет $sent от $total';
+  }
+
+  @override
+  String photo_sendingRepairPacket(int sent, int total) {
+    return 'Пакет $sent от $total (възстановяващ)';
+  }
+
+  @override
+  String photo_notSent(String error) {
+    return 'Не е изпратено: $error';
+  }
+
+  @override
+  String get photo_errorNotConnected => 'няма връзка с радио';
+
+  @override
+  String get photo_errorNoAnswer => 'радиото не отговори';
+
+  @override
+  String photo_errorRefused(int code) {
+    return 'радиото отказа пакет (грешка $code)';
+  }
+
+  @override
+  String get photo_confirmTitle => 'Send photo';
+
+  @override
+  String photo_openChannelTitle(String channel) {
+    return 'Photos on $channel';
+  }
+
+  @override
+  String get photo_openChannelNotEveryone =>
+      'Most people here won\'t see it: only MeshTrax shows photos.';
+
+  @override
+  String photo_openChannelAirtime(String airtime, int messages) {
+    return 'This photo takes $airtime on air, as much as $messages text messages.';
+  }
+
+  @override
+  String get photo_openChannelRepeaters =>
+      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+
+  @override
+  String get photo_openChannelBetter =>
+      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+
+  @override
+  String get photo_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String photo_confirmAirtime(int packets, String airtime, int messages) {
+    return '$packets packets, $airtime on air: as much as $messages text messages.';
+  }
+
+  @override
+  String photo_confirmOpenChannel(String channel) {
+    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+  }
+
+  @override
+  String get photo_confirmFlood =>
+      'Each repeater that hears it sends it again.';
+
+  @override
+  String get photo_confirmZeroHop =>
+      'Zero hop: only radios in direct range get it.';
+
+  @override
+  String get photo_label => 'AI reconstructed';
+
+  @override
+  String get photo_tapToView => 'Tap to view';
+
+  @override
+  String get photo_enhance => 'Enhance 4×';
+
+  @override
+  String get photo_enhancing => 'Enhancing…';
+
+  @override
+  String get photo_save => 'Save';
+
+  @override
+  String get photo_saved => 'Saved to your photos';
+
+  @override
+  String get photo_saveFailed => 'Couldn\'t save the photo.';
+
+  @override
+  String get photo_details => 'About this photo';
+
+  @override
+  String photo_caption(int bytes) {
+    return 'ИИ модел я е реконструирал от $bytes байта. Фините детайли са генерирани, не изпратени: табелите и текстът не се предават. Не е запис на това, което е имало там.';
+  }
+
+  @override
+  String get photo_enlargedNote =>
+      'Enhanced 4× on this phone: fine detail may be made up.';
+
+  @override
+  String get photo_enlargeNoMemory =>
+      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+
+  @override
+  String get photo_enlargeFlagged =>
+      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+
+  @override
+  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+
+  @override
+  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+
+  @override
+  String get photo_enlargeAutomaticallyHint =>
+      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+
+  @override
+  String get photo_rebuilding => 'Реконструиране… около 20 с';
+
+  @override
+  String get photo_hiddenFlagged =>
+      'Изображението е скрито: маркирано като неподходящо';
+
+  @override
+  String get photo_hiddenReported =>
+      'Снимката е скрита: подадохте сигнал за нея';
+
+  @override
+  String get photo_noMemory =>
+      'В момента няма достатъчно памет за реконструиране на тази снимка. Затворете други приложения или рестартирайте MeshTrax, след което опитайте отново.';
+
+  @override
+  String get photo_rebuildFailed =>
+      'Тази снимка не можа да бъде реконструирана.';
+
+  @override
+  String get photo_report => 'Подай сигнал';
+
+  @override
+  String photo_block(String name) {
+    return 'Блокирай $name';
+  }
+
+  @override
+  String photo_blockedSender(String name) {
+    return 'Блокирано: $name';
+  }
+
+  @override
+  String get photo_reportTitle => 'Сигнал за тази снимка';
+
+  @override
+  String get photo_reportBody =>
+      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+
+  @override
+  String get photo_reportInclude => 'Приложи снимката';
+
+  @override
+  String get photo_reportIncludeHint =>
+      'Нейният код, няколкостотин байта, от който тя може да бъде реконструирана. Не самото изображение.';
+
+  @override
+  String get photo_reportReason => 'What\'s wrong? (optional)';
+
+  @override
+  String get photo_reportedSent =>
+      'Photo hidden, and the report is sent. Thank you.';
+
+  @override
+  String get photo_reportedQueued =>
+      'Photo hidden. The report will be sent when there\'s internet.';
+
+  @override
+  String photo_reportPending(String name) {
+    return 'Сигнал за снимка: $name';
+  }
+
+  @override
+  String get photo_reportPendingHint => 'Waiting for internet to send';
+
+  @override
+  String get photo_reportStillWaiting =>
+      'Still no internet. It will be sent later.';
+
+  @override
+  String get photo_autoRebuild =>
+      'Автоматично реконструиране на получените снимки';
+
+  @override
+  String get photo_autoRebuildHint =>
+      'Изключено: докоснете снимка, за да я реконструирате. Включено: всяка снимка се реконструира при пристигане, докато приложението MeshTrax е отворено и телефонът има достатъчно памет.';
+
+  @override
+  String get photo_modelTitle => 'Модел за снимки';
+
+  @override
+  String photo_modelProgress(String done, String total) {
+    return '$done от $total';
+  }
+
+  @override
+  String get photo_modelChecking => 'Проверка на изтеглянето…';
+
+  @override
+  String get photo_modelRetrying => 'Нов опит…';
+
+  @override
+  String get photo_modelPaused => 'На пауза';
+
+  @override
+  String get photo_modelWaitingWifi => 'Изчакване: изтеглянията чакат Wi‑Fi';
+
+  @override
+  String get photo_modelWaiting => 'Изчакване…';
+
+  @override
+  String photo_modelInstalled(String size) {
+    return 'На това устройство ($size)';
+  }
+
+  @override
+  String photo_modelFailed(String error) {
+    return 'Неуспешно изтегляне: $error';
+  }
+
+  @override
+  String get photo_modelNoReason => 'без посочена причина';
+
+  @override
+  String photo_modelNeeded(String size) {
+    return 'Нужен за изпращане и реконструиране на снимки: $size';
+  }
+
+  @override
+  String get photo_keepOpen =>
+      'Не затваряйте MeshTrax, докато изтеглянето не завърши. Напредъкът се вижда и в Офлайн карти.';
+
+  @override
+  String photo_licencesLink(String poweredBy) {
+    return '$poweredBy · Лицензи';
+  }
+
+  @override
+  String get photo_cancelDownload => 'Отмени изтеглянето';
+
+  @override
+  String get photo_downloadModel => 'Изтегли модела за снимки';
+
+  @override
+  String get photo_tryAgain => 'Опитай отново';
+
+  @override
+  String get photo_deleteModel => 'Изтрий модела за снимки';
+
+  @override
+  String get photo_downloadLicences => 'Изтегли текстовете на лицензите';
+
+  @override
+  String get photo_deleteModelTitle => 'Да се изтрие ли моделът за снимки?';
+
+  @override
+  String photo_deleteModelBody(String size) {
+    return 'Снимките няма да могат да се изпращат или реконструират, докато не го изтеглите отново ($size).';
+  }
+
+  @override
+  String get photo_keep => 'Запази';
+
+  @override
+  String photo_notEnoughSpace(String needed, String free) {
+    return 'Няма достатъчно място: моделът за снимки се нуждае от $needed свободно място, а това устройство има $free.';
+  }
+
+  @override
+  String photo_downloadName(int index, int count) {
+    return 'Модел за снимки ($index от $count)';
+  }
+
+  @override
+  String photo_downloadLicenceName(int index, int count) {
+    return 'Лиценз на модела за снимки ($index от $count)';
+  }
+
+  @override
+  String get photo_licencesTitle => 'Лицензи на модела за снимки';
+
+  @override
+  String get photo_licencesIntro =>
+      'Моделът, който реконструира снимките, е изграден върху SD-Turbo на Stability AI, с кодека за изображения AEIC и декодера на AdcSR; проверката за безопасност използва класификатор на изображения, изграден върху SwiftFormer. Това са уведомлението и лицензите, които ги придружават.';
+
+  @override
+  String get photo_licencesMissing =>
+      'Текстовете на лицензите се изтеглят заедно с модела за снимки.';
+
+  @override
+  String photo_message(String id) {
+    return '📷 Снимка $id';
+  }
+
+  @override
+  String photo_messageWithTag(String id, String tag) {
+    return '📷 Снимка $id · $tag';
+  }
+
+  @override
+  String photo_incomplete(String id, int got, int total) {
+    return '📷 Снимка $id е непълна: $got от $total пакета';
+  }
+
+  @override
+  String photo_unreadable(String id) {
+    return '📷 Снимка $id не можа да бъде прочетена';
+  }
+
+  @override
+  String photo_unknownSender(String id) {
+    return 'Възел $id';
+  }
+
+  @override
+  String get photo_chatPhoto => '📷 Снимка';
+
+  @override
+  String get photo_cameraDenied =>
+      'MeshTrax не може да използва камерата. Можете да разрешите това в настройките на телефона.';
+
+  @override
+  String photo_pickFailed(String error) {
+    return 'Няма снимка: $error';
+  }
+
+  @override
   String get appTitle => 'MeshTrax';
 
   @override

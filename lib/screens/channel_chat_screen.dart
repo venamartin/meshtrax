@@ -19,6 +19,11 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/message_facts.dart';
 import '../helpers/mention_helper.dart';
+import '../services/photo_mesh.dart';
+import '../services/photo_store.dart';
+import '../widgets/photo_message_card.dart';
+import '../widgets/photo_report_dialog.dart';
+import 'photo_send_screen.dart';
 import '../widgets/share_contact_dialog.dart';
 import '../widgets/message_text.dart';
 import '../l10n/l10n.dart';
@@ -1522,6 +1527,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
     );
     final isOutgoing = message.isOutgoing;
     final facts = MessageFacts.of(message.text);
+    final isPhoto = PhotoMesh.isPhotoMessage(message);
     _rebuildAt(facts.changesAt);
     // With tracing on, a time reads with its date once it is a day old.
     if (enableTracing) {
@@ -1703,6 +1709,14 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                     ? _tracingStatusIcon(context, message)
                                     : _statusIcon(context, message),
                           ),
+                      ] else if (isPhoto) ...[
+                        PhotoMessageCard(
+                          messageId: message.messageId,
+                          senderName: message.senderName,
+                          photoTime: message.timestamp,
+                          size: (MediaQuery.sizeOf(context).width * 0.65 - 24)
+                              .clamp(120.0, 240.0),
+                        ),
                       ] else ...[
                         if (cleanDisplayText.isNotEmpty)
                           Row(
@@ -2437,6 +2451,20 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             () => DrawingComposeScreen.open(context, maxBytes: maxBytes),
           ),
         ),
+        if (photosSupported && PhotoStore.instance.photosEnabled)
+          AttachTile(
+            icon: Icons.photo_camera,
+            label: l10n.tray_photo,
+            onTap: () {
+              setState(() => _trayOpen = false);
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  fullscreenDialog: true,
+                  builder: (_) => PhotoSendScreen(channel: widget.channel),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
@@ -3020,12 +3048,19 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
         MessageAction(
           Icons.flag_outlined,
           'Report',
-          () => ReportHelper.reportMessage(
-            context,
-            sender: message.senderName,
-            text: message.text,
-            timestamp: message.timestamp,
-          ),
+          () => PhotoMesh.isPhotoMessage(message)
+              ? reportPhoto(
+                  context,
+                  messageId: message.messageId,
+                  sender: message.senderName,
+                  photoTime: message.timestamp,
+                )
+              : ReportHelper.reportMessage(
+                  context,
+                  sender: message.senderName,
+                  text: message.text,
+                  timestamp: message.timestamp,
+                ),
         ),
         MessageAction(Icons.block, 'Block ${message.senderName}', () async {
           await context

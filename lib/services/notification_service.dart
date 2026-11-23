@@ -81,6 +81,9 @@ class NotificationService {
 
   AppLocalizations get _l10n => lookupAppLocalizations(_locale);
 
+  /// The app's language, for text written away from any screen.
+  Locale get locale => _locale;
+
   // Rate limiting to prevent notification storms
   // (Added after getting notification-flooded while evaluating RF flood management. The irony.)
   static const _minNotificationInterval = Duration(seconds: 3);

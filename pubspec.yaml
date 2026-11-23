@@ -89,6 +89,12 @@ dependencies:
   # Offline vector maps: renders and downloads map packs (docs/technical/offline-maps-notes.md)
   traxmap:
     path: packages/traxmap
+  # Photos over the mesh: packets with a repair packet, and the entropy coder
+  traxpix:
+    path: packages/traxpix
+  # The photo model's runtime: LiteRT in a worker isolate
+  traxpix_litert:
+    path: packages/traxpix_litert
   # Offline routing, points of interest and positions for the map
   traxcoords:
     path: packages/traxcoords
@@ -165,6 +171,10 @@ flutter:
     - assets/icons/
     - assets/map_layers/
     - assets/fonts/JetBrainsMono-OFL.txt
+    # LiteRT's licence and its third-party notices, from Google's AAR; the
+    # photo model's runtime ships inside the app. Registered in main.dart.
+    - assets/licenses/LiteRT-LICENSE.txt
+    - assets/licenses/LiteRT-THIRD_PARTY_NOTICE.txt
 
   # Code text in messages, the same on every platform. SIL Open Font
   # License 1.1, registered in main.dart's licenses.

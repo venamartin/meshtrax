@@ -1640,8 +1640,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await _channelMessageStore.deleteMessage(channel.idKey, message.messageId);
     _channelOrphanRows[channel.idKey]
         ?.removeWhere((o) => o.messageId == message.messageId);
+    onChannelMessageDeleted?.call(message.messageId);
     notifyListeners();
   }
+
+  /// Told the id of each channel message the user deletes, so a photo's
+  /// files go with it.
+  void Function(String messageId)? onChannelMessageDeleted;
 
   /// The names and note the user gave a contact, if any.
   ContactNote? contactNote(String publicKeyHex) =>
@@ -4475,6 +4480,56 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         expectsGenericAck: expectsGenericAck,
       ))?[0] ==
       respCodeOk;
+
+  /// Files a photo as a channel message, so it shows in the chat, the chat
+  /// list and notifications like any message.
+  /// [text] must differ between photos ("📷 Photo #3a"): the echo match merges
+  /// same-text messages from one sender within five minutes. Returns the
+  /// message id the photo store keys the photo by, or null when the channel
+  /// slot is unknown. [notify] false files it quietly, with no notification.
+  Future<String?> ingestPhotoMessage({
+    required int channelIndex,
+    required String senderName,
+    required String text,
+    required bool isOutgoing,
+    required String packetHash,
+    bool notify = true,
+  }) async {
+    final message = ChannelMessage(
+      senderName: senderName,
+      text: text,
+      timestamp: DateTime.now(),
+      isOutgoing: isOutgoing,
+      status: ChannelMessageStatus.sent,
+      pathLength: 0,
+      heardDirect: !isOutgoing,
+      channelIndex: channelIndex,
+      packetHash: packetHash,
+    );
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return null;
+    final isNew = await _ingestChannelMessage(channelIndex, message);
+    if (isNew && !isOutgoing && notify) {
+      _maybeNotifyChannelMessage(message, channelName: channel.displayName);
+    }
+    return message.messageId;
+  }
+
+  /// Whether the user blocked [senderName].
+  bool isSenderBlocked(String senderName) =>
+      _appSettingsService?.isSenderBlocked(senderName) ?? false;
+
+  /// One packet's airtime, in ms, for [bytes] on air with the radio's
+  /// current settings.
+  int estimatePacketAirtimeMs(int bytes) => _estimateAirtimeMs(bytes);
+
+  /// Sends [data] and returns the radio's OK or ERR frame, tracked in the
+  /// generic ack queue like any command.
+  Future<Uint8List?> sendAndAwaitReply(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 5),
+  }) =>
+      _sendAndWaitForReply(data, timeout: timeout, expectsGenericAck: true);
 
   /// The radio's OK or ERR frame for [data]; null when none came in time.
   Future<Uint8List?> _sendAndWaitForReply(
@@ -9626,6 +9681,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
         return;
       }
+      // Channel datagrams too, so a photo sent along a set path reaches every
+      // radio on the way that hears it, not only the one at the end.
+      if (packet.payloadType == _payloadTypeGroupData) {
+        _handleRawGroupData(packet);
+        return;
+      }
       if (packet.payloadType != _payloadTypeGroupText) return;
 
       final payload = BufferReader(packet.payload);
@@ -9727,6 +9788,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     } catch (e) {
       appLogger.warn('Error handling log RX data frame: $e');
+    }
+  }
+
+  /// Each channel datagram the radio logged, decrypted with its live
+  /// channel's key: the slot, the data type and the blob, as a CHANNEL_DATA
+  /// push would give them.
+  void Function(int channelIndex, int dataType, Uint8List blob)?
+      onRawChannelData;
+
+  void _handleRawGroupData(_RawPacket packet) {
+    final hook = onRawChannelData;
+    if (hook == null || packet.payload.length < 4) return;
+    final channelHash = packet.payload[0];
+    final encrypted = Uint8List.fromList(packet.payload.sublist(1));
+    for (final channel in _channels) {
+      if (channel.isEmpty) continue;
+      if (_computeChannelHash(channel.psk) != channelHash) continue;
+      // A 1-byte hash collides: one that fails the MAC isn't the channel.
+      final plain = _decryptPayload(channel.psk, encrypted);
+      if (plain == null || plain.length < 3) continue;
+      final length = plain[2];
+      if (3 + length > plain.length) continue;
+      hook(
+        channel.index,
+        plain[0] | (plain[1] << 8),
+        Uint8List.sublistView(plain, 3, 3 + length),
+      );
+      return;
     }
   }
 
@@ -13901,6 +13990,7 @@ const int _routeTransportDirect = 0x03;
 
 const int _payloadTypeTxtMsg = 0x02;
 const int _payloadTypeGroupText = 0x05;
+const int _payloadTypeGroupData = 0x06;
 const int _cipherMacSize = 2;
 
 class _RawPacket {

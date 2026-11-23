@@ -12,6 +12,442 @@ class AppLocalizationsPl extends AppLocalizations {
   AppLocalizationsPl([String locale = 'pl']) : super(locale);
 
   @override
+  String get tray_photo => 'Zdjęcie';
+
+  @override
+  String get photo_settingsTitle => 'Zdjęcia';
+
+  @override
+  String photo_enableHint(String size) {
+    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+  }
+
+  @override
+  String photo_sendTitle(String channel) {
+    return 'Zdjęcie do $channel';
+  }
+
+  @override
+  String get photo_squareIntro =>
+      'Pick a photo, then choose the square to send.';
+
+  @override
+  String get photo_takePhoto => 'Zrób zdjęcie';
+
+  @override
+  String get photo_choosePhoto => 'Wybierz zdjęcie';
+
+  @override
+  String get photo_chooseAnother => 'Wybierz inne zdjęcie';
+
+  @override
+  String get photo_cropHint =>
+      'Przesuwaj i przybliżaj, aż to, co ważne, wypełni kwadrat.';
+
+  @override
+  String get photo_preview => 'Podgląd';
+
+  @override
+  String get photo_changeCrop => 'Change crop';
+
+  @override
+  String get photo_checkingAndCoding => 'Sprawdzanie i kodowanie zdjęcia…';
+
+  @override
+  String get photo_modelMissing =>
+      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+
+  @override
+  String get photo_previewNoMemory =>
+      'Za mało pamięci, żeby pokazać tu, co zobaczą inni. Nadal możesz je wysłać.';
+
+  @override
+  String get photo_rebuildingPreview =>
+      'Rekonstruowanie tego, co zobaczą inni… około 20 sekund';
+
+  @override
+  String photo_prepareFailed(String error) {
+    return 'Nie udało się przygotować zdjęcia: $error';
+  }
+
+  @override
+  String get photo_flaggedNotSent =>
+      'Tego zdjęcia nie można wysłać: kontrola bezpieczeństwa je oznaczyła.';
+
+  @override
+  String get photo_tagTitle => 'Etykieta (opcjonalnie)';
+
+  @override
+  String get photo_zeroHop => 'Zero hop';
+
+  @override
+  String get photo_zeroHopHint =>
+      'Only radios in direct range; repeaters don\'t pass it on';
+
+  @override
+  String photo_sendFigures(int packets, String sendTime) {
+    return '$packets packets · about $sendTime to send';
+  }
+
+  @override
+  String photo_seconds(String seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String photo_blockedWait(int gap, int minutes) {
+    return 'Na częstotliwościach MeshCore radio wysyła jedno zdjęcie co $gap minut. Kolejne możesz wysłać za $minutes min.';
+  }
+
+  @override
+  String photo_blockedWaitRepeaters(int gap, int minutes) {
+    return 'Na częstotliwościach MeshCore radio wysyła jedno zdjęcie przez przekaźniki co $gap minut. Kolejne przez przekaźniki możesz wysłać za $minutes min albo jedno w trybie zero-hop już teraz.';
+  }
+
+  @override
+  String get photo_send => 'Wyślij';
+
+  @override
+  String get photo_sending => 'Wysyłanie…';
+
+  @override
+  String photo_sendingPacket(int sent, int total) {
+    return 'Pakiet $sent z $total';
+  }
+
+  @override
+  String photo_sendingRepairPacket(int sent, int total) {
+    return 'Pakiet $sent z $total (naprawczy)';
+  }
+
+  @override
+  String photo_notSent(String error) {
+    return 'Nie wysłano: $error';
+  }
+
+  @override
+  String get photo_errorNotConnected => 'brak połączenia z radiem';
+
+  @override
+  String get photo_errorNoAnswer => 'radio nie odpowiedziało';
+
+  @override
+  String photo_errorRefused(int code) {
+    return 'radio odrzuciło pakiet (błąd $code)';
+  }
+
+  @override
+  String get photo_confirmTitle => 'Send photo';
+
+  @override
+  String photo_openChannelTitle(String channel) {
+    return 'Photos on $channel';
+  }
+
+  @override
+  String get photo_openChannelNotEveryone =>
+      'Most people here won\'t see it: only MeshTrax shows photos.';
+
+  @override
+  String photo_openChannelAirtime(String airtime, int messages) {
+    return 'This photo takes $airtime on air, as much as $messages text messages.';
+  }
+
+  @override
+  String get photo_openChannelRepeaters =>
+      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+
+  @override
+  String get photo_openChannelBetter =>
+      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+
+  @override
+  String get photo_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String photo_confirmAirtime(int packets, String airtime, int messages) {
+    return '$packets packets, $airtime on air: as much as $messages text messages.';
+  }
+
+  @override
+  String photo_confirmOpenChannel(String channel) {
+    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+  }
+
+  @override
+  String get photo_confirmFlood =>
+      'Each repeater that hears it sends it again.';
+
+  @override
+  String get photo_confirmZeroHop =>
+      'Zero hop: only radios in direct range get it.';
+
+  @override
+  String get photo_label => 'AI reconstructed';
+
+  @override
+  String get photo_tapToView => 'Tap to view';
+
+  @override
+  String get photo_enhance => 'Enhance 4×';
+
+  @override
+  String get photo_enhancing => 'Enhancing…';
+
+  @override
+  String get photo_save => 'Save';
+
+  @override
+  String get photo_saved => 'Saved to your photos';
+
+  @override
+  String get photo_saveFailed => 'Couldn\'t save the photo.';
+
+  @override
+  String get photo_details => 'About this photo';
+
+  @override
+  String photo_caption(int bytes) {
+    return 'Zrekonstruowane przez model AI z $bytes bajtów. Drobne szczegóły są wygenerowane, a nie przesłane: znaki i napisy nie dotrą. To nie jest zapis tego, co tam było.';
+  }
+
+  @override
+  String get photo_enlargedNote =>
+      'Enhanced 4× on this phone: fine detail may be made up.';
+
+  @override
+  String get photo_enlargeNoMemory =>
+      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+
+  @override
+  String get photo_enlargeFlagged =>
+      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+
+  @override
+  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+
+  @override
+  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+
+  @override
+  String get photo_enlargeAutomaticallyHint =>
+      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+
+  @override
+  String get photo_rebuilding => 'Rekonstruowanie… około 20 s';
+
+  @override
+  String get photo_hiddenFlagged =>
+      'Obraz ukryty: oznaczony jako nieodpowiedni';
+
+  @override
+  String get photo_hiddenReported => 'Zdjęcie ukryte: zgłoszone przez Ciebie';
+
+  @override
+  String get photo_noMemory =>
+      'Za mało pamięci, żeby teraz zrekonstruować to zdjęcie. Zamknij inne aplikacje lub uruchom ponownie MeshTrax, a potem spróbuj jeszcze raz.';
+
+  @override
+  String get photo_rebuildFailed =>
+      'Nie udało się zrekonstruować tego zdjęcia.';
+
+  @override
+  String get photo_report => 'Zgłoś';
+
+  @override
+  String photo_block(String name) {
+    return 'Zablokuj $name';
+  }
+
+  @override
+  String photo_blockedSender(String name) {
+    return 'Zablokowano: $name';
+  }
+
+  @override
+  String get photo_reportTitle => 'Zgłoś to zdjęcie';
+
+  @override
+  String get photo_reportBody =>
+      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+
+  @override
+  String get photo_reportInclude => 'Dołącz zdjęcie';
+
+  @override
+  String get photo_reportIncludeHint =>
+      'Jego kod, kilkaset bajtów, z którego można je zrekonstruować. Nie sam obraz.';
+
+  @override
+  String get photo_reportReason => 'What\'s wrong? (optional)';
+
+  @override
+  String get photo_reportedSent =>
+      'Photo hidden, and the report is sent. Thank you.';
+
+  @override
+  String get photo_reportedQueued =>
+      'Photo hidden. The report will be sent when there\'s internet.';
+
+  @override
+  String photo_reportPending(String name) {
+    return 'Zgłoszenie zdjęcia: $name';
+  }
+
+  @override
+  String get photo_reportPendingHint => 'Waiting for internet to send';
+
+  @override
+  String get photo_reportStillWaiting =>
+      'Still no internet. It will be sent later.';
+
+  @override
+  String get photo_autoRebuild => 'Automatycznie rekonstruuj odebrane zdjęcia';
+
+  @override
+  String get photo_autoRebuildHint =>
+      'Wyłączone: stuknij zdjęcie, aby je zrekonstruować. Włączone: każde zdjęcie jest rekonstruowane zaraz po odebraniu, gdy aplikacja MeshTrax jest otwarta, a telefon ma dość pamięci.';
+
+  @override
+  String get photo_modelTitle => 'Model do zdjęć';
+
+  @override
+  String photo_modelProgress(String done, String total) {
+    return '$done z $total';
+  }
+
+  @override
+  String get photo_modelChecking => 'Sprawdzanie pobranych plików…';
+
+  @override
+  String get photo_modelRetrying => 'Ponawianie…';
+
+  @override
+  String get photo_modelPaused => 'Wstrzymane';
+
+  @override
+  String get photo_modelWaitingWifi => 'Oczekiwanie: pobieranie czeka na Wi‑Fi';
+
+  @override
+  String get photo_modelWaiting => 'Oczekiwanie…';
+
+  @override
+  String photo_modelInstalled(String size) {
+    return 'Na tym urządzeniu ($size)';
+  }
+
+  @override
+  String photo_modelFailed(String error) {
+    return 'Pobieranie nie powiodło się: $error';
+  }
+
+  @override
+  String get photo_modelNoReason => 'nie podano przyczyny';
+
+  @override
+  String photo_modelNeeded(String size) {
+    return 'Potrzebny do wysyłania i rekonstruowania zdjęć: $size';
+  }
+
+  @override
+  String get photo_keepOpen =>
+      'Nie zamykaj MeshTrax, dopóki pobieranie się nie zakończy. Postęp widać też w Mapach offline.';
+
+  @override
+  String photo_licencesLink(String poweredBy) {
+    return '$poweredBy · Licencje';
+  }
+
+  @override
+  String get photo_cancelDownload => 'Anuluj pobieranie';
+
+  @override
+  String get photo_downloadModel => 'Pobierz model do zdjęć';
+
+  @override
+  String get photo_tryAgain => 'Spróbuj ponownie';
+
+  @override
+  String get photo_deleteModel => 'Usuń model do zdjęć';
+
+  @override
+  String get photo_downloadLicences => 'Pobierz teksty licencji';
+
+  @override
+  String get photo_deleteModelTitle => 'Usunąć model do zdjęć?';
+
+  @override
+  String photo_deleteModelBody(String size) {
+    return 'Do czasu ponownego pobrania ($size) nie będzie można wysyłać ani rekonstruować zdjęć.';
+  }
+
+  @override
+  String get photo_keep => 'Zachowaj';
+
+  @override
+  String photo_notEnoughSpace(String needed, String free) {
+    return 'Za mało miejsca: model do zdjęć potrzebuje $needed wolnego miejsca, a na tym urządzeniu jest $free.';
+  }
+
+  @override
+  String photo_downloadName(int index, int count) {
+    return 'Model do zdjęć ($index z $count)';
+  }
+
+  @override
+  String photo_downloadLicenceName(int index, int count) {
+    return 'Licencja modelu do zdjęć ($index z $count)';
+  }
+
+  @override
+  String get photo_licencesTitle => 'Licencje modelu do zdjęć';
+
+  @override
+  String get photo_licencesIntro =>
+      'Model, który rekonstruuje zdjęcia, jest zbudowany na SD-Turbo od Stability AI, z kodekiem obrazu AEIC i dekoderem z AdcSR; kontrola bezpieczeństwa używa klasyfikatora obrazów zbudowanego na SwiftFormer. Oto nota prawna i licencje, które są do nich dołączone.';
+
+  @override
+  String get photo_licencesMissing =>
+      'Teksty licencji pobierają się razem z modelem do zdjęć.';
+
+  @override
+  String photo_message(String id) {
+    return '📷 Zdjęcie $id';
+  }
+
+  @override
+  String photo_messageWithTag(String id, String tag) {
+    return '📷 Zdjęcie $id · $tag';
+  }
+
+  @override
+  String photo_incomplete(String id, int got, int total) {
+    return '📷 Zdjęcie $id niekompletne: $got z $total pakietów';
+  }
+
+  @override
+  String photo_unreadable(String id) {
+    return '📷 Nie udało się odczytać zdjęcia $id';
+  }
+
+  @override
+  String photo_unknownSender(String id) {
+    return 'Węzeł $id';
+  }
+
+  @override
+  String get photo_chatPhoto => '📷 Zdjęcie';
+
+  @override
+  String get photo_cameraDenied =>
+      'MeshTrax nie może używać aparatu. Możesz na to zezwolić w ustawieniach telefonu.';
+
+  @override
+  String photo_pickFailed(String error) {
+    return 'Brak zdjęcia: $error';
+  }
+
+  @override
   String get appTitle => 'MeshTrax';
 
   @override
