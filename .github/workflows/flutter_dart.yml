@@ -33,6 +33,11 @@ jobs:
       - name: Run tests
         run: flutter test -r github
 
+      # The report inbox is a Cloudflare Worker, tested with Node's own runner.
+      - name: Test the report inbox
+        working-directory: tools/report-inbox
+        run: node --test test/*.test.js
+
       # The path_graph package is pure Dart with its own pubspec — the
       # app's analyze/test above never touch it.
       - name: Analyze path_graph package

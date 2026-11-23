@@ -33,6 +33,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [TRAX mode](technical/trax-mode.md) | Moving a group's radios off the regular mesh and back: saved settings, the settings write, the TRAX message, Leave |
 | [Offline maps notes](technical/offline-maps-notes.md) | Where the map code and data live, decisions, pitfalls |
 | [Offline maps roadmap](technical/offline-maps-roadmap.md) | The offline maps plan and its status |
+| [Report inbox](../tools/report-inbox/README.md) | The Cloudflare Worker that emails in-app reports to the developer, and keeps nothing |
 | [Park maps](technical/park-maps.md) | Planned park map overlays (not built) |
 | [Database plan](technical/phase3d-cut-plan.md) | How the message database became the one source of messages (finished) |
 | [Bluetooth auto-connect findings](technical/ble-autoconnect-findings.md) | Three auto-connect bugs and their fixes (finished) |

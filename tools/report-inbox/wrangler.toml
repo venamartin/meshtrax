@@ -1,0 +1,31 @@
+# The MeshTrax report inbox. See README.md before deploying.
+name = "meshtrax-report-inbox"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+preview_urls = false
+
+[[routes]]
+pattern = "reports.meshtrax.io"
+custom_domain = true
+
+[vars]
+FROM = "reports@meshtrax.io"
+TO = "venahamtrack@gmail.com"
+
+# The only address this Worker can send to.
+[[send_email]]
+name = "REPORTS"
+destination_address = "venahamtrack@gmail.com"
+
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
+# New Workers log every request unless told not to.
+[observability]
+enabled = false
