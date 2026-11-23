@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/timeout_helper.dart';
 import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
@@ -49,6 +50,10 @@ final pf2 = PathSelection(
 
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
+  final _clock = Stopwatch()..start();
+
+  /// When each ACK went out, in ms, in the order of [acks].
+  final ackAtMs = <int>[];
 
   @override
   bool get isConnected => true;
@@ -60,6 +65,9 @@ class _Connector extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data);
+    if (data.isNotEmpty && data[0] == cmdSendRawPacket) {
+      ackAtMs.add(_clock.elapsedMilliseconds);
+    }
   }
 
   @override
@@ -350,6 +358,16 @@ void main() {
     expect(sent, hasLength(2));
     expect(sent[0].sublist(0, 15), plainAck(stored));
     expect(sent[1].sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('the second ACK still follows the stand-in, which waited a moment, '
+      'by the gap sendAckTo keeps', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    await acks(2);
+    expect(c.ackAtMs, hasLength(2));
+    expect(c.ackAtMs[1] - c.ackAtMs[0],
+        greaterThanOrEqualTo(TimeoutHelper.extraAckGapMs - 50));
   });
 
   test("a passing copy, then the radio's own copy: the radio's ACK is the "

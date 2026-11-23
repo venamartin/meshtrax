@@ -9698,7 +9698,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// The first [gated] packets may no longer be wanted when their time comes
   /// ([stillWanted], told whether it is the last of them): each waits
   /// [TimeoutHelper.standInRecheckMs] first, so radio frames a busy app has
-  /// not handled yet are handled before the check.
+  /// not handled yet are handled before the check, and the packets after them
+  /// wait as long, so the gap stays.
   List<Timer> _queueRawPackets(
     List<Uint8List> packets,
     int delayMs, {
@@ -9730,6 +9731,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         });
       }));
       delay += TimeoutHelper.extraAckGapMs;
+      if (last) delay += TimeoutHelper.standInRecheckMs;
     }
     _rawPacketTimers
       ..removeWhere((t) => !t.isActive)
