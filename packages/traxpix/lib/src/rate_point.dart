@@ -32,9 +32,4 @@ class ImageCodecRateStats {
     minBytes: 208,
     maxBytes: 796,
   );
-
-  static ImageCodecRateStats forRate(ImageCodecRatePoint rate) =>
-      switch (rate) {
-        ImageCodecRatePoint.ft8 => ft8,
-      };
 }

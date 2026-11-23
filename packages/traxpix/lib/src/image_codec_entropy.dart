@@ -129,8 +129,6 @@ class AeicEntropyGeometry {
   List<int> get yShape => <int>[1, yChannels, yHeight, yWidth];
 
   List<int> get zShape => <int>[1, zChannels, zHeight, zWidth];
-
-  List<int> get imageShape => <int>[1, 3, resolution, resolution];
 }
 
 /// The four masks of `get_mask_four_parts`, as arithmetic rather than tensors.

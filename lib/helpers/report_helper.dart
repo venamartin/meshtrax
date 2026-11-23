@@ -14,26 +14,6 @@ class ReportHelper {
 
   static const String _reportEmail = 'venahamtrack@gmail.com';
 
-  /// Opens the email app with a report to the developer. Returns whether an
-  /// email app took it; the user still decides whether to send.
-  static Future<bool> openReportEmail({
-    required String subject,
-    required String body,
-  }) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: _reportEmail,
-      query:
-          'subject=${Uri.encodeComponent(subject)}'
-          '&body=${Uri.encodeComponent(body)}',
-    );
-    try {
-      return await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      return false;
-    }
-  }
-
   static Future<void> reportMessage(
     BuildContext context, {
     required String sender,
