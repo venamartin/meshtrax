@@ -65,6 +65,14 @@ class PhotoSettingsSection extends StatelessWidget {
                   onChanged: (on) => store.enlargeAutomatically = on,
                 ),
               ],
+              const Divider(height: 1),
+              SwitchListTile(
+                secondary: const Icon(Icons.timer_off_outlined),
+                title: Text(l10n.photo_ignoreTimeLimits),
+                subtitle: Text(l10n.photo_ignoreTimeLimitsHint),
+                value: store.ignoreTimeLimits,
+                onChanged: (on) => store.ignoreTimeLimits = on,
+              ),
             ],
             for (final r in reports.all.where((r) => !r.sent)) ...[
               const Divider(height: 1),

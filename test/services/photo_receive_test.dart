@@ -160,6 +160,13 @@ void main() {
       );
       PhotoStore.instance.rebuildAutomatically = false;
     });
+
+    test('the time limits apply until the testing switch is on', () async {
+      expect(PhotoStore.instance.ignoreTimeLimits, isFalse);
+      PhotoStore.instance.ignoreTimeLimits = true;
+      expect(PrefsManager.instance.getBool('photo_ignore_time_limits'), isTrue);
+      PhotoStore.instance.ignoreTimeLimits = false;
+    });
   });
 
   test(

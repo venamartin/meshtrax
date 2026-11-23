@@ -156,7 +156,7 @@ They apply on the frequencies of the presets in Radio settings, except the Off-G
 - **Every channel** may take a photo, Public included.
 - **Before each photo** the sender confirms it: its packets, its airtime, and as how many text messages that counts (a 69-byte text packet, `photoTextMessageAirBytes`). It also says whether repeaters pass it on. A photo is usually as much as 8 text messages.
 - **On Public and hashtag channels**, the first time, a longer explanation comes first: most people there won't see the photo, only MeshTrax shows photos, every repeater sends all of it again, and what's better. "Don't show this again" skips it from then on; the confirmation stays.
-- **Time limits:** one photo every 10 minutes from each radio, and one through repeaters every 30 minutes, kept per radio key (`notePhotoSent`). Zero hop is the way to send another sooner.
+- **Time limits:** one photo every 10 minutes from each radio, and one through repeaters every 30 minutes, kept per radio key (`notePhotoSent`). Zero hop is the way to send another sooner. **Ignore the photo time limits** in App settings, Messaging, Photos (off by default, for testing) lifts both on that phone.
 
 ## Safety
 

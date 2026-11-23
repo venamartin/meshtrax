@@ -257,6 +257,18 @@ class PhotoStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  static const _noLimitsKey = 'photo_ignore_time_limits';
+
+  /// "Ignore the photo time limits": off by default. For testing: on, this
+  /// phone sends photos without the waits between them.
+  bool get ignoreTimeLimits =>
+      PrefsManager.instance.getBool(_noLimitsKey) ?? false;
+
+  set ignoreTimeLimits(bool on) {
+    unawaited(PrefsManager.instance.setBool(_noLimitsKey, on));
+    notifyListeners();
+  }
+
   final _waitingForFront = <String>{};
   AppLifecycleListener? _frontListener;
 

@@ -84,6 +84,8 @@
   "photo_enlargeFailed": "Couldn't enlarge the photo.",
   "photo_enlargeAutomatically": "Enlarge photos automatically",
   "photo_enlargeAutomaticallyHint": "Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.",
+  "photo_ignoreTimeLimits": "Ignore the photo time limits",
+  "photo_ignoreTimeLimitsHint": "For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.",
   "photo_rebuilding": "Rebuilding… about 20 s",
   "photo_hiddenFlagged": "Image hidden: flagged as inappropriate",
   "photo_hiddenReported": "Photo hidden: you reported it",

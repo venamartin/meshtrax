@@ -533,7 +533,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
     final sending = _step == _Step.sending;
     final key = connector.selfPublicKeyHex;
-    final blocked = sending
+    final blocked = sending || PhotoStore.instance.ignoreTimeLimits
         ? null
         : photoSendBlocked(
             freqKhz: connector.currentFreqHz,

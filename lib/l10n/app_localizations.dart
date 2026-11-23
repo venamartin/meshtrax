@@ -527,6 +527,18 @@ abstract class AppLocalizations {
   /// **'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.'**
   String get photo_enlargeAutomaticallyHint;
 
+  /// No description provided for @photo_ignoreTimeLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore the photo time limits'**
+  String get photo_ignoreTimeLimits;
+
+  /// No description provided for @photo_ignoreTimeLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.'**
+  String get photo_ignoreTimeLimitsHint;
+
   /// No description provided for @photo_rebuilding.
   ///
   /// In en, this message translates to:

@@ -259,6 +259,13 @@ class AppLocalizationsKo extends AppLocalizations {
       'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
 
   @override
+  String get photo_ignoreTimeLimits => 'Ignore the photo time limits';
+
+  @override
+  String get photo_ignoreTimeLimitsHint =>
+      'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.';
+
+  @override
   String get photo_rebuilding => '재구성 중… 약 20초';
 
   @override
