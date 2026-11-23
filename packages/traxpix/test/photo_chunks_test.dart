@@ -713,7 +713,7 @@ void main() {
         dataType: dataTypeMeshTraxPhoto,
         payload: Uint8List.fromList(<int>[0xAA, 0xBB]),
       );
-      expect(frame, <int>[0x3E, 0x00, 0xFF, 0x50, 0x01, 0xAA, 0xBB]);
+      expect(frame, <int>[0x3E, 0x00, 0xFF, 0x1C, 0xFF, 0xAA, 0xBB]);
     });
 
     test('a direct-path frame inserts the path bytes before the data type', () {
@@ -724,7 +724,7 @@ void main() {
         pathLen: 0x02,
         path: Uint8List.fromList(<int>[0x11, 0x22]),
       );
-      expect(frame, <int>[0x3E, 0x02, 0x02, 0x11, 0x22, 0x50, 0x01, 0x01]);
+      expect(frame, <int>[0x3E, 0x02, 0x02, 0x11, 0x22, 0x1C, 0xFF, 0x01]);
     });
 
     test('RESP_CODE_CHANNEL_DATA_RECV parses, snr is signed', () {
@@ -735,8 +735,8 @@ void main() {
         0,
         3,
         0xFF,
-        0x50,
-        0x01,
+        0x1C,
+        0xFF,
         2,
         0x42,
         0x43,
@@ -805,7 +805,7 @@ void main() {
           send: (frame) async {
             // CMD_SEND_CHANNEL_DATA, channel 1, flood (path length 0xFF, no
             // path bytes), MeshTrax's data type, then the chunk.
-            expect(frame.sublist(0, 5), <int>[0x3E, 1, 0xFF, 0x50, 0x01]);
+            expect(frame.sublist(0, 5), <int>[0x3E, 1, 0xFF, 0x1C, 0xFF]);
             inFlight++;
             maxInFlight = maxInFlight > inFlight ? maxInFlight : inFlight;
             await Future<void>.delayed(const Duration(milliseconds: 1));
@@ -828,7 +828,7 @@ void main() {
         // with MeshTrax's photo type.
         for (final blob in sent) {
           final frame = BytesBuilder()
-            ..add(<int>[0x1B, 0x10, 0, 0, 1, 0xFF, 0x50, 0x01, blob.length])
+            ..add(<int>[0x1B, 0x10, 0, 0, 1, 0xFF, 0x1C, 0xFF, blob.length])
             ..add(blob);
           tx.handleFrame(frame.toBytes());
         }
@@ -879,10 +879,10 @@ void main() {
         ),
         isNull,
       );
-      // The testing type photos used before 2026-11-19.
+      // 0x0150, another app's in MeshCore's allocation table.
       expect(
         tx.handleFrame(
-          Uint8List.fromList(<int>[0x1B, 0, 0, 0, 0, 0xFF, 0x1C, 0xFF, 0]),
+          Uint8List.fromList(<int>[0x1B, 0, 0, 0, 0, 0xFF, 0x50, 0x01, 0]),
         ),
         isNull,
       );
@@ -900,7 +900,7 @@ void main() {
       await tx.sendImage(payload: payloadOf(120), metadata: ft8Meta);
       expect(frames, isNotEmpty);
       for (final f in frames) {
-        expect(f.sublist(0, 5), <int>[0x3E, 0, 0xFF, 0x50, 0x01]);
+        expect(f.sublist(0, 5), <int>[0x3E, 0, 0xFF, 0x1C, 0xFF]);
       }
     });
 
@@ -919,7 +919,7 @@ void main() {
       );
       expect(frames, isNotEmpty);
       for (final f in frames) {
-        expect(f.sublist(0, 5), <int>[0x3E, 2, 0x00, 0x50, 0x01]);
+        expect(f.sublist(0, 5), <int>[0x3E, 2, 0x00, 0x1C, 0xFF]);
       }
     });
 

@@ -100,16 +100,16 @@ void main() {
 
   test('a photo chunk routed through a repeater is handed over', () {
     final blob = List.generate(157, (i) => i);
-    c.handleFrameForTest(_logged(0x0150, blob, _psk));
+    c.handleFrameForTest(_logged(0xFF1C, blob, _psk));
     expect(heard, hasLength(1));
     expect(heard.single.$1, 1);
-    expect(heard.single.$2, 0x0150);
+    expect(heard.single.$2, 0xFF1C);
     expect(heard.single.$3, blob);
   });
 
   test('a datagram for a channel this radio lacks is not', () {
     final other = Uint8List.fromList(List.filled(16, 0x11));
-    c.handleFrameForTest(_logged(0x0150, [1, 2, 3], other));
+    c.handleFrameForTest(_logged(0xFF1C, [1, 2, 3], other));
     expect(heard, isEmpty);
   });
 

@@ -10,7 +10,7 @@ model itself runs in `traxpix_litert`.
 
 - **Sending.** The sender crops a photo square. The AEIC-SE `ft8` model codes
   it to about 400 bytes, which is 3 to 7 packets with the repair packet. Each
-  packet is channel data of type `0x0150` on the chosen channel.
+  packet is channel data of type `0xFF1C` on the chosen channel.
 - **Routes.** A photo goes as a flood, the way the radio sends the channel's
   messages, or zero hop (`sendImage(zeroHop: true)`): only radios in direct
   range hear it.
