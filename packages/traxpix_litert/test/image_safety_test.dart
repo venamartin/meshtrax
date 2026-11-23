@@ -47,16 +47,27 @@ void main() {
     });
   });
 
-  group('ImageSafetyThresholds', () {
-    const t = ImageSafetyThresholds(nsfw: 0.3, nsfl: 0.3, combined: 0.5);
+  group('ImageSafetyRule', () {
+    const rule = ImageSafetyRule.standard;
     ImageSafetyScores s(double nsfl, double nsfw) =>
         ImageSafetyScores(nsfl: nsfl, nsfw: nsfw, sfw: 1 - nsfl - nsfw);
 
-    test('passes a safe picture', () => expect(t.flags(s(0.05, 0.05)), false));
-    test('flags nudity alone', () => expect(t.flags(s(0, 0.3)), true));
-    test('flags gore alone', () => expect(t.flags(s(0.3, 0)), true));
-    test('flags a score split between the two', () {
-      expect(t.flags(s(0.26, 0.26)), true);
+    test('passes a safe picture, on a receiver and a sender', () {
+      expect(rule.flags(s(0.05, 0.05)), false);
+      expect(rule.flags(s(0.05, 0.05), forSender: true), false);
+    });
+    test('flags nudity above safe', () => expect(rule.flags(s(0, 0.55)), true));
+    test('flags gore above safe', () => expect(rule.flags(s(0.55, 0)), true));
+    test('passes a receiver while safe leads both', () {
+      expect(rule.flags(s(0.3, 0.3)), false);
+    });
+    test('a sender needs safe ahead of both by the margin', () {
+      // One photo's scores as a Mac and an iPhone XS rebuilt it.
+      final mac = s(0.035, 0.288);
+      final phone = s(0.036, 0.401);
+      expect(rule.flags(mac, forSender: true), false);
+      expect(rule.flags(phone), false);
+      expect(rule.flags(phone, forSender: true), true);
     });
   });
 }

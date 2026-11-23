@@ -115,9 +115,10 @@ class ImageCodecSession {
   Future<EncodedImage> encode(Uint8List rgbBytes) =>
       _submit('encode', rgbBytes);
 
-  /// Rebuilds the photo and checks it. A flagged picture has no pixels.
-  Future<RebuiltImage> rebuild(Uint8List bitstream) =>
-      _submit('rebuild', bitstream);
+  /// Rebuilds the photo and checks it, with [forSender] by the sender's
+  /// stricter check. A flagged picture has no pixels.
+  Future<RebuiltImage> rebuild(Uint8List bitstream, {bool forSender = false}) =>
+      _submit(forSender ? 'senderRebuild' : 'rebuild', bitstream);
 
   /// The rANS bitstream -> `y_hat [1, 256, 16, 16]`, without the decoder.
   Future<Float32List> decodeToLatent(Uint8List bitstream) =>
@@ -232,6 +233,7 @@ Future<void> _workerMain(_Boot boot) async {
             final Object value = switch (map['op']) {
               'encode' => await backend.checkedEncode(bytes),
               'rebuild' => await backend.rebuild(bytes),
+              'senderRebuild' => await backend.rebuild(bytes, forSender: true),
               'decodeToLatent' => await backend.decodeToLatent(bytes),
               'classify' => backend.classify(bytes),
               'enhance' => backend.enhance(bytes),

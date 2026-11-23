@@ -18,7 +18,7 @@ class ImageCodecBundle {
   /// first use. They are mapped from there instead of taking the app's
   /// memory. Null keeps them in memory.
   final String? weightCacheDir;
-  final ImageSafetyThresholds safetyThresholds;
+  final ImageSafetyRule safetyRule;
 
   const ImageCodecBundle({
     required this.sidePath,
@@ -31,7 +31,7 @@ class ImageCodecBundle {
     required this.safetyPath,
     required this.tablesPath,
     this.weightCacheDir,
-    this.safetyThresholds = ImageSafetyThresholds.standard,
+    this.safetyRule = ImageSafetyRule.standard,
   });
 
   /// The ft8 files in [dir], as `kImageCodecFiles` names them, with the

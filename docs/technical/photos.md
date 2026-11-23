@@ -32,7 +32,7 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 1. **Pick and crop.** The photo is cropped square and scaled to 512 × 512 RGB.
 2. **Check.** The classifier checks the original. A flagged photo is never coded or sent.
 3. **Code.** The send side of the entropy network (`aeic_side_ft8.tflite`) turns the picture into latents, and the rANS coder writes them as a bitstream of 208 to 796 bytes, about 400 on average.
-4. **Preview.** The phone rebuilds the bitstream exactly as a receiver will and checks that too, so the sender sees what the others will get. If the memory isn't there, it says so and the photo can still be sent.
+4. **Preview.** The phone rebuilds the bitstream exactly as a receiver will and checks that too, with the sender's margin (see [Safety](#safety)), so the sender sees what the others will get and they won't refuse it. If the memory isn't there, it says so, the original takes the margin instead, and the photo can still be sent.
 5. **Tag.** The sender may type a tag, up to 24 characters and 64 UTF-8 bytes. It goes ahead of the bitstream as a length byte and the text (`photoPayloadWithTag`), and the metadata byte says it's there. The receiver shows it as text, so the AI can never change it.
 6. **Packets.** The payload is cut into blobs of up to 157 bytes (`buildImageChunks`), then the XOR repair blob is added.
 7. **Route.** Each blob goes to the radio as `CMD_SEND_CHANNEL_DATA` (62), with path length `0xFF` for a flood or `0` for zero hop. A flood goes through the radio's own scoped flood (`sendGroupData` → `sendFloodScoped`), the same call as a channel text, so it takes the radio's region. Where the connector puts a channel's sends in a region, or sends a Nearby only channel zero hop, channel data is included, so a photo follows its channel as text does.
@@ -159,8 +159,8 @@ They apply on the frequencies of the presets in Radio settings, except the Off-G
 
 ## Safety
 
-- **The classifier:** `image-safety-classifier-s`. It sees the whole picture, area-scaled to 224 × 224, never cropped. A picture is flagged at NSFW ≥ 0.30, NSFL ≥ 0.30, or the two together ≥ 0.50 (`ImageSafetyThresholds.standard`).
-- **What it checks:** the sender's original before it is coded, the preview, every rebuilt picture and every enhanced one. Flagged pixels never leave `traxpix_litert`: the results carry no picture.
+- **The classifier:** `image-safety-classifier-s`. It sees the whole picture, area-scaled to 224 × 224, never cropped. A picture is flagged when its NSFW or NSFL score is above its SFW score, the classifier author's own rule. A sender's check is stricter: SFW has to lead both by 0.3 (`ImageSafetyRule.standard`). Phones score the same rebuild a little differently (by up to 0.115 between an iPhone XS and a Mac, on 68 photos), and the margin keeps a receiver from refusing a photo its sender passed.
+- **What it checks:** the sender's original before it is coded, the preview, every rebuilt picture and every enhanced one. The preview takes the sender's margin; on a phone without the memory for a preview, the original does. Flagged pixels never leave `traxpix_litert`: the results carry no picture.
 - **Report** hides a photo for good and sends a report from inside the app (`PhotoReports`, `report_inbox.dart`) to the report inbox, `https://reports.meshtrax.io/v1/report`. The inbox passes each report on by email to the developer and keeps nothing. A report carries the sender's name as shown, when it arrived, its size, whether the check hid it, the user's reason and the app's version, and the photo's code only if the user ticks "Include the photo"; nothing about the reporter. Without internet it waits on the phone and is sent at the next launch, or from App settings, Messaging, Photos. App stores ask that reporting work from inside the app for AI-generated content. **Block** drops that sender's photos from then on.
 
 ## Where things are kept

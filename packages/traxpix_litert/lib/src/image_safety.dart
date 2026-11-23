@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 /// Side of the square picture the safety classifier takes.
@@ -26,36 +27,27 @@ class ImageSafetyScores {
       'SFW ${sfw.toStringAsFixed(4)}';
 }
 
-/// Where a picture is flagged. Each class has its own line, so an injury
-/// photo's gore score never adds to its nudity score; [combined] catches a
-/// picture whose probability is split between the two.
-class ImageSafetyThresholds {
-  final double nsfw;
-  final double nsfl;
-  final double combined;
+/// When a picture is flagged: when its nudity or gore score is above its safe
+/// score, the classifier author's own rule. A sender's check also needs safe
+/// ahead of both by [senderMargin]: phones score the same rebuild a little
+/// differently, and the margin keeps a receiver from refusing a photo its
+/// sender passed.
+class ImageSafetyRule {
+  final double senderMargin;
 
-  const ImageSafetyThresholds({
-    required this.nsfw,
-    required this.nsfl,
-    required this.combined,
-  });
+  const ImageSafetyRule({required this.senderMargin});
 
-  /// The limits chosen on 2026-11-18 (owner). Checked against 190 real trip
-  /// photos, scored as the app scores them (before sending and after a
-  /// rebuild): none was flagged. The highest was a close-up of a bare arm and
-  /// leg in shorts, 0.443 combined before sending; nothing else passed 0.16,
-  /// and no rebuild passed 0.145. Strict on purpose: recall can't be measured
-  /// without unsafe pictures, which this project never handles.
-  static const standard = ImageSafetyThresholds(
-    nsfw: 0.30,
-    nsfl: 0.30,
-    combined: 0.50,
-  );
+  /// The rule chosen on 2026-11-23 (owner). An iPhone XS and a Mac rebuilt the
+  /// same 68 photos: the largest score difference was 0.115, and differences
+  /// grew where the classifier was unsure. Each 0.1 of score that moves from
+  /// safe to nudity or gore closes the gap by 0.2, so a 0.3 margin covers a
+  /// move of 0.15.
+  static const standard = ImageSafetyRule(senderMargin: 0.3);
 
-  bool flags(ImageSafetyScores scores) =>
-      scores.nsfw >= nsfw ||
-      scores.nsfl >= nsfl ||
-      scores.nsfw + scores.nsfl >= combined;
+  /// Whether [scores] are flagged; with [forSender], by the sender's check.
+  bool flags(ImageSafetyScores scores, {bool forSender = false}) =>
+      math.max(scores.nsfw, scores.nsfl) + (forSender ? senderMargin : 0) >
+      scores.sfw;
 }
 
 /// A rebuilt photo. [rgb] is null when the picture was flagged: flagged

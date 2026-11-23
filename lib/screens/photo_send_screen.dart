@@ -175,10 +175,15 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         room = imageCodecHasRoomToRebuild();
       }
       if (!room) {
+        // No rebuild to check here, so the original takes the sender's margin.
+        if (store.bundle.safetyRule.flags(sent.scores, forSender: true)) {
+          setState(() => _step = _Step.flagged);
+          return;
+        }
         _previewNote = l10n.photo_previewNoMemory;
       } else {
         setState(() => _working = l10n.photo_rebuildingPreview);
-        final rebuilt = await codec.rebuild(bitstream);
+        final rebuilt = await codec.rebuild(bitstream, forSender: true);
         if (rebuilt.flagged) {
           setState(() => _step = _Step.flagged);
           return;

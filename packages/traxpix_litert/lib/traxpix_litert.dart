@@ -23,7 +23,7 @@ export 'src/image_safety.dart'
         EncodedImage,
         EnhancedImage,
         ImageSafetyScores,
-        ImageSafetyThresholds,
+        ImageSafetyRule,
         RebuiltImage;
 export 'src/litert_api.dart'
     show LiteRtApi, LiteRtEnvironment, LiteRtException, LiteRtModel;

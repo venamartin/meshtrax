@@ -74,7 +74,7 @@ class LiteRtImageCodecBackend {
 
   Future<EncodedImage> checkedEncode(Uint8List rgbBytes) async {
     final scores = classify(rgbBytes);
-    if (bundle.safetyThresholds.flags(scores)) {
+    if (bundle.safetyRule.flags(scores)) {
       return EncodedImage(scores: scores, flagged: true);
     }
     return EncodedImage(
@@ -84,10 +84,13 @@ class LiteRtImageCodecBackend {
     );
   }
 
-  Future<RebuiltImage> rebuild(Uint8List bitstream) async {
+  Future<RebuiltImage> rebuild(
+    Uint8List bitstream, {
+    bool forSender = false,
+  }) async {
     final rgb = await decodeToRgb(bitstream);
     final scores = classify(rgb);
-    final flagged = bundle.safetyThresholds.flags(scores);
+    final flagged = bundle.safetyRule.flags(scores, forSender: forSender);
     return RebuiltImage(
       scores: scores,
       flagged: flagged,
@@ -188,7 +191,7 @@ class LiteRtImageCodecBackend {
       }
     }
     final scores = classify(enlarged, side: kImageCodecEnhancedSize);
-    final flagged = bundle.safetyThresholds.flags(scores);
+    final flagged = bundle.safetyRule.flags(scores);
     return EnhancedImage(
       scores: scores,
       flagged: flagged,
