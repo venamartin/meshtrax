@@ -158,6 +158,10 @@ void main() {
     if (pathfinder) c.graphRouteCandidates = (_) => routes;
     c.handleFrameForTest(_deviceInfo(clientRepeat: clientRepeat));
     c.handleFrameForTest(_selfInfo());
+    // SELF_INFO loads this radio's cached contacts, which replaces the list:
+    // let it finish before the radio's contacts come in, or a test that waits
+    // finds the contact gone.
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     await c.getContacts();
     c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
     c.handleFrameForTest(_contactFrame(routeBack: routeBack));
@@ -355,6 +359,22 @@ void main() {
     // The last repeater's copy comes while the app still holds its ACKs.
     c.handleFrameForTest(_rxLog(dmLastCopy));
     await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test("the radio's copy handled just after the stand-in was due, by a busy "
+      'app, still drops it', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // The stand-in's time comes while the app is busy; the radio's own copy,
+    // already waiting, is handled only after it (simulator, 2026-11-22).
+    final hold = c.passingCopyHoldMsForTest(dmFromAd77.length, 1);
+    await Future<void>.delayed(Duration(milliseconds: hold + 40));
+    expect(c.acks, isEmpty, reason: 'the stand-in waits a moment first');
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await acks(1);
     await Future<void>.delayed(const Duration(milliseconds: 500));
     expect(c.acks, hasLength(1));
     expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));

@@ -7230,6 +7230,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Future<void> preparePassingCopiesForTest() =>
       _preparePassingCopies().then((_) => _applyAckMode());
 
+  /// How long the app holds its ACKs for a passing copy of [packetBytes]
+  /// with [hopsLeft] hops still to go, at this radio's settings.
+  @visibleForTesting
+  int passingCopyHoldMsForTest(int packetBytes, int hopsLeft) =>
+      TimeoutHelper.passingCopyAckDelayMs(
+          _estimateAirtimeMs(packetBytes), hopsLeft);
+
   void _handleFrame(List<int> data) {
     // Synchronous, so this is pure UI-thread time per radio frame.
     final sw = Stopwatch()..start();
@@ -9459,14 +9466,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final second = _appSendsSecondAck && _remember(_secondAckSent, id)
         ? _secondAckPackets(copy, contact, byFlood: false)
         : const <Uint8List>[];
-    final timers = _queueRawPackets(
-      [...standIn, ...second],
-      TimeoutHelper.passingCopyAckDelayMs(
-        _estimateAirtimeMs(packetBytes),
-        copy.hopsLeftCount,
-      ),
-    );
-    _standInAcks.removeWhere((_, held) => !held.any((t) => t.isActive));
     // With repeat on, the radio passes on a copy whose next hop is its own
     // hash and marks it seen (Mesh.cpp onRecvPacket, allowPacketForward), so
     // it never opens the last repeater's copy and sends no ACK: then the
@@ -9478,8 +9477,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             PathHelper.hopHex(
               PathHelper.pubKeyPrefix(me, stride: copy.hopWidth),
             );
+    final timers = _queueRawPackets(
+      [...standIn, ...second],
+      TimeoutHelper.passingCopyAckDelayMs(
+        _estimateAirtimeMs(packetBytes),
+        copy.hopsLeftCount,
+      ),
+      gated: radioPassesItOn ? 0 : standIn.length,
+      // Still held when its time comes: [_dropStandInAck] takes it out.
+      stillWanted: (last) {
+        if (!_standInAcks.containsKey(id)) return false;
+        if (last) _standInAcks.remove(id);
+        return true;
+      },
+    );
     if (!radioPassesItOn) {
       _standInAcks[id] = timers.sublist(0, standIn.length);
+      while (_standInAcks.length > 32) {
+        _standInAcks.remove(_standInAcks.keys.first);
+      }
     }
   }
 
@@ -9505,12 +9521,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       contactKeys: _contacts.map((c) => c.publicKey),
     );
     if (copy == null) return;
-    final held = [
-      for (final t in _standInAcks.remove(pubKeyToHex(copy.ack.sublist(0, 4))) ??
-          const <Timer>[])
-        if (t.isActive) t,
-    ];
-    if (held.isEmpty) return;
+    // Out of the map, a stand-in whose time has come but is still waiting
+    // ([TimeoutHelper.standInRecheckMs]) is not sent either.
+    final held = _standInAcks.remove(pubKeyToHex(copy.ack.sublist(0, 4)));
+    if (held == null) return;
     for (final t in held) {
       t.cancel();
     }
@@ -9681,12 +9695,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// ACKs. The radio queues a routed packet at priority 0 (sendDirect) and a
   /// flood at 1 (sendFlood).
   /// The timers are returned in the packets' order.
-  List<Timer> _queueRawPackets(List<Uint8List> packets, int delayMs) {
+  /// The first [gated] packets may no longer be wanted when their time comes
+  /// ([stillWanted], told whether it is the last of them): each waits
+  /// [TimeoutHelper.standInRecheckMs] first, so radio frames a busy app has
+  /// not handled yet are handled before the check.
+  List<Timer> _queueRawPackets(
+    List<Uint8List> packets,
+    int delayMs, {
+    int gated = 0,
+    bool Function(bool last)? stillWanted,
+  }) {
     final timers = <Timer>[];
     var delay = delayMs;
-    for (final packet in packets) {
+    for (var i = 0; i < packets.length; i++) {
+      final packet = packets[i];
       final priority = (packet[0] & 0x03) == 0x02 ? 0 : 1;
-      timers.add(Timer(Duration(milliseconds: delay), () {
+      void send() {
         if (!isConnected) return;
         unawaited(
           sendFrame(
@@ -9694,6 +9718,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             expectsGenericAck: true,
           ).catchError((Object _) {}),
         );
+      }
+
+      final gate = i < gated ? stillWanted : null;
+      final last = i == gated - 1;
+      timers.add(Timer(Duration(milliseconds: delay), () {
+        if (gate == null) return send();
+        Timer(const Duration(milliseconds: TimeoutHelper.standInRecheckMs),
+            () {
+          if (gate(last)) send();
+        });
       }));
       delay += TimeoutHelper.extraAckGapMs;
     }
