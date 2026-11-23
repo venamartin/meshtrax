@@ -232,6 +232,41 @@ void main() {
       expect(sent(), [routed]);
     });
 
+    // MESHTRAX PI, 2026-11-22: a sender waiting on its reply took the
+    // region frame's OK, so a refused send counted as sent.
+    test("a sender waiting on its reply gets the data frame's own", () async {
+      await regions.setChannelRegion(channel.idKey, 'sf');
+      final reply = c.sendAndWaitForReplyForTest(data());
+      await pumpEventQueue();
+      expect(sent(), hasLength(3), reason: 'set, send, clear');
+      c.handleFrameForTest([respCodeOk]); // the region set
+      c.handleFrameForTest([respCodeErr, 3]); // the data frame: refused
+      c.handleFrameForTest([respCodeOk]); // the clear
+      expect((await reply)![0], respCodeErr);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+    });
+
+    test('no reply: the waiter ends at its timeout with nothing', () async {
+      await regions.setChannelRegion(channel.idKey, 'sf');
+      final reply = c.sendAndWaitForReplyForTest(
+        data(),
+        timeout: const Duration(milliseconds: 100),
+      );
+      expect(await reply, isNull);
+      // The replies come late: each still finds its own entry, none throws.
+      c.handleFrameForTest([respCodeOk]);
+      c.handleFrameForTest([respCodeErr, 3]);
+      c.handleFrameForTest([respCodeOk]);
+      expect(c.pendingGenericAckIdsForTest, isEmpty);
+    });
+
+    test('with no region, the first reply is its own as before', () async {
+      final reply = c.sendAndWaitForReplyForTest(data());
+      await pumpEventQueue();
+      c.handleFrameForTest([respCodeErr, 3]);
+      expect((await reply)![0], respCodeErr);
+    });
+
     test('Nearby only: the same frame with an empty path, zero hop',
         () async {
       await regions.setChannelRegion(channel.idKey, RegionHelper.nearbyOnly);

@@ -4400,6 +4400,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (!isConnected) {
       throw Exception("Not connected to a MeshCore device");
     }
+    final reply = _replyTo[data];
     final region = _regionFrameFor(data);
     if (region == null) {
       // Kept out of a send in a region: between its set and clear, anything
@@ -4415,6 +4416,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         channelSendQueueId: channelSendQueueId,
         expectsGenericAck: expectsGenericAck,
         ackAs: nearby == null || nearby[0] == data[0] ? null : data[0],
+        reply: reply,
       );
     }
     while (_regionSend != null) {
@@ -4429,6 +4431,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
           data,
           channelSendQueueId: channelSendQueueId,
           expectsGenericAck: expectsGenericAck,
+          reply: reply,
         );
       } finally {
         await _writeFrame(buildClearFloodScopeFrame(), expectsGenericAck: true)
@@ -4525,6 +4528,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
     int? ackAs,
+    Completer<Uint8List>? reply,
   }) async {
     _bleDebugLogService?.logFrame(data, outgoing: true);
 
@@ -4538,6 +4542,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       ackAs == null ? data : Uint8List.fromList([ackCode]),
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
+      reply: reply,
     );
     _recordOutgoing(data);
 
@@ -4596,6 +4601,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool expectsGenericAck = false,
   }) async {
     if (!isConnected) return null;
+    // A tracked command gets the reply that pops its own entry: a send in a
+    // region writes a region frame before it, whose OK comes first.
+    final own = expectsGenericAck ? Completer<Uint8List>() : null;
+    if (own != null) _replyTo[data] = own;
     final completer = Completer<Uint8List?>();
     final subscription = receivedFrames.listen((rxFrame) {
       if (rxFrame.isEmpty) return;
@@ -4606,13 +4615,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       await sendFrame(data, expectsGenericAck: expectsGenericAck);
-      return await completer.future.timeout(timeout);
+      // Untracked (a test's own sendFrame): the first reply, as before.
+      final tracked = own != null &&
+          (own.isCompleted ||
+              _pendingGenericAckQueue.any((a) => a.reply == own));
+      return await (tracked ? own.future : completer.future).timeout(timeout);
     } on TimeoutException {
       // The radio answers these in order, so a late reply must still find this
       // entry: taken by the next command, an ERR would fail that send. Only one
       // that stays unanswered is dropped, see _dropLostAcks.
       final index = _pendingGenericAckQueue.lastIndexWhere(
-        (a) => a.commandCode == data[0],
+        (a) => a.reply == own && a.commandCode == data[0],
       );
       if (expectsGenericAck && index >= 0) {
         _pendingGenericAckQueue[index].givenUpAt = DateTime.now();
@@ -4624,6 +4637,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       await subscription.cancel();
     }
   }
+
+  /// The reply slot [_sendAndWaitForReply] hangs on the very frame it sends,
+  /// for [sendFrame] to hand to that frame's pending-ack entry.
+  final Expando<Completer<Uint8List>> _replyTo = Expando();
+
+  @visibleForTesting
+  Future<Uint8List?> sendAndWaitForReplyForTest(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 2),
+  }) =>
+      _sendAndWaitForReply(data, timeout: timeout, expectsGenericAck: true);
 
   Future<void> requestBatteryStatus({bool force = false}) async {
     if (!isConnected) return;
@@ -7272,7 +7296,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     switch (code) {
       case respCodeOk:
-        _handleOk();
+        _handleOk(frame);
         break;
       case respCodeDeviceInfo:
         _handleDeviceInfo(frame);
@@ -7589,6 +7613,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     final failedAck = _pendingGenericAckQueue.removeAt(0);
+    failedAck.complete(frame);
     if (failedAck.commandCode != cmdSendChannelTxtMsg ||
         failedAck.channelSendQueueId == null) {
       return;
@@ -9970,13 +9995,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return true;
   }
 
-  void _handleOk() {
+  void _handleOk(Uint8List frame) {
     _dropLostAcks();
     if (_pendingGenericAckQueue.isEmpty) {
       return;
     }
 
     final pendingAck = _pendingGenericAckQueue.removeAt(0);
+    pendingAck.complete(frame);
     if (pendingAck.commandCode != cmdSendChannelTxtMsg ||
         pendingAck.channelSendQueueId == null) {
       return;
@@ -12574,12 +12600,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List data, {
     String? channelSendQueueId,
     required bool expectsGenericAck,
+    Completer<Uint8List>? reply,
   }) {
     if (!expectsGenericAck || data.isEmpty) return;
     _pendingGenericAckQueue.add(
       _PendingCommandAck(
         commandCode: data[0],
         channelSendQueueId: channelSendQueueId,
+        reply: reply,
       ),
     );
   }
@@ -14052,7 +14080,20 @@ class _PendingCommandAck {
   // The sender stopped waiting for this reply. It may still come.
   DateTime? givenUpAt;
 
-  _PendingCommandAck({required this.commandCode, this.channelSendQueueId});
+  /// Completed with the OK or ERR that pops this entry, for a sender
+  /// waiting on its own reply.
+  final Completer<Uint8List>? reply;
+
+  _PendingCommandAck({
+    required this.commandCode,
+    this.channelSendQueueId,
+    this.reply,
+  });
+
+  void complete(Uint8List frame) {
+    final waiting = reply;
+    if (waiting != null && !waiting.isCompleted) waiting.complete(frame);
+  }
 }
 
 /// What an SOS heard again is to the card its sender has open
