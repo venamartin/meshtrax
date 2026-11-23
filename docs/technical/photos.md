@@ -10,7 +10,7 @@
 
 ## In one paragraph
 
-The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its `ft8` level: about 400 bytes. traxpix cuts that into 2 to 6 channel-data packets of up to 157 bytes and adds one XOR repair packet. They go one at a time as MeshCore channel data, type `0xFF1C`, as a flood like a channel message, or zero hop. The receiving phone puts the packets back together, decodes the bitstream into the model's latents, and a decoder built on SD-Turbo draws a picture from them. A safety classifier checks every picture before it is shown. Full screen, the user can enlarge it 4× with a small Real-ESRGAN model. Everything runs on the phone, on the CPU, with Google's LiteRT 2.3.0.
+The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its `ft8` level: about 400 bytes. traxpix cuts that into 2 to 6 channel-data packets of up to 157 bytes and adds one XOR repair packet. They go one at a time as MeshCore channel data, type `0x0170`, as a flood like a channel message, or zero hop. The receiving phone puts the packets back together, decodes the bitstream into the model's latents, and a decoder built on SD-Turbo draws a picture from them. A safety classifier checks every picture before it is shown. Full screen, the user can enlarge it 4× with a small Real-ESRGAN model. Everything runs on the phone, on the CPU, with Google's LiteRT 2.3.0.
 
 ## Where the code is
 
@@ -41,7 +41,7 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 
 ## The packet format
 
-Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0xFF1C`, from the FF00–FFFF range that MeshCore's `docs/number_allocations.md` leaves free for apps in development, until MeshTrax has its own allocation there. A blob is at most 157 bytes:
+Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0170`, the first of the block 0170–017F that MeshTrax asked for in MeshCore's `docs/number_allocations.md` (meshcore-dev/MeshCore#3925). A blob is at most 157 bytes:
 
 ```
   off  size  field
@@ -62,7 +62,7 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0xFF1C`, fro
 
 ## Receiving
 
-1. **Packets in.** Channel data arrives as `RESP_CODE_CHANNEL_DATA_RECV` (27). `PhotoMesh` hands frames of type `0xFF1C` to the `ImageReassembler`. It keys a photo by sender prefix, image id and channel, and holds it for 60 seconds (`kImageReassemblyTtl`).
+1. **Packets in.** Channel data arrives as `RESP_CODE_CHANNEL_DATA_RECV` (27). `PhotoMesh` hands frames of type `0x0170` to the `ImageReassembler`. It keys a photo by sender prefix, image id and channel, and holds it for 60 seconds (`kImageReassemblyTtl`).
 2. **Whole, or not.** With all data chunks, or all but one plus the repair chunk, the photo is complete. Otherwise, a minute after its first chunk, the chat says "Photo incomplete: x of y packets". An item that runs past the end makes it "unreadable"; a format version or must-understand item this release doesn't know, "needs a newer MeshTrax". Nothing is asked for again.
 3. **Filed.** The chat gets a line "📷 Photo #id" (with the tag if any), marked by its packet hash (`photo:…`), and `PhotoStore` keeps a record (bytes, packets, tag, position) and the coded bytes. A position shows under the photo in the reader's coordinate format, with **Map** and **Navigate** as on a location card. A blocked sender's photos are dropped, not kept.
 4. **Rebuilt** when the user taps the photo, or as it arrives if "Rebuild received photos automatically" is on and the phone has the memory:

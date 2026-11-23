@@ -96,11 +96,11 @@ const int outPathUnknown = 0xFF;
 /// meshcore-dev/MeshCore 75b04ef, 2026-11-18.
 const int pathLenZeroHop = 0;
 
-/// The data type MeshTrax photos travel as. It's in the FF00–FFFF range that
-/// MeshCore's `docs/number_allocations.md` leaves free for apps in
-/// development, until MeshTrax has its own allocation there; then it changes
-/// to that. `0x0000` is rejected by the firmware.
-const int dataTypeMeshTraxPhoto = 0xFF1C;
+/// The data type MeshTrax photos travel as: the first of the block
+/// 0170–017F that MeshTrax asked for in MeshCore's
+/// `docs/number_allocations.md` (meshcore-dev/MeshCore#3925). `0x0000` is
+/// rejected by the firmware.
+const int dataTypeMeshTraxPhoto = 0x0170;
 
 /// Maximum blob we will ever put in one GRP_DATA packet.
 ///
