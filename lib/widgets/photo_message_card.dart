@@ -19,6 +19,7 @@ import '../services/photo_mesh.dart';
 import '../services/photo_save.dart';
 import '../services/photo_store.dart';
 import 'photo_ai_mark.dart';
+import 'photo_footprint_mark.dart';
 import 'photo_report_dialog.dart';
 
 /// The sender's tag, drawn as text by this app, never by the AI.
@@ -232,6 +233,7 @@ class PhotoMessageCard extends StatelessWidget {
                   children: [
                     Image.file(image, fit: BoxFit.cover, gaplessPlayback: true),
                     const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
+                    const PhotoFootprintMark(),
                   ],
                 )
               : ColoredBox(
@@ -583,9 +585,21 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                         transformationController: _zoom,
                         maxScale: 6,
                         child: Center(
-                          child: enlarged != null
-                              ? RawImage(image: enlarged, fit: BoxFit.contain)
-                              : Image.file(file, fit: BoxFit.contain),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                enlarged != null
+                                    ? RawImage(
+                                        image: enlarged,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : Image.file(file, fit: BoxFit.contain),
+                                const PhotoFootprintMark(),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

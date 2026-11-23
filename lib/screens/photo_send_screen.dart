@@ -22,6 +22,7 @@ import '../services/photo_mesh.dart';
 import '../services/photo_rules.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_ai_mark.dart';
+import '../widgets/photo_footprint_mark.dart';
 import '../widgets/photo_message_card.dart' show photoPositionDistance;
 
 enum _Step { pick, crop, working, ready, flagged, sending }
@@ -552,6 +553,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
                 children: [
                   Image.memory(_previewPng!, width: double.infinity),
                   const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
+                  const Positioned.fill(child: PhotoFootprintMark()),
                 ],
               ),
             ),

@@ -6,7 +6,7 @@ Send a photo to a channel over the mesh, with no phone network or internet. Unfa
 
 A photo is far too big for a LoRa radio. MeshTrax shrinks it on your phone with an AI model, to a code of about 400 bytes: 3 to 7 radio packets, including a repair packet that can rebuild one lost packet.
 
-The phones that receive it rebuild a picture from that code with the same model. The picture keeps the scene: its layout and colours, vehicles, people. Its fine detail is made up by the model, though, so signs and text don't come through. Every rebuilt picture says "AI reconstructed", small in a corner. It isn't a record of what was there, so put what matters in a tag or a message.
+The phones that receive it rebuild a picture from that code with the same model. The picture keeps the scene: its layout and colours, vehicles, people. Its fine detail is made up by the model, though, so signs and text don't come through. Every rebuilt picture says "AI reconstructed", small in a corner, and has the MeshTrax footprint, faint, in the other. It isn't a record of what was there, so put what matters in a tag or a message.
 
 ## Before you start
 
@@ -39,7 +39,7 @@ The Off-Grid presets, TRAX included, and custom frequencies have none of these l
 
 - A photo shows in the chat under the sender's name, with its tag and position, if any, under it. **Map** and **Navigate** work as on a shared location. Tap it to see it full screen: it's rebuilt there first, in about 20 seconds on an older phone and a few seconds on a recent one. Pinch or double-tap to zoom.
 - **Enhance 4×**, at the bottom, enlarges it to 2048 × 2048. An AI model on your phone sharpens it, so fine detail may be made up. It takes about 4 seconds on an older phone, 1 on a recent one, and needs about 1 GB of free memory. MeshTrax keeps only the rebuilt photo, not the enhanced one.
-- **Save**, at the top, saves what's on screen to your photos (on a Mac, where you choose), with "AI reconstructed" in its corner. The ⋮ menu has **About this photo** and, for a photo you received, **Report** and **Block**.
+- **Save**, at the top, saves what's on screen to your photos (on a Mac, where you choose), with "AI reconstructed" and the footprint in its corners. The ⋮ menu has **About this photo** and, for a photo you received, **Report** and **Block**.
 - To skip the taps, turn on **Rebuild received photos automatically** in App settings, Messaging, Photos: each photo then rebuilds as it arrives, while MeshTrax is open and the phone has the memory. On phones with 8 GB of memory or more, **Enlarge photos automatically** enlarges a photo as it opens full screen.
 - A photo that didn't arrive whole says so, for example "📷 Photo #3a incomplete: 3 of 5 packets". It isn't sent again.
 

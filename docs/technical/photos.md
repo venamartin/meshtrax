@@ -22,9 +22,9 @@ The sender's phone codes a 512 × 512 photo with the AEIC-SE image codec at its 
 | Photos kept | `lib/services/photo_store.dart` | The records, the coded bytes, the rebuilt pictures, and the one-at-a-time queue for rebuilds and enlargements. |
 | Model download | `lib/services/photo_model_downloads.dart` | Downloads the model through the map downloader. |
 | Rules | `lib/services/photo_rules.dart` | Where the MeshCore-frequency rules apply, the time limits, the gap between packets, what the sender is asked. |
-| Saving | `lib/services/photo_save.dart` | Draws the "AI reconstructed" mark into a copy and saves it. |
+| Saving | `lib/services/photo_save.dart` | Draws the "AI reconstructed" mark and the footprint into a copy and saves it. |
 | Reports | `lib/services/photo_reports.dart`, `lib/services/report_inbox.dart` | Photo reports, kept on the phone until the report inbox has them. |
-| Screens | `lib/screens/photo_send_screen.dart`, `lib/widgets/photo_message_card.dart` (chat bubble and full-screen viewer), `photo_settings_section.dart`, `photo_ai_mark.dart`, `photo_report_dialog.dart`, `lib/screens/photo_licences_screen.dart` | The user's side. |
+| Screens | `lib/screens/photo_send_screen.dart`, `lib/widgets/photo_message_card.dart` (chat bubble and full-screen viewer), `photo_settings_section.dart`, `photo_ai_mark.dart`, `photo_footprint_mark.dart`, `photo_report_dialog.dart`, `lib/screens/photo_licences_screen.dart` | The user's side. |
 | Native | `ios/Runner/AppDelegate.swift`, `android/.../MainActivity.kt`, `macos/Runner/MainFlutterWindow.swift` | `meshtrax/storage`: the phone's memory (iOS), free space, saving to the photo library. |
 
 ## Sending
@@ -73,7 +73,7 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0170`, the
    A passed picture is kept as a PNG in the cache folder (at most 100 MB, oldest first out). A flagged one shows only "Image hidden", and its pixels are never stored.
 5. **Full screen.** One tap on the bubble opens the viewer, which rebuilds the photo there if it hasn't been. It has pinch and double-tap zoom, Save, a ⋮ menu (About this photo, and Report and Block for a received photo), and **Enhance 4×**.
 6. **Enhance 4×.** It runs in the same queue as the rebuilds, after a memory check, and with every other model released first (`ImageCodecSession.enhance`). The result is checked like a rebuilt picture. It isn't kept: closing the viewer drops it.
-7. **Save.** Save writes what's on screen to the phone's photo library: iOS through `PHPhotoLibrary` (add only), Android to Pictures/MeshTrax through MediaStore, a Mac through a Save dialog. The copy has "AI reconstructed" drawn in its bottom-left corner, at 2.4 % of its width.
+7. **Save.** Save writes what's on screen to the phone's photo library: iOS through `PHPhotoLibrary` (add only), Android to Pictures/MeshTrax through MediaStore, a Mac through a Save dialog. The copy has "AI reconstructed" drawn in its bottom-left corner, at 2.4 % of its width, and the MeshTrax footprint in its bottom-right: white at 70 % with a light shadow, 7 % of the width tall. On screen the footprint is drawn over the rebuilt picture the same way, and zooms with it in the viewer.
 
 ## The model
 

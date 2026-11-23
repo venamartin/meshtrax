@@ -3,12 +3,14 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/services.dart' show MethodChannel;
+import 'package:flutter/services.dart' show MethodChannel, rootBundle;
 import 'package:material_ui/material_ui.dart';
 
+import '../widgets/photo_footprint_mark.dart';
+
 /// [picture] as a PNG with [mark] ("AI reconstructed") small and faint in
-/// its bottom-left corner, as the viewer shows it, so a saved copy stays
-/// labelled outside MeshTrax.
+/// its bottom-left corner and the MeshTrax footprint in its bottom-right, as
+/// the viewer shows them, so a saved copy stays labelled outside MeshTrax.
 Future<Uint8List> markedPng(ui.Image picture, String mark) async {
   final width = picture.width.toDouble(), height = picture.height.toDouble();
   final size = width * 0.024;
@@ -27,6 +29,43 @@ Future<Uint8List> markedPng(ui.Image picture, String mark) async {
   )..layout();
   text.paint(canvas, Offset(size * 0.8, height - size * 0.6 - text.height));
   text.dispose();
+  final foot = await _footprint();
+  final f = photoFootprintFor(width);
+  final w = f.height * foot.width / foot.height;
+  final src = Rect.fromLTWH(
+    0,
+    0,
+    foot.width.toDouble(),
+    foot.height.toDouble(),
+  );
+  final dst = Rect.fromLTWH(
+    width - f.right - w,
+    height - f.bottom - f.height,
+    w,
+    f.height,
+  );
+  canvas
+    ..drawImageRect(
+      foot,
+      src,
+      dst,
+      Paint()
+        ..colorFilter = ColorFilter.mode(
+          Colors.black.withValues(alpha: photoFootprintShadow),
+          BlendMode.srcIn,
+        )
+        ..imageFilter = ui.ImageFilter.blur(sigmaX: f.blur, sigmaY: f.blur),
+    )
+    ..drawImageRect(
+      foot,
+      src,
+      dst,
+      Paint()
+        ..colorFilter = ColorFilter.mode(
+          Colors.white.withValues(alpha: photoFootprintOpacity),
+          BlendMode.srcIn,
+        ),
+    );
   final drawn = await recorder.endRecording().toImage(
     picture.width,
     picture.height,
@@ -34,6 +73,19 @@ Future<Uint8List> markedPng(ui.Image picture, String mark) async {
   final png = await drawn.toByteData(format: ui.ImageByteFormat.png);
   drawn.dispose();
   return png!.buffer.asUint8List();
+}
+
+ui.Image? _footprintImage;
+
+/// The footprint asset as a picture, loaded once.
+Future<ui.Image> _footprint() async {
+  final loaded = _footprintImage;
+  if (loaded != null) return loaded;
+  final data = await rootBundle.load(PhotoFootprintMark.asset);
+  final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+  final image = (await codec.getNextFrame()).image;
+  codec.dispose();
+  return _footprintImage = image;
 }
 
 /// A PNG's picture, for [markedPng].
