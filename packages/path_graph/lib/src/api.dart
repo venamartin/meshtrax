@@ -966,9 +966,9 @@ class PathGraph {
   /// first hop heard them, a doorstep of theirs further along its path only
   /// passed it on (a repeater forwards the first copy it hears, so it did
   /// not hear them), and, unless this is another [copy] of the packet
-  /// before, every other doorstep has missed one more of their packets. One
-  /// too far from the repeater that heard them to hear them as well
-  /// ([PathGraphConfig.contactFarKm]) has missed enough at once.
+  /// before, every other doorstep has missed one more of their packets.
+  /// Distance alone overrules nothing: a high site hears them far from the
+  /// repeaters that hear them at home.
   void _noteOwnPacket(String pk, List<String> hops,
       {required bool copy, String? messageId}) {
     final own = _ownPackets.putIfAbsent(pk, _OwnPackets.new);
@@ -977,10 +977,7 @@ class PathGraph {
       own.heard.clear();
       for (final key in _evidence.entries.keys) {
         if (key.$1 != pk || key.$2 == directHash) continue;
-        final missed = (own.missed[key.$2] ?? 0) + 1;
-        final far = missed < config.contactMissesBeforeLast &&
-            _movedFar(key.$2, hops.first);
-        own.missed[key.$2] = far ? config.contactMissesBeforeLast : missed;
+        own.missed[key.$2] = (own.missed[key.$2] ?? 0) + 1;
       }
     }
     own.heard.add(hops.first);
@@ -1056,16 +1053,6 @@ class PathGraph {
     if (own == null || !own.heard.contains(hash)) return false;
     final row = _evidence.entries[(contactPubkey, hash)];
     return row != null && !row.proven;
-  }
-
-  bool _movedFar(String fromHash, String toHash) {
-    final a = _store.nodes[fromHash];
-    final b = _store.nodes[toHash];
-    if (!isRealPosition(a?.lat, a?.lon) || !isRealPosition(b?.lat, b?.lon)) {
-      return false;
-    }
-    return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
-        config.contactFarKm;
   }
 
   /// Proven egress refresh; supersede/slash only in a failure episode.

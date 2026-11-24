@@ -58,6 +58,30 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-23 — distance alone overrules no doorstep.** The 60 km rule
+  (`contactFarKm`) is gone. It held that a doorstep farther than 60 km
+  from the repeater that just heard a contact could not hear them, and
+  put it last on one packet. High sites break that.
+  * **The case.** Replayed on the owner's graph: one packet from a contact
+    at home was heard first by C47F, 88 km from their usual repeater AA77.
+    AA77 dropped to the third route attempt. C47F has 21 links over 60 km
+    (the longest 223 km), and C47F and AA77 don't hear each other.
+  * **How common.** On the owner's graph, 174 doorstep rows sit more than
+    60 km from their contact's best-record row (68 of 558 contacts with
+    two or more rows). In 111 of them the far repeater's own links reach
+    at least that far.
+  * **What overrules a doorstep now.** Their packet showing the doorstep
+    only passing it on, or two of their packets in a row without it
+    (`contactMissesBeforeLast`).
+  * **The cost.** After a move of more than 60 km, the first reply tries
+    the old doorstep once before the repeater that heard them, unless
+    their packet shows the old doorstep passing it on. Replayed: AA77
+    first, then the new repeater. From their second packet on, the new
+    repeater comes first.
+  * **Rejected.** Keeping the rule except where the far repeater's own
+    links reach that far fixes C47F. But it still fires on bad advert
+    positions (one repeater advertises a position 9,458 km away) and on
+    one-off long-distance propagation, and it is more code.
 * **2026-11-22 — one doorstep per attempt; their own packets overrule a
   record; nothing stored is erased.** Two field failures on 2026-11-21
   had one root: every route attempt of a message was bet on one doorstep,
@@ -86,7 +110,8 @@ me and who hears my contact, what path bytes should this DM use?*
     its own copy. One that missed `contactMissesBeforeLast` (2) of their
     packets in a row has stopped hearing them. One farther than
     `contactFarKm` (60, was `contactMoveWipeKm`) from the repeater that
-    just heard them cannot hear them now. Such a doorstep is tried after
+    just heard them cannot hear them now (removed 2026-11-23, see above:
+    high sites). Such a doorstep is tried after
     their others (`_ingressTiers`) until it hears them first again; its
     weight and proofs are untouched. The 60 km rule used to wipe the
     list.
@@ -179,8 +204,9 @@ me and who hears my contact, what path bytes should this DM use?*
   (`contactSupersedeFactor` 0.5, DIRECT included); and when advert
   positions show the new first hop is farther than `contactMoveWipeKm`
   (60) from their current top doorstep, the list is wiped outright —
-  Watsonville to San Francisco in one message (since 2026-11-22 the far
-  doorsteps come last and keep their records, see above). **Channel
+  Watsonville to San Francisco in one message (2026-11-22 the far
+  doorsteps came last and kept their records instead; since 2026-11-23
+  distance alone moves nothing, see above). **Channel
   messages feed
   it**: the app already decrypts every raw `GRP_TXT` packet and shows
   its paths under the message, so the connector raises

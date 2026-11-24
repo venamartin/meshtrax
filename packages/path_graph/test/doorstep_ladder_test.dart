@@ -217,8 +217,8 @@ void main() {
     expect(ladder(), [c0de, aa77]);
   });
 
-  test('a doorstep too far from the repeater that just heard them comes '
-      'last at once, record kept', () async {
+  test('one packet heard first far from their doorstep moves nothing: a '
+      'high site hears them far from home', () async {
     await open();
     // About 90 km apart.
     graph.ingestNode('AA77', lat: 10.0, lon: 10.0);
@@ -226,10 +226,13 @@ void main() {
     atHome();
     final before = weightOf('AA77');
     heard([...c0de, ...f5ee, ...a277]);
-    expect(ladder(), [c0de, aa77],
-        reason: 'they cannot be inside both footprints');
+    expect(ladder(), [aa77, c0de],
+        reason: 'the record first, the repeater that heard them next');
     expect(weightOf('AA77'), closeTo(before * 0.5, 0.01),
-        reason: 'the list used to be wiped here');
+        reason: 'halved as by any sighting elsewhere, never wiped');
+
+    heard([...c0de, ...f5ee, ...a277]);
+    expect(ladder(), [c0de, aa77], reason: 'two in a row without it');
   });
 
   test('copies of one packet are one sighting', () async {
