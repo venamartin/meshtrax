@@ -3,12 +3,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
 
-import '../screens/map_screen.dart';
+import '../helpers/link_handler.dart';
 import '../utils/platform_info.dart';
 import 'app_map.dart';
 
 /// A small, non-interactive map with one pin, for cards in chat. Tapping it
-/// opens the full map centred on the pin.
+/// shows the pin on a full map.
 class MiniMap extends StatelessWidget {
   final LatLng position;
   final String? label;
@@ -66,15 +66,11 @@ class MiniMap extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => Navigator.push(
+                onTap: () => LinkHandler.openMapAt(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => MapScreen(
-                      highlightPosition: position,
-                      highlightLabel: label,
-                      highlightSos: sos,
-                    ),
-                  ),
+                  position,
+                  label: label,
+                  sos: sos,
                 ),
               ),
             ),

@@ -16,10 +16,12 @@ import 'package:traxroute/traxroute.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/date_time_helper.dart';
+import 'package:meshtrax/helpers/link_handler.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/map_focus.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/screens/map_screen.dart';
 import 'package:meshtrax/screens/offline_maps_screen.dart';
@@ -1027,7 +1029,10 @@ void main() {
       await showRoute(
         tester,
         steps: steps,
-        screen: const MapScreen(highlightPosition: ll.LatLng(41.83, -71.4)),
+        screen: const MapScreen(
+          overScreen: true,
+          focus: MapFocusPoint(ll.LatLng(41.83, -71.4)),
+        ),
       );
       final map = tester.getRect(find.byType(AppMap));
       expect(map.bottom, 900);
@@ -1078,15 +1083,6 @@ void main() {
       await go(const Scaffold());
       expect(find.byType(RouteSheet), findsNothing);
 
-      // A map opened from a chat is another map: no route, and none lost.
-      await go(
-        const MapScreen(highlightPosition: ll.LatLng(41.83, -71.4)),
-        replace: false,
-      );
-      expect(find.byType(RouteSheet), findsNothing);
-      await tester.binding.handlePopRoute();
-      await settle(tester);
-
       await go(const MapScreen());
       expect(shown('Directions'), findsOneWidget);
       expect(overlay<MapLine>(tester, 'route').points, hasLength(2));
@@ -1113,6 +1109,124 @@ void main() {
       await go(const Scaffold());
       await go(const MapScreen());
       expect(find.byType(RouteSheet), findsNothing);
+    });
+
+    // Navigate on a card: the screen it opens from.
+    Widget card() => Builder(
+      builder: (context) => Scaffold(
+        body: TextButton(
+          onPressed: () => MapScreen.show(
+            context,
+            const MapFocusRoute(ll.LatLng(41.8, -71.4), label: 'Camp'),
+          ),
+          child: const Text('Navigate'),
+        ),
+      ),
+    );
+
+    // A route from a chat opens over it, and Back goes straight back to the
+    // chat with the route kept for the Map tab.
+    testWidgets('Navigate from a chat: over it, kept for the Map tab', (
+      tester,
+    ) async {
+      routing = _Routing(maps, elevations: const [10, 12], steps: steps);
+      await showMap(tester, screen: card());
+      await tap(tester, find.text('Navigate'));
+      await settle(tester);
+      expect(find.textContaining('To Camp'), findsOneWidget);
+      expect(shown('Directions'), findsOneWidget);
+      expect(find.byType(BackButton), findsOneWidget);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Camp');
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(MapScreen), findsNothing);
+      expect(find.text('Navigate'), findsOneWidget);
+
+      unawaited(
+        Navigator.of(tester.element(find.text('Navigate'))).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const MapScreen()),
+        ),
+      );
+      await settle(tester);
+      await settle(tester);
+      expect(find.textContaining('To Camp'), findsOneWidget);
+      expect(shown('Directions'), findsOneWidget);
+      expect(routing.requests, hasLength(1));
+    });
+
+    // The chat was opened from the Map tab, which was left far from Camp:
+    // Back returns to the chat, then the Map tab shows the route whole.
+    testWidgets('Navigate from a chat over the Map tab: the chat stays, and '
+        'the Map tab shows the route', (tester) async {
+      routing = _Routing(maps, elevations: const [10, 12], steps: steps);
+      await showMap(tester);
+      tester
+          .widget<AppMap>(find.byType(AppMap))
+          .controller!
+          .move(const LatLng(45, -110), zoom: 10);
+      await settle(tester);
+      unawaited(
+        Navigator.of(tester.element(find.byType(AppMap)))
+            .push(MaterialPageRoute<void>(builder: (_) => card())),
+      );
+      await settle(tester);
+      await tap(tester, find.text('Navigate'));
+      await settle(tester);
+      expect(find.byType(MapScreen, skipOffstage: false), findsNWidgets(2));
+      expect(find.byType(BackButton), findsOneWidget);
+      expect(find.textContaining('To Camp'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.text('Navigate'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(QuickSwitchBar), findsOneWidget);
+      expect(shown('Directions'), findsOneWidget);
+      expect(find.textContaining('To Camp'), findsOneWidget);
+      expect(routing.requests, hasLength(1));
+      final map = tester.getRect(find.byType(AppMap));
+      final sheet = tester.getRect(find.byType(RouteSheet));
+      expect(routeMiddle(tester).dy, closeTo((map.top + sheet.top) / 2, 1));
+    });
+
+    // A quick look over a chat leaves the Map tab's route where it was.
+    testWidgets("a map over a chat starts without the Map tab's route", (
+      tester,
+    ) async {
+      await showRoute(tester, steps: steps);
+      unawaited(
+        Navigator.of(tester.element(find.byType(AppMap))).push(
+          MaterialPageRoute<void>(
+            builder: (_) => Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => LinkHandler.openMapAt(
+                    context,
+                    const ll.LatLng(41.83, -71.4),
+                    label: 'Spring',
+                  ),
+                  child: const Text('Card map'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await settle(tester);
+      await tap(tester, find.text('Card map'));
+      await settle(tester);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Spring');
+      expect(find.byType(RouteSheet), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(header, findsOneWidget);
+      expect(routing.requests, hasLength(1));
     });
   });
 
@@ -1492,15 +1606,15 @@ void main() {
     });
   });
 
-  testWidgets('a POI link: back button, labelled pin, no quick-switch bar', (
+  testWidgets('over a chat: back button, labelled pin, no quick-switch bar', (
     tester,
   ) async {
     await pumpMap(
       tester,
       _FakeConnector(nodes: const []),
       screen: const MapScreen(
-        highlightPosition: ll.LatLng(41.83, -71.4),
-        highlightLabel: 'Trailhead',
+        overScreen: true,
+        focus: MapFocusPoint(ll.LatLng(41.83, -71.4), label: 'Trailhead'),
       ),
     );
     final pin = overlay<MapMarker>(tester, 'highlight');
@@ -1514,6 +1628,155 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(MapScreen), findsNothing);
+  });
+
+  // Back from a map could land on another map: a second one opened over the
+  // Map tab from its TRAX sheet (Martin, 2026-11-24). What you tap on a map
+  // now shows on it; from a chat, a map opens over the chat.
+  group('shown on a map', () {
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    // A chat with a card's map button; [tab] makes it the Chats tab.
+    Widget chat({bool tab = false}) => Builder(
+      builder: (context) => Scaffold(
+        body: TextButton(
+          onPressed: () {
+            if (tab) {
+              context.read<UiViewStateService>().chatsTab = ModalRoute.of(
+                context,
+              );
+            }
+            LinkHandler.openMapAt(
+              context,
+              const ll.LatLng(41.83, -71.4),
+              label: 'Camp',
+            );
+          },
+          child: const Text('Card map'),
+        ),
+      ),
+    );
+
+    // With nothing downloaded there, the map tries the zoom again for 3 s.
+    Future<void> outOfDetail(WidgetTester tester) =>
+        tester.pump(const Duration(seconds: 3));
+
+    ll.LatLng center(WidgetTester tester) {
+      final c = tester
+          .widget<AppMap>(find.byType(AppMap))
+          .controller!
+          .camera!
+          .center;
+      return ll.LatLng(c.latitude, c.longitude);
+    }
+
+    testWidgets('from a chat: a map over it; Back returns there', (
+      tester,
+    ) async {
+      await pumpMap(tester, _FakeConnector(nodes: const []), screen: chat());
+      await tester.tap(find.text('Card map'));
+      await settle(tester);
+      expect(
+        tester.widget<MapScreen>(find.byType(MapScreen)).overScreen,
+        isTrue,
+      );
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Camp');
+      expect(center(tester).latitude, closeTo(41.83, 1e-6));
+      expect(find.byType(QuickSwitchBar), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(MapScreen), findsNothing);
+      expect(find.text('Card map'), findsOneWidget);
+    });
+
+    // The chat was opened from the Map tab: Back returns to the chat, then
+    // to the Map tab as it was.
+    testWidgets('from a chat over the Map tab: over the chat, and the Map '
+        'tab stays as it was', (tester) async {
+      await pumpMap(tester, _FakeConnector(nodes: const []));
+      final before = center(tester);
+      unawaited(
+        Navigator.of(tester.element(find.byType(AppMap)))
+            .push(MaterialPageRoute<void>(builder: (_) => chat())),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Card map'));
+      await settle(tester);
+      expect(find.byType(MapScreen, skipOffstage: false), findsNWidgets(2));
+      expect(find.byType(BackButton), findsOneWidget);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Camp');
+      expect(center(tester).latitude, closeTo(41.83, 1e-6));
+      await outOfDetail(tester);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.text('Card map'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.byType(QuickSwitchBar), findsOneWidget);
+      expect(center(tester).latitude, closeTo(before.latitude, 1e-6));
+      expect(
+        overlays(tester).whereType<MapMarker>().map((m) => m.id),
+        isNot(contains('highlight')),
+      );
+    });
+
+    testWidgets('on a map over a chat: shown there, not on a third map', (
+      tester,
+    ) async {
+      await pumpMap(tester, _FakeConnector(nodes: const []), screen: chat());
+      await tester.tap(find.text('Card map'));
+      await settle(tester);
+      MapScreen.show(
+        tester.element(find.byType(AppMap)),
+        const MapFocusPoint(ll.LatLng(41.85, -71.45), label: 'Spring'),
+      );
+      await settle(tester);
+      expect(find.byType(MapScreen, skipOffstage: false), findsOneWidget);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Spring');
+      expect(center(tester).latitude, closeTo(41.85, 1e-6));
+      await outOfDetail(tester);
+
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.text('Card map'), findsOneWidget);
+    });
+
+    testWidgets('from the Chats tab: the Map tab in its place', (tester) async {
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const []),
+        screen: chat(tab: true),
+      );
+      await tester.tap(find.text('Card map'));
+      await settle(tester);
+      expect(
+        tester.widget<MapScreen>(find.byType(MapScreen)).overScreen,
+        isFalse,
+      );
+      expect(find.text('Card map', skipOffstage: false), findsNothing);
+      expect(find.byType(QuickSwitchBar), findsOneWidget);
+      expect(find.byType(BackButton), findsNothing);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Camp');
+    });
+
+    testWidgets('on the Map tab: shown there', (tester) async {
+      await pumpMap(tester, _FakeConnector(nodes: const []));
+      MapScreen.show(
+        tester.element(find.byType(AppMap)),
+        const MapFocusPoint(ll.LatLng(41.83, -71.4), label: 'Camp'),
+      );
+      await settle(tester);
+      expect(find.byType(MapScreen, skipOffstage: false), findsOneWidget);
+      expect(overlay<MapMarker>(tester, 'highlight').label, 'Camp');
+      expect(center(tester).latitude, closeTo(41.83, 1e-6));
+      await outOfDetail(tester);
+    });
   });
 
   testWidgets('the menu opens Offline maps', (tester) async {
@@ -1951,9 +2214,7 @@ void main() {
       expect(camera(tester).center.latitude, closeTo(37.3, 0.01));
     });
 
-    testWidgets("a map pushed to show a point keeps the main map's view", (
-      tester,
-    ) async {
+    testWidgets("a map over a chat keeps the Map tab's view", (tester) async {
       final viewState = UiViewStateService();
       final connector = _FakeConnector(nodes: [contact]);
       await pumpMap(tester, connector, viewState: viewState);
@@ -1964,10 +2225,41 @@ void main() {
         tester,
         connector,
         viewState: viewState,
-        screen: const MapScreen(highlightPosition: ll.LatLng(45, -110)),
+        screen: const MapScreen(
+          overScreen: true,
+          focus: MapFocusPoint(ll.LatLng(45, -110)),
+        ),
       );
       await leave(tester);
       expect(viewState.mapCamera!.center.latitude, main.center.latitude);
+    });
+
+    // A look over a chat, even one dragged around, isn't the Map tab made
+    // yours: the Map tab still goes to your position once a run.
+    testWidgets('a map over a chat leaves the GPS start to the Map tab', (
+      tester,
+    ) async {
+      final viewState = UiViewStateService();
+      final connector = _FakeConnector(nodes: [contact], gps: '1');
+      await pumpMap(
+        tester,
+        connector,
+        viewState: viewState,
+        screen: const MapScreen(
+          overScreen: true,
+          focus: MapFocusPoint(ll.LatLng(45, -110)),
+        ),
+      );
+      await tester.drag(find.byType(AppMap), const Offset(80, 0));
+      await tester.pump(const Duration(milliseconds: 200));
+      await leave(tester);
+      expect(viewState.mapWentToGps, isFalse);
+
+      await pumpMap(tester, connector, viewState: viewState);
+      connector.moveSelf(gps);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(camera(tester).center.latitude, closeTo(41.81, 1e-6));
     });
   });
 
@@ -2230,7 +2522,10 @@ void main() {
     ) async {
       await showMap(
         tester,
-        screen: const MapScreen(highlightPosition: ll.LatLng(41.8, -71.4)),
+        screen: const MapScreen(
+          overScreen: true,
+          focus: MapFocusPoint(ll.LatLng(41.8, -71.4)),
+        ),
       );
       await tester.tap(find.byTooltip('Full screen'));
       await settle(tester);

@@ -7,6 +7,7 @@ import 'package:traxmap/traxmap.dart' as traxmap show LatLng;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
+import '../models/map_focus.dart';
 import '../screens/map_screen.dart';
 import '../screens/offline_maps_screen.dart';
 import '../services/routing_service.dart';
@@ -102,16 +103,8 @@ class NavigateHelper {
     LatLng position, {
     String? label,
   }) async {
-    void route() => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MapScreen(
-          highlightPosition: position,
-          highlightLabel: label,
-          routeToHighlight: true,
-        ),
-      ),
-    );
+    void route() =>
+        MapScreen.show(context, MapFocusRoute(position, label: label));
     void otherApp() =>
         unawaited(LinkHandler.openInMapsApp(context, position, label: label));
 

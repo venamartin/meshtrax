@@ -17,6 +17,7 @@ import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/l10n/l10n.dart';
 import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/map_focus.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/models/radio_settings.dart';
 import 'package:meshtrax/models/trax.dart';
@@ -872,9 +873,11 @@ void main() {
     MapMarker marker(WidgetTester tester, String id) =>
         overlays(tester).whereType<MapMarker>().firstWhere((o) => o.id == id);
 
-    testWidgets('a member\'s trail over your own track, their marker for '
-        'the pin; a tap on it opens their card, and their trail stays once '
-        'that is closed', (tester) async {
+    testWidgets('a member shown on the map: their card, their trail over '
+        'your own track, their marker for the pin; the trail stays once the '
+        'card is closed, and a tap on the marker opens it again', (
+      tester,
+    ) async {
       startServices();
       // Your own way: 300 m east, a reading every 30 s.
       for (var m = 0; m <= 300; m += 100) {
@@ -891,8 +894,10 @@ void main() {
       await pumpApp(
         tester,
         MapScreen(
-          highlightPosition: ll.LatLng(_here.lat, _here.lon),
-          showTrailOf: bo.publicKeyHex.substring(0, 8),
+          focus: MapFocusMember(
+            bo.publicKeyHex.substring(0, 8),
+            ll.LatLng(_here.lat, _here.lon),
+          ),
         ),
       );
 
@@ -912,11 +917,7 @@ void main() {
         of: find.byType(BottomSheet),
         matching: find.text('Bo'),
       );
-      marker(tester, 'trip:11111111').onTap!();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
       expect(card, findsOneWidget);
-      expect(line('trail:of:0'), isNotNull);
       expect(overlays(tester).map((o) => o.id), isNot(contains('sheet-pin')));
       await tester.tapAt(const Offset(10, 10));
       await tester.pump();
@@ -924,6 +925,12 @@ void main() {
       expect(card, findsNothing);
       expect(line('trail:of:0'), isNotNull);
       expect(line('trail:self:0'), isNotNull);
+
+      marker(tester, 'trip:11111111').onTap!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(card, findsOneWidget);
+      expect(line('trail:of:0'), isNotNull);
       await stopServices(tester);
     });
 
@@ -1470,9 +1477,58 @@ void main() {
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
+      // No map behind the sheet: a map opens over the screen.
       final map = tester.widget<MapScreen>(find.byType(MapScreen));
-      expect(map.showTrailOf, bo.publicKeyHex.substring(0, 8));
-      expect(map.highlightPosition!.latitude, closeTo(36.4650, 1e-4));
+      expect(map.overScreen, isTrue);
+      final focus = map.focus! as MapFocusMember;
+      expect(focus.prefix, bo.publicKeyHex.substring(0, 8));
+      expect(focus.place.latitude, closeTo(36.4650, 1e-4));
+      expect(find.byType(TraxSheet), findsNothing);
+      await stopServices(tester);
+    });
+
+    // The sheet's member opened a second map over the map (Martin,
+    // 2026-11-24): now their card, on the map the sheet was opened from.
+    testWidgets('a member in the TRAX sheet over the map: their card on that '
+        'map, not a second one', (tester) async {
+      now = DateTime.now();
+      await tester.runAsync(
+        () => trax.updateSetup(
+          TraxSetup(
+            channelKey: _trip.idKey,
+            until: now.add(const Duration(days: 2)),
+          ),
+        ),
+      );
+      trax.since = now.subtract(const Duration(minutes: 30));
+      startServices();
+      radio.datagrams.add(
+        _datagram(
+          _report(0x11, sentAt: now.subtract(const Duration(minutes: 2))),
+          receivedAt: now.subtract(const Duration(minutes: 2)),
+        ),
+      );
+      await pumpApp(tester, const MapScreen());
+      unawaited(showTraxSheet(tester.element(find.byType(AppMap))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(
+        find.descendant(of: find.byType(TraxSheet), matching: find.text('Bo')),
+      );
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byType(MapScreen, skipOffstage: false), findsOneWidget);
+      expect(find.byType(TraxSheet), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('Bo'),
+        ),
+        findsOneWidget,
+        reason: 'their card',
+      );
       await stopServices(tester);
     });
   });

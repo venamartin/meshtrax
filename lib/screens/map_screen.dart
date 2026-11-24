@@ -31,6 +31,7 @@ import '../connector/meshcore_protocol.dart';
 import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
+import '../models/map_focus.dart';
 import '../models/trax.dart';
 import '../services/app_settings_service.dart';
 import '../services/line_of_sight.dart';
@@ -83,41 +84,56 @@ import 'map_search_screen.dart';
 import 'offline_maps_screen.dart';
 
 class MapScreen extends StatefulWidget {
-  /// A point to show and pin, e.g. a shared POI opened from a chat. The
-  /// screen then has a back button and no quick-switch bar.
-  final LatLng? highlightPosition;
-  final String? highlightLabel;
+  /// What the map opens on: a point, the route to one, or a trip member's
+  /// card. [show] gives an open map the same.
+  final MapFocus? focus;
 
-  /// MapLibre zoom for [highlightPosition].
-  final double highlightZoom;
-  final bool hideBackButton;
+  /// A map over another screen, opened to show [focus]: a back button and
+  /// no quick-switch bar, and Back returns to that screen. It leaves the
+  /// Map tab's view as it was; a route started on it is kept for the Map
+  /// tab.
+  final bool overScreen;
 
   /// Pick mode: a tap or long press pops the screen with the chosen LatLng.
   final bool pickPosition;
 
-  /// Opens with the route from your position to [highlightPosition], as
-  /// Route here does; Back then goes straight back (Navigate on a card).
-  final bool routeToHighlight;
-
-  /// [highlightPosition] is an SOS: its pin opens Route here and Navigate.
-  final bool highlightSos;
-
-  /// The trip member, by key prefix, the map opens on: their trail shows,
-  /// their own marker stands at [highlightPosition] in place of a pin, and
-  /// the map follows them until it is dragged.
-  final String? showTrailOf;
+  /// Where picking starts, pinned.
+  final LatLng? pickAround;
 
   const MapScreen({
     super.key,
-    this.highlightPosition,
-    this.highlightLabel,
-    this.highlightZoom = 14.0,
-    this.hideBackButton = false,
+    this.focus,
+    this.overScreen = false,
     this.pickPosition = false,
-    this.routeToHighlight = false,
-    this.highlightSos = false,
-    this.showTrailOf,
+    this.pickAround,
   });
+
+  /// Shows [focus] where you are, never on a map over another map: in place
+  /// on the map you're on, from the Chats tab on the Map tab in its place,
+  /// or else on a map over this screen, which Back leaves. A sheet or
+  /// dialog over the screen closes first.
+  static void show(BuildContext context, MapFocus focus) {
+    final viewState = context.read<UiViewStateService>();
+    final navigator = Navigator.of(context);
+    Route<Object?>? screen;
+    navigator.popUntil((route) {
+      if (route is PopupRoute) return false;
+      screen = route;
+      return true;
+    });
+    final onMap = viewState.openMaps[screen];
+    if (onMap != null) {
+      onMap(focus);
+    } else if (screen != null && screen == viewState.chatsTab) {
+      navigator.pushReplacement(buildQuickSwitchRoute(MapScreen(focus: focus)));
+    } else {
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => MapScreen(focus: focus, overScreen: true),
+        ),
+      );
+    }
+  }
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -126,6 +142,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   // MapLibre zoom from which node labels show.
   static const double _labelMinZoom = 13.0;
+
+  /// MapLibre zoom for a point the map is asked to show.
+  static const double _focusZoom = 14.0;
 
   final _mapController = OfflineMapController();
   final MapMarkerService _markerService = MapMarkerService();
@@ -147,20 +166,47 @@ class _MapScreenState extends State<MapScreen> {
 
   /// The trip member whose trail shows, by key prefix: the last one tapped,
   /// until another is.
-  late String? _trailOf = widget.showTrailOf;
+  String? _trailOf;
 
   /// Whom the map keeps in the middle as new positions come in, until it
   /// is dragged: you after My location, or a trip member by key prefix
-  /// after a tap on them (or the one this map opened on).
+  /// after a tap on them (or the one the map was asked to show).
   bool _followMe = false;
-  late String? _followOf = widget.showTrailOf;
+  String? _followOf;
 
   /// Where the map last went for [_followMe] or [_followOf].
-  late LatLng? _followedAt = widget.highlightPosition;
+  LatLng? _followedAt;
 
   /// The trip member whose card is open, and how much of the map it covers.
   String? _cardOf;
   double _cardCovered = 0;
+
+  /// Where the map opens: what it was asked to show, or where picking
+  /// starts.
+  late final LatLng? _openedOn = switch (widget.focus) {
+    MapFocusPoint(:final position) ||
+    MapFocusRoute(:final position) => position,
+    MapFocusMember(:final place) => place,
+    null => widget.pickAround,
+  };
+
+  /// The point the map was asked to show, pinned until another is; or
+  /// where picking starts.
+  late MapFocusPoint? _pin = switch ((widget.focus, widget.pickAround)) {
+    (final focus?, _) => _pinOf(focus),
+    (null, final around?) => MapFocusPoint(around),
+    (null, null) => null,
+  };
+
+  /// This map's route, in [UiViewStateService.openMaps] while it is open.
+  ModalRoute<Object?>? _pageRoute;
+
+  /// The route this map last kept in [UiViewStateService.mapRoute], or took
+  /// from it. Another there since was kept by a map over a chat.
+  MapRoute? _keptRoute;
+
+  /// The Map tab opened on a route started over a chat: shown whole.
+  bool _routeUnseen = false;
 
   /// The main map without the title bar and the tabs, and on a phone without
   /// its status and navigation bars. Never saved: the app starts without it.
@@ -230,9 +276,13 @@ class _MapScreenState extends State<MapScreen> {
   /// Your GPS position, when the map went there as it opened.
   LatLng? _openedOnGps;
 
-  /// The map of the quick-switch bar, not one pushed to show or pick a point.
-  bool get _isMainMap =>
-      widget.highlightPosition == null && !widget.pickPosition;
+  /// The Map tab: it keeps its view and its route for the next visit, and
+  /// goes to your GPS position once a run.
+  bool get _isMapTab => !_overScreen;
+
+  /// Over another screen, which Back returns to: a back button, and no
+  /// quick-switch bar.
+  bool get _overScreen => widget.overScreen || widget.pickPosition;
 
   /// Full screen on any map but one picking a position: a map opened from a
   /// chat had none (owner, 2026-11-16, after Navigate).
@@ -244,12 +294,19 @@ class _MapScreenState extends State<MapScreen> {
     HardwareKeyboard.instance.addHandler(_onKey);
     _loadRemovedMarkers();
     _viewState = context.read<UiViewStateService>();
+    // The Map tab goes to what it was asked to show, not to your GPS
+    // position or where it was left.
+    if (widget.focus != null && _isMapTab) _viewState.mapWentToGps = true;
     _keepView =
-        _isMainMap &&
+        widget.focus == null &&
+        _isMapTab &&
         _viewState.mapShownThisRun &&
         _viewState.mapCamera != null;
-    final kept = _isMainMap ? _viewState.mapRoute : null;
+    // A map over a chat starts with just what it was opened for.
+    final kept = _keptRoute = _isMapTab ? _viewState.mapRoute : null;
     if (kept != null) {
+      _routeUnseen = !_viewState.mapRouteSeen;
+      _viewState.mapRouteSeen = true;
       _routeTo = (name: kept.name, point: kept.to.toLatLong2());
       _routeFrom = kept.from?.toLatLong2();
       _route = kept.result;
@@ -257,28 +314,6 @@ class _MapScreenState extends State<MapScreen> {
       _routeFoundAt = kept.foundAt;
     }
     final connector = _connector = context.read<MeshCoreConnector>();
-    final to = widget.highlightPosition;
-    if (widget.routeToHighlight && to != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final settings = context.read<AppSettingsService>().settings;
-        _routeHere(
-          widget.highlightLabel ??
-              positionLines(
-                to.latitude,
-                to.longitude,
-                coordFormatOf(settings),
-              ).first,
-          to,
-          connector.hasValidLocation(
-                connector.selfLatitude,
-                connector.selfLongitude,
-              )
-              ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
-              : null,
-        );
-      });
-    }
     // A new channel message may carry a pin.
     _channelLatest = connector.watchChannelLatest().listen((_) {
       if (mounted) unawaited(_refreshChannelMarkers(connector));
@@ -291,7 +326,127 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.pickPosition) return;
+    // What you tap on this map shows on it (MapScreen.show).
+    if (_pageRoute == null) {
+      final route = _pageRoute = ModalRoute.of(context);
+      if (route != null) _viewState.openMaps[route] = _show;
+    }
+    // Back on the Map tab: a route started on a map over a chat since.
+    if (_isMapTab &&
+        (ModalRoute.isCurrentOf(context) ?? false) &&
+        !identical(_viewState.mapRoute, _keptRoute)) {
+      _takeKeptRoute();
+    }
+  }
+
+  /// Takes the route a map over a chat kept, and shows it whole.
+  void _takeKeptRoute() {
+    final kept = _keptRoute = _viewState.mapRoute;
+    _viewState.mapRouteSeen = true;
+    // A route of this map's still being found is dropped.
+    _routeGeneration++;
+    _routeTo = kept == null
+        ? null
+        : (name: kept.name, point: kept.to.toLatLong2());
+    _routeFrom = kept?.from?.toLatLong2();
+    _route = kept?.result;
+    _routeFoundFrom = kept?.foundFrom?.toLatLong2();
+    _routeFoundAt = kept?.foundAt;
+    _routing = false;
+    _routeError = null;
+    if (kept == null) return;
+    _followMe = false;
+    _followOf = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_los != null) _closeLos();
+      if (_route != null) return _fitRoute();
+      final connector = _connector;
+      unawaited(
+        _findRoute(
+          connector.hasValidLocation(
+                connector.selfLatitude,
+                connector.selfLongitude,
+              )
+              ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+              : null,
+        ),
+      );
+    });
+  }
+
+  /// The pin [focus] puts on the map: its point, or the route's end.
+  static MapFocusPoint? _pinOf(MapFocus focus) => switch (focus) {
+    final MapFocusPoint point => point,
+    MapFocusRoute(:final position, :final label) => MapFocusPoint(
+      position,
+      label: label,
+    ),
+    MapFocusMember() => null,
+  };
+
+  /// Shows [focus] as this map shows such things itself: the point pinned,
+  /// the route to it as Route here finds it, or the member's card as their
+  /// pin opens it. Line of sight closes, and the map follows no one else.
+  void _show(MapFocus focus) {
+    if (_isMapTab) _viewState.mapWentToGps = true;
+    if (_los != null) _closeLos();
+    setState(() {
+      _pin = _pinOf(focus);
+      _followMe = false;
+      _followOf = null;
+    });
+    switch (focus) {
+      case MapFocusPoint(:final position):
+        unawaited(_moveTo(position, _focusZoom));
+      case MapFocusRoute(:final position, :final label):
+        // From your position, not a start picked for the route before.
+        _routeFrom = null;
+        _mapController.move(position.toOvm(), zoom: _focusZoom);
+        final connector = _connector;
+        _routeHere(
+          label ??
+              positionLines(
+                position.latitude,
+                position.longitude,
+                coordFormatOf(context.read<AppSettingsService>().settings),
+              ).first,
+          position,
+          connector.hasValidLocation(
+                connector.selfLatitude,
+                connector.selfLongitude,
+              )
+              ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
+              : null,
+        );
+      case MapFocusMember(:final prefix, :final place):
+        final member = _members(
+          context.read<TripPositions?>(),
+          context.read<TripService?>(),
+          context.read<TraxService?>()?.isOn ?? false,
+          _connector,
+        ).where((m) => m.prefix == prefix).firstOrNull;
+        if (member != null &&
+            _person(context, member.contact, member.report).place != null) {
+          unawaited(_showMemberCard(member, zoom: _focusZoom));
+          return;
+        }
+        // Not one of the map's group: their trail, followed.
+        setState(() {
+          _trailOf = prefix;
+          _followOf = prefix;
+          _followedAt = place;
+        });
+        unawaited(_moveTo(place, _focusZoom));
+    }
+  }
+
+  @override
   void dispose() {
+    _viewState.openMaps.remove(_pageRoute);
     if (_saveCamera?.isActive ?? false) {
       _saveCamera!.cancel();
       _viewState.setMapCamera(_viewState.mapCamera!);
@@ -348,6 +503,11 @@ class _MapScreenState extends State<MapScreen> {
         _ => l10n.map_fullScreenHintKey,
       }),
     );
+  }
+
+  void _touched() {
+    if (_isMapTab) _viewState.mapWentToGps = true;
+    _wakeControls();
   }
 
   /// In full screen, any touch on the map or its buttons (or a mouse moving
@@ -461,11 +621,10 @@ class _MapScreenState extends State<MapScreen> {
 
   void _onCameraChanged(MapCamera camera) {
     _saveCamera?.cancel();
-    // Only the main map's view is kept, at once for the next map of the
-    // run (a quick switch back starts it before this one is gone), and on
-    // the device after a pause. A map pushed to show or pick a point leaves
-    // it as it was.
-    if (_isMainMap) {
+    // Only the Map tab's view is kept, at once for the next map of the run
+    // (a quick switch back starts it before this one is gone), and on the
+    // device after a pause. A map over another screen leaves it as it was.
+    if (_isMapTab) {
       _viewState.setMapCamera(camera, save: false);
       _saveCamera = Timer(
         const Duration(seconds: 1),
@@ -556,7 +715,7 @@ class _MapScreenState extends State<MapScreen> {
             ? allContacts
             : allContacts.where((c) => c.isActive).toList();
 
-        final highlightPosition = widget.highlightPosition;
+        final pin = _pin;
         _refreshDirectMarkersIfChanged(connector);
         // An SOS shows whatever the marker filter says, until removed.
         final sharedMarkers = _channelMarkers
@@ -643,7 +802,7 @@ class _MapScreenState extends State<MapScreen> {
         final hasMapContent =
             hasRealPositions ||
             guessedLocations.isNotEmpty ||
-            highlightPosition != null;
+            _openedOn != null;
         if (hasRealPositions || guessedLocations.isNotEmpty) {
           final allPoints = [
             ...contactsWithLocation.map(
@@ -712,9 +871,9 @@ class _MapScreenState extends State<MapScreen> {
           }
         }
         var zoom = MapCamera.fromFlutterMapZoom(initialZoom);
-        if (highlightPosition != null) {
-          center = highlightPosition;
-          zoom = widget.highlightZoom;
+        if (_openedOn case final opened?) {
+          center = opened;
+          zoom = _focusZoom;
         }
 
         // A radio with no position reports 0, 0.
@@ -726,10 +885,10 @@ class _MapScreenState extends State<MapScreen> {
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
 
-        // Once a run the main map goes to your position, as soon as the
+        // Once a run the Map tab goes to your position, as soon as the
         // radio's GPS has one, unless you've touched the map first. A map
         // still loading opens there.
-        if (_isMainMap &&
+        if (_isMapTab &&
             !_viewState.mapWentToGps &&
             connector.gpsOn &&
             selfPosition != null) {
@@ -790,15 +949,25 @@ class _MapScreenState extends State<MapScreen> {
           _hasInitializedMap = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            if (_routeTo != null) {
+            if (widget.focus case final focus?) {
+              // What it was asked to show. A route kept from the last visit
+              // stays, found again if it wasn't.
+              if (_routeTo != null &&
+                  _route == null &&
+                  focus is! MapFocusRoute) {
+                unawaited(_findRoute(selfPosition));
+              }
+              _show(focus);
+            } else if (_routeTo != null) {
               // A route kept from the last visit: the map stays as it was
-              // left, and the route is found again if it wasn't.
+              // left, and the route is found again if it wasn't. One
+              // started over a chat is shown whole.
               if (_route == null) {
                 unawaited(_findRoute(selfPosition));
-              } else if (!_keepView) {
+              } else if (!_keepView || _routeUnseen) {
                 _fitRoute();
               }
-            } else if (_isMainMap && (_keepView || _viewState.mapWentToGps)) {
+            } else if (_isMapTab && (_keepView || _viewState.mapWentToGps)) {
               // Where it was left, or on your position.
             } else if (hasMapContent) {
               _mapController.move(center.toOvm(), zoom: zoom);
@@ -808,10 +977,9 @@ class _MapScreenState extends State<MapScreen> {
           });
         }
 
-        // A pushed map (a shared point, or picking one) goes back where it
-        // came from; picking without a point to start from is no exception.
-        final isPoiLink = !_isMainMap;
-        final allowBack = !connector.isConnected || isPoiLink;
+        // A map over another screen (showing something, or a picker) goes
+        // back where it came from.
+        final allowBack = !connector.isConnected || _overScreen;
         final mapDark = settings.mapTheme == 'dark';
         final showPlaces =
             settings.mapPlaces && !widget.pickPosition && !_isBuildingPathTrace;
@@ -827,14 +995,15 @@ class _MapScreenState extends State<MapScreen> {
             !widget.pickPosition;
 
         return PopScope(
-          // Back leaves full screen, then lowers a raised route sheet, then
-          // closes the route, before anything else. A map opened to route
-          // somewhere goes straight back to where you came from.
+          // Back leaves full screen and line of sight first. On the Map tab
+          // it then lowers a raised route sheet, then closes the route; a
+          // map over another screen goes straight back there, and its route
+          // stays for the Map tab.
           canPop:
               allowBack &&
               !_fullScreen &&
               _los == null &&
-              (_routeTo == null || widget.routeToHighlight),
+              (_routeTo == null || _overScreen),
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
             if (_fullScreen) return _setFullScreen(false);
@@ -859,7 +1028,7 @@ class _MapScreenState extends State<MapScreen> {
                       subtitle: false,
                     ),
                     centerTitle: true,
-                    automaticallyImplyLeading: isPoiLink,
+                    automaticallyImplyLeading: _overScreen,
                     actions: [
                       if (!widget.pickPosition) ...[
                         const TraxButton(),
@@ -1052,28 +1221,27 @@ class _MapScreenState extends State<MapScreen> {
                               color: Colors.blueAccent,
                               width: 4,
                             ),
-                          if (highlightPosition != null &&
-                              widget.showTrailOf == null)
+                          if (pin != null)
                             MapMarker(
                               id: 'highlight',
-                              position: highlightPosition.toOvm(),
+                              position: pin.position.toOvm(),
                               size: const Size(40, 40),
                               // An SOS looks as its pin from the message
                               // does, which lies on it.
-                              anchor: widget.highlightSos
+                              anchor: pin.sos
                                   ? Alignment.center
                                   : Alignment.bottomCenter,
-                              interactive: widget.highlightSos,
-                              onTap: widget.highlightSos
+                              interactive: pin.sos,
+                              onTap: pin.sos
                                   ? () => _showSosSheet(
-                                      highlightPosition,
+                                      pin.position,
                                       title:
-                                          widget.highlightLabel ??
+                                          pin.label ??
                                           context.l10n.structured_sos,
                                     )
                                   : null,
-                              label: widget.highlightLabel,
-                              child: widget.highlightSos
+                              label: pin.label,
+                              child: pin.sos
                                   ? _nodeDot(
                                       Colors.red,
                                       Icons.warning_rounded,
@@ -1166,21 +1334,15 @@ class _MapScreenState extends State<MapScreen> {
                           child: _filterButton(settingsService),
                         ),
                       if (_isBuildingPathTrace) _buildPathTraceOverlay(),
-                      // A touch on the main map makes it yours: it no longer
+                      // A touch on the Map tab makes it yours: it no longer
                       // goes to your GPS position by itself. In full screen
                       // it also brings back the faded buttons.
-                      if (_isMainMap)
+                      if (!widget.pickPosition)
                         Positioned.fill(
                           child: Listener(
                             behavior: HitTestBehavior.translucent,
-                            onPointerDown: (_) {
-                              _viewState.mapWentToGps = true;
-                              _wakeControls();
-                            },
-                            onPointerSignal: (_) {
-                              _viewState.mapWentToGps = true;
-                              _wakeControls();
-                            },
+                            onPointerDown: (_) => _touched(),
+                            onPointerSignal: (_) => _touched(),
                             onPointerMove: (_) => _wakeControls(),
                             onPointerHover: (_) => _wakeControls(),
                           ),
@@ -1197,7 +1359,7 @@ class _MapScreenState extends State<MapScreen> {
                 : _routeTo == null
                 ? null
                 : _buildRouteSheet(settingsService, selfPosition, side: false),
-            bottomNavigationBar: isPoiLink || _fullScreen
+            bottomNavigationBar: _overScreen || _fullScreen
                 ? null
                 : QuickSwitchBar(
                     selectedIndex: 1,
@@ -2416,8 +2578,9 @@ class _MapScreenState extends State<MapScreen> {
   /// A trip member's card over a clear map: their trail above it, centred
   /// on them, and what is known of them, kept up to date. The map follows
   /// them, with the card open or closed, until it is dragged; their trail
-  /// stays. Their own marker is the pin.
-  Future<void> _showMemberCard(_Member member) async {
+  /// stays. Their own marker is the pin. With a [zoom], the map goes to them
+  /// first: asked from elsewhere, they may be out of view.
+  Future<void> _showMemberCard(_Member member, {double? zoom}) async {
     final place = _person(context, member.contact, member.report).place;
     if (place == null) return;
     setState(() {
@@ -2430,7 +2593,7 @@ class _MapScreenState extends State<MapScreen> {
     await _showPointSheet(
       place,
       pin: false,
-      centerAfter: Future<void>.value(),
+      centerAfter: zoom == null ? Future<void>.value() : _moveTo(place, zoom),
       builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           child: _Ticking(
@@ -3130,7 +3293,9 @@ class _MapScreenState extends State<MapScreen> {
       MaterialPageRoute(builder: (_) => OfflineMapsScreen(initialPacks: ids)),
     ),
     onHeight: side ? null : (height) => _losCovered.value = height,
-    bottomInset: side || _isMainMap ? 0 : MediaQuery.paddingOf(context).bottom,
+    bottomInset: side || !_overScreen
+        ? 0
+        : MediaQuery.paddingOf(context).bottom,
   );
 
   /// The line in its answer's colour (grey while it is worked out), the
@@ -3423,13 +3588,18 @@ class _MapScreenState extends State<MapScreen> {
     _keepRoute();
   }
 
-  /// Keeps the main map's route for when the map is back: the quick switch
-  /// puts another screen in its place. One still being found is found again
-  /// then.
+  /// Keeps the route for the Map tab: the quick switch puts another screen
+  /// in its place, and Back from a map over a chat leaves the route there.
+  /// One still being found is found again then. A map under another one
+  /// that has kept a route since leaves that route.
   void _keepRoute() {
-    if (!_isMainMap) return;
+    if (widget.pickPosition) return;
+    if (!(_pageRoute?.isCurrent ?? true) &&
+        !identical(_viewState.mapRoute, _keptRoute)) {
+      return;
+    }
     final to = _routeTo;
-    _viewState.mapRoute = to == null
+    _viewState.mapRoute = _keptRoute = to == null
         ? null
         : (
             name: to.name,
@@ -3439,6 +3609,7 @@ class _MapScreenState extends State<MapScreen> {
             foundFrom: _routeFoundFrom?.toOvm(),
             foundAt: _routeFoundAt,
           );
+    _viewState.mapRouteSeen = _isMapTab;
   }
 
   Widget _buildRouteSheet(
@@ -3496,7 +3667,7 @@ class _MapScreenState extends State<MapScreen> {
       side: side,
       // With no quick-switch bar under the map, the sheet reaches the
       // screen's edge.
-      bottomInset: side || _isMainMap
+      bottomInset: side || !_overScreen
           ? 0
           : MediaQuery.paddingOf(context).bottom,
     );
