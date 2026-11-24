@@ -95,6 +95,22 @@ class TimeoutHelper {
   /// the radio's copy waited over a second behind a DM's intake and reply).
   static const int standInRecheckMs = 100;
 
+  /// How long after a flood to this radio was first heard the app waits
+  /// before it sends the sender a corrected way back
+  /// (MeshCoreConnector._repairWayBack). The radio's own answer has to
+  /// reach them first, or it would replace the correction: it leaves within
+  /// 500 ms (TXT_ACK_DELAY for a flooded path return, 500 ms for the routed
+  /// path that answers a path reply, Mesh.cpp) and, as a flood, crosses
+  /// [hops] + 1 legs, each a repeater's longest wait and one airtime. Then a
+  /// second for busy air.
+  static int wayBackRepairDelayMs(int airtimeMs, int hops) =>
+      500 +
+      ((hops + 1) *
+              airtimeMs *
+              (1 + retransmitDelaySpan * repeaterTxDelayFactor))
+          .ceil() +
+      1000;
+
   /// Floor for the final attempt of a retry ladder on a fast path.
   static const int lastAttemptFloorMs = 8000;
 

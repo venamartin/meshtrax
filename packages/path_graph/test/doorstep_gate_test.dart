@@ -218,4 +218,27 @@ void main() {
       expect(firstHop(), 'beef');
     });
   });
+
+  // What the app asks before it corrects a contact's way back to me: is
+  // this the repeater my own routes start at, here and now?
+  group('a repeater a route may start at now', () {
+    test('one proven to hear me is, one I only hear is not', () {
+      echo(a277);
+      heardLast(beef);
+      expect(graph.startsRoutesNow('A277'), isTrue);
+      expect(graph.startsRoutesNow('a277'), isTrue);
+      expect(graph.startsRoutesNow('BEEF'), isFalse);
+      expect(graph.startsRoutesNow('1312'), isFalse);
+    });
+
+    test('not while it is held, and again once it proves itself', () {
+      provenCorridor([...a277, ...r1312]);
+      expect(graph.startsRoutesNow('A277'), isTrue);
+      failed([...a277, ...r1312]);
+      failed([...a277, ...r1312]);
+      expect(graph.startsRoutesNow('A277'), isFalse);
+      echo(a277);
+      expect(graph.startsRoutesNow('A277'), isTrue);
+    });
+  });
 }

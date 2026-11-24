@@ -2227,6 +2227,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// radio. Null while Pathfinder is off.
   bool Function(List<int> hop, int width)? isCarRepeater;
 
+  /// Whether repeater code [hop] ([width] bytes) is one Pathfinder would
+  /// start a route from right now: it hears this radio where the radio is.
+  /// Null while Pathfinder is off.
+  bool Function(List<int> hop, int width)? isOwnDoorstep;
+
   /// Pathfinder's current distance to a contact in hops, or null when it
   /// has nothing recent (see [estimatedHopsTo]).
   int? Function(Contact contact)? graphDistanceTo;
@@ -10006,6 +10011,125 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   Contact? _contactWithKey(Uint8List key) =>
       _contacts.where((c) => listEquals(c.publicKey, key)).firstOrNull;
 
+  // Floods to this radio that it answers (a DM, a path reply), by payload:
+  // the path of the first copy heard, which is the one it answered.
+  final Map<String, ({DateTime at, Uint8List path, int pathLenRaw})>
+      _answeredFloods = {};
+  final Set<String> _wayBackRepaired = {};
+
+  /// A later copy of a flood counts for [_repairWayBack] this long after
+  /// the first: its other repeaters have passed it on by then.
+  static const _wayBackWindow = Duration(seconds: 8);
+
+  /// Tests shorten the wait before the corrected way back goes out.
+  @visibleForTesting
+  int? wayBackRepairDelayMsForTest;
+
+  /// The firmware answers the first copy of a flood it hears, and its answer
+  /// hands the sender that copy's path as their route to this radio
+  /// (BaseChatMesh::onPeerDataRecv and Mesh::onRecvPacket: createPathReturn
+  /// with the packet's own path; they store it whatever they held,
+  /// onContactPathRecv). A copy heard straight from a far repeater is always
+  /// the first, because the nearer repeaters only pass on what it sent. The
+  /// sender is then told a route that ends at a repeater this radio hears
+  /// now and then, and their ACKs and routed DMs arrive only when it does
+  /// (simulator, 2026-11-24; at the owner's house about one flood in five).
+  ///
+  /// So when that copy's last repeater is not one this radio is heard by
+  /// here ([isOwnDoorstep]) and a later copy of the same packet came through
+  /// one that is, the app sends them the later copy's path: a path packet of
+  /// the firmware's own kind, direct on its route to them, once the radio's
+  /// answer has had time to arrive. Never for a route that already ends at
+  /// such a repeater, never a path no copy travelled, and never by flood
+  /// (owner, 2026-11-24).
+  void _repairWayBack(_RawPacket packet) {
+    final hearsMe = isOwnDoorstep;
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    if (hearsMe == null ||
+        opener == null ||
+        me == null ||
+        !packet.isFlood ||
+        packet.hopCount <= 0 ||
+        (packet.payloadType != _payloadTypeTxtMsg &&
+            packet.payloadType != payloadTypePATH) ||
+        packet.payload.length < 2 ||
+        packet.payload[0] != me[0] ||
+        packet.payload[1] == me[0] ||
+        (_firmwareVerCode ?? 0) < 13 ||
+        !listEquals(opener.selfKey, me)) {
+      return;
+    }
+    final id = String.fromCharCodes(packet.payload);
+    final now = DateTime.now();
+    final first = _answeredFloods[id];
+    if (first == null) {
+      _answeredFloods[id] = (
+        at: now,
+        path: packet.pathBytes,
+        pathLenRaw: packet.pathLenRaw,
+      );
+      if (_answeredFloods.length > 16) {
+        _answeredFloods.remove(_answeredFloods.keys.first);
+      }
+      return;
+    }
+    final width = packet.hashSize;
+    if (now.difference(first.at) > _wayBackWindow ||
+        _wayBackRepaired.contains(id) ||
+        PathHelper.pathLenWidth(first.pathLenRaw) != width) {
+      return;
+    }
+    List<int> last(Uint8List path) => path.sublist(path.length - width);
+    if (hearsMe(last(first.path), width) ||
+        !hearsMe(last(packet.pathBytes), width)) {
+      return;
+    }
+    final keys = _contacts.map((c) => c.publicKey);
+    final sender = packet.payloadType == payloadTypePATH
+        ? opener
+            .pathReplyRoute(payload: packet.payload, contactKeys: keys)
+            ?.contactKey
+        : opener
+            .openAny(
+              flood: true,
+              pathLenRaw: packet.pathLenRaw,
+              pathBytes: packet.pathBytes,
+              payload: packet.payload,
+              contactKeys: keys,
+            )
+            ?.senderKey;
+    final contact = sender == null ? null : _contactWithKey(sender);
+    if (contact == null) return;
+    final route = _ackRoutes(contact)?.firstOrNull ??
+        resolvePathSelection(contact, radioWidth: _pathHashByteWidth);
+    if (route.useFlood) return;
+    final wire = opener.wayBackPacket(
+      contactKey: contact.publicKey,
+      wayBackLen: packet.pathLenRaw,
+      wayBack: packet.pathBytes,
+      routePathLen: PathHelper.encodePathLen(route.hopCount, route.hashSize),
+      routePath: route.pathBytes,
+    );
+    if (wire == null) return;
+    _remember(_wayBackRepaired, id);
+    appLogger.info(
+      'Way back for ${contact.name}: the radio answered a copy heard from '
+      '${PathHelper.formatPathHex(last(first.path), stride: width)}, which '
+      "doesn't hear this radio here; sending them the route "
+      '${PathHelper.formatPathHex(packet.pathBytes, stride: width)}',
+      tag: 'Connector',
+    );
+    _queueRawPackets(
+      [wire],
+      wayBackRepairDelayMsForTest ??
+          TimeoutHelper.wayBackRepairDelayMs(
+            _estimateAirtimeMs(wire.length + packet.pathBytes.length),
+            packet.hopCount,
+          ),
+    );
+  }
+
   /// Adds [id] to [seen], which keeps the last 64; false when it was there.
   static bool _remember(Set<String> seen, String id) {
     if (!seen.add(id)) return false;
@@ -10072,6 +10196,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
       _noteAckHeard(packet);
+      _repairWayBack(packet);
       // A repeater's own advert, zero hops: a repeater transmission
       // reached me just as surely as a relayed packet (the parked-message
       // wake; simulator 2026-10-25, where a 30 s advert was all the air

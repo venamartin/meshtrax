@@ -323,6 +323,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onAckHeard = _onAckHeard;
     connector.graphRouteCandidates = candidatesFor;
     connector.isCarRepeater = isCarRepeater;
+    connector.isOwnDoorstep = isOwnDoorstep;
     connector.graphDistanceTo = distanceTo;
     connector.onChannelPacketHeard = _onChannelPacket;
     connector.onOwnEchoHeard = _onOwnEcho;
@@ -581,6 +582,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onAckHeard = null;
     _connector?.graphRouteCandidates = null;
     _connector?.isCarRepeater = null;
+    _connector?.isOwnDoorstep = null;
     _connector?.graphDistanceTo = null;
     _connector?.onChannelPacketHeard = null;
     _connector?.onOwnEchoHeard = null;
@@ -999,6 +1001,19 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     final reason = code == null ? null : graph.movingStatus(code)?.reason;
     return reason == MovingReason.manual ||
         reason == MovingReason.manualWithMe;
+  }
+
+  /// Whether repeater code [hop] ([width] bytes) is one a route of mine may
+  /// start at right now: it hears this radio where the radio is. A wider
+  /// code is cut to the graph's width, and a narrower one names nobody.
+  bool isOwnDoorstep(List<int> hop, int width) {
+    final graph = _graph;
+    if (graph == null || width < graph.hashWidthBytes || hop.length != width) {
+      return false;
+    }
+    final code = PathHelper.firstHopHex(hop, stride: width)
+        ?.substring(0, graph.hashWidthBytes * 2);
+    return code != null && graph.startsRoutesNow(code);
   }
 
   /// Pathfinder's ranked routes to [contact] for the retry ladder, best

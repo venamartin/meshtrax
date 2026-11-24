@@ -1721,6 +1721,19 @@ class PathGraph {
     return (candidates: kept, held: held, gate: gate);
   }
 
+  /// Whether a route may start at [repeaterHash] right now: it is proven
+  /// to hear this radio and nothing holds it ([doorstepHold], and where the
+  /// radio's area is known, it was heard hearing the radio there).
+  bool startsRoutesNow(String repeaterHash) {
+    final self = _selfPubkey;
+    if (self == null) return false;
+    final hash = repeaterHash.toUpperCase();
+    return _egressCandidates(self, _arrivalMillis)
+            .candidates
+            ?.any((c) => c.repeaterHash.toUpperCase() == hash) ??
+        false;
+  }
+
   /// Why [c], one of my proven doorsteps, may not start a route right now,
   /// or null when it may (see [PathGraphConfig.selfFailGate]). Failures
   /// are checked first: they are this doorstep's own record.
