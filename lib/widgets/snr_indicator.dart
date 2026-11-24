@@ -108,7 +108,18 @@ class SNRIndicator extends StatelessWidget {
     MeshCoreConnector connector,
   ) {
     final directRepeaters = connector.directRepeaters;
-    final best = List.of(directRepeaters)..sort(DirectRepeater.compare);
+    // The repeater that heard this radio best in the latest Discover, as
+    // the Nearby repeaters list puts it first; with no answer, the one
+    // heard best. A repeater heard loudly need not hear this radio at all.
+    final answered = [
+      for (final r in directRepeaters)
+        if (connector.discoverScan > 0 &&
+            r.answeredScan == connector.discoverScan)
+          r,
+    ]..sort((a, b) => b.uplinkSnr!.compareTo(a.uplinkSnr!));
+    final best = answered.isNotEmpty
+        ? answered
+        : (List.of(directRepeaters)..sort(DirectRepeater.compare));
     final directRepeater = best.isEmpty ? null : best.first;
     final ui = snrUiFromSNR(directRepeater?.snr, connector.currentSf);
     return (

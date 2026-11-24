@@ -10,6 +10,7 @@ import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/nearby_repeaters_dialog.dart';
+import 'package:meshtrax/widgets/snr_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Connector extends MeshCoreConnector {
@@ -81,6 +82,26 @@ void main() {
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
+  });
+
+  // Field 2026-11-24: at home the radio hears AA77, which does not hear it.
+  group('the top bar names', () {
+    test('the repeater that heard this radio best in the latest Discover, '
+        'not the one it hears loudest', () {
+      final loud = _repeater(0x10, 9.0); // overheard only
+      final hearsMe = _repeater(0x30, 2.0, up: 6.5, scan: 2);
+      final hearsMeLess = _repeater(0x50, 4.0, up: 1.0, scan: 2);
+      final c = _Connector([loud, hearsMeLess, hearsMe], scan: 2);
+      expect(SNRIndicator.textsFor(c).repeaters, startsWith('3: 3031:'));
+    });
+
+    test('the one heard loudest when none answered the latest Discover', () {
+      final c = _Connector(
+        [_repeater(0x10, 9.0), _repeater(0x50, 4.0, up: 8.0, scan: 1)],
+        scan: 2,
+      );
+      expect(SNRIndicator.textsFor(c).repeaters, startsWith('2: 1011:'));
+    });
   });
 
   testWidgets('only answers to the latest Discover are marked and counted', (
