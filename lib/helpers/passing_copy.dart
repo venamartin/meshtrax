@@ -208,6 +208,46 @@ class PassingCopyOpener {
     return null;
   }
 
+  /// The ACK code inside a path reply to this radio from one of
+  /// [contactKeys]: a DM it sent reached them by flood, and the reply
+  /// carries the ACK (BaseChatMesh::onPeerDataRecv, createPathReturn: path
+  /// length, path, extra type, extra). Null for any other packet.
+  int? pathReplyAck({
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (payload.length < 2 + _macSize + _blockSize) return null;
+    if (payload[0] != _selfKey[0]) return null;
+    final macAndData = Uint8List.fromList(payload.sublist(2));
+    for (final key in contactKeys) {
+      if (key.length != pubKeySize || key[0] != payload[1]) continue;
+      final secret = sharedSecret(key);
+      if (secret == null) continue;
+      final plain = macThenDecrypt(secret, macAndData);
+      if (plain == null) continue;
+      final extraAt = 1 + PathHelper.pathLenBytes(plain[0]);
+      if (plain.length < extraAt + 5) return null;
+      if ((plain[extraAt] & 0x0F) != payloadTypeACK) return null;
+      return ByteData.sublistView(plain, extraAt + 1, extraAt + 5)
+          .getUint32(0, Endian.little);
+    }
+    return null;
+  }
+
+  /// The ACK code a plain or MULTIPART ACK packet carries, else null.
+  static int? ackCode(int payloadType, List<int> payload) {
+    final at = switch (payloadType) {
+      payloadTypeACK => 0,
+      payloadTypeMULTIPART
+          when payload.isNotEmpty && (payload[0] & 0x0F) == payloadTypeACK =>
+        1,
+      _ => null,
+    };
+    if (at == null || payload.length < at + 4) return null;
+    return ByteData.sublistView(Uint8List.fromList(payload), at, at + 4)
+        .getUint32(0, Endian.little);
+  }
+
   /// The firmware's shared secret with [contactKey] (ed25519_key_exchange:
   /// X25519 of this radio's clamped scalar and the contact's key moved to
   /// Montgomery form), or null for a key that isn't a curve point.

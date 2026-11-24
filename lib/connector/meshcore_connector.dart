@@ -861,6 +861,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   PassingCopyOpener? _passingCopyOpener;
   Uint8List? _passingCopyScopeKey;
   final Set<String> _passingCopyAcked = {};
+  // ACKs seen in the RX log for my sends, each left to the radio for a
+  // moment before the app counts it (see _noteAckHeard).
+  final Map<int, Timer> _heardAckTimers = {};
   // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
   // the second on another of Pathfinder's routes (owner, 2026-11-19).
   bool _appSendsSecondAck = false;
@@ -9302,6 +9305,71 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
+  /// An ACK for one of my sends, seen in the RX log, that the radio may
+  /// not count (owner, 2026-11-20: any ACK for us the firmware can miss and
+  /// the app can see, the app deals with):
+  /// - a MULTIPART ACK with hops to go: on its way the firmware checks only
+  ///   plain ACKs (Mesh.cpp onRecvPacket, "early received ACK");
+  /// - any ACK for a send the radio no longer waits on: it remembers the
+  ///   last 8 (EXPECTED_ACK_TABLE_SIZE) and forgets them on a restart.
+  /// Plain ACKs, MULTIPART ACKs and the ACK in a path reply all count. The
+  /// radio gets [TimeoutHelper.heardAckGraceMs] first; a send still waiting
+  /// after that is confirmed as if the radio had.
+  void _noteAckHeard(_RawPacket packet) {
+    var code = PassingCopyOpener.ackCode(packet.payloadType, packet.payload);
+    if (code == null && packet.payloadType == payloadTypePATH) {
+      final opener = _passingCopyOpener;
+      final me = _selfPublicKey;
+      if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+        return;
+      }
+      code = opener.pathReplyAck(
+        payload: packet.payload,
+        contactKeys: _contacts.map((c) => c.publicKey),
+      );
+    }
+    if (code == null || _heardAckTimers.containsKey(code)) return;
+    final ack = code;
+    final waited = _retryService?.waitingForAck(ack);
+    if (waited == null && !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
+      return;
+    }
+    final tripMs = waited?.inMilliseconds ?? 0;
+    final how = packet.isFlood
+        ? 'by flood'
+        : '${math.max(0, packet.hopCount)} hops to go';
+    _heardAckTimers[ack] = Timer(
+      const Duration(milliseconds: TimeoutHelper.heardAckGraceMs),
+      () {
+        _heardAckTimers.remove(ack);
+        if (_retryService?.waitingForAck(ack) == null &&
+            !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
+          return;
+        }
+        appLogger.info(
+          'The radio missed ACK ${ackHashToHex(ack)} '
+          '(${_heardAckKind(packet.payloadType)}, $how): '
+          'counting it',
+          tag: 'Connector',
+        );
+        _handleSendConfirmed(Uint8List.fromList([
+          pushCodeSendConfirmed,
+          ...(ByteData(8)
+                ..setUint32(0, ack, Endian.little)
+                ..setUint32(4, tripMs, Endian.little))
+              .buffer
+              .asUint8List(),
+        ]));
+      },
+    );
+  }
+
+  static String _heardAckKind(int payloadType) => switch (payloadType) {
+    payloadTypeMULTIPART => 'MULTIPART',
+    payloadTypePATH => 'path reply',
+    _ => 'ACK',
+  };
+
   /// The ACKs for a passing copy, which the radio never opened: the one the
   /// firmware would have sent, on the radio's stored route (with its extra
   /// MULTIPART copy when the radio sends two), and, when the app sends every
@@ -9583,6 +9651,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
+      _noteAckHeard(packet);
       // A repeater's own advert, zero hops: a repeater transmission
       // reached me just as surely as a relayed packet (the parked-message
       // wake; simulator 2026-10-25, where a 30 s advert was all the air
@@ -12739,6 +12808,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _appSettingsService?.removeListener(_onAppSettingsChanged);
     _contactNotesSub?.cancel();
     _contactPersistTimer?.cancel();
+    for (final t in _heardAckTimers.values) {
+      t.cancel();
+    }
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();
