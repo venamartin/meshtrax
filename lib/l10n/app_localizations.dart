@@ -12988,24 +12988,6 @@ abstract class AppLocalizations {
   /// **'Not repeated'**
   String get repeaterRegions_notRepeated;
 
-  /// No description provided for @repeaterRegions_move.
-  ///
-  /// In en, this message translates to:
-  /// **'Move under…'**
-  String get repeaterRegions_move;
-
-  /// No description provided for @repeaterRegions_moveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Move {name} under'**
-  String repeaterRegions_moveTitle(String name);
-
-  /// No description provided for @repeaterRegions_top.
-  ///
-  /// In en, this message translates to:
-  /// **'Top level'**
-  String get repeaterRegions_top;
-
   /// No description provided for @repeaterRegions_removeTitle.
   ///
   /// In en, this message translates to:
@@ -13015,7 +12997,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeaterRegions_hasChildren.
   ///
   /// In en, this message translates to:
-  /// **'Move or remove the regions under it first.'**
+  /// **'The repeater still has regions under this one. Remove those first.'**
   String get repeaterRegions_hasChildren;
 
   /// No description provided for @repeaterRegions_refused.
@@ -13023,12 +13005,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The repeater said: {reply}'**
   String repeaterRegions_refused(String reply);
-
-  /// No description provided for @repeaterRegions_under.
-  ///
-  /// In en, this message translates to:
-  /// **'Under'**
-  String get repeaterRegions_under;
 
   /// No description provided for @repeaterRegions_fromYours.
   ///

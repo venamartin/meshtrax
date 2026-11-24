@@ -7668,32 +7668,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Не повторюється';
 
   @override
-  String get repeaterRegions_move => 'Перемістити в…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Перемістити $name в';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Верхній рівень';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Видалити $name з ретранслятора?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Спершу перемістіть або видаліть регіони всередині нього.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'Ретранслятор відповів: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Усередині';
 
   @override
   String get repeaterRegions_fromYours => 'З ваших регіонів';

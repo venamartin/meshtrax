@@ -105,9 +105,8 @@ Asked for by the owner on 2026-11-21: an easy way to set up the regions of a rep
 **The screen:**
 
 - **Messages with no region:** a switch (`region allowf *` / `region denyf *`). Turning it off asks first: everyone nearby who doesn't use a region stops being repeated.
-- **The repeater's regions:** each with a switch for "Repeats messages in this region" (`region allowf` / `region denyf`), indented under its parent. Tapping a region offers: change its parent (`region put <name> <parent>`; the firmware turns repeating back on when it moves a region, so the screen sends `region denyf` again if it was off), or remove it
- (`region remove`; the firmware refuses while it has child regions, and the screen says so).
-- **Add region:** a name (same rules and checks as the app's Add region), an optional parent, and a list of the app's own regions to tick in one go (`region put`; a new region is repeated straight away).
+- **The repeater's regions:** one flat list by name (owner's choice, 2026-11-23: nesting changes nothing on the air). Each has a switch for "Repeats messages in this region" (`region allowf` / `region denyf`) and a remove button (`region remove`). The firmware refuses to remove a region that has others under it (set up from the command line), so the screen first moves those to the top with `region put <name>`. That turns repeating back on, so it sends `region denyf` again for any that were off. If the list was cut and one under it was never seen, the repeater's refusal is shown.
+- **Add region:** a name (same rules and checks as the app's Add region) and a list of the app's own regions to tick in one go (`region put`, at the top; a new region is repeated straight away).
 - **The repeater's own region:** the region its adverts and its flood replies use when it can't tell the asker's (`region default <name>` / `region default <null>`). The firmware turns flood on for it.
 - **Saving:** each change is followed by `region save`, so nothing is lost if the repeater restarts. (`region default` saves itself.)
 - **Reading:** `region` gives the tree, with `F` marking regions it repeats and `^` the home region. The reply is cut at 160 bytes, so a long list is read with `region list allowed` and `region list denied` as well, and the screen says when the list may be incomplete.

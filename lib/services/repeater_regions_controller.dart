@@ -79,26 +79,23 @@ class RepeaterRegionsController extends ChangeNotifier {
     },
   );
 
-  /// Adds [names] under [parent] (null: the top). The firmware repeats a
-  /// new region straight away.
-  Future<bool> add(List<String> names, String? parent) => _change([
-    for (final name in names)
-      'region put ${RegionHelper.normalize(name)}'
-          '${parent == null ? '' : ' $parent'}',
+  /// Adds [names]. The firmware repeats a new region straight away.
+  Future<bool> add(List<String> names) => _change([
+    for (final name in names) 'region put ${RegionHelper.normalize(name)}',
   ]);
 
-  /// Moves [name] under [parent] (null: the top). Moving turns repeating
-  /// on in the firmware, so a region that wasn't repeated is turned off
+  /// Removes [name]. The firmware refuses a region with others under it,
+  /// and nesting changes nothing on the air, so those move to the top
+  /// first. Moving turns repeating on, so one that was off is turned off
   /// again.
-  Future<bool> move(String name, String? parent) {
-    final wasOff = regions.regions.any((r) => r.name == name && !r.repeats);
-    return _change([
-      'region put $name ${parent ?? '*'}',
-      if (wasOff) 'region denyf $name',
-    ]);
-  }
-
-  Future<bool> remove(String name) => _change(['region remove $name']);
+  Future<bool> remove(String name) => _change([
+    for (final child in regions.regions)
+      if (child.parent == name) ...[
+        'region put ${child.name}',
+        if (!child.repeats) 'region denyf ${child.name}',
+      ],
+    'region remove $name',
+  ]);
 
   /// The repeater's own region; null for none. `region default` saves
   /// itself, and turns repeating on for that region.
@@ -106,24 +103,6 @@ class RepeaterRegionsController extends ChangeNotifier {
     ['region default ${name ?? '<null>'}'],
     save: false,
   );
-
-  /// Regions under [name], at any depth.
-  Set<String> descendantsOf(String name) {
-    final out = <String>{};
-    var grew = true;
-    while (grew) {
-      grew = false;
-      for (final r in regions.regions) {
-        if ((r.parent == name || out.contains(r.parent)) && out.add(r.name)) {
-          grew = true;
-        }
-      }
-    }
-    return out;
-  }
-
-  bool hasChildren(String name) =>
-      regions.regions.any((r) => r.parent == name);
 
   /// Runs [commands] in order, stopping at the first refusal, then
   /// `region save` when any of them went through, so a restart keeps them.

@@ -7633,32 +7633,18 @@ class AppLocalizationsSl extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Se ne ponavlja';
 
   @override
-  String get repeaterRegions_move => 'Premakni pod…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Premakni $name pod';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Najvišja raven';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Odstranim $name z repetitorja?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Najprej premaknite ali odstranite regije pod njo.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'Repetitor je odgovoril: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Pod';
 
   @override
   String get repeaterRegions_fromYours => 'Iz vaših regij';

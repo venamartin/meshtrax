@@ -7157,31 +7157,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get repeaterRegions_notRepeated => '不转发';
 
   @override
-  String get repeaterRegions_move => '移到…之下';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return '将 $name 移到';
-  }
-
-  @override
-  String get repeaterRegions_top => '最上层';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return '从中继器移除 $name?';
   }
 
   @override
-  String get repeaterRegions_hasChildren => '请先移动或移除它下面的区域。';
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return '中继器回复:$reply';
   }
-
-  @override
-  String get repeaterRegions_under => '上级区域';
 
   @override
   String get repeaterRegions_fromYours => '来自你的区域';

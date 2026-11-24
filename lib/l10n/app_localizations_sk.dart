@@ -7628,32 +7628,18 @@ class AppLocalizationsSk extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Neopakuje sa';
 
   @override
-  String get repeaterRegions_move => 'Presunúť pod…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Presunúť $name pod';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Najvyššia úroveň';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Odstrániť $name z opakovača?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Najprv presuňte alebo odstráňte regióny pod ním.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'Opakovač odpovedal: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Pod';
 
   @override
   String get repeaterRegions_fromYours => 'Z vašich regiónov';

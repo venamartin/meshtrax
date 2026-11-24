@@ -7629,32 +7629,18 @@ class AppLocalizationsBg extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Не се повтаря';
 
   @override
-  String get repeaterRegions_move => 'Преместване под…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Преместване на $name под';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Най-горно ниво';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Премахване на $name от ретранслатора?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Първо преместете или премахнете регионите под него.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'Ретранслаторът отговори: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Под';
 
   @override
   String get repeaterRegions_fromYours => 'От вашите региони';

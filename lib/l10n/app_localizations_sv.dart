@@ -7576,32 +7576,18 @@ class AppLocalizationsSv extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Upprepas inte';
 
   @override
-  String get repeaterRegions_move => 'Flytta under…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Flytta $name under';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Översta nivån';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Ta bort $name från repeatern?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Flytta eller ta bort regionerna under den först.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'Repeatern svarade: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Under';
 
   @override
   String get repeaterRegions_fromYours => 'Från dina regioner';

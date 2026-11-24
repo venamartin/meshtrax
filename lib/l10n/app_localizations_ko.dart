@@ -7297,31 +7297,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get repeaterRegions_notRepeated => '반복 안 함';
 
   @override
-  String get repeaterRegions_move => '다음 아래로 이동…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return '$name을(를) 다음 아래로 이동';
-  }
-
-  @override
-  String get repeaterRegions_top => '최상위';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return '$name을(를) 리피터에서 제거할까요?';
   }
 
   @override
-  String get repeaterRegions_hasChildren => '먼저 그 아래의 지역을 이동하거나 제거하세요.';
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return '리피터 응답: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => '상위 지역';
 
   @override
   String get repeaterRegions_fromYours => '내 지역에서';

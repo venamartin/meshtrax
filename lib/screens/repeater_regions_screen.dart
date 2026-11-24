@@ -199,31 +199,8 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
     await _controller.setOwnRegion(picked.value);
   }
 
-  Future<void> _move(RepeaterRegion region) async {
-    final l10n = context.l10n;
-    final blocked = {region.name, ..._controller.descendantsOf(region.name)};
-    final picked = await _pick(
-      title: l10n.repeaterRegions_moveTitle(region.name),
-      nullLabel: l10n.repeaterRegions_top,
-      options: [
-        for (final r in _controller.regions.regions)
-          if (!blocked.contains(r.name)) r.name,
-      ],
-      current: region.parent,
-    );
-    if (picked == null || picked.value == region.parent) return;
-    await _controller.move(region.name, picked.value);
-  }
-
   Future<void> _remove(RepeaterRegion region) async {
     final l10n = context.l10n;
-    if (_controller.hasChildren(region.name)) {
-      showDismissibleSnackBar(
-        context,
-        content: Text(l10n.repeaterRegions_hasChildren),
-      );
-      return;
-    }
     final sure = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -247,16 +224,15 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
   Future<void> _add() async {
     final onRepeater = {for (final r in _controller.regions.regions) r.name};
     final mine = context.read<RegionService?>()?.regions ?? const <String>[];
-    final result = await showDialog<({List<String> names, String? parent})>(
+    final names = await showDialog<List<String>>(
       context: context,
       builder: (_) => _AddDialog(
         onRepeater: onRepeater,
         offered: [for (final r in mine) if (!onRepeater.contains(r)) r],
-        parents: [for (final r in _controller.regions.regions) r.name],
       ),
     );
-    if (result == null) return;
-    await _controller.add(result.names, result.parent);
+    if (names == null) return;
+    await _controller.add(names);
   }
 
   @override
@@ -401,10 +377,10 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
           Card(
             child: Column(
               children: [
-                for (final region in regions.regions)
+                for (final region in _sorted(regions.regions))
                   ListTile(
-                    contentPadding: EdgeInsetsDirectional.only(
-                      start: 16.0 + region.depth * 20,
+                    contentPadding: const EdgeInsetsDirectional.only(
+                      start: 16,
                       end: 4,
                     ),
                     leading: const Icon(Icons.hexagon_outlined),
@@ -423,21 +399,10 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
                               ? null
                               : (on) => c.setRepeats(region.name, on),
                         ),
-                        PopupMenuButton<String>(
-                          enabled: !c.busy,
-                          onSelected: (value) => value == 'move'
-                              ? _move(region)
-                              : _remove(region),
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              value: 'move',
-                              child: Text(l10n.repeaterRegions_move),
-                            ),
-                            PopupMenuItem(
-                              value: 'remove',
-                              child: Text(l10n.common_remove),
-                            ),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: l10n.common_remove,
+                          onPressed: c.busy ? null : () => _remove(region),
                         ),
                       ],
                     ),
@@ -450,16 +415,14 @@ class _RepeaterRegionsScreenState extends State<RepeaterRegionsScreen> {
   }
 }
 
+List<RepeaterRegion> _sorted(List<RepeaterRegion> regions) => [...regions]
+  ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
 class _AddDialog extends StatefulWidget {
   final Set<String> onRepeater;
   final List<String> offered;
-  final List<String> parents;
 
-  const _AddDialog({
-    required this.onRepeater,
-    required this.offered,
-    required this.parents,
-  });
+  const _AddDialog({required this.onRepeater, required this.offered});
 
   @override
   State<_AddDialog> createState() => _AddDialogState();
@@ -468,7 +431,6 @@ class _AddDialog extends StatefulWidget {
 class _AddDialogState extends State<_AddDialog> {
   final _name = TextEditingController();
   final _ticked = <String>{};
-  String? _parent;
 
   @override
   void dispose() {
@@ -542,24 +504,6 @@ class _AddDialogState extends State<_AddDialog> {
                   ),
                 ),
             ],
-            if (widget.parents.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String?>(
-                initialValue: _parent,
-                decoration: InputDecoration(
-                  labelText: l10n.repeaterRegions_under,
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(l10n.repeaterRegions_top),
-                  ),
-                  for (final p in widget.parents)
-                    DropdownMenuItem<String?>(value: p, child: Text(p)),
-                ],
-                onChanged: (value) => setState(() => _parent = value),
-              ),
-            ],
           ],
         ),
       ),
@@ -571,7 +515,7 @@ class _AddDialogState extends State<_AddDialog> {
         FilledButton(
           onPressed: names.isEmpty
               ? null
-              : () => Navigator.pop(context, (names: names, parent: _parent)),
+              : () => Navigator.pop(context, names),
           child: Text(l10n.common_add),
         ),
       ],

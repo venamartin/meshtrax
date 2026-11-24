@@ -7530,32 +7530,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Not repeated';
 
   @override
-  String get repeaterRegions_move => 'Move under…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return 'Move $name under';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Top level';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Remove $name from the repeater?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Move or remove the regions under it first.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'The repeater said: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Under';
 
   @override
   String get repeaterRegions_fromYours => 'From your regions';

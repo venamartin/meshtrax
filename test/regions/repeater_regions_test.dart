@@ -229,49 +229,47 @@ void main() {
       expect(c.regions.noRegionRepeats, isFalse);
     });
 
-    test('several regions added under a parent, saved once', () async {
+    test('several regions added at the top, saved once', () async {
       await c.load();
       repeater.sent.clear();
-      expect(await c.add(['marin', '#oakland'], 'bayarea'), isTrue);
-      expect(repeater.sent.take(3), [
-        'region put marin bayarea',
-        'region put oakland bayarea',
-        'region save',
-      ]);
-      expect(_region(c, 'marin').parent, 'bayarea');
+      expect(await c.add(['marin', '#oakland']), isTrue);
+      expect(repeater.sent.take(3),
+          ['region put marin', 'region put oakland', 'region save']);
+      expect(_region(c, 'marin').parent, isNull);
       expect(_region(c, 'oakland').repeats, isTrue);
     });
 
-    test('moving a region keeps it off when it was off', () async {
+    test('removing a region first moves the ones under it to the top',
+        () async {
       await c.load();
       repeater.sent.clear();
-      expect(await c.move('sf', null), isTrue);
-      expect(repeater.sent.take(3),
-          ['region put sf *', 'region denyf sf', 'region save']);
+      expect(await c.remove('bayarea'), isTrue);
+      expect(repeater.sent.take(4), [
+        'region put sf',
+        'region denyf sf', // moving turned it on; it was off
+        'region remove bayarea',
+        'region save',
+      ]);
+      expect(_names(c), isNot(contains('bayarea')));
       expect(_region(c, 'sf').parent, isNull);
       expect(_region(c, 'sf').repeats, isFalse);
     });
 
-    test('regions under a region are not offered as its new parent', () async {
+    test('one under it the app never saw: the refusal says so, the rest saved',
+        () async {
       await c.load();
-      expect(c.descendantsOf('bayarea'), {'sf'});
-      expect(c.hasChildren('bayarea'), isTrue);
-    });
-
-    test('removing a region with regions under it is refused', () async {
-      await c.load();
+      repeater.regions.add(_Region('oakland', 'bayarea'));
       repeater.sent.clear();
       expect(await c.remove('bayarea'), isFalse);
       expect(c.problem, RepeaterRegionsProblem.hasChildren);
-      expect(repeater.sent.first, 'region remove bayarea');
-      expect(repeater.sent, isNot(contains('region save')));
+      expect(repeater.sent, contains('region save'));
       expect(_names(c), contains('bayarea'));
     });
 
     test('a refusal partway still saves what went through', () async {
       await c.load();
       repeater.sent.clear();
-      expect(await c.add(['marin', 'full', 'oakland'], null), isFalse);
+      expect(await c.add(['marin', 'full', 'oakland']), isFalse);
       expect(c.problem, RepeaterRegionsProblem.refused);
       expect(c.refusal, 'Err - unable to put');
       expect(repeater.sent.take(3),
@@ -283,8 +281,8 @@ void main() {
     test('nothing went through: nothing to save', () async {
       await c.load();
       repeater.sent.clear();
-      expect(await c.add(['marin'], 'nowhere'), isFalse);
-      expect(c.refusal, 'Err - unknown parent');
+      expect(await c.add(['full']), isFalse);
+      expect(c.refusal, 'Err - unable to put');
       expect(repeater.sent, isNot(contains('region save')));
     });
 
@@ -336,7 +334,7 @@ void main() {
       c = RepeaterRegionsController(repeater.call);
     });
 
-    testWidgets('lists the regions under their parents', (tester) async {
+    testWidgets('lists the regions flat, by name', (tester) async {
       await open(tester);
       expect(find.text('Hilltop'), findsOneWidget);
       expect(find.text('Repeat messages with no region'), findsOneWidget);
@@ -344,7 +342,8 @@ void main() {
       expect(find.text('Not repeated'), findsOneWidget);
       double indent(String name) => tester.getTopLeft(find.text(name)).dx;
 
-      expect(indent('sf'), greaterThan(indent('bayarea')));
+      expect(indent('sf'), indent('bayarea'));
+      expect(find.text('Move under…'), findsNothing);
     });
 
     testWidgets('turning off messages with no region asks first',

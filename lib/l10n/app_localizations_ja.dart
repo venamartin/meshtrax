@@ -7280,31 +7280,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get repeaterRegions_notRepeated => '中継しない';
 
   @override
-  String get repeaterRegions_move => '移動先…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return '$name の移動先';
-  }
-
-  @override
-  String get repeaterRegions_top => '最上位';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return '$name をリピーターから削除しますか?';
   }
 
   @override
-  String get repeaterRegions_hasChildren => '先にその下のリージョンを移動または削除してください。';
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'リピーターの返答: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => '親リージョン';
 
   @override
   String get repeaterRegions_fromYours => 'あなたのリージョンから';

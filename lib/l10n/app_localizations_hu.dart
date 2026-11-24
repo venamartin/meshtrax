@@ -7651,32 +7651,18 @@ class AppLocalizationsHu extends AppLocalizations {
   String get repeaterRegions_notRepeated => 'Nem ismétli';
 
   @override
-  String get repeaterRegions_move => 'Áthelyezés ez alá…';
-
-  @override
-  String repeaterRegions_moveTitle(String name) {
-    return '$name áthelyezése ez alá';
-  }
-
-  @override
-  String get repeaterRegions_top => 'Legfelső szint';
-
-  @override
   String repeaterRegions_removeTitle(String name) {
     return 'Eltávolítod $name régiót a jelismétlőről?';
   }
 
   @override
   String get repeaterRegions_hasChildren =>
-      'Előbb helyezd át vagy távolítsd el az alatta lévő régiókat.';
+      'The repeater still has regions under this one. Remove those first.';
 
   @override
   String repeaterRegions_refused(String reply) {
     return 'A jelismétlő válasza: $reply';
   }
-
-  @override
-  String get repeaterRegions_under => 'Alatta';
 
   @override
   String get repeaterRegions_fromYours => 'A te régióidból';
