@@ -143,6 +143,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Only radios in direct range; repeaters don\'t pass it on';
 
   @override
+  String get photo_repairPacket => 'Repair packet';
+
+  @override
+  String get photo_repairPacketHint =>
+      'One more packet, so the photo still arrives if any one packet is lost';
+
+  @override
   String photo_sendFigures(int packets, String sendTime) {
     return '$packets packets · about $sendTime to send';
   }

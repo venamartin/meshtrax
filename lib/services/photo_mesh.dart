@@ -146,8 +146,13 @@ class PhotoMesh {
     ImageReassemblyFailure f,
   ) {
     if (f.isCorrupt) return l10n.photo_needsNewer(_id(f.key.imgId));
-    final got = f.receivedDataChunks + (f.hadParity ? 1 : 0);
-    return l10n.photo_incomplete(_id(f.key.imgId), got, f.total + 1);
+    // The repair packet is the sender's choice, so it counts once it came.
+    final repair = f.hadParity ? 1 : 0;
+    return l10n.photo_incomplete(
+      _id(f.key.imgId),
+      f.receivedDataChunks + repair,
+      f.total + repair,
+    );
   }
 
   /// Companion firmware 1.15 (version code 11) added channel datagrams.
@@ -260,7 +265,7 @@ class PhotoMesh {
       PhotoRecord(
         messageId: messageId,
         bytes: parts.bitstream.length,
-        packets: r.chunkCount + 1,
+        packets: r.chunkCount + (r.recoveredWithParity ? 1 : 0),
         outgoing: false,
         recoveredWithParity: r.recoveredWithParity,
         tag: parts.extras.tag,
@@ -291,15 +296,16 @@ class PhotoMesh {
   }
 
   /// Sends a coded photo as the channel sends its messages, or zero hop, with
-  /// the sender's [tag] and [position] if any, and files it in the chat as
-  /// ours, with the sender's preview as its picture (what the receivers will
-  /// see).
+  /// the sender's [tag] and [position] if any and a repair packet if
+  /// [repairPacket], and files it in the chat as ours, with the sender's
+  /// preview as its picture (what the receivers will see).
   Future<void> sendPhoto(
     Uint8List bitstream,
     int channelIndex, {
     String? tag,
     PhotoPosition? position,
     bool zeroHop = false,
+    bool repairPacket = true,
     Uint8List? previewPng,
     void Function(ImageSendProgress)? onProgress,
   }) async {
@@ -310,6 +316,7 @@ class PhotoMesh {
       channelIndex,
       extras: extras,
       zeroHop: zeroHop,
+      repairPacket: repairPacket,
       onProgress: onProgress,
     );
     final messageId = await connector.ingestPhotoMessage(
@@ -336,13 +343,14 @@ class PhotoMesh {
   }
 
   /// Sends a coded photo on [channelIndex], one chunk at a time, with its
-  /// [extras] ahead of it: as a flood, the way the radio sends the channel's
-  /// messages, or zero hop.
+  /// [extras] ahead of it and the repair chunk last if [repairPacket]: as a
+  /// flood, the way the radio sends the channel's messages, or zero hop.
   Future<ImageChunkSet> send(
     Uint8List bitstream,
     int channelIndex, {
     PhotoExtras extras = const PhotoExtras(),
     bool zeroHop = false,
+    bool repairPacket = true,
     void Function(ImageSendProgress)? onProgress,
   }) async {
     final transport = _ensureTransport();
@@ -364,6 +372,7 @@ class PhotoMesh {
         hasExtras: !extras.isEmpty,
       ),
       channelIndex: channelIndex,
+      parity: repairPacket,
       gap: gap,
       zeroHop: zeroHop,
       onProgress: onProgress,

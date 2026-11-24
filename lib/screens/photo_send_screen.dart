@@ -63,6 +63,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
 
   /// The radio's position goes with the photo. Off for each new photo.
   bool _includePosition = false;
+  bool _repairPacket = PrefsManager.instance.getBool(_repairPacketKey) ?? false;
 
   /// The position's size in bytes, which is its accuracy.
   int _positionBytes = 5;
@@ -73,6 +74,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   /// The sender has read why photos on Public and hashtag channels ask a lot
   /// of the mesh, and asked not to see it again.
   static const _openChannelKey = 'photo_open_channel_explained';
+  static const _repairPacketKey = 'photo_repair_packet';
 
   @override
   void dispose() {
@@ -261,13 +263,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         : null,
   );
 
-  /// Packets the coded photo takes with its extras, the repair packet
-  /// included.
+  /// Packets the coded photo takes with its extras, and the repair packet
+  /// when it's on.
   int _packets(MeshCoreConnector connector) =>
       imageDataChunkCount(
         photoPayload(_bitstream!, _extras(connector)).length,
       ) +
-      1;
+      (_repairPacket ? 1 : 0);
 
   void _watchPosition(MeshCoreConnector connector, bool on) {
     _includePosition = on;
@@ -397,6 +399,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         tag: _tag.text,
         position: _extras(connector).position,
         zeroHop: _zeroHop,
+        repairPacket: _repairPacket,
         previewPng: _previewPng,
         onProgress: (p) {
           if (mounted) {
@@ -653,6 +656,19 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         subtitle: Text(l10n.photo_zeroHopHint),
         value: _zeroHop,
         onChanged: sending ? null : (on) => setState(() => _zeroHop = on),
+      ),
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        secondary: const Icon(Icons.healing_outlined),
+        title: Text(l10n.photo_repairPacket),
+        subtitle: Text(l10n.photo_repairPacketHint),
+        value: _repairPacket,
+        onChanged: sending
+            ? null
+            : (on) async {
+                setState(() => _repairPacket = on);
+                await PrefsManager.instance.setBool(_repairPacketKey, on);
+              },
       ),
       Text(
         l10n.photo_sendFigures(packets, _secs(l10n, sendTime)),

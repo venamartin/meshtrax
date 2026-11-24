@@ -40,14 +40,14 @@ ChannelMessage message(String text, String? packetHash) => ChannelMessage(
 
 void main() {
   group('an incomplete photo in the chat', () {
-    test('counts packets as the sender does, repair packet included', () {
+    test('counts the repair packet only once it came', () {
       expect(
         PhotoMesh.incompleteText(en, failure()),
         '📷 Photo #3a incomplete: 3 of 5 packets',
       );
       expect(
         PhotoMesh.incompleteText(en, failure(got: 1, parity: false)),
-        '📷 Photo #3a incomplete: 1 of 5 packets',
+        '📷 Photo #3a incomplete: 1 of 4 packets',
       );
     });
 

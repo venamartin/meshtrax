@@ -323,6 +323,18 @@ abstract class AppLocalizations {
   /// **'Only radios in direct range; repeaters don\'t pass it on'**
   String get photo_zeroHopHint;
 
+  /// No description provided for @photo_repairPacket.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair packet'**
+  String get photo_repairPacket;
+
+  /// No description provided for @photo_repairPacketHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One more packet, so the photo still arrives if any one packet is lost'**
+  String get photo_repairPacketHint;
+
   /// No description provided for @photo_sendFigures.
   ///
   /// In en, this message translates to:

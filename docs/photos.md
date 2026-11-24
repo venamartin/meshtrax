@@ -4,7 +4,7 @@ Send a photo to a channel over the mesh, with no phone network or internet. Unfa
 
 ## How it works
 
-A photo is far too big for a LoRa radio. MeshTrax shrinks it on your phone with an AI model, to a code of about 400 bytes: 3 to 7 radio packets, including a repair packet that can rebuild one lost packet.
+A photo is far too big for a LoRa radio. MeshTrax shrinks it on your phone with an AI model, to a code of about 400 bytes: 2 to 6 radio packets, and one more with the repair packet.
 
 The phones that receive it rebuild a picture from that code with the same model. The picture keeps the scene: its layout and colours, vehicles, people. Its fine detail is made up by the model, though, so signs and text don't come through. Every rebuilt picture says "AI reconstructed", small in a corner, and has the MeshTrax footprint, faint, in the other. It isn't a record of what was there, so put what matters in a tag or a message.
 
@@ -23,7 +23,7 @@ The phones that receive it rebuild a picture from that code with the same model.
 5. To show where you are, turn on **Include position** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's position now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
 6. Tap **Send**. MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first.
 
-A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. A photo the safety check flags can't be sent.
+A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
 
 ## On MeshCore frequencies
 
