@@ -170,4 +170,119 @@ void main() {
       ]);
     });
   });
+
+  group('path packets, built as Mesh::createPathReturn builds them', () {
+    test("encrypting gives back the firmware's own bytes", () {
+      // The DM as A's firmware encrypted it: the MAC and one block.
+      final macAndData = dmFromAd77.sublist(6);
+      final plain = PassingCopyOpener.macThenDecrypt(secretBA, macAndData)!;
+      expect(PassingCopyOpener.encryptThenMac(secretBA, plain), macAndData);
+      // Time, flags and "hello B" are 12 bytes: the firmware filled the
+      // block with zeroes, and so does this.
+      expect(
+        PassingCopyOpener.encryptThenMac(secretBA, plain.sublist(0, 12)),
+        macAndData,
+      );
+    });
+
+    test('a way back for A: sent direct on the route to A, the route for A '
+        'inside', () {
+      final packet = _opener().wayBackPacket(
+        contactKey: aPub,
+        wayBackLen: 0x42,
+        wayBack: _hex('A277AD77'),
+        routePathLen: 0x43,
+        routePath: _hex('BEEFAD77A277'),
+      )!;
+      // A PATH packet on a direct route, B's route to A, then A's and B's
+      // first key bytes.
+      expect(packet.sublist(0, 10), _hex('2243BEEFAD77A277C3E7'));
+      expect(packet.length, 10 + 2 + 16);
+      final plain = PassingCopyOpener.macThenDecrypt(
+        secretBA,
+        packet.sublist(10),
+      )!;
+      // The path length, the path, and the firmware's filler for a path
+      // packet with nothing extra: 0xFF and four random bytes.
+      expect(plain.sublist(0, 6), _hex('42A277AD77FF'));
+      expect(plain.sublist(10), List.filled(6, 0));
+    });
+
+    test('two way-back packets for one route differ, so a repeater that '
+        'carried the first passes the second on', () {
+      Uint8List build(PassingCopyOpener opener) => opener.wayBackPacket(
+        contactKey: aPub,
+        wayBackLen: 0x41,
+        wayBack: _hex('A277'),
+        routePathLen: 0x41,
+        routePath: _hex('BEEF'),
+      )!;
+      final opener = _opener();
+      expect(build(opener), isNot(build(opener)));
+    });
+
+    test('no way-back packet without a route to send it on, or for a key '
+        'that is no key', () {
+      expect(
+        _opener().wayBackPacket(
+          contactKey: aPub,
+          wayBackLen: 0x41,
+          wayBack: _hex('A277'),
+          routePathLen: 0xFF,
+          routePath: const [],
+        ),
+        isNull,
+      );
+      expect(
+        _opener().wayBackPacket(
+          contactKey: aPub,
+          wayBackLen: 0xFF,
+          wayBack: const [],
+          routePathLen: 0x41,
+          routePath: _hex('BEEF'),
+        ),
+        isNull,
+      );
+    });
+
+    test('reads the route and the ACK out of a path reply from A', () {
+      // As A's firmware answers a flooded DM of B's: the path B's flood
+      // took to A, then the ACK.
+      final payload = [
+        bPub[0],
+        aPub[0],
+        ...PassingCopyOpener.encryptThenMac(
+          secretBA,
+          _hex('42BEEFAD7703' '1FEE94EB05A7'),
+        ),
+      ];
+      final route = _opener().pathReplyRoute(
+        payload: payload,
+        contactKeys: [bPub, aPub],
+      )!;
+      expect(route.contactKey, aPub);
+      expect(route.pathLenRaw, 0x42);
+      expect(route.path, _hex('BEEFAD77'));
+      final ack = _opener().pathReplyAck(
+        payload: payload,
+        contactKeys: [bPub, aPub],
+      )!;
+      expect(ack.code, 0xEB94EE1F);
+      expect(ack.pathReply, isTrue);
+      expect(ack.attempt, 5);
+    });
+
+    test('reads no route from a path packet of a sender it has no key for',
+        () {
+      final payload = [
+        bPub[0],
+        aPub[0],
+        ...PassingCopyOpener.encryptThenMac(secretBA, _hex('41BEEFFF01020304')),
+      ];
+      expect(
+        _opener().pathReplyRoute(payload: payload, contactKeys: [bPub]),
+        isNull,
+      );
+    });
+  });
 }
