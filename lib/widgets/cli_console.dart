@@ -17,7 +17,14 @@ class CliHelpEntry {
   final String command;
   final String description;
 
-  const CliHelpEntry({required this.command, required this.description});
+  /// The command that reads back what [command] sets, e.g. `get tx`.
+  final String? getCommand;
+
+  const CliHelpEntry({
+    required this.command,
+    required this.description,
+    this.getCommand,
+  });
 }
 
 class CliHelpSection {
@@ -460,6 +467,17 @@ class _CliConsoleState extends State<CliConsole> {
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (entry.getCommand case final get?) ...[
+                const SizedBox(height: 8),
+                ActionChip(
+                  label: Text(
+                    get,
+                    style: const TextStyle(fontFamily: 'monospace'),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _applyHelpCommand(get),
+                ),
+              ],
             ],
           ),
         ),
