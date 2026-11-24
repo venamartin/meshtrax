@@ -2,12 +2,16 @@ import '../connector/meshcore_protocol.dart'
     show hex2Uint8List, payloadTypeADVERT;
 import '../services/path_graph/frame_adapter.dart'
     show parseAdvert, parseRawPacket;
+import 'region_helper.dart';
 
 class ChannelQrData {
   final String name;
   final String pskHex;
 
-  ChannelQrData({required this.name, required this.pskHex});
+  /// The channel's region (`region_scope`), when the code has a usable one.
+  final String? region;
+
+  ChannelQrData({required this.name, required this.pskHex, this.region});
 }
 
 class ContactQrData {
@@ -31,10 +35,13 @@ class MeshCoreQr {
   static const String _channelPrefix = 'meshcore://channel/add';
   static const String _contactPrefix = 'meshcore://contact/add';
 
-  /// Encode a channel to meshcore format
-  static String encodeChannel(String name, String pskHex) {
+  /// Encode a channel to meshcore format; [region] adds `region_scope`.
+  static String encodeChannel(String name, String pskHex, {String? region}) {
     final encodedName = Uri.encodeComponent(name);
-    return '$_channelPrefix?name=$encodedName&secret=$pskHex';
+    final scope = region == null
+        ? ''
+        : '&region_scope=${Uri.encodeComponent(region)}';
+    return '$_channelPrefix?name=$encodedName&secret=$pskHex$scope';
   }
 
   /// Encode a contact to meshcore format
@@ -60,9 +67,14 @@ class MeshCoreQr {
     if (!isChannelQr(data)) return null;
 
     final uri = Uri.parse(data);
+    final scope = uri.queryParameters['region_scope'];
+    final region = scope == null ? null : RegionHelper.normalize(scope);
     return ChannelQrData(
       name: uri.queryParameters['name']!,
       pskHex: uri.queryParameters['secret']!,
+      region: region != null && RegionHelper.check(region) == null
+          ? region
+          : null,
     );
   }
 

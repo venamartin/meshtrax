@@ -1,23 +1,47 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
+import '../services/region_service.dart';
 import '../helpers/meshcore_qr.dart';
+import '../helpers/region_helper.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/qr_code_display.dart';
 import '../widgets/qr_share_button.dart';
 
-class ChannelShareScreen extends StatelessWidget {
+class ChannelShareScreen extends StatefulWidget {
   final Channel channel;
 
   const ChannelShareScreen({super.key, required this.channel});
 
   @override
+  State<ChannelShareScreen> createState() => _ChannelShareScreenState();
+}
+
+class _ChannelShareScreenState extends State<ChannelShareScreen> {
+  /// The switch on this screen; until it's touched, the regions setting
+  /// decides.
+  bool? _includeRegion;
+
+  Channel get channel => widget.channel;
+
+  @override
   Widget build(BuildContext context) {
-    final qrData = MeshCoreQr.encodeChannel(channel.name, channel.pskHex);
-    
+    final regions = context.watch<RegionService?>();
+    final own = regions?.regionOf(channel.idKey);
+    final region = RegionHelper.isRegionName(own) ? own : null;
+    final include =
+        region != null && (_includeRegion ?? regions!.regionsInQr);
+    final shared = include ? region : null;
+    final qrData = MeshCoreQr.encodeChannel(
+      channel.name,
+      channel.pskHex,
+      region: shared,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: AdaptiveAppBarTitle(context.l10n.channels_shareChannel),
@@ -37,8 +61,19 @@ class ChannelShareScreen extends StatelessWidget {
                 instructions: context.l10n.channels_shareChannelInstructions,
                 padding: EdgeInsets.zero,
               ),
+              if (region != null) ...[
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  secondary: const Icon(Icons.hexagon_outlined),
+                  title: Text(context.l10n.channelRegion_qrInclude(region)),
+                  value: include,
+                  onChanged: (on) => setState(() => _includeRegion = on),
+                ),
+              ],
+
               const SizedBox(height: 32),
               _buildSecretKeyCard(context, channel.pskHex),
+
               const SizedBox(height: 16),
               _buildUriCard(context, qrData),
               const SizedBox(height: 16),

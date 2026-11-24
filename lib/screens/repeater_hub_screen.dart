@@ -6,6 +6,7 @@ import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import 'repeater_status_screen.dart';
 import 'repeater_cli_screen.dart';
+import 'repeater_regions_screen.dart';
 import 'repeater_settings_screen.dart';
 import 'room_users_screen.dart';
 import 'telemetry_screen.dart';
@@ -299,6 +300,25 @@ class RepeaterHubScreen extends StatelessWidget {
                         room: repeater,
                         password: password,
                       ),
+                    ),
+                  );
+                },
+              ),
+            ],
+            if (isAdmin && repeater.type == advTypeRepeater) ...[
+              const SizedBox(height: 12),
+              _buildManagementCard(
+                context,
+                icon: Icons.hexagon_outlined,
+                title: l10n.regions_title,
+                subtitle: l10n.repeaterRegions_subtitle,
+                color: Colors.cyan,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          RepeaterRegionsScreen(repeater: repeater),
                     ),
                   );
                 },

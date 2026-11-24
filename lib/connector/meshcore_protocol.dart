@@ -1023,6 +1023,24 @@ Uint8List buildSendBinaryReq(Uint8List repeaterPubKey, {Uint8List? payload}) {
   return writer.toBytes();
 }
 
+// Anonymous request sub-type a repeater answers with the regions it
+// repeats (simple_repeater/MyMesh.cpp, ANON_REQ_TYPE_REGIONS; repeater
+// 1.12+). It must arrive DIRECT.
+const int anonReqTypeRegions = 0x01;
+
+// Build CMD_SEND_ANON_REQ asking [repeaterPubKey] for its regions, its
+// answer coming back zero-hop (reply path length 0).
+// Format: [cmd][pub_key x32][req type][reply path len][reply path]
+// The radio answers RESP_CODE_SENT with a tag; the repeater's answer comes
+// as PUSH_CODE_BINARY_RESPONSE with that tag: [repeater clock x4][names].
+Uint8List buildRegionsRequestFrame(Uint8List repeaterPubKey) =>
+    Uint8List.fromList([
+      cmdSendAnonReq,
+      ...repeaterPubKey,
+      anonReqTypeRegions,
+      0,
+    ]);
+
 // Sensor telemetry push (firmware 1.18, SensorMesh.cpp). These are
 // CMD_SEND_BINARY_REQ payloads; the radio prepends the request timestamp,
 // which comes back as the tag in RESP_CODE_SENT and the reply.
@@ -1235,6 +1253,20 @@ Uint8List buildSetDefaultFloodScopeFrame(String? name, Uint8List? key) {
   }
   return writer.toBytes();
 }
+
+// Build CMD_SET_FLOOD_SCOPE_KEY frames (v8+): the region the radio's next
+// floods carry, held until cleared or the radio reboots. It applies to every
+// flood the radio sends, its own ACKs too, so set it just around one send.
+// Format: [cmd][0][key x16] sets it, [cmd][0] clears it, and [cmd][1] sends
+// with no region even when a default is set (v12+).
+Uint8List buildSetFloodScopeKeyFrame(Uint8List key) =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 0, ...key]);
+
+Uint8List buildClearFloodScopeFrame() =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 0]);
+
+Uint8List buildFloodUnscopedFrame() =>
+    Uint8List.fromList([cmdSetFloodScopeKey, 1]);
 
 // Build CMD_GET_ALLOWED_REPEAT_FREQ frame (v9+)
 // Format: [cmd]

@@ -34,6 +34,8 @@ import '../services/app_settings_service.dart';
 import '../services/chat_text_scale_service.dart';
 import '../services/heard_service.dart';
 import '../services/notification_service.dart';
+import '../helpers/region_helper.dart';
+import '../services/region_service.dart';
 import '../services/sos_service.dart';
 import '../services/trax_service.dart';
 import '../services/ui_view_state_service.dart';
@@ -61,6 +63,8 @@ import '../widgets/pinned_messages_bar.dart';
 import '../widgets/structured_message_card.dart';
 import '../widgets/structured_message_dialogs.dart';
 import '../widgets/reaction_details_sheet.dart';
+import '../widgets/region_dialogs.dart';
+import '../widgets/region_label.dart';
 import '../widgets/wavy_divider.dart';
 import 'channel_message_path_screen.dart';
 import 'channel_share_screen.dart';
@@ -1102,9 +1106,26 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                widget.channel.displayName,
-                style: const TextStyle(fontSize: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.channel.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  if (context
+                          .watch<RegionService?>()
+                          ?.regionOf(widget.channel.idKey)
+                      case final region?)
+                    InkWell(
+                      onTap: () =>
+                          showChannelRegionDialog(context, widget.channel),
+                      child: RegionLabel(region),
+                    ),
+                ],
               ),
             ),
           ],
@@ -1155,7 +1176,9 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'clearChat') {
+              if (value == 'region') {
+                showChannelRegionDialog(context, widget.channel);
+              } else if (value == 'clearChat') {
                 final connector = context.read<MeshCoreConnector>();
                 ClearChatDialog.show(context).then((choice) {
                   if (choice == null) return;
@@ -1167,6 +1190,17 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               }
             },
             itemBuilder: (context) => [
+              if (context.read<MeshCoreConnector>().supportsRegions)
+                PopupMenuItem(
+                  value: 'region',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.hexagon_outlined, size: 20),
+                      const SizedBox(width: 12),
+                      Text(context.l10n.channelRegion_title),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'clearChat',
                 child: Row(
@@ -1994,14 +2028,29 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
       );
 
   /// Sent, the wait for a repeat is over, and neither a radio nor an
-  /// observer repeated it: nothing says anyone got it.
+  /// observer repeated it: nothing says anyone got it. Never on a Nearby
+  /// only channel, where no repeat is ever expected.
   bool _isUnheard(BuildContext context, ChannelMessage message) =>
       message.isOutgoing &&
       message.status == ChannelMessageStatus.sent &&
       message.repeatCount == 0 &&
+      _channelRegion(context) != RegionHelper.nearbyOnly &&
       !context.select<MeshCoreConnector, bool>(
         (c) => c.isChannelMessageRetrying(message.messageId),
       );
+
+  String? _channelRegion(BuildContext context) =>
+      Provider.of<RegionService?>(context, listen: false)
+          ?.regionOf(widget.channel.idKey);
+
+  /// The long-press text of the amber check: in a region, which one, and
+  /// that repeaters that don't know it drop the message.
+  String? _unheardHint(BuildContext context) {
+    final region = _channelRegion(context);
+    return RegionHelper.isRegionName(region)
+        ? context.l10n.chat_channelNoSignRegion(region!)
+        : null;
+  }
 
   static bool _observerHeard(ChannelMessage message) =>
       HeardService.instance.heardBy(message.messageId)?.isNotEmpty ?? false;
@@ -2018,6 +2067,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           isDelivered: message.status == ChannelMessageStatus.delivered,
           isFailed: message.status == ChannelMessageStatus.failed,
           isUnheard: unheard && !_observerHeard(message),
+          unheardHint: _unheardHint(context),
         ),
       ),
     );
@@ -2036,6 +2086,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               isAcked: true,
               isFailed: failed,
               isUnheard: true,
+              unheardHint: _unheardHint(context),
             );
           }
           return Icon(

@@ -22,12 +22,14 @@ import '../utils/restore_settings.dart';
 import '../models/path_selection.dart';
 import '../helpers/advert_signature.dart';
 import '../helpers/cayenne_lpp.dart';
+import '../helpers/channel_packet.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
 import '../helpers/passing_copy.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
 import '../helpers/reaction_helper.dart';
+import '../helpers/region_helper.dart';
 import '../helpers/smaz.dart';
 import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
@@ -42,6 +44,7 @@ import '../services/storage_service.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_service.dart';
 import '../services/notification_service.dart';
+import '../services/region_service.dart';
 import 'meshcore_connector_usb.dart';
 import 'meshcore_connector_tcp.dart';
 import '../storage/arrival_clock.dart';
@@ -526,6 +529,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? _foreignDiscoverHeardAt;
 
   /// Whether the last Discover was Pathfinder's own, not the user's.
+  /// A Discover the user started has closed, with the full keys of the
+  /// repeaters that answered it (the regions hook).
+  void Function(List<Uint8List> answered)? onManualDiscoverDone;
+
   bool get lastDiscoverAutomatic => _lastDiscoverAutomatic;
   bool _lastDiscoverAutomatic = false;
 
@@ -2210,15 +2217,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       (channel: channel, secs: secs, text: text, messageId: messageId),
     );
     if (_ownChannelSends.length > 32) _ownChannelSends.removeAt(0);
-    final key = _findChannelByIndex(channel)?.psk;
+    final sentOn = _findChannelByIndex(channel);
+    final key = sentOn?.psk;
     final name = _selfName;
-    if (messageId != null && key != null && name != null) {
+    // A Nearby only send reaches no observer server worth asking.
+    if (messageId != null &&
+        key != null &&
+        name != null &&
+        !_isNearbyOnly(sentOn!.idKey)) {
+      final region = regionService?.regionOf(sentOn.idKey);
       onChannelSendStamped?.call((
         messageId: messageId,
         channelKey: key,
         senderName: name,
         text: text,
         secs: secs,
+        region: RegionHelper.isRegionName(region) ? region : null,
       ));
     }
   }
@@ -2226,6 +2240,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// A channel message of mine went on air, first send or resend, with all
   /// that decides its packet's hash: the radio sends `name: text` under
   /// this timestamp, sealed with the channel key (the observer-server hook).
+  /// [region] is the channel's own region, which decides which observers
+  /// can hear it; null for none.
   void Function(
     ({
       String messageId,
@@ -2233,6 +2249,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       String senderName,
       String text,
       int secs,
+      String? region,
     }) send,
   )? onChannelSendStamped;
 
@@ -2240,11 +2257,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// the packet it came in.
   void Function(String messageId, String packetHash)? onOwnChannelEcho;
 
-  /// Whether a channel message of mine that only one repeater carried, and
-  /// no observer heard, may go out once more: observers hear this radio
-  /// lately (the observer-server hook). Null or false: one repeat is
-  /// enough.
-  bool Function()? mayResendAfterOneRepeater;
+  /// Whether channel message [messageId] of mine, which only one repeater
+  /// carried and no observer heard, may go out once more: observers hear
+  /// this radio lately, in that message's region (the observer-server
+  /// hook). Null or false: one repeat is enough.
+  bool Function(String messageId)? mayResendAfterOneRepeater;
 
   /// A channel message of mine went out once more after only one repeater
   /// carried it.
@@ -4309,6 +4326,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _clientRepeat = null;
     _rememberedNonRepeatRadioState = null;
     _firmwareVerCode = null;
+    _radioDefaultRegion = null;
+    _radioDefaultRegionKnown = false;
     _firmwareVersion = null;
     _hasWifi = null;
     _resetSecondApp();
@@ -4423,6 +4442,136 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (!isConnected) {
       throw Exception("Not connected to a MeshCore device");
     }
+    final reply = _replyTo[data];
+    final region = _regionFrameFor(data);
+    if (region == null) {
+      // Kept out of a send in a region: between its set and clear, anything
+      // the radio floods carries that channel's region.
+      while (_regionSend != null) {
+        await _regionSend;
+      }
+      // A Nearby only channel goes out zero-hop, as a packet the app built;
+      // its OK settles the message as the channel send's OK would.
+      final nearby = _nearbyPacketFor(data);
+      return _writeFrame(
+        nearby ?? data,
+        channelSendQueueId: channelSendQueueId,
+        expectsGenericAck: expectsGenericAck,
+        ackAs: nearby == null || nearby[0] == data[0] ? null : data[0],
+        reply: reply,
+      );
+    }
+    while (_regionSend != null) {
+      await _regionSend;
+    }
+    final done = Completer<void>();
+    _regionSend = done.future;
+    try {
+      await _writeFrame(region, expectsGenericAck: true);
+      try {
+        await _writeFrame(
+          data,
+          channelSendQueueId: channelSendQueueId,
+          expectsGenericAck: expectsGenericAck,
+          reply: reply,
+        );
+      } finally {
+        await _writeFrame(buildClearFloodScopeFrame(), expectsGenericAck: true)
+            .catchError((Object _) {});
+      }
+    } finally {
+      _regionSend = null;
+      done.complete();
+    }
+  }
+
+  /// Set while a channel send in a region is on its way to the radio.
+  Future<void>? _regionSend;
+
+  /// Holds the region store; set at startup.
+  RegionService? regionService;
+
+  /// Firmware 8+ takes a region for the next floods (CMD_SET_FLOOD_SCOPE_KEY).
+  bool get supportsRegions => (_firmwareVerCode ?? 0) >= 8;
+
+  /// Firmware 12+ can send with no region while a default is set.
+  bool get supportsRegionEverywhere => (_firmwareVerCode ?? 0) >= 12;
+
+  /// Firmware 11+ keeps a default region.
+  bool get supportsRadioDefaultRegion => (_firmwareVerCode ?? 0) >= 11;
+
+  /// Firmware 13+ sends a packet the app built (CMD_SEND_RAW_PACKET), which
+  /// a Nearby only channel needs: the radio has no zero-hop channel send.
+  bool get supportsNearbyOnly => (_firmwareVerCode ?? 0) >= 13;
+
+  bool _isNearbyOnly(String idKey) =>
+      regionService?.regionOf(idKey) == RegionHelper.nearbyOnly;
+
+  /// The channel a flooded channel send [data] goes to: a text
+  /// ([cmd][type][idx]...), or channel data with no path ([cmd][idx][0xFF]...;
+  /// one with a path goes direct and takes no region). Null for any other
+  /// frame.
+  Channel? _floodChannelOf(Uint8List data) {
+    final int index;
+    if (data.length >= 3 && data[0] == cmdSendChannelTxtMsg) {
+      index = data[2];
+    } else if (data.length >= 3 &&
+        data[0] == cmdSendChannelData &&
+        data[2] == 0xFF) {
+      index = data[1];
+    } else {
+      return null;
+    }
+    return _channels.where((c) => c.index == index).firstOrNull;
+  }
+
+  /// The frame that sends the channel send [data] zero-hop, when its channel
+  /// is Nearby only; null otherwise.
+  /// - Channel data: the same frame with an empty path, which the radio
+  ///   sends DIRECT with no hops (BaseChatMesh::sendGroupData).
+  /// - Channel text: the radio has no zero-hop text send, so a raw packet
+  ///   the app built (firmware 13+; older firmware floods it as usual).
+  Uint8List? _nearbyPacketFor(Uint8List data) {
+    final channel = _floodChannelOf(data);
+    if (channel == null || !_isNearbyOnly(channel.idKey)) return null;
+    if (data[0] == cmdSendChannelData) {
+      return Uint8List.fromList(data)..[2] = 0;
+    }
+    final name = _selfName;
+    if (!supportsNearbyOnly || data.length < 7 || name == null) return null;
+    final packet = ChannelPacket.zeroHopText(
+      channelKey: channel.psk,
+      senderName: name,
+      text: data.sublist(7),
+      timestampSecs: ByteData.sublistView(data, 3, 7).getUint32(0, Endian.little),
+    );
+    // Priority 0: the radio queues routed packets so (Mesh::sendDirect).
+    return Uint8List.fromList([cmdSendRawPacket, 0, ...packet]);
+  }
+
+  /// The frame that puts the radio in the region of the channel [data] sends
+  /// to; null for any other frame, or a channel with no region of its own.
+  Uint8List? _regionFrameFor(Uint8List data) {
+    final regions = regionService;
+    if (regions == null || !supportsRegions) return null;
+    final channel = _floodChannelOf(data);
+    final region = channel == null ? null : regions.regionOf(channel.idKey);
+    if (region == null || region == RegionHelper.nearbyOnly) return null;
+    if (region == RegionHelper.everywhere) {
+      return supportsRegionEverywhere ? buildFloodUnscopedFrame() : null;
+    }
+    return buildSetFloodScopeKeyFrame(RegionHelper.keyFor(region));
+  }
+
+  /// [ackAs]: the command code the radio's OK is counted for, when [data]
+  /// stands in for another command (a Nearby only channel send).
+  Future<void> _writeFrame(
+    Uint8List data, {
+    String? channelSendQueueId,
+    bool expectsGenericAck = false,
+    int? ackAs,
+    Completer<Uint8List>? reply,
+  }) async {
     _bleDebugLogService?.logFrame(data, outgoing: true);
 
     // Register the pending ack BEFORE writing, with no await in between. On fast
@@ -4430,17 +4579,19 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // and be dispatched on the event loop during the write/delay below — if the
     // queue entry isn't in place yet, _handleOk sees an empty queue and discards
     // the ack, leaving the message stuck 'pending' until it falsely times out.
+    final ackCode = ackAs ?? data[0];
     _trackPendingGenericAck(
-      data,
+      ackAs == null ? data : Uint8List.fromList([ackCode]),
       channelSendQueueId: channelSendQueueId,
       expectsGenericAck: expectsGenericAck,
+      reply: reply,
     );
     _recordOutgoing(data);
 
     try {
       await writeToTransport(data);
     } catch (_) {
-      if (expectsGenericAck) _forgetPendingAck(data[0], channelSendQueueId);
+      if (expectsGenericAck) _forgetPendingAck(ackCode, channelSendQueueId);
       rethrow;
     }
   }
@@ -4542,6 +4693,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     bool expectsGenericAck = false,
   }) async {
     if (!isConnected) return null;
+    // A tracked command gets the reply that pops its own entry: a send in a
+    // region writes a region frame before it, whose OK comes first.
+    final own = expectsGenericAck ? Completer<Uint8List>() : null;
+    if (own != null) _replyTo[data] = own;
     final completer = Completer<Uint8List?>();
     final subscription = receivedFrames.listen((rxFrame) {
       if (rxFrame.isEmpty) return;
@@ -4552,13 +4707,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       await sendFrame(data, expectsGenericAck: expectsGenericAck);
-      return await completer.future.timeout(timeout);
+      // Untracked (a test's own sendFrame): the first reply, as before.
+      final tracked = own != null &&
+          (own.isCompleted ||
+              _pendingGenericAckQueue.any((a) => a.reply == own));
+      return await (tracked ? own.future : completer.future).timeout(timeout);
     } on TimeoutException {
       // The radio answers these in order, so a late reply must still find this
       // entry: taken by the next command, an ERR would fail that send. Only one
       // that stays unanswered is dropped, see _dropLostAcks.
       final index = _pendingGenericAckQueue.lastIndexWhere(
-        (a) => a.commandCode == data[0],
+        (a) => a.reply == own && a.commandCode == data[0],
       );
       if (expectsGenericAck && index >= 0) {
         _pendingGenericAckQueue[index].givenUpAt = DateTime.now();
@@ -4570,6 +4729,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       await subscription.cancel();
     }
   }
+
+  /// The reply slot [_sendAndWaitForReply] hangs on the very frame it sends,
+  /// for [sendFrame] to hand to that frame's pending-ack entry.
+  final Expando<Completer<Uint8List>> _replyTo = Expando();
+
+  @visibleForTesting
+  Future<Uint8List?> sendAndWaitForReplyForTest(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 2),
+  }) =>
+      _sendAndWaitForReply(data, timeout: timeout, expectsGenericAck: true);
 
   Future<void> requestBatteryStatus({bool force = false}) async {
     if (!isConnected) return;
@@ -6657,10 +6827,17 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     // Repeater firmware answers with a randomized anti-collision delay
     // (sendZeroHop with getRetransmitDelay x4, simple_repeater/MyMesh.cpp) —
     // a 10s window dropped legitimate late responses on the bench.
+    final scan = _discoverScan;
     _discoverTimer = Timer(discoverWindow, () {
       _isDiscovering = false;
       _pendingDiscoverTag = null;
       notifyListeners();
+      if (!automatic) {
+        onManualDiscoverDone?.call([
+          for (final r in _directRepeaters)
+            if (r.answeredScan == scan && r.publicKey != null) r.publicKey!,
+        ]);
+      }
     });
 
 final frame = buildRepeaterDiscoveryFrame(tag);
@@ -6961,7 +7138,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final retries = _channelMessageRetries[messageId] ?? 0;
     final maxRetries = _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
-    if (retries < maxRetries) {
+    // A Nearby only send isn't retried: nothing would carry it further.
+    final idKey = _findChannelByIndex(channelIndex)?.idKey;
+    if (retries < maxRetries && (idKey == null || !_isNearbyOnly(idKey))) {
       _channelMessageRetries[messageId] = retries + 1;
       unawaited(resendChannelMessageById(channelIndex, messageId));
       return;
@@ -7036,16 +7215,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// One more send for a channel message only one repeater carried: never
   /// with channel retries set to 0, and only while observers hear this
   /// radio (traxheard's README).
-  bool _oneRepeaterResendAllowed() =>
+  bool _oneRepeaterResendAllowed(String messageId) =>
       (_appSettingsService?.settings.maxChannelMessageRetries ?? 1) > 0 &&
-      mayResendAfterOneRepeater?.call() == true;
+      mayResendAfterOneRepeater?.call(messageId) == true;
 
   /// Whether my channel message [messageId], just heard back as [copy],
   /// keeps waiting for a second repeater. Repeaters count by their codes
   /// over all the copies, and a car repeater doesn't count.
   bool _waitForSecondRepeater(String messageId, ChannelMessage copy) {
     if (!_channelRepeatTimers.containsKey(messageId) ||
-        !_oneRepeaterResendAllowed()) {
+        !_oneRepeaterResendAllowed(messageId)) {
       return false;
     }
     final heard = _repeatersHeard.putIfAbsent(messageId, () => <String>{});
@@ -7065,7 +7244,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     String messageId,
     Set<String> repeaters,
   ) {
-    if (!_oneRepeaterResendAllowed()) return;
+    if (!_oneRepeaterResendAllowed(messageId)) return;
     final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join(', ');
     appLogger.info(
       'Only $by carried $messageId and no observer heard it: sending it '
@@ -7275,7 +7454,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     switch (code) {
       case respCodeOk:
-        _handleOk();
+        _handleOk(frame);
         break;
       case respCodeDeviceInfo:
         _handleDeviceInfo(frame);
@@ -7592,6 +7771,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
 
     final failedAck = _pendingGenericAckQueue.removeAt(0);
+    failedAck.complete(frame);
     if (failedAck.commandCode != cmdSendChannelTxtMsg ||
         failedAck.channelSendQueueId == null) {
       return;
@@ -9858,6 +10038,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payloadType,
             packet.payload,
           );
+          final regionCode = packet.routeType == _routeTransportFlood &&
+                  (packet.regionCode ?? 0) != 0
+              ? packet.regionCode
+              : null;
 
           final message = ChannelMessage(
             senderKey: null,
@@ -9871,6 +10055,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             pathHashSize: packet.hashSize,
             channelIndex: channel.index,
             packetHash: pktHash,
+            regionCode: regionCode,
+            region: regionCode == null
+                ? null
+                : _regionNamed(regionCode, packet.payloadType, packet.payload),
           );
 
           _updateContactLastMessageAtByName(
@@ -10187,7 +10375,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ),
           _pathHashByteWidth,
         );
-        if (observable) {
+        if (_isNearbyOnly(idKey)) {
+          // Zero-hop: no repeater carries it, so there is no echo to wait
+          // for and nothing to retry. Sent is as far as it goes.
+        } else if (observable) {
           _startWaitForRepeatTimer(liveIndex, messageId);
         } else {
           appLogger.info(
@@ -10202,13 +10393,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return true;
   }
 
-  void _handleOk() {
+  void _handleOk(Uint8List frame) {
     _dropLostAcks();
     if (_pendingGenericAckQueue.isEmpty) {
       return;
     }
 
     final pendingAck = _pendingGenericAckQueue.removeAt(0);
+    pendingAck.complete(frame);
     if (pendingAck.commandCode != cmdSendChannelTxtMsg ||
         pendingAck.channelSendQueueId == null) {
       return;
@@ -11643,10 +11835,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final hasTransport =
           routeType == _routeTransportFlood ||
           routeType == _routeTransportDirect;
-      if (hasTransport) {
-        // Skip reserved bytes in transport header made up of two u16 fields
-        reader.skipBytes(4);
-      }
+      // Two u16 transport codes; the first is the region code.
+      final regionCode = hasTransport ? reader.readUInt16LE() : null;
+      if (hasTransport) reader.skipBytes(2);
       final pathLenRaw = reader.readByte();
       final pathByteLen = PathHelper.pathLenBytes(pathLenRaw);
       final pathBytes = reader.readBytes(pathByteLen);
@@ -11660,6 +11851,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         pathLenRaw: pathLenRaw,
         pathBytes: pathBytes,
         payload: payload,
+        regionCode: regionCode,
       );
     } catch (e) {
       appLogger.warn('Error parsing raw packet: $e');
@@ -12290,6 +12482,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // even though the display path adopts the longest observed route.
         heardDirect: m.heardDirect || incoming.heardDirect,
         packetHash: m.packetHash ?? incoming.packetHash,
+        regionCode: m.regionCode ?? incoming.regionCode,
+        region: m.region ?? incoming.region,
         status: m.isOutgoing ? ChannelMessageStatus.delivered : m.status,
         sentWireSecs: m.sentWireSecs.contains(incomingSecs)
             ? m.sentWireSecs
@@ -12384,8 +12578,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       replyToMessageId: replyToMessageId,
       replyToSenderName: replyToSenderName,
       replyToText: replyToText,
+      regionCode: base.regionCode,
+      region: base.region,
     );
   }
+
+  /// Which region [code] stands for, among the names the app knows: its
+  /// own regions, the radio's default, and those nearby repeaters named.
+  /// The code depends on the packet, so each name is tried in turn.
+  String? _regionNamed(int code, int payloadType, Uint8List payload) {
+    final names = <String>{
+      ...?regionService?.regions,
+      ?_radioDefaultRegion,
+      ...?regionService?.heardFromRepeaters,
+    };
+    for (final name in names) {
+      final key = _regionKeys.putIfAbsent(name, () => RegionHelper.keyFor(name));
+      if (RegionHelper.transportCode(key, payloadType, payload) == code) {
+        return name;
+      }
+    }
+    return null;
+  }
+
+  final Map<String, Uint8List> _regionKeys = {};
 
   /// How far back a reaction or reply looks for its target in a channel or
   /// room, by when rows arrived HERE, so a sender's wrong clock cannot hide
@@ -12784,12 +13000,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     Uint8List data, {
     String? channelSendQueueId,
     required bool expectsGenericAck,
+    Completer<Uint8List>? reply,
   }) {
     if (!expectsGenericAck || data.isEmpty) return;
     _pendingGenericAckQueue.add(
       _PendingCommandAck(
         commandCode: data[0],
         channelSendQueueId: channelSendQueueId,
+        reply: reply,
       ),
     );
   }
@@ -12934,6 +13152,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         !_pendingChannelSyncAfterQueueSync) {
       _initialSyncComplete = true;
       unawaited(_probeWifi());
+      unawaited(_clearLeftoverRegion());
       unawaited(_preparePassingCopies().then((_) => _applyAckMode()));
       if (_contactFullResyncPending) {
         _contactFullResyncPending = false;
@@ -13172,6 +13391,64 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       throw StateError('Radio did not report its default flood scope');
     }
     return parseDefaultFloodScopeFrame(frame);
+  }
+
+  /// The radio's default region, null when it has none. Read once per
+  /// connection by [loadRadioDefaultRegion]; see [radioDefaultRegionKnown].
+  String? get radioDefaultRegion => _radioDefaultRegion;
+  bool get radioDefaultRegionKnown => _radioDefaultRegionKnown;
+  String? _radioDefaultRegion;
+  bool _radioDefaultRegionKnown = false;
+
+  Future<void> loadRadioDefaultRegion() async {
+    if (!supportsRadioDefaultRegion || _radioDefaultRegionKnown) return;
+    try {
+      final scope = await getDefaultFloodScope();
+      _radioDefaultRegion =
+          scope == null ? null : RegionHelper.normalize(scope.name);
+      _radioDefaultRegionKnown = true;
+      notifyListeners();
+    } on StateError {
+      // No answer: stays unknown, and the next look asks again.
+    }
+  }
+
+  /// Saves [name] as the radio's default region, null for none. False when
+  /// the radio refused or didn't answer.
+  Future<bool> setRadioDefaultRegion(String? name) async {
+    final region = name == null ? null : RegionHelper.normalize(name);
+    final ok = await _sendAndWaitForAck(
+      buildSetDefaultFloodScopeFrame(
+        region,
+        region == null ? null : RegionHelper.keyFor(region),
+      ),
+      expectsGenericAck: true,
+    );
+    if (ok) {
+      _radioDefaultRegion = region;
+      _radioDefaultRegionKnown = true;
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  /// A region set for a send stays on the radio until it reboots, so a send
+  /// cut short (app killed, link lost) could leave it set for every flood.
+  /// Cleared whenever the app has used regions at all: the channel that
+  /// set it may have gone back to no region since.
+  @visibleForTesting
+  Future<void> clearLeftoverRegionForTest() => _clearLeftoverRegion();
+
+  Future<void> _clearLeftoverRegion() async {
+    final regions = regionService;
+
+    if (!supportsRegions || regions == null) return;
+    if (!regions.anyChannelHasRegion && regions.regions.isEmpty) return;
+
+    await _sendAndWaitForAck(
+      buildClearFloodScopeFrame(),
+      expectsGenericAck: true,
+    );
   }
 
   /// Re-reads CMD_GET_AUTOADD_CONFIG so a backup never relies on the
@@ -14130,6 +14407,10 @@ class _RawPacket {
   final Uint8List pathBytes;
   final Uint8List payload;
 
+  /// The first transport code: the region a scoped flood carries. Null
+  /// without transport codes; 0 counts as no region.
+  final int? regionCode;
+
   _RawPacket({
     required this.header,
     required this.routeType,
@@ -14138,6 +14419,7 @@ class _RawPacket {
     required this.pathLenRaw,
     required this.pathBytes,
     required this.payload,
+    this.regionCode,
   });
 
   bool get isFlood =>
@@ -14202,7 +14484,20 @@ class _PendingCommandAck {
   // The sender stopped waiting for this reply. It may still come.
   DateTime? givenUpAt;
 
-  _PendingCommandAck({required this.commandCode, this.channelSendQueueId});
+  /// Completed with the OK or ERR that pops this entry, for a sender
+  /// waiting on its own reply.
+  final Completer<Uint8List>? reply;
+
+  _PendingCommandAck({
+    required this.commandCode,
+    this.channelSendQueueId,
+    this.reply,
+  });
+
+  void complete(Uint8List frame) {
+    final waiting = reply;
+    if (waiting != null && !waiting.isCompleted) waiting.complete(frame);
+  }
 }
 
 /// What an SOS heard again is to the card its sender has open

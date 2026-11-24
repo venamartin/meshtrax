@@ -8062,4 +8062,274 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Mój kontakt';
+
+  @override
+  String get regions_title => 'Regiony';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Wiadomości kanału tylko w jednym obszarze';
+
+  @override
+  String get regions_intro =>
+      'Region utrzymuje wiadomości kanału na przekaźnikach obsługujących jeden obszar. Przekaźnik, który nie zna regionu, nie przekaże wiadomości, więc używaj nazw, których używają przekaźniki w twojej okolicy.';
+
+  @override
+  String get regions_yourRegions => 'Twoje regiony';
+
+  @override
+  String get regions_empty =>
+      'Nie ma jeszcze regionów. Dodaj nazwę, której używają przekaźniki w twojej okolicy.';
+
+  @override
+  String get regions_add => 'Dodaj region';
+
+  @override
+  String get regions_nameLabel => 'Nazwa regionu';
+
+  @override
+  String get regions_nameHelp =>
+      'Wielkość liter ma znaczenie: SF i sf to dwa różne regiony.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Spacje, kropki, przecinki i większość znaków interpunkcyjnych są niedozwolone.';
+
+  @override
+  String get regions_nameTooLong => 'Za długa: najwyżej 30 bajtów.';
+
+  @override
+  String get regions_nameExists => 'Już jest na twojej liście.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Używa go $count kanału',
+      many: 'Używa go $count kanałów',
+      few: 'Używają go $count kanały',
+      one: 'Używa go 1 kanał',
+      zero: 'Żaden kanał go nie używa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Usunąć $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kanału używa tego regionu. Zostaną bez regionu.',
+      many: '$count kanałów używa tego regionu. Zostaną bez regionu.',
+      few: '$count kanały używają tego regionu. Zostaną bez regionu.',
+      one: '1 kanał używa tego regionu. Zostanie bez regionu.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Domyślny region radia';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Zapisany w radiu. Używają go kanały bez własnego regionu, wiadomości bezpośrednie i adverty, z każdej aplikacji.';
+
+  @override
+  String get regions_none => 'Brak';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'Radio nie przyjęło zmiany. Spróbuj ponownie.';
+
+  @override
+  String get regions_inQr => 'Region w kodach QR kanałów';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Włączone: kod QR kanału zawiera jego region, a zeskanowany kod ustawia region, który zawiera.';
+
+  @override
+  String get regions_unsupported =>
+      'Oprogramowanie tego radia jest za stare na regiony.';
+
+  @override
+  String get channelRegion_title => 'Region';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Brak (domyślny radia: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Wszędzie (bez regionu)';
+
+  @override
+  String get channelRegion_help =>
+      'Wiadomości tego kanału idą tylko przez przekaźniki, które znają jego region.';
+
+  @override
+  String get channelRegion_manage => 'Zarządzaj regionami';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Region: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Które regiony ten przekaźnik przekazuje';
+
+  @override
+  String get repeaterRegions_reading => 'Odczytywanie regionów przekaźnika…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Oprogramowanie tego przekaźnika jest za stare, by zarządzać tu jego regionami. Potrzebna jest wersja 1.15 lub nowsza.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Przekaźnik nie odpowiedział. Spróbuj ponownie.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Powtarzaj wiadomości bez regionu';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Większość osób wysyła bez regionu. Po wyłączeniu ten przekaźnik przestaje przekazywać ich wiadomości.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Przestać powtarzać wiadomości bez regionu?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Nikt w pobliżu, kto nie używa regionu, nie będzie już powtarzany przez ten przekaźnik.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Wyłącz';
+
+  @override
+  String get repeaterRegions_own => 'Własny region przekaźnika';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Używają go jego adverty, a także jego odpowiedzi, gdy nie wie, w jakim regionie przyszło zapytanie.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regiony na tym przekaźniku';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Nie ma jeszcze regionów. Wiadomość z regionem jest tu powtarzana dopiero po dodaniu jej regionu.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Lista przekaźnika jest długa i jego odpowiedź została ucięta, więc może tu brakować regionów.';
+
+  @override
+  String get repeaterRegions_repeated => 'Powtarzany';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Niepowtarzany';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Usunąć $name z przekaźnika?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Przekaźnik odpowiedział: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'Z twoich regionów';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Już jest na tym przekaźniku.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Dołącz region $name';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => 'Tylko w pobliżu (bez przekaźników)';
+
+  @override
+  String get channelRegion_nearby => 'Tylko w pobliżu';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Słyszą to tylko radia w zasięgu. Wysłane raz, bez ponowień.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regiony: $names oraz wiadomości bez regionu';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regiony: tylko $names, bez wiadomości bez regionu';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Brak regionów; powtarza wiadomości bez regionu';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Nic nie powtarza: ani regionów, ani wiadomości bez regionu';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count przekaźnika w pobliżu',
+      many: '$count przekaźników w pobliżu',
+      few: '$count przekaźniki w pobliżu',
+      one: '1 przekaźnik w pobliżu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      'Żaden przekaźnik w pobliżu go nie obsługuje';
+
+  @override
+  String get regions_heardNearby => 'Usłyszane od przekaźników w pobliżu';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Przekaźniki w pobliżu piszą go $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Użyj';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Nieznany ci (kod $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Wysłano w $region · brak śladu, kto to dostał. Przekaźniki, które nie znają $region, je odrzucają.';
+  }
 }

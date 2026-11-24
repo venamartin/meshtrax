@@ -92,6 +92,7 @@ void main() {
         String senderName,
         String text,
         int secs,
+        String? region,
       })> stamped;
 
   setUp(() async {

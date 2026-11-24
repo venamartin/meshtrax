@@ -8048,4 +8048,268 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Saját névjegy';
+
+  @override
+  String get regions_title => 'Régiók';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Egy csatorna üzenetei egy területen maradnak';
+
+  @override
+  String get regions_intro =>
+      'A régió egy csatorna üzeneteit azoknál a jelismétlőknél tartja, amelyek egy területet szolgálnak ki. Az a jelismétlő, amely nem ismeri a régiót, nem adja tovább az üzenetet, ezért a környéked jelismétlői által használt neveket használd.';
+
+  @override
+  String get regions_yourRegions => 'A régióid';
+
+  @override
+  String get regions_empty =>
+      'Még nincs régió. Add hozzá a nevet, amelyet a környéked jelismétlői használnak.';
+
+  @override
+  String get regions_add => 'Régió hozzáadása';
+
+  @override
+  String get regions_nameLabel => 'A régió neve';
+
+  @override
+  String get regions_nameHelp =>
+      'A kis- és nagybetű számít: az SF és az sf két különböző régió.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Szóköz, pont, vessző és a legtöbb írásjel nem megengedett.';
+
+  @override
+  String get regions_nameTooLong => 'Túl hosszú: legfeljebb 30 bájt.';
+
+  @override
+  String get regions_nameExists => 'Már szerepel a listádon.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count csatorna használja',
+      one: '1 csatorna használja',
+      zero: 'Egy csatorna sem használja',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Törlöd: $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count csatorna használja ezt a régiót. Régió nélkül maradnak.',
+      one: '1 csatorna használja ezt a régiót. Régió nélkül marad.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'A rádió alapértelmezett régiója';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'A rádión tárolódik. A saját régió nélküli csatornák, a közvetlen üzenetek és a hirdetések használják, bármelyik alkalmazásból.';
+
+  @override
+  String get regions_none => 'Nincs';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'A rádió nem fogadta el a változást. Próbáld újra.';
+
+  @override
+  String get regions_inQr => 'Régió a csatornák QR-kódjában';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Bekapcsolva: a csatorna QR-kódja tartalmazza a régióját, és egy beolvasott kód beállítja a benne lévő régiót.';
+
+  @override
+  String get regions_unsupported =>
+      'Ennek a rádiónak a firmware-e túl régi a régiókhoz.';
+
+  @override
+  String get channelRegion_title => 'Régió';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Nincs (a rádió alapértelmezése: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Mindenhol (régió nélkül)';
+
+  @override
+  String get channelRegion_help =>
+      'Ennek a csatornának az üzenetei csak a régióját ismerő jelismétlőkön mennek át.';
+
+  @override
+  String get channelRegion_manage => 'Régiók kezelése';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Régió: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Mely régiókat adja tovább ez a jelismétlő';
+
+  @override
+  String get repeaterRegions_reading => 'A jelismétlő régióinak olvasása…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Ennek a jelismétlőnek a firmware-e túl régi ahhoz, hogy itt kezeld a régióit. 1.15 vagy újabb kell.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'A jelismétlő nem válaszolt. Próbáld újra.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Régió nélküli üzenetek ismétlése';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'A legtöbben régió nélkül küldenek. Kikapcsolva ez a jelismétlő nem adja tovább az üzeneteiket.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Leállítod a régió nélküli üzenetek ismétlését?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'A közelben senkit, aki nem használ régiót, nem ismétel többé ez a jelismétlő.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Kikapcsolás';
+
+  @override
+  String get repeaterRegions_own => 'A jelismétlő saját régiója';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'A hirdetései ezt használják, és a válaszai is, ha nem tudja, melyik régióban jött egy kérés.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Régiók ezen a jelismétlőn';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Még nincs régió. Egy régióval küldött üzenetet itt csak akkor ismétel, ha a régióját hozzáadtad.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'A jelismétlő listája hosszú, és a válaszát levágta, ezért itt hiányozhatnak régiók.';
+
+  @override
+  String get repeaterRegions_repeated => 'Ismétli';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Nem ismétli';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Eltávolítod $name régiót a jelismétlőről?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'A jelismétlő válasza: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'A te régióidból';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Már szerepel ezen a jelismétlőn.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'A(z) $name régió belefoglalása';
+  }
+
+  @override
+  String get channelRegion_nearbyOption =>
+      'Csak a közelben (jelismétlők nélkül)';
+
+  @override
+  String get channelRegion_nearby => 'Csak a közelben';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Csak a hatótávon belüli rádiók hallják. Egyszer küldi, újrapróbálás nélkül.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Régiók: $names, és a régió nélküli üzenetek';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Régiók: csak $names, a régió nélküli üzenetek nem';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Nincs régió; a régió nélküli üzeneteket ismétli';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Semmit sem ismétel: se régiót, se régió nélküli üzenetet';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count közeli jelismétlő',
+      one: '1 közeli jelismétlő',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => 'Egy közeli jelismétlő sem viszi';
+
+  @override
+  String get regions_heardNearby => 'Közeli jelismétlőktől hallva';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'A közeli jelismétlők így írják: $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Ezt használom';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Egy, amit nem ismersz (kód $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Elküldve itt: $region · semmi jel arra, ki kapta meg. Azok a jelismétlők, amelyek nem ismerik ezt: $region, eldobják.';
+  }
 }

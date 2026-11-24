@@ -32,8 +32,10 @@ import 'app_debug_log_screen.dart';
 import 'ble_debug_log_screen.dart';
 import 'companion_cli_screen.dart';
 import 'health_check_screen.dart';
+import 'regions_screen.dart';
 import 'trax_settings_screen.dart';
 import 'wifi_settings_screen.dart';
+import '../services/region_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
@@ -433,6 +435,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.hexagon_outlined),
+            title: Text(l10n.regions_title),
+            subtitle: Text(l10n.regions_settingsSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const RegionsScreen()),
+            ),
+          ),
+
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.sensors_outlined),
@@ -1774,6 +1788,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (context.mounted) {
           await context.read<AppSettingsService>().loadSettings();
         }
+        if (context.mounted) await context.read<RegionService>().load();
       }
     } catch (e) {
       if (context.mounted) {

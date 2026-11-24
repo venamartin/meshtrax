@@ -24,7 +24,10 @@ class HeardService extends ChangeNotifier {
   @visibleForTesting
   static void resetForTesting() {
     instance._checker.dispose();
-    for (final timer in instance._missTimers.values) {
+    for (final timer in [
+      ...instance._missTimers.values,
+      ...instance._learnTimers.values,
+    ]) {
       timer.cancel();
     }
     instance = HeardService._();
@@ -34,6 +37,7 @@ class HeardService extends ChangeNotifier {
   static const _keyServer = 'heard_check_server';
   static const _keyHeard = 'heard_check_heard';
   static const _keyLastEar = 'heard_check_last_ear';
+  static const _keyRegions = 'heard_check_regions';
 
   /// Messages whose observers are kept, newest last.
   static const _keptMessages = 300;
@@ -46,6 +50,17 @@ class HeardService extends ChangeNotifier {
   /// stop until an observer hears this radio again.
   static const missesBeforeBackOff = 3;
 
+  /// Sends in a region, in a row, that no observer heard before the
+  /// region counts as having none: its channels go unchecked, and get no
+  /// resend after one repeater, for [regionQuietFor]. Then one send is
+  /// checked again; unheard, the region is quiet for another day.
+  static const regionMissesBeforeQuiet = 3;
+  static const regionQuietFor = Duration(days: 1);
+
+  /// The region rule's clock; tests move it.
+  @visibleForTesting
+  static DateTime Function() now = DateTime.now;
+
   MeshCoreConnector? _connector;
   bool _enabled = false;
   String _server = '';
@@ -53,10 +68,18 @@ class HeardService extends ChangeNotifier {
   final _heard = <String, List<Sighting>>{};
 
   /// When an observer last heard a channel message of each radio, by its
-  /// public key.
+  /// public key; for a message sent in a region, by key|region.
   final _lastEar = <String, DateTime>{};
   int _misses = 0;
   final _missTimers = <String, Timer>{};
+
+  /// The region each recent send of mine went out in.
+  final _sendRegion = <String, String>{};
+
+  /// Per region: unheard sends in a row, and until when it counts as
+  /// having no observer.
+  final _regions = <String, ({int misses, DateTime? quietUntil})>{};
+  final _learnTimers = <String, Timer>{};
 
   late final _checker = HeardChecker(
     server: () => _enabled ? _observerServer : null,
@@ -98,6 +121,20 @@ class HeardService extends ChangeNotifier {
     } catch (e) {
       appLogger.warn('Unreadable last observer times: $e', tag: 'Heard');
     }
+    try {
+      final saved = jsonDecode(prefs.getString(_keyRegions) ?? '{}') as Map;
+      for (final MapEntry(:key, :value) in saved.entries) {
+        final quiet = (value as Map)['quietUntil'] as int?;
+        _regions[key as String] = (
+          misses: value['misses'] as int? ?? 0,
+          quietUntil: quiet == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(quiet),
+        );
+      }
+    } catch (e) {
+      appLogger.warn('Unreadable region observer state: $e', tag: 'Heard');
+    }
     connector.onChannelSendStamped = _onSendStamped;
     connector.onOwnChannelEcho = _onOwnEcho;
     connector.mayResendAfterOneRepeater = _mayResendAfterOneRepeater;
@@ -117,9 +154,11 @@ class HeardService extends ChangeNotifier {
     // What the old server's observers heard says nothing about the new one.
     _lastEar.clear();
     _misses = 0;
+    _regions.clear();
     notifyListeners();
     await PrefsManager.instance.setString(_keyServer, _server);
     await PrefsManager.instance.remove(_keyLastEar);
+    await PrefsManager.instance.remove(_keyRegions);
   }
 
   /// Whether the server at [address] answers: it is asked about one
@@ -145,9 +184,24 @@ class HeardService extends ChangeNotifier {
       String senderName,
       String text,
       int secs,
+      String? region,
     }) send,
   ) {
     if (!_enabled || _observerServer == null) return;
+    final region = send.region;
+    if (region != null) {
+      _sendRegion.remove(send.messageId);
+      _sendRegion[send.messageId] = region;
+      while (_sendRegion.length > _keptMessages) {
+        _sendRegion.remove(_sendRegion.keys.first);
+      }
+      if (_regionQuiet(region)) return;
+      _learnTimers.remove(send.messageId)?.cancel();
+      _learnTimers[send.messageId] = Timer(
+        _checker.askAfter.last + const Duration(seconds: 30),
+        () => _regionMissed(send.messageId, region),
+      );
+    }
     _checker.track(
       send.messageId,
       channelTextPacketHash(
@@ -177,13 +231,70 @@ class HeardService extends ChangeNotifier {
     return key == null ? null : pubKeyToHex(key);
   }
 
-  /// Whether a channel message only one repeater carried may go out once
-  /// more: an observer heard this radio within [proofWindow], and fewer
-  /// than [missesBeforeBackOff] such resends in a row went unheard.
-  bool _mayResendAfterOneRepeater() {
+  /// Where an ear on [messageId] proves observers hear this radio: the
+  /// radio itself, or the radio in that message's region.
+  String? _laneOf(String messageId) {
+    final radio = _radioKey;
+    final region = _sendRegion[messageId];
+    return radio == null || region == null ? radio : '$radio|$region';
+  }
+
+  bool _regionQuiet(String region) {
+    final until = _regions[region]?.quietUntil;
+    return until != null && now().isBefore(until);
+  }
+
+  /// No observer heard [messageId], sent in [region], by its last ask.
+  void _regionMissed(String messageId, String region) {
+    _learnTimers.remove(messageId);
+    final misses = (_regions[region]?.misses ?? 0) + 1;
+    if (misses >= regionMissesBeforeQuiet) {
+      appLogger.info(
+        'No observer heard $misses sends in a row in region $region: no '
+        'observer checks there for a day',
+        tag: 'Heard',
+      );
+      // After the day, one unheard send is enough to stay quiet.
+      _regions[region] = (
+        misses: regionMissesBeforeQuiet - 1,
+        quietUntil: now().add(regionQuietFor),
+      );
+    } else {
+      _regions[region] = (misses: misses, quietUntil: null);
+    }
+    _saveRegions();
+  }
+
+  void _saveRegions() => unawaited(
+    PrefsManager.instance.setString(
+      _keyRegions,
+      jsonEncode({
+        for (final MapEntry(:key, :value) in _regions.entries)
+          key: {
+            'misses': value.misses,
+            'quietUntil': value.quietUntil?.millisecondsSinceEpoch,
+          },
+      }),
+    ),
+  );
+
+  @visibleForTesting
+  bool regionQuietForTest(String region) => _regionQuiet(region);
+
+  @visibleForTesting
+  bool checkingForTest(String messageId) =>
+      _checker.hashesOf(messageId) != null;
+
+  /// Whether channel message [messageId], which only one repeater carried,
+  /// may go out once more: an observer heard this radio, in that message's
+  /// region, within [proofWindow]; the region isn't quiet; and fewer than
+  /// [missesBeforeBackOff] such resends in a row went unheard.
+  bool _mayResendAfterOneRepeater(String messageId) {
     if (!_enabled || _observerServer == null) return false;
     if (_misses >= missesBeforeBackOff) return false;
-    final heardAt = _lastEar[_radioKey];
+    final region = _sendRegion[messageId];
+    if (region != null && _regionQuiet(region)) return false;
+    final heardAt = _lastEar[_laneOf(messageId)];
     return heardAt != null && DateTime.now().difference(heardAt) < proofWindow;
   }
 
@@ -229,9 +340,14 @@ class HeardService extends ChangeNotifier {
       timer.cancel();
     }
     _missTimers.clear();
-    final radio = _radioKey;
-    if (radio != null) {
-      _lastEar[radio] = DateTime.now();
+    final region = _sendRegion[messageId];
+    if (region != null) {
+      _learnTimers.remove(messageId)?.cancel();
+      if (_regions.remove(region) != null) _saveRegions();
+    }
+    final lane = _laneOf(messageId);
+    if (lane != null) {
+      _lastEar[lane] = DateTime.now();
       unawaited(
         PrefsManager.instance.setString(
           _keyLastEar,

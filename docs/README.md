@@ -32,6 +32,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [Pathfinder design](technical/path-graph-design.md) | Pathfinder's design, decisions and evidence rules |
 | [Pathfinder build plan](technical/path-graph-implementation.md) | The original build plan (finished) |
 | [TRAX mode](technical/trax-mode.md) | Moving a group's radios off the regular mesh and back: saved settings, the settings write, the TRAX message, Leave |
+| [Regions](technical/regions.md) | Messages that travel only through one area's repeaters: firmware facts, decisions and the plan |
 | [Offline maps notes](technical/offline-maps-notes.md) | Where the map code and data live, decisions, pitfalls |
 | [Offline maps roadmap](technical/offline-maps-roadmap.md) | The offline maps plan and its status |
 | [Report inbox](../tools/report-inbox/README.md) | The Cloudflare Worker that emails in-app reports to the developer, and keeps nothing |

@@ -7972,4 +7972,267 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Min kontakt';
+
+  @override
+  String get regions_title => 'Regioner';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Håll en kanals meddelanden inom ett område';
+
+  @override
+  String get regions_intro =>
+      'En region håller en kanals meddelanden hos de repeatrar som täcker ett område. En repeater som inte känner regionen skickar inte meddelandet vidare, så använd de namn som repeatrarna i ditt område använder.';
+
+  @override
+  String get regions_yourRegions => 'Dina regioner';
+
+  @override
+  String get regions_empty =>
+      'Inga regioner än. Lägg till namnet som repeatrarna i ditt område använder.';
+
+  @override
+  String get regions_add => 'Lägg till region';
+
+  @override
+  String get regions_nameLabel => 'Regionens namn';
+
+  @override
+  String get regions_nameHelp =>
+      'Versaler räknas: SF och sf är två olika regioner.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Mellanslag, punkter, kommatecken och de flesta skiljetecken är inte tillåtna.';
+
+  @override
+  String get regions_nameTooLong => 'För långt: högst 30 byte.';
+
+  @override
+  String get regions_nameExists => 'Finns redan i din lista.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Används av $count kanaler',
+      one: 'Används av 1 kanal',
+      zero: 'Ingen kanal använder den',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Ta bort $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kanaler använder den här regionen. De får ingen region.',
+      one: '1 kanal använder den här regionen. Den får ingen region.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Radions standardregion';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Sparad på radion. Kanaler utan egen region, direktmeddelanden och adverts använder den, oavsett app.';
+
+  @override
+  String get regions_none => 'Ingen';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'Radion tog inte emot ändringen. Försök igen.';
+
+  @override
+  String get regions_inQr => 'Region i kanalens QR-koder';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'På: en kanals QR-kod bär dess region, och en skannad kod sätter regionen den bär.';
+
+  @override
+  String get regions_unsupported =>
+      'Radions firmware är för gammal för regioner.';
+
+  @override
+  String get channelRegion_title => 'Region';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Ingen (radions standard: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Överallt (ingen region)';
+
+  @override
+  String get channelRegion_help =>
+      'Meddelanden i den här kanalen går bara via repeatrar som känner dess region.';
+
+  @override
+  String get channelRegion_manage => 'Hantera regioner';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Region: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Vilka regioner den här repeatern skickar vidare';
+
+  @override
+  String get repeaterRegions_reading => 'Läser repeaterns regioner…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Repeaterns firmware är för gammal för att hantera dess regioner här. Den behöver 1.15 eller nyare.';
+
+  @override
+  String get repeaterRegions_noAnswer => 'Repeatern svarade inte. Försök igen.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Upprepa meddelanden utan region';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'De flesta skickar utan region. Avstängt slutar den här repeatern skicka vidare deras meddelanden.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Sluta upprepa meddelanden utan region?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Alla i närheten som inte använder en region upprepas inte längre av den här repeatern.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Stäng av';
+
+  @override
+  String get repeaterRegions_own => 'Repeaterns egen region';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Dess adverts använder den, och även dess svar när den inte vet i vilken region en förfrågan kom.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Regioner på den här repeatern';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Inga regioner än. Ett meddelande med en region upprepas här först när dess region har lagts till.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Repeaterns lista är lång och svaret klipptes, så regioner kan saknas här.';
+
+  @override
+  String get repeaterRegions_repeated => 'Upprepas';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Upprepas inte';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Ta bort $name från repeatern?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Repeatern svarade: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'Från dina regioner';
+
+  @override
+  String get repeaterRegions_alreadyThere =>
+      'Finns redan på den här repeatern.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Ta med regionen $name';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => 'Bara i närheten (inga repeatrar)';
+
+  @override
+  String get channelRegion_nearby => 'Bara i närheten';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Regioner: $names och meddelanden utan region';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Regioner: bara $names, inte meddelanden utan region';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Inga regioner; upprepar meddelanden utan region';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Upprepar ingenting: inga regioner och inga meddelanden utan region';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repeatrar i närheten',
+      one: '1 repeater i närheten',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => 'Ingen repeater i närheten bär den';
+
+  @override
+  String get regions_heardNearby => 'Hörda från repeatrar i närheten';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Repeatrar i närheten stavar den $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Använd den';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'En du inte känner (kod $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Skickat i $region · inget tecken på vem som fick det. Repeatrar som inte känner $region släpper det.';
+  }
 }

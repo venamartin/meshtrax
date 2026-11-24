@@ -8060,4 +8060,276 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Мій контакт';
+
+  @override
+  String get regions_title => 'Регіони';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Повідомлення каналу лише в одній місцевості';
+
+  @override
+  String get regions_intro =>
+      'Регіон тримає повідомлення каналу на ретрансляторах, що обслуговують одну місцевість. Ретранслятор, який не знає регіону, не передасть повідомлення далі, тож використовуйте назви, які використовують ретранслятори у вашій місцевості.';
+
+  @override
+  String get regions_yourRegions => 'Ваші регіони';
+
+  @override
+  String get regions_empty =>
+      'Регіонів поки немає. Додайте назву, яку використовують ретранслятори у вашій місцевості.';
+
+  @override
+  String get regions_add => 'Додати регіон';
+
+  @override
+  String get regions_nameLabel => 'Назва регіону';
+
+  @override
+  String get regions_nameHelp =>
+      'Регістр важливий: SF і sf — два різні регіони.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Пробіли, крапки, коми та більшість розділових знаків не дозволені.';
+
+  @override
+  String get regions_nameTooLong => 'Задовга: не більше 30 байтів.';
+
+  @override
+  String get regions_nameExists => 'Вже є у вашому списку.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Використовують $count каналу',
+      many: 'Використовують $count каналів',
+      few: 'Використовують $count канали',
+      one: 'Використовує $count канал',
+      zero: 'Не використовується жодним каналом',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Видалити $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count каналу використовують цей регіон. Вони залишаться без регіону.',
+      many:
+          '$count каналів використовують цей регіон. Вони залишаться без регіону.',
+      few:
+          '$count канали використовують цей регіон. Вони залишаться без регіону.',
+      one: '$count канал використовує цей регіон. Він залишиться без регіону.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Регіон радіо за замовчуванням';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Зберігається в радіо. Його використовують канали без власного регіону, особисті повідомлення та адверти, з будь-якого застосунку.';
+
+  @override
+  String get regions_none => 'Немає';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'Радіо не прийняло зміну. Спробуйте ще раз.';
+
+  @override
+  String get regions_inQr => 'Регіон у QR-кодах каналів';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Увімкнено: QR-код каналу містить його регіон, а сканування коду встановлює регіон із нього.';
+
+  @override
+  String get regions_unsupported =>
+      'Прошивка цього радіо застара для регіонів.';
+
+  @override
+  String get channelRegion_title => 'Регіон';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Немає (за замовчуванням у радіо: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Скрізь (без регіону)';
+
+  @override
+  String get channelRegion_help =>
+      'Повідомлення цього каналу йдуть лише через ретранслятори, які знають його регіон.';
+
+  @override
+  String get channelRegion_manage => 'Керувати регіонами';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Регіон: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle => 'Які регіони передає цей ретранслятор';
+
+  @override
+  String get repeaterRegions_reading => 'Читання регіонів ретранслятора…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Прошивка цього ретранслятора застара, щоб керувати його регіонами тут. Потрібна 1.15 або новіша.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Ретранслятор не відповів. Спробуйте ще раз.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Повторювати повідомлення без регіону';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Більшість надсилає без регіону. Якщо вимкнути, цей ретранслятор перестане передавати їхні повідомлення.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Перестати повторювати повідомлення без регіону?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Усі поблизу, хто не використовує регіон, більше не повторюватимуться цим ретранслятором.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Вимкнути';
+
+  @override
+  String get repeaterRegions_own => 'Власний регіон ретранслятора';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Його використовують адверти ретранслятора, а також його відповіді, коли він не знає, у якому регіоні надійшов запит.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Регіони на цьому ретрансляторі';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Регіонів поки немає. Повідомлення з регіоном повторюється тут, лише коли його регіон додано.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Список ретранслятора довгий, і його відповідь обрізано, тож тут можуть бути не всі регіони.';
+
+  @override
+  String get repeaterRegions_repeated => 'Повторюється';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Не повторюється';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Видалити $name з ретранслятора?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Ретранслятор відповів: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'З ваших регіонів';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Вже є на цьому ретрансляторі.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Додати регіон $name';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => 'Лише поблизу (без ретрансляторів)';
+
+  @override
+  String get channelRegion_nearby => 'Лише поблизу';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Регіони: $names і повідомлення без регіону';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Регіони: лише $names, без повідомлень без регіону';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Регіонів немає; повторює повідомлення без регіону';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Нічого не повторює: ні регіонів, ні повідомлень без регіону';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ретранслятора поблизу',
+      many: '$count ретрансляторів поблизу',
+      few: '$count ретранслятори поблизу',
+      one: '$count ретранслятор поблизу',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      'Жоден ретранслятор поблизу його не передає';
+
+  @override
+  String get regions_heardNearby => 'Почуті від ретрансляторів поблизу';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Ретранслятори поблизу пишуть його як $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Використати';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Невідомий вам (код $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Надіслано в $region · немає ознак, хто отримав. Ретранслятори, які не знають $region, його відкидають.';
+  }
 }

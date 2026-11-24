@@ -7678,4 +7678,251 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '自分の連絡先';
+
+  @override
+  String get regions_title => 'リージョン';
+
+  @override
+  String get regions_settingsSubtitle => 'チャンネルのメッセージを1つの地域にとどめる';
+
+  @override
+  String get regions_intro =>
+      'リージョンは、チャンネルのメッセージを1つの地域を受け持つリピーターにとどめます。そのリージョンを知らないリピーターはメッセージを中継しないので、地域のリピーターが使っている名前を使ってください。';
+
+  @override
+  String get regions_yourRegions => 'あなたのリージョン';
+
+  @override
+  String get regions_empty => 'まだリージョンがありません。地域のリピーターが使っている名前を追加してください。';
+
+  @override
+  String get regions_add => 'リージョンを追加';
+
+  @override
+  String get regions_nameLabel => 'リージョン名';
+
+  @override
+  String get regions_nameHelp => '大文字と小文字は区別されます。SF と sf は別のリージョンです。';
+
+  @override
+  String get regions_nameBadCharacter => 'スペース、ピリオド、カンマ、ほとんどの記号は使えません。';
+
+  @override
+  String get regions_nameTooLong => '長すぎます。最大30バイトです。';
+
+  @override
+  String get regions_nameExists => 'すでにリストにあります。';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count個のチャンネルが使用中',
+      zero: '使っているチャンネルはありません',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '$name を削除しますか?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count個のチャンネルがこのリージョンを使っています。リージョンなしに戻ります。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '無線機の既定リージョン';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '無線機に保存されます。自分のリージョンがないチャンネル、ダイレクトメッセージ、アドバートが、どのアプリからでもこれを使います。';
+
+  @override
+  String get regions_none => 'なし';
+
+  @override
+  String get regions_radioNoAnswer => '無線機が変更を受け付けませんでした。もう一度お試しください。';
+
+  @override
+  String get regions_inQr => 'チャンネルQRコードにリージョンを入れる';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'オン:チャンネルのQRコードにリージョンが入り、読み取ったコードのリージョンが設定されます。';
+
+  @override
+  String get regions_unsupported => 'この無線機のファームウェアはリージョンには古すぎます。';
+
+  @override
+  String get channelRegion_title => 'リージョン';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'なし(無線機の既定: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'どこでも(リージョンなし)';
+
+  @override
+  String get channelRegion_help => 'このチャンネルのメッセージは、そのリージョンを知っているリピーターだけを通ります。';
+
+  @override
+  String get channelRegion_manage => 'リージョンを管理';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'リージョン: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle => 'このリピーターが中継するリージョン';
+
+  @override
+  String get repeaterRegions_reading => 'リピーターのリージョンを読み込んでいます…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'このリピーターのファームウェアは古すぎて、ここでリージョンを管理できません。1.15以降が必要です。';
+
+  @override
+  String get repeaterRegions_noAnswer => 'リピーターが応答しませんでした。もう一度お試しください。';
+
+  @override
+  String get repeaterRegions_noRegion => 'リージョンなしのメッセージを中継';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      '多くの人はリージョンなしで送信します。オフにすると、このリピーターはそれらのメッセージを中継しなくなります。';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => 'リージョンなしのメッセージの中継をやめますか?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'リージョンを使っていない近くの人は、このリピーターで中継されなくなります。';
+
+  @override
+  String get repeaterRegions_turnOff => 'オフにする';
+
+  @override
+  String get repeaterRegions_own => 'リピーター自身のリージョン';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'アドバートで使われ、要求がどのリージョンで届いたか分からないときの返信にも使われます。';
+
+  @override
+  String get repeaterRegions_onRepeater => 'このリピーターのリージョン';
+
+  @override
+  String get repeaterRegions_empty =>
+      'まだリージョンがありません。リージョン付きのメッセージは、そのリージョンを追加して初めてここで中継されます。';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'リピーターのリストが長く返信が途中で切れたため、ここに表示されていないリージョンがあるかもしれません。';
+
+  @override
+  String get repeaterRegions_repeated => '中継する';
+
+  @override
+  String get repeaterRegions_notRepeated => '中継しない';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '$name をリピーターから削除しますか?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'リピーターの返答: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'あなたのリージョンから';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'すでにこのリピーターにあります。';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'リージョン $name を含める';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => '近くだけ(リピーターなし)';
+
+  @override
+  String get channelRegion_nearby => '近くだけ';
+
+  @override
+  String get channelRegion_nearbyHelp => '届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'リージョン: $names、リージョンなしのメッセージも';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'リージョン: $names のみ、リージョンなしのメッセージは中継しない';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => 'リージョンなし。リージョンなしのメッセージを中継';
+
+  @override
+  String get nearbyRegions_nothing => '何も中継しない: リージョンも、リージョンなしのメッセージも';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '近くのリピーター $count 台',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => 'これを中継する近くのリピーターはありません';
+
+  @override
+  String get regions_heardNearby => '近くのリピーターから';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '近くのリピーターの表記は $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'これを使う';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '知らないリージョン (コード $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '$region で送信 · 誰が受け取ったか分かりません。$region を知らないリピーターは破棄します。';
+  }
 }

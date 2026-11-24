@@ -7697,4 +7697,252 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '내 연락처';
+
+  @override
+  String get regions_title => '지역';
+
+  @override
+  String get regions_settingsSubtitle => '채널 메시지를 한 지역 안에 두기';
+
+  @override
+  String get regions_intro =>
+      '지역은 채널의 메시지를 한 지역을 맡은 리피터에만 머물게 합니다. 그 지역을 모르는 리피터는 메시지를 전달하지 않으므로, 내 지역 리피터가 쓰는 이름을 사용하세요.';
+
+  @override
+  String get regions_yourRegions => '내 지역';
+
+  @override
+  String get regions_empty => '아직 지역이 없습니다. 내 지역 리피터가 쓰는 이름을 추가하세요.';
+
+  @override
+  String get regions_add => '지역 추가';
+
+  @override
+  String get regions_nameLabel => '지역 이름';
+
+  @override
+  String get regions_nameHelp => '대소문자를 구분합니다: SF와 sf는 서로 다른 지역입니다.';
+
+  @override
+  String get regions_nameBadCharacter => '공백, 마침표, 쉼표와 대부분의 문장 부호는 쓸 수 없습니다.';
+
+  @override
+  String get regions_nameTooLong => '너무 깁니다: 최대 30바이트입니다.';
+
+  @override
+  String get regions_nameExists => '이미 목록에 있습니다.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '채널 $count개가 사용 중',
+      zero: '사용하는 채널 없음',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '$name을(를) 삭제할까요?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '채널 $count개가 이 지역을 사용합니다. 지역 없음으로 돌아갑니다.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '무전기 기본 지역';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '무전기에 저장됩니다. 자체 지역이 없는 채널, 개인 메시지, 광고가 어느 앱에서든 이를 사용합니다.';
+
+  @override
+  String get regions_none => '없음';
+
+  @override
+  String get regions_radioNoAnswer => '무전기가 변경을 받아들이지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get regions_inQr => '채널 QR 코드에 지역 넣기';
+
+  @override
+  String get regions_inQrSubtitle =>
+      '켜면 채널의 QR 코드에 지역이 들어가고, 스캔한 코드의 지역이 설정됩니다.';
+
+  @override
+  String get regions_unsupported => '이 무전기의 펌웨어는 지역을 쓰기에 너무 오래되었습니다.';
+
+  @override
+  String get channelRegion_title => '지역';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return '없음 (무전기 기본: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => '어디서나 (지역 없음)';
+
+  @override
+  String get channelRegion_help => '이 채널의 메시지는 그 지역을 아는 리피터로만 전달됩니다.';
+
+  @override
+  String get channelRegion_manage => '지역 관리';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return '지역: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle => '이 리피터가 전달하는 지역';
+
+  @override
+  String get repeaterRegions_reading => '리피터의 지역을 읽는 중…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      '이 리피터의 펌웨어가 너무 오래되어 여기서 지역을 관리할 수 없습니다. 1.15 이상이 필요합니다.';
+
+  @override
+  String get repeaterRegions_noAnswer => '리피터가 응답하지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get repeaterRegions_noRegion => '지역 없는 메시지 반복';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      '대부분은 지역 없이 보냅니다. 끄면 이 리피터는 그 메시지를 더 이상 전달하지 않습니다.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => '지역 없는 메시지 반복을 멈출까요?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      '지역을 쓰지 않는 주변 사람은 더 이상 이 리피터로 반복되지 않습니다.';
+
+  @override
+  String get repeaterRegions_turnOff => '끄기';
+
+  @override
+  String get repeaterRegions_own => '리피터 자체 지역';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      '리피터의 광고에 쓰이고, 요청이 어느 지역으로 왔는지 모를 때 응답에도 쓰입니다.';
+
+  @override
+  String get repeaterRegions_onRepeater => '이 리피터의 지역';
+
+  @override
+  String get repeaterRegions_empty =>
+      '아직 지역이 없습니다. 지역이 있는 메시지는 그 지역이 추가되어야 여기서 반복됩니다.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      '리피터의 목록이 길어 응답이 잘렸으므로 여기에 빠진 지역이 있을 수 있습니다.';
+
+  @override
+  String get repeaterRegions_repeated => '반복함';
+
+  @override
+  String get repeaterRegions_notRepeated => '반복 안 함';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '$name을(를) 리피터에서 제거할까요?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return '리피터 응답: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => '내 지역에서';
+
+  @override
+  String get repeaterRegions_alreadyThere => '이미 이 리피터에 있습니다.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return '지역 $name 포함';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => '근처만 (리피터 없음)';
+
+  @override
+  String get channelRegion_nearby => '근처만';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      '범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return '지역: $names, 그리고 지역 없는 메시지';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return '지역: $names만, 지역 없는 메시지는 아님';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => '지역 없음. 지역 없는 메시지를 반복';
+
+  @override
+  String get nearbyRegions_nothing => '아무것도 반복 안 함: 지역도, 지역 없는 메시지도';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '근처 리피터 $count개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '이 지역을 전달하는 근처 리피터가 없습니다';
+
+  @override
+  String get regions_heardNearby => '근처 리피터에게서 들음';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '근처 리피터는 $name(으)로 씁니다';
+  }
+
+  @override
+  String get regions_useSpelling => '사용';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '모르는 지역 (코드 $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '$region에서 보냄 · 누가 받았는지 알 수 없음. $region을(를) 모르는 리피터는 버립니다.';
+  }
 }

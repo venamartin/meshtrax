@@ -8027,4 +8027,268 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get shareContact_myContact => 'Моят контакт';
+
+  @override
+  String get regions_title => 'Региони';
+
+  @override
+  String get regions_settingsSubtitle =>
+      'Съобщенията на канал само в една област';
+
+  @override
+  String get regions_intro =>
+      'Регионът държи съобщенията на канала при ретранслаторите, които обслужват една област. Ретранслатор, който не познава региона, не предава съобщението, затова използвайте имената, които използват ретранслаторите във вашата област.';
+
+  @override
+  String get regions_yourRegions => 'Вашите региони';
+
+  @override
+  String get regions_empty =>
+      'Все още няма региони. Добавете името, което използват ретранслаторите във вашата област.';
+
+  @override
+  String get regions_add => 'Добавяне на регион';
+
+  @override
+  String get regions_nameLabel => 'Име на региона';
+
+  @override
+  String get regions_nameHelp =>
+      'Главните букви имат значение: SF и sf са два различни региона.';
+
+  @override
+  String get regions_nameBadCharacter =>
+      'Интервали, точки, запетаи и повечето препинателни знаци не са разрешени.';
+
+  @override
+  String get regions_nameTooLong => 'Твърде дълго: най-много 30 байта.';
+
+  @override
+  String get regions_nameExists => 'Вече е във вашия списък.';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Използва се от $count канала',
+      one: 'Използва се от 1 канал',
+      zero: 'Никой канал не го използва',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return 'Изтриване на $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count канала използват този регион. Те остават без регион.',
+      one: '1 канал използва този регион. Той остава без регион.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => 'Регион по подразбиране на радиото';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      'Записан в радиото. Използват го каналите без собствен регион, личните съобщения и адвертите, от всяко приложение.';
+
+  @override
+  String get regions_none => 'Няма';
+
+  @override
+  String get regions_radioNoAnswer =>
+      'Радиото не прие промяната. Опитайте пак.';
+
+  @override
+  String get regions_inQr => 'Регион в QR кодовете на канали';
+
+  @override
+  String get regions_inQrSubtitle =>
+      'Включено: QR кодът на канала носи неговия регион, а сканираният код задава региона, който носи.';
+
+  @override
+  String get regions_unsupported =>
+      'Фърмуерът на това радио е твърде стар за региони.';
+
+  @override
+  String get channelRegion_title => 'Регион';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return 'Няма (по подразбиране на радиото: $name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => 'Навсякъде (без регион)';
+
+  @override
+  String get channelRegion_help =>
+      'Съобщенията в този канал минават само през ретранслатори, които познават неговия регион.';
+
+  @override
+  String get channelRegion_manage => 'Управление на регионите';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return 'Регион: $name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle =>
+      'Кои региони предава този ретранслатор';
+
+  @override
+  String get repeaterRegions_reading => 'Четене на регионите на ретранслатора…';
+
+  @override
+  String get repeaterRegions_tooOld =>
+      'Фърмуерът на този ретранслатор е твърде стар, за да се управляват регионите му тук. Нужна е 1.15 или по-нова.';
+
+  @override
+  String get repeaterRegions_noAnswer =>
+      'Ретранслаторът не отговори. Опитайте пак.';
+
+  @override
+  String get repeaterRegions_noRegion => 'Повтаряне на съобщения без регион';
+
+  @override
+  String get repeaterRegions_noRegionHelp =>
+      'Повечето хора изпращат без регион. Изключено, този ретранслатор спира да предава техните съобщения.';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle =>
+      'Да спре ли повтарянето на съобщения без регион?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody =>
+      'Никой наблизо, който не използва регион, вече няма да бъде повтарян от този ретранслатор.';
+
+  @override
+  String get repeaterRegions_turnOff => 'Изключване';
+
+  @override
+  String get repeaterRegions_own => 'Собствен регион на ретранслатора';
+
+  @override
+  String get repeaterRegions_ownHelp =>
+      'Използват го неговите адверти, а и отговорите му, когато не знае в кой регион е дошла заявката.';
+
+  @override
+  String get repeaterRegions_onRepeater => 'Региони на този ретранслатор';
+
+  @override
+  String get repeaterRegions_empty =>
+      'Все още няма региони. Съобщение с регион се повтаря тук едва след като регионът му бъде добавен.';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete =>
+      'Списъкът на ретранслатора е дълъг и отговорът му е отрязан, затова тук може да липсват региони.';
+
+  @override
+  String get repeaterRegions_repeated => 'Повтаря се';
+
+  @override
+  String get repeaterRegions_notRepeated => 'Не се повтаря';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return 'Премахване на $name от ретранслатора?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return 'Ретранслаторът отговори: $reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => 'От вашите региони';
+
+  @override
+  String get repeaterRegions_alreadyThere => 'Вече е на този ретранслатор.';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return 'Включване на региона $name';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => 'Само наблизо (без ретранслатори)';
+
+  @override
+  String get channelRegion_nearby => 'Само наблизо';
+
+  @override
+  String get channelRegion_nearbyHelp =>
+      'Чуват го само радиата в обхват. Изпраща се веднъж, без повторни опити.';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return 'Региони: $names и съобщения без регион';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return 'Региони: само $names, без съобщения без регион';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain =>
+      'Без региони; повтаря съобщения без регион';
+
+  @override
+  String get nearbyRegions_nothing =>
+      'Не повтаря нищо: нито региони, нито съобщения без регион';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ретранслатора наблизо',
+      one: '1 ретранслатор наблизо',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier =>
+      'Никой ретранслатор наблизо не го предава';
+
+  @override
+  String get regions_heardNearby => 'Чути от ретранслатори наблизо';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return 'Ретранслаторите наблизо го пишат $name';
+  }
+
+  @override
+  String get regions_useSpelling => 'Използване';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return 'Непознат за вас (код $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return 'Изпратено в $region · няма следа кой го е получил. Ретранслаторите, които не познават $region, го изхвърлят.';
+  }
 }

@@ -75,6 +75,14 @@ class ChannelMessage {
   // believable, for a "sent 14:00 by its clock" line. Null otherwise.
   final DateTime? claimedAt;
 
+  /// The region code (first transport code) a copy of this message came in
+  /// with, when it came in a region; null for none or not seen.
+  final int? regionCode;
+
+  /// [regionCode]'s region, when it matched one of the names the app
+  /// knows; null otherwise.
+  final String? region;
+
   /// An SOS whose sender repeats it: when the newest repeat merged in, with
   /// [text] its latest wire text. Null for any other message.
   final DateTime? sosUpdatedAt;
@@ -111,6 +119,8 @@ class ChannelMessage {
     this.sosUpdatedAt,
     this.sosCancelledAt,
     this.claimedAt,
+    this.regionCode,
+    this.region,
   }) : messageId =
            messageId ??
            '${timestamp.millisecondsSinceEpoch}_${senderName.hashCode}_${text.hashCode}',
@@ -153,6 +163,8 @@ class ChannelMessage {
     DateTime? sosUpdatedAt,
     DateTime? sosCancelledAt,
     DateTime? claimedAt,
+    int? regionCode,
+    String? region,
   }) {
     return ChannelMessage(
       senderKey: senderKey,
@@ -183,6 +195,8 @@ class ChannelMessage {
       sosUpdatedAt: sosUpdatedAt ?? this.sosUpdatedAt,
       sosCancelledAt: sosCancelledAt ?? this.sosCancelledAt,
       claimedAt: claimedAt ?? this.claimedAt,
+      regionCode: regionCode ?? this.regionCode,
+      region: region ?? this.region,
     );
   }
 

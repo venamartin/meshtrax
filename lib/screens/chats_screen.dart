@@ -12,6 +12,7 @@ import '../models/contact.dart';
 import '../models/message.dart';
 import '../services/app_settings_service.dart';
 import '../services/notification_service.dart';
+import '../services/region_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
@@ -35,6 +36,7 @@ import '../widgets/trax_button.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
+import '../widgets/region_label.dart';
 import '../widgets/shares_position_icon.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/unread_badge.dart';
@@ -728,6 +730,7 @@ class _ChatsScreenState extends State<ChatsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final regions = context.watch<RegionService?>();
     return Consumer<MeshCoreConnector>(
       builder: (context, connector, child) {
         final List<_ChatListItem> chatItems = [];
@@ -1120,6 +1123,15 @@ class _ChatsScreenState extends State<ChatsScreen>
                                                     case final pill?) ...[
                                                   const SizedBox(width: 6),
                                                   NicknamePill(pill),
+                                                ],
+                                              if (item.channel?.idKey
+                                                  case final idKey?)
+                                                if (regions?.regionOf(idKey)
+                                                    case final region?) ...[
+                                                  const SizedBox(width: 6),
+                                                  Flexible(
+                                                    child: RegionLabel(region),
+                                                  ),
                                                 ],
                                             ],
                                           ),

@@ -7560,4 +7560,244 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shareContact_myContact => '我的联系人';
+
+  @override
+  String get regions_title => '区域';
+
+  @override
+  String get regions_settingsSubtitle => '让频道消息只在一个地区传递';
+
+  @override
+  String get regions_intro =>
+      '区域让频道的消息只经过服务某一地区的中继器。不认识该区域的中继器不会转发消息,所以请使用你所在地区中继器使用的名称。';
+
+  @override
+  String get regions_yourRegions => '你的区域';
+
+  @override
+  String get regions_empty => '还没有区域。添加你所在地区中继器使用的名称。';
+
+  @override
+  String get regions_add => '添加区域';
+
+  @override
+  String get regions_nameLabel => '区域名称';
+
+  @override
+  String get regions_nameHelp => '区分大小写:SF 和 sf 是两个不同的区域。';
+
+  @override
+  String get regions_nameBadCharacter => '不允许空格、句点、逗号和大多数标点。';
+
+  @override
+  String get regions_nameTooLong => '太长:最多 30 字节。';
+
+  @override
+  String get regions_nameExists => '已在你的列表中。';
+
+  @override
+  String regions_usedBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个频道在使用',
+      zero: '没有频道使用',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String regions_deleteTitle(String name) {
+    return '删除 $name?';
+  }
+
+  @override
+  String regions_deleteInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个频道使用此区域。它们将恢复为无区域。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regions_radioDefault => '电台默认区域';
+
+  @override
+  String get regions_radioDefaultHelp =>
+      '保存在电台上。没有自己区域的频道、私信和广播都会使用它,无论哪个应用发送。';
+
+  @override
+  String get regions_none => '无';
+
+  @override
+  String get regions_radioNoAnswer => '电台没有接受更改。请重试。';
+
+  @override
+  String get regions_inQr => '在频道二维码中包含区域';
+
+  @override
+  String get regions_inQrSubtitle => '开启后,频道的二维码会带上它的区域,扫描二维码会设置其中的区域。';
+
+  @override
+  String get regions_unsupported => '此电台的固件太旧,不支持区域。';
+
+  @override
+  String get channelRegion_title => '区域';
+
+  @override
+  String channelRegion_noneWithDefault(String name) {
+    return '无(电台默认:$name)';
+  }
+
+  @override
+  String get channelRegion_everywhere => '所有地方(无区域)';
+
+  @override
+  String get channelRegion_help => '此频道的消息只经过认识其区域的中继器。';
+
+  @override
+  String get channelRegion_manage => '管理区域';
+
+  @override
+  String channelRegion_qrLine(String name) {
+    return '区域:$name';
+  }
+
+  @override
+  String get repeaterRegions_subtitle => '此中继器转发哪些区域';
+
+  @override
+  String get repeaterRegions_reading => '正在读取中继器的区域…';
+
+  @override
+  String get repeaterRegions_tooOld => '此中继器的固件太旧,无法在这里管理它的区域。需要 1.15 或更新版本。';
+
+  @override
+  String get repeaterRegions_noAnswer => '中继器没有应答。请重试。';
+
+  @override
+  String get repeaterRegions_noRegion => '转发无区域的消息';
+
+  @override
+  String get repeaterRegions_noRegionHelp => '大多数人发送时不带区域。关闭后,此中继器不再转发他们的消息。';
+
+  @override
+  String get repeaterRegions_noRegionOffTitle => '停止转发无区域的消息?';
+
+  @override
+  String get repeaterRegions_noRegionOffBody => '附近不使用区域的人将不再由此中继器转发。';
+
+  @override
+  String get repeaterRegions_turnOff => '关闭';
+
+  @override
+  String get repeaterRegions_own => '中继器自己的区域';
+
+  @override
+  String get repeaterRegions_ownHelp => '它的广播使用此区域;当它无法判断请求来自哪个区域时,回复也使用此区域。';
+
+  @override
+  String get repeaterRegions_onRepeater => '此中继器上的区域';
+
+  @override
+  String get repeaterRegions_empty => '还没有区域。带区域的消息只有在添加其区域后才会在这里转发。';
+
+  @override
+  String get repeaterRegions_mayBeIncomplete => '中继器的列表很长,回复被截断,因此这里可能缺少一些区域。';
+
+  @override
+  String get repeaterRegions_repeated => '转发';
+
+  @override
+  String get repeaterRegions_notRepeated => '不转发';
+
+  @override
+  String repeaterRegions_removeTitle(String name) {
+    return '从中继器移除 $name?';
+  }
+
+  @override
+  String get repeaterRegions_hasChildren =>
+      'The repeater still has regions under this one. Remove those first.';
+
+  @override
+  String repeaterRegions_refused(String reply) {
+    return '中继器回复:$reply';
+  }
+
+  @override
+  String get repeaterRegions_fromYours => '来自你的区域';
+
+  @override
+  String get repeaterRegions_alreadyThere => '已在此中继器上。';
+
+  @override
+  String channelRegion_qrInclude(String name) {
+    return '包含区域 $name';
+  }
+
+  @override
+  String get channelRegion_nearbyOption => '仅附近(不经中继器)';
+
+  @override
+  String get channelRegion_nearby => '仅附近';
+
+  @override
+  String get channelRegion_nearbyHelp => '只有范围内的电台能收到。只发送一次,不重试。';
+
+  @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
+  String nearbyRegions_withPlain(String names) {
+    return '区域:$names,以及无区域的消息';
+  }
+
+  @override
+  String nearbyRegions_only(String names) {
+    return '区域:仅 $names,不含无区域的消息';
+  }
+
+  @override
+  String get nearbyRegions_noneButPlain => '无区域;转发无区域的消息';
+
+  @override
+  String get nearbyRegions_nothing => '什么都不转发:既无区域,也不转发无区域的消息';
+
+  @override
+  String channelRegion_carriers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '附近 $count 个中继器',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelRegion_noCarrier => '附近没有中继器转发它';
+
+  @override
+  String get regions_heardNearby => '从附近中继器得知';
+
+  @override
+  String regions_nearbySpelling(String name) {
+    return '附近的中继器写作 $name';
+  }
+
+  @override
+  String get regions_useSpelling => '使用';
+
+  @override
+  String channelPath_regionUnknown(String code) {
+    return '你不认识的区域(代码 $code)';
+  }
+
+  @override
+  String chat_channelNoSignRegion(String region) {
+    return '已在 $region 发送 · 不知道谁收到了。不认识 $region 的中继器会丢弃它。';
+  }
 }

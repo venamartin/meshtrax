@@ -62,6 +62,7 @@ class BackupService {
     'channel_order_',
     'contact_smaz_',
     'channel_smaz_',
+    'regions_',
   ];
 
   static bool _isBackupSettingsKey(String key) =>
