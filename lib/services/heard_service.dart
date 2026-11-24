@@ -43,8 +43,10 @@ class HeardService extends ChangeNotifier {
   static const _keptMessages = 300;
 
   /// A resend after one repeater needs an observer to have heard this
-  /// radio this lately.
-  static const proofWindow = Duration(hours: 2);
+  /// radio this lately. A day, so a quiet morning doesn't switch it off
+  /// for the next message (owner, 2026-11-24: at 2 hours it did); a radio
+  /// taken out of the observers' reach is stopped by [missesBeforeBackOff].
+  static const proofWindow = Duration(hours: 24);
 
   /// Resends after one repeater that went unheard, in a row, before they
   /// stop until an observer hears this radio again.
