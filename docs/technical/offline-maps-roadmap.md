@@ -115,7 +115,8 @@ The rest of this section is the record from 2026-10-17 to 2026-11-02.
      - uses the phone's GPS where the user allows it (Android, iOS, macOS, Windows; `PhoneLocationService` over geolocator), else the radio's own position;
      - asks while-in-use on the first tap only;
      - zooms to at least 14;
-     - with no position, says why, and offers Settings when location is denied for good.
+     - with no position, says why, and offers Settings when location is denied for good;
+     - **follows (Martin, 2026-11-23):** keeps you in the middle as the radio's position moves, until the map is dragged (a zoom doesn't stop it); the button is filled meanwhile. A tapped TRAX trip member is followed the same way, with their card open or closed, and their trail stays.
    - **The phone is its own marker** (Martin): a blue dot, apart from the radio's teal "You".
      - Nothing is read until the user has tapped My location once (remembered). The OS permission alone doesn't count.
      - After that, it follows while a map is open with the app in front.

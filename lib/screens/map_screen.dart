@@ -101,7 +101,8 @@ class MapScreen extends StatefulWidget {
   final bool highlightSos;
 
   /// The trip member, by key prefix, the map opens on: their trail shows,
-  /// and their own marker stands at [highlightPosition] in place of a pin.
+  /// their own marker stands at [highlightPosition] in place of a pin, and
+  /// the map follows them until it is dragged.
   final String? showTrailOf;
 
   const MapScreen({
@@ -142,9 +143,22 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
 
-  /// The trip member whose trail shows, by key prefix; with none, your own
-  /// TRAX track shows behind your dot.
+  /// The trip member whose trail shows, by key prefix: the last one tapped,
+  /// until another is.
   late String? _trailOf = widget.showTrailOf;
+
+  /// Whom the map keeps in the middle as new positions come in, until it
+  /// is dragged: you after My location, or a trip member by key prefix
+  /// after a tap on them (or the one this map opened on).
+  bool _followMe = false;
+  late String? _followOf = widget.showTrailOf;
+
+  /// Where the map last went for [_followMe] or [_followOf].
+  late LatLng? _followedAt = widget.highlightPosition;
+
+  /// The trip member whose card is open, and how much of the map it covers.
+  String? _cardOf;
+  double _cardCovered = 0;
 
   /// The main map without the title bar and the tabs, and on a phone without
   /// its status and navigation bars. Never saved: the app starts without it.
@@ -364,8 +378,9 @@ class _MapScreenState extends State<MapScreen> {
     return false;
   }
 
-  /// My location: the radio's GPS position. With the GPS off, offers to turn
-  /// it on, since a first fix can take minutes.
+  /// My location: the radio's GPS position, kept in the middle as it moves
+  /// until the map is dragged. With the GPS off, offers to turn it on, since
+  /// a first fix can take minutes.
   Future<void> _myLocation(
     MeshCoreConnector connector,
     LatLng? selfPosition,
@@ -397,6 +412,49 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
     MapControls.centerOn(_mapController, selfPosition.toOvm());
+    setState(() {
+      _followMe = true;
+      _followOf = null;
+      _followedAt = selfPosition;
+    });
+  }
+
+  /// Where the trip member [prefix] is, as their card says: from their
+  /// TRAX report, or a contact's answer or advert before one comes.
+  LatLng? _memberPlace(
+    TripPositions? trip,
+    MeshCoreConnector connector,
+    String prefix,
+  ) {
+    final report = trip?.all.where((p) => p.prefix == prefix).firstOrNull;
+    final contact = report != null
+        ? connector.contactByKeyPrefix4(report.prefixBytes)
+        : connector.allContacts
+              .where((c) => c.publicKeyHex.startsWith(prefix))
+              .firstOrNull;
+    if (report == null && contact == null) return null;
+    return _person(context, contact, report).place;
+  }
+
+  /// Puts [at] in the middle of the map, or of what the open card of the
+  /// member followed leaves, at the zoom the map has.
+  void _followTo(LatLng at) {
+    final zoom = _mapController.camera?.zoom;
+    if (zoom == null) return;
+    _mapController.fitPoints(
+      [at.toOvm()],
+      padding: EdgeInsets.only(bottom: _cardOf == null ? 0 : _cardCovered),
+      maxZoom: zoom,
+    );
+  }
+
+  /// A drag of the map ends following; a zoom doesn't.
+  void _stopFollowing() {
+    if (!_followMe && _followOf == null) return;
+    setState(() {
+      _followMe = false;
+      _followOf = null;
+    });
   }
 
   void _onCameraChanged(MapCamera camera) {
@@ -678,6 +736,24 @@ class _MapScreenState extends State<MapScreen> {
             _openedOnGps = selfPosition;
           }
         }
+        // The map keeps whom it follows in the middle. A sheet about
+        // something else holds it; once that closes, the map goes back.
+        final followAt = _followMe
+            ? selfPosition
+            : switch (_followOf) {
+                final prefix? => _memberPlace(tripPositions, connector, prefix),
+                null => null,
+              };
+        if (followAt != null) {
+          if (_los != null || (_sheetPoint != null && _cardOf == null)) {
+            _followedAt = null;
+          } else if (followAt != _followedAt) {
+            _followedAt = followAt;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _followTo(followAt);
+            });
+          }
+        }
         final lastCamera = _viewState.mapCamera;
         final startCamera = switch (_openedOnGps) {
           // As close as My location goes: where nothing is downloaded, as
@@ -904,6 +980,7 @@ class _MapScreenState extends State<MapScreen> {
                           );
                         },
                         onCameraChanged: _onCameraChanged,
+                        onDrag: _stopFollowing,
                         appPlaces: showPlaces && _placesHere,
                         overlays: [
                           if (showPlaces)
@@ -1091,6 +1168,7 @@ class _MapScreenState extends State<MapScreen> {
                   ? () => unawaited(_myLocation(connector, selfPosition))
                   : null,
               gpsOff: !connector.gpsOn,
+              following: _followMe,
               onSearch: !_isBuildingPathTrace && !widget.pickPosition
                   ? () => _openSearch(
                       connector,
@@ -2266,10 +2344,17 @@ class _MapScreenState extends State<MapScreen> {
   ].join(' · ');
 
   /// A trip member's card over a clear map: their trail above it, centred
-  /// on them, and what is known of them, kept up to date. Closing it hides
-  /// the trail. Their own marker is the pin.
+  /// on them, and what is known of them, kept up to date. The map follows
+  /// them, with the card open or closed, until it is dragged; their trail
+  /// stays. Their own marker is the pin.
   Future<void> _showMemberCard(TripPosition member, Contact? contact) async {
-    setState(() => _trailOf = member.prefix);
+    setState(() {
+      _trailOf = member.prefix;
+      _followMe = false;
+      _followOf = member.prefix;
+      _followedAt = LatLng(member.lat, member.lon);
+      _cardOf = member.prefix;
+    });
     await _showPointSheet(
       LatLng(member.lat, member.lon),
       pin: false,
@@ -2283,7 +2368,14 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
     );
-    if (mounted && _trailOf == member.prefix) setState(() => _trailOf = null);
+    // Back in the middle of the whole map.
+    if (mounted && _cardOf == member.prefix) {
+      setState(() {
+        _cardOf = null;
+        _cardCovered = 0;
+        _followedAt = null;
+      });
+    }
   }
 
   /// Who, when heard and how far, then one line of small figures (which
@@ -3092,6 +3184,7 @@ class _MapScreenState extends State<MapScreen> {
     // How much of the map's bottom the sheet covers.
     final top = MediaQuery.sizeOf(context).height - sheetHeight;
     final covered = box.localToGlobal(Offset.zero).dy + box.size.height - top;
+    if (_cardOf != null) _cardCovered = max(0, covered);
     if (covered <= 0) return;
     if (centerAfter == null) {
       final at = _mapController.toScreen(point.toOvm());

@@ -1,5 +1,8 @@
 ## Unreleased
 
+- **`onDrag`:** `OfflineMapView` says when a drag of the map starts (one
+  finger or the mouse), not a pinch, a double-tap or the wheel, so an app
+  can stop following a position once the user moves the map.
 - **The app's own files download beside the packs.** `PackDownloader.start`
   takes a `DownloadItem`: a `PackIndexEntry` as before, or a `DownloadFile`
   the app installs itself (routing data, places). The downloader fetches it

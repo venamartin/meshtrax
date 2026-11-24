@@ -43,6 +43,9 @@ class AppMap extends StatefulWidget {
   final ValueChanged<LatLng>? onLongPress;
   final ValueChanged<MapCamera>? onCameraChanged;
 
+  /// A drag of the map starts (not a zoom).
+  final VoidCallback? onDrag;
+
   /// Overrides the map chosen in settings.
   final MapType? mapType;
 
@@ -89,6 +92,7 @@ class AppMap extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.onCameraChanged,
+    this.onDrag,
     this.mapType,
     this.contours,
     this.appPlaces = false,
@@ -269,6 +273,7 @@ class _AppMapState extends State<AppMap> {
           ),
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
+          onDrag: widget.onDrag,
           onCameraChanged: _onCameraChanged,
           appPlaces: widget.appPlaces,
           hiddenGroups: {if (!settings.mapParks) 'parks'},
