@@ -4778,11 +4778,11 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Sťahovať mapy len cez Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnly => 'Sťahovať len cez Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Sťahovanie máp čaká na pripojenie Wi‑Fi';
+      'Sťahovanie čaká na Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Offline mapy';
@@ -5048,13 +5048,13 @@ class AppLocalizationsSk extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Pre tento región nedostupné';
 
   @override
-  String get offlineMaps_notificationRunning => 'Sťahuje sa mapa';
+  String get offlineMaps_notificationRunning => 'Sťahuje sa';
 
   @override
-  String get offlineMaps_notificationPaused => 'Sťahovanie mapy pozastavené';
+  String get offlineMaps_notificationPaused => 'Sťahovanie pozastavené';
 
   @override
-  String get offlineMaps_notificationFailed => 'Sťahovanie mapy zlyhalo';
+  String get offlineMaps_notificationFailed => 'Sťahovanie zlyhalo';
 
   @override
   String get map_notForNavigation => 'Nie na navigáciu';

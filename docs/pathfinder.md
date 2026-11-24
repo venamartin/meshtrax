@@ -23,8 +23,11 @@ It's careful about what it believes. A repeater code it has never heard before o
 ## What happens when you send
 
 1. Pathfinder tries its best route.
-2. If that fails, it tries its next best one.
-3. It floods only as a last resort.
+2. If that fails, it tries its next best one. If their latest message was first heard by a different repeater than the one Pathfinder ranks first, the next route ends there. Otherwise it is another way to the same repeater.
+3. Before it gives up on routes, a repeater that has delivered to them before gets a try.
+4. It floods only as a last resort.
+
+Which repeater hears them? The ones that were first to pass on their own messages, ranked by how often they did and how often a message through them was delivered. Their latest messages can overrule that record: a repeater that only passed their message on from another repeater, or missed their last two messages, is tried after the others until it hears them first again. Nothing is forgotten when that happens. And when a send through the top repeater fails while their latest message came in through another repeater, that other repeater goes first, until a send through it fails too.
 
 Every delivery and every failure teaches it more. A failure counts against that link for a while, then fades: a day later it counts half as much, and after a few days hardly at all. So one bad moment doesn't block a good link for good.
 

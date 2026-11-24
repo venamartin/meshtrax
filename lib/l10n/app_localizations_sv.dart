@@ -4747,12 +4747,11 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Ladda bara ner kartor via wifi';
+  String get appSettings_mapDownloadsWifiOnly => 'Ladda bara ner via wifi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Kartnedladdningar väntar på en wifi-anslutning';
+      'Nedladdningar väntar på wifi';
 
   @override
   String get offlineMaps_title => 'Offlinekartor';
@@ -5015,13 +5014,13 @@ class AppLocalizationsSv extends AppLocalizations {
       'Inte tillgängligt för den här regionen';
 
   @override
-  String get offlineMaps_notificationRunning => 'Laddar ner karta';
+  String get offlineMaps_notificationRunning => 'Laddar ner';
 
   @override
-  String get offlineMaps_notificationPaused => 'Kartnedladdning pausad';
+  String get offlineMaps_notificationPaused => 'Nedladdning pausad';
 
   @override
-  String get offlineMaps_notificationFailed => 'Kartnedladdning misslyckades';
+  String get offlineMaps_notificationFailed => 'Nedladdning misslyckades';
 
   @override
   String get map_notForNavigation => 'Inte för navigering';

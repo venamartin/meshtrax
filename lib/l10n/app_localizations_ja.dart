@@ -4558,11 +4558,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Wi‑Fi接続時のみ地図をダウンロード';
+  String get appSettings_mapDownloadsWifiOnly => 'Wi‑Fi接続時のみダウンロード';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      '地図のダウンロードはWi‑Fiに接続するまで待機します';
+      'ダウンロードはWi‑Fiに接続するまで待機します';
 
   @override
   String get offlineMaps_title => 'オフライン地図';
@@ -4817,13 +4817,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'この地域では利用できません';
 
   @override
-  String get offlineMaps_notificationRunning => '地図をダウンロード中';
+  String get offlineMaps_notificationRunning => 'ダウンロード中';
 
   @override
-  String get offlineMaps_notificationPaused => '地図のダウンロードを一時停止中';
+  String get offlineMaps_notificationPaused => 'ダウンロードを一時停止中';
 
   @override
-  String get offlineMaps_notificationFailed => '地図のダウンロードに失敗しました';
+  String get offlineMaps_notificationFailed => 'ダウンロードに失敗しました';
 
   @override
   String get map_notForNavigation => '航海用ではありません';

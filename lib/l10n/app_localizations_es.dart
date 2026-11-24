@@ -4794,12 +4794,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Descargar mapas solo con Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnly => 'Descargar solo con Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Las descargas de mapas esperan a una conexión Wi‑Fi';
+      'Las descargas esperan al Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Mapas sin conexión';
@@ -5062,13 +5061,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'No disponible para esta región';
 
   @override
-  String get offlineMaps_notificationRunning => 'Descargando mapa';
+  String get offlineMaps_notificationRunning => 'Descargando';
 
   @override
-  String get offlineMaps_notificationPaused => 'Descarga de mapa en pausa';
+  String get offlineMaps_notificationPaused => 'Descarga en pausa';
 
   @override
-  String get offlineMaps_notificationFailed => 'Error en la descarga del mapa';
+  String get offlineMaps_notificationFailed => 'Error en la descarga';
 
   @override
   String get map_notForNavigation => 'No apto para navegar';

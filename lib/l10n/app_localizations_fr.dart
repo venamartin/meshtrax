@@ -4825,11 +4825,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appSettings_mapDownloadsWifiOnly =>
-      'Télécharger les cartes en Wi‑Fi uniquement';
+      'Télécharger en Wi‑Fi uniquement';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Les téléchargements de cartes attendent une connexion Wi‑Fi';
+      'Les téléchargements attendent le Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Cartes hors ligne';
@@ -5093,15 +5093,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Non disponible pour cette région';
 
   @override
-  String get offlineMaps_notificationRunning => 'Téléchargement de carte';
+  String get offlineMaps_notificationRunning => 'Téléchargement en cours';
 
   @override
-  String get offlineMaps_notificationPaused =>
-      'Téléchargement de carte en pause';
+  String get offlineMaps_notificationPaused => 'Téléchargement en pause';
 
   @override
-  String get offlineMaps_notificationFailed =>
-      'Échec du téléchargement de carte';
+  String get offlineMaps_notificationFailed => 'Échec du téléchargement';
 
   @override
   String get map_notForNavigation => 'Pas pour la navigation';

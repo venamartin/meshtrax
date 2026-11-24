@@ -4710,11 +4710,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Download maps on Wi‑Fi only';
+  String get appSettings_mapDownloadsWifiOnly => 'Download on Wi‑Fi only';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Map downloads wait for a Wi‑Fi connection';
+      'Downloads wait for Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Offline maps';
@@ -4976,13 +4976,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Not available for this region';
 
   @override
-  String get offlineMaps_notificationRunning => 'Downloading map';
+  String get offlineMaps_notificationRunning => 'Downloading';
 
   @override
-  String get offlineMaps_notificationPaused => 'Map download paused';
+  String get offlineMaps_notificationPaused => 'Download paused';
 
   @override
-  String get offlineMaps_notificationFailed => 'Map download failed';
+  String get offlineMaps_notificationFailed => 'Download failed';
 
   @override
   String get map_notForNavigation => 'Not for navigation';

@@ -291,6 +291,27 @@ void main() {
     expect(find.text('Download failed: Not enough storage'), findsNothing);
   });
 
+  testWidgets('a download with no region shows its name once', (tester) async {
+    downloader.emit(
+      PackDownload(
+        DownloadFile(
+          id: 'extra',
+          name: 'Extra data (1 of 2)',
+          url: Uri.parse('https://maps.example/dev/files/extra.bin'),
+          bytes: 1000,
+          sha256: '0' * 64,
+          kind: 'extra',
+        ),
+        PackDownloadState.running,
+        progress: 0.5,
+      ),
+    );
+    await open(tester, size: const Size(400, 900));
+    await tester.tap(find.widgetWithText(Tab, 'Downloaded'));
+    await tester.pumpAndSettle();
+    expect(find.text('Extra data (1 of 2)'), findsOneWidget);
+  });
+
   testWidgets("a drive: only what it holds, Install, and Back to internet", (
     tester,
   ) async {

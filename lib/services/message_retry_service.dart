@@ -451,13 +451,54 @@ class MessageRetryService extends ChangeNotifier {
   /// waits for its ACK. A copy of it that waited for a quiet radio while
   /// the ACK came is not worth sending.
   bool awaitsAck(String contactKey, int timestampSeconds, String text) =>
-      _pendingMessages.entries.any(
-        (e) =>
-            e.value.text == text &&
-            e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
-                timestampSeconds &&
-            _pendingContacts[e.key]?.publicKeyHex == contactKey,
-      );
+      _messageIdOf(contactKey, timestampSeconds, text) != null;
+
+  String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
+      _pendingMessages.entries
+          .where(
+            (e) =>
+                e.value.text == text &&
+                e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
+                    timestampSeconds &&
+                _pendingContacts[e.key]?.publicKeyHex == contactKey,
+          )
+          .firstOrNull
+          ?.key;
+
+  /// The route of the attempt now going out with the DM [text] to
+  /// [contact] (as the radio holds it now) stamped [timestampSeconds],
+  /// chosen again: the radio learned a route from them while the attempt
+  /// waited, and stored it over the one written for it. Pathfinder's ladder
+  /// plans this rung again from what it knows now; the firmware ladder takes
+  /// the radio's route as it is. The attempt is recorded on the new route,
+  /// so its outcome is credited to the route that carried it. Null when no
+  /// such message waits.
+  PathSelection? rechooseRoute(
+      Contact contact, int timestampSeconds, String text) {
+    final messageId =
+        _messageIdOf(contact.publicKeyHex, timestampSeconds, text);
+    final message = messageId == null ? null : _pendingMessages[messageId];
+    if (messageId == null || message == null) return null;
+    final attempt = message.retryCount;
+    final before = _attemptRoutes[messageId]?[attempt];
+    if (_pathfinderLadders.contains(messageId)) {
+      _plan(messageId, contact, keep: attempt);
+    }
+    final selection = _selectionFor(messageId, attempt, contact);
+    (_attemptRoutes[messageId] ??= {})[attempt] = selection;
+    _pendingMessages[messageId] = message.copyWith(
+      pathLength: selection.useFlood ? -1 : selection.hopCount,
+      pathBytes: Uint8List.fromList(selection.pathBytes),
+      pathHashSize: selection.hashSize,
+      routeSource: selection.source ?? RouteSource.firmware,
+      guessedHops: selection.guessedHops,
+    );
+    // A flood's echoes are told apart by attempt from its start.
+    if (selection.useFlood && !(before?.useFlood ?? false)) {
+      _config?.onAttemptStarted?.call(contact, selection, attempt);
+    }
+    return selection;
+  }
 
   /// The attempt number a parked rung is sent again with. Its own number
   /// would repeat the packet exactly, and every radio that heard it drops
@@ -1123,6 +1164,16 @@ class MessageRetryService extends ChangeNotifier {
       }
     }
     return false;
+  }
+
+  /// How long ago the attempt [ackHash] belongs to went out, while its DM
+  /// still waits for an ACK; null when nothing waits for that hash.
+  Duration? waitingForAck(int ackHash) {
+    final mapping = _ackHashToMessageId[ackHash.toRadixString(16).padLeft(8, '0')];
+    if (mapping == null || !_pendingMessages.containsKey(mapping.messageId)) {
+      return null;
+    }
+    return DateTime.now().difference(mapping.timestamp);
   }
 
   void handleAckReceived(int ackHash, int tripTimeMs) {

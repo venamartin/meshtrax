@@ -202,4 +202,22 @@ void main() {
       );
     });
   });
+
+  group('hopsBefore', () {
+    test('the hops in front of a tail, at the stride', () {
+      final path = [0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF];
+      expect(PathHelper.hopsBefore(path, [0xBE, 0xEF], stride: 2),
+          [0xA2, 0x77, 0xAD, 0x77]);
+      expect(PathHelper.hopsBefore(path, [], stride: 2), path);
+      expect(PathHelper.hopsBefore(path, path, stride: 2), isEmpty);
+    });
+
+    test('null when the tail is not its last hops', () {
+      final path = [0xA2, 0x77, 0xBE, 0xEF];
+      expect(PathHelper.hopsBefore(path, [0xA2, 0x77], stride: 2), isNull);
+      expect(PathHelper.hopsBefore(path, [0x77, 0xBE, 0xEF], stride: 2),
+          isNull, reason: 'a byte suffix is not a hop suffix');
+      expect(PathHelper.hopsBefore([0xBE, 0xEF], path, stride: 2), isNull);
+    });
+  });
 }

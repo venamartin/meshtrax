@@ -4801,12 +4801,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Скачивать карты только по Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnly => 'Скачивать только по Wi‑Fi';
 
   @override
-  String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Загрузка карт ждёт подключения к Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnlySubtitle => 'Загрузки ждут Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Офлайн-карты';
@@ -5070,13 +5068,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Недоступно для этого региона';
 
   @override
-  String get offlineMaps_notificationRunning => 'Скачивание карты';
+  String get offlineMaps_notificationRunning => 'Скачивание';
 
   @override
-  String get offlineMaps_notificationPaused => 'Загрузка карты приостановлена';
+  String get offlineMaps_notificationPaused => 'Загрузка приостановлена';
 
   @override
-  String get offlineMaps_notificationFailed => 'Не удалось скачать карту';
+  String get offlineMaps_notificationFailed => 'Не удалось скачать';
 
   @override
   String get map_notForNavigation => 'Не для навигации';

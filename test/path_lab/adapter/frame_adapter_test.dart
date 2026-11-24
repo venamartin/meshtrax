@@ -769,12 +769,55 @@ void main() {
       expect(adapter.packetLog.first.verdict, contains('no logged packet'));
     });
 
+    test('a copy the app opened itself is credited at once, and the decoded '
+        'message does not credit it again', () {
+      final frame = dm(path: [0xA2, 0x77, 0x13, 0x12]);
+      final payload = Uint8List.fromList([0xAB, 0x5B, 0x11, 0x22, 1, 2, 3]);
+      adapter.attributeOpenedCopy(
+          sender, Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]), 2, 32, payload);
+
+      final row = graph.ingressCandidates(sender).single;
+      expect(row.repeaterHash, 'A277');
+      expect(row.weight, closeTo(3.0, 0.01));
+      expect(adapter.messagesAttributed, 1);
+      expect(adapter.packetLog.first.verdict, contains('heard by A277'));
+
+      // The radio's log line reaches the adapter next, then its decoded
+      // message, a sync round-trip later.
+      adapter.handleFrame(frame);
+      adapter.attributeContactMessage(sender, 0x42, 32);
+      expect(weightOf('A277'), closeTo(3.0, 0.01),
+          reason: 'one message, one sighting');
+      expect(graph.ingressCandidates(sender).single.finalCount, 1);
+      expect(adapter.messagesAttributed, 1);
+
+      // A later copy of the same send, by another first repeater.
+      adapter.attributeOpenedCopy(
+          sender, Uint8List.fromList([0x5C, 0xBB, 0x13, 0x12]), 2, 20, payload);
+      expect(graph.ingressCandidates(sender).single.repeaterHash, 'A277');
+    });
+
     test('a sender sharing my first byte is not credited from [X][X]', () {
       final twin = 'ab' * 31 + 'cd';
       // Could be my own echo to them, or theirs to me: not kept.
       adapter.handleFrame(dm(path: [0xA2, 0x77, 0x13, 0x12], src: 0xAB));
       adapter.attributeContactMessage(twin, 0x42, 32);
       expect(graph.ingressCandidates(twin), isEmpty);
+    });
+
+    test('nor from a copy the app opened: it may be my own DM to them, '
+        'heard back', () {
+      final twin = 'ab' * 31 + 'cd';
+      // The secret is the same both ways, so my flood to them opens as
+      // theirs to me, and its first repeater heard me.
+      adapter.attributeOpenedCopy(
+          twin,
+          Uint8List.fromList([0xA2, 0x77, 0x13, 0x12]),
+          2,
+          32,
+          Uint8List.fromList([0xAB, 0xAB, 0x11, 0x22, 1, 2, 3]));
+      expect(graph.ingressCandidates(twin), isEmpty);
+      expect(adapter.messagesAttributed, 0);
     });
 
     test('a weak signal (negative SNR) still matches', () {
@@ -839,6 +882,98 @@ void main() {
       adapter.attributeContactMessage(sender, 0x43, 32);
       expect(graph.edgeCount, edges);
       expect(graph.egressCandidates().length, mine);
+    });
+  });
+
+  // Two copies of one routed packet: the later one's transmitter is the
+  // earlier one's next hop (Mesh.cpp removeSelfFromPath). Owner, 2026-11-19.
+  group('copy chain', () {
+    var now = DateTime(2026, 11, 19, 12);
+    late PathLabAdapter chain;
+    const dm = [0x5B, 0xAB, 9, 9, 9, 9];
+
+    setUp(() {
+      now = DateTime(2026, 11, 19, 12);
+      chain = PathLabAdapter(graph, now: () => now);
+    });
+
+    void copy(List<int> path,
+        {List<int> payload = dm, int type = 0x02, int stride = 2}) {
+      chain.handleFrame(rxFrame(
+          payloadType: type,
+          path: path,
+          payload: payload,
+          stride: stride,
+          routeType: 0x02));
+    }
+
+    Map<String, Candidate> heard() =>
+        {for (final c in graph.egressCandidates()) c.repeaterHash: c};
+
+    test('each later copy names the hop that passed it on', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty, reason: 'one copy: its sender is unknown');
+
+      now = now.add(const Duration(seconds: 2));
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard().keys, ['A277']);
+      expect(graph.snapshot().edges, isEmpty);
+      expect(chain.packetLog.first.verdict,
+          'direct — later copy of one heard before: A277 passed it on, '
+          'so I hear A277');
+
+      now = now.add(const Duration(seconds: 2));
+      copy([0xBE, 0xEF]);
+      expect(heard().keys, containsAll(['A277', 'AD77']));
+      expect(graph.snapshot().edges.keys, [('A277', 'AD77')]);
+
+      now = now.add(const Duration(seconds: 2));
+      copy([]);
+      expect(heard().keys, containsAll(['A277', 'AD77', 'BEEF']));
+      expect(graph.snapshot().edges.containsKey(('AD77', 'BEEF')), isTrue);
+      expect(graph.snapshot().edges[('A277', 'AD77')]!.obsCount, 1,
+          reason: 'one packet is one sighting of a link');
+      expect(heard().values.where((c) => c.proven), isEmpty,
+          reason: 'nothing here says who hears me');
+    });
+
+    test('a copy too late for its hops is another send', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      now = now.add(const Duration(seconds: 9));
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty);
+      // Two hops on from the first copy still fit two hops' time.
+      now = now.add(const Duration(seconds: 1));
+      copy([0xBE, 0xEF]);
+      expect(heard().keys, ['AD77']);
+      expect(graph.snapshot().edges.keys, [('A277', 'AD77')]);
+    });
+
+    test('the same bytes on two routes place nobody', () {
+      copy([0xA2, 0x77, 0xAD, 0x77, 0xBE, 0xEF]);
+      copy([0x10, 0x00, 0xAD, 0x77, 0xBE, 0xEF]);
+      copy([0xAD, 0x77, 0xBE, 0xEF]);
+      expect(heard(), isEmpty);
+      expect(chain.packetLog.first.verdict,
+          'direct — the same packet on two routes; nothing to learn');
+    });
+
+    test('the same copy twice is one proof', () {
+      copy([0xA2, 0x77, 0xBE, 0xEF]);
+      copy([0xBE, 0xEF]);
+      copy([0xBE, 0xEF]);
+      expect(heard()['A277']!.finalCount, 1);
+    });
+
+    test('other bytes, ACKs and narrow codes chain nothing', () {
+      copy([0xA2, 0x77, 0xBE, 0xEF]);
+      copy([0xBE, 0xEF], payload: [0x5B, 0xAB, 1, 1, 1, 1]);
+      copy([0xA2, 0x77, 0xBE, 0xEF], type: 0x03, payload: [1, 2, 3, 4]);
+      copy([0xBE, 0xEF], type: 0x03, payload: [1, 2, 3, 4]);
+      copy([0xA2, 0xBE], stride: 1);
+      copy([0xBE], stride: 1);
+      expect(heard(), isEmpty);
+      expect(graph.counters.droppedNarrow, 1);
     });
   });
 }

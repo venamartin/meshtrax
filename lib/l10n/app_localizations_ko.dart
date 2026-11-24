@@ -4568,11 +4568,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly => 'Wi‑Fi에서만 지도 다운로드';
+  String get appSettings_mapDownloadsWifiOnly => 'Wi‑Fi에서만 다운로드';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      '지도 다운로드는 Wi‑Fi에 연결될 때까지 기다립니다';
+      '다운로드는 Wi‑Fi에 연결될 때까지 기다립니다';
 
   @override
   String get offlineMaps_title => '오프라인 지도';
@@ -4827,13 +4827,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineMaps_notInCatalogue => '이 지역에서는 사용할 수 없음';
 
   @override
-  String get offlineMaps_notificationRunning => '지도 다운로드 중';
+  String get offlineMaps_notificationRunning => '다운로드 중';
 
   @override
-  String get offlineMaps_notificationPaused => '지도 다운로드 일시 중지됨';
+  String get offlineMaps_notificationPaused => '다운로드 일시 중지됨';
 
   @override
-  String get offlineMaps_notificationFailed => '지도 다운로드 실패';
+  String get offlineMaps_notificationFailed => '다운로드 실패';
 
   @override
   String get map_notForNavigation => '항해용 아님';

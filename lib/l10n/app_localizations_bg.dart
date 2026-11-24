@@ -4787,12 +4787,11 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
-  String get appSettings_mapDownloadsWifiOnly =>
-      'Изтегляй карти само през Wi‑Fi';
+  String get appSettings_mapDownloadsWifiOnly => 'Изтегляй само през Wi‑Fi';
 
   @override
   String get appSettings_mapDownloadsWifiOnlySubtitle =>
-      'Изтеглянето на карти чака Wi‑Fi връзка';
+      'Изтеглянията чакат Wi‑Fi';
 
   @override
   String get offlineMaps_title => 'Офлайн карти';
@@ -5052,14 +5051,13 @@ class AppLocalizationsBg extends AppLocalizations {
   String get offlineMaps_notInCatalogue => 'Не е налично за този регион';
 
   @override
-  String get offlineMaps_notificationRunning => 'Изтегляне на карта';
+  String get offlineMaps_notificationRunning => 'Изтегляне';
 
   @override
-  String get offlineMaps_notificationPaused =>
-      'Изтеглянето на картата е на пауза';
+  String get offlineMaps_notificationPaused => 'Изтеглянето е на пауза';
 
   @override
-  String get offlineMaps_notificationFailed => 'Неуспешно изтегляне на картата';
+  String get offlineMaps_notificationFailed => 'Неуспешно изтегляне';
 
   @override
   String get map_notForNavigation => 'Не е за навигация';

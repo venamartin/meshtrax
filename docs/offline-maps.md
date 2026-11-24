@@ -20,7 +20,7 @@ The app also comes with a base map of the whole world, down to towns and major r
 
 1. Open the **Map** screen, tap the menu, and choose **Offline maps**.
 2. Pick a region in the **Maps** tab (or a coast in the **Charts** tab), tick the kinds you want, and tap **Download**.
-3. The size is shown before you start. For large downloads, use Wi-Fi and keep your device charging; **Download maps on Wi-Fi only** in App Settings makes downloads wait for Wi-Fi. You can pause and resume. The download keeps going in the background, and on Android a notification shows its progress.
+3. The size is shown before you start. For large downloads, use Wi-Fi and keep your device charging; **Download on Wi-Fi only** in App Settings makes downloads wait for Wi-Fi. You can pause and resume. The download keeps going in the background, and on Android a notification shows its progress.
 
 The **Downloaded** tab lists what's on your device, how much space it uses, and lets you delete a region to free space. You can download it again later.
 
