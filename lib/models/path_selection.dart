@@ -20,7 +20,7 @@ class PathSelection {
   // Hash width of pathBytes; the radio's own width for a flood.
   final int hashSize;
   final bool useFlood;
-  // Null for a flood.
+  // Null for a flood the ladder chose; see [PathSelection.flood].
   final RouteSource? source;
   // The graph's delivery estimate; only a graph route has one.
   final double? estDelivery;
@@ -39,12 +39,15 @@ class PathSelection {
     this.guessedLinks = const [],
   });
 
-  const PathSelection.flood(int radioWidth)
+  /// A flood. With [RouteSource.firmware] as [source] it is the radio's
+  /// route where the contact list shows none: a flood, unless the radio has
+  /// learned a route the list doesn't show yet. Without, the ladder chose a
+  /// flood, and the radio's stored route is cleared for it.
+  const PathSelection.flood(int radioWidth, {this.source})
       : pathBytes = const [],
         hopCount = -1,
         hashSize = radioWidth,
         useFlood = true,
-        source = null,
         estDelivery = null,
         guessedLinks = const [];
 
@@ -93,8 +96,11 @@ PathSelection resolvePathSelection(
     );
   }
 
-  if (forceFlood || contact.pathLength < 0 || selection?.useFlood == true) {
+  if (forceFlood || selection?.useFlood == true) {
     return PathSelection.flood(radioWidth);
+  }
+  if (contact.pathLength < 0) {
+    return PathSelection.flood(radioWidth, source: RouteSource.firmware);
   }
 
   if (selection != null && selection.pathBytes.isNotEmpty) {

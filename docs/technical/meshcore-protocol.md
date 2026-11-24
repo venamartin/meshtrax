@@ -825,6 +825,18 @@ direct after the first flood login.
 
 Previously debugged issues. Check here before touching related code.
 
+### Bug (fixed 2026-11): a flood the ladder chose went out on the radio's stored route
+**File:** `lib/connector/meshcore_connector.dart` (`_putRoute`), `lib/models/path_selection.dart`
+**Symptom:** a flood attempt went out on a route (field, 2026-11-21: "was asked to go as a
+flood but the radio sent it on its stored route"), so a try meant for everyone took one route.
+**Cause:** `CMD_RESET_PATH` was sent before a flood only when the contact list showed a route,
+and the list can lag the radio: a route learned while its read-back timed out.
+**Rule:** a flood the ladder chose always sends the reset. That covers Pathfinder's floods, the
+firmware ladder's floods after its route tries, a manual resend and a flood the user set. Only
+the radio's route where the list shows none (`PathSelection.flood` with `RouteSource.firmware`,
+from `resolvePathSelection`) clears just a route the list shows, so one only the radio knows is
+kept.
+
 ### Bug (fixed 2026-11): a route learned while a DM waited carried it, the planned one got the credit
 **File:** `lib/connector/meshcore_connector.dart` (`sendOnRoute`, `_sendMessageDirect`)
 **Symptom:** a reply sent right after a contact's flooded DM went out on the route their PATH

@@ -243,4 +243,45 @@ void main() {
     await deliver();
     expect(credited, [(route: _hex(_planned.pathBytes), delivered: true)]);
   });
+
+  // Field 2026-11-21: a flood went out on the radio's stored route. The
+  // contact list showed no route (read back too late after the radio
+  // learned one), so the app sent no reset.
+  group('a route only the radio knows', () {
+    Contact listed() => c.contacts.firstWhere((x) => x.name == 'Bob');
+    int resets() => c.frames.where((f) => f[0] == cmdResetPath).length;
+
+    setUp(() {
+      c.stored[_hex(bobKey)] = _learned.pathBytes;
+    });
+
+    test('is cleared for a flood the ladder chose', () async {
+      c.graphRouteCandidates = (_) => const [];
+      expect(listed().pathLength, -1, reason: 'the list shows no route');
+      unawaited(c.sendMessage(listed(), 're: test'));
+      await until(() => c.dms.isNotEmpty);
+
+      expect(c.dmRoutes, ['flood']);
+      expect(resets(), 1);
+    });
+
+    test('is cleared for a flood the user set', () async {
+      c.graphRouteCandidates = null;
+      await c.setPathOverride(listed(), pathLen: -1);
+      unawaited(c.sendMessage(listed(), 're: test'));
+      await until(() => c.dms.isNotEmpty);
+
+      expect(c.dmRoutes, ['flood']);
+      expect(resets(), 1);
+    });
+
+    test("carries the radio's route where the list shows none", () async {
+      c.graphRouteCandidates = null;
+      unawaited(c.sendMessage(listed(), 're: test'));
+      await until(() => c.dms.isNotEmpty);
+
+      expect(c.dmRoutes, [_hex(_learned.pathBytes)]);
+      expect(resets(), 0, reason: 'a route the radio just learned is kept');
+    });
+  });
 }

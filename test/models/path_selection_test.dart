@@ -65,13 +65,26 @@ void main() {
     expect(sel.hashSize, 2);
   });
 
-  test('a flood carries the radio width', () {
+  test("with no route known it is the radio's route: a flood at the radio "
+      'width, unless the radio has learned one', () {
     final sel = resolvePathSelection(contact(pathLength: -1), radioWidth: 1);
 
     expect(sel.useFlood, isTrue);
     expect(sel.hashSize, 1);
     expect(sel.pathBytes, isEmpty);
-    expect(sel.source, isNull);
+    expect(sel.source, RouteSource.firmware);
+  });
+
+  test('a flood the user set, or a forced one, is a flood chosen as one', () {
+    final userFlood = resolvePathSelection(contact(pathOverride: -1),
+        radioWidth: 2);
+    final forced = resolvePathSelection(contact(pathLength: -1),
+        radioWidth: 2, forceFlood: true);
+
+    for (final sel in [userFlood, forced]) {
+      expect(sel.useFlood, isTrue);
+      expect(sel.source, isNull);
+    }
   });
 
   group('planAttempts', () {
@@ -245,6 +258,23 @@ void main() {
       expect(kinds(plan(contact(), budget: 3)), ['firmware', 'flood', 'flood']);
       expect(kinds(plan(contact(pathLength: -1), budget: 3)),
           ['flood', 'flood', 'flood']);
+    });
+
+    test("only the firmware ladder's route tries are the radio's route; every "
+        'other flood is one the ladder chose', () {
+      List<RouteSource?> sources(List<PathSelection> plan) =>
+          [for (final s in plan) s.source];
+      final none = contact(pathLength: -1);
+
+      expect(sources(plan(none, budget: 4)),
+          [RouteSource.firmware, RouteSource.firmware, null, null]);
+      expect(sources(plan(none, budget: 3)), [RouteSource.firmware, null, null]);
+      expect(sources(plan(none, budget: 3, floodFirst: true)), [null, null, null]);
+      expect(sources(plan(none, budget: 3, graphRoutes: [])), [null, null, null]);
+      expect(sources(plan(contact(), budget: 3, graphRoutes: [g1])).skip(1),
+          [null, null]);
+      expect(sources(plan(contact(pathOverride: -1), budget: 3)),
+          [null, null, null]);
     });
 
     test('a user override keeps its ladder and ignores the graph', () {
