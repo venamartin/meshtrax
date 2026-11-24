@@ -72,6 +72,10 @@ class DiscoverResponse {
 /// each is a doubt about MY side of the air that one zero-hop request
 /// settles for a packet, where a flood would cost the whole mesh.
 enum DiscoverReason {
+  /// A doorstep of mine was not heard passing on a packet I sent it
+  /// twice, though I hear it: it may not hear me now.
+  doorstepSilent,
+
   /// The radio knows its area and no repeater has been heard hearing me
   /// around here.
   noDoorstepHere,
@@ -469,7 +473,14 @@ class PathGraph {
   /// A flood of mine was delivered to them: their radio now holds the
   /// way back from where I am.
   void reportFloodDelivered(String contactPubkey) {
-    _reachedSinceMove.add(contactPubkey.toLowerCase());
+    contactPubkey = contactPubkey.toLowerCase();
+    _reachedSinceMove.add(contactPubkey);
+    // Their path reply, when one came, named the repeater it reached them
+    // by and settled the misses already ([reportSendResult]). Without
+    // one (a room sends none) the flood got through where the routes did
+    // not, and that is all that is known.
+    _settleMissedEnds(contactPubkey);
+    _scheduleFlush();
   }
 
   /// Whether their way back is known to end at a repeater heard hearing
@@ -494,6 +505,36 @@ class PathGraph {
   // echo heard. Memory only — advice is about now.
   int? _lastSelfProofAt;
   final Map<String, Set<String>> _failedToward = {};
+
+  // Doorsteps of mine not heard passing on a packet sent twice, and when:
+  // a doubt, ended by that doorstep's next proof or by [_doubtMinutes].
+  final Map<String, int> _silentAt = {};
+  static const _doubtMinutes = 10;
+
+  // Per contact: the repeaters my routed sends to them ended at and got
+  // no ACK through, since the last delivery to them, and when. The next
+  // delivery settles each: by the same repeater, the misses were chance;
+  // by another, or by a flood whose path is not known, it is held
+  // against that repeater ([PathGraphConfig.contactFailGate]).
+  final Map<String, Map<String, int>> _missedEnds = {};
+  static const _missedEndMinutes = 15;
+
+  bool _inDoubt(String hash, int now) {
+    final at = _silentAt[hash];
+    return at != null && now - at <= _doubtMinutes * 60 * 1000;
+  }
+
+  /// Holds every repeater a routed send to [contactPubkey] ended at
+  /// without an ACK against it, except [deliveredBy], and forgets them.
+  void _settleMissedEnds(String contactPubkey, {String? deliveredBy}) {
+    final missed = _missedEnds.remove(contactPubkey);
+    if (missed == null) return;
+    final cutoff = _arrivalMillis - _missedEndMinutes * 60 * 1000;
+    for (final e in missed.entries) {
+      if (e.key == deliveredBy || e.value < cutoff) continue;
+      _evidence.recordFailedIngress(contactPubkey, e.key);
+    }
+  }
   int? _unansweredLadderAt;
   static const _unansweredAdviceMinutes = 10;
 
@@ -513,6 +554,10 @@ class PathGraph {
     final self = _selfPubkey;
     if (self == null) return null;
     final now = _arrivalMillis;
+    // My own side, whoever the send was for.
+    if (_silentAt.keys.any((hash) => _inDoubt(hash, now))) {
+      return DiscoverReason.doorstepSilent;
+    }
     if (contactPubkey != null &&
         _theirDoorstepsAllFailing(contactPubkey.toLowerCase(), now)) {
       return null;
@@ -573,6 +618,7 @@ class PathGraph {
     final upper = repeater.toUpperCase();
     _lastSelfProofAt = _arrivalMillis;
     _failedToward.remove(upper);
+    _silentAt.remove(upper);
     _unansweredLadderAt = null;
     final self = _selfPubkey, cell = _cell;
     if (self == null) return;
@@ -595,6 +641,8 @@ class PathGraph {
     _hints.clear();
     _failedGuesses.clear();
     _ownPackets.clear();
+    _missedEnds.clear();
+    _silentAt.clear();
   }
 
   String? get selfPubkey => _selfPubkey;
@@ -925,6 +973,25 @@ class PathGraph {
     _scheduleFlush();
   }
 
+  /// The first hop of [pathBytes] was heard passing on a routed packet of
+  /// mine sent on that route: it heard me. Unlike a flood's echo it says
+  /// nothing about my other doorsteps (only this one was asked), so none
+  /// is pushed down for it.
+  void observePassedOn(Uint8List pathBytes, int stride) {
+    final self = _selfPubkey;
+    if (self == null || pathBytes.isEmpty) return;
+    if (stride < hashWidthBytes) {
+      _droppedNarrow++;
+      return;
+    }
+    if (pathBytes.length % stride != 0) return;
+    final first = _hopHex(pathBytes, stride, 0);
+    _evidence.recordProvenEgress(self, first, _arrivalMillis);
+    _notePlace(first);
+    _observationsApplied++;
+    _scheduleFlush();
+  }
+
   /// A repeater's own zero-hop transmission reached this radio (an
   /// overheard discover reply, for one). That is the heard-last fact a
   /// received path gives — I hear it, measured — and nothing about
@@ -1020,11 +1087,16 @@ class PathGraph {
     final top = standing.isEmpty
         ? null
         : standing.reduce((a, b) => b.weight > a.weight ? b : a);
-    final recordFailed =
-        top != null && !heardLatest(top) && top.failedSinceProof > 0;
+    // Failed: held against it by a delivery that came another way, or a
+    // miss the next delivery has yet to settle ([_settleMissedEnds]).
+    final missed = _missedEnds[contactPubkey];
+    final cutoff = _arrivalMillis - _missedEndMinutes * 60 * 1000;
+    bool failed(Candidate c) =>
+        c.failedSinceProof > 0 || (missed?[c.repeaterHash] ?? 0) > cutoff;
+    final recordFailed = top != null && !heardLatest(top) && failed(top);
     final fresh = [
       for (final c in standing)
-        if (heardLatest(c) && (!recordFailed || c.failedSinceProof == 0)) c
+        if (heardLatest(c) && (!recordFailed || !failed(c))) c
     ];
     return [
       if ((newestBeforeRecord ?? config.newestBeforeRecord) ||
@@ -1106,6 +1178,16 @@ class PathGraph {
   /// says nothing the graph may keep: the break was most likely the guess,
   /// so no row is minted for a guessed pair and my doorstep is not charged
   /// (owner, 2026-10-24).
+  ///
+  /// [hopsHeard]: how many hops of the route were heard passing the packet
+  /// on. A failure is charged by where it broke (owner, 2026-11-24: one
+  /// missed ACK is no reason to drop a learned route). Heard at all, my
+  /// doorstep heard me: it is not charged, and the links up to the last
+  /// hop heard carried the packet. 0, listened for and not heard, the
+  /// same packet sent twice: the packet never left my doorstep, so only
+  /// it is charged, no link was tried and nothing is said about their
+  /// end. Null, nobody could be listened for: charged as a whole, since
+  /// the break cannot be placed.
   void reportSendResult(
     Uint8List pathBytes,
     bool success, {
@@ -1115,6 +1197,7 @@ class PathGraph {
     bool tally = true,
     bool proveEgress = true,
     List<bool> guessedLinks = const [],
+    int? hopsHeard,
   }) {
     contactPubkey = contactPubkey?.toLowerCase();
     final arrival = _arrivalMillis;
@@ -1152,23 +1235,30 @@ class PathGraph {
       // (simulator 2026-11-22: two messages lost that master delivered).
       final secondOpinion = contactPubkey != null &&
           _secondOpinion(contactPubkey, _hopHex(pathBytes, stride, hopCount - 1));
-      if (!secondOpinion) {
-        _evidence.recordFailedEgress(
-            _selfPubkey!, _hopHex(pathBytes, stride, 0));
-        _failPlace(_hopHex(pathBytes, stride, 0));
-        if (contactPubkey != null) {
-          _failedToward
-              .putIfAbsent(
-                  _hopHex(pathBytes, stride, 0).toUpperCase(), () => {})
-              .add(contactPubkey);
+      final first = _hopHex(pathBytes, stride, 0).toUpperCase();
+      final silent = hopsHeard == 0;
+      // Heard passing it on, my doorstep is not charged: it proved itself
+      // as it was heard ([observePassedOn]).
+      if (silent || (hopsHeard == null && !secondOpinion)) {
+        _evidence.recordFailedEgress(_selfPubkey!, first);
+        if (silent) {
+          _silentAt[first] = arrival;
+        } else if (contactPubkey != null) {
+          _failedToward.putIfAbsent(first, () => {}).add(contactPubkey);
+        }
+        // Held now: where the radio knows its area, held for this area
+        // until it proves itself here again.
+        final row = _evidence.entries[(_selfPubkey!, first)];
+        if (row != null && row.failedSinceProof >= config.selfFailGate) {
+          _failPlace(first);
         }
       }
-      // ...and their end likewise: a doorstep that keeps failing deliveries
-      // to them stops ending routes (PathGraphConfig.contactFailGate);
-      // only a delivery through it resets that.
-      if (contactPubkey != null) {
-        _evidence.recordFailedIngress(
-            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1));
+      // ...and their end: a miss is remembered, and the next delivery to
+      // them says whether it counts ([_settleMissedEnds]). A packet that
+      // never left my doorstep says nothing about theirs.
+      if (contactPubkey != null && !silent) {
+        (_missedEnds[contactPubkey] ??= {})[
+            _hopHex(pathBytes, stride, hopCount - 1)] = arrival;
       }
     }
     if (contactPubkey != null) {
@@ -1191,10 +1281,14 @@ class PathGraph {
         continue;
       }
       if (!success && anyGuessed) continue;
+      // A packet that never left my doorstep tried no link.
+      if (!success && hopsHeard == 0) continue;
       final edge = _store.edges.putIfAbsent((from, to),
           () => EdgeState(source: 'observed', firstObserved: arrival));
       edge.n++;
-      if (success) {
+      // The hop this link leads to was heard passing the packet on (it is
+      // the i + 2nd of the route): the link carried it.
+      if (success || (hopsHeard != null && hopsHeard >= i + 2)) {
         // The packet travelled every hop: a sighting as well as a proof.
         edge.s++;
         edge.lastObserved = arrival;
@@ -1222,8 +1316,9 @@ class PathGraph {
         _notePlace(_hopHex(pathBytes, stride, 0));
       }
       if (contactPubkey != null) {
-        _evidence.recordProvenIngress(
-            contactPubkey, _hopHex(pathBytes, stride, hopCount - 1), arrival);
+        final end = _hopHex(pathBytes, stride, hopCount - 1);
+        _evidence.recordProvenIngress(contactPubkey, end, arrival);
+        _settleMissedEnds(contactPubkey, deliveredBy: end);
       }
     }
     _scheduleFlush();
@@ -1699,6 +1794,14 @@ class PathGraph {
     final cell = _cell;
     for (final c in eligible) {
       var hold = doorstepHold(c, now: now);
+      // In doubt, and another repeater has proved since that it hears
+      // me (its own proof would have ended the doubt): that one starts
+      // the routes until this one proves itself again.
+      if (hold == null &&
+          _inDoubt(c.repeaterHash, now) &&
+          (_lastSelfProofAt ?? 0) > _silentAt[c.repeaterHash]!) {
+        hold = FloodReason.doorstepsFailing;
+      }
       var use = c;
       // Where the radio is known, a doorstep starts a route only if it
       // was heard hearing me around here and has not failed here since;

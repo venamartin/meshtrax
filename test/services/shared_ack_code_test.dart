@@ -44,7 +44,7 @@ class _Rig {
       pathHashByteWidth: () => 2,
       graphRoutes: (_) => graph.isEmpty ? [_g1, _g2, _g3] : graph,
       onAttemptStarted: (_, sel, _) => routes.add(sel),
-      onAttemptResult: (_, sel, delivered, _) => reported.add((
+      onAttemptResult: (_, sel, delivered, _, _) => reported.add((
         route: sel.useFlood ? 'flood' : _hex(sel.pathBytes),
         delivered: delivered,
       )),

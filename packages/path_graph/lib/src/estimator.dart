@@ -56,8 +56,12 @@ class PathGraphConfig {
 
   /// A contact's doorstep is a repeater heard carrying their packets, which
   /// proves it hears THEM; a route ending there assumes it also reaches
-  /// them. When this many direct sends ending at it have failed since its
-  /// last proven delivery, the assumption is wrong for this pair (field
+  /// them. A missed ACK alone says little: two radios sending at once
+  /// explains it as well (owner, 2026-11-24). What counts is a send that
+  /// missed through it followed by a delivery that came another way: by a
+  /// route ending elsewhere, or by a flood whose path reply names another
+  /// repeater or none. After this many of those in a row since its last
+  /// proven delivery, the assumption is wrong for this pair (field
   /// 2026-10-24: F5EE heard Monterey Bay and this radio, the room did not
   /// hear F5EE, four posts failed on it) and it stops ending routes to that
   /// contact. Only a delivery through it resets the count — hearing them via
@@ -252,7 +256,9 @@ class PathGraphConfig {
   /// [selfFailGate]: this many direct sends failed from a doorstep since
   /// its last proof and it stops starting routes (replay of that drive:
   /// at 2, 113 of 186 failed route attempts skipped, 2 of 7 deliveries
-  /// blocked). [selfSilenceMinutes]: a doorstep this much quieter than
+  /// blocked). A send whose packet the doorstep was heard passing on is
+  /// not one of them: it heard me, and the failure lies further on
+  /// ([PathGraph.reportSendResult], hopsHeard). [selfSilenceMinutes]: a doorstep this much quieter than
   /// the newest-heard of my doorsteps stops too — a repeater out-transmits
   /// a handheld, so not hearing it for that long while hearing others is
   /// as good as it not hearing me. Self-gated: the clock is my own

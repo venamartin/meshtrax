@@ -128,6 +128,63 @@ void main() {
     });
   });
 
+  // A DM reads the same in both directions but for its two address bytes:
+  // one secret, and the MAC covers the ciphertext only. So the firmware's
+  // DM from A, with those two bytes swapped, is B's own DM to A.
+  group("this radio's own DM, heard passed on", () {
+    final ownPayload = Uint8List.fromList(
+      [aPub[0], bPub[0], ...dmFromAd77.sublist(6)],
+    );
+
+    test('is read with the contact it went to, its time, attempt and text',
+        () {
+      final own = _opener().openOwn(
+        payload: ownPayload,
+        contactKeys: [bPub, aPub],
+      )!;
+      expect(own.contactKey, aPub);
+      expect(own.timestamp, 1795046400);
+      expect(own.attempt, 0);
+      expect(String.fromCharCodes(own.textBytes), 'hello B');
+    });
+
+    test('an attempt above 3 is read from the byte after the text', () {
+      final payload = Uint8List.fromList([
+        aPub[0],
+        bPub[0],
+        ...PassingCopyOpener.encryptThenMac(secretBA, [
+          0x10, 0x20, 0x30, 0x40, // time
+          0x01, // attempt 5, low two bits
+          0x68, 0x69, 0x00, // "hi"
+          0x05,
+        ]),
+      ]);
+      final own = _opener().openOwn(payload: payload, contactKeys: [aPub])!;
+      expect(own.attempt, 5);
+      expect(String.fromCharCodes(own.textBytes), 'hi');
+    });
+
+    test("a DM to this radio is not its own", () {
+      expect(
+        _opener().openOwn(
+          payload: dmFromAd77.sublist(4),
+          contactKeys: [aPub],
+        ),
+        isNull,
+      );
+    });
+
+    test('nor a packet whose MAC fails, or to a contact it has no key for',
+        () {
+      final bad = Uint8List.fromList(ownPayload)..[ownPayload.length - 1] ^= 1;
+      expect(_opener().openOwn(payload: bad, contactKeys: [aPub]), isNull);
+      expect(
+        _opener().openOwn(payload: ownPayload, contactKeys: [bPub]),
+        isNull,
+      );
+    });
+  });
+
   group('ACK packets, built as BaseChatMesh::sendAckTo builds them', () {
     test('with no route back: one flood, as the firmware sent it', () {
       final packets = PassingCopyOpener.ackPackets(

@@ -18,6 +18,12 @@ const beef = [0xBE, 0xEF];
 /// none was answered; every flood that followed echoed via F5EE and reset
 /// my own doorstep's failure count, so F5EE was tried again and again. The
 /// contact's end now keeps its own count (owner, 2026-10-24).
+///
+/// What counts (owner, 2026-11-24: one missed ACK is no reason to drop a
+/// learned route): not a missed ACK by itself, which two radios sending at
+/// once explains as well, but a miss through the doorstep followed by a
+/// delivery that came another way. Twice in a row, and it stops ending
+/// routes.
 void main() {
   late PathGraph graph;
   var nowMillis = 1000000000;
@@ -53,23 +59,102 @@ void main() {
 
   List<int> bytesOf(PathResult r) => (r as RouteResult).pathBytes;
 
-  test('two failed deliveries through a doorstep stop routes ending there',
-      () {
+  /// A post went out on [route], F5EE was heard passing it on (so my own
+  /// end is not in question), and no ACK came.
+  void missed([List<int> route = f5ee]) => graph.reportSendResult(
+      path(route), false,
+      contactPubkey: roomPk, hopsHeard: 1);
+
+  /// Twice a post missed through F5EE and then got through as a flood (a
+  /// room sends no path reply, so by a way nobody named).
+  void holdF5ee() {
+    for (var i = 0; i < 2; i++) {
+      missed();
+      graph.reportFloodDelivered(roomPk);
+    }
+  }
+
+  test('missed ACKs alone stop nothing', () {
     setupMesh();
     expect(bytesOf(graph.findPath(roomPk)), f5ee, reason: 'one hop beats two');
+    for (var i = 0; i < 4; i++) {
+      missed();
+    }
+    expect(bytesOf(graph.findPath(roomPk)), f5ee);
+  });
 
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    expect(bytesOf(graph.findPath(roomPk)), f5ee, reason: 'one failure is noise');
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+  test('twice a miss through a doorstep and then a delivery another way: '
+      'routes stop ending there', () {
+    setupMesh();
+    missed();
+    missed();
+    graph.reportFloodDelivered(roomPk);
+    expect(bytesOf(graph.findPath(roomPk)), f5ee,
+        reason: 'once is chance, however many tries missed');
+    missed();
+    graph.reportFloodDelivered(roomPk);
 
     expect(bytesOf(graph.findPath(roomPk)), [...a277, ...beef],
         reason: 'F5EE no longer ends routes to the room');
   });
 
+  test('a delivery on a route ending elsewhere counts like the flood', () {
+    setupMesh();
+    for (var i = 0; i < 2; i++) {
+      missed();
+      graph.reportSendResult(path([...a277, ...beef]), true,
+          contactPubkey: roomPk);
+    }
+    final theirs = graph.ingressCandidates(roomPk)
+        .firstWhere((c) => c.repeaterHash == 'F5EE');
+    expect(graph.doorstepFailsThem(theirs), isTrue);
+  });
+
+  test('a flood that got through by the same doorstep clears it: the '
+      'misses were chance', () {
+    setupMesh();
+    missed();
+    graph.reportFloodDelivered(roomPk);
+    missed();
+    missed();
+    // Their path reply names the way the flood took: it ended at F5EE.
+    graph.reportSendResult(path(f5ee), true,
+        contactPubkey: roomPk, tally: false);
+    graph.reportFloodDelivered(roomPk);
+    final theirs = graph.ingressCandidates(roomPk)
+        .firstWhere((c) => c.repeaterHash == 'F5EE');
+    expect(theirs.failedSinceProof, 0);
+    expect(bytesOf(graph.findPath(roomPk)), f5ee);
+  });
+
+  test('a packet that never left my own doorstep says nothing about '
+      'theirs', () {
+    setupMesh();
+    for (var i = 0; i < 2; i++) {
+      graph.reportSendResult(path([...a277, ...f5ee]), false,
+          contactPubkey: roomPk, hopsHeard: 0);
+      graph.reportFloodDelivered(roomPk);
+    }
+    final theirs = graph.ingressCandidates(roomPk)
+        .firstWhere((c) => c.repeaterHash == 'F5EE');
+    expect(theirs.failedSinceProof, 0);
+  });
+
+  test('a miss from long before the delivery is not held against it', () {
+    setupMesh();
+    for (var i = 0; i < 2; i++) {
+      missed();
+      nowMillis += 16 * 60 * 1000;
+      graph.reportFloodDelivered(roomPk);
+    }
+    final theirs = graph.ingressCandidates(roomPk)
+        .firstWhere((c) => c.repeaterHash == 'F5EE');
+    expect(theirs.failedSinceProof, 0);
+  });
+
   test('the flooded ACK of a delivery through the doorstep reopens it', () {
     setupMesh();
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    holdF5ee();
     expect(bytesOf(graph.findPath(roomPk)), [...a277, ...beef]);
     // My flood got through and its ACK came back via F5EE: a delivery.
     graph.observeContactSender(roomPk, path(f5ee), 2,
@@ -82,8 +167,7 @@ void main() {
 
   test('hearing them via the doorstep again does not reopen it', () {
     setupMesh();
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    holdF5ee();
     // The room's next reply arrives via F5EE: proves room→F5EE, not F5EE→room.
     graph.observePath(path(f5ee), 2,
         const ObservationOrigin.pubkeyConfirmed(roomPk),
@@ -94,8 +178,7 @@ void main() {
 
   test('a delivery through the doorstep reopens it', () {
     setupMesh();
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    holdF5ee();
     graph.reportSendResult(path(f5ee), true, contactPubkey: roomPk);
 
     expect(bytesOf(graph.findPath(roomPk)), f5ee);
@@ -103,8 +186,7 @@ void main() {
 
   test('my own echoes resetting my doorstep do not reopen theirs', () {
     setupMesh();
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    holdF5ee();
     // The flood rung's echo: F5EE heard me — true, and beside the point.
     graph.observeOwnEcho(path(f5ee), 2);
 
@@ -117,8 +199,7 @@ void main() {
     graph.observePath(path(f5ee), 2,
         const ObservationOrigin.pubkeyConfirmed(roomPk),
         messageId: 'reply');
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
-    graph.reportSendResult(path(f5ee), false, contactPubkey: roomPk);
+    holdF5ee();
 
     expect((graph.findPath(roomPk) as FloodResult).reason,
         FloodReason.theirDoorstepsFailing);
@@ -130,11 +211,13 @@ void main() {
     // route that leads for ten minutes, and one delivery proved through F5EE.
     graph.reportSendResult(path(f5ee), true, contactPubkey: roomPk, tally: false);
     expect(bytesOf(graph.findPath(roomPk)), f5ee);
-    // Then two deliveries fail at F5EE, on routes other than the live one
-    // (a failure on its exact hops drops it anyway) and from first hops
-    // that leave my own doorsteps open.
-    graph.reportSendResult(path([...a277, ...f5ee]), false, contactPubkey: roomPk);
-    graph.reportSendResult(path([...beef, ...f5ee]), false, contactPubkey: roomPk);
+    // Then twice a post misses at F5EE and gets through as a flood, on
+    // routes other than the live one (a failure on its exact hops drops
+    // it anyway).
+    missed([...a277, ...f5ee]);
+    graph.reportFloodDelivered(roomPk);
+    missed([...beef, ...f5ee]);
+    graph.reportFloodDelivered(roomPk);
 
     expect(bytesOf(graph.findPath(roomPk)), [...a277, ...beef],
         reason: 'the live route ends at a doorstep that fails them');

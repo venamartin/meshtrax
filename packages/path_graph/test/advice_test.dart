@@ -80,10 +80,12 @@ void main() {
   test('never while their doorsteps are the ones failing', () {
     corridors();
     // A277 fails twice toward Bob and once toward Carol: my side is in
-    // doubt (two contacts), but BEEF has failed Bob twice as well, so for
-    // Bob the doubt is his end and no Discover can settle it.
+    // doubt (two contacts). But both of Bob's got through as a flood
+    // afterwards, which is held against BEEF, so for Bob the doubt is his
+    // end and no Discover can settle it.
     for (var i = 0; i < 2; i++) {
       graph.reportSendResult(path([...a277, ...beef]), false, contactPubkey: bobPk);
+      graph.reportFloodDelivered(bobPk);
     }
     graph.reportSendResult(path([...a277, ...beef]), false, contactPubkey: carolPk);
     expect(graph.selfAdvice(contactPubkey: bobPk), isNull);

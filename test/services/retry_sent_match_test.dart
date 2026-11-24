@@ -34,7 +34,11 @@ final _bob = _person('Bob', 0xAA);
 final _carol = _person('Carol', 0x10);
 
 class _Rig {
-  _Rig() {
+  _Rig([FakeAsync? async])
+      : svc = MessageRetryService(
+            clock: async == null
+                ? null
+                : () => DateTime(2026, 11, 24).add(async.elapsed)) {
     svc.initialize(
       RetryServiceConfig(
         sendMessage: (contact, text, attempt, ts) =>
@@ -58,7 +62,7 @@ class _Rig {
   late Uint8List? appKey = radioKey;
   final sends = <({String to, String text, int attempt, int ts})>[];
   final seen = <Message>[];
-  final svc = MessageRetryService();
+  final MessageRetryService svc;
 
   /// The ACK hash the radio reports for the send to [to] numbered
   /// [attempt].
@@ -80,9 +84,12 @@ void main() {
     test('a SENT for Bob\'s resend after his ACK never lands on Carol\'s SOS '
         '(${carolFirst ? 'hers the older DM' : 'his parked first'})', () {
       fakeAsync((async) {
-        final r = _Rig();
-        // A repeater was heard a moment ago: a flood nobody echoes parks.
+        final r = _Rig(async);
+        // A repeater was heard two minutes ago: a flood nobody echoes
+        // parks. (Heard within the last minute, it would go out again
+        // first.)
         r.svc.noteRepeaterHeard();
+        async.elapse(const Duration(minutes: 2));
         for (final (contact, text)
             in carolFirst
                 ? [(_carol, _sos), (_bob, 'one')]

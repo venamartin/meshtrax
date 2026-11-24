@@ -320,6 +320,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onFirmwarePathLearned = _onFirmwarePath;
     connector.onSendAttemptResult = _onAttemptResult;
     connector.onSendAttemptStarted = _onAttemptStarted;
+    connector.onOwnCopyPassedOn = _onPassedOn;
+    connector.onPathReplyHeard = _onPathReplyHeard;
+    connector.beforeFirstDmAttempt = _beforeFirstAttempt;
     connector.onAckHeard = _onAckHeard;
     connector.graphRouteCandidates = candidatesFor;
     connector.isCarRepeater = isCarRepeater;
@@ -578,6 +581,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.selfGps.removeListener(_syncPlace);
     _connector?.onFirmwarePathLearned = null;
     _connector?.onSendAttemptResult = null;
+    _connector?.onOwnCopyPassedOn = null;
+    _connector?.onPathReplyHeard = null;
+    _connector?.beforeFirstDmAttempt = null;
+    _pathReplies.clear();
     _connector?.onSendAttemptStarted = null;
     _connector?.onAckHeard = null;
     _connector?.graphRouteCandidates = null;
@@ -774,6 +781,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
   /// rule, 2026-10-14).
   void _onFirmwarePath(Contact snapshot) {
     final connector = _connector;
+    final named = _pathReplies.remove(snapshot.publicKeyHex);
     if (connector == null || snapshot.pathLength < 0 || _onOtherMesh) return;
     // The reply that carried this route was a flood from them: credit
     // their doorstep from the logged copy before proving the route.
@@ -782,38 +790,58 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         .where((c) => c.publicKeyHex == snapshot.publicKeyHex)
         .firstOrNull;
     if (known?.pathOverride != null) return;
-    // A ladder write can land between the push and the contact fetch; the
-    // snapshot then holds the app's route, not the firmware's.
-    if (connector.wroteContactPath(snapshot)) return;
-    _provePathReply(snapshot);
+    if (named != null &&
+        DateTime.now().difference(named.at) <= _pathReplyFresh) {
+      // The route as their packet named it. The contact read back can
+      // hold a route the app wrote since (the keeper writes within
+      // 50 ms of an ACK), which named nothing (field 2026-11-24: floods
+      // that got through by the usual repeater proved nothing).
+      _provePathReply(snapshot, named.path, named.width);
+    } else {
+      // A ladder write can land between the push and the contact fetch;
+      // the snapshot then holds the app's route, not the firmware's.
+      if (connector.wroteContactPath(snapshot)) return;
+      _provePathReply(snapshot, snapshot.path, snapshot.pathHashSize);
+    }
     // The firmware just replaced the stored route the ACKs go on.
     _keeper?.reassert(snapshot.publicKeyHex);
   }
 
+  // The route each contact's last path packet named, read from the packet,
+  // until the radio says it stored it.
+  final Map<String, ({Uint8List path, int width, DateTime at})> _pathReplies =
+      {};
+  static const _pathReplyFresh = Duration(seconds: 30);
+
+  void _onPathReplyHeard(Contact contact, Uint8List path, int width) {
+    _pathReplies[contact.publicKeyHex] =
+        (path: path, width: width, at: DateTime.now());
+  }
+
   /// A PATH reply names the first flood copy that arrived: it proves both
   /// doorsteps, but says nothing about how good its corridor is.
-  /// The route keeps the hash width of the packet that built it
-  /// ([Contact.pathHashSize]), not the radio's.
-  void _provePathReply(Contact contact) {
+  /// The route keeps the hash width of the packet that built it ([width]),
+  /// not the radio's.
+  void _provePathReply(Contact contact, Uint8List path, int width) {
     // The flood that earned this route was echoed back first; if that
     // echo already proved the first hop, this is the same proof again.
     // The route's first hop at the graph's width, through PathHelper: a
     // route narrower than the graph has no identity here (and is dropped
     // by the graph below).
-    final width = _graph?.hashWidthBytes ?? contact.pathHashSize;
-    final hop = contact.pathHashSize >= width
-        ? PathHelper.firstHopHex(contact.path, stride: contact.pathHashSize)
+    final graphWidth = _graph?.hashWidthBytes ?? width;
+    final hop = width >= graphWidth
+        ? PathHelper.firstHopHex(path, stride: width)
         : null;
-    final firstHop = hop == null ? '' : hop.substring(0, width * 2);
+    final firstHop = hop == null ? '' : hop.substring(0, graphWidth * 2);
     final echoed = firstHop.isNotEmpty &&
         (_adapter?.echoAlreadyProved(contact.publicKeyHex, firstHop) ?? false);
     appLogger.info(
-        'path reply from ${contact.name}: ${_hops(contact.path, contact.pathHashSize)} '
+        'path reply from ${contact.name}: ${_hops(path, width)} '
         '— ${echoed ? "first hop already proved by its echo" : "first hop credited as hearing me"}',
         tag: 'PathGraph');
-    _graph?.reportSendResult(contact.path, true,
+    _graph?.reportSendResult(path, true,
         contactPubkey: contact.publicKeyHex,
-        stride: contact.pathHashSize,
+        stride: width,
         tally: false,
         proveEgress: !echoed);
     _notifySoon();
@@ -865,12 +893,46 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     if (_autoDiscoverTimer != null) return;
-    final maxMs = autoDiscoverJitterMax.inMilliseconds;
+    // A silent doorstep is this radio's doubt alone, and the next attempt
+    // goes out after the retry gap: asked within a second, the answers
+    // are in by then.
+    final maxMs = reason == DiscoverReason.doorstepSilent
+        ? math.min(1000, autoDiscoverJitterMax.inMilliseconds)
+        : autoDiscoverJitterMax.inMilliseconds;
     final wait = Duration(milliseconds: maxMs == 0 ? 0 : _random.nextInt(maxMs));
     _autoDiscoverTimer = Timer(wait, () {
       _autoDiscoverTimer = null;
       unawaited(_sendAutoDiscover(reason));
     });
+  }
+
+  /// How long a DM's first attempt waits for the answers to the Discover
+  /// sent before it ([_beforeFirstAttempt]).
+  static const discoverFirstWait = Duration(seconds: 5);
+
+  /// Before a DM's first attempt to [contact] (owner, 2026-11-24). Where
+  /// the radio knows its area and no repeater has been heard hearing it
+  /// there, or it has moved since one was, Pathfinder would flood: one
+  /// Discover goes out first, and the attempt waits [discoverFirstWait]
+  /// for its answers, which then decide the route. Null when there is no
+  /// such doubt or an automatic Discover may not go out now: the DM goes
+  /// at once, as before.
+  Future<void>? _beforeFirstAttempt(Contact contact) {
+    final graph = _graph;
+    final c = _connector;
+    if (graph == null || c == null || _onOtherMesh) return null;
+    if (contact.pathOverride != null || _autoDiscoverTimer != null) {
+      return null;
+    }
+    final reason = graph.selfAdvice();
+    if (reason == null ||
+        (reason != DiscoverReason.noDoorstepHere &&
+            reason != DiscoverReason.movedSinceProof)) {
+      return null;
+    }
+    if (_discoverHold(c) != null) return null;
+    return _sendAutoDiscover(reason)
+        .then((_) => Future<void>.delayed(discoverFirstWait));
   }
 
   /// Why an automatic Discover may not go out now, or null.
@@ -930,6 +992,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Why Pathfinder would like a Discover, in plain words.
   static String discoverReasonText(DiscoverReason reason) => switch (reason) {
+        DiscoverReason.doorstepSilent =>
+          'a repeater that hears this radio did not pass on a message '
+              'sent to it twice',
         DiscoverReason.noDoorstepHere =>
           'no repeater has been heard hearing this radio around here',
         DiscoverReason.movedSinceProof =>
@@ -955,24 +1020,48 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void _onAttemptResult(
-      Contact contact, PathSelection selection, bool delivered, int? tripMs) {
+  /// The first repeater of [selection] was heard passing a DM to [contact]
+  /// on: it heard this radio, whatever becomes of the DM.
+  void _onPassedOn(Contact contact, PathSelection selection) {
+    if (_onOtherMesh) return;
+    _graph?.observePassedOn(
+        Uint8List.fromList(selection.pathBytes), selection.hashSize);
+    _notifySoon();
+  }
+
+  /// [hopsHeard]: how many hops of the route were heard passing the DM on
+  /// (0: the first was listened for and not heard; null: nobody could be
+  /// listened for). It places a failure ([PathGraph.reportSendResult]).
+  void _onAttemptResult(Contact contact, PathSelection selection,
+      bool delivered, int? tripMs, int? hopsHeard) {
     final graph = _graph;
     if (graph == null || selection.useFlood) return;
     final guessed = selection.guessedHops;
+    final heard = (hopsHeard ?? 0) > 0;
+    final where = hopsHeard == null
+        ? ''
+        : hopsHeard == 0
+            ? ' — its first repeater was not heard passing it on: only '
+                'that repeater is in doubt'
+            : ' — heard passed on for $hopsHeard of ${selection.hopCount} '
+                'hop${selection.hopCount == 1 ? "" : "s"}: the first '
+                'repeater is not in doubt';
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
         '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name}'
         '${guessed > 0 ? ", $guessed hop${guessed == 1 ? "" : "s"} guessed" : ""})'
         '${delivered ? " — first hop credited as hearing me" : ""}'
         '${delivered && guessed > 0 ? ", guessed hops now proven" : ""}'
-        '${!delivered && guessed > 0 ? " — a guess failed, nothing recorded" : ""}',
+        '${!delivered && guessed > 0 ? " — a guess failed, nothing recorded" : where}',
         tag: 'PathGraph');
     graph.reportSendResult(Uint8List.fromList(selection.pathBytes), delivered,
         contactPubkey: contact.publicKeyHex,
         tripTimeMs: tripMs,
         stride: selection.hashSize,
-        guessedLinks: selection.guessedLinks);
+        guessedLinks: selection.guessedLinks,
+        // Heard passing it on, the first hop was credited then.
+        proveEgress: !(delivered && heard),
+        hopsHeard: hopsHeard);
     if (selection.source == RouteSource.graph) {
       if (delivered) {
         _graphDelivered++;

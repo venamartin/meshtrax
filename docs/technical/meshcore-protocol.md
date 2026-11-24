@@ -708,7 +708,46 @@ path carrying `pkt->path` (`Mesh::onRecvPacket`), and the sender stores it whate
   radio's key, or on firmware without `CMD_SEND_RAW_PACKET`.
 - **How much it matters** depends on how often the far repeater is heard directly. At the
   owner's one copy in five, the simulator put it at 1 to 7 lost ACKs in about 80 routed
-  tries; at 65% it dominated.
+  tries; at 65% it dominated. It also depends on how often the sender floods: every
+  delivered flood teaches the way back again, right or wrong, so a sender that stays on
+  its route keeps a wrong lesson longer (simulator: 48 s when the next send flooded, two
+  to three minutes when the sends stayed on the route).
+
+### A routed packet heard passed on, and the same packet sent again
+The radio logs every packet it receives before it handles it (`Dispatcher::checkRecv`,
+`logRxRaw`), so the RX log carries its first repeater's copy of a routed packet the radio
+itself just sent: the same payload, the path shorter by the hops already done (each
+repeater takes itself off the front, `removeSelfFromPath`).
+- **Telling it is mine** (`PassingCopyOpener.openOwn`). A TXT_MSG whose source byte is
+  this radio's and whose MAC passes with the secret shared with a contact whose first key
+  byte is the destination byte. Inside are the timestamp, the attempt number (its low two
+  bits in the flags byte; the whole number in the byte after the text's terminator when
+  it is above 3, `composeMsgPacket`) and the text. A contact sharing this radio's first key
+  byte is left out: a packet to them reads the same as one from them.
+- **What it says.** The hops left are the tail of the route the attempt went out on, so
+  the repeater just before that tail sent this copy. It received the packet, and so did
+  every repeater before it; the first of them heard this radio.
+- **A repeater passes a routed packet on once.** `Mesh::onRecvPacket` forwards a direct
+  packet only when `!_tables->wasSeen(pkt)`, and the receiver opens a text packet only
+  then too. The hash covers the payload type and payload, not the path
+  (`Packet::calculatePacketHash`). The sending radio marks its own packet seen and sends
+  it whatever the table says (`Mesh::sendDirect`, `sendFlood`).
+- **The same attempt number, timestamp and text give the same bytes** (AES-128-ECB, zero
+  padded, nothing random). So handing the radio the same `CMD_SEND_TXT_MSG` a second
+  time is a retry of the first hop alone: a repeater that missed the first copy passes
+  this one on, a repeater that passed the first on drops it, and the receiver never gets
+  two. The expected ACK is the same. This is why a new try of a message must carry a new
+  attempt number, and why a copy that must NOT be dropped (a parked message sent again)
+  takes a number of its own (`MessageRetryService._resendAttempt`).
+- **How long to listen** (`TimeoutHelper.passOnWaitMs`): this radio's airtime, the
+  repeater's longest wait before it passes a routed packet on (`getDirectRetransmitDelay`,
+  0 to 5 x airtime x `direct_tx_delay_factor`, 0.3 by default), its airtime, and a second
+  for a busy channel. About 2 s at 0.3 s airtime.
+- **Limits.** A repeater's table holds 160 hashes (`SimpleMeshTables`), so on very busy
+  air it can have forgotten the first copy and pass the second on as well; the receiver
+  then drops it, unless it has forgotten too. A repeater that hears this radio and is not
+  heard by it says nothing by its silence, so the app listens only for a repeater it heard
+  in the last 10 minutes (a flood's last hop, or its own advert).
 
 ### ADV_TYPE constants
 | Value | Meaning |

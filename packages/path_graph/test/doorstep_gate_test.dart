@@ -95,12 +95,8 @@ void main() {
 
       echo(a277); // the flood's echo: it still hears me
       expect(graph.egressCandidates().single.failedSinceProof, 0);
-      // Their end keeps its own count (owner, 2026-10-24): nothing yet shows
-      // 1312 reaches Bob, so the next send still floods.
-      expect(floodReason(), FloodReason.theirDoorstepsFailing);
-      // The flood's PATH reply names the route it took: 1312 did reach him.
-      graph.reportSendResult(path([...a277, ...r1312]), true,
-          contactPubkey: bobPk, tally: false);
+      // Missed ACKs alone are not held against his end (owner,
+      // 2026-11-24): the route is offered again.
       expect(firstHop(), 'a277');
     });
 

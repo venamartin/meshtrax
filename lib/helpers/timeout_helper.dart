@@ -61,6 +61,16 @@ class TimeoutHelper {
   /// (getDirectRetransmitDelay, 0 to 5 x airtime x factor).
   static const double repeaterDirectTxDelayFactor = 0.3;
 
+  /// How long after the radio took a routed packet its first repeater's
+  /// copy of it can still be heard: this radio's airtime, the repeater's
+  /// longest wait before it passes a routed packet on
+  /// (getDirectRetransmitDelay), its airtime, and a second for a busy
+  /// channel on either side. ~2 s at 0.3 s airtime, ~3 s at 0.6 s.
+  static int passOnWaitMs(int airtimeMs) =>
+      (airtimeMs * (2 + retransmitDelaySpan * repeaterDirectTxDelayFactor))
+          .round() +
+      1000;
+
   /// TXT_ACK_DELAY (BaseChatMesh.cpp): a companion waits this long before
   /// it sends the ACK for a message it opened.
   static const int ackDelayMs = 200;

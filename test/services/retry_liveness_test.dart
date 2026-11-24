@@ -67,6 +67,14 @@ class _Rig {
       sends[i].ts, sends[i].attempt, sends[i].text, selfKey);
 
   void sentLast() => svc.updateMessageFromSent(ackFor(sends.length - 1), 0);
+
+  /// A repeater was heard two minutes ago: lately enough to wait for one,
+  /// not so lately that a flood nobody passed on just goes out again (the
+  /// quick resend, below).
+  void heardAWhileAgo(FakeAsync async) {
+    svc.noteRepeaterHeard();
+    async.elapse(const Duration(minutes: 2));
+  }
 }
 
 final _bob = Contact(
@@ -84,7 +92,7 @@ void main() {
       'status sent, waiting for a repeater', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []); // Pathfinder: every rung floods
-      r.svc.noteRepeaterHeard(); // a moment ago
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -107,7 +115,7 @@ void main() {
   test('a repeater\'s copy of my flood keeps the normal ACK wait', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -125,7 +133,7 @@ void main() {
   test('an echo for another contact changes nothing', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -139,7 +147,7 @@ void main() {
       'most, then the ladder moves on', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 2, graph: const []);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -179,7 +187,7 @@ void main() {
   });
 
   void parkThenResend(_Rig r, FakeAsync async, String text) {
-    r.svc.noteRepeaterHeard();
+    r.heardAWhileAgo(async);
     r.svc.sendMessageWithRetry(contact: _bob, text: text);
     async.flushMicrotasks();
     r.sentLast();
@@ -232,7 +240,7 @@ void main() {
   test('an ACK while parked delivers it, and the park limit stays quiet', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -255,7 +263,7 @@ void main() {
       'goes once it is delivered', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'one');
       async.flushMicrotasks();
       r.sentLast();
@@ -287,7 +295,7 @@ void main() {
           source: RouteSource.graph,
           estDelivery: 0.9);
       final r = _Rig(async, budget: 3, graph: [route]);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.sentLast();
@@ -295,7 +303,7 @@ void main() {
       expect(r.last.waitingForRepeater, isFalse, reason: 'a route, not a flood');
 
       final r2 = _Rig(async, budget: 3, graph: const []);
-      r2.svc.noteRepeaterHeard();
+      r2.heardAWhileAgo(async);
       r2.svc.sendMessageWithRetry(contact: _bob, text: 'a' * 158);
       async.flushMicrotasks();
       r2.sentLast();
@@ -309,7 +317,7 @@ void main() {
       'flood echo can come back', () {
     fakeAsync((async) {
       final r = _Rig(async, budget: 3, graph: const []); // the plan floods
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       // "was asked to go as a flood but the radio sent it on its stored
@@ -334,12 +342,88 @@ void main() {
           source: RouteSource.graph,
           estDelivery: 0.9);
       final r = _Rig(async, budget: 3, graph: [route]);
-      r.svc.noteRepeaterHeard();
+      r.heardAWhileAgo(async);
       r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
       async.flushMicrotasks();
       r.svc.updateMessageFromSent(r.ackFor(0), 0, isFlood: true);
       async.elapse(Duration(milliseconds: _echoWait + 1));
       expect(r.last.waitingForRepeater, isTrue);
+    });
+  });
+
+  // Field 2026-11-24: a flood nobody was heard passing on parked for 32 s
+  // beside a repeater 30 m away that had been heard seconds before. Two
+  // radios had sent at once.
+  group('a repeater heard within the last minute', () {
+    test('a flood nobody passes on goes out again at once as the same packet, '
+        'twice at most, with nothing shown; then it waits for a repeater', () {
+      fakeAsync((async) {
+        final r = _Rig(async, budget: 3, graph: const []);
+        r.svc.noteRepeaterHeard();
+        r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+        async.flushMicrotasks();
+        r.sentLast();
+
+        for (var again = 1; again <= MessageRetryService.maxQuickResends; again++) {
+          async.elapse(Duration(milliseconds: _echoWait + 1));
+          async.flushMicrotasks();
+          expect(r.sends, hasLength(1 + again));
+          expect(r.sends.last, r.sends.first,
+              reason: 'the same packet: a repeater that passed the first on '
+                  'drops it, so the mesh never carries the flood twice');
+          expect(r.updates.where((m) => m.waitingForRepeater), isEmpty);
+          r.sentLast();
+        }
+
+        async.elapse(Duration(milliseconds: _echoWait + 1));
+        expect(r.sends, hasLength(1 + MessageRetryService.maxQuickResends));
+        expect(r.last.waitingForRepeater, isTrue);
+      });
+    });
+
+    test('heard passed on after going out again: the wait for its ACK runs '
+        'on as usual', () {
+      fakeAsync((async) {
+        final r = _Rig(async, budget: 3, graph: const []);
+        r.svc.noteRepeaterHeard();
+        r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+        async.flushMicrotasks();
+        r.sentLast();
+        async.elapse(Duration(milliseconds: _echoWait + 1));
+        async.flushMicrotasks();
+        r.sentLast();
+        async.elapse(const Duration(seconds: 2));
+        r.svc.noteOwnFloodEcho(_bob.publicKey[0]);
+
+        async.elapse(Duration(milliseconds: _echoWait));
+        expect(r.sends, hasLength(2));
+        expect(r.last.waitingForRepeater, isFalse);
+        r.svc.handleAckReceived(r.ackFor(0), 4000);
+        async.flushMicrotasks();
+        expect(r.last.status, MessageStatus.delivered);
+      });
+    });
+
+    test('a message parked before keeps the pace of a parked message', () {
+      fakeAsync((async) {
+        final r = _Rig(async, budget: 3, graph: const []);
+        r.heardAWhileAgo(async);
+        r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+        async.flushMicrotasks();
+        r.sentLast();
+        async.elapse(Duration(milliseconds: _echoWait + 1));
+        expect(r.last.waitingForRepeater, isTrue);
+
+        async.elapse(const Duration(
+            milliseconds: MessageRetryService.repeaterCooldownMs + 1));
+        r.svc.noteRepeaterHeard();
+        async.flushMicrotasks();
+        r.sentLast();
+        async.elapse(Duration(milliseconds: _echoWait + 1));
+        async.flushMicrotasks();
+        expect(r.sends, hasLength(2), reason: 'no third copy at once');
+        expect(r.last.waitingForRepeater, isTrue);
+      });
     });
   });
 
@@ -402,7 +486,7 @@ void main() {
         'queued behind it goes', () {
       fakeAsync((async) {
         final r = _Rig(async, budget: 3, graph: const []);
-        r.svc.noteRepeaterHeard();
+        r.heardAWhileAgo(async);
         r.svc.sendMessageWithRetry(contact: _bob, text: 'one');
         async.flushMicrotasks();
         r.sentLast();
@@ -432,7 +516,7 @@ void main() {
         'park; parked again, it gets a fresh 10 minutes', () {
       fakeAsync((async) {
         final r = _Rig(async, budget: 3, graph: const []);
-        r.svc.noteRepeaterHeard();
+        r.heardAWhileAgo(async);
         r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
         async.flushMicrotasks();
         r.sentLast();
@@ -468,7 +552,7 @@ void main() {
       ]) {
         fakeAsync((async) {
           final r = _Rig(async, budget: 3, graph: const []);
-          r.svc.noteRepeaterHeard();
+          r.heardAWhileAgo(async);
           r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
           async.flushMicrotasks();
           r.sentLast();
@@ -520,7 +604,7 @@ void main() {
       fakeAsync((async) {
         final r =
             _Rig(async, budget: 3, graph: const [], routeWriteThrows: (n) => n == 2);
-        r.svc.noteRepeaterHeard();
+        r.heardAWhileAgo(async);
         r.svc.sendMessageWithRetry(contact: _bob, text: 'one');
         r.svc.sendMessageWithRetry(contact: _bob, text: 'two');
         async.flushMicrotasks();

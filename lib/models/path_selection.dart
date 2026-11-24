@@ -10,6 +10,14 @@ const int recentAttemptDiversityWindow = 2;
 /// four-hop route starts near 7% (owner, 2026-10-14).
 const double minRouteDelivery = 0.05;
 
+/// A DM's ladder gives Pathfinder's best route a second try only when its
+/// delivery estimate reaches this. A missed ACK on a route that usually
+/// works is most often chance; on a route that rarely works it is the
+/// route (simulator, 2026-11-24: a contact who had moved was reachable
+/// only over long unproven routes, none of 55 tries on them was answered,
+/// and trying each twice cost half again as many transmissions as before).
+const double repeatMinDelivery = 0.5;
+
 /// Who chose a route: the firmware's learned `out_path`, the path graph
 /// (Pathfinder), or the user's override.
 enum RouteSource { firmware, graph, custom }
@@ -148,6 +156,16 @@ PathSelection resolvePathSelection(
 /// of the remaining [budget] close it (the floods the original ladder
 /// still owes), so a route Pathfinder now ranks first after a failure is
 /// tried next instead of being skipped.
+///
+/// [bestTwice], a DM's ladder (owner, 2026-11-24): a missed ACK is most
+/// often two radios sending at once, not a broken route, so Pathfinder's
+/// first choice gets two tries before another route or a flood, when it
+/// is a route likely to work ([repeatMinDelivery]; a weaker one keeps the
+/// ladder above). Back to back when the next route ends at the same
+/// repeater (the contact has not moved); around the next route when that
+/// one ends elsewhere (the repeater that heard their latest packet goes
+/// second). With five tries: best, best, next, flood, flood; with three:
+/// best, best, flood.
 List<PathSelection> planAttempts(
   Contact contact, {
   required int radioWidth,
@@ -157,6 +175,7 @@ List<PathSelection> planAttempts(
   double minDelivery = minRouteDelivery,
   Iterable<PathSelection> tried = const [],
   int? floods,
+  bool bestTwice = false,
 }) {
   final flood = PathSelection.flood(radioWidth);
   final resend = floodFirst && contact.pathOverride == null;
@@ -175,17 +194,61 @@ List<PathSelection> planAttempts(
       ? 'direct'
       : '${s.hashSize}:${s.pathBytes.join(',')}';
   final seen = <String>{for (final t in tried) if (!t.useFlood) key(t)};
-  final routes = <PathSelection>[];
-  for (final g in graphRoutes) {
-    final k = key(g);
-    if (seen.contains(k)) continue;
-    // The best remaining route is tried whatever its score.
-    if (routes.isNotEmpty && (g.estDelivery ?? 1) < minDelivery) continue;
-    seen.add(k);
-    routes.add(g);
+  var routes = <PathSelection>[];
+  final best = graphRoutes.firstOrNull;
+  final twice = bestTwice &&
+      best != null &&
+      (best.estDelivery ?? 1) >= repeatMinDelivery;
+  if (!twice) {
+    for (final g in graphRoutes) {
+      final k = key(g);
+      if (seen.contains(k)) continue;
+      // The best remaining route is tried whatever its score.
+      if (routes.isNotEmpty && (g.estDelivery ?? 1) < minDelivery) continue;
+      seen.add(k);
+      routes.add(g);
+    }
+  } else {
+    String lastHop(PathSelection s) => s.hopCount == 0
+        ? 'direct'
+        : s.pathBytes.sublist(s.pathBytes.length - s.hashSize).join(',');
+    final timesTried = <String, int>{};
+    for (final t in tried) {
+      if (!t.useFlood) timesTried[key(t)] = (timesTried[key(t)] ?? 0) + 1;
+    }
+    final distinct = <PathSelection>[];
+    final keys = <String>{};
+    for (final g in graphRoutes) {
+      if (keys.add(key(g))) distinct.add(g);
+    }
+    final bestLeft = (2 - (timesTried[key(best)] ?? 0)).clamp(0, 2);
+    final others = <PathSelection>[];
+    for (final g in distinct.skip(1)) {
+      if (timesTried.containsKey(key(g))) continue;
+      // With nothing else left, the next route is tried whatever its score.
+      final needsScore = bestLeft > 0 || others.isNotEmpty;
+      if (needsScore && (g.estDelivery ?? 1) < minDelivery) continue;
+      others.add(g);
+    }
+    final sameEnd = others.isEmpty || lastHop(others.first) == lastHop(best);
+    routes = [
+      if (bestLeft == 2) best,
+      if (bestLeft >= 1 && sameEnd) best,
+      if (!sameEnd) others.first,
+      if (bestLeft >= 1 && !sameEnd) best,
+      ...others.skip(sameEnd ? 0 : 1),
+    ];
   }
 
-  final floodCount = (floods ?? (budget <= 2 ? budget - 1 : 2)).clamp(0, budget);
+  // Floods cost the whole mesh a transmission each: with three tries and
+  // the best route tried twice, one closes the ladder.
+  final floodCount = (floods ??
+          (budget <= 2
+              ? budget - 1
+              : twice && budget == 3
+                  ? 1
+                  : 2))
+      .clamp(0, budget);
   final slots = budget - floodCount;
   return [
     ...routes.take(slots),

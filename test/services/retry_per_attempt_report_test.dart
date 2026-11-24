@@ -44,7 +44,7 @@ class _Rig {
         planned++;
         return graph;
       },
-      onAttemptResult: (_, sel, delivered, _) => reported.add((
+      onAttemptResult: (_, sel, delivered, _, _) => reported.add((
         route: sel.useFlood ? 'flood' : _hex(sel.pathBytes),
         delivered: delivered,
       )),

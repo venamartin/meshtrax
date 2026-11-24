@@ -97,7 +97,8 @@ void main() {
   test('a flood nobody echoed is parked and reported, and still counts as '
       'waiting', () {
     fakeAsync((async) {
-      final withEcho = MessageRetryService();
+      final withEcho = MessageRetryService(
+          clock: () => DateTime(2026, 11, 24).add(async.elapsed));
       final ended = <bool>[];
       withEcho.initialize(RetryServiceConfig(
         sendMessage: (_, text, attempt, ts) =>
@@ -111,7 +112,10 @@ void main() {
         estimateAirtime: (_) => 200,
         onFloodAttemptEnded: (_, {required delivered}) => ended.add(delivered),
       ));
-      withEcho.noteRepeaterHeard(); // parks only with a repeater near
+      // Parks only with a repeater near; one heard within the last minute
+      // would have the flood go out again first.
+      withEcho.noteRepeaterHeard();
+      async.elapse(const Duration(minutes: 2));
       withEcho.sendMessageWithRetry(contact: bob, text: 'anyone?', floodFirst: true);
       async.flushMicrotasks();
       withEcho.updateMessageFromSent(ackFor(0), 30000);

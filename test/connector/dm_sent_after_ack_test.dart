@@ -98,6 +98,8 @@ void main() {
 
   late _Connector c;
   late MessageRetryService retry;
+  // Moves the retry clock ahead of the wall clock (see heardAWhileAgo).
+  var sinceHeard = Duration.zero;
   late Contact bob;
   late Contact carol;
 
@@ -123,7 +125,8 @@ void main() {
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
-    retry = MessageRetryService();
+    sinceHeard = Duration.zero;
+    retry = MessageRetryService(clock: () => DateTime.now().add(sinceHeard));
     c = _Connector()..initialize(retryService: retry);
     c.handleFrameForTest(_selfInfo(selfKey));
     // SELF_INFO's load of the empty store would replace the list below.
@@ -142,6 +145,13 @@ void main() {
   });
 
   tearDown(() => retry.dispose());
+
+  /// A repeater was heard two minutes ago: lately enough for a flood nobody
+  /// echoes to wait for one, not so lately that it just goes out again.
+  void heardAWhileAgo() {
+    retry.noteRepeaterHeard();
+    sinceHeard += const Duration(minutes: 2);
+  }
 
   test('a garbled delivery receipt marks no DM delivered', () async {
     await c.sendMessage(bob, 'one');
@@ -211,7 +221,7 @@ void main() {
   List<int> resendAttempts({required bool ackDuringWait}) {
     late List<int> attempts;
     fakeAsync((async) {
-      retry.noteRepeaterHeard();
+      heardAWhileAgo();
       c.sendMessage(bob, 'one');
       async.flushMicrotasks();
       final bobAck = ackOf(c.dms.single);
@@ -262,7 +272,7 @@ void main() {
     void park(FakeAsync async) {
       // A database opened outside fake time never answers inside it.
       AppDatabase.useInMemoryForTesting();
-      retry.noteRepeaterHeard();
+      heardAWhileAgo();
       c.sendMessage(bob, 'one');
       async.flushMicrotasks();
       c.handleFrameForTest(_sent(ackOf(c.dms.single)));

@@ -215,6 +215,40 @@ class PassingCopyOpener {
     return null;
   }
 
+  /// A copy of a DM this radio sent to one of [contactKeys], read from its
+  /// RX log: a repeater passing it on. The MAC passes only with their key
+  /// and this radio's, so it is this radio's packet and no other. [attempt]
+  /// is the number it was sent with: the tail byte above 3, else the two
+  /// bits in the flags (BaseChatMesh::composeMsgPacket). Null for anything
+  /// else, and for a contact who shares this radio's first key byte: a copy
+  /// to them reads the same as one from them.
+  ({Uint8List contactKey, int timestamp, int attempt, Uint8List textBytes})?
+  openOwn({
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (payload.length < 2 + _macSize + _blockSize) return null;
+    if (payload[1] != _selfKey[0] || payload[0] == _selfKey[0]) return null;
+    final macAndData = Uint8List.fromList(payload.sublist(2));
+    for (final key in contactKeys) {
+      if (key.length != pubKeySize || key[0] != payload[0]) continue;
+      final secret = sharedSecret(key);
+      if (secret == null) continue;
+      final plain = macThenDecrypt(secret, macAndData);
+      if (plain == null || plain.length <= 5) continue;
+      if (plain[4] >> 2 != txtTypePlain) return null;
+      final end = _textEnd(plain, 5);
+      final tail = end + 1 < plain.length ? plain[end + 1] : 0;
+      return (
+        contactKey: key,
+        timestamp: ByteData.sublistView(plain).getUint32(0, Endian.little),
+        attempt: tail > 3 ? tail : plain[4] & 0x03,
+        textBytes: Uint8List.fromList(plain.sublist(5, end)),
+      );
+    }
+    return null;
+  }
+
   /// The ACK code inside a path reply to this radio from one of
   /// [contactKeys]: a DM it sent reached them by flood, and the reply
   /// carries the ACK (BaseChatMesh::onPeerDataRecv, createPathReturn: path

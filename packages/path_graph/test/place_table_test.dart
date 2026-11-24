@@ -97,17 +97,24 @@ void main() {
         FloodReason.doorstepsFailing);
   });
 
-  test('one failure here holds the row until the doorstep proves here again',
-      () {
+  test('one missed ACK here drops nothing; a doorstep held for its failures '
+      'is held for this area until it proves here again', () {
     corridors();
     advance(4 * minute); // long enough ago that nothing is filed here
     graph.setPlace('c1_1', const {});
     graph.observeOwnEcho(path(a277), 2);
     graph.reportSendResult(path([...a277, ...a277]), false, contactPubkey: bobPk);
-    expect((graph.findPath(bobPk) as FloodResult).reason,
-        FloodReason.doorstepsNotHere);
+    expect(firstHop(), 'A277',
+        reason: 'the radio has not moved: one missed ACK is chance');
+    expect(graph.placesHere()['A277']!.failedHere, isFalse);
+
+    graph.reportSendResult(path([...a277, ...a277]), false, contactPubkey: bobPk);
+    expect(graph.findPath(bobPk), isA<FloodResult>());
+    expect(graph.placesHere()['A277']!.failedHere, isTrue);
+
     graph.observeOwnEcho(path(a277), 2);
     expect(firstHop(), 'A277');
+    expect(graph.placesHere()['A277']!.failedHere, isFalse);
   });
 
   test('the block around the cell counts; leaving it holds, deletes nothing',
