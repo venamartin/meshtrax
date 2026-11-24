@@ -193,7 +193,6 @@
   "trax_trailhead": "Переключайтесь в начале маршрута, когда у радио есть GPS-позиция.",
   "trax_settings": "Настройки TRAX",
   "trax_switch": "Перейти в TRAX",
-  "trax_groupCheck": "Проверка группы",
   "trax_heard": "{count, plural, =0{На TRAX пока никого не слышно} other{Слышно на TRAX ({count}): {names}}}",
   "trax_checkAgain": "Проверить снова",
   "trax_noSaved": "На этом телефоне нет сохранённых настроек: «Выйти из TRAX» спросит, к какому пресету вернуться.",
@@ -290,6 +289,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Ваше местоположение отправляется участникам поездки каждые {minutes} мин.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Прошивка этого радио не может отправлять ваше местоположение участникам поездки. Обновите её.",
+  "trax_locationsNoChannel": "Выберите канал поездки в настройках TRAX, чтобы делиться местоположением.",
+  "trax_memberNoLocation": "{name}: местоположения пока нет",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "может быть устаревшим",
+  "trax_tripChannelLocation": "В режиме TRAX ваше местоположение отправляется в этот канал.",
+  "map_lastHeard": "Последний приём",
+  "map_fromYou": "От вас",
+  "map_heading": "Курс",
+  "map_speed": "Скорость",
+  "map_notMoving": "Не движется",
+  "map_notMovingSince": "с {time} ({minutes} мин)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Не движется {minutes} мин",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Высота",
+  "map_radioBattery": "Батарея радио",
   "settings_deviceInfo": "Информация об устройстве",
   "settings_appSettings": "Настройки приложения",
   "settings_appSettingsSubtitle": "Уведомления, сообщения и настройки карты",

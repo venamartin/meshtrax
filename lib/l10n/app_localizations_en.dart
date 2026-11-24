@@ -1016,9 +1016,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_switch => 'Switch to TRAX';
 
   @override
-  String get trax_groupCheck => 'Group check';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1234,6 +1231,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: no answer';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Your location goes to the trip every $minutes min.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'This radio\'s firmware can\'t send your location to the trip. Update it.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Pick a trip channel in TRAX settings to share locations.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: no location yet';
+  }
+
+  @override
+  String get trax_mayBeOld => 'may be old';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'In TRAX mode your location goes to this channel.';
+
+  @override
+  String get map_lastHeard => 'Last heard';
+
+  @override
+  String get map_fromYou => 'From you';
+
+  @override
+  String get map_heading => 'Heading';
+
+  @override
+  String get map_speed => 'Speed';
+
+  @override
+  String get map_notMoving => 'Not moving';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'since $time ($minutes min)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Stopped $minutes min';
+  }
+
+  @override
+  String get map_elevation => 'Elevation';
+
+  @override
+  String get map_radioBattery => 'Radio battery';
 
   @override
   String get settings_deviceInfo => 'Device Info';

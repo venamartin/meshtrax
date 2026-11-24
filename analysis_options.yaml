@@ -18,8 +18,9 @@ analyzer:
     - build/**
     # packages/path_graph and packages/traxmap have their own pubspecs and CI
     # steps; the root analyze cannot resolve their dependencies before their
-    # own pub get.
+    # own pub get. So has the TRAX simulator.
     - packages/**
+    - tool/trax_sim/**
     - android/**
     - ios/**
     - web/**

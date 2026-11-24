@@ -12,6 +12,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
 
 import '../models/channel.dart';
+import '../models/channel_datagram.dart';
 import '../models/channel_message.dart';
 import '../models/companion_radio_stats.dart';
 import '../models/contact.dart';
@@ -332,6 +333,15 @@ class RoomLoginEvent {
 }
 
 /// The radio's own GPS reading, and when the app read it.
+/// A channel datagram read before the slot map was verified.
+typedef _HeldDatagram = ({
+  int slot,
+  int dataType,
+  Uint8List payload,
+  DateTime receivedAt,
+  bool fromBacklog,
+});
+
 typedef SelfGpsReading = ({
   double latitude,
   double longitude,
@@ -456,6 +466,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// app was away.
   Stream<({ChannelMessage message, bool fromBacklog})> get channelMessagesIn =>
       _channelMessagesInController.stream;
+
+  final StreamController<ChannelDatagram> _channelDatagramsController =
+      StreamController.broadcast();
+
+  /// Every channel datagram the radio reads, any app's, once its channel is
+  /// known.
+  Stream<ChannelDatagram> get channelDatagrams =>
+      _channelDatagramsController.stream;
+
+  // Held like channel messages until the slot map is verified: the radio's
+  // queue never gives them again.
+  final List<_HeldDatagram> _heldDatagrams = [];
 
   /// TRAX mode's button on a channel message's notification, by action id
   /// ([NotificationService.traxFollowAction]), or null. Wired by the app.
@@ -1436,6 +1458,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   int? get firmwareVerCode => _firmwareVerCode;
+
+  /// The radio sends and passes on channel datagrams (companion v1.15,
+  /// firmware ver code 11).
+  bool get supportsChannelData => (_firmwareVerCode ?? 0) >= 11;
   String? get firmwareVersion => _firmwareVersion;
   Map<String, String>? get currentCustomVars => _currentCustomVars;
 
@@ -7046,6 +7072,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     for (final idx in _pendingUntrackedChannelMessages.keys.toList()) {
       unawaited(sendFrame(buildGetChannelFrame(idx)));
     }
+    _heldDatagrams
+      ..forEach(_emitDatagram)
+      ..clear();
 
     // A slot changed while this pass ran: the map is valid but already
     // stale. Rerun now — a deferred queue drain stays deferred so it always
@@ -7642,9 +7671,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         _handleIncomingChannelMessage(frame);
         break;
       // The radio queues every channel datagram it can read, from any app
-      // (MyMesh.cpp onChannelDataRecv). Nothing reads them yet, but each is a
-      // queued message: left uncounted, it holds the drain for its timeout.
+      // (MyMesh.cpp onChannelDataRecv). Each is a queued message: left
+      // uncounted, it holds the drain for its timeout.
       case respCodeChannelDataRecv:
+        _handleChannelDatagram(frame);
         _handleQueuedMessageReceived();
         break;
       case respCodeSent:
@@ -7925,6 +7955,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _channels.clear();
       _cachedChannels = [];
       _pendingUntrackedChannelMessages.clear();
+      _heldDatagrams.clear();
       _queriedUntrackedChannels.clear();
       _slotsToRequery.clear();
       _processedChannelReactions.clear();
@@ -8080,6 +8111,60 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _pendingChannelSyncAfterQueueSync = false;
       unawaited(getChannels());
     }
+  }
+
+  /// Frame 27: `[27][snr×4][0][0][slot][path_len][type lo][type hi]
+  /// [length][payload]`.
+  void _handleChannelDatagram(Uint8List frame) {
+    if (frame.length < 9 || frame.length < 9 + frame[8]) return;
+    final datagram = (
+      slot: frame[4],
+      dataType: frame[6] | frame[7] << 8,
+      payload: Uint8List.fromList(frame.sublist(9, 9 + frame[8])),
+      receivedAt: DateTime.now(),
+      fromBacklog: _isSyncingQueuedMessages && !_completedFirstQueueDrain,
+    );
+    if (_channelsVerified) {
+      _emitDatagram(datagram);
+    } else {
+      // The radio's queue holds at most 256.
+      if (_heldDatagrams.length >= 256) _heldDatagrams.removeAt(0);
+      _heldDatagrams.add(datagram);
+    }
+  }
+
+  void _emitDatagram(_HeldDatagram d) {
+    for (final channel in _channels) {
+      if (channel.index != d.slot) continue;
+      _channelDatagramsController.add(
+        ChannelDatagram(
+          channel: channel,
+          dataType: d.dataType,
+          payload: d.payload,
+          receivedAt: d.receivedAt,
+          fromBacklog: d.fromBacklog,
+        ),
+      );
+      return;
+    }
+  }
+
+  /// Floods [payload] to [channel] as a datagram of [dataType]. True once
+  /// the radio took it; nothing says whether anyone heard it.
+  Future<bool> sendChannelData(
+    Channel channel,
+    int dataType,
+    Uint8List payload,
+  ) async {
+    if (!isConnected || !_channelsVerified || !supportsChannelData) {
+      return false;
+    }
+    final live = _liveChannelByIdKey(channel.idKey);
+    if (live == null) return false;
+    return _sendAndWaitForAck(
+      buildSendChannelDataFrame(live.index, dataType, payload),
+      expectsGenericAck: true,
+    );
   }
 
   void _handleQueuedMessageReceived() {
@@ -13196,6 +13281,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _roomLoginEventsController.close();
     _blockedCliCommandsController.close();
     _channelMessagesInController.close();
+    _channelDatagramsController.close();
     _sensorPushController.close();
     _usbManager.dispose();
     _tcpConnector.dispose();

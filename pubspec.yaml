@@ -108,6 +108,9 @@ dependencies:
   # Asks an observer server whether a channel message was heard
   traxheard:
     path: packages/traxheard
+  # Locations on a private channel: the report TRAX mode sends
+  traxshare:
+    path: packages/traxshare
   # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
   traxroute_ios:
     path: packages/traxroute_ios

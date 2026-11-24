@@ -220,7 +220,6 @@
   "trax_trailhead": "Passa al punto di partenza, quando la radio ha una posizione GPS.",
   "trax_settings": "Impostazioni TRAX",
   "trax_switch": "Passa a TRAX",
-  "trax_groupCheck": "Controllo del gruppo",
   "trax_heard": "{count, plural, =0{Ancora nessuno sentito su TRAX} other{Sentiti su TRAX ({count}): {names}}}",
   "trax_checkAgain": "Controlla di nuovo",
   "trax_noSaved": "Nessuna impostazione salvata su questo telefono: «Esci da TRAX» chiede a quale preimpostazione tornare.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "La tua posizione va all'uscita ogni {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Il firmware di questa radio non può inviare la tua posizione all'uscita. Aggiornalo.",
+  "trax_locationsNoChannel": "Scegli un canale dell'uscita nelle impostazioni TRAX per condividere le posizioni.",
+  "trax_memberNoLocation": "{name}: ancora nessuna posizione",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "potrebbe essere vecchia",
+  "trax_tripChannelLocation": "In modalità TRAX la tua posizione va su questo canale.",
+  "map_lastHeard": "Ultimo ascolto",
+  "map_fromYou": "Da te",
+  "map_heading": "Direzione",
+  "map_speed": "Velocità",
+  "map_notMoving": "Fermo",
+  "map_notMovingSince": "dalle {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Fermo da {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Altitudine",
+  "map_radioBattery": "Batteria della radio",
   "settings_deviceInfo": "Informazioni Dispositivo",
   "settings_appSettings": "Impostazioni App",
   "settings_appSettingsSubtitle": "Notifiche, messaggi e preferenze della mappa",

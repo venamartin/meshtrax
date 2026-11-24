@@ -277,7 +277,6 @@
   "trax_trailhead": "A kiindulópontnál váltson, amint a rádiónak van GPS-pozíciója.",
   "trax_settings": "TRAX beállítások",
   "trax_switch": "Váltás TRAX-ra",
-  "trax_groupCheck": "Csoportellenőrzés",
   "trax_heard": "{count, plural, =0{Még senki sem hallható a TRAX-on} other{Hallható a TRAX-on ({count}): {names}}}",
   "trax_checkAgain": "Ellenőrzés újra",
   "trax_noSaved": "Nincs mentett beállítás ezen a telefonon: a „Kilépés a TRAX-ból” megkérdezi, melyik előbeállításra térjen vissza.",
@@ -374,6 +373,52 @@
       }
     }
   },
+  "trax_sendingEvery": "A helyzete {minutes} percenként megy a túrának.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "A rádió firmware-e nem tudja elküldeni a helyzetét a túrának. Frissítse.",
+  "trax_locationsNoChannel": "Válasszon túracsatornát a TRAX beállításokban a helyzetek megosztásához.",
+  "trax_memberNoLocation": "{name}: még nincs helyzet",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "lehet, hogy régi",
+  "trax_tripChannelLocation": "TRAX módban a helyzete erre a csatornára megy.",
+  "map_lastHeard": "Utoljára hallva",
+  "map_fromYou": "Öntől",
+  "map_heading": "Irány",
+  "map_speed": "Sebesség",
+  "map_notMoving": "Nem mozog",
+  "map_notMovingSince": "{time} óta ({minutes} perc)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Nem mozog {minutes} perce",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Magasság",
+  "map_radioBattery": "A rádió akkuja",
   "settings_deviceInfo": "A készülék információi",
   "settings_appSettings": "Alkalmazási beállítások",
   "settings_appSettingsSubtitle": "Értesítések, üzenetküldés és térképi beállítások",

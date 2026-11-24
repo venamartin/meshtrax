@@ -1019,9 +1019,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_switch => 'Byt till TRAX';
 
   @override
-  String get trax_groupCheck => 'Gruppkontroll';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1238,6 +1235,62 @@ class AppLocalizationsSv extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: inget svar';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Din plats skickas till turen var $minutes min.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'Den här radions firmware kan inte skicka din plats till turen. Uppdatera den.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Välj en turkanal i TRAX-inställningarna för att dela platser.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: ingen plats än';
+  }
+
+  @override
+  String get trax_mayBeOld => 'kan vara gammal';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'I TRAX-läge skickas din plats till den här kanalen.';
+
+  @override
+  String get map_lastHeard => 'Senast hörd';
+
+  @override
+  String get map_fromYou => 'Från dig';
+
+  @override
+  String get map_heading => 'Kurs';
+
+  @override
+  String get map_speed => 'Fart';
+
+  @override
+  String get map_notMoving => 'Står still';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'sedan $time ($minutes min)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Står still i $minutes min';
+  }
+
+  @override
+  String get map_elevation => 'Höjd';
+
+  @override
+  String get map_radioBattery => 'Radions batteri';
 
   @override
   String get settings_deviceInfo => 'Enhetens information';

@@ -1027,9 +1027,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trax_switch => 'Zu TRAX wechseln';
 
   @override
-  String get trax_groupCheck => 'Gruppencheck';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1247,6 +1244,62 @@ class AppLocalizationsDe extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: keine Antwort';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Ihr Standort geht alle $minutes Min. an die Tour.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'Die Firmware dieses Funkgeräts kann Ihren Standort nicht an die Tour senden. Aktualisieren Sie sie.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Wählen Sie in den TRAX-Einstellungen einen Tour-Kanal, um Standorte zu teilen.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: noch kein Standort';
+  }
+
+  @override
+  String get trax_mayBeOld => 'evtl. veraltet';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'Im TRAX-Modus geht Ihr Standort an diesen Kanal.';
+
+  @override
+  String get map_lastHeard => 'Zuletzt gehört';
+
+  @override
+  String get map_fromYou => 'Von Ihnen';
+
+  @override
+  String get map_heading => 'Richtung';
+
+  @override
+  String get map_speed => 'Geschwindigkeit';
+
+  @override
+  String get map_notMoving => 'Keine Bewegung';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'seit $time ($minutes Min.)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Steht seit $minutes Min.';
+  }
+
+  @override
+  String get map_elevation => 'Höhe';
+
+  @override
+  String get map_radioBattery => 'Akku des Funkgeräts';
 
   @override
   String get settings_deviceInfo => 'Geräteinformationen';

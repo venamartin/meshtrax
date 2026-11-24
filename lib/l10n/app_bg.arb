@@ -220,7 +220,6 @@
   "trax_trailhead": "Превключете в началото на маршрута, щом радиото има GPS позиция.",
   "trax_settings": "Настройки на TRAX",
   "trax_switch": "Превключи на TRAX",
-  "trax_groupCheck": "Проверка на групата",
   "trax_heard": "{count, plural, =0{Още никой не е чут в TRAX} other{Чути в TRAX ({count}): {names}}}",
   "trax_checkAgain": "Провери отново",
   "trax_noSaved": "Няма запазени настройки на този телефон: „Изход от TRAX“ ще попита към коя предварителна настройка да се върне.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Местоположението ви се изпраща на пътуването на всеки {minutes} мин.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Фърмуерът на това радио не може да изпраща местоположението ви на пътуването. Обновете го.",
+  "trax_locationsNoChannel": "Изберете канал на пътуването в настройките на TRAX, за да споделяте местоположения.",
+  "trax_memberNoLocation": "{name}: още няма местоположение",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "може да е старо",
+  "trax_tripChannelLocation": "В режим TRAX местоположението ви се изпраща в този канал.",
+  "map_lastHeard": "Последно чут",
+  "map_fromYou": "От вас",
+  "map_heading": "Посока",
+  "map_speed": "Скорост",
+  "map_notMoving": "Не се движи",
+  "map_notMovingSince": "от {time} ({minutes} мин)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Не се движи от {minutes} мин",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Надморска височина",
+  "map_radioBattery": "Батерия на радиото",
   "settings_deviceInfo": "Информация за устройството",
   "settings_appSettings": "Настройки на приложението",
   "settings_appSettingsSubtitle": "Уведомления, съобщения и предпочитания за карта",

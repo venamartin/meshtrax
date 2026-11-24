@@ -2,15 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:traxshare/traxshare.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
+import '../models/radio_settings.dart';
 import '../storage/prefs_manager.dart';
 import '../utils/app_logger.dart';
 import 'radio_ask_service.dart';
 import 'trax_service.dart';
+import 'trip_positions.dart';
 
 /// A trip member: a contact on this radio, or a name posted on the trip
 /// channel that no single contact has ([contact] null).
@@ -68,23 +71,27 @@ class TripGrants {
 }
 
 /// Trip setup, with nothing to set up: everyone who posts on the trip
-/// channel is a trip member, and may ask this radio where it is as soon as
-/// the trip channel is picked. Each member gets location by contact and a
-/// favourite's place, and the radio's GPS goes on. Leaving TRAX mode after
-/// the trip's end puts it all back, except the favourites.
+/// channel or sends a location there is a trip member, and may ask this
+/// radio where it is as soon as the trip channel is picked. Each member
+/// gets location by contact and a favourite's place, and the radio's GPS
+/// goes on. Leaving TRAX mode after the trip's end puts it all back, except
+/// the favourites.
 ///
 /// In TRAX mode, two minutes after a group check, the radios of members
-/// not heard on TRAX are asked, one at a time.
+/// not heard on TRAX are asked, one at a time; so are those of members
+/// whose locations stop coming.
 class TripService extends ChangeNotifier {
   TripService(
     this._connector,
     this._trax,
     this._asks, {
+    this._positions,
     DateTime Function()? clock,
     this.askAfter = const Duration(minutes: 2),
   }) : _clock = clock ?? DateTime.now {
     _connector.addListener(_onChange);
     _trax.addListener(_onChange);
+    _positions?.addListener(_onChange);
     _messages = _connector.channelMessagesIn.listen(_onMessage);
     _left = _trax.left.listen(_onLeft);
     _onChange();
@@ -93,6 +100,7 @@ class TripService extends ChangeNotifier {
   final MeshCoreConnector _connector;
   final TraxService _trax;
   final RadioAskService _asks;
+  final TripPositions? _positions;
   final DateTime Function() _clock;
 
   /// How long after a group check a member counts as not heard.
@@ -100,6 +108,11 @@ class TripService extends ChangeNotifier {
 
   /// Posts older than this don't make anyone a member.
   static const postsWindow = Duration(days: 30);
+
+  /// A member whose location hasn't come for this many intervals gets
+  /// their radio asked, again every [askSilentEvery] while it stays away.
+  static const silentIntervals = 3;
+  static const askSilentEvery = Duration(minutes: 10);
 
   static String grantsKeyFor(String radioKey) => 'trip_grants_$radioKey';
 
@@ -119,6 +132,8 @@ class TripService extends ChangeNotifier {
   Future<void> _applying = Future.value();
   DateTime? _askedFor;
   Timer? _askTimer;
+  Timer? _silentTimer;
+  final _silentAsked = <String, DateTime>{};
   bool _disposed = false;
 
   /// The trip members: the trip channel's posters, plus those added by
@@ -142,6 +157,19 @@ class TripService extends ChangeNotifier {
       final contact = byName[key];
       if (contact == null) {
         out['name:$key'] = (name: name, contact: null);
+      } else if (!setup.removed.contains(contact.publicKeyHex)) {
+        out[contact.publicKeyHex] = (name: contact.name, contact: contact);
+      }
+    }
+    for (final p in _positions?.all ?? const <TripPosition>[]) {
+      final found = _connector.contactByKeyPrefix4(p.prefixBytes);
+      final contact = saved.where((c) => c == found).firstOrNull;
+      if (contact == null) {
+        final name = p.name ?? found?.name ?? p.prefix.toUpperCase();
+        out.putIfAbsent(
+          'name:${name.toLowerCase()}',
+          () => (name: name, contact: null),
+        );
       } else if (!setup.removed.contains(contact.publicKeyHex)) {
         out[contact.publicKeyHex] = (name: contact.name, contact: contact);
       }
@@ -171,16 +199,48 @@ class TripService extends ChangeNotifier {
       _connector.telemetryModeBase == teleModeDeny ||
       _connector.telemetryModeLoc == teleModeDeny;
 
-  /// [contact] has been heard on TRAX since it began: an advert, a post on
-  /// the trip channel, or an answer from its radio.
+  /// [contact] has been heard on TRAX since it began: an advert, a post or
+  /// a location on the trip channel, or an answer from its radio.
   bool onTrax(Contact contact) {
     final since = _trax.heardSince;
-    if (since == null) return false;
-    bool after(DateTime? t) => t != null && !t.isBefore(since);
-    return after(_connector.getLocalDiscoveredTime(contact.publicKeyHex)) ||
-        after(_posters[contact.name.toLowerCase()]?.at) ||
-        after(_asks.askFor(contact)?.latest?.receivedAt);
+    final last = _lastHeard(contact);
+    return since != null && last != null && !last.isBefore(since);
   }
+
+  DateTime? _lastHeard(Contact contact) {
+    DateTime? last;
+    for (final t in [
+      _connector.getLocalDiscoveredTime(contact.publicKeyHex),
+      _posters[contact.name.toLowerCase()]?.at,
+      _asks.askFor(contact)?.latest?.receivedAt,
+      _positions?.of(contact)?.heardAt,
+    ]) {
+      if (t != null && (last == null || t.isAfter(last))) last = t;
+    }
+    return last;
+  }
+
+  /// How often each member's MeshTrax sends its location in TRAX mode: by
+  /// the trip's size, and the air a report takes on the radio's settings.
+  Duration get locationInterval => beaconInterval(
+    members: members.length + 1,
+    reportAirtimeMs: switch (_trax.current) {
+      final p? => reportAirtimeMs(p),
+      null => referenceReportAirtimeMs,
+    },
+  );
+
+  /// A report's time on air: 37 bytes, with the firmware's preamble
+  /// (RadioLibWrappers.h preambleLengthForSF) and RadioLib's automatic low
+  /// data rate optimisation.
+  static int reportAirtimeMs(LoRaParams p) => calculateLoRaAirtime(
+    payloadBytes: 37,
+    spreadingFactor: p.sf,
+    bandwidthHz: p.bwHz,
+    codingRate: p.cr - 4,
+    preambleSymbols: p.sf <= 8 ? 32 : 16,
+    lowDataRateOptimize: (1 << p.sf) / (p.bwHz / 1000) > 16,
+  );
 
   void addMember(Contact contact) {
     final setup = _trax.setup;
@@ -256,6 +316,7 @@ class TripService extends ChangeNotifier {
     }
 
     _syncAskTimer();
+    _syncSilentTimer();
   }
 
   static bool _sameState(Object? a, Object? b) {
@@ -454,12 +515,42 @@ class TripService extends ChangeNotifier {
     }
   }
 
+  void _syncSilentTimer() {
+    final on = _positions != null && _trax.isOn;
+    if (on == (_silentTimer != null)) return;
+    _silentTimer?.cancel();
+    _silentTimer = on
+        ? Timer.periodic(const Duration(seconds: 30), (_) => _askSilent())
+        : null;
+    if (!on) _silentAsked.clear();
+  }
+
+  /// Asks the radios of members not heard for [silentIntervals] location
+  /// intervals, counted from when TRAX mode began at the earliest.
+  void _askSilent() {
+    final since = _trax.heardSince;
+    if (_disposed || !_trax.isOn || since == null) return;
+    final now = _clock();
+    final silentAfter = locationInterval * silentIntervals;
+    if (now.difference(since) < silentAfter) return;
+    for (final m in memberContacts) {
+      final last = _lastHeard(m);
+      if (last != null && now.difference(last) < silentAfter) continue;
+      final asked = _silentAsked[m.publicKeyHex];
+      if (asked != null && now.difference(asked) < askSilentEvery) continue;
+      _silentAsked[m.publicKeyHex] = now;
+      _asks.ask(m);
+    }
+  }
+
   @override
   void dispose() {
     _disposed = true;
     _askTimer?.cancel();
+    _silentTimer?.cancel();
     _connector.removeListener(_onChange);
     _trax.removeListener(_onChange);
+    _positions?.removeListener(_onChange);
     unawaited(_messages.cancel());
     unawaited(_left.cancel());
     super.dispose();

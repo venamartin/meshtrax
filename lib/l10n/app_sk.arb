@@ -220,7 +220,6 @@
   "trax_trailhead": "Prepnite na začiatku trasy, keď má rádio polohu z GPS.",
   "trax_settings": "Nastavenia TRAX",
   "trax_switch": "Prepnúť na TRAX",
-  "trax_groupCheck": "Kontrola skupiny",
   "trax_heard": "{count, plural, =0{Na TRAX zatiaľ nikoho nepočuť} other{Počuť na TRAX ({count}): {names}}}",
   "trax_checkAgain": "Skontrolovať znova",
   "trax_noSaved": "V tomto telefóne nie sú uložené nastavenia: „Opustiť TRAX“ sa spýta, na ktorú predvoľbu sa vrátiť.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Vaša poloha sa posiela výletu každých {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Firmvér tohto rádia nevie poslať vašu polohu výletu. Aktualizujte ho.",
+  "trax_locationsNoChannel": "Ak chcete zdieľať polohy, vyberte kanál výletu v nastaveniach TRAX.",
+  "trax_memberNoLocation": "{name}: zatiaľ bez polohy",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "môže byť stará",
+  "trax_tripChannelLocation": "V režime TRAX sa vaša poloha posiela do tohto kanála.",
+  "map_lastHeard": "Naposledy počuté",
+  "map_fromYou": "Od vás",
+  "map_heading": "Smer",
+  "map_speed": "Rýchlosť",
+  "map_notMoving": "Nehýbe sa",
+  "map_notMovingSince": "od {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Nehýbe sa {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Nadmorská výška",
+  "map_radioBattery": "Batéria rádia",
   "settings_deviceInfo": "Informácie o zariadení",
   "settings_appSettings": "Nastavenia aplikácie",
   "settings_appSettingsSubtitle": "Upozornenia, správy a nastavenia mapy",

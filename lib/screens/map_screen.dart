@@ -23,6 +23,7 @@ import 'package:traxlos/traxlos.dart'
 import 'package:traxpoi/traxpoi.dart'
     show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
 import 'package:traxroute/traxroute.dart' as trax show RouteResult;
+import 'package:traxshare/traxshare.dart' show TrailPoint;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
@@ -30,10 +31,12 @@ import '../connector/meshcore_protocol.dart';
 import '../models/app_settings.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
+import '../models/trax.dart';
 import '../services/app_settings_service.dart';
 import '../services/line_of_sight.dart';
 import '../services/line_of_sight_session.dart';
 import '../helpers/date_time_helper.dart';
+import '../helpers/geo_format.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/map_places.dart';
 import '../helpers/poi_kinds.dart';
@@ -43,6 +46,8 @@ import '../services/map_marker_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/poi_service.dart';
 import '../services/radio_ask_service.dart';
+import '../services/trax_beacon_service.dart';
+import '../services/trip_positions.dart';
 import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/app_logger.dart';
@@ -95,6 +100,10 @@ class MapScreen extends StatefulWidget {
   /// [highlightPosition] is an SOS: its pin opens Route here and Navigate.
   final bool highlightSos;
 
+  /// The trip member, by key prefix, the map opens on: their trail shows,
+  /// and their own marker stands at [highlightPosition] in place of a pin.
+  final String? showTrailOf;
+
   const MapScreen({
     super.key,
     this.highlightPosition,
@@ -104,6 +113,7 @@ class MapScreen extends StatefulWidget {
     this.pickPosition = false,
     this.routeToHighlight = false,
     this.highlightSos = false,
+    this.showTrailOf,
   });
 
   @override
@@ -131,6 +141,10 @@ class _MapScreenState extends State<MapScreen> {
   String _guessedLocationsCacheKey = '';
   Timer? _saveCamera;
   StreamSubscription<Object?>? _channelLatest;
+
+  /// The trip member whose trail shows, by key prefix; with none, your own
+  /// TRAX track shows behind your dot.
+  late String? _trailOf = widget.showTrailOf;
 
   /// The main map without the title bar and the tabs, and on a phone without
   /// its status and navigation bars. Never saved: the app starts without it.
@@ -179,8 +193,10 @@ class _MapScreenState extends State<MapScreen> {
   /// The map's area on screen, to see how much of it a sheet covers.
   final _mapKey = GlobalKey();
 
-  /// The point a place or position sheet is about, pinned while it's open.
+  /// The point a place or position sheet is about, pinned while it's open
+  /// unless something on the map is already there ([_sheetPin] false).
   LatLng? _sheetPoint;
+  bool _sheetPin = true;
 
   // Points of interest in view, and whether the region in view has them
   // (the map then drops its own icons for the same kinds).
@@ -467,6 +483,8 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final radioAsks = context.watch<RadioAskService?>();
+    final tripPositions = context.watch<TripPositions?>();
+    final beacon = context.watch<TraxBeaconService?>();
     return Consumer2<MeshCoreConnector, AppSettingsService>(
       builder: (context, connector, settingsService, child) {
         final settings = settingsService.settings;
@@ -910,6 +928,7 @@ class _MapScreenState extends State<MapScreen> {
                                         settings.unitSystem,
                                       ),
                               ),
+                          ..._trailLines(tripPositions, beacon),
                           ..._routeOverlays(),
                           ..._losOverlays(),
                           if (_isBuildingPathTrace && _points.length > 1)
@@ -919,7 +938,8 @@ class _MapScreenState extends State<MapScreen> {
                               color: Colors.blueAccent,
                               width: 4,
                             ),
-                          if (highlightPosition != null)
+                          if (highlightPosition != null &&
+                              widget.showTrailOf == null)
                             MapMarker(
                               id: 'highlight',
                               position: highlightPosition.toOvm(),
@@ -952,7 +972,16 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                             ),
                           ..._buildGuessedMarkers(guessedLocations),
-                          ..._buildRadioAnswerMarkers(radioAsks, connector),
+                          ..._buildRadioAnswerMarkers(
+                            radioAsks,
+                            tripPositions,
+                            connector,
+                          ),
+                          ..._buildTripMarkers(
+                            tripPositions,
+                            radioAsks,
+                            connector,
+                          ),
                           ..._buildMarkers(
                             contactsWithLocation,
                             settings,
@@ -995,7 +1024,7 @@ class _MapScreenState extends State<MapScreen> {
                                 Icons.person_pin_circle,
                               ),
                             ),
-                          if (_sheetPoint case final point?)
+                          if (_sheetPoint case final point? when _sheetPin)
                             MapMarker(
                               id: 'sheet-pin',
                               position: point.toOvm(),
@@ -1217,9 +1246,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Where people's radios said they were, when asked: apart from their
-  /// advert pins, with the time it said so.
+  /// advert pins, with the time it said so. A newer TRAX location replaces
+  /// it.
   List<MapMarker> _buildRadioAnswerMarkers(
     RadioAskService? asks,
+    TripPositions? trip,
     MeshCoreConnector connector,
   ) {
     if (asks == null) return const [];
@@ -1227,34 +1258,104 @@ class _MapScreenState extends State<MapScreen> {
       for (final ask in asks.located)
         if (ask.latest case final answer?)
           if (answer.position case final p?)
-            MapMarker(
-              id: 'ask:${ask.contact.publicKeyHex}',
-              position: LatLng(p.lat, p.lon).toOvm(),
-              size: const Size(35, 35),
-              label: context.l10n.radioAsk_mapLabel(
-                ask.contact.name,
-                DateTimeHelper.timeWithDay(context, answer.receivedAt),
-              ),
-              labelMinZoom: _labelMinZoom,
-              onTap: () => _los != null
-                  ? _los!.tap(
-                      LosPlace.point(
-                        LatLng(p.lat, p.lon),
-                        name: ask.contact.name,
+            if (trip?.of(ask.contact)?.heardAt.isAfter(answer.receivedAt) !=
+                true)
+              MapMarker(
+                id: 'ask:${ask.contact.publicKeyHex}',
+                position: LatLng(p.lat, p.lon).toOvm(),
+                size: const Size(35, 35),
+                label: context.l10n.radioAsk_mapLabel(
+                  ask.contact.name,
+                  DateTimeHelper.timeWithDay(context, answer.receivedAt),
+                ),
+                labelMinZoom: _labelMinZoom,
+                onTap: () => _los != null
+                    ? _los!.tap(
+                        LosPlace.point(
+                          LatLng(p.lat, p.lon),
+                          name: ask.contact.name,
+                        ),
+                      )
+                    : _showNodeInfo(
+                        context,
+                        connector.allContacts.firstWhere(
+                          (c) => c.publicKeyHex == ask.contact.publicKeyHex,
+                          orElse: () => ask.contact,
+                        ),
                       ),
-                    )
-                  : _showNodeInfo(
-                      context,
-                      connector.allContacts.firstWhere(
-                        (c) => c.publicKeyHex == ask.contact.publicKeyHex,
-                        orElse: () => ask.contact,
-                      ),
-                    ),
-              child: _nodeDot(
-                _getNodeColor(advTypeChat),
-                Icons.settings_input_antenna,
+                child: _nodeDot(
+                  _getNodeColor(advTypeChat),
+                  Icons.settings_input_antenna,
+                ),
               ),
+    ];
+  }
+
+  /// Where trip members' MeshTrax said they were in TRAX mode, grey when
+  /// their radio's reading may be old. A newer radio answer replaces it.
+  List<MapMarker> _buildTripMarkers(
+    TripPositions? trip,
+    RadioAskService? asks,
+    MeshCoreConnector connector,
+  ) {
+    if (trip == null) return const [];
+    return [
+      for (final p in trip.shown)
+        if (connector.contactByKeyPrefix4(p.prefixBytes) case final contact
+            when contact == null ||
+                asks?.positionOf(contact)?.receivedAt.isAfter(p.heardAt) !=
+                    true)
+          MapMarker(
+            id: 'trip:${p.prefix}',
+            position: LatLng(p.lat, p.lon).toOvm(),
+            size: const Size(35, 35),
+            label: context.l10n.radioAsk_mapLabel(
+              contact?.name ?? p.name ?? p.prefix.toUpperCase(),
+              DateTimeHelper.timeWithDay(context, p.heardAt),
             ),
+            labelMinZoom: _labelMinZoom,
+            onTap: () => _los != null
+                ? _los!.tap(
+                    LosPlace.point(
+                      LatLng(p.lat, p.lon),
+                      name: contact?.name ?? p.name,
+                    ),
+                  )
+                : _showMemberCard(p, contact),
+            onLongPress: contact == null
+                ? null
+                : () => _showNodeInfo(context, contact),
+            child: _nodeDot(
+              p.mayBeOld ? Colors.grey : const Color(Trax.orange),
+              Icons.hiking,
+            ),
+          ),
+    ];
+  }
+
+  /// Your own TRAX track behind your dot, 10 miles of it, and the tapped
+  /// trip member's trail over it.
+  List<MapLine> _trailLines(TripPositions? trip, TraxBeaconService? beacon) {
+    final of = _trailOf;
+    List<MapLine> lines(String id, List<List<TrailPoint>> parts, Color color) =>
+        [
+          for (final (i, part) in parts.indexed)
+            if (part.length >= 2)
+              MapLine(
+                id: 'trail:$id:$i',
+                points: [for (final p in part) LatLng(p.lat, p.lon).toOvm()],
+                color: color,
+                width: 3,
+              ),
+        ];
+    return [
+      if (beacon != null && beacon.track.recording)
+        ...lines('self', beacon.track.recent, Colors.blue[600]!),
+      if (of != null)
+        ...lines('of', [
+          for (final p in trip?.all ?? const <TripPosition>[])
+            if (p.prefix == of) ...p.line,
+        ], const Color(Trax.orange)),
     ];
   }
 
@@ -1757,30 +1858,26 @@ class _MapScreenState extends State<MapScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow('Type', contact.typeLabel),
-              _buildInfoRow('Path', contact.pathLabel),
-              if (contact.hasLocation)
+              if (contact.type == advTypeChat)
+                ..._personRows(context, contact, guessedPosition)
+              else ...[
+                _buildInfoRow('Type', contact.typeLabel),
+                _buildInfoRow('Path', contact.pathLabel),
+                if (contact.hasLocation)
+                  _buildInfoRow(
+                    'Location',
+                    '${contact.latitude!.toStringAsFixed(6)}, ${contact.longitude!.toStringAsFixed(6)}',
+                  )
+                else if (guessedPosition != null)
+                  _buildInfoRow(
+                    'Est. Location',
+                    '~${guessedPosition.latitude.toStringAsFixed(6)}, ${guessedPosition.longitude.toStringAsFixed(6)}',
+                  ),
                 _buildInfoRow(
-                  'Location',
-                  '${contact.latitude!.toStringAsFixed(6)}, ${contact.longitude!.toStringAsFixed(6)}',
-                )
-              else if (guessedPosition != null)
-                _buildInfoRow(
-                  'Est. Location',
-                  '~${guessedPosition.latitude.toStringAsFixed(6)}, ${guessedPosition.longitude.toStringAsFixed(6)}',
+                  context.l10n.map_lastSeen,
+                  _formatLastSeen(contact.lastSeen),
                 ),
-              _buildInfoRow(
-                context.l10n.map_lastSeen,
-                _formatLastSeen(contact.lastSeen),
-              ),
-              if (context.read<RadioAskService?>()?.positionOf(contact)
-                  case final answer?)
-                _buildInfoRow(
-                  context.l10n.radioAsk_rowLabel,
-                  '${answer.position!.lat.toStringAsFixed(4)}, '
-                  '${answer.position!.lon.toStringAsFixed(4)} · '
-                  '${DateTimeHelper.timeWithDay(context, answer.receivedAt)}',
-                ),
+              ],
               _buildInfoRow('Public Key', contact.publicKeyHex),
               if (contact.type == advTypeChat &&
                   connector.isConnected &&
@@ -1804,8 +1901,11 @@ class _MapScreenState extends State<MapScreen> {
                   },
                 ),
               ],
-              // Not from a guessed position: it can be tens of km out.
+              // Not from a guessed position: it can be tens of km out. A
+              // person's info is about them, not the radio path (owner,
+              // 2026-11-21).
               if (_losOffered &&
+                  contact.type != advTypeChat &&
                   guessedPosition == null &&
                   contact.hasLocation &&
                   !_isBuildingPathTrace) ...[
@@ -2021,6 +2121,377 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(context.l10n.common_close),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// What is known of a person: when they were last heard and, from the
+  /// newest of their TRAX report, their radio's answer and their advert,
+  /// where; which way and how fast from a TRAX report that is the newest.
+  List<Widget> _personRows(
+    BuildContext context,
+    Contact contact,
+    LatLng? guessedPosition,
+  ) {
+    final l10n = context.l10n;
+    final units = context.read<AppSettingsService>().settings.unitSystem;
+    final p = _person(
+      context,
+      contact,
+      context.read<TripPositions?>()?.of(contact),
+    );
+    return [
+      _buildInfoRow(l10n.map_lastHeard, _heardText(p.heard, p.old)),
+      if (p.place case final place?)
+        _buildInfoRow(
+          'Location',
+          '${place.latitude.toStringAsFixed(5)}, '
+              '${place.longitude.toStringAsFixed(5)}',
+        )
+      else if (guessedPosition != null)
+        _buildInfoRow(
+          'Est. Location',
+          '~${guessedPosition.latitude.toStringAsFixed(5)}, ${guessedPosition.longitude.toStringAsFixed(5)}',
+        ),
+      if (_fromYou(p.place) case final from?)
+        _buildInfoRow(l10n.map_fromYou, from),
+      if (p.heading case final h?)
+        _buildInfoRow(l10n.map_heading, _headingText(h)),
+      if (p.speed case final v?)
+        _buildInfoRow(l10n.map_speed, GeoFormat.speedText(v, units)),
+      if (p.stillSince case final still?)
+        _buildInfoRow(
+          l10n.map_notMoving,
+          l10n.map_notMovingSince(
+            DateTimeHelper.timeWithDay(context, still),
+            DateTime.now().difference(still).inMinutes,
+          ),
+        ),
+      if (p.altitude case final a?)
+        _buildInfoRow(l10n.map_elevation, GeoFormat.heightText(a, units)),
+      if (p.battery case final b?) _buildInfoRow(l10n.map_radioBattery, '$b%'),
+      _buildInfoRow('Path', contact.pathLabel),
+    ];
+  }
+
+  /// What the map knows of a person, from the newest of their TRAX
+  /// [report], their radio's answer and their advert: when they were last
+  /// heard, whether that reading may be old, where they are, which way and
+  /// how fast they go or since when they haven't moved, how high they are
+  /// and their radio's battery. One of [contact] and [report] at least.
+  ({
+    DateTime heard,
+    bool old,
+    LatLng? place,
+    double? heading,
+    double? speed,
+    DateTime? stillSince,
+    double? altitude,
+    int? battery,
+  })
+  _person(BuildContext context, Contact? contact, TripPosition? report) {
+    final answer = contact == null
+        ? null
+        : context.read<RadioAskService?>()?.positionOf(contact);
+    final places = [
+      if (report != null)
+        (
+          at: report.heardAt,
+          place: LatLng(report.lat, report.lon),
+          altitude: report.altitude?.toDouble(),
+          old: report.mayBeOld,
+        ),
+      if (answer?.position case final p?)
+        (
+          at: answer!.receivedAt,
+          place: LatLng(p.lat, p.lon),
+          altitude: p.altitude == 0 ? null : p.altitude,
+          old: false,
+        ),
+      if (contact != null && contact.hasLocation)
+        (
+          at: contact.lastSeen,
+          place: LatLng(contact.latitude!, contact.longitude!),
+          altitude: null,
+          old: false,
+        ),
+    ]..sort((a, b) => b.at.compareTo(a.at));
+    final latest = places.firstOrNull;
+    final heard = [
+      ?contact?.lastSeen,
+      ?report?.heardAt,
+      ?answer?.receivedAt,
+    ].reduce((a, b) => a.isAfter(b) ? a : b);
+    final moving = report != null && latest?.at == report.heardAt;
+    return (
+      heard: heard,
+      old: latest != null && latest.old && latest.at == heard,
+      place: latest?.place,
+      heading: moving ? report.heading : null,
+      speed: moving ? report.speed : null,
+      stillSince: moving ? report.stillSince : null,
+      altitude: latest?.altitude,
+      battery: report?.battery,
+    );
+  }
+
+  /// "0.4 mi NW": how far [place] is from this radio, and which way.
+  String? _fromYou(LatLng? place) {
+    final me = _selfPosition(_connector);
+    if (me == null || place == null) return null;
+    final units = context.read<AppSettingsService>().settings.unitSystem;
+    return GeoFormat.offset(me, place, units).text;
+  }
+
+  /// Battery icons with 1 to 7 bars, for 20 % and up.
+  static const _batteryIcons = [
+    Icons.battery_1_bar,
+    Icons.battery_2_bar,
+    Icons.battery_3_bar,
+    Icons.battery_4_bar,
+    Icons.battery_5_bar,
+    Icons.battery_6_bar,
+    Icons.battery_full,
+  ];
+
+  static String _headingText(double degrees) =>
+      '${GeoFormat.compass8(degrees)} ${degrees.round()}°';
+
+  /// "5:25 PM · 3m ago", and "may be old" when the reading may be.
+  String _heardText(DateTime heard, bool old) => [
+    DateTimeHelper.timeWithDay(context, heard),
+    _formatLastSeen(heard),
+    if (old) context.l10n.trax_mayBeOld,
+  ].join(' · ');
+
+  /// A trip member's card over a clear map: their trail above it, centred
+  /// on them, and what is known of them, kept up to date. Closing it hides
+  /// the trail. Their own marker is the pin.
+  Future<void> _showMemberCard(TripPosition member, Contact? contact) async {
+    setState(() => _trailOf = member.prefix);
+    await _showPointSheet(
+      LatLng(member.lat, member.lon),
+      pin: false,
+      centerAfter: Future<void>.value(),
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          child: _Ticking(
+            builder: (context) =>
+                _memberCard(context, sheetContext, member, contact),
+          ),
+        ),
+      ),
+    );
+    if (mounted && _trailOf == member.prefix) setState(() => _trailOf = null);
+  }
+
+  /// Who, when heard and how far, then one line of small figures (which
+  /// way, how fast or how long stopped, how high, their battery; each
+  /// names itself on a long-press), then Chat and Ask for a contact.
+  Widget _memberCard(
+    BuildContext context,
+    BuildContext sheetContext,
+    TripPosition member,
+    Contact? contact,
+  ) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final settings = context.read<AppSettingsService>().settings;
+    final units = settings.unitSystem;
+    final m =
+        context
+            .watch<TripPositions>()
+            .all
+            .where((q) => q.prefix == member.prefix)
+            .firstOrNull ??
+        member;
+    final p = _person(context, contact, m);
+    final place = p.place;
+
+    Widget figure(
+      String label,
+      IconData icon,
+      String value, {
+      double? degrees,
+      Color? color,
+    }) {
+      final glyph = Icon(
+        icon,
+        size: 16,
+        color: color ?? scheme.onSurfaceVariant,
+      );
+      return Tooltip(
+        message: label,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (degrees != null)
+                Transform.rotate(angle: degrees * pi / 180, child: glyph)
+              else
+                glyph,
+              const SizedBox(width: 6),
+              Text(
+                value,
+                style: theme.textTheme.labelLarge?.copyWith(color: color),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final figures = [
+      if (p.heading case final h?)
+        figure(l10n.map_heading, Icons.north, _headingText(h), degrees: h),
+      if (p.speed case final v?)
+        figure(l10n.map_speed, Icons.speed, GeoFormat.speedText(v, units)),
+      if (p.stillSince case final still?)
+        figure(
+          l10n.map_notMoving,
+          Icons.pause_circle_outline,
+          l10n.map_stoppedFor(DateTime.now().difference(still).inMinutes),
+        ),
+      if (p.altitude case final a?)
+        figure(
+          l10n.map_elevation,
+          Icons.terrain,
+          GeoFormat.heightText(a, units),
+        ),
+      if (p.battery case final b?)
+        figure(
+          l10n.map_radioBattery,
+          b < 20
+              ? Icons.battery_alert
+              : _batteryIcons[(b * 7 / 100).round().clamp(1, 7) - 1],
+          '$b%',
+          color: b < 20 ? scheme.error : null,
+        ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: m.mayBeOld
+                    ? Colors.grey
+                    : const Color(Trax.orange),
+                child: const Icon(Icons.hiking, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contact?.name ?? m.name ?? m.prefix.toUpperCase(),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text.rich(
+                      TextSpan(
+                        text: [
+                          DateTimeHelper.timeWithDay(context, p.heard),
+                          _formatLastSeen(p.heard),
+                          ?_fromYou(place),
+                        ].join(' · '),
+                        children: [
+                          if (p.old)
+                            TextSpan(
+                              text: ' · ${l10n.trax_mayBeOld}',
+                              style: TextStyle(color: scheme.error),
+                            ),
+                        ],
+                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (place != null)
+                CopyPositionButton(
+                  text: positionLines(
+                    place.latitude,
+                    place.longitude,
+                    coordFormatOf(settings),
+                  ).first,
+                ),
+            ],
+          ),
+          if (figures.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Wrap(spacing: 8, runSpacing: 8, children: figures),
+            ),
+          ],
+          if (contact != null) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    final connector = this.context.read<MeshCoreConnector>();
+                    if (!contact.isActive &&
+                        !await connector.importDiscoveredContact(contact)) {
+                      if (mounted) {
+                        showDismissibleSnackBar(
+                          this.context,
+                          content: Text(l10n.contacts_contactImportFailed),
+                        );
+                      }
+                      return;
+                    }
+                    if (!mounted) return;
+                    Navigator.push(
+                      this.context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(contact: contact),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  label: Text(l10n.map_chat),
+                ),
+                if (context.read<MeshCoreConnector>().isConnected)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      RadioAskSheet.show(
+                        this.context,
+                        contact,
+                        onShowOnMap: (point) => _moveTo(
+                          point,
+                          max(_mapController.camera?.zoom ?? 14, 14),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.settings_input_antenna, size: 18),
+                    label: Text(l10n.radioAsk_title(contact.name)),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -2582,8 +3053,12 @@ class _MapScreenState extends State<MapScreen> {
     required WidgetBuilder builder,
     Future<void>? centerAfter,
     bool dragHandle = false,
+    bool pin = true,
   }) async {
-    setState(() => _sheetPoint = point);
+    setState(() {
+      _sheetPoint = point;
+      _sheetPin = pin;
+    });
     await showModalBottomSheet<void>(
       context: context,
       barrierColor: Colors.transparent,
@@ -3848,6 +4323,39 @@ class _ReportHeightState extends State<_ReportHeight> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Builds again every 30 s, so a time shown as "3m ago" keeps counting
+/// while nothing else changes.
+class _Ticking extends StatefulWidget {
+  final WidgetBuilder builder;
+
+  const _Ticking({required this.builder});
+
+  @override
+  State<_Ticking> createState() => _TickingState();
+}
+
+class _TickingState extends State<_Ticking> {
+  late final Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => setState(() {}),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context);
 }
 
 /// The radio's GPS position: a blue dot, or grey when it may be [old].

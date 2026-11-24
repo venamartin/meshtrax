@@ -113,7 +113,7 @@ Uint8List _dm(String text) {
 Uint8List _datagram() {
   final w = BytesBuilder();
   w.add([respCodeChannelDataRecv, 0x14, 0, 0, 1, 0xFF]);
-  w.add([0x54, 0xFF, 3, 1, 2, 3]);
+  w.add([0x71, 0x01, 3, 1, 2, 3]);
   return w.toBytes();
 }
 

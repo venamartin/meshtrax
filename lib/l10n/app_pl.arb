@@ -220,7 +220,6 @@
   "trax_trailhead": "Przełącz w punkcie startowym, gdy radio ma pozycję GPS.",
   "trax_settings": "Ustawienia TRAX",
   "trax_switch": "Przełącz na TRAX",
-  "trax_groupCheck": "Sprawdzenie grupy",
   "trax_heard": "{count, plural, =0{Jeszcze nikogo nie słychać na TRAX} other{Słyszani na TRAX ({count}): {names}}}",
   "trax_checkAgain": "Sprawdź ponownie",
   "trax_noSaved": "Brak zapisanych ustawień na tym telefonie: „Opuść TRAX” zapyta, do którego ustawienia wrócić.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Twoja lokalizacja trafia do wyprawy co {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Oprogramowanie tego radia nie może wysłać Twojej lokalizacji do wyprawy. Zaktualizuj je.",
+  "trax_locationsNoChannel": "Wybierz kanał wyprawy w ustawieniach TRAX, aby udostępniać lokalizacje.",
+  "trax_memberNoLocation": "{name}: jeszcze brak lokalizacji",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "może być nieaktualna",
+  "trax_tripChannelLocation": "W trybie TRAX Twoja lokalizacja trafia na ten kanał.",
+  "map_lastHeard": "Ostatnio słyszane",
+  "map_fromYou": "Od Ciebie",
+  "map_heading": "Kierunek",
+  "map_speed": "Prędkość",
+  "map_notMoving": "Bez ruchu",
+  "map_notMovingSince": "od {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Bez ruchu od {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Wysokość",
+  "map_radioBattery": "Bateria radia",
   "settings_deviceInfo": "Informacje o urządzeniu",
   "settings_appSettings": "Ustawienia aplikacji",
   "settings_appSettingsSubtitle": "Powiadomienia, wiadomości i preferencje mapy",

@@ -277,7 +277,6 @@
   "trax_trailhead": "출발 지점에서 무전기가 GPS 위치를 잡은 뒤 전환하세요.",
   "trax_settings": "TRAX 설정",
   "trax_switch": "TRAX로 전환",
-  "trax_groupCheck": "그룹 확인",
   "trax_heard": "{count, plural, =0{아직 TRAX에서 들린 사람이 없습니다} other{TRAX에서 들림 ({count}): {names}}}",
   "trax_checkAgain": "다시 확인",
   "trax_noSaved": "이 휴대폰에 저장된 설정이 없습니다. ‘TRAX 나가기’가 돌아갈 프리셋을 묻습니다.",
@@ -374,6 +373,52 @@
       }
     }
   },
+  "trax_sendingEvery": "내 위치가 {minutes}분마다 여행 그룹에 전송돼요.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "이 무전기의 펌웨어는 여행 그룹에 위치를 보낼 수 없어요. 업데이트하세요.",
+  "trax_locationsNoChannel": "위치를 공유하려면 TRAX 설정에서 여행 채널을 고르세요.",
+  "trax_memberNoLocation": "{name}: 아직 위치 없음",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "오래되었을 수 있음",
+  "trax_tripChannelLocation": "TRAX 모드에서는 내 위치가 이 채널로 전송돼요.",
+  "map_lastHeard": "마지막 수신",
+  "map_fromYou": "내 위치에서",
+  "map_heading": "진행 방향",
+  "map_speed": "속도",
+  "map_notMoving": "정지",
+  "map_notMovingSince": "{time}부터 ({minutes}분)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "{minutes}분째 정지",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "고도",
+  "map_radioBattery": "무전기 배터리",
   "settings_deviceInfo": "장치 정보",
   "settings_appSettings": "앱 설정",
   "settings_appSettingsSubtitle": "알림, 메시징, 지도 설정",

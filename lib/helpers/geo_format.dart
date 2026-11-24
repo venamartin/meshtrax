@@ -43,6 +43,12 @@ class GeoFormat {
       ? '${(meters * 3.28084).round()} ft'
       : '${meters.round()} m';
 
+  /// "3 mph"; "5 km/h" in metric.
+  static String speedText(double metresPerSecond, UnitSystem units) =>
+      units == UnitSystem.imperial
+      ? '${(metresPerSecond * 2.23694).round()} mph'
+      : '${(metresPerSecond * 3.6).round()} km/h';
+
   /// How far [to] is from [from], and which way.
   static GeoOffset offset(LatLng from, LatLng to, UnitSystem units) {
     final meters = _distance.as(LengthUnit.Meter, from, to);

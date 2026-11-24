@@ -995,9 +995,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_switch => 'TRAXに切り替え';
 
   @override
-  String get trax_groupCheck => 'グループ確認';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1201,6 +1198,59 @@ class AppLocalizationsJa extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name：応答なし';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'あなたの位置は$minutes分ごとに旅のメンバーへ送られます。';
+  }
+
+  @override
+  String get trax_noChannelData => 'この無線機のファームウェアは位置を旅のメンバーへ送れません。更新してください。';
+
+  @override
+  String get trax_locationsNoChannel => '位置を共有するには、TRAX設定で旅のチャンネルを選んでください。';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name：まだ位置情報なし';
+  }
+
+  @override
+  String get trax_mayBeOld => '古い可能性あり';
+
+  @override
+  String get trax_tripChannelLocation => 'TRAXモード中は、あなたの位置がこのチャンネルに送られます。';
+
+  @override
+  String get map_lastHeard => '最終受信';
+
+  @override
+  String get map_fromYou => 'あなたから';
+
+  @override
+  String get map_heading => '進行方向';
+
+  @override
+  String get map_speed => '速度';
+
+  @override
+  String get map_notMoving => '停止中';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return '$timeから（$minutes分）';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return '$minutes分間停止中';
+  }
+
+  @override
+  String get map_elevation => '標高';
+
+  @override
+  String get map_radioBattery => '無線機のバッテリー';
 
   @override
   String get settings_deviceInfo => 'デバイス情報';

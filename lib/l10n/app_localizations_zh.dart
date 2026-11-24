@@ -987,9 +987,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_switch => '切换到 TRAX';
 
   @override
-  String get trax_groupCheck => '小组检查';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1192,6 +1189,59 @@ class AppLocalizationsZh extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name：无应答';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return '您的位置每 $minutes 分钟发送给行程成员。';
+  }
+
+  @override
+  String get trax_noChannelData => '这台电台的固件无法把您的位置发送给行程成员。请更新固件。';
+
+  @override
+  String get trax_locationsNoChannel => '在 TRAX 设置中选择行程频道即可共享位置。';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name：还没有位置';
+  }
+
+  @override
+  String get trax_mayBeOld => '可能已过时';
+
+  @override
+  String get trax_tripChannelLocation => '在 TRAX 模式下，您的位置会发送到这个频道。';
+
+  @override
+  String get map_lastHeard => '最近收到';
+
+  @override
+  String get map_fromYou => '距您';
+
+  @override
+  String get map_heading => '方向';
+
+  @override
+  String get map_speed => '速度';
+
+  @override
+  String get map_notMoving => '未移动';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return '自 $time 起（$minutes 分钟）';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return '已停留 $minutes 分钟';
+  }
+
+  @override
+  String get map_elevation => '海拔';
+
+  @override
+  String get map_radioBattery => '电台电量';
 
   @override
   String get settings_deviceInfo => '设备信息';

@@ -220,7 +220,6 @@
   "trax_trailhead": "Cambia en el punto de partida, cuando la radio tenga posición GPS.",
   "trax_settings": "Ajustes de TRAX",
   "trax_switch": "Cambiar a TRAX",
-  "trax_groupCheck": "Comprobación del grupo",
   "trax_heard": "{count, plural, =0{Aún no se ha oído a nadie en TRAX} other{Oídos en TRAX ({count}): {names}}}",
   "trax_checkAgain": "Comprobar de nuevo",
   "trax_noSaved": "No hay ajustes guardados en este teléfono: «Salir de TRAX» pregunta a qué preajuste volver.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Tu ubicación se envía a la salida cada {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "El firmware de esta radio no puede enviar tu ubicación a la salida. Actualízalo.",
+  "trax_locationsNoChannel": "Elige un canal de la salida en los ajustes de TRAX para compartir ubicaciones.",
+  "trax_memberNoLocation": "{name}: aún sin ubicación",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "puede ser antigua",
+  "trax_tripChannelLocation": "En modo TRAX, tu ubicación se envía a este canal.",
+  "map_lastHeard": "Última vez oído",
+  "map_fromYou": "Desde ti",
+  "map_heading": "Rumbo",
+  "map_speed": "Velocidad",
+  "map_notMoving": "Sin moverse",
+  "map_notMovingSince": "desde {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Sin moverse {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Altitud",
+  "map_radioBattery": "Batería de la radio",
   "settings_deviceInfo": "Información del dispositivo",
   "settings_appSettings": "Configuración de la App",
   "settings_appSettingsSubtitle": "Notificaciones, mensajes y preferencias de mapa",

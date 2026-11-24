@@ -277,7 +277,6 @@
   "trax_trailhead": "登山口で、無線機がGPSで位置を取得してから切り替えてください。",
   "trax_settings": "TRAX設定",
   "trax_switch": "TRAXに切り替え",
-  "trax_groupCheck": "グループ確認",
   "trax_heard": "{count, plural, =0{TRAXでまだ誰も聞こえていません} other{TRAXで聞こえた人（{count}）：{names}}}",
   "trax_checkAgain": "もう一度確認",
   "trax_noSaved": "この電話に保存された設定がありません。「TRAXを終了」で戻るプリセットを尋ねます。",
@@ -374,6 +373,52 @@
       }
     }
   },
+  "trax_sendingEvery": "あなたの位置は{minutes}分ごとに旅のメンバーへ送られます。",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "この無線機のファームウェアは位置を旅のメンバーへ送れません。更新してください。",
+  "trax_locationsNoChannel": "位置を共有するには、TRAX設定で旅のチャンネルを選んでください。",
+  "trax_memberNoLocation": "{name}：まだ位置情報なし",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "古い可能性あり",
+  "trax_tripChannelLocation": "TRAXモード中は、あなたの位置がこのチャンネルに送られます。",
+  "map_lastHeard": "最終受信",
+  "map_fromYou": "あなたから",
+  "map_heading": "進行方向",
+  "map_speed": "速度",
+  "map_notMoving": "停止中",
+  "map_notMovingSince": "{time}から（{minutes}分）",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "{minutes}分間停止中",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "標高",
+  "map_radioBattery": "無線機のバッテリー",
   "settings_deviceInfo": "デバイス情報",
   "settings_appSettings": "アプリ設定",
   "settings_appSettingsSubtitle": "通知、メッセージング、および地図の表示設定",

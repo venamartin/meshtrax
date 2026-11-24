@@ -220,7 +220,6 @@
   "trax_trailhead": "Basculez au point de départ, une fois que la radio a une position GPS.",
   "trax_settings": "Paramètres TRAX",
   "trax_switch": "Passer en TRAX",
-  "trax_groupCheck": "Vérification du groupe",
   "trax_heard": "{count, plural, =0{Personne entendu sur TRAX pour l'instant} other{Entendus sur TRAX ({count}) : {names}}}",
   "trax_checkAgain": "Vérifier à nouveau",
   "trax_noSaved": "Aucun paramètre enregistré sur ce téléphone : « Quitter TRAX » demande vers quel préréglage revenir.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Votre position est envoyée à la sortie toutes les {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Le micrologiciel de cette radio ne peut pas envoyer votre position à la sortie. Mettez-le à jour.",
+  "trax_locationsNoChannel": "Choisissez un canal de la sortie dans les paramètres TRAX pour partager les positions.",
+  "trax_memberNoLocation": "{name} : pas encore de position",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "peut-être ancienne",
+  "trax_tripChannelLocation": "En mode TRAX, votre position est envoyée sur ce canal.",
+  "map_lastHeard": "Dernière écoute",
+  "map_fromYou": "Par rapport à vous",
+  "map_heading": "Cap",
+  "map_speed": "Vitesse",
+  "map_notMoving": "Immobile",
+  "map_notMovingSince": "depuis {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Immobile depuis {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Altitude",
+  "map_radioBattery": "Batterie de la radio",
   "settings_deviceInfo": "Informations du périphérique",
   "settings_appSettings": "Paramètres de l'application",
   "settings_appSettingsSubtitle": "Notifications, messagerie et préférences de carte",
