@@ -15,6 +15,7 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/map_focus.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/screens/map_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
@@ -289,9 +290,11 @@ void main() {
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    final screen = tester.widget<MapScreen>(find.byType(MapScreen));
-    expect(screen.highlightPosition, _spot);
-    expect(screen.highlightSos, isTrue);
+    final focus =
+        tester.widget<MapScreen>(find.byType(MapScreen)).focus!
+            as MapFocusPoint;
+    expect(focus.position, _spot);
+    expect(focus.sos, isTrue);
 
     final pin = tester
         .widget<AppMap>(find.byType(AppMap).last)

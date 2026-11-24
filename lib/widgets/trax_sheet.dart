@@ -9,6 +9,7 @@ import '../connector/meshcore_connector.dart';
 import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
+import '../models/map_focus.dart';
 import '../models/trax.dart';
 import '../screens/map_screen.dart';
 import '../screens/trax_settings_screen.dart';
@@ -384,7 +385,7 @@ class _TraxSheetState extends State<TraxSheet> {
     final scheme = Theme.of(context).colorScheme;
     final name = m.member.name;
     final contact = m.member.contact;
-    if ((m.at, m.place) case (final at?, final place?)) {
+    if ((m.at, m.place, m.trail) case (final at?, final place?, final trail?)) {
       final from = _fromYou(context, place);
       return ListTile(
         contentPadding: EdgeInsets.zero,
@@ -410,13 +411,7 @@ class _TraxSheetState extends State<TraxSheet> {
           ),
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            builder: (_) =>
-                MapScreen(highlightPosition: place, showTrailOf: m.trail),
-          ),
-        ),
+        onTap: () => MapScreen.show(context, MapFocusMember(trail, place)),
       );
     }
     final (text, color) = contact != null && !m.on

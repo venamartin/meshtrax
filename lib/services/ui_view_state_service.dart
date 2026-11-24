@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Route;
 import 'package:traxmap/traxmap.dart' show LatLng, MapCamera;
 import 'package:traxroute/traxroute.dart' show RouteResult;
 
+import '../models/map_focus.dart';
 import '../storage/prefs_manager.dart';
 import '../utils/contact_search.dart';
 
@@ -96,14 +98,27 @@ class UiViewStateService extends ChangeNotifier {
   bool get mapShownThisRun => _mapShownThisRun;
 
   /// Set once the main map has gone to your GPS position since the app
-  /// started, or you touched it before it could: it goes there by itself
-  /// once a run. Not saved.
+  /// started, or you touched it or it was asked to show something before it
+  /// could: it goes there by itself once a run. Not saved.
   bool mapWentToGps = false;
 
-  /// The main map's route, kept as it changes: the quick switch puts another
+  /// The Map tab's route, kept as it changes: the quick switch puts another
   /// screen in the map's place, and the route is there when the map is back.
-  /// Not saved, so it goes with the app.
+  /// A route started on a map over a chat is kept here too. Not saved, so it
+  /// goes with the app.
   MapRoute? mapRoute;
+
+  /// Whether the Map tab has shown [mapRoute]. A route started on a map
+  /// over a chat is shown whole there the first time.
+  bool mapRouteSeen = true;
+
+  /// The maps open now, the Map tab or ones over other screens, by route:
+  /// how to show each something. What you tap on a map shows on it, never
+  /// on a second map over it.
+  final Map<Route<Object?>, ValueChanged<MapFocus>> openMaps = {};
+
+  /// The Chats tab while it is open: the map shown from it takes its place.
+  Route<Object?>? chatsTab;
 
   Future<void> initialize() async {
     final prefs = PrefsManager.instance;

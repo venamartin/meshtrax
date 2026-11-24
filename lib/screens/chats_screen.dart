@@ -104,6 +104,8 @@ class _ChatsScreenState extends State<ChatsScreen>
   // Once per screen: a run of failed adds would stack one dialog each.
   bool _tableFullAsked = false;
   late MeshCoreConnector _connector;
+  late UiViewStateService _viewState;
+  ModalRoute<Object?>? _tabRoute;
 
   @override
   void initState() {
@@ -170,7 +172,18 @@ class _ChatsScreenState extends State<ChatsScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The map shown from here takes this tab's place (MapScreen.show).
+    if (_tabRoute == null) {
+      _viewState = context.read<UiViewStateService>();
+      _viewState.chatsTab = _tabRoute = ModalRoute.of(context);
+    }
+  }
+
+  @override
   void dispose() {
+    if (_viewState.chatsTab == _tabRoute) _viewState.chatsTab = null;
     _connector.removeListener(_connectorListener);
     _tableFullSubscription?.cancel();
     super.dispose();
@@ -251,7 +264,7 @@ class _ChatsScreenState extends State<ChatsScreen>
     if (index == 1) {
       Navigator.pushReplacement(
         context,
-        buildQuickSwitchRoute(const MapScreen(hideBackButton: true)),
+        buildQuickSwitchRoute(const MapScreen()),
       );
     }
   }

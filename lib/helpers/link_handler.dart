@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
+import '../models/map_focus.dart';
 import '../screens/channel_chat_screen.dart';
 import '../screens/map_screen.dart';
 import '../utils/platform_info.dart';
@@ -118,24 +119,15 @@ class LinkHandler {
         channels.where((c) => c.name == lower).firstOrNull;
   }
 
-  /// [sos]: the point is an SOS, whose pin opens Route here.
+  /// The point pinned on a map ([MapScreen.show]). [sos]: the point is an
+  /// SOS, whose pin opens Route here.
   static void openMapAt(
     BuildContext context,
     LatLng position, {
     String? label,
     bool sos = false,
-  }) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MapScreen(
-          highlightPosition: position,
-          highlightLabel: label,
-          highlightSos: sos,
-        ),
-      ),
-    );
-  }
+  }) =>
+      MapScreen.show(context, MapFocusPoint(position, label: label, sos: sos));
 
   /// Hands [position] to the system maps app for directions. Android gets a
   /// `geo:` URI, so the user picks the app (Google Maps, OsmAnd, …).

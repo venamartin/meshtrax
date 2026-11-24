@@ -31,8 +31,7 @@ class StructuredMessageDialogs {
     return Navigator.push<LatLng>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            MapScreen(pickPosition: true, highlightPosition: around),
+        builder: (_) => MapScreen(pickPosition: true, pickAround: around),
       ),
     );
   }
