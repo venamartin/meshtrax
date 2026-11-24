@@ -2170,7 +2170,6 @@
   "chat_kindDirect": "direto",
   "chat_kindRoute": "rota ({count} {count, plural, =1{salto} other{saltos}})",
   "chat_statusQueued": "Na fila",
-  "chat_statusNoRepeaterHeard": "Nenhum repetidor ouviu você. Vai tentar de novo quando houver um ao alcance.",
   "chat_channelNoSign": "Enviado · nenhum sinal de quem recebeu",
   "chat_sentByItsClock": "enviado {time} pelo relógio do remetente",
   "chat_narrowHashNotice": "O rádio de {name} envia códigos de repetidor curtos (1 byte). O Pathfinder não consegue aprender rotas até esse contato enquanto o rádio dele não usar códigos de 2 bytes.",

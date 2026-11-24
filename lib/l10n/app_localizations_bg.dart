@@ -4775,10 +4775,6 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chat_statusQueued => 'На опашка';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Никой повторител не ви чу. Ще опита отново, когато има повторител в обхват.';
-
-  @override
   String get chat_channelNoSign => 'Изпратено · няма знак кой го е получил';
 
   @override

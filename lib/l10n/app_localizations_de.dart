@@ -4790,10 +4790,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chat_statusQueued => 'In Warteschlange';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Kein Repeater hat Sie gehört. Neuer Versuch, sobald einer in Reichweite ist.';
-
-  @override
   String get chat_channelNoSign => 'Gesendet · kein Zeichen, wer sie erhielt';
 
   @override

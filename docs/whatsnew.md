@@ -8,7 +8,7 @@ Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 - Navigate a route inside MeshTrax, or hand it to another app from the route sheet.
 - Check sends with observers (optional, off by default): MeshTrax asks an observer server you pick whether your channel messages were heard, and doesn't send them again for nothing.
 - Contacts get a nickname, a full name and a note. Share a contact from the + tray; a contact posted in a chat shows as a card. A deleted contact stays deleted, and adverts with a bad signature are ignored.
-- A direct message is never stuck: with no repeater near, it fails within minutes so your next messages go, and "No repeater heard you" shows while it waits for one.
+- A direct message is never stuck: with no repeater near, it fails within minutes so your next messages go.
 - A message your radio held for hours says when it was sent ("sent 2:00 PM by its clock").
 - With the radio's GPS on, your dot turns grey ("Last known · 2:02 PM") once the GPS stops giving new positions.
 - The Chats tab counts unread messages. A chat you are reading further up stays put when messages arrive. Day headings and the NEW MESSAGES line are drawn as a wave.

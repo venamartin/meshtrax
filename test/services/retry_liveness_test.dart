@@ -11,7 +11,7 @@ import 'package:meshtrax/services/message_retry_service.dart';
 
 // Drive 2026-10-17: 29 of 77 DMs were heard by no repeater and burned the
 // whole ladder before showing "failed". A flood nobody echoes is parked
-// with "No repeater heard you" and sent again when a repeater is heard.
+// (the chat shows only its wait icon) and sent again when a repeater is heard.
 // Fail fast (Martin, 2026-11-16): it parks only when a repeater was heard
 // in the last 10 minutes, and a park that hears none for 10 minutes fails,
 // so the messages queued behind it to the same contact can go.
@@ -302,6 +302,44 @@ void main() {
       async.elapse(Duration(milliseconds: _echoWait + 1));
       expect(r2.last.waitingForRepeater, isFalse,
           reason: 'its echo could never reach the raw log');
+    });
+  });
+
+  test('a flood rung the radio sent on its stored route never parks: no '
+      'flood echo can come back', () {
+    fakeAsync((async) {
+      final r = _Rig(async, budget: 3, graph: const []); // the plan floods
+      r.svc.noteRepeaterHeard();
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      // "was asked to go as a flood but the radio sent it on its stored
+      // route": the radio held a route the contact row didn't show.
+      r.svc.updateMessageFromSent(r.ackFor(0), 0, isFlood: false);
+      async.elapse(Duration(milliseconds: _echoWait + 1));
+      expect(r.last.waitingForRepeater, isFalse);
+      async.elapse(const Duration(milliseconds: _timeoutMs));
+      async.flushMicrotasks();
+      expect(r.sends, hasLength(2), reason: 'the ladder timed out as usual');
+    });
+  });
+
+  test('a route rung the radio flooded for want of a route is watched like '
+      'any flood', () {
+    fakeAsync((async) {
+      final route = PathSelection(
+          pathBytes: const [0xA2, 0x77],
+          hopCount: 1,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: 0.9);
+      final r = _Rig(async, budget: 3, graph: [route]);
+      r.svc.noteRepeaterHeard();
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      r.svc.updateMessageFromSent(r.ackFor(0), 0, isFlood: true);
+      async.elapse(Duration(milliseconds: _echoWait + 1));
+      expect(r.last.waitingForRepeater, isTrue);
     });
   });
 

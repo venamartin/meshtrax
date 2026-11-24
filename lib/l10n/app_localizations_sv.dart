@@ -4736,10 +4736,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chat_statusQueued => 'I kö';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.';
-
-  @override
   String get chat_channelNoSign => 'Skickat · inget tecken på vem som fick det';
 
   @override

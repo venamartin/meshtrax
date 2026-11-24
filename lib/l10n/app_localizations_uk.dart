@@ -4788,10 +4788,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chat_statusQueued => 'У черзі';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Жоден ретранслятор вас не почув. Спробуємо знову, коли якийсь буде поруч.';
-
-  @override
   String get chat_channelNoSign => 'Надіслано · не видно, хто отримав';
 
   @override

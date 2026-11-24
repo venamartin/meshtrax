@@ -4760,10 +4760,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chat_statusQueued => 'In wachtrij';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Geen repeater heeft je gehoord. Er wordt opnieuw geprobeerd zodra er een binnen bereik is.';
-
-  @override
   String get chat_channelNoSign => 'Verzonden · geen teken wie het kreeg';
 
   @override

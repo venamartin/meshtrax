@@ -571,7 +571,12 @@ the connector's `_openPassingCopy`):
   firmware always ACKs a DM it opens, and `multi_acks` only drops its extra copy. So the app
   drops its stand-in for the radio's ACK, and its second ACK (below) still goes: the radio's
   ACK is the one nobody controls, and the app's second is the one on a good route (owner,
-  2026-11-21). A stand-in already sent can't be called back, so then the message gets three.
+  2026-11-21). When the stand-in's time comes it waits `TimeoutHelper.standInRecheckMs`
+  (100 ms) first, on a fresh timer: a busy app can still hold the radio's copy among frames
+  it hasn't handled, and an expired timer can run before them (the simulator saw the copy wait
+  over a second behind a DM's intake and reply). The ACKs after it wait as long, so the second
+  still follows it by 300 ms. A stand-in already sent can't be called back, so then the
+  message gets three.
 - **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
   a long DM, or a shorter one on a long route, is never seen. A scope set by another app
   with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.

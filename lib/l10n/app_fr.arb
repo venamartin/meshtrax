@@ -2170,7 +2170,6 @@
   "chat_kindDirect": "direct",
   "chat_kindRoute": "itinéraire ({count} {count, plural, one{saut} other{sauts}})",
   "chat_statusQueued": "En file d'attente",
-  "chat_statusNoRepeaterHeard": "Aucun répéteur ne vous a entendu. Nouvel essai dès qu'un répéteur sera à portée.",
   "chat_channelNoSign": "Envoyé · aucun signe de qui l'a reçu",
   "chat_sentByItsClock": "envoyé {time} selon l'horloge de l'expéditeur",
   "chat_narrowHashNotice": "La radio de {name} envoie des codes de répéteur courts (1 octet). Pathfinder ne peut pas apprendre d'itinéraires vers ce contact tant que sa radio n'utilise pas des codes de 2 octets.",

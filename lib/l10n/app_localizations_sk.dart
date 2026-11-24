@@ -4762,10 +4762,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chat_statusQueued => 'Vo fronte';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Žiadny opakovač vás nepočul. Skúsi sa to znova, keď bude niektorý v dosahu.';
-
-  @override
   String get chat_channelNoSign => 'Odoslané · nevidno, kto to dostal';
 
   @override

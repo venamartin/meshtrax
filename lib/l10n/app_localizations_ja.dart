@@ -4567,10 +4567,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chat_statusQueued => '送信待ち';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'どのリピーターにも届きませんでした。範囲内にリピーターが入ったら再試行します。';
-
-  @override
   String get chat_channelNoSign => '送信済み · 誰に届いたか不明';
 
   @override

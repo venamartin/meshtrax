@@ -4783,10 +4783,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chat_statusQueued => 'En cola';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Ningún repetidor te oyó. Se volverá a intentar cuando haya uno al alcance.';
-
-  @override
   String get chat_channelNoSign => 'Enviado · sin señal de quién lo recibió';
 
   @override

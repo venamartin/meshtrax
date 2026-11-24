@@ -2170,7 +2170,6 @@
   "chat_kindDirect": "direkt",
   "chat_kindRoute": "rutt ({count} {count, plural, =1{hopp} other{hopp}})",
   "chat_statusQueued": "I kö",
-  "chat_statusNoRepeaterHeard": "Ingen repeater hörde dig. Försöker igen när en är inom räckhåll.",
   "chat_channelNoSign": "Skickat · inget tecken på vem som fick det",
   "chat_sentByItsClock": "skickat {time} enligt avsändarens klocka",
   "chat_narrowHashNotice": "{name}s radio skickar korta repeaterkoder (1 byte). Pathfinder kan inte lära sig rutter till dem förrän deras radio använder 2-byte-koder.",

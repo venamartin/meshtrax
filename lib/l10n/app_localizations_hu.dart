@@ -4789,10 +4789,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chat_statusQueued => 'Sorban áll';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Egy repeater sem hallotta. Újra próbálja, amikor lesz egy hatótávon belül.';
-
-  @override
   String get chat_channelNoSign => 'Elküldve · nincs jele, ki kapta meg';
 
   @override

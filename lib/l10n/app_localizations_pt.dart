@@ -4785,10 +4785,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chat_statusQueued => 'Na fila';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Nenhum repetidor ouviu você. Vai tentar de novo quando houver um ao alcance.';
-
-  @override
   String get chat_channelNoSign => 'Enviado · nenhum sinal de quem recebeu';
 
   @override

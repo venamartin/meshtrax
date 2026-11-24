@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
+import 'package:meshtrax/helpers/timeout_helper.dart';
 import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
@@ -49,6 +50,10 @@ final pf2 = PathSelection(
 
 class _Connector extends MeshCoreConnector {
   final sent = <Uint8List>[];
+  final _clock = Stopwatch()..start();
+
+  /// When each ACK went out, in ms, in the order of [acks].
+  final ackAtMs = <int>[];
 
   @override
   bool get isConnected => true;
@@ -60,6 +65,9 @@ class _Connector extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async {
     sent.add(data);
+    if (data.isNotEmpty && data[0] == cmdSendRawPacket) {
+      ackAtMs.add(_clock.elapsedMilliseconds);
+    }
   }
 
   @override
@@ -158,6 +166,10 @@ void main() {
     if (pathfinder) c.graphRouteCandidates = (_) => routes;
     c.handleFrameForTest(_deviceInfo(clientRepeat: clientRepeat));
     c.handleFrameForTest(_selfInfo());
+    // SELF_INFO loads this radio's cached contacts, which replaces the list:
+    // let it finish before the radio's contacts come in, or a test that waits
+    // finds the contact gone.
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     await c.getContacts();
     c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
     c.handleFrameForTest(_contactFrame(routeBack: routeBack));
@@ -348,6 +360,16 @@ void main() {
     expect(sent[1].sublist(0, 14), secondAck(pf2.pathBytes));
   });
 
+  test('the second ACK still follows the stand-in, which waited a moment, '
+      'by the gap sendAckTo keeps', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    await acks(2);
+    expect(c.ackAtMs, hasLength(2));
+    expect(c.ackAtMs[1] - c.ackAtMs[0],
+        greaterThanOrEqualTo(TimeoutHelper.extraAckGapMs - 50));
+  });
+
   test("a passing copy, then the radio's own copy: the radio's ACK is the "
       'first, and the app sends only its second', () async {
     await connect(routes: [pf1, pf2]);
@@ -355,6 +377,22 @@ void main() {
     // The last repeater's copy comes while the app still holds its ACKs.
     c.handleFrameForTest(_rxLog(dmLastCopy));
     await acks(2);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(c.acks, hasLength(1));
+    expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test("the radio's copy handled just after the stand-in was due, by a busy "
+      'app, still drops it', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFromAd77));
+    // The stand-in's time comes while the app is busy; the radio's own copy,
+    // already waiting, is handled only after it (simulator, 2026-11-22).
+    final hold = c.passingCopyHoldMsForTest(dmFromAd77.length, 1);
+    await Future<void>.delayed(Duration(milliseconds: hold + 40));
+    expect(c.acks, isEmpty, reason: 'the stand-in waits a moment first');
+    c.handleFrameForTest(_rxLog(dmLastCopy));
+    await acks(1);
     await Future<void>.delayed(const Duration(milliseconds: 500));
     expect(c.acks, hasLength(1));
     expect(c.acks.single.sublist(0, 14), secondAck(pf2.pathBytes));

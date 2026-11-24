@@ -4792,10 +4792,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chat_statusQueued => 'In coda';
 
   @override
-  String get chat_statusNoRepeaterHeard =>
-      'Nessun ripetitore ti ha sentito. Riproverà quando uno sarà in portata.';
-
-  @override
   String get chat_channelNoSign =>
       'Inviato · nessun segno di chi l\'ha ricevuto';
 

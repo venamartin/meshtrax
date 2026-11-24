@@ -8092,12 +8092,6 @@ abstract class AppLocalizations {
   /// **'Queued'**
   String get chat_statusQueued;
 
-  /// No description provided for @chat_statusNoRepeaterHeard.
-  ///
-  /// In en, this message translates to:
-  /// **'No repeater heard you. Will try again when one is in range.'**
-  String get chat_statusNoRepeaterHeard;
-
   /// Long press on the amber check of your own channel text: the radio sent it, but no radio repeated it and no observer heard it
   ///
   /// In en, this message translates to:

@@ -4470,9 +4470,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chat_statusQueued => '排队中';
 
   @override
-  String get chat_statusNoRepeaterHeard => '没有转发节点听到您。有转发节点进入范围时会再试。';
-
-  @override
   String get chat_channelNoSign => '已发送 · 不知道谁收到了';
 
   @override

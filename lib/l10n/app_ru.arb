@@ -1538,7 +1538,6 @@
   "chat_kindDirect": "напрямую",
   "chat_kindRoute": "маршрут ({count} {count, plural, one{хоп} few{хопа} many{хопов} other{хопов}})",
   "chat_statusQueued": "В очереди",
-  "chat_statusNoRepeaterHeard": "Ни один репитер вас не услышал. Попробуем снова, когда какой-нибудь окажется в зоне.",
   "chat_channelNoSign": "Отправлено · не видно, кто получил",
   "chat_sentByItsClock": "отправлено {time} по часам отправителя",
   "chat_narrowHashNotice": "Радио {name} отправляет короткие коды репитеров (1 байт). Pathfinder не сможет изучить маршруты к этому контакту, пока его радио не перейдёт на 2-байтовые коды.",

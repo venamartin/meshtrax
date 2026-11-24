@@ -2170,7 +2170,6 @@
   "chat_kindDirect": "neposredno",
   "chat_kindRoute": "po poti ({count} {count, plural, one{skok} two{skoka} few{skoki} other{skokov}})",
   "chat_statusQueued": "V čakalni vrsti",
-  "chat_statusNoRepeaterHeard": "Noben ponovitelj vas ni slišal. Ponovni poskus, ko bo kateri v dosegu.",
   "chat_channelNoSign": "Poslano · ni znaka, kdo je prejel",
   "chat_sentByItsClock": "poslano {time} po uri pošiljatelja",
   "chat_narrowHashNotice": "Radio {name} pošilja kratke kode ponoviteljev (1 bajt). Pathfinder se ne more naučiti poti do tega stika, dokler njegov radio ne uporablja 2-bajtnih kod.",

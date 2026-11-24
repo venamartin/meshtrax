@@ -87,6 +87,14 @@ class TimeoutHelper {
               .round() +
           ackDelayMs;
 
+  /// How long an app-held stand-in for the radio's ACK waits once its time
+  /// has come, before it is sent: on a fresh timer, whose deadline is still
+  /// ahead, a busy app handles the radio frames already waiting for it, the
+  /// radio's own copy of the message among them, which drops the stand-in.
+  /// An expired timer can run before those frames (simulator, 2026-11-22:
+  /// the radio's copy waited over a second behind a DM's intake and reply).
+  static const int standInRecheckMs = 100;
+
   /// Floor for the final attempt of a retry ladder on a fast path.
   static const int lastAttemptFloorMs = 8000;
 
