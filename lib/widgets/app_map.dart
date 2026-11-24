@@ -72,6 +72,10 @@ class AppMap extends StatefulWidget {
   /// sits beside them rather than above.
   final double controlsWidth;
 
+  /// Width of the screen's map buttons at the left edge: the credits and
+  /// the offline card sit beside them.
+  final double leftControlsWidth;
+
   /// How much of the map's bottom a sheet covers: the credits and the
   /// offline card stay above it.
   final ValueListenable<double>? coveredBottom;
@@ -100,6 +104,7 @@ class AppMap extends StatefulWidget {
     this.exact = false,
     this.onCreditsChanged,
     this.controlsWidth = 0,
+    this.leftControlsWidth = 0,
     this.coveredBottom,
   });
 
@@ -299,7 +304,7 @@ class _AppMapState extends State<AppMap> {
           _AboveSheet(
             covered: widget.coveredBottom,
             builder: (covered) => Positioned(
-              left: 8,
+              left: widget.leftControlsWidth > 0 ? widget.leftControlsWidth : 8,
               // Beside the screen's map buttons and above the credits chip,
               // or clear of the screen's floating action button.
               right: widget.controlsWidth > 0 ? widget.controlsWidth : 8,
@@ -315,7 +320,7 @@ class _AppMapState extends State<AppMap> {
           _AboveSheet(
             covered: widget.coveredBottom,
             builder: (covered) => Positioned(
-              left: 8,
+              left: widget.leftControlsWidth > 0 ? widget.leftControlsWidth : 8,
               bottom: 8 + covered,
               child: AttributionChip(credits: credits, dark: dark),
             ),

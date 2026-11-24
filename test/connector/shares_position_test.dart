@@ -173,7 +173,7 @@ void main() {
     expect(find.byIcon(Icons.share_location), findsNothing);
     await pump(true);
     expect(find.byIcon(Icons.share_location), findsOneWidget);
-    expect(find.byTooltip('Can get your position'), findsOneWidget);
+    expect(find.byTooltip('Can get your location'), findsOneWidget);
     final icon = tester.getCenter(find.byIcon(Icons.share_location));
     final badge = tester.getCenter(find.byType(UnreadBadge));
     expect(icon.dx, lessThan(badge.dx));

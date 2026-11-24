@@ -110,7 +110,7 @@ void main() {
 
   testWidgets('no position: pick a start or another app', (tester) async {
     await actOn(tester, const NavigateNeedsStart());
-    expect(find.textContaining('No GPS position.'), findsOneWidget);
+    expect(find.textContaining('No GPS location.'), findsOneWidget);
     expect(find.text('Pick a start'), findsOneWidget);
     expect(find.text('Another app'), findsOneWidget);
   });

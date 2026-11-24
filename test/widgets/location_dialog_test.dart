@@ -212,10 +212,10 @@ void main() {
           context.read<MeshCoreConnector>(),
         );
       });
-      expect(find.text('Your radio has no position yet. Pick one on the map.'),
+      expect(find.text('Your radio has no location yet. Pick one on the map.'),
           findsOneWidget);
       expect(insert(tester).onPressed, isNull);
-      await tester.enterText(field('Position'), '36.97, -121.9');
+      await tester.enterText(field('Location'), '36.97, -121.9');
       await tester.pump();
       expect(insert(tester).onPressed, isNotNull);
     });
@@ -227,12 +227,12 @@ void main() {
         wire = await StructuredMessageDialogs.pointOnMap(context);
       });
       expect(insert(tester).onPressed, isNull, reason: 'no position yet');
-      await tester.enterText(field('Position'), 'hello');
+      await tester.enterText(field('Location'), 'hello');
       await tester.pump();
-      expect(find.text("Can't read a position here"), findsOneWidget);
+      expect(find.text("Can't read a location here"), findsOneWidget);
       expect(insert(tester).onPressed, isNull);
 
-      await tester.enterText(field('Position'), 'geo:36.97,-121.9');
+      await tester.enterText(field('Location'), 'geo:36.97,-121.9');
       await tester.pump();
       expect(find.text(_here), findsOneWidget,
           reason: 'a link shows the coordinates that will be sent');
@@ -251,13 +251,13 @@ void main() {
       HttpOverrides.global = network;
       addTearDown(() => HttpOverrides.global = null);
       await tester.enterText(
-        field('Position'),
+        field('Location'),
         'https://maps.app.goo.gl/AbCdEf',
       );
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'This short link has no position in it. Open it in your '
+          'This short link has no location in it. Open it in your '
           'maps app and copy the coordinates.',
         ),
         findsOneWidget,
@@ -272,7 +272,7 @@ void main() {
       await host(tester, _Radio(), (context) async {
         wire = await StructuredMessageDialogs.pointOnMap(context);
       });
-      await tester.enterText(field('Position'), '36.97 -121.9');
+      await tester.enterText(field('Location'), '36.97 -121.9');
       await tester.enterText(field('Note (optional)'), 'behind the hut');
       await done(tester);
       expect(wire, 'Location: behind the hut\n$_here',
@@ -284,7 +284,7 @@ void main() {
       await host(tester, _Radio(), (context) async {
         wire = await StructuredMessageDialogs.pointOnMap(context);
       });
-      await tester.enterText(field('Position'), '36.97, -121.9');
+      await tester.enterText(field('Location'), '36.97, -121.9');
       await tester.pump();
       await done(tester);
       expect(wire, 'Location: $_here');
@@ -310,7 +310,7 @@ void main() {
       });
       expect(
         find.textContaining(
-          RegExp(r'^Your last known position \(2:02\sPM\), may be old$'),
+          RegExp(r'^Your last known location \(2:02\sPM\), may be old$'),
         ),
         findsOneWidget,
       );
@@ -330,11 +330,11 @@ void main() {
           context.read<MeshCoreConnector>(),
         );
       });
-      const line = 'Your last known position, may be old';
+      const line = 'Your last known location, may be old';
       expect(find.text(line), findsOneWidget);
       expect(insert(tester).onPressed, isNotNull, reason: 'it never blocks');
 
-      await tester.enterText(field('Position'), '36.98, -121.9');
+      await tester.enterText(field('Location'), '36.98, -121.9');
       await tester.pump();
       expect(find.text(line), findsNothing);
       await tester.enterText(field('What happened?'), 'Broken leg');
@@ -367,7 +367,7 @@ void main() {
       });
       await tester.enterText(field('What happened?'), 'Broken leg');
       expect(insert(tester).onPressed, isNull);
-      await tester.enterText(field('Position'), '36.97, -121.9');
+      await tester.enterText(field('Location'), '36.97, -121.9');
       await tester.pump();
       await done(tester);
       expect(wire, 'SOS: Broken leg\n$_here');

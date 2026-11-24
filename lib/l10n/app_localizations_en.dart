@@ -1254,6 +1254,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trax_mayBeOld => 'may be old';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'In TRAX mode your location goes to this channel.';
 
@@ -2104,7 +2107,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_noPosition => 'No GPS position';
+  String get radioAsk_noPosition => 'No GPS location';
 
   @override
   String get radioAsk_noFix => 'May be old: no GPS fix';
@@ -2835,11 +2838,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get route_fromLastKnown => 'From your last known position, may be old';
+  String get route_fromLastKnown => 'From your last known location, may be old';
 
   @override
   String route_fromLastKnownAt(String time) {
-    return 'From your last known position ($time), may be old';
+    return 'From your last known location ($time), may be old';
   }
 
   @override
@@ -2862,11 +2865,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get gps_lastKnown => 'Your last known position, may be old';
+  String get gps_lastKnown => 'Your last known location, may be old';
 
   @override
   String gps_lastKnownAt(String time) {
-    return 'Your last known position ($time), may be old';
+    return 'Your last known location ($time), may be old';
   }
 
   @override
@@ -3723,7 +3726,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get repeater_cliHelpGpsSetLoc =>
-      'Sets node\'s position to gps coordinates and save preferences.';
+      'Sets node\'s location to gps coordinates and save preferences.';
 
   @override
   String get repeater_cliHelpGpsAdvert =>
@@ -5564,7 +5567,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get map_chartsNoticePositions =>
-      'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
+      'Locations can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.';
 
   @override
   String get map_chartsNoticeNotPlotter =>
@@ -5599,7 +5602,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gps_off => 'GPS off';
 
   @override
-  String get gps_onHint => 'The radio updates its position from the GPS.';
+  String get gps_onHint => 'The radio updates its location from the GPS.';
 
   @override
   String get gps_offHint => 'Off saves battery. A fix can take a few minutes.';
@@ -5609,10 +5612,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gps_noPosition =>
-      'No position yet. Outdoors, the first one can take a few minutes.';
+      'No location yet. Outdoors, the first one can take a few minutes.';
 
   @override
-  String get gps_position => 'Position';
+  String get gps_position => 'Location';
 
   @override
   String get gps_altitude => 'Altitude';
@@ -5902,7 +5905,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navigate_noPosition =>
-      'No GPS position. Pick a start on the map, or use another app.';
+      'No GPS location. Pick a start on the map, or use another app.';
 
   @override
   String get structured_channel => 'Channel';
@@ -5960,7 +5963,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tray_noRadioPosition =>
-      'Your radio has no position yet. Pick one on the map.';
+      'Your radio has no location yet. Pick one on the map.';
 
   @override
   String get dialog_insert => 'Insert';
@@ -5997,30 +6000,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sos_alsoPublicHint =>
-      'Anyone in range can read it and your position. Sent once.';
+      'Anyone in range can read it and your location. Sent once.';
 
   @override
-  String get sos_askingRadio => 'Asking the radio for its position…';
+  String get sos_askingRadio => 'Asking the radio for its location…';
 
   @override
   String sos_positionFrom(String time, String age) {
-    return 'Radio position from $time ($age)';
+    return 'Radio location from $time ($age)';
   }
 
   @override
   String sos_positionNotNew(String time, String age) {
-    return 'No new position. Last known $time ($age).';
+    return 'No new location. Last known $time ($age).';
   }
 
   @override
-  String get sos_positionAgeUnknown => 'Last known position, age unknown.';
+  String get sos_positionAgeUnknown => 'Last known location, age unknown.';
 
   @override
-  String get sos_positionTyped => 'Your own position: every repeat sends it.';
+  String get sos_positionTyped => 'Your own location: every repeat sends it.';
 
   @override
   String get sos_repeats =>
-      'Repeats every 2 min with your position until you cancel; every 5 min after a Got it.';
+      'Repeats every 2 min with your location until you cancel; every 5 min after a Got it.';
 
   @override
   String get sos_publicOnce => 'In Public it goes once.';
@@ -6185,7 +6188,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paste_shortLinkNoPosition =>
-      'This short link has no position in it. Open it in your maps app and copy the coordinates.';
+      'This short link has no location in it. Open it in your maps app and copy the coordinates.';
 
   @override
   String get pinned_dismiss => 'Dismiss';
@@ -6209,7 +6212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get map_pickPositionHint => 'Tap the map to pick a position';
+  String get map_pickPositionHint => 'Tap the map to pick a location';
 
   @override
   String get map_legendMesh => 'Mesh';
@@ -6908,7 +6911,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get contact_sharesPosition => 'Can get your position';
+  String get contact_sharesPosition => 'Can get your location';
 
   @override
   String get pathfinder_meshTitle => 'A different mesh?';
@@ -7006,7 +7009,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get route_startNowYou => 'Start now: your position';
+  String get route_startNowYou => 'Start now: your location';
 
   @override
   String route_from(String start) {
@@ -7014,10 +7017,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get route_fromYou => 'From your position';
+  String get route_fromYou => 'From your location';
 
   @override
-  String get route_useMyPosition => 'Use my position';
+  String get route_useMyPosition => 'Use my location';
 
   @override
   String get route_noHeights => 'No heights for this area.';
@@ -7445,7 +7448,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get route_noStart =>
-      'No starting position. Long-press the map and choose Route from here.';
+      'No starting location. Long-press the map and choose Route from here.';
 
   @override
   String get route_noData =>
@@ -7458,7 +7461,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appSettings_coordinateFormat => 'Coordinate format';
 
   @override
-  String get map_copyPosition => 'Copy position';
+  String get map_copyPosition => 'Copy location';
 
   @override
   String get poiKind_park => 'Park';
@@ -7533,7 +7536,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dialog_positionHint => 'Paste coordinates or a maps link';
 
   @override
-  String get dialog_positionUnreadable => 'Can\'t read a position here';
+  String get dialog_positionUnreadable => 'Can\'t read a location here';
 
   @override
   String get locationSharing_share => 'Share my location';
@@ -7729,7 +7732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_locationTapMap =>
-      'Tap the map to set the position, or type the numbers.';
+      'Tap the map to set the location, or type the numbers.';
 
   @override
   String get channels_pasteLink => 'Paste a link';
@@ -7743,7 +7746,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_locationGpsNote =>
-      'With GPS on, the radio replaces this position as soon as its GPS has a fix.';
+      'With GPS on, the radio replaces this location as soon as its GPS has a fix.';
 
   @override
   String contacts_hopsAway(int count) {
@@ -7797,7 +7800,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get los_noPosition =>
-      'Your position isn\'t known yet. Tap the map to start from there.';
+      'Your location isn\'t known yet. Tap the map to start from there.';
 
   @override
   String get los_nothingInWay => 'Nothing in the way.';
@@ -7889,7 +7892,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get los_meByHand => 'Me, position set by hand';
+  String get los_meByHand => 'Me, location set by hand';
 
   @override
   String get los_meNotYetGps => 'Me, not yet updated by GPS';
@@ -7946,11 +7949,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap the map or a name for the line of sight to it.';
 
   @override
-  String get los_positionGuessed => 'Position guessed';
+  String get los_positionGuessed => 'Location guessed';
 
   @override
   String los_positionGuessedVia(String names) {
-    return 'Position guessed, heard via $names';
+    return 'Location guessed, heard via $names';
   }
 
   @override
@@ -7960,7 +7963,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String los_nobodyWithin(String distance) {
-    return 'No one with a position within $distance.';
+    return 'No one with a location within $distance.';
   }
 
   @override
@@ -8241,4 +8244,158 @@ class AppLocalizationsEn extends AppLocalizations {
   String chat_channelNoSignRegion(String region) {
     return 'Sent in $region · no sign of who got it. Repeaters that don\'t know $region drop it.';
   }
+
+  @override
+  String get myLocation_title => 'My location';
+
+  @override
+  String get myLocation_onlyYou => 'Only you';
+
+  @override
+  String get myLocation_people => 'People you picked can ask';
+
+  @override
+  String get myLocation_everyone => 'Everyone saved on your radio can ask';
+
+  @override
+  String get myLocation_adverts => 'In your adverts';
+
+  @override
+  String get myLocation_gpsNoFix => 'GPS on, no fix yet';
+
+  @override
+  String get myLocation_radioGps => 'Radio GPS';
+
+  @override
+  String myLocation_fix(String ago, String position) {
+    return 'Fix $ago ago · $position';
+  }
+
+  @override
+  String get myLocation_noFix => 'No fix yet.';
+
+  @override
+  String get myLocation_offSaves => 'Off saves battery.';
+
+  @override
+  String myLocation_lastFix(String time) {
+    return 'Last fix $time.';
+  }
+
+  @override
+  String get myLocation_inAdverts => 'In my adverts';
+
+  @override
+  String get myLocation_advertsHint => 'Anyone who hears your radio';
+
+  @override
+  String get myLocation_advertsInfo =>
+      'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.';
+
+  @override
+  String get myLocation_peopleWho => 'People who can ask';
+
+  @override
+  String get myLocation_nobody => 'Nobody';
+
+  @override
+  String myLocation_allSaved(int count) {
+    return 'Everyone saved on your radio ($count)';
+  }
+
+  @override
+  String get myLocation_pickPeople => 'Pick people instead';
+
+  @override
+  String get myLocation_batterySensors => 'Battery and sensors';
+
+  @override
+  String get myLocation_peopleHint =>
+      'They can ask your radio where it is, and its battery.';
+
+  @override
+  String get myLocation_addSomeone => 'Add someone';
+
+  @override
+  String myLocation_search(int count) {
+    return 'Search $count contacts';
+  }
+
+  @override
+  String get myLocation_recent => 'Recent messages';
+
+  @override
+  String get myLocation_canAsk => 'Can ask';
+
+  @override
+  String get iconHelp_title => 'What the icons mean';
+
+  @override
+  String get iconHelp_tap => 'Tap an icon in the bar to open it.';
+
+  @override
+  String get iconHelp_radio => 'Radio';
+
+  @override
+  String get iconHelp_battery => 'Radio battery';
+
+  @override
+  String get iconHelp_batteryText => 'Tap for volts.';
+
+  @override
+  String get iconHelp_signal => 'Signal';
+
+  @override
+  String get iconHelp_signalText =>
+      'How well your radio hears the best repeater near you. Tap for the list.';
+
+  @override
+  String get iconHelp_repeaters => 'Repeaters heard';
+
+  @override
+  String get iconHelp_repeatersText =>
+      'How many · the best one\'s code · how long ago';
+
+  @override
+  String get iconHelp_traxOff => 'TRAX mode off';
+
+  @override
+  String get iconHelp_traxOn => 'TRAX mode on';
+
+  @override
+  String get iconHelp_traxOnText => 'Your radio is on the group\'s frequency.';
+
+  @override
+  String get iconHelp_who => 'My location: who can see it';
+
+  @override
+  String get iconHelp_people => 'People you picked';
+
+  @override
+  String get iconHelp_peopleText => 'They can ask your radio where it is.';
+
+  @override
+  String get iconHelp_advertsText => 'Anyone who hears your radio.';
+
+  @override
+  String get iconHelp_gps => 'My location: radio GPS';
+
+  @override
+  String get iconHelp_filled => 'Filled: GPS on';
+
+  @override
+  String get iconHelp_outline => 'Outline: GPS off';
+
+  @override
+  String get iconHelp_dashed => 'Dashed: no GPS fix yet';
+
+  @override
+  String get iconHelp_red => 'Red: no fix, and someone can see it';
+
+  @override
+  String get locationNote_title => 'One location button';
+
+  @override
+  String get locationNote_body =>
+      'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
 }
