@@ -31,6 +31,7 @@ import 'package:meshtrax/services/routing_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
 import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/map_layers_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
@@ -619,7 +620,7 @@ void main() {
       await tap(tester, find.text('Directions'));
       expect(height(tester), map.height);
       expect(header.hitTestable(), findsOneWidget);
-      expect(shown('From your position'), findsOneWidget);
+      expect(shown('From your location'), findsOneWidget);
       expect(shown('Turn left onto Main Street'), findsOneWidget);
 
       // Scaffold puts a sheet that was raised back at its first height.
@@ -806,7 +807,7 @@ void main() {
         find
             .textContaining(
               RegExp(
-                r'^From your last known position \(2:02\sPM\), may be old$',
+                r'^From your last known location \(2:02\sPM\), may be old$',
               ),
             )
             .hitTestable(),
@@ -818,7 +819,7 @@ void main() {
         ..notifyListeners();
       await settle(tester);
       expect(
-        shown('From your last known position, may be old'),
+        shown('From your last known location, may be old'),
         findsOneWidget,
       );
 
@@ -826,7 +827,7 @@ void main() {
         ..fresh = true
         ..notifyListeners();
       await settle(tester);
-      expect(shown('From your position'), findsOneWidget);
+      expect(shown('From your location'), findsOneWidget);
     });
 
     testWidgets('the directions start where the route does', (tester) async {
@@ -841,9 +842,9 @@ void main() {
         const LatLng(41.7, -71.3),
       );
 
-      await tap(tester, find.text('Use my position'));
-      expect(shown('From your position'), findsOneWidget);
-      expect(find.text('Use my position'), findsNothing);
+      await tap(tester, find.text('Use my location'));
+      expect(shown('From your location'), findsOneWidget);
+      expect(find.text('Use my location'), findsNothing);
       expect(
         overlay<MapMarker>(tester, 'route-start').position,
         const LatLng(41.81, -71.42),
@@ -891,12 +892,12 @@ void main() {
       );
       await showRoute(tester, steps: steps, radio: radio);
       await tap(tester, find.text('Directions'));
-      expect(shown('From your position'), findsOneWidget);
+      expect(shown('From your location'), findsOneWidget);
 
       // 50 m on: still from your position.
       radio.moveSelf(const ll.LatLng(41.8104, -71.42));
       await settle(tester);
-      expect(shown('From your position'), findsOneWidget);
+      expect(shown('From your location'), findsOneWidget);
 
       // 250 m on: the route stays where it was found.
       radio.moveSelf(const ll.LatLng(41.8123, -71.42));
@@ -1305,7 +1306,7 @@ void main() {
     ) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, chat, repeater]));
       await settingsOf(tester).setMapShowRepeaters(false);
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
 
       expect(ids(tester), isNot(contains(guessId(chat))));
@@ -1335,7 +1336,7 @@ void main() {
       tester,
     ) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
 
       overlay<MapMarker>(tester, guessId(repeater)).onLongPress!();
@@ -1348,7 +1349,7 @@ void main() {
       tester,
     ) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
       final marker = overlay<MapMarker>(tester, guessId(repeater));
 
@@ -1394,7 +1395,7 @@ void main() {
 
     testWidgets('a return trace carries the estimate too', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
       overlay<MapMarker>(tester, guessId(repeater)).onTap!();
       await tester.pump();
@@ -1411,7 +1412,7 @@ void main() {
 
     testWidgets('a new trace starts with no old estimates', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
       overlay<MapMarker>(tester, guessId(repeater)).onTap!();
       await tester.pump();
@@ -1423,7 +1424,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
       overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
       await tester.pump();
@@ -1440,7 +1441,7 @@ void main() {
 
     testWidgets('undoing a guessed hop drops its estimate', (tester) async {
       await pumpMap(tester, _RadioConnector(nodes: [anchor, repeater]));
-      await tester.tap(find.byIcon(Icons.radar));
+      await _startPathTrace(tester);
       await tester.pump();
 
       overlay<MapMarker>(tester, guessId(repeater)).onTap!();
@@ -1526,6 +1527,37 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(OfflineMapsScreen), findsOneWidget);
+  });
+
+  testWidgets('Path trace is in the menu, not the bar; the icon help last', (
+    tester,
+  ) async {
+    await pumpMap(tester, _FakeConnector(nodes: const []));
+    expect(find.byIcon(Icons.radar), findsNothing);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final texts = [
+      for (final item in find
+          .byWidgetPredicate((w) => w is PopupMenuItem)
+          .evaluate())
+        tester
+            .widget<Text>(
+              find.descendant(
+                of: find.byWidget(item.widget),
+                matching: find.byType(Text),
+              ),
+            )
+            .data,
+    ];
+    expect(texts.take(2), contains('Path Trace'), reason: 'with the tools');
+    expect(texts.last, 'What the icons mean');
+    await tester.tap(find.text('What the icons mean'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(IconHelpSheet), findsOneWidget);
   });
 
   testWidgets('the layers button: map types, details and node types', (
@@ -1732,7 +1764,7 @@ void main() {
     );
     await tester.tap(find.byTooltip('My location'));
     await tester.pump();
-    expect(find.textContaining('No position yet'), findsOneWidget);
+    expect(find.textContaining('No location yet'), findsOneWidget);
   });
 
   testWidgets('no GPS module: no My location; "You" is the typed position', (
@@ -2001,7 +2033,7 @@ void main() {
         nodes: [_node('Hilltop', advTypeRepeater, 1, 41.8, -71.4)],
       ),
     );
-    await tester.tap(find.byIcon(Icons.radar));
+    await _startPathTrace(tester);
     await tester.pump();
     expect(tester.takeException(), isNull);
     expect(find.text('Path Trace'), findsOneWidget);
@@ -2217,4 +2249,15 @@ void main() {
       expect(find.byTooltip('Full screen'), findsNothing);
     });
   });
+}
+
+/// Path trace, from the ⋮ menu since 2026-11-23 (Martin).
+Future<void> _startPathTrace(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.more_vert));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.byIcon(Icons.radar));
+  for (var i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }

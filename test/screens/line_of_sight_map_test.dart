@@ -451,7 +451,7 @@ void main() {
     // known from the contours.
     await pumpMap(tester, _Radio(self: dantes, nodes: [ana]));
     await menu(tester, 'Line of sight');
-    expect(find.text('Me, position set by hand'), findsOneWidget);
+    expect(find.text('Me, location set by hand'), findsOneWidget);
     await tapMap(tester, badwater);
     expect(find.text('Can\'t tell'), findsOneWidget);
     expect(
@@ -538,7 +538,7 @@ void main() {
       );
     }
     expect(y('AD77'), greaterThan(y(shown.last.$1)));
-    expect(find.text('Position guessed, heard via Peak'), findsOneWidget);
+    expect(find.text('Location guessed, heard via Peak'), findsOneWidget);
     await tapInSheet(tester, find.text('Ana'));
     await answer(tester);
     expect(session(tester)!.mode, LosMode.line);

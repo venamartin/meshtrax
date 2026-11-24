@@ -12,8 +12,8 @@ import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:path_graph/path_graph.dart'
     show PathGraph, RouteResult, FloodResult;
 import 'package:meshtrax/widgets/app_bar.dart';
-import 'package:meshtrax/widgets/gps_status_button.dart';
-import 'package:meshtrax/widgets/location_sharing_button.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
+import 'package:meshtrax/widgets/my_location_button.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
@@ -48,6 +48,8 @@ import '../services/poi_service.dart';
 import '../services/radio_ask_service.dart';
 import '../services/trax_beacon_service.dart';
 import '../services/trip_positions.dart';
+import '../services/trip_service.dart';
+import '../services/trax_service.dart';
 import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/app_logger.dart';
@@ -543,6 +545,8 @@ class _MapScreenState extends State<MapScreen> {
     final radioAsks = context.watch<RadioAskService?>();
     final tripPositions = context.watch<TripPositions?>();
     final beacon = context.watch<TraxBeaconService?>();
+    final traxOn = context.watch<TraxService?>()?.isOn ?? false;
+    final tripService = context.watch<TripService?>();
     return Consumer2<MeshCoreConnector, AppSettingsService>(
       builder: (context, connector, settingsService, child) {
         final settings = settingsService.settings;
@@ -625,6 +629,10 @@ class _MapScreenState extends State<MapScreen> {
           settings,
           connector.pathHashByteWidth,
         );
+
+        // A TRAX group member has one pin, theirs: no node, answer or guess.
+        final members = _members(tripPositions, tripService, traxOn, connector);
+        final memberKeys = {for (final m in members) ?m.contact?.publicKeyHex};
 
         // Calculate center and zoom of all nodes (flutter_map zooms; the map
         // takes MapLibre zooms, one lower).
@@ -811,6 +819,12 @@ class _MapScreenState extends State<MapScreen> {
         // A wide screen has the route at the side of the map, not over it.
         final screen = MediaQuery.sizeOf(context);
         final routeAtSide = screen.width >= 600 && screen.width > screen.height;
+        final sideSheet = routeAtSide && (_los != null || _routeTo != null);
+        final groupButton =
+            traxOn &&
+            _los == null &&
+            !_isBuildingPathTrace &&
+            !widget.pickPosition;
 
         return PopScope(
           // Back leaves full screen, then lowers a raised route sheet, then
@@ -849,38 +863,50 @@ class _MapScreenState extends State<MapScreen> {
                     actions: [
                       if (!widget.pickPosition) ...[
                         const TraxButton(),
-                        const GpsStatusButton(),
-                        const LocationSharingButton(),
+                        const MyLocationButton(),
                       ],
-                      if (!_isBuildingPathTrace)
-                        IconButton(
-                          style: topBarIconStyle,
-                          icon: const Icon(Icons.radar),
-                          onPressed: () => _startPath(selfPosition),
-                          tooltip: context.l10n.contacts_pathTrace,
-                        ),
                       PopupMenuButton(
                         style: topBarIconStyle,
                         iconSize: topBarIconSize,
                         itemBuilder: (context) => [
-                          // One entry: the reach from you, where a tap on
-                          // the map or a name gives the line to it.
-                          if (_losOffered) ...<PopupMenuEntry<Object?>>[
-                            PopupMenuItem(
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.visibility_outlined),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(context.l10n.los_lineOfSight),
-                                  ),
-                                ],
+                          // The map's tools first: the reach from you,
+                          // where a tap on the map or a name gives the line
+                          // to it, and a path trace, in the menu since
+                          // 2026-11-23 (Martin).
+                          if (_losOffered || !_isBuildingPathTrace) ...<
+                            PopupMenuEntry<Object?>
+                          >[
+                            if (_losOffered)
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.visibility_outlined),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(context.l10n.los_lineOfSight),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _openLos(
+                                  LosMode.reach,
+                                  from: _me(connector, selfPosition),
+                                ),
                               ),
-                              onTap: () => _openLos(
-                                LosMode.reach,
-                                from: _me(connector, selfPosition),
+                            if (!_isBuildingPathTrace)
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.radar),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        context.l10n.contacts_pathTrace,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _startPath(selfPosition),
                               ),
-                            ),
                             const PopupMenuDivider(),
                           ],
                           if (!PlatformInfo.isWeb)
@@ -927,6 +953,16 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             ),
                           ),
+                          PopupMenuItem(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.help_outline),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text(context.l10n.iconHelp_title)),
+                              ],
+                            ),
+                            onTap: () => showIconHelp(context),
+                          ),
                         ],
                         icon: const Icon(Icons.more_vert),
                       ),
@@ -937,7 +973,7 @@ class _MapScreenState extends State<MapScreen> {
             body: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (routeAtSide && (_los != null || _routeTo != null)) ...[
+                if (sideSheet) ...[
                   SizedBox(
                     width: RouteSheet.sideWidth,
                     child: _los != null
@@ -958,6 +994,7 @@ class _MapScreenState extends State<MapScreen> {
                         controller: _mapController,
                         initialCamera: startCamera,
                         controlsWidth: MapControls.width,
+                        leftControlsWidth: groupButton ? MapControls.width : 0,
                         coveredBottom: _losCovered,
                         onTap: widget.pickPosition
                             ? (position) =>
@@ -1048,22 +1085,28 @@ class _MapScreenState extends State<MapScreen> {
                                       size: 34,
                                     ),
                             ),
-                          ..._buildGuessedMarkers(guessedLocations),
+                          ..._buildGuessedMarkers([
+                            for (final guess in guessedLocations)
+                              if (!memberKeys.contains(
+                                guess.contact.publicKeyHex,
+                              ))
+                                guess,
+                          ]),
                           ..._buildRadioAnswerMarkers(
                             radioAsks,
-                            tripPositions,
-                            connector,
-                          ),
-                          ..._buildTripMarkers(
-                            tripPositions,
-                            radioAsks,
+                            memberKeys,
                             connector,
                           ),
                           ..._buildMarkers(
-                            contactsWithLocation,
+                            [
+                              for (final c in contactsWithLocation)
+                                if (!memberKeys.contains(c.publicKeyHex)) c,
+                            ],
                             settings,
                             connector.pathHashByteWidth,
                           ),
+                          // The group's people above the mesh's nodes.
+                          ..._buildTripMarkers(members),
                           ...sharedMarkers.map(_buildSharedMarker),
                           // The GPS's position is a blue dot while its reading
                           // changes, then grey and "Last known"; a position
@@ -1169,6 +1212,10 @@ class _MapScreenState extends State<MapScreen> {
                   : null,
               gpsOff: !connector.gpsOn,
               following: _followMe,
+              onTraxGroup: groupButton
+                  ? () => unawaited(_showGroupSheet())
+                  : null,
+              mapLeft: sideSheet ? RouteSheet.sideWidth + 1 : 0,
               onSearch: !_isBuildingPathTrace && !widget.pickPosition
                   ? () => _openSearch(
                       connector,
@@ -1324,11 +1371,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Where people's radios said they were, when asked: apart from their
-  /// advert pins, with the time it said so. A newer TRAX location replaces
-  /// it.
+  /// advert pins, with the time it said so. A TRAX group member's answer is
+  /// on their own pin.
   List<MapMarker> _buildRadioAnswerMarkers(
     RadioAskService? asks,
-    TripPositions? trip,
+    Set<String> memberKeys,
     MeshCoreConnector connector,
   ) {
     if (asks == null) return const [];
@@ -1336,8 +1383,7 @@ class _MapScreenState extends State<MapScreen> {
       for (final ask in asks.located)
         if (ask.latest case final answer?)
           if (answer.position case final p?)
-            if (trip?.of(ask.contact)?.heardAt.isAfter(answer.receivedAt) !=
-                true)
+            if (!memberKeys.contains(ask.contact.publicKeyHex))
               MapMarker(
                 id: 'ask:${ask.contact.publicKeyHex}',
                 position: LatLng(p.lat, p.lon).toOvm(),
@@ -1369,47 +1415,71 @@ class _MapScreenState extends State<MapScreen> {
     ];
   }
 
-  /// Where trip members' MeshTrax said they were in TRAX mode, grey when
-  /// their radio's reading may be old. A newer radio answer replaces it.
-  List<MapMarker> _buildTripMarkers(
+  /// The TRAX group as the map shows it, by the first 4 bytes of their keys:
+  /// whoever sent a TRAX location the map shows and, in TRAX mode, the trip
+  /// members who are contacts.
+  List<_Member> _members(
     TripPositions? trip,
-    RadioAskService? asks,
+    TripService? group,
+    bool traxOn,
     MeshCoreConnector connector,
   ) {
-    if (trip == null) return const [];
-    return [
-      for (final p in trip.shown)
-        if (connector.contactByKeyPrefix4(p.prefixBytes) case final contact
-            when contact == null ||
-                asks?.positionOf(contact)?.receivedAt.isAfter(p.heardAt) !=
-                    true)
-          MapMarker(
-            id: 'trip:${p.prefix}',
-            position: LatLng(p.lat, p.lon).toOvm(),
-            size: const Size(35, 35),
-            label: context.l10n.radioAsk_mapLabel(
-              contact?.name ?? p.name ?? p.prefix.toUpperCase(),
-              DateTimeHelper.timeWithDay(context, p.heardAt),
-            ),
-            labelMinZoom: _labelMinZoom,
-            onTap: () => _los != null
-                ? _los!.tap(
-                    LosPlace.point(
-                      LatLng(p.lat, p.lon),
-                      name: contact?.name ?? p.name,
-                    ),
-                  )
-                : _showMemberCard(p, contact),
-            onLongPress: contact == null
-                ? null
-                : () => _showNodeInfo(context, contact),
-            child: _nodeDot(
-              p.mayBeOld ? Colors.grey : const Color(Trax.orange),
-              Icons.hiking,
-            ),
+    final out = <String, _Member>{};
+    for (final p in trip?.shown ?? const <TripPosition>[]) {
+      final contact = connector.contactByKeyPrefix4(p.prefixBytes);
+      out[p.prefix] = (
+        prefix: p.prefix,
+        name: contact?.name ?? p.name ?? p.prefix.toUpperCase(),
+        contact: contact,
+        report: p,
+      );
+    }
+    if (traxOn) {
+      for (final m in group?.members ?? const <TripMember>[]) {
+        final contact = m.contact;
+        if (contact == null || contact.publicKey.length < 4) continue;
+        final prefix = pubKeyToHex(contact.publicKey.sublist(0, 4));
+        out.putIfAbsent(
+          prefix,
+          () => (
+            prefix: prefix,
+            name: contact.name,
+            contact: contact,
+            report: null,
           ),
-    ];
+        );
+      }
+    }
+    return out.values.toList();
   }
+
+  /// One pin per TRAX group member, with their name, where they were last
+  /// known to be: from their TRAX location, their radio's answer or their
+  /// advert, whichever is newest. Grey when that reading may be old. A tap
+  /// opens their card, a long-press their node's.
+  List<MapMarker> _buildTripMarkers(List<_Member> members) => [
+    for (final m in members)
+      if (_person(context, m.contact, m.report) case final p
+          when p.place != null)
+        MapMarker(
+          id: 'trip:${m.prefix}',
+          position: p.place!.toOvm(),
+          size: const Size(35, 35),
+          label: m.name,
+          labelMinZoom: _labelMinZoom,
+          onTap: () => _los != null
+              ? _los!.tap(LosPlace.point(p.place!, name: m.name))
+              : _showMemberCard(m),
+          onLongPress: switch (m.contact) {
+            final contact? => () => _showNodeInfo(context, contact),
+            null => null,
+          },
+          child: _nodeDot(
+            p.old ? Colors.grey : const Color(Trax.orange),
+            Icons.hiking,
+          ),
+        ),
+  ];
 
   /// Your own TRAX track behind your dot, 10 miles of it, and the tapped
   /// trip member's trail over it.
@@ -2347,23 +2417,24 @@ class _MapScreenState extends State<MapScreen> {
   /// on them, and what is known of them, kept up to date. The map follows
   /// them, with the card open or closed, until it is dragged; their trail
   /// stays. Their own marker is the pin.
-  Future<void> _showMemberCard(TripPosition member, Contact? contact) async {
+  Future<void> _showMemberCard(_Member member) async {
+    final place = _person(context, member.contact, member.report).place;
+    if (place == null) return;
     setState(() {
       _trailOf = member.prefix;
       _followMe = false;
       _followOf = member.prefix;
-      _followedAt = LatLng(member.lat, member.lon);
+      _followedAt = place;
       _cardOf = member.prefix;
     });
     await _showPointSheet(
-      LatLng(member.lat, member.lon),
+      place,
       pin: false,
       centerAfter: Future<void>.value(),
       builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           child: _Ticking(
-            builder: (context) =>
-                _memberCard(context, sheetContext, member, contact),
+            builder: (context) => _memberCard(context, sheetContext, member),
           ),
         ),
       ),
@@ -2384,22 +2455,22 @@ class _MapScreenState extends State<MapScreen> {
   Widget _memberCard(
     BuildContext context,
     BuildContext sheetContext,
-    TripPosition member,
-    Contact? contact,
+    _Member member,
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final settings = context.read<AppSettingsService>().settings;
     final units = settings.unitSystem;
-    final m =
+    final contact = member.contact;
+    final report =
         context
-            .watch<TripPositions>()
-            .all
+            .watch<TripPositions?>()
+            ?.all
             .where((q) => q.prefix == member.prefix)
             .firstOrNull ??
-        member;
-    final p = _person(context, contact, m);
+        member.report;
+    final p = _person(context, contact, report);
     final place = p.place;
 
     Widget figure(
@@ -2477,9 +2548,7 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: m.mayBeOld
-                    ? Colors.grey
-                    : const Color(Trax.orange),
+                backgroundColor: p.old ? Colors.grey : const Color(Trax.orange),
                 child: const Icon(Icons.hiking, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
@@ -2488,7 +2557,7 @@ class _MapScreenState extends State<MapScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      contact?.name ?? m.name ?? m.prefix.toUpperCase(),
+                      contact?.name ?? report?.name ?? member.name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -2588,6 +2657,117 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
+
+  /// The TRAX group by name, with how far away and which way each is and
+  /// when heard; grey when that may be old, and those with no location yet
+  /// last. A tap opens their card on the map.
+  Future<void> _showGroupSheet() async {
+    final picked = await showModalBottomSheet<_Member>(
+      context: context,
+      barrierColor: Colors.transparent,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          child: _Ticking(
+            builder: (context) => _groupList(context, sheetContext),
+          ),
+        ),
+      ),
+    );
+    if (picked != null && mounted) await _showMemberCard(picked);
+  }
+
+  Widget _groupList(BuildContext context, BuildContext sheetContext) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final group = context.watch<TripService?>();
+    context.watch<RadioAskService?>();
+    final members = _members(
+      context.watch<TripPositions?>(),
+      group,
+      context.watch<TraxService?>()?.isOn ?? false,
+      context.watch<MeshCoreConnector>(),
+    );
+    final located = <(_Member, LatLng, DateTime, bool)>[];
+    final unlocated = <String>[];
+    for (final m in members) {
+      final p = _person(context, m.contact, m.report);
+      if (p.place case final place?) {
+        located.add((m, place, p.heard, p.old));
+      } else {
+        unlocated.add(m.name);
+      }
+    }
+    // The trip channel's posters no single contact has.
+    final listed = {
+      for (final m in members) ...[
+        m.name.toLowerCase(),
+        ?m.report?.name?.toLowerCase(),
+      ],
+    };
+    for (final t in group?.members ?? const <TripMember>[]) {
+      if (t.contact == null && !listed.contains(t.name.toLowerCase())) {
+        unlocated.add(t.name);
+      }
+    }
+    located.sort((a, b) => _byName(a.$1.name, b.$1.name));
+    unlocated.sort(_byName);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(
+            l10n.trax_group,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        if (located.isEmpty && unlocated.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Text(l10n.trax_heard(0, '')),
+          ),
+        for (final (member, place, heard, old) in located)
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: old ? Colors.grey : const Color(Trax.orange),
+              child: const Icon(Icons.hiking, color: Colors.white, size: 22),
+            ),
+            title: Text(
+              member.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              [?_fromYou(place), _formatLastSeen(heard)].join(' · '),
+            ),
+            onTap: () => Navigator.pop(sheetContext, member),
+          ),
+        for (final name in unlocated)
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: scheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.hiking,
+                color: scheme.onSurfaceVariant,
+                size: 22,
+              ),
+            ),
+            title: Text(
+              l10n.trax_memberNoLocation(name),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+
+  static int _byName(String a, String b) =>
+      a.toLowerCase().compareTo(b.toLowerCase());
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -4417,6 +4597,15 @@ class _ReportHeightState extends State<_ReportHeight> {
   @override
   Widget build(BuildContext context) => widget.child;
 }
+
+/// A TRAX group member on the map, by the first 4 bytes of their key: their
+/// TRAX location, their contact or both.
+typedef _Member = ({
+  String prefix,
+  String name,
+  Contact? contact,
+  TripPosition? report,
+});
 
 /// Builds again every 30 s, so a time shown as "3m ago" keeps counting
 /// while nothing else changes.

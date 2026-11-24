@@ -20,8 +20,8 @@ import 'package:meshtrax/services/trax_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
-import 'package:meshtrax/widgets/gps_status_button.dart';
-import 'package:meshtrax/widgets/location_sharing_button.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
+import 'package:meshtrax/widgets/my_location_button.dart';
 import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
 
@@ -70,6 +70,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({
       PathfinderHelpDialog.prefKey: true,
+      LocationButtonNote.prefKey: true,
     });
     PrefsManager.reset();
     await PrefsManager.initialize();
@@ -77,7 +78,7 @@ void main() {
   });
 
   testWidgets("a phone's Chats bar has room for the radio's name beside "
-      'the four icons', (tester) async {
+      'its three icons', (tester) async {
     // The owner's phone.
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 2.625;
@@ -111,8 +112,7 @@ void main() {
     expect(title.didExceedMaxLines, isFalse, reason: 'the name is not cut');
     for (final button in [
       find.byType(TraxButton),
-      find.byType(GpsStatusButton),
-      find.byType(LocationSharingButton),
+      find.byType(MyLocationButton),
     ]) {
       expect(tester.getSize(button).width, 36);
     }

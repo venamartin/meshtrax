@@ -30,9 +30,9 @@ import '../widgets/clear_chat_dialog.dart';
 import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_name.dart';
 import '../widgets/contact_info_dialog.dart';
-import '../widgets/gps_status_button.dart';
-import '../widgets/location_sharing_button.dart';
 import '../widgets/trax_button.dart';
+import '../widgets/icon_help.dart';
+import '../widgets/my_location_button.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -161,6 +161,11 @@ class _ChatsScreenState extends State<ChatsScreen>
         (ModalRoute.of(context)?.isCurrent ?? false) &&
         context.read<AppSettingsService>().settings.pathGraphEnabled) {
       await PathfinderHelpDialog.showOnce(context);
+    }
+    if (mounted &&
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        _connector.isConnected) {
+      await LocationButtonNote.showOnce(context);
     }
   }
 
@@ -922,8 +927,7 @@ class _ChatsScreenState extends State<ChatsScreen>
               centerTitle: true,
               actions: [
                 const TraxButton(),
-                const GpsStatusButton(),
-                const LocationSharingButton(),
+                const MyLocationButton(),
                 PopupMenuButton<void>(
                   style: topBarIconStyle,
                   iconSize: topBarIconSize,
@@ -1011,6 +1015,16 @@ class _ChatsScreenState extends State<ChatsScreen>
                           builder: (context) => const SettingsScreen(),
                         ),
                       ),
+                    ),
+                    PopupMenuItem(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.help_outline),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text(context.l10n.iconHelp_title)),
+                        ],
+                      ),
+                      onTap: () => showIconHelp(context),
                     ),
                   ],
                   icon: const Icon(Icons.more_vert),

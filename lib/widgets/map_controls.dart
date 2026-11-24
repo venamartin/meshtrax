@@ -5,10 +5,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:traxmap/traxmap.dart';
 
 import '../l10n/l10n.dart';
+import 'trax_dialogs.dart';
 
 /// The map's buttons, bottom right: search, full screen, zoom (desktop only;
-/// phones pinch), My location, and the layers button. Search, full screen and
-/// My location show only when the screen handles them.
+/// phones pinch), My location, and the layers button; bottom left, the TRAX
+/// group. Search, full screen, My location and the TRAX group show only when
+/// the screen handles them.
 class MapControls extends StatelessWidget {
   final OfflineMapController controller;
   final VoidCallback onLayers;
@@ -36,8 +38,16 @@ class MapControls extends StatelessWidget {
   /// The map keeps you in the middle: My location shows filled.
   final bool following;
 
+  /// The TRAX group's list, from a button at the map's bottom left.
+  final VoidCallback? onTraxGroup;
+
+  /// Where the map starts, from the screen's left edge: a sheet at the side
+  /// takes the room before it.
+  final double mapLeft;
+
   /// The room the buttons take at the map's right edge
-  /// ([AppMap.controlsWidth]).
+  /// ([AppMap.controlsWidth]), and the TRAX group's at its left
+  /// ([AppMap.leftControlsWidth]).
   static const width = 80.0;
 
   /// How close My location zooms in, unless already closer.
@@ -59,6 +69,8 @@ class MapControls extends StatelessWidget {
     this.onMyLocation,
     this.gpsOff = false,
     this.following = false,
+    this.onTraxGroup,
+    this.mapLeft = 0,
   });
 
   /// Centres [controller] on [here], zoomed in to at least [locateZoom].
@@ -156,12 +168,49 @@ class MapControls extends StatelessWidget {
         ),
       ],
     );
+    // One row across the map's bottom, so the group button rises above a
+    // sheet with the others. Its empty middle lets taps through to the map.
+    final group = onTraxGroup;
+    final all = group == null
+        ? buttons
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              // The screen's own insets: the scaffold took them from this
+              // button's MediaQuery.
+              final insets = MediaQueryData.fromView(View.of(context)).padding;
+              final left = math.max(mapLeft, insets.left);
+              return SizedBox(
+                width: math.max(
+                  0,
+                  constraints.maxWidth -
+                      left -
+                      insets.right -
+                      2 * kFloatingActionButtonMargin,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    fade(
+                      FloatingActionButton(
+                        heroTag: null,
+                        tooltip: l10n.trax_group,
+                        onPressed: group,
+                        child: const TraxGroupIcon(),
+                      ),
+                    ),
+                    const Spacer(),
+                    buttons,
+                  ],
+                ),
+              );
+            },
+          );
     final touch = onTouch;
-    if (touch == null) return buttons;
+    if (touch == null) return all;
     return Listener(
       onPointerDown: (_) => touch(),
       onPointerHover: (_) => touch(),
-      child: buttons,
+      child: all,
     );
   }
 }

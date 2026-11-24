@@ -115,7 +115,7 @@ void main() {
     final radio = _Radio(lat: 36.46, lon: -116.87);
     await open(tester, radio);
     expect(radio.viewers, 1, reason: 'asks now, and every 10 s while open');
-    expect(find.text('Asking the radio for its position…'), findsOneWidget);
+    expect(find.text('Asking the radio for its location…'), findsOneWidget);
     expect(
       send(tester).onPressed,
       isNotNull,
@@ -127,7 +127,7 @@ void main() {
     await tester.pump();
     expect(
       find.textContaining(
-        RegExp(r'^Radio position from \d{1,2}:\d\d\W+[AP]M \(Just now\)$'),
+        RegExp(r'^Radio location from \d{1,2}:\d\d\W+[AP]M \(Just now\)$'),
       ),
       findsOneWidget,
     );
@@ -157,7 +157,7 @@ void main() {
     expect(
       find.textContaining(
         RegExp(
-          r'^No new position\. Last known .+ \(22m ago\)\.$',
+          r'^No new location\. Last known .+ \(22m ago\)\.$',
         ),
       ),
       findsOneWidget,
@@ -169,7 +169,7 @@ void main() {
     final radio = _Radio(lat: 36.46, lon: -116.87, asks: false);
     await open(tester, radio);
     expect(
-      find.text('Last known position, age unknown.'),
+      find.text('Last known location, age unknown.'),
       findsOneWidget,
     );
     expect(radio.viewers, 0, reason: 'a radio that cannot answer is not asked');
@@ -184,7 +184,7 @@ void main() {
     expect(box.value, isTrue);
     expect(find.text('Also send to Public'), findsOneWidget);
     expect(
-      find.text('Anyone in range can read it and your position. Sent once.'),
+      find.text('Anyone in range can read it and your location. Sent once.'),
       findsOneWidget,
     );
     await tester.enterText(
@@ -230,7 +230,7 @@ void main() {
     );
     await tester.pump();
     expect(
-      find.text("Your own position: every repeat sends it."),
+      find.text("Your own location: every repeat sends it."),
       findsOneWidget,
     );
     radio.answer(36.47, -116.88);
@@ -258,7 +258,7 @@ void main() {
     );
     expect(find.textContaining('Repeats every 2 min'), findsNothing);
     expect(
-      find.text('Last known position, age unknown.'),
+      find.text('Last known location, age unknown.'),
       findsOneWidget,
       reason: 'the position age stays',
     );
