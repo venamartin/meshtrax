@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+. Offline map packs (files/maps/) are large and can be
-     downloaded again, so they stay out of cloud backups and device transfers;
-     otherwise they would push Auto Backup past its 25 MB quota. -->
+<!-- Android 12+. Offline map packs (files/maps/) and the photo model
+     (app_flutter/ft8/) are large and can be downloaded again, so they stay out
+     of cloud backups and device transfers; otherwise they would push Auto
+     Backup past its 25 MB quota. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="maps/" />
+        <exclude domain="root" path="app_flutter/ft8/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="maps/" />
+        <exclude domain="root" path="app_flutter/ft8/" />
     </device-transfer>
 </data-extraction-rules>

@@ -1,0 +1,16 @@
+name: traxpix
+description: >
+  Photos over the mesh: coded photos split into MeshCore channel-data packets
+  with a repair packet, put back together on the other side, and the entropy
+  coder for the photo model's bitstream. Pure Dart, no screens; the model
+  runs in traxpix_litert.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  crypto: ^3.0.8
+  lints: ^5.0.0
+  test: ^1.25.8

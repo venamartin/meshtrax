@@ -26,6 +26,8 @@ import '../helpers/snack_bar_builder.dart';
 import 'drawing_settings_screen.dart';
 import 'offline_maps_screen.dart';
 import 'path_graph_screen.dart';
+import '../services/photo_mesh.dart' show photosSupported;
+import '../widgets/photo_settings_section.dart';
 
 class AppSettingsScreen extends StatelessWidget {
   const AppSettingsScreen({super.key});
@@ -569,6 +571,10 @@ class AppSettingsScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const DrawingSettingsScreen()),
             ),
           ),
+          if (photosSupported) ...[
+            const Divider(height: 1),
+            const PhotoSettingsSection(),
+          ],
           const Divider(height: 1),
           SwitchListTile(
             secondary: const Icon(Icons.vertical_align_top),

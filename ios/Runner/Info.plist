@@ -36,9 +36,11 @@
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>This app uses Bluetooth to communicate with MeshCore devices.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>This app uses the camera to scan QR codes for joining communities.</string>
+	<string>This app uses the camera to scan QR codes for joining communities and to take photos you choose to send.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>MeshTrax saves the photos you choose to save to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app uses the photo library to scan QR codes from saved images.</string>
+	<string>This app uses the photo library to scan QR codes from saved images and to send photos you choose.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>This app adds events you choose from event messages to your calendar. It never reads your calendar.</string>
 	<key>NSContactsUsageDescription</key>
