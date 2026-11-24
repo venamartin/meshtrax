@@ -19,6 +19,7 @@ import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/channel_message_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
 import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -140,7 +141,10 @@ Future<void> _pumpChats(WidgetTester tester, _Radio radio) async {
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({PathfinderHelpDialog.prefKey: true});
+    SharedPreferences.setMockInitialValues({
+      PathfinderHelpDialog.prefKey: true,
+      LocationButtonNote.prefKey: true,
+    });
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();

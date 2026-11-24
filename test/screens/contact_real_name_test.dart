@@ -30,6 +30,7 @@ import 'package:meshtrax/widgets/contact_info_dialog.dart';
 import 'package:meshtrax/widgets/contact_tile.dart';
 import 'package:meshtrax/widgets/mention_composer.dart';
 import 'package:meshtrax/widgets/nickname_pill.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
 import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 
 // The owner wanted to note who is behind a radio: a name beside the radio
@@ -117,7 +118,10 @@ Future<void> _settle(WidgetTester tester) async {
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({PathfinderHelpDialog.prefKey: true});
+    SharedPreferences.setMockInitialValues({
+      PathfinderHelpDialog.prefKey: true,
+      LocationButtonNote.prefKey: true,
+    });
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();

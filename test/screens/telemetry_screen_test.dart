@@ -150,7 +150,7 @@ void main() {
     await open(tester, [..._battery, ..._noFix]);
 
     expect(find.byType(StructuredMessageCard), findsNothing);
-    expect(find.text('Position'), findsOneWidget);
+    expect(find.text('Location'), findsOneWidget);
     expect(find.textContaining('latitude'), findsNothing);
   });
 }

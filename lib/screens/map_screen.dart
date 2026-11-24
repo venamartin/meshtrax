@@ -12,8 +12,8 @@ import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:path_graph/path_graph.dart'
     show PathGraph, RouteResult, FloodResult;
 import 'package:meshtrax/widgets/app_bar.dart';
-import 'package:meshtrax/widgets/gps_status_button.dart';
-import 'package:meshtrax/widgets/location_sharing_button.dart';
+import 'package:meshtrax/widgets/icon_help.dart';
+import 'package:meshtrax/widgets/my_location_button.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
@@ -849,38 +849,50 @@ class _MapScreenState extends State<MapScreen> {
                     actions: [
                       if (!widget.pickPosition) ...[
                         const TraxButton(),
-                        const GpsStatusButton(),
-                        const LocationSharingButton(),
+                        const MyLocationButton(),
                       ],
-                      if (!_isBuildingPathTrace)
-                        IconButton(
-                          style: topBarIconStyle,
-                          icon: const Icon(Icons.radar),
-                          onPressed: () => _startPath(selfPosition),
-                          tooltip: context.l10n.contacts_pathTrace,
-                        ),
                       PopupMenuButton(
                         style: topBarIconStyle,
                         iconSize: topBarIconSize,
                         itemBuilder: (context) => [
-                          // One entry: the reach from you, where a tap on
-                          // the map or a name gives the line to it.
-                          if (_losOffered) ...<PopupMenuEntry<Object?>>[
-                            PopupMenuItem(
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.visibility_outlined),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(context.l10n.los_lineOfSight),
-                                  ),
-                                ],
+                          // The map's tools first: the reach from you,
+                          // where a tap on the map or a name gives the line
+                          // to it, and a path trace, in the menu since
+                          // 2026-11-23 (Martin).
+                          if (_losOffered || !_isBuildingPathTrace) ...<
+                            PopupMenuEntry<Object?>
+                          >[
+                            if (_losOffered)
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.visibility_outlined),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(context.l10n.los_lineOfSight),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _openLos(
+                                  LosMode.reach,
+                                  from: _me(connector, selfPosition),
+                                ),
                               ),
-                              onTap: () => _openLos(
-                                LosMode.reach,
-                                from: _me(connector, selfPosition),
+                            if (!_isBuildingPathTrace)
+                              PopupMenuItem(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.radar),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        context.l10n.contacts_pathTrace,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _startPath(selfPosition),
                               ),
-                            ),
                             const PopupMenuDivider(),
                           ],
                           if (!PlatformInfo.isWeb)
@@ -926,6 +938,16 @@ class _MapScreenState extends State<MapScreen> {
                                 builder: (context) => const SettingsScreen(),
                               ),
                             ),
+                          ),
+                          PopupMenuItem(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.help_outline),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text(context.l10n.iconHelp_title)),
+                              ],
+                            ),
+                            onTap: () => showIconHelp(context),
                           ),
                         ],
                         icon: const Icon(Icons.more_vert),

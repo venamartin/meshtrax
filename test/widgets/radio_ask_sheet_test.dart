@@ -130,7 +130,7 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(find.text('No GPS position'), findsOneWidget);
+    expect(find.text('No GPS location'), findsOneWidget);
     expect(find.text('4.15 V'), findsOneWidget);
     expect(find.text('Show on map'), findsNothing);
   });

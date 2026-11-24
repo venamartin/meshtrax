@@ -3650,7 +3650,7 @@ abstract class AppLocalizations {
   /// No description provided for @radioAsk_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'No GPS position'**
+  /// **'No GPS location'**
   String get radioAsk_noPosition;
 
   /// No description provided for @radioAsk_noFix.
@@ -4940,13 +4940,13 @@ abstract class AppLocalizations {
   /// No description provided for @route_fromLastKnown.
   ///
   /// In en, this message translates to:
-  /// **'From your last known position, may be old'**
+  /// **'From your last known location, may be old'**
   String get route_fromLastKnown;
 
   /// No description provided for @route_fromLastKnownAt.
   ///
   /// In en, this message translates to:
-  /// **'From your last known position ({time}), may be old'**
+  /// **'From your last known location ({time}), may be old'**
   String route_fromLastKnownAt(String time);
 
   /// No description provided for @route_fromWhereYouWere.
@@ -4976,13 +4976,13 @@ abstract class AppLocalizations {
   /// No description provided for @gps_lastKnown.
   ///
   /// In en, this message translates to:
-  /// **'Your last known position, may be old'**
+  /// **'Your last known location, may be old'**
   String get gps_lastKnown;
 
   /// No description provided for @gps_lastKnownAt.
   ///
   /// In en, this message translates to:
-  /// **'Your last known position ({time}), may be old'**
+  /// **'Your last known location ({time}), may be old'**
   String gps_lastKnownAt(String time);
 
   /// No description provided for @map_setAsMyLocation.
@@ -6469,7 +6469,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeater_cliHelpGpsSetLoc.
   ///
   /// In en, this message translates to:
-  /// **'Sets node\'s position to gps coordinates and save preferences.'**
+  /// **'Sets node\'s location to gps coordinates and save preferences.'**
   String get repeater_cliHelpGpsSetLoc;
 
   /// No description provided for @repeater_cliHelpGpsAdvert.
@@ -9445,7 +9445,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_chartsNoticePositions.
   ///
   /// In en, this message translates to:
-  /// **'Positions can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.'**
+  /// **'Locations can be wrong or old. GPS can be off by 10 m (30 ft) or more, and a node is only where it last reported.'**
   String get map_chartsNoticePositions;
 
   /// No description provided for @map_chartsNoticeNotPlotter.
@@ -9511,7 +9511,7 @@ abstract class AppLocalizations {
   /// No description provided for @gps_onHint.
   ///
   /// In en, this message translates to:
-  /// **'The radio updates its position from the GPS.'**
+  /// **'The radio updates its location from the GPS.'**
   String get gps_onHint;
 
   /// No description provided for @gps_offHint.
@@ -9529,13 +9529,13 @@ abstract class AppLocalizations {
   /// No description provided for @gps_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'No position yet. Outdoors, the first one can take a few minutes.'**
+  /// **'No location yet. Outdoors, the first one can take a few minutes.'**
   String get gps_noPosition;
 
   /// No description provided for @gps_position.
   ///
   /// In en, this message translates to:
-  /// **'Position'**
+  /// **'Location'**
   String get gps_position;
 
   /// No description provided for @gps_altitude.
@@ -9997,7 +9997,7 @@ abstract class AppLocalizations {
   /// No description provided for @navigate_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'No GPS position. Pick a start on the map, or use another app.'**
+  /// **'No GPS location. Pick a start on the map, or use another app.'**
   String get navigate_noPosition;
 
   /// No description provided for @structured_channel.
@@ -10111,7 +10111,7 @@ abstract class AppLocalizations {
   /// No description provided for @tray_noRadioPosition.
   ///
   /// In en, this message translates to:
-  /// **'Your radio has no position yet. Pick one on the map.'**
+  /// **'Your radio has no location yet. Pick one on the map.'**
   String get tray_noRadioPosition;
 
   /// No description provided for @dialog_insert.
@@ -10183,43 +10183,43 @@ abstract class AppLocalizations {
   /// No description provided for @sos_alsoPublicHint.
   ///
   /// In en, this message translates to:
-  /// **'Anyone in range can read it and your position. Sent once.'**
+  /// **'Anyone in range can read it and your location. Sent once.'**
   String get sos_alsoPublicHint;
 
   /// No description provided for @sos_askingRadio.
   ///
   /// In en, this message translates to:
-  /// **'Asking the radio for its position…'**
+  /// **'Asking the radio for its location…'**
   String get sos_askingRadio;
 
   /// No description provided for @sos_positionFrom.
   ///
   /// In en, this message translates to:
-  /// **'Radio position from {time} ({age})'**
+  /// **'Radio location from {time} ({age})'**
   String sos_positionFrom(String time, String age);
 
   /// No description provided for @sos_positionNotNew.
   ///
   /// In en, this message translates to:
-  /// **'No new position. Last known {time} ({age}).'**
+  /// **'No new location. Last known {time} ({age}).'**
   String sos_positionNotNew(String time, String age);
 
   /// No description provided for @sos_positionAgeUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Last known position, age unknown.'**
+  /// **'Last known location, age unknown.'**
   String get sos_positionAgeUnknown;
 
   /// No description provided for @sos_positionTyped.
   ///
   /// In en, this message translates to:
-  /// **'Your own position: every repeat sends it.'**
+  /// **'Your own location: every repeat sends it.'**
   String get sos_positionTyped;
 
   /// No description provided for @sos_repeats.
   ///
   /// In en, this message translates to:
-  /// **'Repeats every 2 min with your position until you cancel; every 5 min after a Got it.'**
+  /// **'Repeats every 2 min with your location until you cancel; every 5 min after a Got it.'**
   String get sos_repeats;
 
   /// No description provided for @sos_publicOnce.
@@ -10483,7 +10483,7 @@ abstract class AppLocalizations {
   /// No description provided for @paste_shortLinkNoPosition.
   ///
   /// In en, this message translates to:
-  /// **'This short link has no position in it. Open it in your maps app and copy the coordinates.'**
+  /// **'This short link has no location in it. Open it in your maps app and copy the coordinates.'**
   String get paste_shortLinkNoPosition;
 
   /// No description provided for @pinned_dismiss.
@@ -10519,7 +10519,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_pickPositionHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap the map to pick a position'**
+  /// **'Tap the map to pick a location'**
   String get map_pickPositionHint;
 
   /// No description provided for @map_legendMesh.
@@ -11815,7 +11815,7 @@ abstract class AppLocalizations {
   /// No description provided for @contact_sharesPosition.
   ///
   /// In en, this message translates to:
-  /// **'Can get your position'**
+  /// **'Can get your location'**
   String get contact_sharesPosition;
 
   /// No description provided for @pathfinder_meshTitle.
@@ -11971,7 +11971,7 @@ abstract class AppLocalizations {
   /// No description provided for @route_startNowYou.
   ///
   /// In en, this message translates to:
-  /// **'Start now: your position'**
+  /// **'Start now: your location'**
   String get route_startNowYou;
 
   /// No description provided for @route_from.
@@ -11983,13 +11983,13 @@ abstract class AppLocalizations {
   /// No description provided for @route_fromYou.
   ///
   /// In en, this message translates to:
-  /// **'From your position'**
+  /// **'From your location'**
   String get route_fromYou;
 
   /// No description provided for @route_useMyPosition.
   ///
   /// In en, this message translates to:
-  /// **'Use my position'**
+  /// **'Use my location'**
   String get route_useMyPosition;
 
   /// No description provided for @route_noHeights.
@@ -12793,7 +12793,7 @@ abstract class AppLocalizations {
   /// No description provided for @route_noStart.
   ///
   /// In en, this message translates to:
-  /// **'No starting position. Long-press the map and choose Route from here.'**
+  /// **'No starting location. Long-press the map and choose Route from here.'**
   String get route_noStart;
 
   /// No description provided for @route_noData.
@@ -12817,7 +12817,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_copyPosition.
   ///
   /// In en, this message translates to:
-  /// **'Copy position'**
+  /// **'Copy location'**
   String get map_copyPosition;
 
   /// No description provided for @poiKind_park.
@@ -12949,7 +12949,7 @@ abstract class AppLocalizations {
   /// No description provided for @dialog_positionUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'Can\'t read a position here'**
+  /// **'Can\'t read a location here'**
   String get dialog_positionUnreadable;
 
   /// No description provided for @locationSharing_share.
@@ -13291,7 +13291,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_locationTapMap.
   ///
   /// In en, this message translates to:
-  /// **'Tap the map to set the position, or type the numbers.'**
+  /// **'Tap the map to set the location, or type the numbers.'**
   String get settings_locationTapMap;
 
   /// No description provided for @channels_pasteLink.
@@ -13315,7 +13315,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_locationGpsNote.
   ///
   /// In en, this message translates to:
-  /// **'With GPS on, the radio replaces this position as soon as its GPS has a fix.'**
+  /// **'With GPS on, the radio replaces this location as soon as its GPS has a fix.'**
   String get settings_locationGpsNote;
 
   /// No description provided for @contacts_hopsAway.
@@ -13399,7 +13399,7 @@ abstract class AppLocalizations {
   /// No description provided for @los_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'Your position isn\'t known yet. Tap the map to start from there.'**
+  /// **'Your location isn\'t known yet. Tap the map to start from there.'**
   String get los_noPosition;
 
   /// No description provided for @los_nothingInWay.
@@ -13537,7 +13537,7 @@ abstract class AppLocalizations {
   /// No description provided for @los_meByHand.
   ///
   /// In en, this message translates to:
-  /// **'Me, position set by hand'**
+  /// **'Me, location set by hand'**
   String get los_meByHand;
 
   /// No description provided for @los_meNotYetGps.
@@ -13633,13 +13633,13 @@ abstract class AppLocalizations {
   /// No description provided for @los_positionGuessed.
   ///
   /// In en, this message translates to:
-  /// **'Position guessed'**
+  /// **'Location guessed'**
   String get los_positionGuessed;
 
   /// No description provided for @los_positionGuessedVia.
   ///
   /// In en, this message translates to:
-  /// **'Position guessed, heard via {names}'**
+  /// **'Location guessed, heard via {names}'**
   String los_positionGuessedVia(String names);
 
   /// No description provided for @los_lookFurther.
@@ -13651,7 +13651,7 @@ abstract class AppLocalizations {
   /// No description provided for @los_nobodyWithin.
   ///
   /// In en, this message translates to:
-  /// **'No one with a position within {distance}.'**
+  /// **'No one with a location within {distance}.'**
   String los_nobodyWithin(String distance);
 
   /// No description provided for @offlineMaps_losContours.
@@ -14067,6 +14067,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sent in {region} · no sign of who got it. Repeaters that don\'t know {region} drop it.'**
   String chat_channelNoSignRegion(String region);
+
+  /// No description provided for @myLocation_title.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get myLocation_title;
+
+  /// No description provided for @myLocation_onlyYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you'**
+  String get myLocation_onlyYou;
+
+  /// No description provided for @myLocation_people.
+  ///
+  /// In en, this message translates to:
+  /// **'People you picked can ask'**
+  String get myLocation_people;
+
+  /// No description provided for @myLocation_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone saved on your radio can ask'**
+  String get myLocation_everyone;
+
+  /// No description provided for @myLocation_adverts.
+  ///
+  /// In en, this message translates to:
+  /// **'In your adverts'**
+  String get myLocation_adverts;
+
+  /// No description provided for @myLocation_gpsNoFix.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS on, no fix yet'**
+  String get myLocation_gpsNoFix;
+
+  /// No description provided for @myLocation_radioGps.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio GPS'**
+  String get myLocation_radioGps;
+
+  /// No description provided for @myLocation_fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix {ago} ago · {position}'**
+  String myLocation_fix(String ago, String position);
+
+  /// No description provided for @myLocation_noFix.
+  ///
+  /// In en, this message translates to:
+  /// **'No fix yet.'**
+  String get myLocation_noFix;
+
+  /// No description provided for @myLocation_offSaves.
+  ///
+  /// In en, this message translates to:
+  /// **'Off saves battery.'**
+  String get myLocation_offSaves;
+
+  /// No description provided for @myLocation_lastFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Last fix {time}.'**
+  String myLocation_lastFix(String time);
+
+  /// No description provided for @myLocation_inAdverts.
+  ///
+  /// In en, this message translates to:
+  /// **'In my adverts'**
+  String get myLocation_inAdverts;
+
+  /// No description provided for @myLocation_advertsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who hears your radio'**
+  String get myLocation_advertsHint;
+
+  /// No description provided for @myLocation_advertsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.'**
+  String get myLocation_advertsInfo;
+
+  /// No description provided for @myLocation_peopleWho.
+  ///
+  /// In en, this message translates to:
+  /// **'People who can ask'**
+  String get myLocation_peopleWho;
+
+  /// No description provided for @myLocation_nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get myLocation_nobody;
+
+  /// No description provided for @myLocation_allSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone saved on your radio ({count})'**
+  String myLocation_allSaved(int count);
+
+  /// No description provided for @myLocation_pickPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick people instead'**
+  String get myLocation_pickPeople;
+
+  /// No description provided for @myLocation_batterySensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery and sensors'**
+  String get myLocation_batterySensors;
+
+  /// No description provided for @myLocation_peopleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'They can ask your radio where it is, and its battery.'**
+  String get myLocation_peopleHint;
+
+  /// No description provided for @myLocation_addSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'Add someone'**
+  String get myLocation_addSomeone;
+
+  /// No description provided for @myLocation_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search {count} contacts'**
+  String myLocation_search(int count);
+
+  /// No description provided for @myLocation_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent messages'**
+  String get myLocation_recent;
+
+  /// No description provided for @myLocation_canAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Can ask'**
+  String get myLocation_canAsk;
+
+  /// No description provided for @iconHelp_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What the icons mean'**
+  String get iconHelp_title;
+
+  /// No description provided for @iconHelp_tap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an icon in the bar to open it.'**
+  String get iconHelp_tap;
+
+  /// No description provided for @iconHelp_radio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get iconHelp_radio;
+
+  /// No description provided for @iconHelp_battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio battery'**
+  String get iconHelp_battery;
+
+  /// No description provided for @iconHelp_batteryText.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap for volts.'**
+  String get iconHelp_batteryText;
+
+  /// No description provided for @iconHelp_signal.
+  ///
+  /// In en, this message translates to:
+  /// **'Signal'**
+  String get iconHelp_signal;
+
+  /// No description provided for @iconHelp_signalText.
+  ///
+  /// In en, this message translates to:
+  /// **'How well your radio hears the best repeater near you. Tap for the list.'**
+  String get iconHelp_signalText;
+
+  /// No description provided for @iconHelp_repeaters.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeaters heard'**
+  String get iconHelp_repeaters;
+
+  /// No description provided for @iconHelp_repeatersText.
+  ///
+  /// In en, this message translates to:
+  /// **'How many · the best one\'s code · how long ago'**
+  String get iconHelp_repeatersText;
+
+  /// No description provided for @iconHelp_traxOff.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode off'**
+  String get iconHelp_traxOff;
+
+  /// No description provided for @iconHelp_traxOn.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX mode on'**
+  String get iconHelp_traxOn;
+
+  /// No description provided for @iconHelp_traxOnText.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio is on the group\'s frequency.'**
+  String get iconHelp_traxOnText;
+
+  /// No description provided for @iconHelp_who.
+  ///
+  /// In en, this message translates to:
+  /// **'My location: who can see it'**
+  String get iconHelp_who;
+
+  /// No description provided for @iconHelp_people.
+  ///
+  /// In en, this message translates to:
+  /// **'People you picked'**
+  String get iconHelp_people;
+
+  /// No description provided for @iconHelp_peopleText.
+  ///
+  /// In en, this message translates to:
+  /// **'They can ask your radio where it is.'**
+  String get iconHelp_peopleText;
+
+  /// No description provided for @iconHelp_advertsText.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who hears your radio.'**
+  String get iconHelp_advertsText;
+
+  /// No description provided for @iconHelp_gps.
+  ///
+  /// In en, this message translates to:
+  /// **'My location: radio GPS'**
+  String get iconHelp_gps;
+
+  /// No description provided for @iconHelp_filled.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled: GPS on'**
+  String get iconHelp_filled;
+
+  /// No description provided for @iconHelp_outline.
+  ///
+  /// In en, this message translates to:
+  /// **'Outline: GPS off'**
+  String get iconHelp_outline;
+
+  /// No description provided for @iconHelp_dashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashed: no GPS fix yet'**
+  String get iconHelp_dashed;
+
+  /// No description provided for @iconHelp_red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red: no fix, and someone can see it'**
+  String get iconHelp_red;
+
+  /// No description provided for @locationNote_title.
+  ///
+  /// In en, this message translates to:
+  /// **'One location button'**
+  String get locationNote_title;
+
+  /// No description provided for @locationNote_body.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.'**
+  String get locationNote_body;
 }
 
 class _AppLocalizationsDelegate

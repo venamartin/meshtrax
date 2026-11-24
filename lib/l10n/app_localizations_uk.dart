@@ -8385,4 +8385,158 @@ class AppLocalizationsUk extends AppLocalizations {
   String chat_channelNoSignRegion(String region) {
     return 'Надіслано в $region · немає ознак, хто отримав. Ретранслятори, які не знають $region, його відкидають.';
   }
+
+  @override
+  String get myLocation_title => 'My location';
+
+  @override
+  String get myLocation_onlyYou => 'Only you';
+
+  @override
+  String get myLocation_people => 'People you picked can ask';
+
+  @override
+  String get myLocation_everyone => 'Everyone saved on your radio can ask';
+
+  @override
+  String get myLocation_adverts => 'In your adverts';
+
+  @override
+  String get myLocation_gpsNoFix => 'GPS on, no fix yet';
+
+  @override
+  String get myLocation_radioGps => 'Radio GPS';
+
+  @override
+  String myLocation_fix(String ago, String position) {
+    return 'Fix $ago ago · $position';
+  }
+
+  @override
+  String get myLocation_noFix => 'No fix yet.';
+
+  @override
+  String get myLocation_offSaves => 'Off saves battery.';
+
+  @override
+  String myLocation_lastFix(String time) {
+    return 'Last fix $time.';
+  }
+
+  @override
+  String get myLocation_inAdverts => 'In my adverts';
+
+  @override
+  String get myLocation_advertsHint => 'Anyone who hears your radio';
+
+  @override
+  String get myLocation_advertsInfo =>
+      'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.';
+
+  @override
+  String get myLocation_peopleWho => 'People who can ask';
+
+  @override
+  String get myLocation_nobody => 'Nobody';
+
+  @override
+  String myLocation_allSaved(int count) {
+    return 'Everyone saved on your radio ($count)';
+  }
+
+  @override
+  String get myLocation_pickPeople => 'Pick people instead';
+
+  @override
+  String get myLocation_batterySensors => 'Battery and sensors';
+
+  @override
+  String get myLocation_peopleHint =>
+      'They can ask your radio where it is, and its battery.';
+
+  @override
+  String get myLocation_addSomeone => 'Add someone';
+
+  @override
+  String myLocation_search(int count) {
+    return 'Search $count contacts';
+  }
+
+  @override
+  String get myLocation_recent => 'Recent messages';
+
+  @override
+  String get myLocation_canAsk => 'Can ask';
+
+  @override
+  String get iconHelp_title => 'What the icons mean';
+
+  @override
+  String get iconHelp_tap => 'Tap an icon in the bar to open it.';
+
+  @override
+  String get iconHelp_radio => 'Radio';
+
+  @override
+  String get iconHelp_battery => 'Radio battery';
+
+  @override
+  String get iconHelp_batteryText => 'Tap for volts.';
+
+  @override
+  String get iconHelp_signal => 'Signal';
+
+  @override
+  String get iconHelp_signalText =>
+      'How well your radio hears the best repeater near you. Tap for the list.';
+
+  @override
+  String get iconHelp_repeaters => 'Repeaters heard';
+
+  @override
+  String get iconHelp_repeatersText =>
+      'How many · the best one\'s code · how long ago';
+
+  @override
+  String get iconHelp_traxOff => 'TRAX mode off';
+
+  @override
+  String get iconHelp_traxOn => 'TRAX mode on';
+
+  @override
+  String get iconHelp_traxOnText => 'Your radio is on the group\'s frequency.';
+
+  @override
+  String get iconHelp_who => 'My location: who can see it';
+
+  @override
+  String get iconHelp_people => 'People you picked';
+
+  @override
+  String get iconHelp_peopleText => 'They can ask your radio where it is.';
+
+  @override
+  String get iconHelp_advertsText => 'Anyone who hears your radio.';
+
+  @override
+  String get iconHelp_gps => 'My location: radio GPS';
+
+  @override
+  String get iconHelp_filled => 'Filled: GPS on';
+
+  @override
+  String get iconHelp_outline => 'Outline: GPS off';
+
+  @override
+  String get iconHelp_dashed => 'Dashed: no GPS fix yet';
+
+  @override
+  String get iconHelp_red => 'Red: no fix, and someone can see it';
+
+  @override
+  String get locationNote_title => 'One location button';
+
+  @override
+  String get locationNote_body =>
+      'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
 }

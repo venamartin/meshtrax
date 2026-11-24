@@ -21,7 +21,7 @@ class _NoNetwork extends HttpOverrides {
 }
 
 const _shortLinkLine =
-    'This short link has no position in it. Open it in your maps app and '
+    'This short link has no location in it. Open it in your maps app and '
     'copy the coordinates.';
 
 void main() {
