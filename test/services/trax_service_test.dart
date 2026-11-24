@@ -488,7 +488,6 @@ void main() {
       radio.telemetryModeLoc,
       radio.telemetryModeEnv,
       1,
-      radio.multiAcks,
     );
     expect(await trax.start(), TraxOutcome.ok);
     expect(trax.session?.advertSet, isFalse);

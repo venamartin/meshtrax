@@ -286,6 +286,5 @@ Future<void> _offerAllowByContactFlags(
     loc ? teleModeAllowFlags : connector.telemetryModeLoc,
     env ? teleModeAllowFlags : connector.telemetryModeEnv,
     connector.advertLocationPolicy,
-    connector.multiAcks,
   );
 }

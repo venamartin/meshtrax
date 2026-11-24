@@ -8,7 +8,6 @@ import '../connector/meshcore_connector.dart';
 import '../helpers/position_text.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
-import '../models/device_backup.dart';
 import '../services/app_settings_service.dart';
 import '../services/battery_sleep_service.dart';
 import '../services/chat_text_scale_service.dart';
@@ -582,24 +581,6 @@ class AppSettingsScreen extends StatelessWidget {
             subtitle: Text(context.l10n.appSettings_jumpToOldestUnreadSubtitle),
             value: settingsService.settings.jumpToOldestUnread,
             onChanged: settingsService.setJumpToOldestUnread,
-          ),
-          const Divider(height: 1),
-          SwitchListTile(
-            secondary: const Icon(Icons.done_all),
-            title: Text(context.l10n.settings_multiAck),
-            subtitle: Text(context.l10n.settings_multiAckSubtitle),
-            // The choice, not the radio's own setting: while MeshTrax sends
-            // the second ACK, the radio is set to send one.
-            value: connector.twoAcks,
-            onChanged:
-                connector.isConnected &&
-                    firmwareSupports(
-                      RadioSetting.multiAcks,
-                      connector.firmwareVerCode,
-                      connector.firmwareVersion,
-                    )
-                ? (value) => connector.setTwoAcks(value)
-                : null,
           ),
           const Divider(height: 1),
           ListTile(

@@ -1432,13 +1432,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_advertLocationSubtitle => 'Include location in advert.';
 
   @override
-  String get settings_multiAck => 'Multi-ACKs';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it. With Pathfinder on, MeshTrax sends it on another route.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Telemetry mode updated';
 
   @override

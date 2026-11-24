@@ -135,7 +135,6 @@ void main() {
       await findings(
         (r) =>
             r.id.startsWith('radio_auto_add') ||
-            r.id == 'radio_multi_acks' ||
             r.id == 'radio_path_hash_width',
       ),
       isEmpty,
@@ -165,10 +164,9 @@ void main() {
       await findings(
         (r) =>
             r.id == 'radio_auto_add_repeaters' ||
-            r.id == 'radio_multi_acks' ||
             r.id == 'radio_path_hash_width',
       ),
-      ['radio_auto_add_repeaters', 'radio_multi_acks', 'radio_path_hash_width'],
+      ['radio_auto_add_repeaters', 'radio_path_hash_width'],
     );
   });
 

@@ -109,7 +109,6 @@ class _Radio extends MeshCoreConnector {
     int location,
     int env,
     int advert,
-    int multiAcks,
   ) async {
     modeBase = base;
     modeLoc = location;

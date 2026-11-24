@@ -263,7 +263,6 @@ void main() {
       2,
       1,
       usb.connector.advertLocationPolicy,
-      usb.connector.multiAcks,
     );
     await usb.connector.refreshDeviceInfo();
     await waitUntil(

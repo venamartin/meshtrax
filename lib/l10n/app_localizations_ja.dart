@@ -1389,13 +1389,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_advertLocationSubtitle => '広告に場所を記載してください。';
 
   @override
-  String get settings_multiAck => '複数のACK（応答）';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'ダイレクトメッセージがルート経由で届いたときに2回目のACKを送信し、送信者に届きやすくします。Pathfinder がオンのときは、MeshTrax が別のルートで送信します。';
-
-  @override
   String get settings_telemetryModeUpdated => 'テレメトリモードが更新されました';
 
   @override

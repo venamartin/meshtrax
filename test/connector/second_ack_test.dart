@@ -86,12 +86,12 @@ class _Connector extends MeshCoreConnector {
   ];
 }
 
-Uint8List _selfInfo() {
+Uint8List _selfInfo({int extraAcks = 1}) {
   final w = BytesBuilder();
   w.add([respCodeSelfInfo, advTypeChat, 20, 22]);
   w.add(bPub);
   w.add(Uint8List(8));
-  w.add([1, 0, 0, 1]); // the radio sends two ACKs
+  w.add([extraAcks, 0, 0, 1]); // 1: the radio sends two ACKs
   w.add((ByteData(8)
         ..setUint32(0, 910525, Endian.little)
         ..setUint32(4, 62500, Endian.little))
@@ -155,6 +155,7 @@ void main() {
     List<PathSelection> routes = const [],
     bool routeBack = true,
     bool clientRepeat = false,
+    int radioExtraAcks = 1,
   }) async {
     final settings = AppSettingsService();
     await settings.setPathGraphEnabled(pathfinder);
@@ -165,7 +166,7 @@ void main() {
       );
     if (pathfinder) c.graphRouteCandidates = (_) => routes;
     c.handleFrameForTest(_deviceInfo(clientRepeat: clientRepeat));
-    c.handleFrameForTest(_selfInfo());
+    c.handleFrameForTest(_selfInfo(extraAcks: radioExtraAcks));
     // SELF_INFO loads this radio's cached contacts, which replaces the list:
     // let it finish before the radio's contacts come in, or a test that waits
     // finds the contact gone.
@@ -203,7 +204,6 @@ void main() {
       "Pathfinder's route the radio isn't holding", () async {
     await connect(routes: [pf1, pf2]);
     expect(c.radioMultiAcks, [0]);
-    expect(c.twoAcks, isTrue, reason: 'the choice outlives the radio\'s one');
 
     c.handleFrameForTest(_rxLog(dmLastCopy));
     final sent = await acks(1);
@@ -527,12 +527,20 @@ void main() {
     expect(c.radioMultiAcks, [0, 1]);
   });
 
-  test('turning Multi-ACKs off: one ACK, from the radio', () async {
-    await connect(routes: [pf1, pf2]);
-    await c.setTwoAcks(false);
-    expect(c.twoAcks, isFalse);
+  // The owner, 2026-11-24: no switch, two ACKs always. A stored choice
+  // could end up off by itself: a radio the app had left at one ACK (a
+  // dropped link) was read as the user's choice on a phone with none.
+  test('a radio found at one ACK: the app still sends the second', () async {
+    await connect(routes: [pf1, pf2], radioExtraAcks: 0);
+    expect(c.radioMultiAcks, isEmpty, reason: 'one from the radio is right');
     c.handleFrameForTest(_rxLog(dmLastCopy));
-    await Future<void>.delayed(const Duration(seconds: 1));
-    expect(c.acks, isEmpty);
+    final sent = await acks(1);
+    expect(sent.single.sublist(0, 14), secondAck(pf2.pathBytes));
+  });
+
+  test('a radio found at one ACK, the app unable to send the second: the '
+      'radio is set to two', () async {
+    await connect(pathfinder: false, radioExtraAcks: 0);
+    expect(c.radioMultiAcks, [1]);
   });
 }

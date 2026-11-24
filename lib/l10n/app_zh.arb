@@ -1920,8 +1920,6 @@
   "contact_nameAndNoteHint": "仅保存在本设备和电台备份中，绝不会发送。",
   "appSettings_maxMessageRetries": "最大消息重试次数",
   "appSettings_maxMessageRetriesSubtitle": "在将消息标记为失败之前，允许尝试的次数",
-  "settings_multiAck": "多重ACK",
-  "settings_multiAckSubtitle": "当私信通过路由到达时发送第二个 ACK，让发送方更有可能收到。开启 Pathfinder 时，MeshTrax 会经另一条路由发送。",
   "settings_telemetryModeUpdated": "遥测模式已更新",
   "map_showOverlaps": "重复键重叠",
   "map_runTraceWithReturnPath": "沿着相同的路径返回",

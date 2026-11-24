@@ -1444,13 +1444,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'Locatie opnemen in advertentie';
 
   @override
-  String get settings_multiAck => 'Meerdere bevestigingen';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Stuur een tweede bevestiging wanneer een direct bericht je via een route bereikt, zodat de afzender die eerder hoort. Met Pathfinder aan stuurt MeshTrax die via een andere route.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Telemetrie-modus bijgewerkt';
 
   @override

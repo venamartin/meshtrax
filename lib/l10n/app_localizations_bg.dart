@@ -1450,13 +1450,6 @@ class AppLocalizationsBg extends AppLocalizations {
       'Включи местоположение в обявата';
 
   @override
-  String get settings_multiAck => 'Множество потвърждения';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Изпраща второ потвърждение, когато лично съобщение стигне до вас по маршрут, за да може подателят по-вероятно да го чуе. С включен Pathfinder MeshTrax го изпраща по друг маршрут.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Режим на телеметрията е обновен';
 
   @override

@@ -251,8 +251,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       'Location',
                       '${connector.selfLatitude!.toStringAsFixed(4)}, ${connector.selfLongitude!.toStringAsFixed(4)}',
                     ),
-                  if (connector.multiAcks != 0)
-                    _buildInfoRow('Multi-Acks', '${connector.multiAcks}'),
                   _buildInfoRow(
                     l10n.settings_infoContactsCount,
                     '${connector.contacts.length}',
@@ -1962,7 +1960,6 @@ void showPrivacySettings(BuildContext context, MeshCoreConnector connector) {
                 telemetryLocMode,
                 telemetryEnvMode,
                 advertLocPolicy ? 1 : 0,
-                connector.multiAcks,
               );
               unawaited(connector.refreshRadioSettings());
               if (!context.mounted) return;

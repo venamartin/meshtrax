@@ -895,8 +895,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // moment before the app counts it (see _noteAckHeard).
   final Map<int, Timer> _heardAckTimers = {};
   final Map<int, HeardAck> _heardAcks = {};
-  // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
-  // the second on another of Pathfinder's routes (owner, 2026-11-19).
+  // Pathfinder on: the radio sends one ACK, and the app the second on
+  // another of Pathfinder's routes (owner, 2026-11-19). See _applyAckMode.
   bool _appSendsSecondAck = false;
   final Set<String> _secondAckSent = {};
   // Per message (contact, sender's timestamp, text type), the routes its
@@ -908,7 +908,6 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Every raw packet still held for sending (_queueRawPackets).
   final Set<Timer> _rawPacketTimers = {};
   bool? _pathfinderWasOn;
-  static const _twoAcksKeyPrefix = 'two_acks_';
 
   static const int _defaultMaxContacts = 32;
   static const int _defaultMaxChannels = 8;
@@ -4303,7 +4302,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (manual && _appSendsSecondAck && isConnected) {
       _appSendsSecondAck = false;
       try {
-        await _setRadioMultiAcks(1).timeout(const Duration(seconds: 2));
+        await _writeOtherParams().timeout(const Duration(seconds: 2));
       } catch (_) {}
     }
 
@@ -6953,12 +6952,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     await sendFrame(buildRebootFrame());
   }
 
+  /// Writes who may ask this radio for what, and its advert position
+  /// policy. The frame carries the radio's extra-ACK setting too, which no
+  /// caller chooses: it is what [_applyAckMode] decided. Firmware that
+  /// ignores that byte keeps the value it reported.
   Future<void> setTelemetryModeBase(
     int base,
     int location,
     int env,
     int advert,
-    int multiAcks,
   ) async {
     // Before SELF_INFO the other values in this frame, and the manual-add byte,
     // are only defaults.
@@ -6967,7 +6969,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _telemetryModeLoc = location.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _telemetryModeEnv = env.clamp(teleModeDeny, teleModeAllowAll).toInt();
     _advertLocPolicy = advert.clamp(0, 1).toInt();
-    _multiAcks = multiAcks.clamp(0, 2).toInt();
+    if (_radioHasExtraAcks) _multiAcks = _radioExtraAcks;
     await sendFrame(
       buildSetOtherParamsFrame(
         (_telemetryModeEnv << 4) |
@@ -9577,36 +9579,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _ackRoutesTried.clear();
   }
 
-  /// The Multi-ACKs choice for this radio: two ACKs for each DM. The radio's
-  /// own setting can read one: while the app sends the second ACK, the radio
-  /// is set to send one.
-  bool get twoAcks {
-    final self = _selfPublicKey;
-    if (self == null) return _multiAcks != 0;
-    try {
-      return PrefsManager.instance
-              .getBool('$_twoAcksKeyPrefix${pubKeyToHex(self)}') ??
-          _multiAcks != 0;
-    } catch (_) {
-      return _multiAcks != 0;
-    }
-  }
-
-  Future<void> setTwoAcks(bool value) async {
-    await _storeTwoAcks(value);
-    await _applyAckMode();
-    notifyListeners();
-  }
-
-  Future<void> _storeTwoAcks(bool value) async {
-    final self = _selfPublicKey;
-    if (self == null) return;
-    try {
-      await PrefsManager.instance
-          .setBool('$_twoAcksKeyPrefix${pubKeyToHex(self)}', value);
-    } catch (_) {}
-  }
-
   bool get _pathfinderOn =>
       (_appSettingsService?.settings.pathGraphEnabled ?? false) &&
       graphRouteCandidates != null;
@@ -9618,37 +9590,48 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(_applyAckMode());
   }
 
-  /// Who sends the second ACK. With two wanted, Pathfinder on, the radio's
-  /// key read and firmware 1.16 or later, the app does: the radio is set to
-  /// one and the app sends the other on another of Pathfinder's routes
-  /// (owner, 2026-11-19). Otherwise the radio sends what the switch says.
-  /// The choice is stored first, so it outlives the radio's one.
+  /// Two ACKs go back for a DM that arrives on a route, always: there is no
+  /// switch (owner, 2026-11-24; a stored choice could end up off by itself,
+  /// and three ACKs are one too many). The radio always sends one. With
+  /// Pathfinder on, the radio's key read and firmware 1.16 or later, the app
+  /// sends the second on another of Pathfinder's routes, and the radio is
+  /// set to send no extra one (owner, 2026-11-19). Otherwise the radio sends
+  /// both, on its stored route. Only this decides the radio's setting
+  /// ([setTelemetryModeBase] writes it with the rest).
   Future<void> _applyAckMode() async {
     if (!isConnected || _selfPublicKey == null) return;
-    if (!firmwareSupports(
-      RadioSetting.multiAcks,
-      _firmwareVerCode,
-      _firmwareVersion,
-    )) {
-      return;
-    }
-    final wanted = twoAcks;
-    await _storeTwoAcks(wanted);
-    final app = wanted &&
-        _pathfinderOn &&
+    if (!_radioHasExtraAcks) return;
+    final app = _pathfinderOn &&
         _passingCopyOpener != null &&
         (_firmwareVerCode ?? 0) >= 13;
+    final changed = app != _appSendsSecondAck;
     _appSendsSecondAck = app;
-    final radio = app ? 0 : (wanted ? 1 : 0);
-    if ((_multiAcks != 0) != (radio != 0)) await _setRadioMultiAcks(radio);
+    if (!changed && _multiAcks == _radioExtraAcks) return;
+    appLogger.info(
+      app
+          ? 'Second ACK: MeshTrax sends it, on another route; the radio is '
+              'set to send one ACK'
+          : 'Second ACK: the radio sends both ACKs',
+      tag: 'Connector',
+    );
+    if (_multiAcks != _radioExtraAcks) await _writeOtherParams();
   }
 
-  Future<void> _setRadioMultiAcks(int value) => setTelemetryModeBase(
+  bool get _radioHasExtraAcks => firmwareSupports(
+    RadioSetting.multiAcks,
+    _firmwareVerCode,
+    _firmwareVersion,
+  );
+
+  /// The radio's extra-ACK setting as it should be: none while the app sends
+  /// the second ACK, one otherwise.
+  int get _radioExtraAcks => _appSendsSecondAck ? 0 : 1;
+
+  Future<void> _writeOtherParams() => setTelemetryModeBase(
     _telemetryModeBase,
     _telemetryModeLoc,
     _telemetryModeEnv,
     _advertLocPolicy,
-    value,
   );
 
   /// A routed DM or room post to this radio that still has hops to go. The

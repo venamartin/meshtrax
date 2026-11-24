@@ -624,18 +624,20 @@ void main() {
 
   test('nothing is written before the radio has been read', () async {
     final radio = _Radio()..initialize(retryService: MessageRetryService());
-    await radio.setTelemetryModeBase(0, 0, 0, 0, 1);
+    await radio.setTelemetryModeBase(0, 0, 0, 0);
     expect(radio.sent, isEmpty);
   });
 
-  group('the Multi-ACK write', () {
+  // No caller chooses the radio's extra ACK: with the app not sending the
+  // second ACK itself (no Pathfinder here), the radio sends both.
+  group('the write that carries the extra-ACK setting', () {
     test('keeps the on/off switch of firmware that has nothing else', () async {
       final radio = _Radio()..initialize(retryService: MessageRetryService());
       radio.handleFrameForTest(_deviceInfo(version: 'v1.9.0', code: 8));
       radio.handleFrameForTest(_selfInfo(manualAdd: 0));
       radio.sent.clear();
 
-      await radio.setTelemetryModeBase(0, 0, 0, 0, 1);
+      await radio.setTelemetryModeBase(0, 0, 0, 0);
 
       final frame = radio.sent.single;
       expect(frame[0], cmdSetOtherParams);
@@ -649,7 +651,7 @@ void main() {
       radio.handleFrameForTest(_selfInfo());
       radio.sent.clear();
 
-      await radio.setTelemetryModeBase(0, 0, 0, 0, 1);
+      await radio.setTelemetryModeBase(0, 0, 0, 0);
 
       expect(radio.sent.single[1], 1);
     });

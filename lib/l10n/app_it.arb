@@ -2047,8 +2047,6 @@
   "repeater_guestTools": "Strumenti per gli ospiti",
   "chat_sendMessage": "Invia messaggio",
   "room_guest": "Informazioni sul server",
-  "settings_multiAck": "ACK multipli",
-  "settings_multiAckSubtitle": "Invia un secondo ACK quando un messaggio diretto ti raggiunge tramite un percorso, così il mittente ha più probabilità di riceverlo. Con Pathfinder attivo, MeshTrax lo invia su un altro percorso.",
   "chat_resendingByRoute": "Reinvio tramite il percorso impostato",
   "room_mute": "Silenzia stanza",
   "room_unmute": "Riattiva stanza",

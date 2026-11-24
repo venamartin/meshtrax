@@ -47,7 +47,9 @@ So a stale stored route loses receipts: your message got there, but you never le
 
 **Staying out of the way.** A contact's stored route is rewritten at most once every 10 minutes, except that a route Pathfinder has stopped listing is replaced at once. A contact is left alone while a message of yours to them is still being tried, and for 6 minutes after one of yours failed every attempt. A guessed route is stored only as the first choice, with one guessed hop at most. And if you picked a route for a contact yourself in the routing dialog, Pathfinder never touches it.
 
-Two things this doesn't change. Pathfinder never uses the stored route for its own sends; those always go on its list and then flood. And the radio's option to send each receipt twice (Multi-ACKs) works the same with or without Pathfinder.
+One thing this doesn't change: Pathfinder never uses the stored route for its own sends; those always go on its list and then flood.
+
+**Two receipts for every message.** A direct message that reaches you on a route is always answered with two receipts (ACKs), so the sender has two chances to hear one. There is no setting for it. Your radio sends the first on its stored route. With Pathfinder on, MeshTrax sends the second on another route, and your radio is set to send only its one. With Pathfinder off, your radio sends both on the same route. If the Bluetooth link to your radio drops, the radio sends one receipt on its own until MeshTrax is connected again.
 
 ## What you see
 

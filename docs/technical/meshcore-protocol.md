@@ -585,15 +585,23 @@ the connector's `_openPassingCopy`):
   never finished.
 
 ### The second ACK, from MeshTrax on another route
-With Multi-ACKs on, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy) on the
-**same** stored route as the first, and a DM that arrived by flood gets only the flooded
-PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19: "either
-the companion sends two acks or it sends one and the app sends the second"):
+With its `multi_acks` set, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy)
+on the **same** stored route as the first, and a DM that arrived by flood gets only the
+flooded PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19:
+"either the companion sends two acks or it sends one and the app sends the second"):
+- **Two ACKs, always, and no switch** (owner, 2026-11-24). There used to be a Multi-ACKs
+  switch whose choice was kept per radio on the phone. A phone with no stored choice read
+  it from the radio, and a radio the app itself had left at one ACK (below) then read as
+  "off" and was saved as the user's choice; Health check read the radio's setting, not the
+  choice, so it complained while the app was sending the second ACK and kept quiet when
+  the choice was off. Now nothing is stored and nobody chooses: `_applyAckMode` alone
+  decides the radio's `multi_acks`, and `setTelemetryModeBase` writes what it decided.
 - **The radio sends one.** While the app is connected, has the radio's key and the firmware
-  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. The Multi-ACKs switch
-  keeps the user's choice per radio (`MeshCoreConnector.twoAcks`), so it stays on. A
-  manual disconnect sets the radio back to 1; after a link that drops, the radio sends one
-  ACK until the app is back.
+  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. Where the app can't send
+  the second ACK (Pathfinder off, no key, older firmware), it is set to 1 and the radio
+  sends both on its stored route. A manual disconnect sets the radio back to 1; after a
+  link that drops, the radio sends one ACK until the app is back, since nothing can be
+  written to it by then.
 - **The app sends the other**, for every copy of a DM or room post to this radio that it
   can read in the RX log (it computes the exact ACK from the decrypted copy), once per
   send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the

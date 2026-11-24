@@ -101,15 +101,13 @@ typedef RestoreWrite = ({
         targetHas(RadioSetting.advertLocPolicy)) {
       note('Location in adverts', notInBackup);
     }
-    if (backup.multiAcks == null && targetHas(RadioSetting.multiAcks)) {
-      note('Multiple acks', notInBackup);
-    }
     write(
       'Telemetry and advert settings',
       buildSetOtherParamsFrame(
         telemetry,
         backup.advertLocPolicy ?? currentAdvertLocPolicy,
-        backup.multiAcks ?? currentMultiAcks,
+        // Never the backup's: MeshTrax decides who sends the second ACK.
+        currentMultiAcks,
         manualAdd: _manualAddByte(
           backup,
           targetHasAutoAdd: targetHasAutoAdd,
