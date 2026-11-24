@@ -7626,6 +7626,10 @@ class AppLocalizationsSv extends AppLocalizations {
       'Bara radioapparater inom räckvidd hör det. Skickas en gång, utan nya försök.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regioner: $names och meddelanden utan region';
   }

@@ -9,6 +9,7 @@ import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/screens/channel_share_screen.dart';
 import 'package:meshtrax/screens/regions_screen.dart';
 import 'package:meshtrax/services/region_service.dart';
+import 'package:meshtrax/services/trax_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/region_dialogs.dart';
@@ -49,6 +50,15 @@ class _Connector extends MeshCoreConnector {
   }
 }
 
+class _Trax extends TraxService {
+  _Trax(super.connector, this.trip);
+
+  final Channel? trip;
+
+  @override
+  Channel? get tripChannel => trip;
+}
+
 final _channel = Channel(
   index: 1,
   name: '#hiking',
@@ -59,8 +69,9 @@ Future<void> _pump(
   WidgetTester tester,
   _Connector c,
   RegionService regions,
-  Widget home,
-) async {
+  Widget home, {
+  TraxService? trax,
+}) async {
   tester.view.physicalSize = const Size(412, 915);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -69,6 +80,8 @@ Future<void> _pump(
       providers: [
         ChangeNotifierProvider<MeshCoreConnector>.value(value: c),
         ChangeNotifierProvider<RegionService>.value(value: regions),
+        if (trax != null)
+          ChangeNotifierProvider<TraxService>.value(value: trax),
       ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -157,6 +170,34 @@ void main() {
       await tester.pumpAndSettle();
       expect(regions.regionOf(_channel.idKey), RegionHelper.nearbyOnly);
       expect(regions.regions, isEmpty, reason: 'not a region');
+    });
+
+    testWidgets("on the trip's channel, Nearby only says TRAX isn't passed on",
+        (tester) async {
+      const tripLine =
+          "TRAX reports on this channel won't be passed on by other radios.";
+      final c = _Connector();
+      final trax = _Trax(c, _channel);
+      addTearDown(trax.dispose);
+      await _pump(tester, c, regions, _opener(), trax: trax);
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining(tripLine), findsOneWidget);
+      await tester.tap(find.text('Nearby only (no repeaters)'));
+      await tester.pumpAndSettle();
+      expect(regions.regionOf(_channel.idKey), RegionHelper.nearbyOnly,
+          reason: 'still a choice');
+    });
+
+    testWidgets('no TRAX line on a channel that is not the trip one',
+        (tester) async {
+      final c = _Connector();
+      final trax = _Trax(c, null);
+      addTearDown(trax.dispose);
+      await _pump(tester, c, regions, _opener(), trax: trax);
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('TRAX reports'), findsNothing);
     });
 
     testWidgets('no Nearby only on older firmware', (tester) async {

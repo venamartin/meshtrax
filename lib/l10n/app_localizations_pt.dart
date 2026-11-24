@@ -7688,6 +7688,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Só os rádios ao alcance o ouvem. Enviado uma vez, sem novas tentativas.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regiões: $names e mensagens sem região';
   }

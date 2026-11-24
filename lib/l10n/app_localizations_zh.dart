@@ -7204,6 +7204,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelRegion_nearbyHelp => '只有范围内的电台能收到。只发送一次,不重试。';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return '区域:$names,以及无区域的消息';
   }

@@ -7717,6 +7717,10 @@ class AppLocalizationsUk extends AppLocalizations {
       'Чують лише радіо в зоні досяжності. Надсилається один раз, без повторів.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Регіони: $names і повідомлення без регіону';
   }

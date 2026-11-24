@@ -7701,6 +7701,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Csak a hatótávon belüli rádiók hallják. Egyszer küldi, újrapróbálás nélkül.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Régiók: $names, és a régió nélküli üzenetek';
   }

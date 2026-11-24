@@ -3705,6 +3705,7 @@
   "channelRegion_nearbyOption": "Nearby only (no repeaters)",
   "channelRegion_nearby": "Nearby only",
   "channelRegion_nearbyHelp": "Only radios in range hear it. Sent once, with no retries.",
+  "channelRegion_nearbyTrip": "TRAX reports on this channel won't be passed on by other radios.",
   "nearbyRegions_withPlain": "Regions: {names}, and messages with no region",
   "@nearbyRegions_withPlain": {"placeholders": {"names": {"type": "String"}}},
   "nearbyRegions_only": "Regions: {names} only, not messages with no region",

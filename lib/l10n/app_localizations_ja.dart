@@ -7327,6 +7327,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelRegion_nearbyHelp => '届く範囲の無線機だけが受け取ります。1回だけ送信し、再試行しません。';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'リージョン: $names、リージョンなしのメッセージも';
   }

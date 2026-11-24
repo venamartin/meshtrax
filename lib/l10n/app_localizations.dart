@@ -13066,6 +13066,12 @@ abstract class AppLocalizations {
   /// **'Only radios in range hear it. Sent once, with no retries.'**
   String get channelRegion_nearbyHelp;
 
+  /// No description provided for @channelRegion_nearbyTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX reports on this channel won\'t be passed on by other radios.'**
+  String get channelRegion_nearbyTrip;
+
   /// No description provided for @nearbyRegions_withPlain.
   ///
   /// In en, this message translates to:

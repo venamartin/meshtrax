@@ -10,6 +10,7 @@ import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../screens/regions_screen.dart';
 import '../services/region_service.dart';
+import '../services/trax_service.dart';
 import 'region_label.dart';
 
 /// Asks for a new region name and adds it. The added name, or null.
@@ -90,6 +91,8 @@ class _ChannelRegionDialog extends StatelessWidget {
         current == RegionHelper.everywhere;
     final offerNearby =
         connector.supportsNearbyOnly || current == RegionHelper.nearbyOnly;
+    final isTrip =
+        context.watch<TraxService?>()?.tripChannel?.idKey == channel.idKey;
 
     void pick(String? region) {
       unawaited(regions.setChannelRegion(channel.idKey, region));
@@ -130,7 +133,12 @@ class _ChannelRegionDialog extends StatelessWidget {
                   if (offerNearby)
                     RadioListTile<String?>(
                       title: Text(l10n.channelRegion_nearbyOption),
-                      subtitle: Text(l10n.channelRegion_nearbyHelp),
+                      subtitle: Text(
+                        isTrip
+                            ? '${l10n.channelRegion_nearbyHelp}\n'
+                                  '${l10n.channelRegion_nearbyTrip}'
+                            : l10n.channelRegion_nearbyHelp,
+                      ),
                       value: RegionHelper.nearbyOnly,
                     ),
                   for (final region in regions.regions)

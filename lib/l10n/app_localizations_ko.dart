@@ -7345,6 +7345,10 @@ class AppLocalizationsKo extends AppLocalizations {
       '범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return '지역: $names, 그리고 지역 없는 메시지';
   }

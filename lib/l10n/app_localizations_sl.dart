@@ -7682,6 +7682,10 @@ class AppLocalizationsSl extends AppLocalizations {
       'Slišijo ga samo radii v dosegu. Pošlje se enkrat, brez ponovitev.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regije: $names in sporočila brez regije';
   }

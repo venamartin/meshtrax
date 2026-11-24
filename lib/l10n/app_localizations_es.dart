@@ -7692,6 +7692,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Solo lo oyen las radios al alcance. Se envía una vez, sin reintentos.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regiones: $names y mensajes sin región';
   }

@@ -7677,6 +7677,10 @@ class AppLocalizationsSk extends AppLocalizations {
       'Počujú to len rádiá v dosahu. Odošle sa raz, bez opakovaní.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regióny: $names a správy bez regiónu';
   }

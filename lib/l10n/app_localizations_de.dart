@@ -7711,6 +7711,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Nur Funkgeräte in Reichweite hören es. Einmal gesendet, ohne Wiederholungen.';
 
   @override
+  String get channelRegion_nearbyTrip =>
+      'TRAX reports on this channel won\'t be passed on by other radios.';
+
+  @override
   String nearbyRegions_withPlain(String names) {
     return 'Regionen: $names und Nachrichten ohne Region';
   }
