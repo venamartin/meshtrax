@@ -21,7 +21,6 @@ class PathGraphConfig {
     this.egressProvenDecayFactor = 4,
     this.ingressHalfLifeHours = 12,
     this.contactSupersedeFactor = 0.5,
-    this.contactFarKm = 60,
     this.contactMissesBeforeLast = 2,
     this.newestBeforeRecord = false,
     this.selfProofStaleMinutes = 15,
@@ -163,9 +162,8 @@ class PathGraphConfig {
   /// almost always reaches them — the heard-from row is a route end.
   /// The list must therefore forget fast: an unrefreshed row fades in
   /// hours, every fresh sighting slashes the others
-  /// ([contactSupersedeFactor]), and a doorstep far from the repeater
-  /// that just heard them comes last at once ([contactFarKm]) —
-  /// Watsonville to San Francisco in one message, not three days.
+  /// ([contactSupersedeFactor]), and their own packets overrule a doorstep
+  /// that stopped hearing them ([contactMissesBeforeLast]).
   final double ingressHalfLifeHours;
 
   /// Every attributed first-hop sighting multiplies the contact's other
@@ -173,15 +171,6 @@ class PathGraphConfig {
   /// hear them keeps both alive; a move buries the old one in two or
   /// three messages. Copies of one packet are one sighting.
   final double contactSupersedeFactor;
-
-  /// When repeater advert positions are known: a doorstep of theirs
-  /// farther than this from the repeater that just heard them cannot hear
-  /// them now (they cannot be inside both footprints). It is tried last at
-  /// once, as [contactMissesBeforeLast] has it, and keeps its record: the
-  /// list used to be wiped here, and one fluke through a far repeater
-  /// erased a home doorstep's whole history (owner, 2026-11-22: nothing
-  /// stored is erased).
-  final double contactFarKm;
 
   /// A contact's own packets can overrule a doorstep's record (owner,
   /// 2026-11-22). A doorstep that passed one of their packets on from
@@ -363,7 +352,6 @@ class PathGraphConfig {
         egressProvenDecayFactor: egressProvenDecayFactor,
         ingressHalfLifeHours: ingressHalfLifeHours,
         contactSupersedeFactor: contactSupersedeFactor,
-        contactFarKm: contactFarKm,
         contactMissesBeforeLast: contactMissesBeforeLast,
         newestBeforeRecord: newestBeforeRecord ?? this.newestBeforeRecord,
         selfProofStaleMinutes: selfProofStaleMinutes,
