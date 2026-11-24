@@ -18,7 +18,7 @@ The phones that receive it rebuild a picture from that code with the same model.
 
 1. In a channel's chat, tap **+**, then **Photo**.
 2. Take a photo or choose one, then move and zoom until what matters fills the square. Close up, it comes through much clearer: something small in a wide shot can come back as shapes the AI made up. **Blur faces** is on: your phone blurs any faces it finds before the photo is coded, because the AI can't rebuild faces and would make them up. If the blurred photo doesn't pass the safety check, the faces are covered in grey instead.
-3. Tap **Preview**. The photo is checked and coded, then rebuilt exactly as the others will see it.
+3. Tap **Preview**. The photo is checked and coded, then rebuilt exactly as the others will see it. Tap the picture to see it full screen: zoom in, or tap **Enhance 4×** as the others can.
 4. Type a tag if it helps, up to 24 characters, such as "Spring flowing". It travels as text, exactly as you type it, so the rebuild can't change it.
 5. To show where you are, turn on **Include location** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's location now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
 6. Tap **Send**. MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first.

@@ -378,19 +378,35 @@ class PhotoStore extends ChangeNotifier {
   /// Enlarges a rebuilt photo 4x and checks it, in the same queue as the
   /// rebuilds, so the two never share the memory; frees the map's memory if
   /// short. The enlarged picture isn't kept: it's for the screen showing it.
-  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(String messageId) {
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(String messageId) =>
+      _enlargeQueued(() async {
+        await load();
+        try {
+          return imageFor(messageId)?.readAsBytesSync();
+        } on FileSystemException catch (e) {
+          appLogger.warn('Enlarging a photo: $e', tag: 'Photos');
+          return null;
+        }
+      });
+
+  /// The same for the sender's preview, before the photo is sent.
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlargePng(
+    Uint8List png,
+  ) => _enlargeQueued(() async => png);
+
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> _enlargeQueued(
+    Future<Uint8List?> Function() png,
+  ) {
     final done = Completer<({RebuildOutcome outcome, Uint8List? rgb})>();
     _queue = _queue.then((_) async {
-      done.complete(await _enlarge(messageId));
+      done.complete(await _enlarge(await png()));
     });
     return done.future;
   }
 
   Future<({RebuildOutcome outcome, Uint8List? rgb})> _enlarge(
-    String messageId,
+    Uint8List? png,
   ) async {
-    await load();
-    final png = imageFor(messageId);
     if (png == null) return (outcome: RebuildOutcome.failed, rgb: null);
     if (!await modelsReady()) {
       return (outcome: RebuildOutcome.noModel, rgb: null);
@@ -404,7 +420,7 @@ class PhotoStore extends ChangeNotifier {
     }
     ImageCodecSession? codec;
     try {
-      final rgb = await pngToRgb(png.readAsBytesSync());
+      final rgb = await pngToRgb(png);
       codec = await ImageCodecSession.spawn(bundle);
       final enlarged = await codec.enhance(rgb);
       return enlarged.flagged

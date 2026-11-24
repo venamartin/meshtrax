@@ -191,6 +191,12 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get photo_preview;
 
+  /// No description provided for @photo_previewTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the picture to zoom in or enhance it 4×'**
+  String get photo_previewTapHint;
+
   /// No description provided for @photo_changeCrop.
   ///
   /// In en, this message translates to:

@@ -47,6 +47,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_preview => '미리 보기';
 
   @override
+  String get photo_previewTapHint =>
+      'Tap the picture to zoom in or enhance it 4×';
+
+  @override
   String get photo_changeCrop => 'Change crop';
 
   @override

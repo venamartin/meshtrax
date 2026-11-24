@@ -23,7 +23,8 @@ import '../services/photo_rules.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_ai_mark.dart';
 import '../widgets/photo_footprint_mark.dart';
-import '../widgets/photo_message_card.dart' show photoPositionDistance;
+import '../widgets/photo_message_card.dart'
+    show PhotoViewerScreen, photoPositionDistance;
 
 enum _Step { pick, crop, working, ready, flagged, sending }
 
@@ -270,6 +271,16 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         photoPayload(_bitstream!, _extras(connector)).length,
       ) +
       (_repairPacket ? 1 : 0);
+
+  /// The preview full screen, as receivers will have it: zoom, Enhance 4x.
+  void _openPreview(MeshCoreConnector connector) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PhotoViewerScreen.preview(
+        _previewPng!,
+        tag: _extras(connector).sentTag,
+      ),
+    ),
+  );
 
   void _watchPosition(MeshCoreConnector connector, bool on) {
     _includePosition = on;
@@ -578,22 +589,27 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             now: DateTime.now(),
           );
     return [
-      if (_previewPng != null)
+      if (_previewPng != null) ...[
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  Image.memory(_previewPng!, width: double.infinity),
-                  const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
-                  const Positioned.fill(child: PhotoFootprintMark()),
-                ],
+            child: GestureDetector(
+              onTap: () => _openPreview(connector),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    Image.memory(_previewPng!, width: double.infinity),
+                    const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
+                    const Positioned.fill(child: PhotoFootprintMark()),
+                  ],
+                ),
               ),
             ),
           ),
         ),
+        Text(l10n.photo_previewTapHint, style: quiet),
+      ],
       if (_previewNote != null) Text(_previewNote!, style: quiet),
       if (_faces > 0)
         Text(

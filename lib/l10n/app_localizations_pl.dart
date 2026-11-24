@@ -48,6 +48,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get photo_preview => 'Podgląd';
 
   @override
+  String get photo_previewTapHint =>
+      'Tap the picture to zoom in or enhance it 4×';
+
+  @override
   String get photo_changeCrop => 'Change crop';
 
   @override
