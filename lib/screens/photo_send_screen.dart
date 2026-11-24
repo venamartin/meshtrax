@@ -43,6 +43,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   final _transform = TransformationController();
   double _viewport = 320;
   bool _centred = false;
+
+  /// Fingers on the crop square. While any are down the page holds still,
+  /// so a pinch or a drag there always moves the photo.
+  int _cropFingers = 0;
   String _working = '';
   Uint8List? _bitstream;
   Uint8List? _previewPng;
@@ -449,6 +453,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ),
       body: SafeArea(
         child: ListView(
+          physics: _step == _Step.crop && _cropFingers > 0
+              ? const NeverScrollableScrollPhysics()
+              : null,
           padding: const EdgeInsets.all(16),
           children: switch (_step) {
             _Step.pick => _pickView(context),
@@ -514,27 +521,36 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           );
         }
         return Center(
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
+          child: Listener(
+            onPointerDown: (_) => setState(() => _cropFingers++),
+            onPointerUp: (_) => setState(
+              () => _cropFingers = math.max(0, _cropFingers - 1),
             ),
-            child: ClipRect(
-              child: SizedBox(
-                width: _viewport,
-                height: _viewport,
-                child: InteractiveViewer(
-                  transformationController: _transform,
-                  constrained: false,
-                  minScale: 1,
-                  maxScale: 8,
-                  boundaryMargin: EdgeInsets.zero,
-                  child: SizedBox(
-                    width: w,
-                    height: h,
-                    child: RawImage(image: s, fit: BoxFit.fill),
+            onPointerCancel: (_) => setState(
+              () => _cropFingers = math.max(0, _cropFingers - 1),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              child: ClipRect(
+                child: SizedBox(
+                  width: _viewport,
+                  height: _viewport,
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    constrained: false,
+                    minScale: 1,
+                    maxScale: 8,
+                    boundaryMargin: EdgeInsets.zero,
+                    child: SizedBox(
+                      width: w,
+                      height: h,
+                      child: RawImage(image: s, fit: BoxFit.fill),
+                    ),
                   ),
                 ),
               ),
