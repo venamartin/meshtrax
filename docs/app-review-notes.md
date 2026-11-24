@@ -20,15 +20,31 @@ Without hardware, the app launches to a scanner screen that lists no devices.
 This is correct behaviour, not a crash or an incomplete feature. Bluetooth
 permission is requested on first launch so the app can scan for these devices.
 
-Camera and photo library permissions are used only to scan QR codes for
-joining communities and channels. The calendar is used only when the user taps
+The camera and photo library are used to scan QR codes for joining
+communities and channels, and to take or choose a photo the user sends; a
+photo is added to the library only when the user taps Save. The calendar is used only when the user taps
 "Add to calendar" on an event message; the app never reads the calendar or
 contacts (the contacts string covers Apple's add-event screen on iOS 16 and
 earlier).
 
-There is no account system, no login, and no server component — all
-communication is directly between the phone and the LoRa device over
-Bluetooth/USB, and then over the LoRa mesh.
+There is no account system and no login. All communication is directly
+between the phone and the LoRa device over Bluetooth/USB, and then over the
+LoRa mesh. MeshTrax's own servers only serve downloads (offline maps and the
+photo model) and pass content reports on to the developer.
+
+Photos: a user can send a photo to a channel over the mesh. An AI image codec
+on the phone codes it to a few hundred bytes; each receiving phone rebuilds a
+picture from that code with the same model, which is built on Stability AI's
+SD-Turbo, and can enlarge it 4x with a small on-device Real-ESRGAN model.
+These are the app's only AI features. They take no text prompts and cannot
+create, edit or undress images: they rebuild only what the sender
+photographed. An on-device image safety classifier checks every photo before
+it is sent, and every rebuilt or enlarged picture before it is shown; a
+flagged picture is hidden and never stored. Every rebuilt picture is marked
+"AI reconstructed". Users can report a photo from inside the app (the report
+goes to the developer's report inbox) and block its sender. The photo model
+(about 1.2 GB) downloads only when the user turns on Photos in App settings
+→ Messaging. Sending a photo needs two radios; the attached video shows it.
 
 Source code: https://github.com/venamartin/meshtrax
 
@@ -55,6 +71,16 @@ continuous take, 60–90 seconds, landscape:
 5. Optional: the node map showing live nodes
 
 Keep both the radio and the phone screen legible throughout.
+
+For a submission with photos, add a second take with two phones and two
+radios, 60–90 seconds:
+
+1. Phone A: + → Photo, crop, Preview, type a tag, Send (the confirmation on
+   a MeshCore frequency shows the photo's airtime)
+2. Phone B: the photo arrives; one tap opens it full screen and rebuilds it,
+   marked "AI reconstructed"
+3. Enhance 4×, then Save
+4. ⋮ → Report: the photo is hidden and the report is sent
 
 ## Beta App Description (TestFlight → Test Information)
 

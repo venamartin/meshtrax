@@ -12,6 +12,519 @@ class AppLocalizationsHu extends AppLocalizations {
   AppLocalizationsHu([String locale = 'hu']) : super(locale);
 
   @override
+  String get tray_photo => 'Fotó';
+
+  @override
+  String get photo_settingsTitle => 'Fotók';
+
+  @override
+  String photo_enableHint(String size) {
+    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+  }
+
+  @override
+  String photo_sendTitle(String channel) {
+    return 'Fotó ide: $channel';
+  }
+
+  @override
+  String get photo_squareIntro =>
+      'Pick a photo, then choose the square to send.';
+
+  @override
+  String get photo_takePhoto => 'Fotó készítése';
+
+  @override
+  String get photo_choosePhoto => 'Fotó kiválasztása';
+
+  @override
+  String get photo_chooseAnother => 'Másik fotó kiválasztása';
+
+  @override
+  String get photo_cropHint =>
+      'Mozgassa és nagyítsa, amíg a lényeg ki nem tölti a négyzetet.';
+
+  @override
+  String get photo_preview => 'Előnézet';
+
+  @override
+  String get photo_changeCrop => 'Change crop';
+
+  @override
+  String get photo_checkingAndCoding => 'A fotó ellenőrzése és kódolása…';
+
+  @override
+  String get photo_modelMissing =>
+      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+
+  @override
+  String get photo_previewNoMemory =>
+      'Itt nincs elég memória annak megjelenítéséhez, amit a többiek látni fognak. Ettől még elküldheti.';
+
+  @override
+  String get photo_rebuildingPreview =>
+      'Annak rekonstruálása, amit látni fognak… kb. 20 másodperc';
+
+  @override
+  String photo_prepareFailed(String error) {
+    return 'Nem sikerült előkészíteni a fotót: $error';
+  }
+
+  @override
+  String get photo_flaggedNotSent =>
+      'Ez a fotó nem küldhető el: a biztonsági ellenőrzés megjelölte.';
+
+  @override
+  String get photo_tagTitle => 'Címke (nem kötelező)';
+
+  @override
+  String get photo_blurFaces => 'Blur faces';
+
+  @override
+  String get photo_blurFacesHint =>
+      'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.';
+
+  @override
+  String photo_facesBlurred(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count faces blurred',
+      one: '1 face blurred',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photo_facesDarkened(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count faces covered in grey: blurred, the photo didn\'t pass the safety check',
+      one: '1 face covered in grey: blurred, the photo didn\'t pass the safety check',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photo_includePosition => 'Include location';
+
+  @override
+  String photo_positionFromRadio(String distance) {
+    return 'Your radio\'s location now, to about $distance';
+  }
+
+  @override
+  String get photo_noPosition => 'Your radio has no location';
+
+  @override
+  String get photo_distance10km => '10 km';
+
+  @override
+  String get photo_distance600m => '600 m';
+
+  @override
+  String get photo_distance40m => '40 m';
+
+  @override
+  String get photo_distance2m => '2 m';
+
+  @override
+  String photo_positionAt(String position, String distance) {
+    return '$position, to about $distance';
+  }
+
+  @override
+  String get photo_zeroHop => 'Zero hop';
+
+  @override
+  String get photo_zeroHopHint =>
+      'Only radios in direct range; repeaters don\'t pass it on';
+
+  @override
+  String get photo_repairPacket => 'Repair packet';
+
+  @override
+  String get photo_repairPacketHint =>
+      'One more packet, so the photo still arrives if any one packet is lost';
+
+  @override
+  String photo_sendFigures(int packets, String sendTime) {
+    return '$packets packets · about $sendTime to send';
+  }
+
+  @override
+  String photo_seconds(String seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String photo_blockedWait(int gap, int minutes) {
+    return 'MeshCore-frekvenciákon egy rádió $gap percenként egy fotót küld. A következőt $minutes perc múlva küldheti el.';
+  }
+
+  @override
+  String photo_blockedWaitRepeaters(int gap, int minutes) {
+    return 'MeshCore-frekvenciákon egy rádió $gap percenként egy fotót küld repeatereken keresztül. A következőt repeatereken keresztül $minutes perc múlva küldheti el, vagy most egyet ugrás nélkül.';
+  }
+
+  @override
+  String get photo_send => 'Küldés';
+
+  @override
+  String get photo_sending => 'Küldés…';
+
+  @override
+  String photo_sendingPacket(int sent, int total) {
+    return '$sent. csomag ($total közül)';
+  }
+
+  @override
+  String photo_sendingRepairPacket(int sent, int total) {
+    return '$sent. csomag ($total közül, javító)';
+  }
+
+  @override
+  String photo_notSent(String error) {
+    return 'Nem ment el: $error';
+  }
+
+  @override
+  String get photo_errorNotConnected => 'nincs csatlakoztatott rádió';
+
+  @override
+  String get photo_errorNoAnswer => 'a rádió nem válaszolt';
+
+  @override
+  String photo_errorRefused(int code) {
+    return 'a rádió elutasított egy csomagot (hibakód: $code)';
+  }
+
+  @override
+  String get photo_confirmTitle => 'Send photo';
+
+  @override
+  String photo_openChannelTitle(String channel) {
+    return 'Photos on $channel';
+  }
+
+  @override
+  String get photo_openChannelNotEveryone =>
+      'Most people here won\'t see it: only MeshTrax shows photos.';
+
+  @override
+  String photo_openChannelAirtime(String airtime, int messages) {
+    return 'This photo takes $airtime on air, as much as $messages text messages.';
+  }
+
+  @override
+  String get photo_openChannelRepeaters =>
+      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+
+  @override
+  String get photo_openChannelBetter =>
+      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+
+  @override
+  String get photo_dontShowAgain => 'Don\'t show this again';
+
+  @override
+  String photo_confirmAirtime(int packets, String airtime, int messages) {
+    return '$packets packets, $airtime on air: as much as $messages text messages.';
+  }
+
+  @override
+  String photo_confirmOpenChannel(String channel) {
+    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+  }
+
+  @override
+  String get photo_confirmFlood =>
+      'Each repeater that hears it sends it again.';
+
+  @override
+  String get photo_confirmZeroHop =>
+      'Zero hop: only radios in direct range get it.';
+
+  @override
+  String get photo_label => 'AI reconstructed';
+
+  @override
+  String get photo_tapToView => 'Tap to view';
+
+  @override
+  String get photo_enhance => 'Enhance 4×';
+
+  @override
+  String get photo_enhancing => 'Enhancing…';
+
+  @override
+  String get photo_save => 'Save';
+
+  @override
+  String get photo_saved => 'Saved to your photos';
+
+  @override
+  String get photo_saveFailed => 'Couldn\'t save the photo.';
+
+  @override
+  String get photo_details => 'About this photo';
+
+  @override
+  String photo_caption(int bytes) {
+    return 'Egy AI-modell rekonstruálta $bytes bájtból. A finom részletek generáltak, nem átküldöttek: a táblák és a szövegek nem jutnak át. Nem dokumentálja, mi volt ott.';
+  }
+
+  @override
+  String get photo_enlargedNote =>
+      'Enhanced 4× on this phone: fine detail may be made up.';
+
+  @override
+  String get photo_enlargeNoMemory =>
+      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+
+  @override
+  String get photo_enlargeFlagged =>
+      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+
+  @override
+  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+
+  @override
+  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+
+  @override
+  String get photo_enlargeAutomaticallyHint =>
+      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+
+  @override
+  String get photo_ignoreTimeLimits => 'Ignore the photo time limits';
+
+  @override
+  String get photo_ignoreTimeLimitsHint =>
+      'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.';
+
+  @override
+  String get photo_rebuilding => 'Rekonstruálás… kb. 20 s';
+
+  @override
+  String get photo_hiddenFlagged =>
+      'Kép elrejtve: nem megfelelőként megjelölve';
+
+  @override
+  String get photo_hiddenReported => 'Fotó elrejtve: Ön jelentette';
+
+  @override
+  String get photo_noMemory =>
+      'Most nincs elég memória ennek a fotónak a rekonstruálásához. Zárjon be más alkalmazásokat, vagy indítsa újra a MeshTraxot, majd próbálja újra.';
+
+  @override
+  String get photo_rebuildFailed => 'Ezt a fotót nem sikerült rekonstruálni.';
+
+  @override
+  String get photo_report => 'Jelentés';
+
+  @override
+  String photo_block(String name) {
+    return '$name letiltása';
+  }
+
+  @override
+  String photo_blockedSender(String name) {
+    return '$name letiltva';
+  }
+
+  @override
+  String get photo_reportTitle => 'A fotó jelentése';
+
+  @override
+  String get photo_reportBody =>
+      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+
+  @override
+  String get photo_reportInclude => 'A fotó csatolása';
+
+  @override
+  String get photo_reportIncludeHint =>
+      'A kódja, néhány száz bájt, amelyből rekonstruálható. Nem maga a kép.';
+
+  @override
+  String get photo_reportReason => 'What\'s wrong? (optional)';
+
+  @override
+  String get photo_reportedSent =>
+      'Photo hidden, and the report is sent. Thank you.';
+
+  @override
+  String get photo_reportedQueued =>
+      'Photo hidden. The report will be sent when there\'s internet.';
+
+  @override
+  String photo_reportPending(String name) {
+    return 'Fotójelentés: $name';
+  }
+
+  @override
+  String get photo_reportPendingHint => 'Waiting for internet to send';
+
+  @override
+  String get photo_reportStillWaiting =>
+      'Still no internet. It will be sent later.';
+
+  @override
+  String get photo_autoRebuild => 'Fogadott fotók automatikus rekonstruálása';
+
+  @override
+  String get photo_autoRebuildHint =>
+      'Ki: koppintson egy fotóra a rekonstruálásához. Be: minden fotó rekonstruálódik, amint megérkezik, amíg a MeshTrax nyitva van, és a telefonnak van hozzá elég memóriája.';
+
+  @override
+  String get photo_modelTitle => 'Fotómodell';
+
+  @override
+  String photo_modelProgress(String done, String total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get photo_modelChecking => 'Letöltés ellenőrzése…';
+
+  @override
+  String get photo_modelRetrying => 'Újrapróbálás…';
+
+  @override
+  String get photo_modelPaused => 'Szüneteltetve';
+
+  @override
+  String get photo_modelWaitingWifi =>
+      'Várakozás: a letöltések Wi‑Fi-re várnak';
+
+  @override
+  String get photo_modelWaiting => 'Várakozás…';
+
+  @override
+  String photo_modelInstalled(String size) {
+    return 'Ezen az eszközön ($size)';
+  }
+
+  @override
+  String photo_modelFailed(String error) {
+    return 'Sikertelen letöltés: $error';
+  }
+
+  @override
+  String get photo_modelNoReason => 'nincs megadott ok';
+
+  @override
+  String photo_modelNeeded(String size) {
+    return 'A fotók küldéséhez és rekonstruálásához szükséges: $size';
+  }
+
+  @override
+  String get photo_keepOpen =>
+      'Tartsa nyitva a MeshTraxot, amíg a letöltés be nem fejeződik. Az előrehaladás az Offline térképeknél is látható.';
+
+  @override
+  String photo_licencesLink(String poweredBy) {
+    return '$poweredBy · Licencek';
+  }
+
+  @override
+  String get photo_cancelDownload => 'Letöltés megszakítása';
+
+  @override
+  String get photo_downloadModel => 'Fotómodell letöltése';
+
+  @override
+  String get photo_tryAgain => 'Próbálja újra';
+
+  @override
+  String get photo_deleteModel => 'Fotómodell törlése';
+
+  @override
+  String get photo_downloadLicences => 'Licencszövegek letöltése';
+
+  @override
+  String get photo_deleteModelTitle => 'Törli a fotómodellt?';
+
+  @override
+  String photo_deleteModelBody(String size) {
+    return 'Amíg újra le nem tölti ($size), nem lehet fotókat küldeni vagy rekonstruálni.';
+  }
+
+  @override
+  String get photo_keep => 'Megtartás';
+
+  @override
+  String photo_notEnoughSpace(String needed, String free) {
+    return 'Nincs elég hely: a fotómodellnek $needed szabad hely kell, ezen az eszközön pedig $free van.';
+  }
+
+  @override
+  String photo_downloadName(int index, int count) {
+    return 'Fotómodell ($index/$count)';
+  }
+
+  @override
+  String photo_downloadLicenceName(int index, int count) {
+    return 'Fotómodell-licenc ($index/$count)';
+  }
+
+  @override
+  String get photo_licencesTitle => 'Fotómodell-licencek';
+
+  @override
+  String get photo_licencesIntro =>
+      'A fotókat rekonstruáló modell a Stability AI SD-Turbo modelljére épül, az AEIC képkodekkel és az AdcSR dekóderével; a biztonsági ellenőrzés egy SwiftFormer alapú képosztályozót használ. Ezek a hozzájuk tartozó közlemény és licencek.';
+
+  @override
+  String get photo_licencesMissing =>
+      'A licencszövegek a fotómodellel együtt töltődnek le.';
+
+  @override
+  String photo_message(String id) {
+    return '📷 Fotó $id';
+  }
+
+  @override
+  String photo_messageWithTag(String id, String tag) {
+    return '📷 Fotó $id · $tag';
+  }
+
+  @override
+  String photo_incomplete(String id, int got, int total) {
+    return '📷 Fotó $id hiányos: $got/$total csomag';
+  }
+
+  @override
+  String photo_unreadable(String id) {
+    return '📷 Fotó $id: nem sikerült beolvasni';
+  }
+
+  @override
+  String photo_needsNewer(String id) {
+    return '📷 Photo $id needs a newer MeshTrax';
+  }
+
+  @override
+  String photo_unknownSender(String id) {
+    return 'Csomópont $id';
+  }
+
+  @override
+  String get photo_chatPhoto => '📷 Fotó';
+
+  @override
+  String get photo_cameraDenied =>
+      'A MeshTrax nem tudja használni a kamerát. Ezt a telefon beállításaiban engedélyezheti.';
+
+  @override
+  String photo_pickFailed(String error) {
+    return 'Nincs fotó: $error';
+  }
+
+  @override
   String get appTitle => 'MeshTrax';
 
   @override

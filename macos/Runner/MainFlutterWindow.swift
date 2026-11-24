@@ -17,6 +17,15 @@ class MainFlutterWindow: NSWindow {
     let storage = FlutterMethodChannel(
       name: "meshtrax/storage", binaryMessenger: flutterViewController.engine.binaryMessenger)
     storage.setMethodCallHandler { call, result in
+      // Bytes free at path for a download the user asks for (the photo model).
+      if call.method == "freeBytes", let path = call.arguments as? String {
+        let url = URL(fileURLWithPath: path)
+        let free = try? url.resourceValues(
+          forKeys: [.volumeAvailableCapacityForImportantUsageKey]
+        ).volumeAvailableCapacityForImportantUsage
+        result(free.map { NSNumber(value: $0) })
+        return
+      }
       guard call.method == "excludeFromBackup", let path = call.arguments as? String else {
         result(FlutterMethodNotImplemented)
         return

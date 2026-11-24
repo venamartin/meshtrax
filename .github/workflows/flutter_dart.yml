@@ -71,3 +71,20 @@ jobs:
       - name: Test traxmap package
         working-directory: packages/traxmap
         run: flutter test -r github
+
+      # Photo packets: pure Dart, its own pubspec.
+      - name: Analyze and test traxpix
+        working-directory: packages/traxpix
+        run: |
+          dart pub get
+          dart analyze --fatal-infos --fatal-warnings
+          dart test -r github
+
+      # The photo model's runtime is a Flutter package with its own pubspec.
+      # The model itself isn't in git, so its reference tests skip here.
+      - name: Analyze and test traxpix_litert package
+        working-directory: packages/traxpix_litert
+        run: |
+          flutter pub get
+          flutter analyze --fatal-infos --fatal-warnings
+          flutter test -r github

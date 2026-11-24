@@ -10,6 +10,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [What's new](whatsnew.md) | What changed in each release |
 | [Pathfinder](pathfinder.md) | How MeshTrax learns routes so your private messages get through |
 | [Offline maps](offline-maps.md) | Downloading maps that work with no signal |
+| [Photos](photos.md) | Sending photos over the mesh, and what a rebuilt photo is |
 | [Privacy policy](privacy.md) | What the app stores, what it sends, and to whom |
 | [Terms of use](terms.md) | The rules for using MeshTrax |
 
@@ -37,6 +38,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [Park maps](technical/park-maps.md) | Planned park map overlays (not built) |
 | [Database plan](technical/phase3d-cut-plan.md) | How the message database became the one source of messages (finished) |
 | [Bluetooth auto-connect findings](technical/ble-autoconnect-findings.md) | Three auto-connect bugs and their fixes (finished) |
+| [Photos](technical/photos.md) | How photos work: the packet format, the photo model and its runtime, memory, safety and the rules on MeshCore frequencies |
 
 To build the app or send a change, start with [CONTRIBUTING.md](../CONTRIBUTING.md).
 
@@ -50,3 +52,4 @@ Used when publishing MeshTrax to the app stores.
 | [App Store](store/app-store-notes.md) | iOS and Mac App Store releases |
 | [Google Play](store/google-play-notes.md) | Setting up and running Play releases |
 | [Microsoft Store](store/microsoft-store-notes.md) | Building and submitting the Windows package |
+| [Photos in the stores](store/photo-review-notes.md) | What the App Store and Google Play ask of photos, and how MeshTrax meets it |

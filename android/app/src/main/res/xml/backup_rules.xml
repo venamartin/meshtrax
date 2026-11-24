@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and below. Same rule as data_extraction_rules.xml: offline
-     map packs (files/maps/) stay out of Auto Backup. -->
+<!-- Android 11 and below. Same rules as data_extraction_rules.xml: offline
+     map packs (files/maps/) and the photo model (app_flutter/ft8/) stay out
+     of Auto Backup. -->
 <full-backup-content>
     <exclude domain="file" path="maps/" />
+    <exclude domain="root" path="app_flutter/ft8/" />
 </full-backup-content>
