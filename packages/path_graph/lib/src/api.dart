@@ -312,6 +312,10 @@ class PathGraph {
   // not offered again while a hint could carry it
   // (PathGraphConfig.hintFreshMinutes). A delivery over the link clears it.
   final Map<(String, String), int> _failedGuesses = {};
+  // Per contact, what their own packets say about their doorsteps
+  // (PathGraphConfig.contactMissesBeforeLast). Memory only, like the hints:
+  // after a restart the stored records alone order the doorsteps.
+  final Map<String, _OwnPackets> _ownPackets = {};
 
   // Watching-only moving-repeater detectors (PathGraphConfig.mobileNewLinks)
   // and, per node, the first sighting of its oldest link (0 = from before
@@ -590,6 +594,7 @@ class PathGraph {
   void clearHints() {
     _hints.clear();
     _failedGuesses.clear();
+    _ownPackets.clear();
   }
 
   String? get selfPubkey => _selfPubkey;
@@ -675,8 +680,10 @@ class PathGraph {
     // [contact] is the normalised key, and null for anonymous traffic and
     // for my own echoes (edges only).
     if (contact != null) {
-      _creditContactDoorstep(contact, hops.first,
-          confirmed: origin is PubkeyConfirmedOrigin, arrival: arrival);
+      _creditContactDoorstep(contact, hops,
+          confirmed: origin is PubkeyConfirmedOrigin,
+          arrival: arrival,
+          messageId: messageId);
       if (origin is PubkeyConfirmedOrigin) _recordHint(contact, hops, arrival);
     }
 
@@ -749,9 +756,11 @@ class PathGraph {
   /// failed-delivery count starts again (the contact-side gate is reset
   /// only by a delivery, and this is one; simulator 2026-10-25: without
   /// it three delivered floods via BEEF left BEEF gated for good).
+  /// [messageId] is the same for every copy of one packet: the copies are
+  /// one sighting, heard by each copy's first hop.
   bool observeContactSender(
       String contactPubkey, Uint8List pathBytes, int stride,
-      {required bool confirmed, bool deliveredAck = false}) {
+      {required bool confirmed, bool deliveredAck = false, String? messageId}) {
     contactPubkey = contactPubkey.toLowerCase();
     if (contactPubkey == _selfPubkey) {
       observeOwnEcho(pathBytes, stride);
@@ -772,17 +781,16 @@ class PathGraph {
       return false;
     }
     if (pathBytes.length % stride != 0) return false;
-    _creditContactDoorstep(contactPubkey, _hopHex(pathBytes, stride, 0),
-        confirmed: confirmed, arrival: arrival);
+    final hops = [
+      for (var i = 0; i < pathBytes.length ~/ stride; i++)
+        _hopHex(pathBytes, stride, i)
+    ];
+    _creditContactDoorstep(contactPubkey, hops,
+        confirmed: confirmed, arrival: arrival, messageId: messageId);
     if (deliveredAck) {
-      _evidence.clearContactFailures(contactPubkey, _hopHex(pathBytes, stride, 0));
+      _evidence.clearContactFailures(contactPubkey, hops.first);
     }
-    if (confirmed) {
-      _recordHint(contactPubkey, [
-        for (var i = 0; i < pathBytes.length ~/ stride; i++)
-          _hopHex(pathBytes, stride, i)
-      ], arrival);
-    }
+    if (confirmed) _recordHint(contactPubkey, hops, arrival);
     _observationsApplied++;
     _scheduleFlush();
     return true;
@@ -803,11 +811,14 @@ class PathGraph {
     if (stride < hashWidthBytes || pathBytes.length % stride != 0) {
       return false;
     }
-    final hops = pathBytes.length ~/ stride;
-    if (hops < 2) return false;
-    _recordHint(contactPubkey,
-        [for (var i = 0; i < hops; i++) _hopHex(pathBytes, stride, i)],
-        _arrivalMillis);
+    final hops = [
+      for (var i = 0; i < pathBytes.length ~/ stride; i++)
+        _hopHex(pathBytes, stride, i)
+    ];
+    // Its first hop heard them too.
+    _noteOwnPacket(contactPubkey, hops, copy: true);
+    if (hops.length < 2) return false;
+    _recordHint(contactPubkey, hops, _arrivalMillis);
     return true;
   }
 
@@ -927,26 +938,124 @@ class PathGraph {
     _scheduleFlush();
   }
 
-  /// One sighting of a contact through [hash]: the repeater that heard
-  /// them first. Their doorstep list answers "who hears them now", so
-  /// the sighting first pushes the rest of the list down — wiped when
-  /// advert positions show [hash] is too far from their current top
-  /// doorstep to be the same place, slashed otherwise — and then counts.
-  void _creditContactDoorstep(String pk, String hash,
-      {required bool confirmed, required int arrival}) {
-    final top = _evidence
-        .candidatesFor(pk, arrival, isSelf: false)
-        .where((c) => c.repeaterHash != directHash)
-        .firstOrNull;
-    if (top != null && top.repeaterHash != hash && _movedFar(top.repeaterHash, hash)) {
-      _evidence.wipeContact(pk);
-    } else {
+  /// One sighting of a contact on [hops] (travel order): the first hop
+  /// heard them. Their doorstep list answers "who hears them now", so
+  /// the sighting first halves the rest of the list, and then counts.
+  /// Copies of one packet ([messageId]) are one sighting: each copy's first
+  /// hop counts, and none pushes another's down. What a packet surely
+  /// theirs says about each doorstep is read by [_noteOwnPacket].
+  void _creditContactDoorstep(String pk, List<String> hops,
+      {required bool confirmed, required int arrival, String? messageId}) {
+    final hash = hops.first;
+    final copy = confirmed &&
+        messageId != null &&
+        _ownPackets[pk]?.packet == messageId;
+    if (confirmed) {
+      _noteOwnPacket(pk, hops, copy: copy, messageId: messageId);
+    }
+    if (!copy) {
       _evidence.supersedeContact(pk,
           except: hash, factor: config.contactSupersedeFactor);
     }
     _evidence.recordIngress(pk, hash,
         pubkeyConfirmed: confirmed, arrival: arrival);
     if (confirmed) _evidence.recordRelayedSighting(pk, arrival);
+  }
+
+  /// Reads what a packet surely [pk]'s says about their doorsteps: its
+  /// first hop heard them, a doorstep of theirs further along its path only
+  /// passed it on (a repeater forwards the first copy it hears, so it did
+  /// not hear them), and, unless this is another [copy] of the packet
+  /// before, every other doorstep has missed one more of their packets. One
+  /// too far from the repeater that heard them to hear them as well
+  /// ([PathGraphConfig.contactFarKm]) has missed enough at once.
+  void _noteOwnPacket(String pk, List<String> hops,
+      {required bool copy, String? messageId}) {
+    final own = _ownPackets.putIfAbsent(pk, _OwnPackets.new);
+    if (!copy) {
+      own.packet = messageId;
+      own.heard.clear();
+      for (final key in _evidence.entries.keys) {
+        if (key.$1 != pk || key.$2 == directHash) continue;
+        final missed = (own.missed[key.$2] ?? 0) + 1;
+        final far = missed < config.contactMissesBeforeLast &&
+            _movedFar(key.$2, hops.first);
+        own.missed[key.$2] = far ? config.contactMissesBeforeLast : missed;
+      }
+    }
+    own.heard.add(hops.first);
+    own.missed.remove(hops.first);
+    own.relayed.remove(hops.first);
+    for (final hop in hops.skip(1)) {
+      if (!own.heard.contains(hop) &&
+          _evidence.entries.containsKey((pk, hop))) {
+        own.relayed.add(hop);
+      }
+    }
+  }
+
+  /// [rows], a contact's doorsteps that may end a route, in the lists they
+  /// are tried in: a later list is used only where the ones before it give
+  /// no route. Their own packets overrule a record, so a doorstep seen
+  /// passing one on, or one that missed
+  /// [PathGraphConfig.contactMissesBeforeLast] in a row, comes last.
+  /// [newestBeforeRecord] ([PathGraphConfig.newestBeforeRecord] unless
+  /// given) also puts the doorsteps that heard their latest packet in a
+  /// list of their own, first. With the record first, so does a failure of
+  /// the record: when their doorstep with the best record missed their
+  /// latest packet and has failed a send since its last proof, the
+  /// doorsteps that heard it and have not failed go first, until they fail
+  /// too (simulator 2026-11-22: a re-plan after one failed route attempt
+  /// spent the next on another way to the doorstep that had just failed,
+  /// and the repeater that heard them was never tried).
+  List<List<Candidate>> _ingressTiers(String contactPubkey, List<Candidate> rows,
+      {bool? newestBeforeRecord}) {
+    final own = _ownPackets[contactPubkey];
+    if (own == null) return [rows];
+    bool overruled(Candidate c) =>
+        own.relayed.contains(c.repeaterHash) ||
+        (own.missed[c.repeaterHash] ?? 0) >= config.contactMissesBeforeLast;
+    bool heardLatest(Candidate c) => own.heard.contains(c.repeaterHash);
+    final standing = [
+      for (final c in rows)
+        if (!overruled(c)) c
+    ];
+    final top = standing.isEmpty
+        ? null
+        : standing.reduce((a, b) => b.weight > a.weight ? b : a);
+    final recordFailed =
+        top != null && !heardLatest(top) && top.failedSinceProof > 0;
+    final fresh = [
+      for (final c in standing)
+        if (heardLatest(c) && (!recordFailed || c.failedSinceProof == 0)) c
+    ];
+    return [
+      if ((newestBeforeRecord ?? config.newestBeforeRecord) ||
+          (recordFailed && fresh.isNotEmpty)) ...[
+        fresh,
+        [
+          for (final c in standing)
+            if (!fresh.contains(c)) c
+        ],
+      ] else
+        standing,
+      [
+        for (final c in rows)
+          if (overruled(c)) c
+      ],
+    ];
+  }
+
+  /// Whether [hash] is a second opinion on [contactPubkey]'s end: a
+  /// doorstep of theirs that heard their latest packet and has never
+  /// delivered to them. The ladder tries one when their own packets
+  /// question the record, and a failure through one is held against it,
+  /// not against my doorstep.
+  bool _secondOpinion(String contactPubkey, String hash) {
+    final own = _ownPackets[contactPubkey];
+    if (own == null || !own.heard.contains(hash)) return false;
+    final row = _evidence.entries[(contactPubkey, hash)];
+    return row != null && !row.proven;
   }
 
   bool _movedFar(String fromHash, String toHash) {
@@ -956,7 +1065,7 @@ class PathGraph {
       return false;
     }
     return haversineKm(a!.lat!, a.lon!, b!.lat!, b.lon!) >
-        config.contactMoveWipeKm;
+        config.contactFarKm;
   }
 
   /// Proven egress refresh; supersede/slash only in a failure episode.
@@ -1049,13 +1158,23 @@ class PathGraph {
     if (!success && _selfPubkey != null && !anyGuessed) {
       // The break cannot be localised, but a doorstep that keeps failing
       // my sends since it last proved itself stops starting routes
-      // (PathGraphConfig.selfFailGate); any proof resets it.
-      _evidence.recordFailedEgress(_selfPubkey!, _hopHex(pathBytes, stride, 0));
-      _failPlace(_hopHex(pathBytes, stride, 0));
-      if (contactPubkey != null) {
-        _failedToward
-            .putIfAbsent(_hopHex(pathBytes, stride, 0).toUpperCase(), () => {})
-            .add(contactPubkey);
+      // (PathGraphConfig.selfFailGate); any proof resets it. Not for a
+      // route ending at a second opinion on their end ([_secondOpinion]):
+      // that failure is far likelier theirs, and charging my only doorstep
+      // with it closed every route before the ladder's last route attempt
+      // (simulator 2026-11-22: two messages lost that master delivered).
+      final secondOpinion = contactPubkey != null &&
+          _secondOpinion(contactPubkey, _hopHex(pathBytes, stride, hopCount - 1));
+      if (!secondOpinion) {
+        _evidence.recordFailedEgress(
+            _selfPubkey!, _hopHex(pathBytes, stride, 0));
+        _failPlace(_hopHex(pathBytes, stride, 0));
+        if (contactPubkey != null) {
+          _failedToward
+              .putIfAbsent(
+                  _hopHex(pathBytes, stride, 0).toUpperCase(), () => {})
+              .add(contactPubkey);
+        }
       }
       // ...and their end likewise: a doorstep that keeps failing deliveries
       // to them stops ending routes (PathGraphConfig.contactFailGate);
@@ -1734,13 +1853,12 @@ class PathGraph {
     return bytes;
   }
 
-  /// Up to [count] genuinely divergent routes: after each find, its
-  /// edges are penalized so the next search prefers different links
-  /// (the retry ladder's alternative-path step, and the harness UI).
+  /// Up to [count] routes a message tries after its best one
+  /// ([findRoutes]): one to each other doorstep of theirs, then genuinely
+  /// divergent corridors — after each find, its edges are penalized so the
+  /// next search prefers different links.
   List<RouteResult> findAlternatives(String contactPubkey, {int count = 3}) =>
-      _alternatives(
-          (now) => _ingressCandidates(contactPubkey, now) ?? const [], count,
-          guessedFor: (now) => _hintGuesses(contactPubkey.toLowerCase(), now));
+      findRoutes(contactPubkey, count: count).alternatives;
 
   /// Alternatives with a repeater itself as the destination.
   List<RouteResult> findAlternativesToRepeater(String repeaterHash,
@@ -2223,12 +2341,106 @@ class PathGraph {
     final now = _arrivalMillis;
     final guessed = _hintGuesses(key, now);
     late final links = _links(now, guessed);
+    final best = _findPath(key, now, () => links);
     return (
-      best: _findPath(key, now, () => links),
-      alternatives: _alternatives(
-          (at) => _ingressCandidates(key, at) ?? const [], count,
-          guessedFor: (_) => guessed, at: now, links: () => links),
+      best: best,
+      alternatives: _routesAfter(best, key, now, count, guessed, () => links),
     );
+  }
+
+  /// What a message to [key] tries after [best], in order:
+  /// 1. the first choice of the other order
+  ///    ([PathGraphConfig.newestBeforeRecord]), when their own packets say
+  ///    anything and it is another doorstep: with the record first, a
+  ///    doorstep that heard their latest packet; with the newest first, the
+  ///    one with the best record;
+  /// 2. other corridors to the doorsteps tried first ([_divergentRoutes],
+  ///    whose first is the best route again), as before: a first attempt
+  ///    that fails by bad luck is followed by another way to the same
+  ///    doorstep, not by an old one-off;
+  /// 3. in the last of the [count] places, when it is at least as likely
+  ///    as the route it displaces, a doorstep with a delivery record that
+  ///    no route above ends at, overruled or not: what is stored is used
+  ///    before a flood, and one packet that overruled a doorstep can be a
+  ///    fluke;
+  /// 4. the best route to each doorstep not tried yet, as [_ingressTiers]
+  ///    orders them.
+  /// Field 2026-11-21: every route attempt of a message ended at the one
+  /// doorstep ranked first, by different corridors, and then it flooded,
+  /// with a route to the repeater that had just heard them known and never
+  /// tried.
+  List<RouteResult> _routesAfter(PathResult best, String key, int now,
+      int count, Set<(String, String)> guessed,
+      Map<String, List<Step>> Function() links) {
+    final self = _selfPubkey;
+    final rows = _ingressCandidates(key, now);
+    if (self == null || rows == null) return const [];
+    final egress = _egressCandidates(self, now).candidates ?? const [];
+    if (egress.isEmpty) return const [];
+    final tiers = _ingressTiers(key, rows);
+    final finder = PathFinder(estimator.config, estimator);
+    final tried = <String>{
+      if (best is RouteResult && best.pathBytes.isNotEmpty)
+        _bytesToHops(best.pathBytes).last,
+    };
+    final routes = <RouteResult>[];
+    final seen = <String>{};
+    void add(RouteResult route) {
+      if (seen.add(route.pathBytes.join(','))) routes.add(route);
+    }
+
+    // The best route to one of [doorsteps] not tried yet.
+    RouteResult? toOneOf(List<Candidate> doorsteps) {
+      final route = finder.search(
+        egress: egress,
+        ingress: [
+          for (final c in doorsteps)
+            if (!tried.contains(c.repeaterHash)) c
+        ],
+        edges: _store.edges,
+        nowMillis: now,
+        adjacency: links(),
+      );
+      if (route == null) return null;
+      tried.add(route.hops.last);
+      return _toResult(route);
+    }
+
+    if (_ownPackets.containsKey(key)) {
+      final second = toOneOf(_ingressTiers(key, rows,
+              newestBeforeRecord: !config.newestBeforeRecord)
+          .first);
+      if (second != null) add(second);
+    }
+    _divergentRoutes(
+            egress: egress,
+            ingress:
+                tiers.firstWhere((t) => t.isNotEmpty, orElse: () => const []),
+            count: count,
+            now: now,
+            guessed: guessed,
+            links: links)
+        .forEach(add);
+    final record = toOneOf([
+      for (final c in rows)
+        if (c.proven) c
+    ]);
+    // It takes the last place from a route no likelier than itself.
+    if (record != null && seen.add(record.pathBytes.join(','))) {
+      if (routes.length >= count &&
+          record.estDelivery >= routes[count - 1].estDelivery) {
+        routes.length = count - 1;
+      }
+      routes.add(record);
+    }
+    for (final tier in tiers) {
+      while (routes.length < count) {
+        final route = toOneOf(tier);
+        if (route == null) break;
+        add(route);
+      }
+    }
+    return routes.take(count).toList();
   }
 
   /// [links] builds the map the corridor search runs on, at [now].
@@ -2276,13 +2488,19 @@ class PathGraph {
           : FloodReason.noProvenEndpoint);
     }
 
-    final route = PathFinder(estimator.config, estimator).search(
-      egress: egress,
-      ingress: ingress,
-      edges: _store.edges,
-      nowMillis: now,
-      adjacency: links(),
-    );
+    final finder = PathFinder(estimator.config, estimator);
+    final adjacency = links();
+    RouteFound? route;
+    for (final tier in _ingressTiers(contactPubkey, ingress)) {
+      route = finder.search(
+        egress: egress,
+        ingress: tier,
+        edges: _store.edges,
+        nowMillis: now,
+        adjacency: adjacency,
+      );
+      if (route != null) break;
+    }
     if (route == null) {
       return const PathResult.flood(FloodReason.noCorridor);
     }
@@ -2340,4 +2558,22 @@ class PathGraph {
         droppedNarrow: _droppedNarrow,
         linksHeld: _linksHeld,
       );
+}
+
+/// What one contact's own packets say about their doorsteps.
+class _OwnPackets {
+  /// The packet being heard now ([PathGraph.observeContactSender]'s
+  /// messageId), null when it carried none.
+  String? packet;
+
+  /// The doorsteps that heard it first, over all its copies.
+  final Set<String> heard = {};
+
+  /// How many of their packets in a row each doorstep was not a first hop
+  /// of.
+  final Map<String, int> missed = {};
+
+  /// Doorsteps seen passing a packet of theirs on since they last heard
+  /// them first.
+  final Set<String> relayed = {};
 }

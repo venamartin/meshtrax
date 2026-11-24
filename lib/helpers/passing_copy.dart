@@ -15,6 +15,13 @@ const int _routeDirect = 0x02;
 const int _macSize = 2;
 const int _blockSize = 16;
 
+/// An ACK for this radio seen on the air. [pathReply]: it came in a path
+/// reply, so the DM reached them by flood; a plain or MULTIPART ACK answers
+/// a routed copy (BaseChatMesh::onPeerDataRecv). [attempt]: the byte the
+/// receiver copies from the DM's tail into its ACK, the attempt number
+/// itself above 3 and 0 at or below; null when the ACK doesn't carry it.
+typedef HeardAck = ({int code, bool pathReply, int? attempt});
+
 /// A DM or room post the radio heard while its copy still had hops left in
 /// the path. The firmware opens a routed packet only from the copy whose path
 /// is used up, the last repeater's (MeshCore Mesh.cpp, onRecvPacket: a copy
@@ -139,6 +146,13 @@ class PassingCopyOpener {
     if (payload.length < 2 + _macSize + _blockSize) return null;
     if (payload[0] != _selfKey[0]) return null;
     final srcHash = payload[1];
+    // From a contact who shares this radio's first key byte, a copy reads
+    // the same as this radio's own DM to them echoed back: the secret is the
+    // same both ways and the text names no direction (BaseChatMesh
+    // composeMsgPacket). The radio marks its own sends seen and opens
+    // theirs itself (Mesh.cpp onRecvPacket), so the app leaves these alone,
+    // as the path graph does.
+    if (srcHash == _selfKey[0]) return null;
     final macAndData = Uint8List.fromList(payload.sublist(2));
     for (final key in contactKeys) {
       if (key.length != pubKeySize || key[0] != srcHash) continue;
@@ -199,6 +213,58 @@ class PassingCopyOpener {
       );
     }
     return null;
+  }
+
+  /// The ACK code inside a path reply to this radio from one of
+  /// [contactKeys]: a DM it sent reached them by flood, and the reply
+  /// carries the ACK (BaseChatMesh::onPeerDataRecv, createPathReturn: path
+  /// length, path, extra type, extra). Null for any other packet.
+  HeardAck? pathReplyAck({
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (payload.length < 2 + _macSize + _blockSize) return null;
+    if (payload[0] != _selfKey[0]) return null;
+    final macAndData = Uint8List.fromList(payload.sublist(2));
+    for (final key in contactKeys) {
+      if (key.length != pubKeySize || key[0] != payload[1]) continue;
+      final secret = sharedSecret(key);
+      if (secret == null) continue;
+      final plain = macThenDecrypt(secret, macAndData);
+      if (plain == null) continue;
+      final extraAt = 1 + PathHelper.pathLenBytes(plain[0]);
+      if (plain.length < extraAt + 5) return null;
+      if ((plain[extraAt] & 0x0F) != payloadTypeACK) return null;
+      // The encrypted reply is padded with zeroes, so a 0 here may be an
+      // older receiver's 4-byte ACK: only a number above 3 is trusted.
+      final attempt =
+          plain.length > extraAt + 5 ? plain[extraAt + 5] : 0;
+      return (
+        code: ByteData.sublistView(plain, extraAt + 1, extraAt + 5)
+            .getUint32(0, Endian.little),
+        pathReply: true,
+        attempt: attempt > 3 ? attempt : null,
+      );
+    }
+    return null;
+  }
+
+  /// The ACK a plain or MULTIPART ACK packet carries, else null.
+  static HeardAck? heardAck(int payloadType, List<int> payload) {
+    final at = switch (payloadType) {
+      payloadTypeACK => 0,
+      payloadTypeMULTIPART
+          when payload.isNotEmpty && (payload[0] & 0x0F) == payloadTypeACK =>
+        1,
+      _ => null,
+    };
+    if (at == null || payload.length < at + 4) return null;
+    return (
+      code: ByteData.sublistView(Uint8List.fromList(payload), at, at + 4)
+          .getUint32(0, Endian.little),
+      pathReply: false,
+      attempt: payload.length > at + 4 ? payload[at + 4] : null,
+    );
   }
 
   /// The firmware's shared secret with [contactKey] (ed25519_key_exchange:

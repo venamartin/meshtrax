@@ -69,6 +69,12 @@ class TimeoutHelper {
   /// plain ACK this much later.
   static const int extraAckGapMs = 300;
 
+  /// How long the app leaves an ACK it saw in the RX log to the radio. The
+  /// radio pushes the RX log line just before it handles the packet
+  /// (Dispatcher.cpp), so its SEND_CONFIRMED for an ACK it counts follows
+  /// within a frame or two.
+  static const int heardAckGraceMs = 1000;
+
   /// How long the app holds the ACK for a DM it opened from a copy that
   /// still had [hopsLeft] hops to go: until the last of those repeaters has
   /// passed the DM on (each waits at most its direct retransmit delay, then

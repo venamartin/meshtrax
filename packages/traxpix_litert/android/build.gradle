@@ -1,0 +1,123 @@
+group = "io.meshtrax.traxpix_litert"
+version = "1.0-SNAPSHOT"
+
+buildscript {
+    ext.kotlin_version = "2.1.0"
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.7.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+
+// The same Kotlin handling as tools/flutter_onnxruntime_patched: on AGP 9+
+// AGP compiles Kotlin itself, and applying KGP as well is fatal. The literal
+// `apply plugin: "kotlin-android"` must stay, because Flutter's tooling greps
+// plugin build files for it.
+def androidComponentsExt = project.extensions.findByName("androidComponents")
+def agpMajor = (androidComponentsExt != null
+        ? androidComponentsExt.pluginVersion.major
+        : com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize(".")[0] as int)
+def builtInKotlinProp = project.findProperty("android.builtInKotlin")
+def builtInKotlin = agpMajor >= 9 &&
+        (builtInKotlinProp == null || builtInKotlinProp.toString().equalsIgnoreCase("true"))
+if (!builtInKotlin) {
+    apply plugin: "kotlin-android"
+}
+
+// LiteRT 2.3.0's libLiteRt.so for arm64, taken out of Google's AAR (pinned by
+// its SHA-256). The AAR's Java classes are not used: Dart calls the C API
+// through FFI, and the classes would bring Guava and Play delivery with them.
+configurations {
+    litertNative {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+def litertAarSha256 = "9508c6e9142646f0f2bc1fe68b3925fb470ee7ddd29114540339a04a8ab189dc"
+
+// Google's AAR, byte for byte, from MeshTrax's host, in its SHA-256's folder.
+repositories {
+    exclusiveContent {
+        forRepository {
+            ivy {
+                name = "MeshTrax LiteRT"
+                url = uri("https://maps.meshtrax.io/runtimes/litert-2.3.0/")
+                patternLayout {
+                    artifact("${litertAarSha256}/[artifact]-[revision].[ext]")
+                }
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeModule("com.google.ai.edge.litert", "litert") }
+    }
+}
+
+dependencies {
+    litertNative "com.google.ai.edge.litert:litert:2.3.0@aar"
+}
+def litertJniDir = layout.buildDirectory.dir("litert-jni").get().asFile
+
+def extractLitertNative = tasks.register("extractLitertNative", Copy) {
+    def aar = configurations.litertNative
+    inputs.files(aar)
+    from({
+        def file = aar.singleFile
+        def sha = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(file.bytes).encodeHex().toString()
+        if (sha != litertAarSha256) {
+            throw new GradleException("LiteRT AAR SHA-256 is $sha, expected $litertAarSha256")
+        }
+        zipTree(file)
+    }) {
+        include "jni/arm64-v8a/libLiteRt.so"
+        eachFile { it.path = it.path.substring("jni/".length()) }
+        includeEmptyDirs = false
+    }
+    into litertJniDir
+}
+
+android {
+    namespace = "io.meshtrax.traxpix_litert"
+
+    compileSdk = 35
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+        main.jniLibs.srcDirs += litertJniDir
+    }
+
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(extractLitertNative)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    }
+}

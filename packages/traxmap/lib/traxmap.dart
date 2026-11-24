@@ -19,4 +19,5 @@ export 'src/view/attribution.dart' show AttributionChip;
 export 'src/view/camera.dart';
 export 'src/view/map_controller.dart' show OfflineMapController, MapFit;
 export 'src/view/offline_map_view.dart';
+export 'src/view/memory.dart';
 export 'src/view/overlays.dart';

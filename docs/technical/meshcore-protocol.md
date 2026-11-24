@@ -531,8 +531,8 @@ the companion's `allowPacketForward` (its client-repeat setting) only decides fo
 So the recipient opens a routed DM, request or room post only from the **last** repeater's
 copy, or the sender's on a zero-hop route. A copy it hears straight from the sender, or from
 an earlier repeater, is dropped unopened even though it is addressed to it. Exceptions:
-routed ACKs are checked at every hop ("early received ACK", `Mesh.cpp` 79-87), and floods
-are opened from the first copy heard.
+routed plain ACKs are checked at every hop ("early received ACK", `Mesh.cpp` 79-87; MULTIPART
+ACKs are not, see below), and floods are opened from the first copy heard.
 
 Proven 2026-11-19 by MeshCore's own code compiled on a PC with a simulated radio, and on two
 radios on 920.000: a routed DM heard directly at +12.5 dB SNR, one fake hop still to go, was
@@ -566,6 +566,12 @@ the connector's `_openPassingCopy`):
   held until the hops still to go have passed the DM on
   (`TimeoutHelper.passingCopyAckDelayMs`). Older firmware gets the message but no ACK; the
   sender retries until a copy the radio opens, and the radio ACKs that one.
+- **The radio's own copy wins.** If the last repeater's copy (or a flood) reaches this radio
+  while the app still holds those ACKs, the radio opens it and sends that ACK itself; the
+  firmware always ACKs a DM it opens, and `multi_acks` only drops its extra copy. So the app
+  drops its stand-in for the radio's ACK, and its second ACK (below) still goes: the radio's
+  ACK is the one nobody controls, and the app's second is the one on a good route (owner,
+  2026-11-21). A stand-in already sent can't be called back, so then the message gets three.
 - **Limits.** The RX log carries packets up to 173 bytes (`MAX_FRAME_SIZE` 176 less 3), so
   a long DM, or a shorter one on a long route, is never seen. A scope set by another app
   with `CMD_SET_FLOOD_SCOPE_KEY` (54) is not known to MeshTrax.
@@ -586,7 +592,8 @@ the companion sends two acks or it sends one and the app sends the second"):
 - **The app sends the other**, for every copy of a DM or room post to this radio that it
   can read in the RX log (it computes the exact ACK from the decrypted copy), once per
   send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
-  first. For a passing copy the app sends both ACKs.
+  first. For a passing copy the app sends both ACKs, unless the radio opens its own copy
+  first (above): then the radio's ACK and the app's second.
 - **Its form is the firmware's extra ACK**: MULTIPART, remaining 1 (`createMultiAck`).
   Repeaters drop a packet they have seen, and `Packet::calculatePacketHash` leaves the path
   out, so a plain copy of the first ACK dies at the first repeater that carried it, and on
@@ -603,7 +610,61 @@ the companion sends two acks or it sends one and the app sends the second"):
   route again. The contact is read when the copy is heard, before the keeper can move the
   stored route. The connector reads routes through `graphRouteCandidates` and tests the
   held route with `PathSelection.heldBy`; it imports nothing from Pathfinder.
+- **A flooded copy tells Pathfinder who heard the sender first.** A flood's path is the way
+  it came, and its first repeater heard the sender. The radio hands the decoded message
+  over only a sync round-trip later, too late for this ACK, so the connector raises
+  `onFloodCopyOpened` before it asks for the routes, and Pathfinder credits that repeater
+  at once (`PathLabAdapter.attributeOpenedCopy`; the decoded message then finds it done).
+  Without it the first DM after a contact moved got its second ACK by where they were
+  heard before (mesh simulator, 2026-11-21).
+- **For a flood copy, the ACK goes back by the repeater that heard it.** Pathfinder ranks a
+  contact's doorsteps by their record, so its best route for a message can end where they
+  were heard before. An ACK has one shot and the copy's first repeater heard them seconds
+  ago: of the routes left, the second ACK takes the first that ends at that repeater
+  (`_secondAckPackets`, `heardBy`; same hash width only), and the first one left when none
+  does.
 - Pathfinder off, or the switch off: the radio does as the switch says, as before.
+
+### ACKs the radio misses, counted by MeshTrax
+A companion counts an ACK for its own send through `processAck`, which pushes
+`PUSH_CODE_SEND_CONFIRMED`. Two kinds of ACK it hears never get there:
+- **A MULTIPART ACK with hops to go.** Only plain ACKs are checked on their way (`Mesh.cpp`
+  78-87). A MULTIPART one counts only once its path is used up (300-319), so the extra ACK
+  Multi-ACKs sends, and MeshTrax's second ACK, are dropped when heard from the ACKing radio
+  or an earlier repeater. Each repeater that passes one on also sends a plain ACK
+  (`forwardMultipartDirect` → `routeDirectRecvAcks`), so this is rare.
+- **An ACK for a send the radio no longer waits on.** `expected_ack_table` holds the last 8
+  sends (`EXPECTED_ACK_TABLE_SIZE`, overwritten in a circle, emptied on a restart), and
+  MeshTrax's retries each take a slot.
+
+The RX log still shows them. For each plain ACK, MULTIPART ACK, or path reply to this radio
+carrying an ACK (opened with the passing-copy key, `PassingCopyOpener.pathReplyAck`), the
+connector (`_noteAckHeard`) checks the code against the DMs still waiting
+(`MessageRetryService.waitingForAck`) and the repeater commands it tracks. A match gets
+`TimeoutHelper.heardAckGraceMs` (1 s): the radio pushes the RX log line just before it
+handles the packet, so its own confirmation comes first when it counts the ACK. A send still
+waiting after that is confirmed as if the radio had, with the trip time measured from its
+`RESP_CODE_SENT`, and the log says "The radio missed ACK …". The ACK code is in the clear,
+so plain and MULTIPART ACKs need no key.
+
+### Attempts that share an ACK code
+`composeMsgPacket` hashes only `attempt & 3` into the ACK, so attempts 0 and 4 of one DM (and
+a parked rung's resends, by design) share a code: with Max Message Retries at 5, the first
+attempt (a route) and the fifth (a flood). The ACK itself tells them apart
+(`BaseChatMesh::onPeerDataRecv`):
+- a flooded copy is answered with a path reply carrying the ACK, a routed copy with a plain
+  (and MULTIPART) ACK;
+- the 6-byte ACK's fifth byte is copied from the DM's tail: the attempt number when above 3
+  (`composeMsgPacket` hides it there), else 0. In a path reply the padding is zeroes too, so
+  only a number above 3 is trusted there. And at attempts 0-3, when the 5 header bytes plus
+  the text (as sent) fill their AES blocks exactly, there is no padding: the receiver reads
+  that byte past its decrypted data, from an uninitialized buffer (`Mesh.cpp`), so for such a
+  send any byte fits (`_blindAttemptByte`).
+
+The connector keeps what it saw of each ACK in the RX log (`HeardAck`) for the grace, and
+`MessageRetryService.handleAckReceived` picks the attempt it fits (`_rungAcked`). When it
+can't tell (the ACK wasn't seen), no route is credited or failed for those attempts, and no
+flood is counted delivered; the DM is still delivered.
 
 ### ADV_TYPE constants
 | Value | Meaning |
@@ -804,6 +865,18 @@ direct after the first flood login.
 ## 12. Known Bugs and Gotchas (Do Not Re-introduce)
 
 Previously debugged issues. Check here before touching related code.
+
+### Bug (fixed 2026-11): a route learned while a DM waited carried it, the planned one got the credit
+**File:** `lib/connector/meshcore_connector.dart` (`sendOnRoute`, `_sendMessageDirect`)
+**Symptom:** a reply sent right after a contact's flooded DM went out on the route their PATH
+had just named, while Pathfinder was told the route the ladder planned had delivered it (mesh
+simulator, 2026-11-21: a home doorstep credited with reaching someone 30 km away).
+**Cause:** the route is written, then the DM waits seconds for a quiet radio; a PATH from the
+contact in that wait replaces the stored route (`BaseChatMesh::onContactPathRecv`). The path
+lock stops only the app's own writes.
+**Rule:** when the radio learned a route from the contact during the wait
+(`PUSH_CODE_PATH_UPDATED`), the attempt's route is chosen again (`rechooseRoute`) and written
+just before the frame, and the attempt is recorded on it.
 
 ### Bug (fixed 2026-10): USB/TCP decoder dropped 173–176-byte frames
 **File:** `lib/services/usb_serial_frame_codec.dart`

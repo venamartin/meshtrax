@@ -1030,14 +1030,21 @@ class MapPacksService extends ChangeNotifier {
 
   // --- Actions -------------------------------------------------------------
 
-  /// Starts downloading [items] (packs, or routing and places files), or
-  /// installing them from the drive in use; already-active ones are left
-  /// alone. From a drive, items still downloading from the server are
-  /// left to finish.
+  /// Starts downloading [items] (packs, routing and places files, or other
+  /// files the app installs), or installing them from the drive in use when
+  /// it has them; already-active ones are left alone. From a drive, items
+  /// still downloading from the server are left to finish. Items the drive
+  /// doesn't have come from the server.
   Future<void> download(Iterable<DownloadItem> items) async {
-    if (drive != null) {
-      if (!await checkDrive()) return;
-      for (final item in items) {
+    final onDrive = _onDrive;
+    final all = items.toList();
+    final fromDrive = [
+      if (onDrive != null)
+        for (final item in all)
+          if (onDrive.files[_drivePath(item.url)] == item.bytes) item,
+    ];
+    if (fromDrive.isNotEmpty && await checkDrive()) {
+      for (final item in fromDrive) {
         if (downloader.network.downloads.any(
           (d) => d.id == item.id && !d.state.isFinal,
         )) {
@@ -1045,13 +1052,17 @@ class MapPacksService extends ChangeNotifier {
         }
         await downloader.startFromDrive(item);
       }
-      return;
     }
+    final fromServer = [
+      for (final item in all)
+        if (!fromDrive.contains(item)) item,
+    ];
+    if (fromServer.isEmpty) return;
     final d = downloader.network;
     if (d is BackgroundPackDownloader) {
       await d.requestNotificationPermission();
     }
-    for (final item in items) {
+    for (final item in fromServer) {
       await downloader.start(item);
     }
   }

@@ -621,11 +621,11 @@ final List<HealthRule> healthRules = [
     id: 'app_map_wifi_only',
     enabled: false,
     severity: HealthSeverity.tip,
-    title: 'Map downloads allowed on mobile data',
+    title: 'Downloads allowed on mobile data',
     why: '',
     check: (ctx) async => !ctx.app.mapDownloadsWifiOnly,
     fix: HealthFix.apply,
-    fixDescription: 'Download maps on Wi-Fi only.',
+    fixDescription: 'Download on Wi-Fi only.',
     apply: (ctx) => ctx.settingsService.setMapDownloadsWifiOnly(true),
   ),
   HealthRule(

@@ -1,20 +1,25 @@
 package com.meshtrax.app
 
 import android.content.ActivityNotFoundException
+import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.Settings
 import android.app.ActivityManager
 import android.content.Context
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.StatFs
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsAnimation
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val usbFunctions by lazy { MeshTraxUsbFunctions(this) }
@@ -52,6 +57,66 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        // "meshtrax/storage": freeBytes(path), the bytes free for a download
+        // the user asks for (the photo model), and saveToPhotos(png), a photo
+        // the user saves. iOS and macOS answer freeBytes too.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshtrax/storage")
+            .setMethodCallHandler { call, result ->
+                val path = call.arguments as? String
+                val png = call.arguments as? ByteArray
+                if (call.method == "freeBytes" && path != null) {
+                    result.success(freeBytes(path))
+                } else if (call.method == "saveToPhotos" && png != null) {
+                    result.success(saveToPhotos(png))
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }
+
+    // A PNG into Pictures/MeshTrax through MediaStore, which needs no
+    // permission on Android 10 and later. False when it couldn't be saved.
+    private fun saveToPhotos(png: ByteArray): Boolean {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "MeshTrax ${System.currentTimeMillis()}.png")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/MeshTrax")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+        val uri = try {
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        } catch (e: Exception) {
+            null
+        } ?: return false
+        return try {
+            contentResolver.openOutputStream(uri)?.use { it.write(png) } ?: return false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                contentResolver.update(
+                    uri,
+                    ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) },
+                    null,
+                    null,
+                )
+            }
+            true
+        } catch (e: Exception) {
+            contentResolver.delete(uri, null, null)
+            false
+        }
+    }
+
+    // Measured at the nearest folder that exists, since the download's own
+    // folder may not be made yet. Null when none can be measured.
+    private fun freeBytes(path: String): Long? {
+        val dir = generateSequence(File(path)) { it.parentFile }.firstOrNull { it.exists() }
+            ?: return null
+        return try {
+            StatFs(dir.path).availableBytes
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
 
     // The notification settings page takes this extra from API 26. Older

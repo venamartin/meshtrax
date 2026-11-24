@@ -868,6 +868,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   PassingCopyOpener? _passingCopyOpener;
   Uint8List? _passingCopyScopeKey;
   final Set<String> _passingCopyAcked = {};
+  // ACKs seen in the RX log for my sends, each left to the radio for a
+  // moment before the app counts it (see _noteAckHeard).
+  final Map<int, Timer> _heardAckTimers = {};
+  final Map<int, HeardAck> _heardAcks = {};
   // Two ACKs wanted and Pathfinder on: the radio sends one ACK, and the app
   // the second on another of Pathfinder's routes (owner, 2026-11-19).
   bool _appSendsSecondAck = false;
@@ -875,6 +879,11 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   // Per message (contact, sender's timestamp, text type), the routes its
   // ACKs have taken; a resend keeps all three.
   final Map<String, Set<String>> _ackRoutesTried = {};
+  // By ACK code, the app's queued stand-ins for the radio's ACK to a copy it
+  // picked up on its way: dropped if the radio opens its own copy first.
+  final Map<String, List<Timer>> _standInAcks = {};
+  // Every raw packet still held for sending (_queueRawPackets).
+  final Set<Timer> _rawPacketTimers = {};
   bool? _pathfinderWasOn;
   static const _twoAcksKeyPrefix = 'two_acks_';
 
@@ -1642,8 +1651,13 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     await _channelMessageStore.deleteMessage(channel.idKey, message.messageId);
     _channelOrphanRows[channel.idKey]
         ?.removeWhere((o) => o.messageId == message.messageId);
+    onChannelMessageDeleted?.call(message.messageId);
     notifyListeners();
   }
+
+  /// Told the id of each channel message the user deletes, so a photo's
+  /// files go with it.
+  void Function(String messageId)? onChannelMessageDeleted;
 
   /// The names and note the user gave a contact, if any.
   ContactNote? contactNote(String publicKeyHex) =>
@@ -2095,6 +2109,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         );
         return;
       }
+      await _rechooseIfRouteChanged(contact, timestampSeconds, text);
       final outboundText = prepareContactOutboundText(contact, text);
       await sendFrame(
         buildSendTextMsgFrame(
@@ -2175,6 +2190,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool wroteContactPath(Contact contact) =>
       _appWrittenPath[contact.publicKeyHex] ==
       _writtenKey(contact.pathHashSize, contact.path);
+
+  /// Routes the radio learned from each contact (their PATH replies, which
+  /// the firmware stores over any route this app wrote), counted, and the
+  /// contact refresh each one started.
+  final Map<String, int> _routesLearned = {};
+  final Map<String, Future<void>> _routeRefreshes = {};
+
+  /// The route [sendOnRoute] put on the radio for the send it is running,
+  /// and how many routes the radio had learned from that contact then.
+  ({String key, int learned, PathSelection selection})? _routeOnRadio;
 
   /// Channel sends this app put on air (channel, wire stamp, exact text, and
   /// the row sent from, none for a reaction): only an echo of one of these
@@ -2338,6 +2363,23 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     int snrByte,
     Uint8List payload,
   )? onPassingCopyHeard;
+
+  /// A flooded DM or room post to this radio that the app opened itself
+  /// from the copy the radio logged, a sync round-trip before the radio
+  /// hands over the decoded message: the contact it came from, the
+  /// repeaters that copy crossed at [hopWidth] bytes each (the first one
+  /// heard the sender), its signed SNR byte, and its payload as heard.
+  /// Raised for the first copy of each send, before the second ACK's route
+  /// is chosen. The path graph hook: Pathfinder then ranks the repeater
+  /// that just heard them ([onContactMessageHeard] comes too late for that
+  /// ACK).
+  void Function(
+    String contactPubkeyHex,
+    Uint8List pathBytes,
+    int hopWidth,
+    int snrByte,
+    Uint8List payload,
+  )? onFloodCopyOpened;
 
   void _updateMessage(Message message) {
     final contactKey = pubKeyToHex(message.senderKey);
@@ -4594,6 +4636,56 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       ))?[0] ==
       respCodeOk;
 
+  /// Files a photo as a channel message, so it shows in the chat, the chat
+  /// list and notifications like any message.
+  /// [text] must differ between photos ("📷 Photo #3a"): the echo match merges
+  /// same-text messages from one sender within five minutes. Returns the
+  /// message id the photo store keys the photo by, or null when the channel
+  /// slot is unknown. [notify] false files it quietly, with no notification.
+  Future<String?> ingestPhotoMessage({
+    required int channelIndex,
+    required String senderName,
+    required String text,
+    required bool isOutgoing,
+    required String packetHash,
+    bool notify = true,
+  }) async {
+    final message = ChannelMessage(
+      senderName: senderName,
+      text: text,
+      timestamp: DateTime.now(),
+      isOutgoing: isOutgoing,
+      status: ChannelMessageStatus.sent,
+      pathLength: 0,
+      heardDirect: !isOutgoing,
+      channelIndex: channelIndex,
+      packetHash: packetHash,
+    );
+    final channel = _findChannelByIndex(channelIndex);
+    if (channel == null) return null;
+    final isNew = await _ingestChannelMessage(channelIndex, message);
+    if (isNew && !isOutgoing && notify) {
+      _maybeNotifyChannelMessage(message, channelName: channel.displayName);
+    }
+    return message.messageId;
+  }
+
+  /// Whether the user blocked [senderName].
+  bool isSenderBlocked(String senderName) =>
+      _appSettingsService?.isSenderBlocked(senderName) ?? false;
+
+  /// One packet's airtime, in ms, for [bytes] on air with the radio's
+  /// current settings.
+  int estimatePacketAirtimeMs(int bytes) => _estimateAirtimeMs(bytes);
+
+  /// Sends [data] and returns the radio's OK or ERR frame, tracked in the
+  /// generic ack queue like any command.
+  Future<Uint8List?> sendAndAwaitReply(
+    Uint8List data, {
+    Duration timeout = const Duration(seconds: 5),
+  }) =>
+      _sendAndWaitForReply(data, timeout: timeout, expectsGenericAck: true);
+
   /// The radio's OK or ERR frame for [data]; null when none came in time.
   Future<Uint8List?> _sendAndWaitForReply(
     Uint8List data, {
@@ -5304,24 +5396,71 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     Future<void> Function() send,
   ) =>
       withPathLock(() async {
-        final live = _contacts.cast<Contact?>().firstWhere(
-                  (c) => c!.publicKeyHex == contact.publicKeyHex,
-                  orElse: () => null,
-                ) ??
-            contact;
-        if (selection.useFlood) {
-          if (live.pathLength >= 0) await clearContactPath(contact);
-        } else if (selection.source != RouteSource.firmware) {
-          final bytes = Uint8List.fromList(selection.pathBytes);
-          final written = _appWrittenPath[contact.publicKeyHex] ==
-              _writtenKey(selection.hashSize, bytes);
-          if (!written || !wroteContactPath(live)) {
-            await setContactPath(contact, bytes, selection.hopCount,
-                hashSize: selection.hashSize);
-          }
+        await _putRoute(contact, selection);
+        final outer = _routeOnRadio;
+        final key = contact.publicKeyHex;
+        _routeOnRadio = (
+          key: key,
+          learned: _routesLearned[key] ?? 0,
+          selection: selection,
+        );
+        try {
+          await send();
+        } finally {
+          _routeOnRadio = outer;
         }
-        await send();
       });
+
+  Future<void> _putRoute(Contact contact, PathSelection selection) async {
+    final live = _contacts.cast<Contact?>().firstWhere(
+              (c) => c!.publicKeyHex == contact.publicKeyHex,
+              orElse: () => null,
+            ) ??
+        contact;
+    if (selection.useFlood) {
+      if (live.pathLength >= 0) await clearContactPath(contact);
+    } else if (selection.source != RouteSource.firmware) {
+      final bytes = Uint8List.fromList(selection.pathBytes);
+      final written = _appWrittenPath[contact.publicKeyHex] ==
+          _writtenKey(selection.hashSize, bytes);
+      if (!written || !wroteContactPath(live)) {
+        await setContactPath(contact, bytes, selection.hopCount,
+            hashSize: selection.hashSize);
+      }
+    }
+  }
+
+  /// The radio learned a route from [contact] while this DM waited for a
+  /// quiet radio, and stored it over the one [sendOnRoute] wrote: the DM
+  /// would go out on it, and its outcome would be credited to the route
+  /// chosen before. The ladder chooses this attempt's route again from what
+  /// is known now (Pathfinder ranks the route just learned first while it
+  /// is live), and that route is written and recorded.
+  Future<void> _rechooseIfRouteChanged(
+      Contact contact, int timestampSeconds, String text) async {
+    final onRadio = _routeOnRadio;
+    final key = contact.publicKeyHex;
+    if (onRadio == null ||
+        onRadio.key != key ||
+        (_routesLearned[key] ?? 0) == onRadio.learned) {
+      return;
+    }
+    // The radio's new route reaches the contact list and Pathfinder only
+    // once the contact is read back.
+    await _routeRefreshes[key]
+        ?.timeout(const Duration(seconds: 4), onTimeout: () {});
+    final live =
+        _contacts.where((c) => c.publicKeyHex == key).firstOrNull ?? contact;
+    final next = _retryService?.rechooseRoute(live, timestampSeconds, text) ??
+        onRadio.selection;
+    appLogger.info(
+      "${contact.name}'s route changed while the DM waited: it goes "
+      '${next.useFlood ? 'as a flood' : next.hopCount == 0 ? 'direct' : 'on ${PathHelper.formatPathHex(next.pathBytes, stride: next.hashSize)}'}'
+      '${next.source == RouteSource.firmware ? " (the radio's route)" : ''}',
+      tag: 'AckHash',
+    );
+    await _putRoute(contact, next);
+  }
 
   /// The route each of [attempts] tries of a one-shot request (login,
   /// repeater command, status, telemetry) goes out on: the DM ladder's own
@@ -7633,8 +7772,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // that can occur when using refreshContactsSinceLastmod(). The
         // reply is the route the firmware just learned — Pathfinder's one
         // true source of firmware proof.
-        unawaited(_fetchContactSnapshotFromDevice(pubKey).then((snapshot) {
+        final key = pubKeyToHex(pubKey);
+        _routesLearned[key] = (_routesLearned[key] ?? 0) + 1;
+        final refresh =
+            _fetchContactSnapshotFromDevice(pubKey).then((snapshot) {
           if (snapshot != null) onFirmwarePathLearned?.call(snapshot);
+        });
+        _routeRefreshes[key] = refresh;
+        unawaited(refresh.whenComplete(() {
+          if (_routeRefreshes[key] == refresh) _routeRefreshes.remove(key);
         }));
       }
     }
@@ -9253,6 +9399,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyOpener = null;
     _passingCopyScopeKey = null;
     _passingCopyAcked.clear();
+    // ACKs still held go nowhere: the link they were meant for is gone.
+    for (final t in _rawPacketTimers) {
+      t.cancel();
+    }
+    _rawPacketTimers.clear();
+    _standInAcks.clear();
     _appSendsSecondAck = false;
     _secondAckSent.clear();
     _ackRoutesTried.clear();
@@ -9389,6 +9541,76 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
+  /// An ACK for one of my sends, seen in the RX log, that the radio may
+  /// not count (owner, 2026-11-20: any ACK for us the firmware can miss and
+  /// the app can see, the app deals with):
+  /// - a MULTIPART ACK with hops to go: on its way the firmware checks only
+  ///   plain ACKs (Mesh.cpp onRecvPacket, "early received ACK");
+  /// - any ACK for a send the radio no longer waits on: it remembers the
+  ///   last 8 (EXPECTED_ACK_TABLE_SIZE) and forgets them on a restart.
+  /// Plain ACKs, MULTIPART ACKs and the ACK in a path reply all count. The
+  /// radio gets [TimeoutHelper.heardAckGraceMs] first; a send still waiting
+  /// after that is confirmed as if the radio had.
+  /// What the app saw of the ACK is kept for that moment too: it tells
+  /// apart the attempts of one DM that share an ACK code.
+  void _noteAckHeard(_RawPacket packet) {
+    var heard = PassingCopyOpener.heardAck(packet.payloadType, packet.payload);
+    if (heard == null && packet.payloadType == payloadTypePATH) {
+      final opener = _passingCopyOpener;
+      final me = _selfPublicKey;
+      if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+        return;
+      }
+      heard = opener.pathReplyAck(
+        payload: packet.payload,
+        contactKeys: _contacts.map((c) => c.publicKey),
+      );
+    }
+    if (heard == null || _heardAckTimers.containsKey(heard.code)) return;
+    final ack = heard.code;
+    final waited = _retryService?.waitingForAck(ack);
+    if (waited == null && !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
+      return;
+    }
+    final tripMs = waited?.inMilliseconds ?? 0;
+    final how = packet.isFlood
+        ? 'by flood'
+        : '${math.max(0, packet.hopCount)} hops to go';
+    _heardAcks[ack] = heard;
+    _heardAckTimers[ack] = Timer(
+      const Duration(milliseconds: TimeoutHelper.heardAckGraceMs),
+      () {
+        _heardAckTimers.remove(ack);
+        if (_retryService?.waitingForAck(ack) == null &&
+            !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
+          _heardAcks.remove(ack);
+          return;
+        }
+        appLogger.info(
+          'The radio missed ACK ${ackHashToHex(ack)} '
+          '(${_heardAckKind(packet.payloadType)}, $how): '
+          'counting it',
+          tag: 'Connector',
+        );
+        _handleSendConfirmed(Uint8List.fromList([
+          pushCodeSendConfirmed,
+          ...(ByteData(8)
+                ..setUint32(0, ack, Endian.little)
+                ..setUint32(4, tripMs, Endian.little))
+              .buffer
+              .asUint8List(),
+        ]));
+        _heardAcks.remove(ack);
+      },
+    );
+  }
+
+  static String _heardAckKind(int payloadType) => switch (payloadType) {
+    payloadTypeMULTIPART => 'MULTIPART',
+    payloadTypePATH => 'path reply',
+    _ => 'ACK',
+  };
+
   /// The ACKs for a passing copy, which the radio never opened: the one the
   /// firmware would have sent, on the radio's stored route (with its extra
   /// MULTIPART copy when the radio sends two), and, when the app sends every
@@ -9403,7 +9625,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (!_remember(_passingCopyAcked, id)) return;
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
-    final packets = PassingCopyOpener.ackPackets(
+    final standIn = PassingCopyOpener.ackPackets(
       copy.ack,
       routePathLen: PathHelper.encodePathLen(
         contact.pathLength,
@@ -9414,23 +9636,81 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       floodWidth: _pathHashByteWidth,
       scopeKey: _passingCopyScopeKey,
     );
-    if (_appSendsSecondAck && _remember(_secondAckSent, id)) {
-      packets.addAll(_secondAckPackets(copy, contact, byFlood: false));
-    }
-    _queueRawPackets(
-      packets,
+    final second = _appSendsSecondAck && _remember(_secondAckSent, id)
+        ? _secondAckPackets(copy, contact, byFlood: false)
+        : const <Uint8List>[];
+    final timers = _queueRawPackets(
+      [...standIn, ...second],
       TimeoutHelper.passingCopyAckDelayMs(
         _estimateAirtimeMs(packetBytes),
         copy.hopsLeftCount,
       ),
+    );
+    _standInAcks.removeWhere((_, held) => !held.any((t) => t.isActive));
+    // With repeat on, the radio passes on a copy whose next hop is its own
+    // hash and marks it seen (Mesh.cpp onRecvPacket, allowPacketForward), so
+    // it never opens the last repeater's copy and sends no ACK: then the
+    // stand-in is the ACK, and stays.
+    final me = _selfPublicKey;
+    final radioPassesItOn = _clientRepeat == true &&
+        me != null &&
+        PathHelper.firstHopHex(copy.hopsLeft, stride: copy.hopWidth) ==
+            PathHelper.hopHex(
+              PathHelper.pubKeyPrefix(me, stride: copy.hopWidth),
+            );
+    if (!radioPassesItOn) {
+      _standInAcks[id] = timers.sublist(0, standIn.length);
+    }
+  }
+
+  /// The radio opens its own copy of a DM or room post the app picked up on
+  /// its way (the last repeater's copy, or a flood) and sends that ACK
+  /// itself. The app's stand-in for it, if still held, is dropped, so the
+  /// message gets no more ACKs than the radio's and the app's second, on
+  /// another route (owner, 2026-11-21: the radio's ACK is the one we can't
+  /// control, the second is the good one). A stand-in already sent can't be
+  /// called back, and the firmware always ACKs a DM it opens.
+  void _dropStandInAck(_RawPacket packet) {
+    if (_standInAcks.isEmpty) return;
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
+      return;
+    }
+    final copy = opener.openAny(
+      flood: packet.isFlood,
+      pathLenRaw: packet.pathLenRaw,
+      pathBytes: packet.pathBytes,
+      payload: packet.payload,
+      contactKeys: _contacts.map((c) => c.publicKey),
+    );
+    if (copy == null) return;
+    final held = [
+      for (final t in _standInAcks.remove(pubKeyToHex(copy.ack.sublist(0, 4))) ??
+          const <Timer>[])
+        if (t.isActive) t,
+    ];
+    if (held.isEmpty) return;
+    for (final t in held) {
+      t.cancel();
+    }
+    final from = _contactWithKey(copy.senderKey)?.name;
+    appLogger.info(
+      'The radio opened its own copy of a message${from == null ? '' : ' from $from'} '
+      "picked up on its way: it sends that ACK, the app's stand-in is dropped",
+      tag: 'Connector',
     );
   }
 
   /// A copy of a DM or room post to this radio that the radio opens itself
   /// (the last routed copy, or a flood). The radio sends one ACK; when the
   /// app sends every second ACK, it sends the other, as the radio's extra
-  /// ACK would follow its first.
-  void _sendSecondAckFor(_RawPacket packet) {
+  /// ACK would follow its first. A flood's path is the way it came, so
+  /// Pathfinder is told who heard the sender first ([onFloodCopyOpened]):
+  /// the ACK then goes by that repeater, not by where they were heard
+  /// before (simulator 2026-11-21: the first DM after a move got its second
+  /// ACK on the old ranking, and that was the one ACK that could arrive).
+  void _sendSecondAckFor(_RawPacket packet, int snrByte) {
     if (!_appSendsSecondAck) return;
     final opener = _passingCopyOpener;
     final me = _selfPublicKey;
@@ -9450,8 +9730,26 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final contact = _contactWithKey(copy.senderKey);
     if (contact == null) return;
+    if (packet.isFlood) {
+      onFloodCopyOpened?.call(
+        contact.publicKeyHex,
+        packet.pathBytes,
+        packet.hashSize,
+        snrByte.toSigned(8),
+        packet.payload,
+      );
+    }
+    final heardBy = packet.isFlood
+        ? PathHelper.firstHopHex(packet.pathBytes, stride: packet.hashSize)
+        : null;
     _queueRawPackets(
-      _secondAckPackets(copy, contact, byFlood: packet.isFlood),
+      _secondAckPackets(
+        copy,
+        contact,
+        byFlood: packet.isFlood,
+        heardBy:
+            heardBy == null ? null : (hop: heardBy, width: packet.hashSize),
+      ),
       TimeoutHelper.ackDelayMs + TimeoutHelper.extraAckGapMs,
     );
   }
@@ -9465,10 +9763,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// such route left, the stored route again (owner: one route, the same
   /// route); on a resend, a flood. A resend keeps the sender's timestamp, so
   /// each one brings a new route in (the Pathfinder session's audit).
+  /// [heardBy] is the first repeater of a flood copy: it heard them seconds
+  /// ago, so of the routes left the ACK takes the first that ends there,
+  /// whichever doorstep Pathfinder ranks first for a message.
   List<Uint8List> _secondAckPackets(
     PassingCopy copy,
     Contact contact, {
     required bool byFlood,
+    ({String hop, int width})? heardBy,
   }) {
     final message =
         '${pubKeyToHex(copy.senderKey)}:${copy.timestamp}:${copy.isRoomPost}';
@@ -9489,10 +9791,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     if (!byFlood) tried.add(_ackRouteKey(held));
     final routes = _ackRoutes(contact) ?? const <PathSelection>[];
     final options = routes.isNotEmpty ? routes : [?held];
-    var route = options
-        .where((r) =>
-            !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)))
-        .firstOrNull;
+    final left = options.where((r) =>
+        !tried.contains(_ackRouteKey(r)) && (byFlood || !r.heldBy(contact)));
+    var route = left
+            .where((r) =>
+                heardBy != null &&
+                r.hashSize == heardBy.width &&
+                PathHelper.lastHopHex(r.pathBytes, stride: r.hashSize) ==
+                    heardBy.hop)
+            .firstOrNull ??
+        left.firstOrNull;
     if (route == null && firstCopy && !byFlood) route = held;
     // No route at all, and the first ACK was a plain flood: a plain flood
     // second ACK would be the same packet, and every repeater that carried
@@ -9552,11 +9860,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// [TimeoutHelper.extraAckGapMs] apart, the way sendAckTo spaces its two
   /// ACKs. The radio queues a routed packet at priority 0 (sendDirect) and a
   /// flood at 1 (sendFlood).
-  void _queueRawPackets(List<Uint8List> packets, int delayMs) {
+  /// The timers are returned in the packets' order.
+  List<Timer> _queueRawPackets(List<Uint8List> packets, int delayMs) {
+    final timers = <Timer>[];
     var delay = delayMs;
     for (final packet in packets) {
       final priority = (packet[0] & 0x03) == 0x02 ? 0 : 1;
-      Timer(Duration(milliseconds: delay), () {
+      timers.add(Timer(Duration(milliseconds: delay), () {
         if (!isConnected) return;
         unawaited(
           sendFrame(
@@ -9564,9 +9874,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             expectsGenericAck: true,
           ).catchError((Object _) {}),
         );
-      });
+      }));
       delay += TimeoutHelper.extraAckGapMs;
     }
+    _rawPacketTimers
+      ..removeWhere((t) => !t.isActive)
+      ..addAll(timers);
+    return timers;
   }
 
   void _handleLogRxData(Uint8List frame) {
@@ -9578,6 +9892,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
+      _noteAckHeard(packet);
       // A repeater's own advert, zero hops: a repeater transmission
       // reached me just as surely as a relayed packet (the parked-message
       // wake; simulator 2026-10-25, where a 30 s advert was all the air
@@ -9613,11 +9928,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         }
       }
       if (packet.payloadType == _payloadTypeTxtMsg) {
+        if (packet.isFlood || packet.hopCount == 0) _dropStandInAck(packet);
         if (!packet.isFlood && packet.hopCount > 0) {
           _openPassingCopy(packet, frame[1]);
         } else {
-          _sendSecondAckFor(packet);
+          _sendSecondAckFor(packet, frame[1]);
         }
+        return;
+      }
+      // Channel datagrams too, so a photo sent along a set path reaches every
+      // radio on the way that hears it, not only the one at the end.
+      if (packet.payloadType == _payloadTypeGroupData) {
+        _handleRawGroupData(packet);
         return;
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
@@ -9729,6 +10051,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
     } catch (e) {
       appLogger.warn('Error handling log RX data frame: $e');
+    }
+  }
+
+  /// Each channel datagram the radio logged, decrypted with its live
+  /// channel's key: the slot, the data type and the blob, as a CHANNEL_DATA
+  /// push would give them.
+  void Function(int channelIndex, int dataType, Uint8List blob)?
+      onRawChannelData;
+
+  void _handleRawGroupData(_RawPacket packet) {
+    final hook = onRawChannelData;
+    if (hook == null || packet.payload.length < 4) return;
+    final channelHash = packet.payload[0];
+    final encrypted = Uint8List.fromList(packet.payload.sublist(1));
+    for (final channel in _channels) {
+      if (channel.isEmpty) continue;
+      if (_computeChannelHash(channel.psk) != channelHash) continue;
+      // A 1-byte hash collides: one that fails the MAC isn't the channel.
+      final plain = _decryptPayload(channel.psk, encrypted);
+      if (plain == null || plain.length < 3) continue;
+      final length = plain[2];
+      if (3 + length > plain.length) continue;
+      hook(
+        channel.index,
+        plain[0] | (plain[1] << 8),
+        Uint8List.sublistView(plain, 3, 3 + length),
+      );
+      return;
     }
   }
 
@@ -10036,7 +10386,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
       // Handle ACK in retry service
       if (_retryService != null) {
-        _retryService!.handleAckReceived(ackHash, tripTimeMs);
+        final heard = _heardAcks[ackHash];
+        _retryService!.handleAckReceived(ackHash, tripTimeMs,
+            viaPathReply: heard?.pathReply, wireAttempt: heard?.attempt);
       }
     } catch (e) {
       // Nothing is marked delivered: the newest sent DM may be anyone's,
@@ -12772,6 +13124,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _appSettingsService?.removeListener(_onAppSettingsChanged);
     _contactNotesSub?.cancel();
     _contactPersistTimer?.cancel();
+    for (final t in _heardAckTimers.values) {
+      t.cancel();
+    }
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     _usbFrameSubscription?.cancel();
@@ -13992,6 +14347,7 @@ const int _routeTransportDirect = 0x03;
 
 const int _payloadTypeTxtMsg = 0x02;
 const int _payloadTypeGroupText = 0x05;
+const int _payloadTypeGroupData = 0x06;
 const int _cipherMacSize = 2;
 
 class _RawPacket {

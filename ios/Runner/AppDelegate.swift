@@ -1,4 +1,5 @@
 import Flutter
+import Photos
 import UIKit
 import UniformTypeIdentifiers
 
@@ -26,6 +27,38 @@ import UniformTypeIdentifiers
     let storage = FlutterMethodChannel(
       name: "meshtrax/storage", binaryMessenger: registrar.messenger())
     storage.setMethodCallHandler { call, result in
+      // The phone's memory, for whether it can rebuild photos.
+      if call.method == "physicalMemory" {
+        result(NSNumber(value: ProcessInfo.processInfo.physicalMemory))
+        return
+      }
+      // Bytes free at path for a download the user asks for (the photo model).
+      if call.method == "freeBytes", let path = call.arguments as? String {
+        let url = URL(fileURLWithPath: path)
+        let free = try? url.resourceValues(
+          forKeys: [.volumeAvailableCapacityForImportantUsageKey]
+        ).volumeAvailableCapacityForImportantUsage
+        result(free.map { NSNumber(value: $0) })
+        return
+      }
+      // A photo the user saves from MeshTrax, added to their library.
+      if call.method == "saveToPhotos",
+        let data = (call.arguments as? FlutterStandardTypedData)?.data
+      {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+          guard status == .authorized || status == .limited else {
+            DispatchQueue.main.async { result(false) }
+            return
+          }
+          PHPhotoLibrary.shared().performChanges({
+            PHAssetCreationRequest.forAsset().addResource(
+              with: .photo, data: data, options: nil)
+          }) { saved, _ in
+            DispatchQueue.main.async { result(saved) }
+          }
+        }
+        return
+      }
       guard call.method == "excludeFromBackup", let path = call.arguments as? String else {
         result(FlutterMethodNotImplemented)
         return

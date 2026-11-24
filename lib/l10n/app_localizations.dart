@@ -131,6 +131,786 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @tray_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get tray_photo;
+
+  /// No description provided for @photo_settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photo_settingsTitle;
+
+  /// No description provided for @photo_enableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send and see photos over the radio. Needs the {size} photo model on this phone.'**
+  String photo_enableHint(String size);
+
+  /// No description provided for @photo_sendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo to {channel}'**
+  String photo_sendTitle(String channel);
+
+  /// No description provided for @photo_squareIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a photo, then choose the square to send.'**
+  String get photo_squareIntro;
+
+  /// No description provided for @photo_takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get photo_takePhoto;
+
+  /// No description provided for @photo_choosePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo'**
+  String get photo_choosePhoto;
+
+  /// No description provided for @photo_chooseAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get photo_chooseAnother;
+
+  /// No description provided for @photo_cropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move and zoom until what matters fills the square. Close up, it comes through much clearer.'**
+  String get photo_cropHint;
+
+  /// No description provided for @photo_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get photo_preview;
+
+  /// No description provided for @photo_changeCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Change crop'**
+  String get photo_changeCrop;
+
+  /// No description provided for @photo_checkingAndCoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking and coding the photo…'**
+  String get photo_checkingAndCoding;
+
+  /// No description provided for @photo_modelMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.'**
+  String get photo_modelMissing;
+
+  /// No description provided for @photo_previewNoMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough memory here to show what they will see. You can still send it.'**
+  String get photo_previewNoMemory;
+
+  /// No description provided for @photo_rebuildingPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuilding what they will see… about 20 seconds'**
+  String get photo_rebuildingPreview;
+
+  /// No description provided for @photo_prepareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t prepare the photo: {error}'**
+  String photo_prepareFailed(String error);
+
+  /// No description provided for @photo_flaggedNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo can\'t be sent: the safety check flagged it.'**
+  String get photo_flaggedNotSent;
+
+  /// No description provided for @photo_tagTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag (optional)'**
+  String get photo_tagTitle;
+
+  /// No description provided for @photo_blurFaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur faces'**
+  String get photo_blurFaces;
+
+  /// No description provided for @photo_blurFacesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.'**
+  String get photo_blurFacesHint;
+
+  /// No description provided for @photo_facesBlurred.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 face blurred} other{{count} faces blurred}}'**
+  String photo_facesBlurred(int count);
+
+  /// No description provided for @photo_facesDarkened.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 face covered in grey: blurred, the photo didn\'t pass the safety check} other{{count} faces covered in grey: blurred, the photo didn\'t pass the safety check}}'**
+  String photo_facesDarkened(int count);
+
+  /// No description provided for @photo_includePosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Include location'**
+  String get photo_includePosition;
+
+  /// No description provided for @photo_positionFromRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio\'s location now, to about {distance}'**
+  String photo_positionFromRadio(String distance);
+
+  /// No description provided for @photo_noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio has no location'**
+  String get photo_noPosition;
+
+  /// No description provided for @photo_distance10km.
+  ///
+  /// In en, this message translates to:
+  /// **'10 km'**
+  String get photo_distance10km;
+
+  /// No description provided for @photo_distance600m.
+  ///
+  /// In en, this message translates to:
+  /// **'600 m'**
+  String get photo_distance600m;
+
+  /// No description provided for @photo_distance40m.
+  ///
+  /// In en, this message translates to:
+  /// **'40 m'**
+  String get photo_distance40m;
+
+  /// No description provided for @photo_distance2m.
+  ///
+  /// In en, this message translates to:
+  /// **'2 m'**
+  String get photo_distance2m;
+
+  /// No description provided for @photo_positionAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{position}, to about {distance}'**
+  String photo_positionAt(String position, String distance);
+
+  /// No description provided for @photo_zeroHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero hop'**
+  String get photo_zeroHop;
+
+  /// No description provided for @photo_zeroHopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only radios in direct range; repeaters don\'t pass it on'**
+  String get photo_zeroHopHint;
+
+  /// No description provided for @photo_repairPacket.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair packet'**
+  String get photo_repairPacket;
+
+  /// No description provided for @photo_repairPacketHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One more packet, so the photo still arrives if any one packet is lost'**
+  String get photo_repairPacketHint;
+
+  /// No description provided for @photo_sendFigures.
+  ///
+  /// In en, this message translates to:
+  /// **'{packets} packets · about {sendTime} to send'**
+  String photo_sendFigures(int packets, String sendTime);
+
+  /// No description provided for @photo_seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String photo_seconds(String seconds);
+
+  /// No description provided for @photo_blockedWait.
+  ///
+  /// In en, this message translates to:
+  /// **'On MeshCore frequencies, a radio sends one photo every {gap} minutes. You can send another in {minutes} min.'**
+  String photo_blockedWait(int gap, int minutes);
+
+  /// No description provided for @photo_blockedWaitRepeaters.
+  ///
+  /// In en, this message translates to:
+  /// **'On MeshCore frequencies, a radio sends one photo through repeaters every {gap} minutes. You can send another through repeaters in {minutes} min, or one zero hop now.'**
+  String photo_blockedWaitRepeaters(int gap, int minutes);
+
+  /// No description provided for @photo_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get photo_send;
+
+  /// No description provided for @photo_sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get photo_sending;
+
+  /// No description provided for @photo_sendingPacket.
+  ///
+  /// In en, this message translates to:
+  /// **'Packet {sent} of {total}'**
+  String photo_sendingPacket(int sent, int total);
+
+  /// No description provided for @photo_sendingRepairPacket.
+  ///
+  /// In en, this message translates to:
+  /// **'Packet {sent} of {total} (repair)'**
+  String photo_sendingRepairPacket(int sent, int total);
+
+  /// No description provided for @photo_notSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: {error}'**
+  String photo_notSent(String error);
+
+  /// No description provided for @photo_errorNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'not connected to a radio'**
+  String get photo_errorNotConnected;
+
+  /// No description provided for @photo_errorNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'the radio didn\'t answer'**
+  String get photo_errorNoAnswer;
+
+  /// No description provided for @photo_errorRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'the radio refused a packet (error {code})'**
+  String photo_errorRefused(int code);
+
+  /// No description provided for @photo_confirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send photo'**
+  String get photo_confirmTitle;
+
+  /// No description provided for @photo_openChannelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos on {channel}'**
+  String photo_openChannelTitle(String channel);
+
+  /// No description provided for @photo_openChannelNotEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Most people here won\'t see it: only MeshTrax shows photos.'**
+  String get photo_openChannelNotEveryone;
+
+  /// No description provided for @photo_openChannelAirtime.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo takes {airtime} on air, as much as {messages} text messages.'**
+  String photo_openChannelAirtime(String airtime, int messages);
+
+  /// No description provided for @photo_openChannelRepeaters.
+  ///
+  /// In en, this message translates to:
+  /// **'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.'**
+  String get photo_openChannelRepeaters;
+
+  /// No description provided for @photo_openChannelBetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.'**
+  String get photo_openChannelBetter;
+
+  /// No description provided for @photo_dontShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get photo_dontShowAgain;
+
+  /// No description provided for @photo_confirmAirtime.
+  ///
+  /// In en, this message translates to:
+  /// **'{packets} packets, {airtime} on air: as much as {messages} text messages.'**
+  String photo_confirmAirtime(int packets, String airtime, int messages);
+
+  /// No description provided for @photo_confirmOpenChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone on {channel} using MeshTrax can see it. Other apps don\'t show photos.'**
+  String photo_confirmOpenChannel(String channel);
+
+  /// No description provided for @photo_confirmFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'Each repeater that hears it sends it again.'**
+  String get photo_confirmFlood;
+
+  /// No description provided for @photo_confirmZeroHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero hop: only radios in direct range get it.'**
+  String get photo_confirmZeroHop;
+
+  /// No description provided for @photo_label.
+  ///
+  /// In en, this message translates to:
+  /// **'AI reconstructed'**
+  String get photo_label;
+
+  /// No description provided for @photo_tapToView.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get photo_tapToView;
+
+  /// No description provided for @photo_enhance.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhance 4×'**
+  String get photo_enhance;
+
+  /// No description provided for @photo_enhancing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhancing…'**
+  String get photo_enhancing;
+
+  /// No description provided for @photo_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get photo_save;
+
+  /// No description provided for @photo_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your photos'**
+  String get photo_saved;
+
+  /// No description provided for @photo_saveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the photo.'**
+  String get photo_saveFailed;
+
+  /// No description provided for @photo_details.
+  ///
+  /// In en, this message translates to:
+  /// **'About this photo'**
+  String get photo_details;
+
+  /// No description provided for @photo_caption.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuilt by an AI model from {bytes} bytes. Fine detail is generated, not sent: signs and text won\'t come through. Not a record of what was there.'**
+  String photo_caption(int bytes);
+
+  /// No description provided for @photo_enlargedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced 4× on this phone: fine detail may be made up.'**
+  String get photo_enlargedNote;
+
+  /// No description provided for @photo_enlargeNoMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free memory to enlarge it now. Close other apps, then try again.'**
+  String get photo_enlargeNoMemory;
+
+  /// No description provided for @photo_enlargeFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.'**
+  String get photo_enlargeFlagged;
+
+  /// No description provided for @photo_enlargeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t enlarge the photo.'**
+  String get photo_enlargeFailed;
+
+  /// No description provided for @photo_enlargeAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Enlarge photos automatically'**
+  String get photo_enlargeAutomatically;
+
+  /// No description provided for @photo_enlargeAutomaticallyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.'**
+  String get photo_enlargeAutomaticallyHint;
+
+  /// No description provided for @photo_ignoreTimeLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore the photo time limits'**
+  String get photo_ignoreTimeLimits;
+
+  /// No description provided for @photo_ignoreTimeLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.'**
+  String get photo_ignoreTimeLimitsHint;
+
+  /// No description provided for @photo_rebuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuilding… about 20 s'**
+  String get photo_rebuilding;
+
+  /// No description provided for @photo_hiddenFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'Image hidden: flagged as inappropriate'**
+  String get photo_hiddenFlagged;
+
+  /// No description provided for @photo_hiddenReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo hidden: you reported it'**
+  String get photo_hiddenReported;
+
+  /// No description provided for @photo_noMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough memory to rebuild this photo right now. Close other apps or restart MeshTrax, then try again.'**
+  String get photo_noMemory;
+
+  /// No description provided for @photo_rebuildFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo couldn\'t be rebuilt.'**
+  String get photo_rebuildFailed;
+
+  /// No description provided for @photo_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get photo_report;
+
+  /// No description provided for @photo_block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}'**
+  String photo_block(String name);
+
+  /// No description provided for @photo_blockedSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked {name}'**
+  String photo_blockedSender(String name);
+
+  /// No description provided for @photo_reportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this photo'**
+  String get photo_reportTitle;
+
+  /// No description provided for @photo_reportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.'**
+  String get photo_reportBody;
+
+  /// No description provided for @photo_reportInclude.
+  ///
+  /// In en, this message translates to:
+  /// **'Include the photo'**
+  String get photo_reportInclude;
+
+  /// No description provided for @photo_reportIncludeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its code, a few hundred bytes, from which it can be rebuilt. Not the picture itself.'**
+  String get photo_reportIncludeHint;
+
+  /// No description provided for @photo_reportReason.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s wrong? (optional)'**
+  String get photo_reportReason;
+
+  /// No description provided for @photo_reportedSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo hidden, and the report is sent. Thank you.'**
+  String get photo_reportedSent;
+
+  /// No description provided for @photo_reportedQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo hidden. The report will be sent when there\'s internet.'**
+  String get photo_reportedQueued;
+
+  /// No description provided for @photo_reportPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo report: {name}'**
+  String photo_reportPending(String name);
+
+  /// No description provided for @photo_reportPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for internet to send'**
+  String get photo_reportPendingHint;
+
+  /// No description provided for @photo_reportStillWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Still no internet. It will be sent later.'**
+  String get photo_reportStillWaiting;
+
+  /// No description provided for @photo_autoRebuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuild received photos automatically'**
+  String get photo_autoRebuild;
+
+  /// No description provided for @photo_autoRebuildHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: tap a photo to rebuild it. On: each photo rebuilds as it arrives, while MeshTrax is open and the phone has the memory.'**
+  String get photo_autoRebuildHint;
+
+  /// No description provided for @photo_modelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo model'**
+  String get photo_modelTitle;
+
+  /// No description provided for @photo_modelProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String photo_modelProgress(String done, String total);
+
+  /// No description provided for @photo_modelChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the download…'**
+  String get photo_modelChecking;
+
+  /// No description provided for @photo_modelRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying…'**
+  String get photo_modelRetrying;
+
+  /// No description provided for @photo_modelPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get photo_modelPaused;
+
+  /// No description provided for @photo_modelWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting: downloads wait for Wi‑Fi'**
+  String get photo_modelWaitingWifi;
+
+  /// No description provided for @photo_modelWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting…'**
+  String get photo_modelWaiting;
+
+  /// No description provided for @photo_modelInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'On this device ({size})'**
+  String photo_modelInstalled(String size);
+
+  /// No description provided for @photo_modelFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed: {error}'**
+  String photo_modelFailed(String error);
+
+  /// No description provided for @photo_modelNoReason.
+  ///
+  /// In en, this message translates to:
+  /// **'no reason given'**
+  String get photo_modelNoReason;
+
+  /// No description provided for @photo_modelNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed to send and rebuild photos: {size}'**
+  String photo_modelNeeded(String size);
+
+  /// No description provided for @photo_keepOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep MeshTrax open until the download finishes. Progress also shows in Offline maps.'**
+  String get photo_keepOpen;
+
+  /// No description provided for @photo_licencesLink.
+  ///
+  /// In en, this message translates to:
+  /// **'{poweredBy} · Licences'**
+  String photo_licencesLink(String poweredBy);
+
+  /// No description provided for @photo_cancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get photo_cancelDownload;
+
+  /// No description provided for @photo_downloadModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Download photo model'**
+  String get photo_downloadModel;
+
+  /// No description provided for @photo_tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get photo_tryAgain;
+
+  /// No description provided for @photo_deleteModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete photo model'**
+  String get photo_deleteModel;
+
+  /// No description provided for @photo_downloadLicences.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the licence texts'**
+  String get photo_downloadLicences;
+
+  /// No description provided for @photo_deleteModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the photo model?'**
+  String get photo_deleteModelTitle;
+
+  /// No description provided for @photo_deleteModelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos can\'t be sent or rebuilt until it\'s downloaded again ({size}).'**
+  String photo_deleteModelBody(String size);
+
+  /// No description provided for @photo_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get photo_keep;
+
+  /// No description provided for @photo_notEnoughSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough space: the photo model needs {needed} free, and this device has {free}.'**
+  String photo_notEnoughSpace(String needed, String free);
+
+  /// No description provided for @photo_downloadName.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo model ({index} of {count})'**
+  String photo_downloadName(int index, int count);
+
+  /// No description provided for @photo_downloadLicenceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo model licence ({index} of {count})'**
+  String photo_downloadLicenceName(int index, int count);
+
+  /// No description provided for @photo_licencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo model licences'**
+  String get photo_licencesTitle;
+
+  /// No description provided for @photo_licencesIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The model that rebuilds photos is built on Stability AI\'s SD-Turbo, with the AEIC image codec and AdcSR\'s decoder; the safety check uses an image classifier built on SwiftFormer. These are the notice and licences that come with them.'**
+  String get photo_licencesIntro;
+
+  /// No description provided for @photo_licencesMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The licence texts download with the photo model.'**
+  String get photo_licencesMissing;
+
+  /// No description provided for @photo_message.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id}'**
+  String photo_message(String id);
+
+  /// No description provided for @photo_messageWithTag.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} · {tag}'**
+  String photo_messageWithTag(String id, String tag);
+
+  /// No description provided for @photo_incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} incomplete: {got} of {total} packets'**
+  String photo_incomplete(String id, int got, int total);
+
+  /// No description provided for @photo_unreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} couldn\'t be read'**
+  String photo_unreadable(String id);
+
+  /// No description provided for @photo_needsNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} needs a newer MeshTrax'**
+  String photo_needsNewer(String id);
+
+  /// No description provided for @photo_unknownSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Node {id}'**
+  String photo_unknownSender(String id);
+
+  /// No description provided for @photo_chatPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo'**
+  String get photo_chatPhoto;
+
+  /// No description provided for @photo_cameraDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax can\'t use the camera. You can allow it in the phone\'s settings.'**
+  String get photo_cameraDenied;
+
+  /// No description provided for @photo_pickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No photo: {error}'**
+  String photo_pickFailed(String error);
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -8035,13 +8815,13 @@ abstract class AppLocalizations {
   /// No description provided for @appSettings_mapDownloadsWifiOnly.
   ///
   /// In en, this message translates to:
-  /// **'Download maps on Wi‑Fi only'**
+  /// **'Download on Wi‑Fi only'**
   String get appSettings_mapDownloadsWifiOnly;
 
   /// No description provided for @appSettings_mapDownloadsWifiOnlySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Map downloads wait for a Wi‑Fi connection'**
+  /// **'Downloads wait for Wi‑Fi'**
   String get appSettings_mapDownloadsWifiOnlySubtitle;
 
   /// No description provided for @offlineMaps_title.
@@ -8443,19 +9223,19 @@ abstract class AppLocalizations {
   /// No description provided for @offlineMaps_notificationRunning.
   ///
   /// In en, this message translates to:
-  /// **'Downloading map'**
+  /// **'Downloading'**
   String get offlineMaps_notificationRunning;
 
   /// No description provided for @offlineMaps_notificationPaused.
   ///
   /// In en, this message translates to:
-  /// **'Map download paused'**
+  /// **'Download paused'**
   String get offlineMaps_notificationPaused;
 
   /// No description provided for @offlineMaps_notificationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Map download failed'**
+  /// **'Download failed'**
   String get offlineMaps_notificationFailed;
 
   /// No description provided for @map_notForNavigation.

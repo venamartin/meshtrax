@@ -289,14 +289,6 @@ class EvidenceStore {
     }
   }
 
-  /// They moved out of range of everything known: drop every doorstep
-  /// row of theirs.
-  void wipeContact(String owner) {
-    for (final key in entries.keys.where((k) => k.$1 == owner).toList()) {
-      removeEntry(key);
-    }
-  }
-
   /// Proven contact ingress: the last hop of a send that was delivered
   /// (ACKed) or of a path-discovery out_path — a repeater that reached
   /// them, in the direction that matters.

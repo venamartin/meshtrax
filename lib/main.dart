@@ -15,6 +15,10 @@ import 'screens/chrome_required_screen.dart';
 import 'utils/platform_info.dart';
 
 import 'connector/meshcore_connector.dart';
+import 'services/photo_mesh.dart';
+import 'services/photo_model_downloads.dart';
+import 'services/photo_reports.dart';
+import 'services/photo_store.dart';
 import 'models/channel.dart';
 import 'models/contact.dart';
 import 'screens/chat_screen.dart';
@@ -56,6 +60,13 @@ void main() async {
   // Initialize services
   final storage = StorageService();
   final connector = MeshCoreConnector();
+  // Photos: listen for them from the start.
+  await checkPhotoMemory();
+  if (photosSupported) {
+    PhotoMesh.of(connector);
+    unawaited(PhotoStore.instance.load());
+    unawaited(PhotoReports.instance.sendWaiting());
+  }
   final pathGraphService = PathGraphService();
   final retryService = MessageRetryService();
   final appSettingsService = AppSettingsService();
@@ -149,6 +160,11 @@ void main() async {
   final poiService = mapPacksService == null
       ? null
       : await PoiService.create(mapPacksService);
+  // The photo model downloads through the map downloader; this installs what
+  // it handed over while the app was closed.
+  if (photosSupported && mapPacksService != null) {
+    await PhotoModelDownloads.start(mapPacksService);
+  }
 
   await connector.loadContactCache();
   // Channel settings and messages are keyed by channel identity, so the
@@ -208,6 +224,19 @@ https://creativecommons.org/licenses/by/4.0/
     yield LicenseEntryWithLineBreaks(
       <String>['JetBrains Mono'],
       await rootBundle.loadString('assets/fonts/JetBrainsMono-OFL.txt'),
+    );
+    for (final file in [
+      'LiteRT-LICENSE.txt',
+      'LiteRT-THIRD_PARTY_NOTICE.txt',
+    ]) {
+      yield LicenseEntryWithLineBreaks(
+        <String>['LiteRT'],
+        await rootBundle.loadString('assets/licenses/$file'),
+      );
+    }
+    yield LicenseEntryWithLineBreaks(
+      <String>['BlazeFace (MediaPipe)'],
+      await rootBundle.loadString('assets/licenses/BlazeFace-NOTICE.txt'),
     );
   });
 }
