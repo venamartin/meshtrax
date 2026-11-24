@@ -186,7 +186,7 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
 
 The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again**.
 - **Heard** means an advert, a post, a radio's answer or a TRAX report since the switch.
-- **Each member** shows when they were heard, how long ago and how far ("1:37 PM · 7m ago · 1.2 km NE", plus "may be old"). A tap opens the map on them, with their trail.
+- **Each member** shows when they were heard, how long ago and how far ("1:37 PM · 7m ago · 1.2 km NE", plus "may be old"). A tap opens their card on the map, with their trail.
 - **A member with no location** says why: asking, no answer, or not heard yet.
 - **Asking silent members:**
   - two minutes after the switch or Check again, the radios of members not heard since the switch are asked, one at a time;
