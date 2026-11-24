@@ -23,7 +23,7 @@ Last updated 2026-11-06. **Resume here.**
 - **The merge and the release wait for traxmapmaker's live publish** (North America routing, then California places) and the checks from the Pi (Martin, 2026-11-06).
 - **Phase 8's two open items come after the release** (Martin, 2026-11-06): parks as places, for the tap, and parks split across regions.
 - **Release gate:** the checklist in Phase 5.
-- **After the release:** saved routes (#242) first, with location sharing's package (#240) built alongside. Its screens come after that release.
+- **After the release:** saved routes, not started; their plan (#242) was closed ([not built yet](trax-mode.md#not-built-yet)). Location sharing shipped as TRAX mode's locations ([TRAX mode](trax-mode.md)).
 
 The rest of this section is the record from 2026-10-17 to 2026-11-02.
 
@@ -466,7 +466,7 @@ As built on #210 (Linux, Android and iOS). The early design (a separate screen, 
 - **Kept:** the path type and the options are saved with the app's settings. The route is kept while the app runs (`UiViewStateService.mapRoute`), so it's still there after a visit to Chats or Contacts.
 - **⚙ options:** for Dirt, fastest, balanced or most direct; avoid highways, tolls and ferries; the hardest trail (SAC T1–T6); climbs and hiking pace.
 - **Naming:** "Trail routing" for the download, and `route_` l10n keys, because `routing_*` already means mesh routing.
-- **Later:** GPX export comes with saved routes (#242).
+- **Later:** GPX export comes with saved routes ([not built yet](trax-mode.md#not-built-yet)).
 
 ### S7. Overlay feature sheet (Phase 8)
 
@@ -705,7 +705,7 @@ From the map packs and Points of interest, with no overlay download (Martin, 202
   - **Uses:**
     - Choosing a repeater site: share a reach from a ridge with a raised antenna before anyone carries it up.
     - On a trip: "this is where my radio reaches from camp".
-    - Later, in TRAX mode, a reach for any member's shared position from the focus view ([#240](https://github.com/venamartin/meshtrax/pull/240)).
+    - Later, in TRAX mode, a reach for any member's shared position from the focus view ([not built yet](trax-mode.md#not-built-yet)).
   - **Safety:**
     - It's a prediction from the terrain, so the sheet keeps its caveats on the receiver's side as well. They cost no bytes.
     - A shared reach gives away the position it's centred on, the same as a pin, so Public asks first.
