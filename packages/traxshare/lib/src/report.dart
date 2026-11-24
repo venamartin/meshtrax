@@ -9,9 +9,9 @@ import 'trail.dart';
 const traxshareDataType = 0x0171;
 
 /// A member's location, as version 1's REPORT (subtype 2) carries it. The
-/// layout is the location-sharing plan's (docs/technical/traxshare-plan.md,
-/// "Wire format, version 1"), so later steps add to it rather than replace
-/// it.
+/// layout is version 1 of the closed location-sharing plan (#240); later
+/// fields add to it rather than replace it. How TRAX uses it:
+/// docs/technical/trax-mode.md.
 ///
 /// 29 bytes: a 12-byte header (version and subtype, seq, sender prefix,
 /// session, sent at), then the field mask, the position, the fix age,

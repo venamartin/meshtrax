@@ -31,7 +31,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [BLE protocol](technical/BLE_PROTOCOL.md) | Older overview of the Bluetooth connection and commands |
 | [Pathfinder design](technical/path-graph-design.md) | Pathfinder's design, decisions and evidence rules |
 | [Pathfinder build plan](technical/path-graph-implementation.md) | The original build plan (finished) |
-| [TRAX mode](technical/trax-mode.md) | Moving a group's radios off the regular mesh and back: saved settings, the settings write, the TRAX message, Leave |
+| [TRAX mode](technical/trax-mode.md) | TRAX as built: TRAX mode, the trip and its members, Ask their radio, locations on the trip channel, the group on the map, and what isn't built yet |
 | [Regions](technical/regions.md) | Messages that travel only through one area's repeaters: firmware facts, decisions and the plan |
 | [Offline maps notes](technical/offline-maps-notes.md) | Where the map code and data live, decisions, pitfalls |
 | [Offline maps roadmap](technical/offline-maps-roadmap.md) | The offline maps plan and its status |
