@@ -108,15 +108,15 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get photo_includePosition => 'Include position';
+  String get photo_includePosition => 'Include location';
 
   @override
   String photo_positionFromRadio(String distance) {
-    return 'Your radio\'s position now, to about $distance';
+    return 'Your radio\'s location now, to about $distance';
   }
 
   @override
-  String get photo_noPosition => 'Your radio has no position';
+  String get photo_noPosition => 'Your radio has no location';
 
   @override
   String get photo_distance10km => '10 km';

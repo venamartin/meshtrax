@@ -266,19 +266,19 @@ abstract class AppLocalizations {
   /// No description provided for @photo_includePosition.
   ///
   /// In en, this message translates to:
-  /// **'Include position'**
+  /// **'Include location'**
   String get photo_includePosition;
 
   /// No description provided for @photo_positionFromRadio.
   ///
   /// In en, this message translates to:
-  /// **'Your radio\'s position now, to about {distance}'**
+  /// **'Your radio\'s location now, to about {distance}'**
   String photo_positionFromRadio(String distance);
 
   /// No description provided for @photo_noPosition.
   ///
   /// In en, this message translates to:
-  /// **'Your radio has no position'**
+  /// **'Your radio has no location'**
   String get photo_noPosition;
 
   /// No description provided for @photo_distance10km.

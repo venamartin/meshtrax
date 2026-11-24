@@ -20,7 +20,7 @@ The phones that receive it rebuild a picture from that code with the same model.
 2. Take a photo or choose one, then move and zoom until what matters fills the square. Close up, it comes through much clearer: something small in a wide shot can come back as shapes the AI made up. **Blur faces** is on: your phone blurs any faces it finds before the photo is coded, because the AI can't rebuild faces and would make them up. If the blurred photo doesn't pass the safety check, the faces are covered in grey instead.
 3. Tap **Preview**. The photo is checked and coded, then rebuilt exactly as the others will see it.
 4. Type a tag if it helps, up to 24 characters, such as "Spring flowing". It travels as text, exactly as you type it, so the rebuild can't change it.
-5. To show where you are, turn on **Include position** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's position now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
+5. To show where you are, turn on **Include location** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's location now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
 6. Tap **Send**. MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first.
 
 A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
@@ -37,7 +37,7 @@ The Off-Grid presets, TRAX included, and custom frequencies have none of these l
 
 ## Receiving a photo
 
-- A photo shows in the chat under the sender's name, with its tag and position, if any, under it. **Map** and **Navigate** work as on a shared location. Tap it to see it full screen: it's rebuilt there first, in about 20 seconds on an older phone and a few seconds on a recent one. Pinch or double-tap to zoom.
+- A photo shows in the chat under the sender's name, with its tag and location, if any, under it. **Map** and **Navigate** work as on a shared location. Tap it to see it full screen: it's rebuilt there first, in about 20 seconds on an older phone and a few seconds on a recent one. Pinch or double-tap to zoom.
 - **Enhance 4×**, at the bottom, enlarges it to 2048 × 2048. An AI model on your phone sharpens it, so fine detail may be made up. It takes about 4 seconds on an older phone, 1 on a recent one, and needs about 1 GB of free memory. MeshTrax keeps only the rebuilt photo, not the enhanced one.
 - **Save**, at the top, saves what's on screen to your photos (on a Mac, where you choose), with "AI reconstructed" and the footprint in its corners. The ⋮ menu has **About this photo** and, for a photo you received, **Report** and **Block**.
 - To skip the taps, turn on **Rebuild received photos automatically** in App settings, Messaging, Photos: each photo then rebuilds as it arrives, while MeshTrax is open and the phone has the memory. On phones with 8 GB of memory or more, **Enlarge photos automatically** enlarges a photo as it opens full screen.
