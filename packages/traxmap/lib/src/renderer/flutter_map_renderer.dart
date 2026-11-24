@@ -57,6 +57,10 @@ class FlutterMapRenderer extends StatefulWidget {
   /// A long-press, or a right-click with a mouse.
   final ValueChanged<LatLng>? onLongPress;
 
+  /// A drag of the map starts: one finger or the mouse, not a pinch, a
+  /// double-tap or the wheel, which zoom.
+  final VoidCallback? onDrag;
+
   /// Device pixels per logical pixel for tile bitmaps; null = auto.
   ///
   /// flutter_map_vector_tiles draws each tile once into a bitmap at a whole
@@ -83,6 +87,7 @@ class FlutterMapRenderer extends StatefulWidget {
     this.onCameraChanged,
     this.onTap,
     this.onLongPress,
+    this.onDrag,
     this.tileResolution,
   });
 
@@ -330,6 +335,10 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
   void _handleLongPress(fm.TapPosition _, ll.LatLng p) =>
       widget.onLongPress?.call(_ovm(p));
 
+  void _handleMapEvent(fm.MapEvent event) {
+    if (event.source == fm.MapEventSource.dragStart) widget.onDrag?.call();
+  }
+
   void _handlePosition(fm.MapCamera c, bool _) {
     widget.onCameraChanged?.call(
       MapCamera(center: _ovm(c.center), zoom: c.zoom - _zoomOffset),
@@ -408,6 +417,7 @@ class _FlutterMapRendererState extends State<FlutterMapRenderer>
         onLongPress: _handleLongPress,
         onSecondaryTap: _handleLongPress,
         onPositionChanged: _handlePosition,
+        onMapEvent: _handleMapEvent,
       ),
       children: [
         // The tile layer reads the screen density from MediaQuery to size

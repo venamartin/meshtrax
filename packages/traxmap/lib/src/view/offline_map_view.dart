@@ -82,6 +82,10 @@ class OfflineMapView extends StatefulWidget {
   final ValueChanged<LatLng>? onTap;
   final ValueChanged<LatLng>? onLongPress;
 
+  /// A drag of the map starts: one finger or the mouse, not a pinch, a
+  /// double-tap or the wheel, which zoom.
+  final VoidCallback? onDrag;
+
   /// Called whenever a style has been loaded, with the credits and
   /// disclaimer the app must show, and whether the style is dark.
   final ValueChanged<MapStyleState>? onStyleLoaded;
@@ -123,6 +127,7 @@ class OfflineMapView extends StatefulWidget {
     this.onCameraChanged,
     this.onTap,
     this.onLongPress,
+    this.onDrag,
     this.onStyleLoaded,
     this.styleRegistry,
     this.units = Units.imperial,
@@ -282,6 +287,7 @@ class _OfflineMapViewState extends State<OfflineMapView> {
       onCameraChanged: _onCamera,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
+      onDrag: widget.onDrag,
       tileResolution: widget.tileResolution,
     );
   }

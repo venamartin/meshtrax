@@ -29,6 +29,58 @@ Pack _pack(String id, String kind, String attribution) => Pack(
 void main() {
   const camera = MapCamera(center: LatLng(36.75, -121.85), zoom: 10);
 
+  testWidgets('onDrag: a one-finger drag, not a pinch', (tester) async {
+    final registry = StyleRegistry(
+      _MemoryStyles({
+        'plain': {
+          'version': 8,
+          'name': 'Plain',
+          'sources': <String, Object?>{},
+          'layers': [
+            {'id': 'bg', 'type': 'background'},
+          ],
+        },
+      }),
+    );
+    final controller = OfflineMapController();
+    var drags = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OfflineMapView(
+          styleId: 'plain',
+          packs: const [],
+          initialCamera: camera,
+          styleRegistry: registry,
+          controller: controller,
+          onDrag: () => drags++,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(controller.isReady, isTrue);
+    final middle = tester.getCenter(find.byType(OfflineMapView));
+    final a = await tester.startGesture(middle - const Offset(40, 0));
+    final b = await tester.startGesture(
+      middle + const Offset(40, 0),
+      pointer: 2,
+    );
+    for (var i = 0; i < 5; i++) {
+      await a.moveBy(const Offset(-20, 0));
+      await b.moveBy(const Offset(20, 0));
+      await tester.pump();
+    }
+    await a.up();
+    await b.up();
+    await tester.pump(const Duration(seconds: 1));
+    expect(controller.camera!.zoom, greaterThan(camera.zoom));
+    expect(drags, 0);
+
+    await tester.drag(find.byType(OfflineMapView), const Offset(0, 100));
+    await tester.pump(const Duration(seconds: 1));
+    expect(drags, 1);
+  });
+
   testWidgets('onStyleLoaded hands the app credits and disclaimer', (
     tester,
   ) async {

@@ -33,6 +33,9 @@ class MapControls extends StatelessWidget {
   /// The radio's GPS is off: My location shows it crossed out.
   final bool gpsOff;
 
+  /// The map keeps you in the middle: My location shows filled.
+  final bool following;
+
   /// The room the buttons take at the map's right edge
   /// ([AppMap.controlsWidth]).
   static const width = 80.0;
@@ -55,6 +58,7 @@ class MapControls extends StatelessWidget {
     this.onTouch,
     this.onMyLocation,
     this.gpsOff = false,
+    this.following = false,
   });
 
   /// Centres [controller] on [here], zoomed in to at least [locateZoom].
@@ -81,6 +85,7 @@ class MapControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
     Widget fade(Widget button) => AnimatedOpacity(
       opacity: faded ? fadedOpacity : 1,
       duration: const Duration(milliseconds: 300),
@@ -137,6 +142,8 @@ class MapControls extends StatelessWidget {
               heroTag: null,
               tooltip: l10n.map_myLocation,
               onPressed: onMyLocation,
+              backgroundColor: following ? scheme.primary : null,
+              foregroundColor: following ? scheme.onPrimary : null,
               child: Icon(gpsOff ? Icons.location_disabled : Icons.my_location),
             ),
           ),

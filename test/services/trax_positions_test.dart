@@ -32,6 +32,7 @@ import 'package:meshtrax/services/trip_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
+import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/trax_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +78,8 @@ class _Radio extends MeshCoreConnector {
   double? get selfLatitude => lat;
   @override
   double? get selfLongitude => lon;
+  @override
+  bool get hasGps => true;
   @override
   bool get gpsOn => gps;
   @override
@@ -864,8 +867,8 @@ void main() {
         overlays(tester).whereType<MapMarker>().firstWhere((o) => o.id == id);
 
     testWidgets('a member\'s trail over your own track, their marker for '
-        'the pin; a tap on it opens their card, and closing that hides '
-        'their trail', (tester) async {
+        'the pin; a tap on it opens their card, and their trail stays once '
+        'that is closed', (tester) async {
       startServices();
       // Your own way: 300 m east, a reading every 30 s.
       for (var m = 0; m <= 300; m += 100) {
@@ -908,9 +911,155 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Bo'), findsNothing);
-      expect(line('trail:of:0'), isNull);
+      expect(line('trail:of:0'), isNotNull);
       expect(line('trail:self:0'), isNotNull);
       await stopServices(tester);
+    });
+
+    group('the map follows', () {
+      OfflineMapController map(WidgetTester tester) =>
+          tester.widget<AppMap>(find.byType(AppMap)).controller!;
+
+      Future<void> settle(WidgetTester tester) async {
+        for (var i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      // Where [p] is on the screen, and the middle of the map that a sheet
+      // leaves, or of the whole map.
+      (double, double) whereAndMiddle(WidgetTester tester, TrailPoint p) {
+        final top = tester.getTopLeft(find.byType(AppMap)).dy;
+        final sheet = find.byType(BottomSheet);
+        final bottom = sheet.evaluate().isEmpty
+            ? tester.getBottomLeft(find.byType(AppMap)).dy
+            : tester.getTopLeft(sheet).dy;
+        final at = map(tester).toScreen(LatLng(p.lat, p.lon))!;
+        return (top + at.dy, (top + bottom) / 2);
+      }
+
+      Future<void> drag(WidgetTester tester) async {
+        await tester.drag(find.byType(AppMap), const Offset(0, 120));
+        await settle(tester);
+      }
+
+      testWidgets('you after My location, as you move, until the map is '
+          'dragged; a sheet about something else holds it', (tester) async {
+        startServices();
+        radio
+          ..lat = _here.lat
+          ..lon = _here.lon;
+        await pumpApp(tester, const MapScreen());
+        Future<void> move(TrailPoint p) async {
+          radio
+            ..lat = p.lat
+            ..lon = p.lon
+            ..changed();
+          await settle(tester);
+        }
+
+        bool following() =>
+            tester.widget<MapControls>(find.byType(MapControls)).following;
+        expect(following(), isFalse);
+        await tester.tap(find.byTooltip('My location'));
+        await settle(tester);
+        expect(following(), isTrue);
+
+        await move(_north(500));
+        var (at, middle) = whereAndMiddle(tester, _north(500));
+        expect(at, closeTo(middle, 1));
+
+        // A sheet about a point low on the map moves the map to show it, and
+        // holds it there even as you move; once it closes, the map is back.
+        Future<void> sheetLow() async {
+          final b = map(tester).visibleBounds!;
+          tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+            LatLng(b.south + (b.north - b.south) * 0.1, (b.west + b.east) / 2),
+          );
+          await settle(tester);
+          expect(find.text('Share marker here'), findsOneWidget);
+        }
+
+        Future<void> closeSheet() async {
+          await tester.tap(find.text('Cancel'));
+          await settle(tester);
+        }
+
+        await sheetLow();
+        expect(
+          whereAndMiddle(tester, _north(500)).$1,
+          isNot(closeTo(whereAndMiddle(tester, _north(500)).$2, 1)),
+          reason: 'moved to show the point',
+        );
+        await closeSheet();
+        (at, middle) = whereAndMiddle(tester, _north(500));
+        expect(at, closeTo(middle, 1), reason: 'back once it closed');
+
+        await sheetLow();
+        final held = map(tester).camera!.center;
+        await move(_north(700));
+        expect(map(tester).camera!.center, held, reason: 'held by the sheet');
+        await closeSheet();
+        (at, middle) = whereAndMiddle(tester, _north(700));
+        expect(at, closeTo(middle, 1), reason: 'back where you are now');
+
+        await drag(tester);
+        expect(following(), isFalse);
+        final left = map(tester).camera!.center;
+        await move(_north(1000));
+        expect(map(tester).camera!.center, left);
+        await stopServices(tester);
+      });
+
+      testWidgets('a tapped member as they move: above their card, then '
+          'with it closed and their trail kept, until the map is dragged', (
+        tester,
+      ) async {
+        startServices();
+        radio.datagrams.add(_datagram(_report(0x11), receivedAt: now));
+        await pumpApp(tester, const MapScreen());
+        var sent = _t0;
+        Future<void> report(TrailPoint p) async {
+          sent = sent.add(const Duration(seconds: 30));
+          now = now.add(const Duration(seconds: 30));
+          radio.datagrams.add(
+            _datagram(
+              _report(0x11, sentAt: sent, lat: p.lat, lon: p.lon),
+              receivedAt: now,
+            ),
+          );
+          await settle(tester);
+        }
+
+        marker(tester, 'trip:11111111').onTap!();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('Bo'), findsOneWidget);
+        await report(_north(400));
+        var (at, middle) = whereAndMiddle(tester, _north(400));
+        expect(at, closeTo(middle, 1), reason: 'above the card');
+
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('Bo'), findsNothing);
+        (at, middle) = whereAndMiddle(tester, _north(400));
+        expect(at, closeTo(middle, 1), reason: 'the whole map\'s middle');
+        await report(_north(800));
+        (at, middle) = whereAndMiddle(tester, _north(800));
+        expect(at, closeTo(middle, 1), reason: 'the card closed');
+        expect(
+          overlays(tester).map((o) => o.id),
+          contains('trail:of:0'),
+          reason: 'their trail',
+        );
+
+        await drag(tester);
+        final left = map(tester).camera!.center;
+        await report(_north(1200));
+        expect(map(tester).camera!.center, left);
+        await stopServices(tester);
+      });
     });
 
     testWidgets('a member\'s card: who and when heard, then which way, how '
