@@ -419,7 +419,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         onProgress: (p) {
           if (mounted) {
             setState(
-              () => _sendStatus = p.isParityChunk
+              () => _sendStatus = p.again
+                  ? l10n.photo_sendingPacketAgain(p.sentChunks, p.totalChunks)
+                  : p.isParityChunk
                   ? l10n.photo_sendingRepairPacket(p.sentChunks, p.totalChunks)
                   : l10n.photo_sendingPacket(p.sentChunks, p.totalChunks),
             );
@@ -588,6 +590,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         photoGapFor(
               photoPayload(_bitstream!, _extras(connector)).length,
               zeroHop: _zeroHop,
+              repairPacket: _repairPacket,
               airtimeMs: airtimeMs,
               shared: photoRulesApply(connector.currentFreqHz),
             ) *

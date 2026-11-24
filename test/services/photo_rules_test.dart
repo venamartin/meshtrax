@@ -110,35 +110,50 @@ void main() {
   group('the gap between packets', () {
     int airtime(int bytes) => 650;
 
+    Duration gap(
+      int bytes, {
+      required bool zeroHop,
+      bool repairPacket = true,
+      int Function(int bytes)? airtimeMs,
+      bool shared = false,
+    }) =>
+        photoGapFor(
+          bytes,
+          zeroHop: zeroHop,
+          repairPacket: repairPacket,
+          airtimeMs: airtimeMs ?? airtime,
+          shared: shared,
+        );
+
     test('zero hop: the airtime and half a second', () {
-      expect(
-        photoGapFor(500, zeroHop: true, airtimeMs: airtime),
-        const Duration(milliseconds: 1150),
-      );
+      expect(gap(500, zeroHop: true), const Duration(milliseconds: 1150));
     });
 
     test('a flood: until the packet has cleared two hops of repeaters', () {
-      expect(
-        photoGapFor(500, zeroHop: false, airtimeMs: airtime),
-        const Duration(milliseconds: 5700),
-      );
+      expect(gap(500, zeroHop: false), const Duration(milliseconds: 5700));
     });
 
     test('on a shared frequency, at least 4 airtimes, within the window', () {
       expect(
-        photoGapFor(500, zeroHop: true, airtimeMs: airtime, shared: true),
+        gap(500, zeroHop: true, shared: true),
         const Duration(milliseconds: 2600),
       );
       expect(
-        photoGapFor(500, zeroHop: false, airtimeMs: airtime, shared: true),
+        gap(500, zeroHop: false, shared: true),
         const Duration(milliseconds: 5700),
       );
       // 3.1 s packets (USA Arizona): 4 airtimes would miss the window, so a
       // 6-packet photo spreads 45 s over its 5 gaps.
       int slow(int bytes) => 3120;
       expect(
-        photoGapFor(700, zeroHop: true, airtimeMs: slow, shared: true),
+        gap(700, zeroHop: true, airtimeMs: slow, shared: true),
         const Duration(seconds: 9),
+      );
+      // Without the repair packet it is 5 packets, 45 s over 4 gaps.
+      expect(
+        gap(700, zeroHop: true, repairPacket: false, airtimeMs: slow,
+            shared: true),
+        const Duration(milliseconds: 11250),
       );
     });
   });

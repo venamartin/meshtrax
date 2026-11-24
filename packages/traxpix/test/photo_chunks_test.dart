@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -1000,6 +1001,164 @@ void main() {
         '101:1',
         '101:2',
       ]);
+    });
+
+    test('photoRepeatHeardWithin: the packet, the longest repeater wait and '
+        'the copy, then half a second', () {
+      const airtime = Duration(milliseconds: 650);
+      expect(
+        photoRepeatHeardWithin(airtime),
+        const Duration(milliseconds: 3425),
+      );
+      // The flood gap leaves time to know before the next packet is due.
+      expect(
+        photoPacketGapFlood(airtime, packets: 6),
+        greaterThan(photoRepeatHeardWithin(airtime)),
+      );
+    });
+  });
+
+  group('sending a packet again', () {
+    /// The chunk index of each frame [send] got, in order.
+    List<int> indexes(List<Uint8List> frames) =>
+        [for (final f in frames) (f[5 + 3] >> 4) & 0x0F];
+
+    ImageChunkTransport transport(List<Uint8List> frames) =>
+        ImageChunkTransport(
+          senderPrefix: senderA,
+          reassembler: ImageReassembler(),
+          idAllocator: ImageIdAllocator(seed: 40),
+          send: (frame) async => frames.add(frame),
+        );
+
+    test('chunk, then sendChunks: the very packets the caller holds go out',
+        () async {
+      final frames = <Uint8List>[];
+      final tx = transport(frames);
+      final set = tx.chunk(
+        payload: payloadOf(450),
+        metadata: ft8Meta,
+        parity: false,
+      );
+      expect(await tx.sendChunks(set), same(set));
+      expect([for (final f in frames) f.sublist(5)], set.blobs);
+      expect(
+        tx.chunk(payload: payloadOf(10), metadata: ft8Meta).imgId,
+        set.imgId + 1,
+      );
+    });
+
+    test('a packet no repeater passed on goes once more, the same bytes, '
+        'before the next', () async {
+      final frames = <Uint8List>[];
+      final asked = <int>[];
+      final progress = <ImageSendProgress>[];
+      final set = await transport(frames).sendImage(
+        payload: payloadOf(450),
+        metadata: ft8Meta,
+        resend: (i) {
+          asked.add(i);
+          return i == 1;
+        },
+        onProgress: progress.add,
+      );
+      await pumpEventQueue();
+      expect(set.blobs, hasLength(4));
+      expect(indexes(frames), [0, 1, 1, 2, 3]);
+      expect(frames[2], frames[1]);
+      expect(asked, [0, 1, 2, 3]);
+      expect(
+        [for (final p in progress) (p.sentChunks, p.again)],
+        [(1, false), (2, false), (2, true), (3, false), (4, false)],
+      );
+    });
+
+    test('each packet is asked about once, the last a gap after it',
+        () async {
+      final frames = <Uint8List>[];
+      final asked = <int>[];
+      final set = await transport(frames).sendImage(
+        payload: payloadOf(450),
+        metadata: ft8Meta,
+        resend: (i) {
+          asked.add(i);
+          return true;
+        },
+      );
+      // Handed back before the check after the last packet.
+      expect(indexes(frames), [0, 0, 1, 1, 2, 2, 3]);
+      await pumpEventQueue();
+      expect(indexes(frames), [0, 0, 1, 1, 2, 2, 3, 3]);
+      expect(asked, [0, 1, 2, 3]);
+      expect(set.blobs, hasLength(4));
+    });
+
+    test('onDone comes after the check that follows the last packet',
+        () async {
+      const gap = Duration(milliseconds: 40);
+      final frames = <Uint8List>[];
+      final done = Completer<void>();
+      final sw = Stopwatch()..start();
+      await transport(frames).sendImage(
+        payload: payloadOf(300),
+        metadata: ft8Meta,
+        gap: gap,
+        resend: (_) => false,
+        onDone: done.complete,
+      );
+      final handedBack = sw.elapsedMilliseconds;
+      expect(done.isCompleted, isFalse);
+      await done.future;
+      expect(
+        sw.elapsedMilliseconds - handedBack,
+        greaterThanOrEqualTo(gap.inMilliseconds - 5),
+      );
+      expect(indexes(frames), [0, 1, 2]);
+    });
+
+    test('nothing goes again where the photo would outlast the window',
+        () async {
+      const gap = Duration(milliseconds: 10);
+      final frames = <Uint8List>[];
+      final asked = <int>[];
+      // Four packets take 3 gaps; one more fits a window of 4.
+      await transport(frames).sendImage(
+        payload: payloadOf(450),
+        metadata: ft8Meta,
+        gap: gap,
+        resendWindow: gap * 4,
+        resend: (i) {
+          asked.add(i);
+          return true;
+        },
+      );
+      await Future<void>.delayed(gap * 3);
+      expect(indexes(frames), [0, 0, 1, 2, 3]);
+      expect(asked, [0]);
+    });
+
+    test('onDone comes when a packet is refused, and the error is handed '
+        'back', () async {
+      var calls = 0;
+      var done = false;
+      final tx = ImageChunkTransport(
+        senderPrefix: senderA,
+        reassembler: ImageReassembler(),
+        send: (frame) async {
+          if (++calls == 2) throw StateError('refused');
+        },
+      );
+      await expectLater(
+        tx.sendImage(
+          payload: payloadOf(450),
+          metadata: ft8Meta,
+          resend: (_) => false,
+          onDone: () => done = true,
+        ),
+        throwsStateError,
+      );
+      expect(done, isTrue);
+      expect(calls, 2);
     });
   });
 

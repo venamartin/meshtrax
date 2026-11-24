@@ -389,6 +389,18 @@ abstract class AppLocalizations {
   /// **'Packet {sent} of {total} (repair)'**
   String photo_sendingRepairPacket(int sent, int total);
 
+  /// No repeater was heard passing this packet on, so it goes out once more.
+  ///
+  /// In en, this message translates to:
+  /// **'Packet {sent} of {total} again'**
+  String photo_sendingPacketAgain(int sent, int total);
+
+  /// Long-press text of the amber check on a sent photo: repeaters were heard passing on only some of its packets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent · repeaters passed on {heard} of its {total} packets'**
+  String photo_passedOnSome(int heard, int total);
+
   /// No description provided for @photo_notSent.
   ///
   /// In en, this message translates to:

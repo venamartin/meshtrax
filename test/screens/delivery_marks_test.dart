@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,7 @@ import 'package:meshtrax/services/chat_text_scale_service.dart';
 import 'package:meshtrax/services/heard_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
+import 'package:meshtrax/services/photo_store.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -68,6 +71,7 @@ ChannelMessage _mine(
   String text, {
   ChannelMessageStatus status = ChannelMessageStatus.sent,
   int repeats = 0,
+  String? packetHash,
 }) => ChannelMessage(
   senderName: 'Base',
   text: text,
@@ -77,7 +81,36 @@ ChannelMessage _mine(
   channelIndex: 1,
   messageId: text,
   repeatCount: repeats,
+  packetHash: packetHash,
 );
+
+/// A photo of mine in 3 packets, [passedOn] of them heard passed on (null:
+/// sent zero hop), filed under [id].
+Future<ChannelMessage> _myPhoto(
+  WidgetTester tester,
+  String id, {
+  int? passedOn,
+  ChannelMessageStatus status = ChannelMessageStatus.sent,
+}) async {
+  await tester.runAsync(
+    () => PhotoStore.instance.save(
+      PhotoRecord(
+        messageId: id,
+        bytes: 450,
+        packets: 3,
+        outgoing: true,
+        packetsPassedOn: passedOn,
+      ),
+      Uint8List(450),
+    ),
+  );
+  return _mine(
+    id,
+    status: status,
+    repeats: passedOn ?? 0,
+    packetHash: 'photo:own:3a:1',
+  );
+}
 
 const _noSign = 'Sent · no sign of who got it';
 
@@ -89,6 +122,20 @@ final _redCross = find.byWidgetPredicate(
 );
 
 void main() {
+  late Directory photos;
+
+  setUpAll(() {
+    photos = Directory.systemTemp.createTempSync('delivery-marks');
+    TestWidgetsFlutterBinding.ensureInitialized();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (call) async => photos.path,
+        );
+  });
+
+  tearDownAll(() => photos.deleteSync(recursive: true));
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({
       'heard_check_heard': jsonEncode({
@@ -222,6 +269,55 @@ void main() {
         ),
       );
       expect(find.byIcon(Icons.schedule), findsOneWidget);
+      expect(_amberCheck, findsNothing);
+    });
+
+    testWidgets('a photo some of whose packets went unheard: an amber check '
+        'that says how many ($mode)', (tester) async {
+      final photo = await _myPhoto(tester, 'photo-$mode-some', passedOn: 2);
+      await open(
+        tester,
+        ChannelChatScreen(channel: _channel),
+        tracing: tracing,
+        radio: _Radio(channelRows: [photo]),
+      );
+      expect(_amberCheck, findsOneWidget);
+      expect(
+        find.byTooltip('Sent · repeaters passed on 2 of its 3 packets'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a photo no repeater passed on: the plain amber check '
+        '($mode)', (tester) async {
+      final photo = await _myPhoto(tester, 'photo-$mode-none', passedOn: 0);
+      await open(
+        tester,
+        ChannelChatScreen(channel: _channel),
+        tracing: tracing,
+        radio: _Radio(channelRows: [photo]),
+      );
+      expect(find.byTooltip(_noSign), findsOneWidget);
+    });
+
+    testWidgets('a photo passed on in full, one still listening, and one '
+        'sent zero hop: no amber ($mode)', (tester) async {
+      final rows = [
+        await _myPhoto(
+          tester,
+          'photo-$mode-all',
+          passedOn: 3,
+          status: ChannelMessageStatus.delivered,
+        ),
+        await _myPhoto(tester, 'photo-$mode-wait', passedOn: 1),
+        await _myPhoto(tester, 'photo-$mode-zero'),
+      ];
+      await open(
+        tester,
+        ChannelChatScreen(channel: _channel),
+        tracing: tracing,
+        radio: _Radio(channelRows: rows)..retrying.add('photo-$mode-wait'),
+      );
       expect(_amberCheck, findsNothing);
     });
   }

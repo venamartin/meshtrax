@@ -25,6 +25,11 @@ The phones that receive it rebuild a picture from that code with the same model.
 
 A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
 
+Through repeaters, your radio listens for each packet being passed on:
+- A packet no repeater was heard passing on goes once more ("Packet 2 of 4 again"), while the others can still put the photo together. It doesn't when **Max Channel Message Retries** is 0, or when no repeater has been heard for 10 minutes. After a packet sent again, no more go until a repeater is heard passing some packet of the photo on. A repeater you marked in Pathfinder as moving with you doesn't count.
+- Your photo then shows the checks a message does: one grey check while your radio listens, two green checks once repeaters passed on every packet the others need, and the amber check when some weren't heard. Hold the amber check to see how many were.
+- Zero hop, no repeater passes it on, so it keeps its one check.
+
 ## On MeshCore frequencies
 
 On the frequencies of MeshCore's standard presets, photos share the air with everyone, so MeshTrax holds them back:

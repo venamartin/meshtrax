@@ -190,6 +190,16 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String photo_sendingPacketAgain(int sent, int total) {
+    return 'Packet $sent of $total again';
+  }
+
+  @override
+  String photo_passedOnSome(int heard, int total) {
+    return 'Sent · repeaters passed on $heard of its $total packets';
+  }
+
+  @override
   String photo_notSent(String error) {
     return 'Nie wysłano: $error';
   }

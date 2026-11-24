@@ -43,6 +43,11 @@ class PhotoRecord {
   /// Where the sender sent it from, when they included their position.
   final PhotoPosition? position;
 
+  /// Of a photo this radio sent through repeaters: how many of its
+  /// [packets] a repeater was heard passing on. Null for one sent zero hop,
+  /// a received photo, or one sent before MeshTrax listened for them.
+  int? packetsPassedOn;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -53,6 +58,7 @@ class PhotoRecord {
     this.reported = false,
     this.tag,
     this.position,
+    this.packetsPassedOn,
   });
 
   Map<String, Object?> toJson() => {
@@ -65,6 +71,7 @@ class PhotoRecord {
     'reported': reported,
     'tag': tag,
     'position': position?.encode(),
+    'packetsPassedOn': packetsPassedOn,
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -80,6 +87,7 @@ class PhotoRecord {
       final List<Object?> b => PhotoPosition.decode(b.cast<int>()),
       _ => null,
     },
+    packetsPassedOn: j['packetsPassedOn'] as int?,
   );
 }
 
@@ -226,6 +234,17 @@ class PhotoStore extends ChangeNotifier {
     for (final f in [_pngOf(messageId), File('$_dir/$messageId.aeic')]) {
       if (f.existsSync()) f.deleteSync();
     }
+    _writeRecord(record);
+    notifyListeners();
+  }
+
+  /// Records that repeaters were heard passing on [count] of the packets of
+  /// my photo [messageId].
+  Future<void> notePassedOn(String messageId, int count) async {
+    await load();
+    final record = _records[messageId];
+    if (record == null || record.packetsPassedOn == count) return;
+    record.packetsPassedOn = count;
     _writeRecord(record);
     notifyListeners();
   }
