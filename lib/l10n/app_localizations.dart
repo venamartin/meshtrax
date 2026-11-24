@@ -182,7 +182,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_cropHint.
   ///
   /// In en, this message translates to:
-  /// **'Move and zoom until what matters fills the square.'**
+  /// **'Move and zoom until what matters fills the square. Close up, it comes through much clearer.'**
   String get photo_cropHint;
 
   /// No description provided for @photo_preview.

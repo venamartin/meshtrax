@@ -42,7 +42,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photo_cropHint =>
-      'Move and zoom until what matters fills the square.';
+      'Move and zoom until what matters fills the square. Close up, it comes through much clearer.';
 
   @override
   String get photo_preview => 'Preview';
