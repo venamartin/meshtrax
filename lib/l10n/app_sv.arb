@@ -263,6 +263,60 @@
   "trax_notificationText": "Det vanliga meshet hör dig inte. Öppna MeshTrax för att lämna.",
   "trax_endedTitle": "Turen har slutat",
   "trax_endedText": "Fortfarande i TRAX-läge: det vanliga meshet hör dig inte.",
+  "trip_members": "Turens medlemmar",
+  "trip_pickChannel": "Välj en turkanal: alla som skriver där är medlemmar.",
+  "trip_noPosts": "Ingen har skrivit på turkanalen än.",
+  "trip_notContact": "Inte en kontakt på den här radion",
+  "trip_canAsk": "Kan fråga din radio",
+  "trip_addMember": "Lägg till en medlem",
+  "trip_askMyRadio": "Medlemmar får fråga min radio",
+  "trip_askMyRadioHint": "Var den är, och dess batteri. Slår på GPS. Slutar när du lämnar TRAX efter turen.",
+  "trip_shareOff": "{setting} är av: medlemmar kan inte fråga.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "I TRAX-läge. Alla inom räckhåll kan läsa den.",
+  "trip_sosTitle": "Ska ett SOS höras även i Stör ej?",
+  "trip_sosBody": "Öppna inställningarna och tillåt Åsidosätt Stör ej.",
+  "trip_onTrax": "{on} av {total} på TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: inte hörd än",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: frågar radion…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: inget svar",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Enhetens information",
   "settings_appSettings": "Appinställningar",
   "settings_appSettingsSubtitle": "Meddelanden, notiser och kartinställningar",

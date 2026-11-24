@@ -263,6 +263,60 @@
   "trax_notificationText": "Zwykła sieć mesh cię nie słyszy. Otwórz MeshTrax, aby opuścić tryb.",
   "trax_endedTitle": "Twoja wyprawa się zakończyła",
   "trax_endedText": "Nadal w trybie TRAX: zwykła sieć mesh cię nie słyszy.",
+  "trip_members": "Uczestnicy wyprawy",
+  "trip_pickChannel": "Wybierz kanał wyprawy: każdy, kto tam pisze, jest uczestnikiem.",
+  "trip_noPosts": "Nikt jeszcze nie pisał na kanale wyprawy.",
+  "trip_notContact": "Nie jest kontaktem w tym radiu",
+  "trip_canAsk": "Może zapytać Twoje radio",
+  "trip_addMember": "Dodaj uczestnika",
+  "trip_askMyRadio": "Uczestnicy mogą pytać moje radio",
+  "trip_askMyRadioHint": "Gdzie jest i jego bateria. Włącza GPS. Kończy się, gdy opuścisz TRAX po wyprawie.",
+  "trip_shareOff": "„{setting}” jest wyłączone: uczestnicy nie mogą pytać.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "W trybie TRAX. Każdy w zasięgu może ją odczytać.",
+  "trip_sosTitle": "Czy SOS ma dzwonić mimo trybu Nie przeszkadzać?",
+  "trip_sosBody": "Otwórz ustawienia i zezwól na zastępowanie trybu Nie przeszkadzać.",
+  "trip_onTrax": "{on} z {total} na TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: jeszcze nie słychać",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: pytanie radia…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: brak odpowiedzi",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informacje o urządzeniu",
   "settings_appSettings": "Ustawienia aplikacji",
   "settings_appSettingsSubtitle": "Powiadomienia, wiadomości i preferencje mapy",

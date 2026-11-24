@@ -38,6 +38,7 @@ import 'services/map_packs_service.dart';
 import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/trax_service.dart';
+import 'services/trip_service.dart';
 import 'services/radio_ask_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
@@ -413,6 +414,15 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
             widget.connector,
             repeaterHeardRecently: () =>
                 widget.retryService.repeaterHeardRecently,
+          ),
+        ),
+        // Not lazy: it grants the trip members with no screen open.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => TripService(
+            widget.connector,
+            widget.traxService,
+            context.read<RadioAskService>(),
           ),
         ),
         Provider.value(value: widget.storage),

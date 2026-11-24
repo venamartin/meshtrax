@@ -320,6 +320,60 @@
   "trax_notificationText": "A szokásos mesh hálózat nem hallja. Nyissa meg a MeshTraxot a kilépéshez.",
   "trax_endedTitle": "A túrája véget ért",
   "trax_endedText": "Még TRAX módban van: a szokásos mesh hálózat nem hallja.",
+  "trip_members": "A túra tagjai",
+  "trip_pickChannel": "Válasszon túracsatornát: aki ott ír, tag.",
+  "trip_noPosts": "A túracsatornán még senki sem írt.",
+  "trip_notContact": "Nem kapcsolat ezen a rádión",
+  "trip_canAsk": "Megkérdezheti a rádióját",
+  "trip_addMember": "Tag hozzáadása",
+  "trip_askMyRadio": "A tagok megkérdezhetik a rádiómat",
+  "trip_askMyRadioHint": "Hol van, és az akkuja. Bekapcsolja a GPS-t. Akkor ér véget, amikor a túra után kilép a TRAX-ból.",
+  "trip_shareOff": "A(z) {setting} ki van kapcsolva: a tagok nem kérdezhetnek.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "TRAX módban. Bárki a hatótávon belül elolvashatja.",
+  "trip_sosTitle": "Szóljon az SOS Ne zavarjanak módban is?",
+  "trip_sosBody": "Nyissa meg a beállításokat, és engedélyezze a Ne zavarjanak felülbírálását.",
+  "trip_onTrax": "{on}/{total} a TRAX-on",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: még nem hallható",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: a rádiója megkérdezése…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: nincs válasz",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "A készülék információi",
   "settings_appSettings": "Alkalmazási beállítások",
   "settings_appSettingsSubtitle": "Értesítések, üzenetküldés és térképi beállítások",

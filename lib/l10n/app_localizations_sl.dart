@@ -1178,6 +1178,68 @@ class AppLocalizationsSl extends AppLocalizations {
       'Še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.';
 
   @override
+  String get trip_members => 'Člani izleta';
+
+  @override
+  String get trip_pickChannel =>
+      'Izberite kanal izleta: kdor tam piše, je član.';
+
+  @override
+  String get trip_noPosts => 'Na kanalu izleta še nihče ni pisal.';
+
+  @override
+  String get trip_notContact => 'Ni stik na tem radiu';
+
+  @override
+  String get trip_canAsk => 'Lahko vpraša vaš radio';
+
+  @override
+  String get trip_addMember => 'Dodaj člana';
+
+  @override
+  String get trip_askMyRadio => 'Člani lahko vprašajo moj radio';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Kje je in njegova baterija. Vklopi GPS. Konča se, ko po izletu zapustite TRAX.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '»$setting« je izklopljeno: člani ne morejo vprašati.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'V načinu TRAX. Prebere jo lahko vsakdo v dosegu.';
+
+  @override
+  String get trip_sosTitle => 'Naj SOS zazvoni tudi v načinu Ne moti?';
+
+  @override
+  String get trip_sosBody =>
+      'Odprite nastavitve in dovolite preglasitev načina Ne moti.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on od $total na TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: še ni slišati';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: sprašujem njegov radio…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: ni odgovora';
+  }
+
+  @override
   String get settings_deviceInfo => 'Informacije o napravei';
 
   @override

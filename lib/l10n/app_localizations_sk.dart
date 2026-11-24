@@ -1182,6 +1182,67 @@ class AppLocalizationsSk extends AppLocalizations {
       'Stále v režime TRAX: bežná sieť mesh vás nepočuje.';
 
   @override
+  String get trip_members => 'Členovia výletu';
+
+  @override
+  String get trip_pickChannel => 'Vyberte kanál výletu: kto tam píše, je člen.';
+
+  @override
+  String get trip_noPosts => 'Na kanáli výletu zatiaľ nikto nepísal.';
+
+  @override
+  String get trip_notContact => 'Nie je kontaktom v tomto rádiu';
+
+  @override
+  String get trip_canAsk => 'Môže sa opýtať vášho rádia';
+
+  @override
+  String get trip_addMember => 'Pridať člena';
+
+  @override
+  String get trip_askMyRadio => 'Členovia sa môžu opýtať môjho rádia';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Kde je a jeho batéria. Zapne GPS. Skončí, keď po výlete opustíte TRAX.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '„$setting“ je vypnuté: členovia sa nemôžu pýtať.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'V režime TRAX. Môže ju prečítať ktokoľvek v dosahu.';
+
+  @override
+  String get trip_sosTitle => 'Má SOS zvoniť aj v režime Nerušiť?';
+
+  @override
+  String get trip_sosBody =>
+      'Otvorte nastavenia a povoľte prepísanie režimu Nerušiť.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on z $total na TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: zatiaľ nepočuť';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: pýtam sa jeho rádia…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: žiadna odpoveď';
+  }
+
+  @override
   String get settings_deviceInfo => 'Informácie o zariadení';
 
   @override

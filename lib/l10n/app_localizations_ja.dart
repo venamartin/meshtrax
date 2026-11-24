@@ -1145,6 +1145,64 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_endedText => 'まだTRAXモードです。通常のメッシュでは聞こえません。';
 
   @override
+  String get trip_members => '旅のメンバー';
+
+  @override
+  String get trip_pickChannel => '旅のチャンネルを選んでください。そこに投稿した人がメンバーになります。';
+
+  @override
+  String get trip_noPosts => '旅のチャンネルにはまだ誰も投稿していません。';
+
+  @override
+  String get trip_notContact => 'この無線機の連絡先にありません';
+
+  @override
+  String get trip_canAsk => 'あなたの無線機に問い合わせできます';
+
+  @override
+  String get trip_addMember => 'メンバーを追加';
+
+  @override
+  String get trip_askMyRadio => 'メンバーが私の無線機に問い合わせできる';
+
+  @override
+  String get trip_askMyRadioHint => '場所とバッテリー。GPSをオンにします。旅のあとTRAXを終了すると止まります。';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '「$setting」がオフです。メンバーは問い合わせできません。';
+  }
+
+  @override
+  String get trip_advertsHint => 'TRAXモード中。範囲内の誰でも読めます。';
+
+  @override
+  String get trip_sosTitle => 'サイレントモードでもSOSを鳴らしますか？';
+
+  @override
+  String get trip_sosBody => '設定を開き、「サイレントモードを無視」を許可してください。';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return 'TRAX上 $on/$total';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name：まだ聞こえていません';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name：無線機に問い合わせ中…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name：応答なし';
+  }
+
+  @override
   String get settings_deviceInfo => 'デバイス情報';
 
   @override

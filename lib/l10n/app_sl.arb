@@ -263,6 +263,60 @@
   "trax_notificationText": "Običajno omrežje mesh vas ne sliši. Odprite MeshTrax, da zapustite način.",
   "trax_endedTitle": "Vaš izlet se je končal",
   "trax_endedText": "Še vedno v načinu TRAX: običajno omrežje mesh vas ne sliši.",
+  "trip_members": "Člani izleta",
+  "trip_pickChannel": "Izberite kanal izleta: kdor tam piše, je član.",
+  "trip_noPosts": "Na kanalu izleta še nihče ni pisal.",
+  "trip_notContact": "Ni stik na tem radiu",
+  "trip_canAsk": "Lahko vpraša vaš radio",
+  "trip_addMember": "Dodaj člana",
+  "trip_askMyRadio": "Člani lahko vprašajo moj radio",
+  "trip_askMyRadioHint": "Kje je in njegova baterija. Vklopi GPS. Konča se, ko po izletu zapustite TRAX.",
+  "trip_shareOff": "»{setting}« je izklopljeno: člani ne morejo vprašati.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "V načinu TRAX. Prebere jo lahko vsakdo v dosegu.",
+  "trip_sosTitle": "Naj SOS zazvoni tudi v načinu Ne moti?",
+  "trip_sosBody": "Odprite nastavitve in dovolite preglasitev načina Ne moti.",
+  "trip_onTrax": "{on} od {total} na TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: še ni slišati",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: sprašujem njegov radio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: ni odgovora",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informacije o napravei",
   "settings_appSettings": "Nastavitve aplikacije",
   "settings_appSettingsSubtitle": "Obveščanja, sporoščanje in zemljevidi.",

@@ -1183,6 +1183,67 @@ class AppLocalizationsHu extends AppLocalizations {
       'Még TRAX módban van: a szokásos mesh hálózat nem hallja.';
 
   @override
+  String get trip_members => 'A túra tagjai';
+
+  @override
+  String get trip_pickChannel => 'Válasszon túracsatornát: aki ott ír, tag.';
+
+  @override
+  String get trip_noPosts => 'A túracsatornán még senki sem írt.';
+
+  @override
+  String get trip_notContact => 'Nem kapcsolat ezen a rádión';
+
+  @override
+  String get trip_canAsk => 'Megkérdezheti a rádióját';
+
+  @override
+  String get trip_addMember => 'Tag hozzáadása';
+
+  @override
+  String get trip_askMyRadio => 'A tagok megkérdezhetik a rádiómat';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Hol van, és az akkuja. Bekapcsolja a GPS-t. Akkor ér véget, amikor a túra után kilép a TRAX-ból.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return 'A(z) $setting ki van kapcsolva: a tagok nem kérdezhetnek.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'TRAX módban. Bárki a hatótávon belül elolvashatja.';
+
+  @override
+  String get trip_sosTitle => 'Szóljon az SOS Ne zavarjanak módban is?';
+
+  @override
+  String get trip_sosBody =>
+      'Nyissa meg a beállításokat, és engedélyezze a Ne zavarjanak felülbírálását.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on/$total a TRAX-on';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: még nem hallható';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: a rádiója megkérdezése…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: nincs válasz';
+  }
+
+  @override
   String get settings_deviceInfo => 'A készülék információi';
 
   @override

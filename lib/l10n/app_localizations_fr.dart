@@ -1189,6 +1189,70 @@ class AppLocalizationsFr extends AppLocalizations {
       'Toujours en mode TRAX : le maillage habituel ne vous entend pas.';
 
   @override
+  String get trip_members => 'Membres de la sortie';
+
+  @override
+  String get trip_pickChannel =>
+      'Choisissez un canal de la sortie : quiconque y écrit en est membre.';
+
+  @override
+  String get trip_noPosts =>
+      'Personne n\'a encore écrit sur le canal de la sortie.';
+
+  @override
+  String get trip_notContact => 'Pas un contact sur cette radio';
+
+  @override
+  String get trip_canAsk => 'Peut interroger votre radio';
+
+  @override
+  String get trip_addMember => 'Ajouter un membre';
+
+  @override
+  String get trip_askMyRadio => 'Les membres peuvent interroger ma radio';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Où elle est, et sa batterie. Active le GPS. Prend fin quand vous quittez TRAX après la sortie.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting est désactivé : les membres ne peuvent pas interroger.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'En mode TRAX. Quiconque à portée peut la lire.';
+
+  @override
+  String get trip_sosTitle =>
+      'Faire sonner un SOS même en mode Ne pas déranger ?';
+
+  @override
+  String get trip_sosBody =>
+      'Ouvrez les paramètres, puis autorisez Ignorer Ne pas déranger.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on sur $total sur TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name : pas encore entendu';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name : interrogation de sa radio…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name : pas de réponse';
+  }
+
+  @override
   String get settings_deviceInfo => 'Informations du périphérique';
 
   @override

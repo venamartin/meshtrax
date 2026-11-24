@@ -1187,6 +1187,69 @@ class AppLocalizationsIt extends AppLocalizations {
       'Ancora in modalità TRAX: la mesh abituale non ti sente.';
 
   @override
+  String get trip_members => 'Membri dell\'uscita';
+
+  @override
+  String get trip_pickChannel =>
+      'Scegli un canale dell\'uscita: chi ci scrive è un membro.';
+
+  @override
+  String get trip_noPosts =>
+      'Nessuno ha ancora scritto nel canale dell\'uscita.';
+
+  @override
+  String get trip_notContact => 'Non è un contatto su questa radio';
+
+  @override
+  String get trip_canAsk => 'Può interrogare la tua radio';
+
+  @override
+  String get trip_addMember => 'Aggiungi un membro';
+
+  @override
+  String get trip_askMyRadio => 'I membri possono interrogare la mia radio';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Dov\'è, e la sua batteria. Accende il GPS. Finisce quando esci da TRAX dopo l\'uscita.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '$setting è disattivato: i membri non possono interrogare.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'In modalità TRAX. Chiunque sia a portata può leggerla.';
+
+  @override
+  String get trip_sosTitle => 'Far suonare un SOS anche con Non disturbare?';
+
+  @override
+  String get trip_sosBody =>
+      'Apri le impostazioni, poi consenti Ignora Non disturbare.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on su $total su TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: non ancora sentito';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: interrogo la sua radio…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: nessuna risposta';
+  }
+
+  @override
   String get settings_deviceInfo => 'Informazioni Dispositivo';
 
   @override

@@ -1186,6 +1186,69 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noch im TRAX-Modus: Das normale Mesh hört Sie nicht.';
 
   @override
+  String get trip_members => 'Tour-Mitglieder';
+
+  @override
+  String get trip_pickChannel =>
+      'Wählen Sie einen Tour-Kanal: Wer dort schreibt, ist Mitglied.';
+
+  @override
+  String get trip_noPosts => 'Im Tour-Kanal hat noch niemand geschrieben.';
+
+  @override
+  String get trip_notContact => 'Kein Kontakt auf diesem Funkgerät';
+
+  @override
+  String get trip_canAsk => 'Kann Ihr Funkgerät fragen';
+
+  @override
+  String get trip_addMember => 'Mitglied hinzufügen';
+
+  @override
+  String get trip_askMyRadio => 'Mitglieder dürfen mein Funkgerät fragen';
+
+  @override
+  String get trip_askMyRadioHint =>
+      'Wo es ist, und sein Akku. Schaltet GPS ein. Endet, wenn Sie TRAX nach der Tour verlassen.';
+
+  @override
+  String trip_shareOff(String setting) {
+    return '„$setting“ ist aus: Mitglieder können nicht fragen.';
+  }
+
+  @override
+  String get trip_advertsHint =>
+      'Im TRAX-Modus. Jeder in Reichweite kann ihn lesen.';
+
+  @override
+  String get trip_sosTitle =>
+      'Soll ein SOS trotz „Bitte nicht stören“ klingeln?';
+
+  @override
+  String get trip_sosBody =>
+      'Einstellungen öffnen, dann „Bitte nicht stören“ ignorieren erlauben.';
+
+  @override
+  String trip_onTrax(int on, int total) {
+    return '$on von $total auf TRAX';
+  }
+
+  @override
+  String trip_notHeardYet(String name) {
+    return '$name: noch nicht gehört';
+  }
+
+  @override
+  String trip_asking(String name) {
+    return '$name: Funkgerät wird gefragt…';
+  }
+
+  @override
+  String trip_noAnswer(String name) {
+    return '$name: keine Antwort';
+  }
+
+  @override
   String get settings_deviceInfo => 'Geräteinformationen';
 
   @override

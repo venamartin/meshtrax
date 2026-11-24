@@ -499,6 +499,60 @@
   "trax_notificationText": "The regular mesh can't hear you. Open MeshTrax to leave.",
   "trax_endedTitle": "Your trip has ended",
   "trax_endedText": "Still in TRAX mode: the regular mesh can't hear you.",
+  "trip_members": "Trip members",
+  "trip_pickChannel": "Pick a trip channel: everyone who posts there is a member.",
+  "trip_noPosts": "Nobody has posted on the trip channel yet.",
+  "trip_notContact": "Not a contact on this radio",
+  "trip_canAsk": "Can ask your radio",
+  "trip_addMember": "Add a member",
+  "trip_askMyRadio": "Members can ask my radio",
+  "trip_askMyRadioHint": "Where it is, and its battery. Turns GPS on. Ends when you leave TRAX after the trip.",
+  "trip_shareOff": "{setting} is off: members can't ask.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "In TRAX mode. Anyone in range can read it.",
+  "trip_sosTitle": "Let an SOS ring through Do Not Disturb?",
+  "trip_sosBody": "Open settings, then allow Override Do Not Disturb.",
+  "trip_onTrax": "{on} of {total} on TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: not heard yet",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: asking their radio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: no answer",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
   "settings_appSettingsSubtitle": "Notifications, messaging, and map preferences",

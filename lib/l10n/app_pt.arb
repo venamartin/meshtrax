@@ -263,6 +263,60 @@
   "trax_notificationText": "A malha normal não ouve você. Abra o MeshTrax para sair.",
   "trax_endedTitle": "Sua viagem terminou",
   "trax_endedText": "Ainda no modo TRAX: a malha normal não ouve você.",
+  "trip_members": "Membros da viagem",
+  "trip_pickChannel": "Escolha um canal da viagem: quem escrever nele é membro.",
+  "trip_noPosts": "Ninguém escreveu no canal da viagem ainda.",
+  "trip_notContact": "Não é um contato neste rádio",
+  "trip_canAsk": "Pode perguntar ao seu rádio",
+  "trip_addMember": "Adicionar um membro",
+  "trip_askMyRadio": "Membros podem perguntar ao meu rádio",
+  "trip_askMyRadioHint": "Onde ele está, e a bateria. Liga o GPS. Termina quando você sai do TRAX depois da viagem.",
+  "trip_shareOff": "{setting} está desligado: os membros não podem perguntar.",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "No modo TRAX. Qualquer pessoa no alcance pode lê-la.",
+  "trip_sosTitle": "Fazer um SOS tocar mesmo no Não perturbe?",
+  "trip_sosBody": "Abra as configurações e permita Substituir Não perturbe.",
+  "trip_onTrax": "{on} de {total} no TRAX",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}: ainda não ouvido",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}: perguntando ao rádio…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}: sem resposta",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "Informações do Dispositivo",
   "settings_appSettings": "Configurações do App",
   "settings_appSettingsSubtitle": "Notificações, mensagens e preferências de mapa",

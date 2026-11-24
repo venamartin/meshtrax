@@ -320,6 +320,60 @@
   "trax_notificationText": "通常のメッシュでは聞こえません。終了するにはMeshTraxを開いてください。",
   "trax_endedTitle": "旅が終了しました",
   "trax_endedText": "まだTRAXモードです。通常のメッシュでは聞こえません。",
+  "trip_members": "旅のメンバー",
+  "trip_pickChannel": "旅のチャンネルを選んでください。そこに投稿した人がメンバーになります。",
+  "trip_noPosts": "旅のチャンネルにはまだ誰も投稿していません。",
+  "trip_notContact": "この無線機の連絡先にありません",
+  "trip_canAsk": "あなたの無線機に問い合わせできます",
+  "trip_addMember": "メンバーを追加",
+  "trip_askMyRadio": "メンバーが私の無線機に問い合わせできる",
+  "trip_askMyRadioHint": "場所とバッテリー。GPSをオンにします。旅のあとTRAXを終了すると止まります。",
+  "trip_shareOff": "「{setting}」がオフです。メンバーは問い合わせできません。",
+  "@trip_shareOff": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_advertsHint": "TRAXモード中。範囲内の誰でも読めます。",
+  "trip_sosTitle": "サイレントモードでもSOSを鳴らしますか？",
+  "trip_sosBody": "設定を開き、「サイレントモードを無視」を許可してください。",
+  "trip_onTrax": "TRAX上 {on}/{total}",
+  "@trip_onTrax": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trip_notHeardYet": "{name}：まだ聞こえていません",
+  "@trip_notHeardYet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_asking": "{name}：無線機に問い合わせ中…",
+  "@trip_asking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trip_noAnswer": "{name}：応答なし",
+  "@trip_noAnswer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings_deviceInfo": "デバイス情報",
   "settings_appSettings": "アプリ設定",
   "settings_appSettingsSubtitle": "通知、メッセージング、および地図の表示設定",
