@@ -220,7 +220,6 @@
   "trax_trailhead": "Wechseln Sie am Ausgangspunkt, sobald das Funkgerät einen GPS-Fix hat.",
   "trax_settings": "TRAX-Einstellungen",
   "trax_switch": "Zu TRAX wechseln",
-  "trax_groupCheck": "Gruppencheck",
   "trax_heard": "{count, plural, =0{Noch niemand auf TRAX gehört} other{Auf TRAX gehört ({count}): {names}}}",
   "trax_checkAgain": "Erneut prüfen",
   "trax_noSaved": "Keine gespeicherten Einstellungen auf diesem Telefon: „TRAX verlassen“ fragt nach der Voreinstellung.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Ihr Standort geht alle {minutes} Min. an die Tour.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Die Firmware dieses Funkgeräts kann Ihren Standort nicht an die Tour senden. Aktualisieren Sie sie.",
+  "trax_locationsNoChannel": "Wählen Sie in den TRAX-Einstellungen einen Tour-Kanal, um Standorte zu teilen.",
+  "trax_memberNoLocation": "{name}: noch kein Standort",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "evtl. veraltet",
+  "trax_tripChannelLocation": "Im TRAX-Modus geht Ihr Standort an diesen Kanal.",
+  "map_lastHeard": "Zuletzt gehört",
+  "map_fromYou": "Von Ihnen",
+  "map_heading": "Richtung",
+  "map_speed": "Geschwindigkeit",
+  "map_notMoving": "Keine Bewegung",
+  "map_notMovingSince": "seit {time} ({minutes} Min.)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Steht seit {minutes} Min.",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Höhe",
+  "map_radioBattery": "Akku des Funkgeräts",
   "settings_deviceInfo": "Geräteinformationen",
   "settings_appSettings": "App-Einstellungen",
   "settings_appSettingsSubtitle": "Benachrichtigungen, Messaging und Kartenwahrnehmung",

@@ -39,6 +39,8 @@ import 'services/poi_service.dart';
 import 'services/routing_service.dart';
 import 'services/trax_service.dart';
 import 'services/trip_service.dart';
+import 'services/trip_positions.dart';
+import 'services/trax_beacon_service.dart';
 import 'services/radio_ask_service.dart';
 import 'services/nearby_regions_asker.dart';
 import 'services/region_service.dart';
@@ -428,6 +430,11 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
                 widget.retryService.repeaterHeardRecently,
           ),
         ),
+        // Not lazy: they keep the trip's locations with no screen open.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (_) => TripPositions(widget.connector, widget.traxService),
+        ),
         // Not lazy: it grants the trip members with no screen open.
         ChangeNotifierProvider(
           lazy: false,
@@ -435,6 +442,15 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
             widget.connector,
             widget.traxService,
             context.read<RadioAskService>(),
+            positions: context.read<TripPositions>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => TraxBeaconService(
+            widget.connector,
+            widget.traxService,
+            context.read<TripService>(),
           ),
         ),
         Provider.value(value: widget.storage),

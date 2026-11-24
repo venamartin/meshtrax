@@ -767,6 +767,24 @@ Uint8List buildGetChannelFrame(int channelIndex) {
   return Uint8List.fromList([cmdGetChannel, channelIndex]);
 }
 
+// Build CMD_SEND_CHANNEL_DATA frame (companion v1.15+, firmware ver 11+),
+// sent by flood. Format: [cmd][channel_idx][path_len 0xFF][data_type u16 LE]
+// [payload]. The radio answers OK, or ERR when it can't send.
+Uint8List buildSendChannelDataFrame(
+  int channelIndex,
+  int dataType,
+  Uint8List payload,
+) {
+  return Uint8List.fromList([
+    cmdSendChannelData,
+    channelIndex,
+    0xFF,
+    dataType & 0xFF,
+    dataType >> 8 & 0xFF,
+    ...payload,
+  ]);
+}
+
 // Build CMD_RUN_CLI_COMMAND frame (firmware ver 14+)
 // Format: [cmd][command] — no terminator, the frame length delimits it.
 Uint8List buildRunCliCommandFrame(String command) {

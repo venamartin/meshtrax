@@ -1799,12 +1799,6 @@ abstract class AppLocalizations {
   /// **'Switch to TRAX'**
   String get trax_switch;
 
-  /// No description provided for @trax_groupCheck.
-  ///
-  /// In en, this message translates to:
-  /// **'Group check'**
-  String get trax_groupCheck;
-
   /// No description provided for @trax_heard.
   ///
   /// In en, this message translates to:
@@ -2152,6 +2146,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name}: no answer'**
   String trip_noAnswer(String name);
+
+  /// No description provided for @trax_sendingEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Your location goes to the trip every {minutes} min.'**
+  String trax_sendingEvery(String minutes);
+
+  /// No description provided for @trax_noChannelData.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio\'s firmware can\'t send your location to the trip. Update it.'**
+  String get trax_noChannelData;
+
+  /// No description provided for @trax_locationsNoChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a trip channel in TRAX settings to share locations.'**
+  String get trax_locationsNoChannel;
+
+  /// No description provided for @trax_memberNoLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: no location yet'**
+  String trax_memberNoLocation(String name);
+
+  /// No description provided for @trax_mayBeOld.
+  ///
+  /// In en, this message translates to:
+  /// **'may be old'**
+  String get trax_mayBeOld;
+
+  /// No description provided for @trax_tripChannelLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'In TRAX mode your location goes to this channel.'**
+  String get trax_tripChannelLocation;
+
+  /// No description provided for @map_lastHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'Last heard'**
+  String get map_lastHeard;
+
+  /// No description provided for @map_fromYou.
+  ///
+  /// In en, this message translates to:
+  /// **'From you'**
+  String get map_fromYou;
+
+  /// No description provided for @map_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get map_heading;
+
+  /// No description provided for @map_speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get map_speed;
+
+  /// No description provided for @map_notMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Not moving'**
+  String get map_notMoving;
+
+  /// No description provided for @map_notMovingSince.
+  ///
+  /// In en, this message translates to:
+  /// **'since {time} ({minutes} min)'**
+  String map_notMovingSince(String time, int minutes);
+
+  /// No description provided for @map_stoppedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped {minutes} min'**
+  String map_stoppedFor(int minutes);
+
+  /// No description provided for @map_elevation.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get map_elevation;
+
+  /// No description provided for @map_radioBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio battery'**
+  String get map_radioBattery;
 
   /// No description provided for @settings_deviceInfo.
   ///

@@ -1019,9 +1019,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trax_switch => 'Preklopi na TRAX';
 
   @override
-  String get trax_groupCheck => 'Preverjanje skupine';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1238,6 +1235,62 @@ class AppLocalizationsSl extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: ni odgovora';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Vaša lokacija se pošlje izletu vsakih $minutes min.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'Vdelana programska oprema tega radia ne more poslati vaše lokacije izletu. Posodobite jo.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Za deljenje lokacij izberite kanal izleta v nastavitvah TRAX.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: še brez lokacije';
+  }
+
+  @override
+  String get trax_mayBeOld => 'morda je stara';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'V načinu TRAX se vaša lokacija pošilja v ta kanal.';
+
+  @override
+  String get map_lastHeard => 'Nazadnje slišan';
+
+  @override
+  String get map_fromYou => 'Od vas';
+
+  @override
+  String get map_heading => 'Smer';
+
+  @override
+  String get map_speed => 'Hitrost';
+
+  @override
+  String get map_notMoving => 'Miruje';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'od $time ($minutes min)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Miruje $minutes min';
+  }
+
+  @override
+  String get map_elevation => 'Nadmorska višina';
+
+  @override
+  String get map_radioBattery => 'Baterija radia';
 
   @override
   String get settings_deviceInfo => 'Informacije o napravei';

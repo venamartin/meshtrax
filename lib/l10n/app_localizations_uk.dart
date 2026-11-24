@@ -1022,9 +1022,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get trax_switch => 'Перейти на TRAX';
 
   @override
-  String get trax_groupCheck => 'Перевірка групи';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1240,6 +1237,62 @@ class AppLocalizationsUk extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: немає відповіді';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Ваше розташування надсилається учасникам поїздки кожні $minutes хв.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'Прошивка цього радіо не може надсилати ваше розташування учасникам поїздки. Оновіть її.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Виберіть канал поїздки в налаштуваннях TRAX, щоб ділитися розташуванням.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: розташування ще немає';
+  }
+
+  @override
+  String get trax_mayBeOld => 'може бути застарілим';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'У режимі TRAX ваше розташування надсилається в цей канал.';
+
+  @override
+  String get map_lastHeard => 'Востаннє чутно';
+
+  @override
+  String get map_fromYou => 'Від вас';
+
+  @override
+  String get map_heading => 'Курс';
+
+  @override
+  String get map_speed => 'Швидкість';
+
+  @override
+  String get map_notMoving => 'Не рухається';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'з $time ($minutes хв)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Не рухається $minutes хв';
+  }
+
+  @override
+  String get map_elevation => 'Висота';
+
+  @override
+  String get map_radioBattery => 'Батарея радіо';
 
   @override
   String get settings_deviceInfo => 'Інформація про пристрій';

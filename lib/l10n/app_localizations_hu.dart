@@ -1024,9 +1024,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_switch => 'Váltás TRAX-ra';
 
   @override
-  String get trax_groupCheck => 'Csoportellenőrzés';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1242,6 +1239,62 @@ class AppLocalizationsHu extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: nincs válasz';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'A helyzete $minutes percenként megy a túrának.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'A rádió firmware-e nem tudja elküldeni a helyzetét a túrának. Frissítse.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Válasszon túracsatornát a TRAX beállításokban a helyzetek megosztásához.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: még nincs helyzet';
+  }
+
+  @override
+  String get trax_mayBeOld => 'lehet, hogy régi';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'TRAX módban a helyzete erre a csatornára megy.';
+
+  @override
+  String get map_lastHeard => 'Utoljára hallva';
+
+  @override
+  String get map_fromYou => 'Öntől';
+
+  @override
+  String get map_heading => 'Irány';
+
+  @override
+  String get map_speed => 'Sebesség';
+
+  @override
+  String get map_notMoving => 'Nem mozog';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return '$time óta ($minutes perc)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Nem mozog $minutes perce';
+  }
+
+  @override
+  String get map_elevation => 'Magasság';
+
+  @override
+  String get map_radioBattery => 'A rádió akkuja';
 
   @override
   String get settings_deviceInfo => 'A készülék információi';

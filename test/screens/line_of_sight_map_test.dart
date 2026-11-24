@@ -333,7 +333,7 @@ void main() {
   });
 
   testWidgets('a contact\'s dialog offers line of sight and radio reach; '
-      'not for a guessed position', (tester) async {
+      'not for a person or a guessed position', (tester) async {
     await settings.setMapShowGuessedLocations(true);
     final anchor = _node(
       'Anchor',
@@ -366,23 +366,33 @@ void main() {
     await tester.tap(find.text('Close'));
     await tester.pump(const Duration(milliseconds: 300));
 
+    // A person's info is about them, not the radio path.
     overlay<MapMarker>(tester, 'node:${ana.publicKeyHex}').onTap!();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Radio reach from Ana'), findsOneWidget);
+    expect(find.text('Last heard'), findsOneWidget);
+    expect(find.text('Line of sight'), findsNothing);
+    expect(find.text('Radio reach from Ana'), findsNothing);
+    await tester.tap(find.text('Close'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Radio reach from Anchor'), findsOneWidget);
     await tester.tap(find.text('Line of sight'));
     await answer(tester);
     final s = session(tester)!;
-    expect(s.to!.name, 'Ana');
+    expect(s.to!.name, 'Anchor');
+    expect(s.toAntenna.kind, AntennaKind.raised);
     expect(s.currentLine, isNotNull);
+    // While the sheet is open a person's marker moves To.
+    overlay<MapMarker>(tester, 'node:${ana.publicKeyHex}').onTap!();
+    await answer(tester);
+    expect(session(tester)!.to!.name, 'Ana');
     // Ana was heard 12 minutes before the file loaded; a slow run takes a
     // minute or two to get here.
     expect(find.textContaining(RegExp(r'^Ana, 1\dm ago$')), findsOneWidget);
-    // While the sheet is open a person's marker moves To.
-    overlay<MapMarker>(tester, 'node:${anchor.publicKeyHex}').onTap!();
-    await answer(tester);
-    expect(session(tester)!.to!.name, 'Anchor');
-    expect(session(tester)!.toAntenna.kind, AntennaKind.raised);
   });
 
   testWidgets('no contours for part of the line: can\'t tell, and the '

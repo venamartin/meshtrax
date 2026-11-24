@@ -220,7 +220,6 @@
   "trax_trailhead": "Wissel bij het startpunt, zodra de radio een GPS-positie heeft.",
   "trax_settings": "TRAX-instellingen",
   "trax_switch": "Naar TRAX wisselen",
-  "trax_groupCheck": "Groepscheck",
   "trax_heard": "{count, plural, =0{Nog niemand gehoord op TRAX} other{Gehoord op TRAX ({count}): {names}}}",
   "trax_checkAgain": "Opnieuw controleren",
   "trax_noSaved": "Geen bewaarde instellingen op deze telefoon: ‘TRAX verlaten’ vraagt naar welke voorinstelling.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Je locatie gaat elke {minutes} min naar de tocht.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "De firmware van deze radio kan je locatie niet naar de tocht sturen. Werk hem bij.",
+  "trax_locationsNoChannel": "Kies een tochtkanaal in de TRAX-instellingen om locaties te delen.",
+  "trax_memberNoLocation": "{name}: nog geen locatie",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "mogelijk oud",
+  "trax_tripChannelLocation": "In TRAX-modus gaat je locatie naar dit kanaal.",
+  "map_lastHeard": "Laatst gehoord",
+  "map_fromYou": "Vanaf jou",
+  "map_heading": "Koers",
+  "map_speed": "Snelheid",
+  "map_notMoving": "Staat stil",
+  "map_notMovingSince": "sinds {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Staat {minutes} min stil",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Hoogte",
+  "map_radioBattery": "Batterij van de radio",
   "settings_deviceInfo": "Apparateninformatie",
   "settings_appSettings": "App Instellingen",
   "settings_appSettingsSubtitle": "Notificaties, berichten en kaartinstellingen",

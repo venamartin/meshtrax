@@ -221,7 +221,6 @@
   "trax_trailhead": "请在出发点、电台获得 GPS 定位后切换。",
   "trax_settings": "TRAX 设置",
   "trax_switch": "切换到 TRAX",
-  "trax_groupCheck": "小组检查",
   "trax_heard": "{count, plural, =0{TRAX 上还没有听到任何人} other{TRAX 上听到 ({count})：{names}}}",
   "trax_checkAgain": "再次检查",
   "trax_noSaved": "这部手机上没有保存的设置：“退出 TRAX”会询问恢复到哪个预设。",
@@ -318,6 +317,52 @@
       }
     }
   },
+  "trax_sendingEvery": "您的位置每 {minutes} 分钟发送给行程成员。",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "这台电台的固件无法把您的位置发送给行程成员。请更新固件。",
+  "trax_locationsNoChannel": "在 TRAX 设置中选择行程频道即可共享位置。",
+  "trax_memberNoLocation": "{name}：还没有位置",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "可能已过时",
+  "trax_tripChannelLocation": "在 TRAX 模式下，您的位置会发送到这个频道。",
+  "map_lastHeard": "最近收到",
+  "map_fromYou": "距您",
+  "map_heading": "方向",
+  "map_speed": "速度",
+  "map_notMoving": "未移动",
+  "map_notMovingSince": "自 {time} 起（{minutes} 分钟）",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "已停留 {minutes} 分钟",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "海拔",
+  "map_radioBattery": "电台电量",
   "settings_deviceInfo": "设备信息",
   "settings_appSettings": "应用设置",
   "settings_appSettingsSubtitle": "通知、消息和地图偏好",

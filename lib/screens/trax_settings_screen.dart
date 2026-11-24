@@ -286,7 +286,10 @@ class TraxSettingsScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-            child: Text(l10n.trax_tripChannelHint),
+            child: Text(
+              '${l10n.trax_tripChannelHint}\n'
+              '${l10n.trax_tripChannelLocation}',
+            ),
           ),
         ],
       ),

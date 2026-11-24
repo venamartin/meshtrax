@@ -1023,9 +1023,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trax_switch => 'Prepnúť na TRAX';
 
   @override
-  String get trax_groupCheck => 'Kontrola skupiny';
-
-  @override
   String trax_heard(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1241,6 +1238,62 @@ class AppLocalizationsSk extends AppLocalizations {
   String trip_noAnswer(String name) {
     return '$name: žiadna odpoveď';
   }
+
+  @override
+  String trax_sendingEvery(String minutes) {
+    return 'Vaša poloha sa posiela výletu každých $minutes min.';
+  }
+
+  @override
+  String get trax_noChannelData =>
+      'Firmvér tohto rádia nevie poslať vašu polohu výletu. Aktualizujte ho.';
+
+  @override
+  String get trax_locationsNoChannel =>
+      'Ak chcete zdieľať polohy, vyberte kanál výletu v nastaveniach TRAX.';
+
+  @override
+  String trax_memberNoLocation(String name) {
+    return '$name: zatiaľ bez polohy';
+  }
+
+  @override
+  String get trax_mayBeOld => 'môže byť stará';
+
+  @override
+  String get trax_tripChannelLocation =>
+      'V režime TRAX sa vaša poloha posiela do tohto kanála.';
+
+  @override
+  String get map_lastHeard => 'Naposledy počuté';
+
+  @override
+  String get map_fromYou => 'Od vás';
+
+  @override
+  String get map_heading => 'Smer';
+
+  @override
+  String get map_speed => 'Rýchlosť';
+
+  @override
+  String get map_notMoving => 'Nehýbe sa';
+
+  @override
+  String map_notMovingSince(String time, int minutes) {
+    return 'od $time ($minutes min)';
+  }
+
+  @override
+  String map_stoppedFor(int minutes) {
+    return 'Nehýbe sa $minutes min';
+  }
+
+  @override
+  String get map_elevation => 'Nadmorská výška';
+
+  @override
+  String get map_radioBattery => 'Batéria rádia';
 
   @override
   String get settings_deviceInfo => 'Informácie o zariadení';

@@ -401,7 +401,6 @@
   "trax_trailhead": "Switch at the trailhead, once the radio has a GPS fix.",
   "trax_settings": "TRAX settings",
   "trax_switch": "Switch to TRAX",
-  "trax_groupCheck": "Group check",
   "trax_heard": "{count, plural, =0{Nobody heard on TRAX yet} other{{count} heard on TRAX: {names}}}",
   "@trax_heard": {
     "placeholders": {
@@ -553,6 +552,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Your location goes to the trip every {minutes} min.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "This radio's firmware can't send your location to the trip. Update it.",
+  "trax_locationsNoChannel": "Pick a trip channel in TRAX settings to share locations.",
+  "trax_memberNoLocation": "{name}: no location yet",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "may be old",
+  "trax_tripChannelLocation": "In TRAX mode your location goes to this channel.",
+  "map_lastHeard": "Last heard",
+  "map_fromYou": "From you",
+  "map_heading": "Heading",
+  "map_speed": "Speed",
+  "map_notMoving": "Not moving",
+  "map_notMovingSince": "since {time} ({minutes} min)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Stopped {minutes} min",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Elevation",
+  "map_radioBattery": "Radio battery",
   "settings_deviceInfo": "Device Info",
   "settings_appSettings": "App Settings",
   "settings_appSettingsSubtitle": "Notifications, messaging, and map preferences",

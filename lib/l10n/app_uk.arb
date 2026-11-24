@@ -220,7 +220,6 @@
   "trax_trailhead": "Перемикайтеся на початку маршруту, коли радіо має GPS-позицію.",
   "trax_settings": "Налаштування TRAX",
   "trax_switch": "Перейти на TRAX",
-  "trax_groupCheck": "Перевірка групи",
   "trax_heard": "{count, plural, =0{На TRAX поки нікого не чути} other{Чути на TRAX ({count}): {names}}}",
   "trax_checkAgain": "Перевірити знову",
   "trax_noSaved": "На цьому телефоні немає збережених налаштувань: «Вийти з TRAX» спитає, до якого пресету повернутися.",
@@ -317,6 +316,52 @@
       }
     }
   },
+  "trax_sendingEvery": "Ваше розташування надсилається учасникам поїздки кожні {minutes} хв.",
+  "@trax_sendingEvery": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_noChannelData": "Прошивка цього радіо не може надсилати ваше розташування учасникам поїздки. Оновіть її.",
+  "trax_locationsNoChannel": "Виберіть канал поїздки в налаштуваннях TRAX, щоб ділитися розташуванням.",
+  "trax_memberNoLocation": "{name}: розташування ще немає",
+  "@trax_memberNoLocation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_mayBeOld": "може бути застарілим",
+  "trax_tripChannelLocation": "У режимі TRAX ваше розташування надсилається в цей канал.",
+  "map_lastHeard": "Востаннє чутно",
+  "map_fromYou": "Від вас",
+  "map_heading": "Курс",
+  "map_speed": "Швидкість",
+  "map_notMoving": "Не рухається",
+  "map_notMovingSince": "з {time} ({minutes} хв)",
+  "@map_notMovingSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_stoppedFor": "Не рухається {minutes} хв",
+  "@map_stoppedFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "map_elevation": "Висота",
+  "map_radioBattery": "Батарея радіо",
   "settings_deviceInfo": "Інформація про пристрій",
   "settings_appSettings": "Налаштування програми",
   "settings_appSettingsSubtitle": "Сповіщення, повідомлення та налаштування карти",

@@ -7,7 +7,9 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/trax.dart';
 import 'package:meshtrax/services/radio_ask_service.dart';
+import 'package:meshtrax/services/trax_beacon_service.dart';
 import 'package:meshtrax/services/trax_service.dart';
+import 'package:meshtrax/services/trip_positions.dart';
 import 'package:meshtrax/services/trip_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
@@ -52,9 +54,13 @@ void main() {
   Future<TraxService> pump(WidgetTester tester, _Radio radio) async {
     final trax = TraxService(radio);
     final asks = RadioAskService(radio);
-    final trip = TripService(radio, trax, asks);
+    final positions = TripPositions(radio, trax);
+    final trip = TripService(radio, trax, asks, positions: positions);
+    final beacon = TraxBeaconService(radio, trax, trip);
     addTearDown(() {
+      beacon.dispose();
       trip.dispose();
+      positions.dispose();
       asks.dispose();
       trax.dispose();
     });
@@ -65,6 +71,8 @@ void main() {
           ChangeNotifierProvider.value(value: trax),
           ChangeNotifierProvider.value(value: asks),
           ChangeNotifierProvider.value(value: trip),
+          ChangeNotifierProvider.value(value: positions),
+          ChangeNotifierProvider.value(value: beacon),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -95,6 +103,10 @@ void main() {
     expect(find.text('Leave TRAX'), findsOneWidget);
     expect(find.text('Nobody heard on TRAX yet'), findsOneWidget);
     expect(
+      find.text('Pick a trip channel in TRAX settings to share locations.'),
+      findsOneWidget,
+    );
+    expect(
       find.textContaining('No saved settings on this phone'),
       findsOneWidget,
       reason: 'another phone switched it',
@@ -108,17 +120,15 @@ void main() {
     await tester.tap(find.byType(IconButton));
     await tester.pumpAndSettle();
     expect(
-      find.text('910.525\u00A0MHz · 62.5\u00A0kHz · SF7 · CR5'),
+      find.text('Now  910.525\u00A0MHz · 62.5\u00A0kHz · SF7 · CR5'),
       findsOneWidget,
     );
     expect(
-      find.text(
-        '918.000\u00A0MHz · 62.5\u00A0kHz · SF7 · CR5\nOff-Grid Repeat on',
-      ),
+      find.text('In TRAX mode  918.000\u00A0MHz · 62.5\u00A0kHz · SF7 · CR5'),
       findsOneWidget,
     );
-    expect(find.text('Trip ends'), findsOneWidget);
-    expect(find.text('Not set'), findsOneWidget);
+    expect(find.text('Off-Grid Repeat on'), findsOneWidget);
+    expect(find.text('Trip ends  Not set'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Switch to TRAX'),
     );
