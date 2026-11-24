@@ -1224,6 +1224,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_mayBeOld => '오래되었을 수 있음';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation => 'TRAX 모드에서는 내 위치가 이 채널로 전송돼요.';
 
   @override

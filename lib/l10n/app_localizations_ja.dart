@@ -1219,6 +1219,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trax_mayBeOld => '古い可能性あり';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation => 'TRAXモード中は、あなたの位置がこのチャンネルに送られます。';
 
   @override

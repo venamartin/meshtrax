@@ -1262,6 +1262,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_mayBeOld => 'lehet, hogy régi';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'TRAX módban a helyzete erre a csatornára megy.';
 

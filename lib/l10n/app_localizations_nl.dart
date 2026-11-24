@@ -1263,6 +1263,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trax_mayBeOld => 'mogelijk oud';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'In TRAX-modus gaat je locatie naar dit kanaal.';
 

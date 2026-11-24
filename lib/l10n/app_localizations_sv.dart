@@ -1258,6 +1258,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trax_mayBeOld => 'kan vara gammal';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'I TRAX-läge skickas din plats till den här kanalen.';
 

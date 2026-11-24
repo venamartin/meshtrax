@@ -1258,6 +1258,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trax_mayBeOld => 'morda je stara';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'V načinu TRAX se vaša lokacija pošilja v ta kanal.';
 

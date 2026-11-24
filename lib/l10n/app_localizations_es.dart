@@ -1263,6 +1263,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trax_mayBeOld => 'puede ser antigua';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'En modo TRAX, tu ubicación se envía a este canal.';
 

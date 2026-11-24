@@ -1210,6 +1210,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_mayBeOld => '可能已过时';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation => '在 TRAX 模式下，您的位置会发送到这个频道。';
 
   @override

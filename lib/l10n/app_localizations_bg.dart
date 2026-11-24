@@ -1265,6 +1265,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get trax_mayBeOld => 'може да е старо';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'В режим TRAX местоположението ви се изпраща в този канал.';
 

@@ -1265,6 +1265,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get trax_mayBeOld => 'może być nieaktualna';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'W trybie TRAX Twoja lokalizacja trafia na ten kanał.';
 

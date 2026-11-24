@@ -1261,6 +1261,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_mayBeOld => 'может быть устаревшим';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'В режиме TRAX ваше местоположение отправляется в этот канал.';
 

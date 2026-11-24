@@ -1260,6 +1260,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get trax_mayBeOld => 'може бути застарілим';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'У режимі TRAX ваше розташування надсилається в цей канал.';
 

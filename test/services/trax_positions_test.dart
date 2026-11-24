@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart' show HitTestResult;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:material_ui/material_ui.dart';
@@ -196,11 +197,16 @@ class _Asks extends RadioAskService {
   _Asks(super.connector);
 
   final asked = <String>[];
+  final answered = <String, RadioAsk>{};
 
   @override
   void ask(Contact contact) => asked.add(contact.name);
   @override
-  RadioAsk? askFor(Contact contact) => null;
+  RadioAsk? askFor(Contact contact) => answered[contact.publicKeyHex];
+  @override
+  Iterable<RadioAsk> get located => answered.values;
+
+  void changed() => notifyListeners();
 }
 
 class _NoDownloads implements PackDownloader {
@@ -898,21 +904,102 @@ void main() {
       final ids = [for (final o in overlays(tester)) o.id];
       expect(ids, isNot(contains('highlight')));
       expect(ids, contains('trip:11111111'));
+      expect(marker(tester, 'trip:11111111').label, 'Bo', reason: 'name only');
       expect(line('trail:of:0')!.points, hasLength(3), reason: 'his trail');
       expect(line('trail:self:0')!.points, hasLength(4), reason: 'your way');
 
+      final card = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Bo'),
+      );
       marker(tester, 'trip:11111111').onTap!();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Bo'), findsOneWidget);
+      expect(card, findsOneWidget);
       expect(line('trail:of:0'), isNotNull);
       expect(overlays(tester).map((o) => o.id), isNot(contains('sheet-pin')));
       await tester.tapAt(const Offset(10, 10));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Bo'), findsNothing);
+      expect(card, findsNothing);
       expect(line('trail:of:0'), isNotNull);
       expect(line('trail:self:0'), isNotNull);
+      await stopServices(tester);
+    });
+
+    List<String> ids(WidgetTester tester) => [
+      for (final o in overlays(tester)) o.id,
+    ];
+
+    testWidgets('a member has one pin, with their name, at the newest place '
+        'known of them: no node or radio answer pin of their own', (
+      tester,
+    ) async {
+      final boOnMap = bo.copyWith(
+        latitude: 36.44,
+        longitude: -116.88,
+        lastSeen: _t0.subtract(const Duration(hours: 1)),
+      );
+      final cyOnMap = cy.copyWith(latitude: 36.45, longitude: -116.87);
+      radio.saved = [boOnMap, cyOnMap];
+      startServices();
+      radio.datagrams.add(_datagram(_report(0x11), receivedAt: now));
+      await pumpApp(tester, const MapScreen());
+
+      double lat() => marker(tester, 'trip:11111111').position.latitude;
+      expect(ids(tester), isNot(contains('node:${boOnMap.publicKeyHex}')));
+      expect(marker(tester, 'trip:11111111').label, 'Bo');
+      expect(lat(), closeTo(36.4570, 1e-6), reason: 'TRAX, newer than advert');
+      expect(
+        ids(tester),
+        contains('node:${cyOnMap.publicKeyHex}'),
+        reason: 'not in the group',
+      );
+
+      asks
+        ..answered[boOnMap.publicKeyHex] = (RadioAsk(boOnMap)
+          ..first = RadioAnswer(
+            receivedAt: _t0.add(const Duration(minutes: 5)),
+            position: (lat: 36.4610, lon: -116.8600, altitude: 120),
+          ))
+        ..changed();
+      await tester.pump();
+      expect(ids(tester), isNot(contains('ask:${boOnMap.publicKeyHex}')));
+      expect(lat(), closeTo(36.4610, 1e-6), reason: 'his radio\'s answer');
+      await stopServices(tester);
+    });
+
+    testWidgets('in TRAX mode a trip member\'s pin is theirs before their '
+        'first TRAX location, at their advert; out of it, their node\'s', (
+      tester,
+    ) async {
+      final cyOnMap = cy.copyWith(latitude: 36.45, longitude: -116.87);
+      radio.saved = [bo, cyOnMap];
+      await tester.runAsync(
+        () => trax.updateSetup(
+          TraxSetup(
+            channelKey: _trip.idKey,
+            until: _t0.add(const Duration(days: 2)),
+            added: {cyOnMap.publicKeyHex},
+          ),
+        ),
+      );
+      startServices();
+      await pumpApp(tester, const MapScreen());
+
+      expect(ids(tester), isNot(contains('node:${cyOnMap.publicKeyHex}')));
+      expect(marker(tester, 'trip:22222222').label, 'Cy');
+      expect(
+        marker(tester, 'trip:22222222').position.latitude,
+        closeTo(36.45, 1e-6),
+      );
+
+      trax
+        ..on = false
+        ..changed();
+      await tester.pump();
+      expect(ids(tester), isNot(contains('trip:22222222')));
+      expect(ids(tester), contains('node:${cyOnMap.publicKeyHex}'));
       await stopServices(tester);
     });
 
@@ -1058,6 +1145,112 @@ void main() {
         final left = map(tester).camera!.center;
         await report(_north(1200));
         expect(map(tester).camera!.center, left);
+        await stopServices(tester);
+      });
+
+      testWidgets('the TRAX group, from a button at the bottom left in TRAX '
+          'mode: by name, how far and when heard, those with no location '
+          'last; a pick opens their card with the map on them', (
+        tester,
+      ) async {
+        // "7m ago" counts by the phone's own clock.
+        now = DateTime.now();
+        DateTime ago(int minutes) => now.subtract(Duration(minutes: minutes));
+        await tester.runAsync(
+          () => trax.updateSetup(
+            TraxSetup(
+              channelKey: _trip.idKey,
+              until: now.add(const Duration(days: 2)),
+              added: {cy.publicKeyHex},
+            ),
+          ),
+        );
+        radio
+          ..saved = [bo.copyWith(lastSeen: ago(60)), cy]
+          ..lat = _here.lat
+          ..lon = _here.lon;
+        startServices();
+        const boAt = (lat: 36.4650, lon: -116.8560);
+        radio.datagrams
+          ..add(
+            _datagram(
+              _report(0x11, sentAt: ago(7), lat: boAt.lat, lon: boAt.lon),
+              receivedAt: ago(7),
+            ),
+          )
+          ..add(
+            _datagram(
+              _report(0x55, name: 'Dee', sentAt: ago(3), lat: 36.4480),
+              receivedAt: ago(3),
+            ),
+          );
+        await pumpApp(tester, const MapScreen());
+
+        final button = find.byTooltip('TRAX group');
+        final at = tester.getCenter(button);
+        expect(at.dx, lessThan(100), reason: 'at the left');
+        expect(
+          tester.getBottomLeft(button).dy,
+          closeTo(tester.getBottomLeft(find.byTooltip('Map layers')).dy, 0.5),
+          reason: 'level with the layers button',
+        );
+        expect(
+          tester.widget<AppMap>(find.byType(AppMap)).leftControlsWidth,
+          MapControls.width,
+          reason: 'the credits keep clear',
+        );
+        // The row the buttons share lets taps through to the map between.
+        bool reachesMap(Offset at) {
+          final result = HitTestResult();
+          WidgetsBinding.instance.hitTestInView(result, at, tester.view.viewId);
+          final mapBox = tester.renderObject(find.byType(AppMap));
+          return result.path.any((e) => e.target == mapBox);
+        }
+
+        expect(reachesMap(Offset(400, at.dy)), isTrue);
+        expect(reachesMap(at), isFalse);
+
+        await tester.tap(button);
+        await settle(tester);
+        Finder inSheet(String text) => find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text(text),
+        );
+        expect(inSheet('TRAX group'), findsOneWidget);
+        double y(String text) => tester.getTopLeft(inSheet(text)).dy;
+        expect(y('Bo'), lessThan(y('Dee')));
+        expect(y('Dee'), lessThan(y('Cy: no location yet')));
+        expect(
+          find.textContaining(RegExp(r'^\S+\s\S+ NE · 7m ago$')),
+          findsOneWidget,
+          reason: 'Bo',
+        );
+        expect(
+          find.textContaining(RegExp(r'^\S+\s\S+ S · 3m ago$')),
+          findsOneWidget,
+          reason: 'Dee',
+        );
+
+        await tester.tap(inSheet('Bo'));
+        await settle(tester);
+        await settle(tester);
+        expect(inSheet('TRAX group'), findsNothing);
+        expect(inSheet('Bo'), findsOneWidget, reason: 'his card');
+        expect(find.text('Chat'), findsOneWidget);
+        final (y0, middle) = whereAndMiddle(tester, boAt);
+        expect(y0, closeTo(middle, 1), reason: 'above his card');
+
+        await tester.tapAt(const Offset(10, 10));
+        await settle(tester);
+        trax
+          ..on = false
+          ..changed();
+        await settle(tester);
+        expect(button, findsNothing);
+        expect(
+          tester.widget<AppMap>(find.byType(AppMap)).leftControlsWidth,
+          0,
+        );
         await stopServices(tester);
       });
     });

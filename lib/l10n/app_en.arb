@@ -571,6 +571,7 @@
     }
   },
   "trax_mayBeOld": "may be old",
+  "trax_group": "TRAX group",
   "trax_tripChannelLocation": "In TRAX mode your location goes to this channel.",
   "map_lastHeard": "Last heard",
   "map_fromYou": "From you",

@@ -2177,6 +2177,12 @@ abstract class AppLocalizations {
   /// **'may be old'**
   String get trax_mayBeOld;
 
+  /// No description provided for @trax_group.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX group'**
+  String get trax_group;
+
   /// No description provided for @trax_tripChannelLocation.
   ///
   /// In en, this message translates to:

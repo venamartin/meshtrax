@@ -1261,6 +1261,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trax_mayBeOld => 'môže byť stará';
 
   @override
+  String get trax_group => 'TRAX group';
+
+  @override
   String get trax_tripChannelLocation =>
       'V režime TRAX sa vaša poloha posiela do tohto kanála.';
 
