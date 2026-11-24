@@ -147,7 +147,8 @@ void main() {
     });
   });
 
-  test('no route: floods from the first attempt, nothing to reset', () {
+  test("no route: floods from the first attempt; only the ladder's own flood "
+      'clears the stored route', () {
     fakeAsync((async) {
       final room = _server();
       LoginOutcome? outcome;
@@ -158,13 +159,16 @@ void main() {
       async.elapse(const Duration(milliseconds: 10));
 
       expect(c.logins, equals(1));
+      expect(c.resets, isEmpty,
+          reason: "the first attempt is the radio's route, and none is listed");
       async.elapse(attemptTimeout(-1, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
 
       expect(c.logins, equals(2));
-      expect(c.resets, isEmpty);
+      expect(c.resets, hasLength(1),
+          reason: 'a route the radio learned meanwhile must not carry a flood');
 
       c.handleFrameForTest(_loginPush(pushCodeLoginSuccess, adminByte: 1));
       async.flushMicrotasks();
@@ -174,12 +178,13 @@ void main() {
     });
   });
 
-  test('a custom path is never reset by the ladder', () {
+  test('a custom path that times out is tried again, never reset for it; '
+      "the ladder's floods after it clear it", () {
     fakeAsync((async) {
       final room = _server(pathOverride: 1, pathOverrideBytes: const [0x33]);
       LoginOutcome? outcome;
       ServerLoginService(c)
-          .login(room, 'pw', maxAttempts: 2)
+          .login(room, 'pw', maxAttempts: 4)
           .then((o) => outcome = o);
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
@@ -188,14 +193,20 @@ void main() {
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
+      expect(c.logins, equals(2));
+      expect(c.resets, isEmpty, reason: 'the second try is on the custom path');
+
       async.elapse(attemptTimeout(1, room));
       async.elapse(const Duration(milliseconds: 10));
       async.flushMicrotasks();
       async.elapse(const Duration(milliseconds: 10));
+      expect(c.logins, equals(3));
+      expect(c.resets, hasLength(1), reason: "the ladder's first flood");
 
-      expect(c.logins, equals(2));
-      expect(c.resets, isEmpty);
-      expect(outcome?.success, isNull, reason: 'both attempts timed out');
+      async.elapse(const Duration(minutes: 5));
+      async.flushMicrotasks();
+      expect(c.logins, equals(4));
+      expect(outcome?.success, isNull, reason: 'every attempt timed out');
     });
   });
 

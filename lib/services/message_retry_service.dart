@@ -734,10 +734,17 @@ class MessageRetryService extends ChangeNotifier {
     (_onAir[messageId] ??= {}).add(message.retryCount);
     if (isFlood != null) {
       final askedFlood = (message.pathLength ?? -1) < 0;
+      final asked = _attemptRoutes[messageId]?[message.retryCount];
       if (askedFlood == isFlood) {
         config.debugLogService?.info(
           'RESP_CODE_SENT: attempt ${message.retryCount + 1} to ${contact.name} '
           'went out ${isFlood ? "as a flood" : "on the route"}, as asked',
+          tag: 'AckHash',
+        );
+      } else if (!isFlood && asked?.source == RouteSource.firmware) {
+        config.debugLogService?.info(
+          'RESP_CODE_SENT: attempt ${message.retryCount + 1} to ${contact.name} '
+          "went out on the radio's route, one the contact list didn't show yet",
           tag: 'AckHash',
         );
       } else {

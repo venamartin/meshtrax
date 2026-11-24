@@ -5248,7 +5248,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
             ) ??
         contact;
     if (selection.useFlood) {
-      if (live.pathLength >= 0) await clearContactPath(contact);
+      // A flood the ladder chose clears the stored route even where the
+      // contact list shows none: the list can lag the radio (a route learned
+      // while its read-back timed out), and the radio would send the flood
+      // on that route. The radio's route where the list shows none leaves a
+      // route only the radio knows alone.
+      if (selection.source != RouteSource.firmware || live.pathLength >= 0) {
+        await clearContactPath(contact);
+      }
     } else if (selection.source != RouteSource.firmware) {
       final bytes = Uint8List.fromList(selection.pathBytes);
       final written = _appWrittenPath[contact.publicKeyHex] ==
@@ -5283,10 +5290,15 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
         _contacts.where((c) => c.publicKeyHex == key).firstOrNull ?? contact;
     final next = _retryService?.rechooseRoute(live, timestampSeconds, text) ??
         onRadio.selection;
+    final radios = next.source == RouteSource.firmware;
+    final how = next.useFlood
+        ? radios
+            ? "on the radio's route, as a flood if it has none"
+            : 'as a flood'
+        : '${next.hopCount == 0 ? 'direct' : 'on ${PathHelper.formatPathHex(next.pathBytes, stride: next.hashSize)}'}'
+            '${radios ? " (the radio's route)" : ''}';
     appLogger.info(
-      "${contact.name}'s route changed while the DM waited: it goes "
-      '${next.useFlood ? 'as a flood' : next.hopCount == 0 ? 'direct' : 'on ${PathHelper.formatPathHex(next.pathBytes, stride: next.hashSize)}'}'
-      '${next.source == RouteSource.firmware ? " (the radio's route)" : ''}',
+      "${contact.name}'s route changed while the DM waited: it goes $how",
       tag: 'AckHash',
     );
     await _putRoute(contact, next);
