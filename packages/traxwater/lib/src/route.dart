@@ -553,6 +553,8 @@ class _Search {
         remainingM: _rhumb(points.last, to).$1,
         lowObjects: short.lowObjects,
         deepestWayM: short.deepestWayM,
+        deepestWayToM: short.deepestWayToM,
+        deepestDraftM: short.deepestDraftM,
       );
     }
 
@@ -566,6 +568,7 @@ class _Search {
       securityZoneM: through.securityM,
       trafficLaneM: through.laneM,
       leastDepthM: through.leastDepthM,
+      leastDepthToM: through.leastDepthToM,
       shallowerThanPreferredM: o.preferDepthM == null ? null : through.shallowM,
       surveyM: through.surveyM,
       offLand: offLand == null
@@ -1284,7 +1287,7 @@ class _Along {
   var outsideM = 0.0, securityM = 0.0, laneM = 0.0, shallowM = 0.0;
   var insideInApproachesM = 0.0, insideElsewhereM = 0.0;
   var reaches = false;
-  double? leastDepthM;
+  double? leastDepthM, leastDepthToM;
   final surveyM = <int, double>{};
   final _metres = <String, double>{}, _from = <String, double>{};
   final _area = <String, WaterArea>{};
@@ -1310,9 +1313,11 @@ class _Along {
             }
             final r = m.row[best], metres = (t1 - t0) * length;
             final at = run + t0 * length;
-            final depth = m.depth[r];
-            if (!depth.isNaN) {
-              leastDepthM = math.min(leastDepthM ?? depth, depth);
+            final depth = m.depth[r], to = m.depthTo[r];
+            if (!depth.isNaN && !(depth > (leastDepthM ?? depth))) {
+              if (depth != leastDepthM) leastDepthToM = null;
+              leastDepthM = depth;
+              if (!to.isNaN) leastDepthToM = math.min(leastDepthToM ?? to, to);
             }
             if (prefer != null && !(depth >= prefer - 0.2)) shallowM += metres;
             surveyM[m.zoc[r]] = (surveyM[m.zoc[r]] ?? 0) + metres;
@@ -1451,14 +1456,25 @@ EndsShort _whyShort(
         : EndsShortReason.depth,
     remainingM: 0,
     lowObjects: const [],
-    deepestWayM: deepest,
+    deepestWayM: deepest?.depth,
+    deepestWayToM: deepest?.to,
+    deepestDraftM: deepest == null
+        ? null
+        : math.max(0, deepest.depth - o.underKeelM + _chartRoundingM),
   );
 }
 
-/// The depth of the deepest way from [start] to [goal] at its shallowest
-/// (a widest-path search over the charted depths and the hazards within
-/// 15 m, where entry isn't prohibited), or null where no water joins them.
-double? _deepestWay(WaterMesh m, _Rows rows, int start, int goal) {
+/// The deepest way from [start] to [goal] (a widest-path search over the
+/// charted depths and the hazards within 15 m, where entry isn't
+/// prohibited): its depth at its shallowest, and the deep end of the depth
+/// band charted there (the least, where several are; null where only a
+/// hazard or no charted depth sets it). Null where no water joins them.
+({double depth, double? to})? _deepestWay(
+  WaterMesh m,
+  _Rows rows,
+  int start,
+  int goal,
+) {
   final n = m.triangleCount;
   double depth(int t) {
     final r = m.row[t];
@@ -1470,19 +1486,34 @@ double? _deepestWay(WaterMesh m, _Rows rows, int start, int goal) {
 
   bool open(int t) => rows.out[m.row[t]] & _outNoEntry == 0;
   final best = Float64List(n)..fillRange(0, n, -1);
+  final came = Int32List(n)..fillRange(0, n, -1);
   final closed = Uint8List(n);
+
+  ({double depth, double? to}) way() {
+    final least = best[goal];
+    double? to;
+    for (var t = goal; t >= 0; t = came[t]) {
+      final r = m.row[t], band = m.depthTo[r];
+      if (depth(t) == least && m.depth[r] == least && !band.isNaN) {
+        to = math.min(to ?? band, band);
+      }
+    }
+    return (depth: least, to: to);
+  }
+
   final heap = _Heap()..push(-depth(start), 0, start);
   best[start] = depth(start);
   while (heap.isNotEmpty) {
     final t = heap.pop();
     if (closed[t] != 0) continue;
     closed[t] = 1;
-    if (t == goal) return best[t];
+    if (t == goal) return way();
     void step(int nb) {
       if (closed[nb] != 0 || !open(nb)) return;
       final d = math.min(best[t], depth(nb));
       if (d > best[nb]) {
         best[nb] = d;
+        came[nb] = t;
         heap.push(-d, 0, nb);
       }
     }

@@ -129,6 +129,8 @@ void main() {
     expect(trip.from.moved, EndMoved.depth);
     expect(trip.endsShort!.reason, EndsShortReason.depth);
     expect(trip.endsShort!.deepestWayM, closeTo(5.4, 0.01));
+    expect(trip.endsShort!.deepestWayToM, closeTo(9.1, 0.01));
+    expect(trip.endsShort!.deepestDraftM, closeTo(5.45, 0.01));
   });
 
   group('an end the boat can\'t use moves to the nearest water it can', () {

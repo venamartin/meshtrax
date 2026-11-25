@@ -100,6 +100,7 @@ class WaterTile {
     this.neighbours,
     this.rows,
     this.depth,
+    this.depthTo,
     this.flags,
     this.ring,
     this.zoc,
@@ -158,8 +159,8 @@ class WaterTile {
       if (r >= na) throw const FormatException('WRM2: no such row');
       rows[i] = r;
     }
-    final depth = Float32List(na), hazardInner = Float32List(na);
-    final hazardOuter = Float32List(na);
+    final depth = Float32List(na), depthTo = Float32List(na);
+    final hazardInner = Float32List(na), hazardOuter = Float32List(na);
     final flags = Uint16List(na), areaSet = Uint16List(na);
     final ring = Uint8List(na), zoc = Uint8List(na);
     for (var i = 0; i < na; i++, o += rowBytes) {
@@ -169,6 +170,7 @@ class WaterTile {
       zoc[i] = b.getUint8(o + 9);
       hazardInner[i] = b.getFloat32(o + 10, le);
       hazardOuter[i] = b.getFloat32(o + 14, le);
+      depthTo[i] = b.getFloat32(o + 22, le);
       areaSet[i] = b.getUint16(o + 26, le);
     }
     final size = b.getUint32(o, le);
@@ -199,6 +201,7 @@ class WaterTile {
       neighbours,
       rows,
       depth,
+      depthTo,
       flags,
       ring,
       zoc,
@@ -234,6 +237,10 @@ class WaterTile {
 
   /// DRVAL1, the least depth in metres; NaN for none.
   final Float32List depth;
+
+  /// DRVAL2, the deep end of the charted depth band in metres; NaN for
+  /// none.
+  final Float32List depthTo;
   final Uint16List flags;
 
   /// The distance off land, as a ring of [ringsNm].
