@@ -47,10 +47,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_preview => '미리 보기';
 
   @override
-  String get photo_previewTapHint =>
-      'Tap the picture to zoom in or enhance it 4×';
-
-  @override
   String get photo_changeCrop => 'Change crop';
 
   @override
@@ -80,10 +76,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get photo_blurFaces => 'Blur faces';
-
-  @override
-  String get photo_blurFacesHint =>
-      'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.';
 
   @override
   String photo_facesBlurred(int count) {
@@ -140,10 +132,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_zeroHop => 'Zero hop';
 
   @override
-  String get photo_zeroHopHint =>
-      'Only radios in direct range; repeaters don\'t pass it on';
-
-  @override
   String get photo_subjectOnly => 'Subject only';
 
   @override
@@ -168,10 +156,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get photo_repairPacket => 'Repair packet';
-
-  @override
-  String get photo_repairPacketHint =>
-      'One more packet, so the photo still arrives if any one packet is lost';
 
   @override
   String photo_sendFigures(int packets, String sendTime) {

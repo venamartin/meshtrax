@@ -36,9 +36,13 @@ Photos: a user can send a photo to a channel over the mesh. An AI image codec
 on the phone codes it to a few hundred bytes; each receiving phone rebuilds a
 picture from that code with the same model, which is built on Stability AI's
 SD-Turbo, and can enlarge it 4x with a small on-device Real-ESRGAN model.
-These are the app's only AI features. They take no text prompts and cannot
-create, edit or undress images: they rebuild only what the sender
-photographed. An on-device image safety classifier checks every photo before
+These are the app's only generative AI features. They take no text prompts
+and cannot create or undress images: they rebuild only what the sender
+photographed. Two small on-device models only find things: MediaPipe's
+BlazeFace finds faces to blur before a photo is coded, and MediaPipe's
+Interactive Segmenter outlines what the sender taps for Subject only (the rest
+of the photo is made black) and Auto crop (the photo is cropped to it). The
+only edits are the sender's own: a crop, blurred faces and that black. An on-device image safety classifier checks every photo before
 it is sent, and every rebuilt or enlarged picture before it is shown; a
 flagged picture is hidden and never stored. Every rebuilt picture is marked
 "AI reconstructed". Users can report a photo from inside the app (the report
@@ -75,8 +79,9 @@ Keep both the radio and the phone screen legible throughout.
 For a submission with photos, add a second take with two phones and two
 radios, 60–90 seconds:
 
-1. Phone A: + → Photo, crop, Preview, type a tag, Send (the confirmation on
-   a MeshCore frequency shows the photo's airtime)
+1. Phone A: + → Photo, crop (optionally Subject only: tap the subject and the
+   rest turns black), Preview, type a tag, Send (the confirmation on a
+   MeshCore frequency shows the photo's airtime)
 2. Phone B: the photo arrives; one tap opens it full screen and rebuilds it,
    marked "AI reconstructed"
 3. Enhance 4×, then Save

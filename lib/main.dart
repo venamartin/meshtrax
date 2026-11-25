@@ -241,6 +241,10 @@ https://creativecommons.org/licenses/by/4.0/
       <String>['BlazeFace (MediaPipe)'],
       await rootBundle.loadString('assets/licenses/BlazeFace-NOTICE.txt'),
     );
+    yield LicenseEntryWithLineBreaks(
+      <String>['Interactive Segmenter (MediaPipe)'],
+      await rootBundle.loadString('assets/licenses/MagicTouch-NOTICE.txt'),
+    );
   });
 }
 
