@@ -71,6 +71,25 @@ void main() {
       expect(parts.bitstream, bitstream);
     });
 
+    test('Subject only is item 3 with no data: two bytes', () {
+      final bitstream = bits(200);
+      final payload = photoPayload(
+        bitstream,
+        const PhotoExtras(subjectOnly: true),
+      );
+      expect(payload.sublist(0, 2), [kPhotoItemSubjectOnly, 0]);
+      expect(payload.length, bitstream.length + 2);
+      final parts = photoPayloadParts(payload, hasExtras: true)!;
+      expect(parts.extras.subjectOnly, isTrue);
+      expect(parts.extras.tag, isNull);
+      expect(parts.bitstream, bitstream);
+      expect(const PhotoExtras(subjectOnly: true).isEmpty, isFalse);
+      expect(
+        photoPayloadParts(bitstream, hasExtras: false)!.extras.subjectOnly,
+        isFalse,
+      );
+    });
+
     test('takes UTF-8 up to the byte limit, and refuses more', () {
       final camp = photoPayload(bits(10), const PhotoExtras(tag: '⛰️ Camp'));
       expect(photoPayloadParts(camp, hasExtras: true)!.extras.tag, '⛰️ Camp');

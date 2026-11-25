@@ -4,6 +4,7 @@ import 'package:traxpix/traxpix.dart';
 import 'image_codec_bundle.dart';
 import 'image_safety.dart';
 import 'litert_api.dart';
+import 'tap_segmenter.dart';
 
 /// Side of the square picture the graphs are exported for.
 const int kImageCodecSquareSize = 512;
@@ -38,6 +39,7 @@ class LiteRtImageCodecBackend {
   LiteRtModel? _safety;
   LiteRtModel? _faceShort;
   LiteRtModel? _faceFull;
+  LiteRtModel? _tap;
 
   LiteRtImageCodecBackend(
     this.bundle,
@@ -118,6 +120,36 @@ class LiteRtImageCodecBackend {
       throw StateError('$path gave ${out.length} outputs, not 2.');
     }
     return (regressors: out.first, logits: out.last);
+  }
+
+  /// What's under each of [taps] (x, y pairs from 0 to 1, from the top left)
+  /// in [rgbBytes], the whole photo stretched to 512 x 512, outlined by the
+  /// tap model and joined: 512 x 512, 255 where it's something tapped. The
+  /// model stays loaded once used: it's small.
+  Uint8List segment(Uint8List rgbBytes, List<double> taps) {
+    final path = bundle.tapPath;
+    if (path == null) throw StateError('This bundle has no tap model.');
+    final model = _tap ??= _load(path, weightCache: false);
+    const pixels = kTapSegmenterSize * kTapSegmenterSize;
+    final joined = Uint8List(pixels);
+    for (var t = 0; t + 1 < taps.length; t += 2) {
+      final out = model
+          .run([tapModelInput(rgbBytes, taps[t], taps[t + 1])])
+          .values
+          .single;
+      if (out.length != pixels) {
+        throw StateError('Tap model gave ${out.length} values, not $pixels.');
+      }
+      for (var i = 0; i < pixels; i++) {
+        final v = out[i] <= 0
+            ? 0
+            : out[i] >= 1
+            ? 255
+            : (out[i] * 255).round();
+        if (v > joined[i]) joined[i] = v;
+      }
+    }
+    return joined;
   }
 
   Future<RebuiltImage> rebuild(
@@ -280,10 +312,10 @@ class LiteRtImageCodecBackend {
   void dispose() {
     _releaseDecoder();
     _releaseEntropy();
-    for (final model in [_safety, _faceShort, _faceFull]) {
+    for (final model in [_safety, _faceShort, _faceFull, _tap]) {
       model?.dispose();
     }
-    _safety = _faceShort = _faceFull = null;
+    _safety = _faceShort = _faceFull = _tap = null;
     _environment.dispose();
   }
 }

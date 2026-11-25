@@ -29,3 +29,4 @@ export 'src/photo_chunks.dart';
 export 'src/photo_extras.dart';
 export 'src/rans_coders.dart';
 export 'src/rate_point.dart';
+export 'src/subject_only.dart';

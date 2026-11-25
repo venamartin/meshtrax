@@ -329,6 +329,42 @@ abstract class AppLocalizations {
   /// **'Only radios in direct range; repeaters don\'t pass it on'**
   String get photo_zeroHopHint;
 
+  /// Option under the photo being prepared: only what the sender taps is sent, the rest made black, so the photo takes fewer packets.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject only'**
+  String get photo_subjectOnly;
+
+  /// Button under the photo being prepared: crops the square around what the sender taps.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto crop'**
+  String get photo_autoCrop;
+
+  /// Hint under the photo while the sender picks the subject for Subject only or Auto crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap what matters. Tap more things to add them.'**
+  String get photo_tapWhatMatters;
+
+  /// Shown while the app outlines what the sender just tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlining…'**
+  String get photo_outlining;
+
+  /// Forgets what the sender tapped, to tap again.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get photo_clearTaps;
+
+  /// The tap found no object to outline.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to outline there. Tap the middle of it.'**
+  String get photo_nothingThere;
+
   /// Under the Zero hop switch, which is on and can't be turned off, when the channel is set to Nearby only.
   ///
   /// In en, this message translates to:

@@ -140,13 +140,29 @@ class ImageCodecSession {
   Future<EnhancedImage> enhance(Uint8List rgbBytes) =>
       _submit('enhance', rgbBytes);
 
-  Future<T> _submit<T extends Object>(String op, Uint8List bytes) async {
+  /// What's under each of [taps] (x, y pairs from 0 to 1, from the top left)
+  /// in [rgbBytes], the whole photo stretched to 512 x 512: a 512 x 512
+  /// mask, 255 where it's something tapped.
+  Future<Uint8List> segment(Uint8List rgbBytes, List<double> taps) =>
+      _submit('segment', rgbBytes, args: taps);
+
+  Future<T> _submit<T extends Object>(
+    String op,
+    Uint8List bytes, {
+    List<double>? args,
+  }) async {
     final closed = _closed;
     if (closed != null) throw closed;
     final id = _nextJobId++;
     final job = Completer<Object>();
     _pending[id] = job;
-    _toWorker.send({'type': 'job', 'id': id, 'op': op, 'bytes': bytes});
+    _toWorker.send({
+      'type': 'job',
+      'id': id,
+      'op': op,
+      'bytes': bytes,
+      'args': args,
+    });
     return await job.future as T;
   }
 
@@ -252,6 +268,10 @@ Future<void> _workerMain(_Boot boot) async {
               'decodeToLatent' => await backend.decodeToLatent(bytes),
               'classify' => backend.classify(bytes),
               'enhance' => backend.enhance(bytes),
+              'segment' => backend.segment(
+                bytes,
+                (map['args'] as List).cast<double>(),
+              ),
               final op => throw StateError('Unknown codec op: $op'),
             };
             reply.send({'type': 'result', 'id': id, 'value': value});

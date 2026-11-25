@@ -29,3 +29,5 @@ export 'src/image_safety.dart'
         RebuiltImage;
 export 'src/litert_api.dart'
     show LiteRtApi, LiteRtEnvironment, LiteRtException, LiteRtModel;
+export 'src/tap_segmenter.dart'
+    show kTapSegmenterFile, kTapSegmenterSize, tapModelInput;

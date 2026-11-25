@@ -48,6 +48,10 @@ class PhotoRecord {
   /// a received photo, or one sent before MeshTrax listened for them.
   int? packetsPassedOn;
 
+  /// The sender kept only what they tapped, on black ("Subject only"): the
+  /// viewer opens zoomed in on it.
+  final bool subjectOnly;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -59,6 +63,7 @@ class PhotoRecord {
     this.tag,
     this.position,
     this.packetsPassedOn,
+    this.subjectOnly = false,
   });
 
   Map<String, Object?> toJson() => {
@@ -72,6 +77,7 @@ class PhotoRecord {
     'tag': tag,
     'position': position?.encode(),
     'packetsPassedOn': packetsPassedOn,
+    'subjectOnly': subjectOnly,
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -88,6 +94,7 @@ class PhotoRecord {
       _ => null,
     },
     packetsPassedOn: j['packetsPassedOn'] as int?,
+    subjectOnly: j['subjectOnly'] as bool? ?? false,
   );
 }
 
@@ -168,15 +175,19 @@ class PhotoStore extends ChangeNotifier {
 
   ImageCodecBundle get bundle => ft8Bundle(_models);
 
-  /// The bundle for coding a photo to send: [bundle] and the two face models,
-  /// which come with the app. LiteRT reads models from files, so they're
+  /// The bundle for coding a photo to send: [bundle], the two face models and
+  /// the tap model for Subject only and Auto crop, which come with the app. LiteRT reads models from files, so they're
   /// copied to the cache folder, which no backup includes, whenever they
   /// aren't there.
   Future<ImageCodecBundle> sendingBundle() async {
     await load();
     final faces = '${(await getApplicationCacheDirectory()).path}/faces';
     Directory(faces).createSync(recursive: true);
-    for (final name in [kFaceShortRangeFile, kFaceFullRangeFile]) {
+    for (final name in [
+      kFaceShortRangeFile,
+      kFaceFullRangeFile,
+      kTapSegmenterFile,
+    ]) {
       final file = File('$faces/$name');
       final data = await rootBundle.load('assets/models/$name');
       if (file.existsSync() && file.lengthSync() == data.lengthInBytes) {
