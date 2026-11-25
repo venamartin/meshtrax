@@ -16,7 +16,15 @@ class PhotoRepeats {
 
   final bool hasRepair;
 
-  PhotoRepeats({required this.blobs, required this.hasRepair});
+  /// The pause after each packet, and when the first went out.
+  final Duration gap;
+  final DateTime startedAt = DateTime.now();
+
+  PhotoRepeats({
+    required this.blobs,
+    required this.hasRepair,
+    this.gap = Duration.zero,
+  });
 
   /// Packets the photo went out as, the repair packet included.
   int get packets => blobs.length;
@@ -109,7 +117,31 @@ class PhotoRepeats {
       return false;
     }
     _passedOnCopiesAtResend = _passedOnCopies;
+    sentAgain(index);
     return true;
+  }
+
+  final Map<int, int> _timesAgain = {};
+
+  /// How many times packet [index] went out once more.
+  int timesAgain(int index) => _timesAgain[index] ?? 0;
+
+  void sentAgain(int index) => _timesAgain[index] = timesAgain(index) + 1;
+
+  /// The data packets no repeater was heard passing on and no observer
+  /// heard ([heard]), by index; none when what was heard already lets a
+  /// receiver put the photo together.
+  List<int> unconfirmed(Set<int> heard) {
+    bool confirmed(int i) => passedOn(i) || heard.contains(i);
+    final data = hasRepair ? packets - 1 : packets;
+    final missing = [
+      for (var i = 0; i < data; i++)
+        if (!confirmed(i)) i,
+    ];
+    if (hasRepair && missing.length == 1 && confirmed(packets - 1)) {
+      return const [];
+    }
+    return missing;
   }
 
   static bool _same(Uint8List a, Uint8List b) {

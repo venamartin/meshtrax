@@ -28,6 +28,7 @@ A photo goes the way the channel's messages go: through the repeaters, within th
 
 Through repeaters, your radio listens for each packet being passed on:
 - A packet no repeater was heard passing on goes once more ("Packet 2 of 4 again"), while the others can still put the photo together. It doesn't when **Max Channel Message Retries** is 0, or when no repeater has been heard for 10 minutes. After a packet sent again, no more go until a repeater is heard passing some packet of the photo on. A repeater you marked in Pathfinder as moving with you doesn't count.
+- With **Check sends with observers** on, the observers' first answer comes about 10 seconds after the photo is sent. A packet that neither a repeater nor an observer was heard to carry then goes once more, if the others can still put the photo together and your retries allow. A packet an observer heard doesn't go again. Like the extra send for a message only one repeater carried, this happens only while observers have heard your radio lately.
 - Your photo then shows the checks a message does: one grey check while your radio listens, two green checks once repeaters passed on every packet the others need, and the amber check when some weren't heard. Hold the amber check to see how many were. With **Check sends with observers** on, the ear appears when an observer heard any of its packets, as on a message, and **Packet Path** lists the observers.
 - Zero hop, no repeater passes it on, so it keeps its one check.
 

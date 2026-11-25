@@ -11,11 +11,13 @@ hear. The package is pure Dart and has no screens.
 is off until the user turns it on and picks a server. While it is on:
 - **Every channel message MeshTrax sends** is asked about. The server gets
   the packet's hash, never the text.
-- **So is every photo**, by the hashes of all its packets together
+- **So is every photo**, each of its packets on its own hash
   (`channelDataPacketHash`; a packet sent again is the same bytes, with the
   same hash). An ear shows on the photo when an observer heard any of them,
   and a photo no repeater carried keeps its time through repeaters if one
-  did.
+  did. At the first answer, a packet that neither a repeater nor an
+  observer was heard to carry goes once more, on the terms of a channel
+  text only one repeater carried.
 - **The hash is known before the message goes out.** A channel text is
   sealed without anything random: the radio sends `name: text` under the
   app's timestamp, sealed with the channel key.

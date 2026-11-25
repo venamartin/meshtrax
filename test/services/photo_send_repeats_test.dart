@@ -554,11 +554,65 @@ void main() {
       HeardService.resetForTesting();
       HeardService.instance.attach(r);
       PhotoMesh.observerWaitOverride = const Duration(milliseconds: 300);
+      PhotoMesh.observerAnswerOverride = const Duration(milliseconds: 500);
     }
 
     tearDown(() {
       HeardService.resetForTesting();
       PhotoMesh.observerWaitOverride = null;
+      PhotoMesh.observerAnswerOverride = null;
+    });
+
+    /// Sends a 3-packet photo on Trip that no repeater passes on; once it
+    /// is filed, the observers heard packets [heard] (by index).
+    Future<String> sendHeard(_Radio r, Set<int> heard) async {
+      final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
+      await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      final id = rows.singleWhere(PhotoMesh.isPhotoMessage).messageId;
+      for (final i in heard) {
+        HeardService.instance.heardForTest(
+          HeardService.photoPacketId(id, i),
+          [Sighting(observer: 'Ridge $i')],
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 2500));
+      await pumpEventQueue(times: 200);
+      return id;
+    }
+
+    test('a packet an observer heard puts the ear on the photo, and isn\'t '
+        'sent again; one nobody confirmed goes once more at their first '
+        'answer', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      final id = await sendHeard(r, {1});
+      // Packet 1 (index 0) went once more already, before the answer.
+      expect(_indexes(r.blobs), [0, 0, 1, 2, 2]);
+      expect(r.blobs[4], r.blobs[3]);
+      expect(HeardService.instance.photoPacketsHeard(id), {1});
+      expect(
+        HeardService.instance.heardBy(id)!.map((s) => s.observer),
+        ['Ridge 1'],
+      );
+    });
+
+    test('nothing goes again on their answer where no observer has heard '
+        'this radio', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      await sendHeard(r, {});
+      expect(_indexes(r.blobs), [0, 0, 1, 2]);
+    });
+
+    test('a photo the observers heard whole goes no more', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      final id = await sendHeard(r, {0, 1, 2});
+      expect(_indexes(r.blobs), [0, 0, 1, 2]);
+      expect(HeardService.instance.heardBy(id), hasLength(3));
     });
 
     test('a photo is asked about by all its packets, as the server files them',

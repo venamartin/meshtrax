@@ -1507,6 +1507,31 @@ class ImageChunkTransport {
     return sentOnce.future;
   }
 
+  /// [blobs], packets of a photo already sent as a flood, once more, the
+  /// same bytes, each [gap] after the one before, in their turn after any
+  /// photo still going out.
+  Future<void> resendBlobs(
+    List<Uint8List> blobs, {
+    required int channelIndex,
+    Duration gap = Duration.zero,
+  }) {
+    final job = _sendQueue.then((_) async {
+      for (final blob in blobs) {
+        if (gap > Duration.zero) await Future<void>.delayed(gap);
+        await send(
+          buildSendChannelDataFrame(
+            channelIndex: channelIndex,
+            dataType: sendDataType,
+            payload: blob,
+            pathLen: outPathUnknown,
+          ),
+        );
+      }
+    });
+    _sendQueue = job.then((_) {}, onError: (Object _) {});
+    return job;
+  }
+
   /// Feeds a raw inbound companion frame. Non-image frames are ignored.
   ///
   /// NOTE: the queued-message sync advance (`_handleQueuedMessageReceived`)

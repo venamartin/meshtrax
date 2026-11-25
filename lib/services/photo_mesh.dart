@@ -9,6 +9,7 @@ import 'package:traxpix/traxpix.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../helpers/path_helper.dart';
+import '../helpers/region_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../models/channel_message.dart';
 import '../utils/app_logger.dart';
@@ -130,6 +131,11 @@ class PhotoMesh {
   @visibleForTesting
   static Duration? observerWaitOverride;
 
+  /// How long after observers are first asked about a photo their first
+  /// answer is taken as in; tests shorten it.
+  @visibleForTesting
+  static Duration? observerAnswerOverride;
+
   /// Writes of what was heard to chat rows and records, one at a time.
   Future<void> _writes = Future<void>.value();
   final Set<PhotoRepeats> _toWrite = {};
@@ -228,6 +234,48 @@ class PhotoMesh {
       '${sent.packets} of ${_id(imgId)}: sending it again',
     );
     return true;
+  }
+
+  /// Observers have answered about photo [key] once. As a channel text
+  /// neither a repeater nor an observer was heard to carry, each data packet
+  /// no repeater was heard passing on and no observer heard goes once more:
+  /// within the channel's retries, counting any sent again already, while
+  /// it still goes out within the receivers' window, and only where
+  /// observers have heard this radio lately ([HeardService.mayResendPhoto]).
+  void _resendUnconfirmed((int, int) key) {
+    final sent = _sent[key];
+    final id = sent?.messageId;
+    final transport = _transport;
+    if (sent == null || id == null || transport == null) return;
+    final retries = connector.channelRetries;
+    final again = [
+      for (final i in sent.unconfirmed(
+        HeardService.instance.photoPacketsHeard(id),
+      ))
+        if (sent.timesAgain(i) < retries) i,
+    ];
+    if (again.isEmpty || !HeardService.instance.mayResendPhoto(id)) return;
+    final end = sent.startedAt.add(kImageReassemblyTtl * 0.75);
+    final now = DateTime.now();
+    final fit = [
+      for (final (k, i) in again.indexed)
+        if (!now.add(sent.gap * (k + 1)).isAfter(end)) i,
+    ];
+    if (fit.isEmpty) return;
+    fit.forEach(sent.sentAgain);
+    _log(
+      'no repeater or observer was heard carrying packets '
+      '${fit.map((i) => i + 1).join(', ')} of ${sent.packets} of '
+      '${_id(key.$2)}: sending them once more',
+    );
+    HeardService.instance.notePhotoResent(id);
+    unawaited(
+      transport.resendBlobs(
+        [for (final i in fit) sent.blobs[i]],
+        channelIndex: key.$1,
+        gap: sent.gap,
+      ),
+    );
   }
 
   /// The wait after the last packet of photo [key] is over: what was heard
@@ -502,14 +550,28 @@ class PhotoMesh {
     final channel = connector.channels
         .where((c) => c.index == channelIndex)
         .firstOrNull;
+    // As for a channel text: a Nearby only send reaches no observer server
+    // worth asking.
+    final region = channel == null
+        ? null
+        : connector.regionService?.regionOf(channel.idKey);
     if (channel != null &&
+        !connector.isNearbyOnlyChannel(channelIndex) &&
         HeardService.instance.trackPhoto(
           messageId,
           channel.psk,
           dataTypeMeshTraxPhoto,
           set.blobs,
+          region: RegionHelper.isRegionName(region) ? region : null,
         )) {
       sent?.observersAskedAt = DateTime.now();
+      if (sent != null) {
+        Timer(
+          observerAnswerOverride ??
+              HeardService.instance.firstAsk + const Duration(seconds: 5),
+          () => _resendUnconfirmed(key),
+        );
+      }
     }
     // Before the record, so the row never shows unheard while it waits.
     if (sent != null) connector.waitForRepeats(messageId, waiting: true);
@@ -587,7 +649,11 @@ class PhotoMesh {
     final key = (channelIndex, imgId);
     final sent = goesZeroHop
         ? null
-        : PhotoRepeats(blobs: chunks.blobs, hasRepair: chunks.hasParity);
+        : PhotoRepeats(
+            blobs: chunks.blobs,
+            hasRepair: chunks.hasParity,
+            gap: gap,
+          );
     if (sent != null) _sent[key] = sent;
     final airtime = Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
     final hearsInTime = gap >= photoRepeatHeardWithin(airtime);
