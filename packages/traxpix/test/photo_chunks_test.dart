@@ -971,10 +971,12 @@ void main() {
 
       test('never shorter than the zero-hop gap', () {
         expect(photoPacketGapFlood(slow, packets: 40), photoPacketGap(slow));
-        expect(
-          photoPacketGapFlood(airtime, packets: 1),
-          photoPacketGap(airtime),
-        );
+      });
+
+      test('one packet alone waits as long, to hear it passed on', () {
+        final gap = photoPacketGapFlood(airtime, packets: 1);
+        expect(gap, const Duration(milliseconds: 5700));
+        expect(gap, greaterThanOrEqualTo(photoRepeatHeardWithin(airtime)));
       });
     });
 

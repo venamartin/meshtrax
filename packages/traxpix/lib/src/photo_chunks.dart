@@ -203,12 +203,14 @@ const double _floodWaitMaxAirtimes = 2.5;
 ///
 /// Capped so that all [packets] still go out within three quarters of the
 /// receiver's [kImageReassemblyTtl]; never shorter than [photoPacketGap].
+/// A photo of one packet waits as long after it, so a repeater's copy can be
+/// heard before it would go once more.
 Duration photoPacketGapFlood(Duration packetAirtime, {required int packets}) {
   final gap = photoPacketGap(packetAirtime);
-  if (packets < 2) return gap;
   final clear =
       packetAirtime * (1 + 2 * (1 + _floodWaitMaxAirtimes)) +
       const Duration(milliseconds: 500);
+  if (packets < 2) return clear;
   final cap = kImageReassemblyTtl * 0.75 ~/ (packets - 1);
   final spaced = clear < cap ? clear : cap;
   return spaced > gap ? spaced : gap;

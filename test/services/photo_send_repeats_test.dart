@@ -250,6 +250,22 @@ void main() {
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
   });
 
+  test('a photo of one packet no repeater passed on goes once more', () async {
+    final r = await radio((n, index) => n == 1);
+    final (row, record) = await send(r, bytes: 100);
+    expect(_indexes(r.blobs), [0, 0]);
+    expect(r.blobs[1], r.blobs[0]);
+    expect(row.status, ChannelMessageStatus.delivered);
+    expect(record.packetsPassedOn, 1);
+  });
+
+  test('a photo of one packet a repeater passed on goes once only', () async {
+    final r = await radio((n, index) => true);
+    final (row, _) = await send(r, bytes: 100);
+    expect(_indexes(r.blobs), [0]);
+    expect(row.status, ChannelMessageStatus.delivered);
+  });
+
   test('after a packet sent again goes unheard, no more go while nothing is '
       'heard, and the photo stays sent', () async {
     final r = await radio((n, index) => index == 0);
@@ -556,7 +572,7 @@ void main() {
       });
     });
 
-    test('an observer that heard a photo no repeater carried keeps its 30 '
+    test('an observer that heard a photo no repeater carried keeps its 20 '
         'minutes', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       await observe(r);
