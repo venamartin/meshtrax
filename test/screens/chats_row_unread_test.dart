@@ -142,7 +142,6 @@ Future<void> _pumpChats(WidgetTester tester, _Radio radio) async {
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({
-      PathfinderHelpDialog.prefKey: true,
       LocationButtonNote.prefKey: true,
     });
     PrefsManager.reset();
@@ -151,6 +150,19 @@ void main() {
   });
 
   final channel = Channel(index: 1, name: '#test', psk: Uint8List(16));
+
+  // Owner, 2026-11-25: Pathfinder's details are for whoever opens them in
+  // Settings, not a popup on a new install.
+  testWidgets('a new install opens Chats with no Pathfinder popup', (
+    tester,
+  ) async {
+    expect(AppSettingsService().settings.pathGraphEnabled, isTrue);
+    final radio = _Radio(channel);
+    addTearDown(radio.dispose);
+    await _pumpChats(tester, radio);
+
+    expect(find.byType(PathfinderHelpDialog), findsNothing);
+  });
 
   testWidgets('a Chats row opens its chat on NEW MESSAGES', (tester) async {
     final radio = _Radio(channel);

@@ -19,7 +19,6 @@ import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/mention_composer.dart';
-import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 
 // The owner, 2026-11-17: typing @ in a channel made the keyboard go away.
 // The @ list and the composer below it were both Consumer<MeshCoreConnector>,
@@ -59,7 +58,7 @@ Future<void> _settle(WidgetTester tester) async {
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({PathfinderHelpDialog.prefKey: true});
+    SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();

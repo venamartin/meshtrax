@@ -18,7 +18,6 @@ import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
-import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 
 // A hashtag channel's key comes from its name as written, so #Test and
 // #test are two channels, and people kept ending up alone in the wrong one.
@@ -70,9 +69,7 @@ Channel _channel(int index, String name) =>
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({
-      PathfinderHelpDialog.prefKey: true,
-    });
+    SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
