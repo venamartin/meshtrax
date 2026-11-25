@@ -1,0 +1,1068 @@
+{
+ "set": "carquinez",
+ "about": "San Pablo Bay to Suisun Bay through Carquinez Strait: water too narrow for 1 nm, a security zone at Rodeo, and the Carquinez and Benicia bridges (one of them a lift bridge).",
+ "build": "2026112401",
+ "tiles": [
+  {
+   "file": "512_230.wrm",
+   "bytes": 816797,
+   "sha256": "8eda49d0f2062ed913f5dc9ad9dab745a06f482635a96dea7026ea99d40c1c0e",
+   "triangles": 25742,
+   "build": "2026112401"
+  },
+  {
+   "file": "512_231.wrm",
+   "bytes": 1248491,
+   "sha256": "6c9f0700362d3bb728dff8c0da9ca2e358dbb4315c3ab3f0dec08de528770818",
+   "triangles": 39252,
+   "build": "2026112401"
+  }
+ ],
+ "trips": [
+  {
+   "name": "San Pablo Bay to Suisun Bay, 1 nm off, distance first only",
+   "args": [
+    "--from=-122.42,38.01",
+    "--to=-122.05,38.06",
+    "--margin-ft",
+    "0",
+    "--off-land-nm",
+    "1",
+    "--security-first",
+    "never"
+   ],
+   "tests": "Without the second search: the trip can't keep 1 nm, and to spend fewer metres inside it cuts through the Rodeo security zone (33 CFR 165.1197).",
+   "result": {
+    "name": "San Pablo Bay to Suisun Bay, 1 nm off, distance first only",
+    "distance_nm": 18.88,
+    "time": "3 h 09 min at 6 kn",
+    "legs": 16,
+    "funnel_legs": 150,
+    "waypoints": [
+     [
+      -122.42,
+      38.01
+     ],
+     [
+      -122.3449215,
+      38.0416545
+     ],
+     [
+      -122.2828055,
+      38.0478434
+     ],
+     [
+      -122.2647352,
+      38.0561529
+     ],
+     [
+      -122.2518022,
+      38.058443
+     ],
+     [
+      -122.241512,
+      38.0588704
+     ],
+     [
+      -122.241263,
+      38.0588714
+     ],
+     [
+      -122.2181656,
+      38.0576409
+     ],
+     [
+      -122.2151001,
+      38.0574753
+     ],
+     [
+      -122.2139154,
+      38.0573908
+     ],
+     [
+      -122.1942787,
+      38.053929
+     ],
+     [
+      -122.1924178,
+      38.0534561
+     ],
+     [
+      -122.1904128,
+      38.0529062
+     ],
+     [
+      -122.1900601,
+      38.0527874
+     ],
+     [
+      -122.148211,
+      38.0317492
+     ],
+     [
+      -122.0812596,
+      38.0530812
+     ],
+     [
+      -122.05,
+      38.06
+     ]
+    ],
+    "leg_nm": [
+     4.03,
+     2.96,
+     0.99,
+     0.63,
+     0.49,
+     0.01,
+     1.1,
+     0.15,
+     0.06,
+     0.95,
+     0.09,
+     0.1,
+     0.02,
+     2.35,
+     3.42,
+     1.54
+    ],
+    "settings": {
+     "draft_ft": 6,
+     "margin_ft": 0.0,
+     "limit_ft": 6.0,
+     "prefer_depth_ft": null,
+     "off_land_nm": 1.0,
+     "approach_m": [
+      0.0,
+      0.0
+     ],
+     "slack": 0.02,
+     "weights": {
+      "shallower_than_preferred": 2.0,
+      "near_hazard": 1.0,
+      "kelp": 2.0,
+      "security_zone": 100.0,
+      "traffic_lane": 100.0,
+      "separation_zone": 100.0,
+      "listed_zones": 0.0
+     },
+     "air_draft_m": null,
+     "unknown_clearance": "block",
+     "avoid_opening_bridges": false,
+     "security_first": "never",
+     "speed_kn": 6
+    },
+    "from": {
+     "asked": [
+      -122.42,
+      38.01
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "to": {
+     "asked": [
+      -122.05,
+      38.06
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "through": {
+     "outside_mesh_samples": 0,
+     "least_charted_depth_ft": 6,
+     "nm_shallower_than_limit": 0.0,
+     "nm_shallower_than_preferred": null,
+     "nm_by_band_least_depth": {
+      "6 ft": 0.12,
+      "12 ft": 1.29,
+      "18 ft": 6.7,
+      "25 ft": 0.24,
+      "29 ft": 0.04,
+      "30 ft": 5.75,
+      "31 ft": 0.38,
+      "34 ft": 1.14,
+      "35 ft": 0.26,
+      "36 ft": 1.41,
+      "37 ft": 0.23,
+      "60 ft": 1.32
+     },
+     "zoc_nm": {
+      "1": 12.64,
+      "3": 6.24
+     },
+     "security_zone_nm": 0.33,
+     "traffic_lane_nm": 0.0,
+     "areas": [
+      {
+       "id": "72f78abfab66",
+       "class": "RESARE",
+       "info": "Regulated navigation area, 33 CFR 165.1185",
+       "restrictions": "entry_restricted",
+       "nm": 18.88,
+       "from_nm": 0.01
+      },
+      {
+       "id": "7582d946f621",
+       "class": "RESARE",
+       "name": "Benicia-Martinez Railroad Drawbridge Regulated Navigation Area",
+       "info": "33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 8.99,
+       "from_nm": 9.88
+      },
+      {
+       "id": "fff52c2cd6e9",
+       "class": "RESARE",
+       "name": "San Pablo Strait Channel",
+       "info": "Regulated Navigation Area, 33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 2.17,
+       "from_nm": 0.4
+      },
+      {
+       "id": "20a8f6c14213",
+       "class": "RESARE",
+       "name": "Pinole Shoal Channel RNA",
+       "info": "Regulated navigation area, 33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 1.48,
+       "from_nm": 2.56
+      },
+      {
+       "id": "86441cf70a77",
+       "class": "ACHARE",
+       "name": "Carquinez Strait Anchorage Area No.22",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.94,
+       "from_nm": 12.91
+      },
+      {
+       "id": "24f65df7bdf1",
+       "class": "CTNARE",
+       "info": "Changeable area",
+       "nm": 0.68,
+       "from_nm": 12.85
+      },
+      {
+       "id": "97fc4ef45fe3",
+       "class": "ACHARE",
+       "name": "Benicia Anchorage Area No.23",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.53,
+       "from_nm": 13.84
+      },
+      {
+       "id": "f401aa192fce",
+       "class": "RESARE",
+       "name": "MOTCO Safety Zone",
+       "info": "33 CFR 165.1198",
+       "restrictions": "stopping_prohibited",
+       "categories": "offshore_safety_zone",
+       "nm": 0.52,
+       "from_nm": 18.37
+      },
+      {
+       "id": "308feccf1af0",
+       "class": "RESARE",
+       "info": "Security Zone, 33 CFR 165.1197",
+       "restrictions": "entry_restricted",
+       "nm": 0.33,
+       "from_nm": 7.97
+      },
+      {
+       "id": "f87d656c2655",
+       "class": "ACHARE",
+       "name": "San Francisco Bay, San Pablo Bay Anchorage Number 20",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.28,
+       "from_nm": 6.89
+      },
+      {
+       "id": "c0a854da49c6",
+       "class": "BRIDGE",
+       "categories": "fixed",
+       "nm": 0.07,
+       "from_nm": 15.23
+      },
+      {
+       "id": "fe34c454dd09",
+       "class": "BRIDGE",
+       "name": "Carquinez Strait Bridge",
+       "categories": "fixed",
+       "clearance_m": 40.2,
+       "horizontal_clearance_m": 304.1,
+       "nm": 0.05,
+       "from_nm": 9.82
+      },
+      {
+       "id": "5d57fb3b3599",
+       "class": "BRIDGE",
+       "name": "Carquinez Strait Bridge",
+       "categories": "fixed",
+       "nm": 0.03,
+       "from_nm": 9.88
+      },
+      {
+       "id": "70dd20cf3ccf",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 54.5,
+       "nm": 0.03,
+       "from_nm": 9.54
+      },
+      {
+       "id": "27869e522824",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 62.7,
+       "nm": 0.01,
+       "from_nm": 10.99
+      }
+     ],
+     "lowest_clearance": {
+      "clearance_m": 40.2,
+      "id": "fe34c454dd09",
+      "class": "BRIDGE",
+      "name": "Carquinez Strait Bridge",
+      "from_nm": 9.82,
+      "uncharted": 2
+     },
+     "off_land": {
+      "distance_nm": 1.0,
+      "reaches_distance": true,
+      "nm_inside_in_approaches": 0.0,
+      "nm_inside_elsewhere": 12.37,
+      "couldnt_keep": [
+       {
+        "from_nm": 6.5,
+        "nm": 12.37,
+        "start": [
+         -122.29316,
+         38.04681
+        ],
+        "end": [
+         -122.05014,
+         38.05997
+        ]
+       }
+      ],
+      "approaches": {
+       "from": {
+        "reaches_distance": true,
+        "shortest_way_out_nm": 0.0,
+        "approach_nm": 0.1
+       },
+       "to": {
+        "reaches_distance": false,
+        "searched_nm": 3.0
+       }
+      }
+     }
+    },
+    "search": {
+     "tiles": 2,
+     "triangles": 64994,
+     "cross_tile_links": 45,
+     "blocked_triangles": 34748,
+     "expanded": 23452,
+     "corridor_triangles": 747,
+     "load_s": 0.6,
+     "search_s": 0.86,
+     "funnel_s": 0.011,
+     "straighten_s": 2.91,
+     "funnel_cost_nm": 54.49,
+     "trip_cost_nm": 52.92,
+     "funnel_inside_nm": 12.98,
+     "trip_inside_nm": 12.38,
+     "funnel_outside_allowed_m": 0.0,
+     "trip_outside_allowed_m": 0.0
+    },
+    "build": {
+     "build": "2026112401",
+     "cells_sha1": "d5c2fc08fc587fb4d8ced76ba317b694907eae1b",
+     "cells": 7114,
+     "extractors": [
+      "enc6/scamin-all+0/ffcb0620"
+     ],
+     "extracted": "2026-10-23"
+    }
+   }
+  },
+  {
+   "name": "San Pablo Bay to Suisun Bay, 1 nm off",
+   "args": [
+    "--from=-122.42,38.01",
+    "--to=-122.05,38.06",
+    "--margin-ft",
+    "0",
+    "--off-land-nm",
+    "1"
+   ],
+   "tests": "Martin's rule: where the distance can't be kept anyway, security zones come first (the second search over the couldn't-keep stretch). No metres in the security zone.",
+   "result": {
+    "name": "San Pablo Bay to Suisun Bay, 1 nm off",
+    "distance_nm": 18.95,
+    "time": "3 h 09 min at 6 kn",
+    "legs": 15,
+    "funnel_legs": 142,
+    "waypoints": [
+     [
+      -122.42,
+      38.01
+     ],
+     [
+      -122.3449215,
+      38.0416545
+     ],
+     [
+      -122.2933881,
+      38.0456725
+     ],
+     [
+      -122.2688359,
+      38.05831
+     ],
+     [
+      -122.241512,
+      38.0588704
+     ],
+     [
+      -122.241263,
+      38.0588714
+     ],
+     [
+      -122.2181656,
+      38.0576409
+     ],
+     [
+      -122.2151001,
+      38.0574753
+     ],
+     [
+      -122.2139154,
+      38.0573908
+     ],
+     [
+      -122.1942787,
+      38.053929
+     ],
+     [
+      -122.1924178,
+      38.0534561
+     ],
+     [
+      -122.1904128,
+      38.0529062
+     ],
+     [
+      -122.1900601,
+      38.0527874
+     ],
+     [
+      -122.148211,
+      38.0317492
+     ],
+     [
+      -122.0812596,
+      38.0530812
+     ],
+     [
+      -122.05,
+      38.06
+     ]
+    ],
+    "leg_nm": [
+     4.03,
+     2.45,
+     1.39,
+     1.29,
+     0.01,
+     1.1,
+     0.15,
+     0.06,
+     0.95,
+     0.09,
+     0.1,
+     0.02,
+     2.35,
+     3.42,
+     1.54
+    ],
+    "settings": {
+     "draft_ft": 6,
+     "margin_ft": 0.0,
+     "limit_ft": 6.0,
+     "prefer_depth_ft": null,
+     "off_land_nm": 1.0,
+     "approach_m": [
+      0.0,
+      0.0
+     ],
+     "slack": 0.02,
+     "weights": {
+      "shallower_than_preferred": 2.0,
+      "near_hazard": 1.0,
+      "kelp": 2.0,
+      "security_zone": 100.0,
+      "traffic_lane": 100.0,
+      "separation_zone": 100.0,
+      "listed_zones": 0.0
+     },
+     "air_draft_m": null,
+     "unknown_clearance": "block",
+     "avoid_opening_bridges": false,
+     "security_first": "cant-keep",
+     "speed_kn": 6
+    },
+    "from": {
+     "asked": [
+      -122.42,
+      38.01
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "to": {
+     "asked": [
+      -122.05,
+      38.06
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "through": {
+     "outside_mesh_samples": 0,
+     "least_charted_depth_ft": 12,
+     "nm_shallower_than_limit": 0.0,
+     "nm_shallower_than_preferred": null,
+     "nm_by_band_least_depth": {
+      "12 ft": 0.46,
+      "18 ft": 6.88,
+      "25 ft": 0.24,
+      "29 ft": 0.04,
+      "30 ft": 6.47,
+      "31 ft": 0.38,
+      "34 ft": 1.14,
+      "35 ft": 0.26,
+      "36 ft": 1.41,
+      "37 ft": 0.23,
+      "60 ft": 1.43
+     },
+     "zoc_nm": {
+      "1": 13.18,
+      "3": 5.77
+     },
+     "security_zone_nm": 0.0,
+     "traffic_lane_nm": 0.0,
+     "areas": [
+      {
+       "id": "72f78abfab66",
+       "class": "RESARE",
+       "info": "Regulated navigation area, 33 CFR 165.1185",
+       "restrictions": "entry_restricted",
+       "nm": 18.95,
+       "from_nm": 0.01
+      },
+      {
+       "id": "7582d946f621",
+       "class": "RESARE",
+       "name": "Benicia-Martinez Railroad Drawbridge Regulated Navigation Area",
+       "info": "33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 9.0,
+       "from_nm": 9.94
+      },
+      {
+       "id": "fff52c2cd6e9",
+       "class": "RESARE",
+       "name": "San Pablo Strait Channel",
+       "info": "Regulated Navigation Area, 33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 2.17,
+       "from_nm": 0.4
+      },
+      {
+       "id": "20a8f6c14213",
+       "class": "RESARE",
+       "name": "Pinole Shoal Channel RNA",
+       "info": "Regulated navigation area, 33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 1.48,
+       "from_nm": 2.56
+      },
+      {
+       "id": "86441cf70a77",
+       "class": "ACHARE",
+       "name": "Carquinez Strait Anchorage Area No.22",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.94,
+       "from_nm": 12.97
+      },
+      {
+       "id": "24f65df7bdf1",
+       "class": "CTNARE",
+       "info": "Changeable area",
+       "nm": 0.68,
+       "from_nm": 12.92
+      },
+      {
+       "id": "97fc4ef45fe3",
+       "class": "ACHARE",
+       "name": "Benicia Anchorage Area No.23",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.53,
+       "from_nm": 13.9
+      },
+      {
+       "id": "f401aa192fce",
+       "class": "RESARE",
+       "name": "MOTCO Safety Zone",
+       "info": "33 CFR 165.1198",
+       "restrictions": "stopping_prohibited",
+       "categories": "offshore_safety_zone",
+       "nm": 0.52,
+       "from_nm": 18.44
+      },
+      {
+       "id": "c0a854da49c6",
+       "class": "BRIDGE",
+       "categories": "fixed",
+       "nm": 0.07,
+       "from_nm": 15.29
+      },
+      {
+       "id": "fe34c454dd09",
+       "class": "BRIDGE",
+       "name": "Carquinez Strait Bridge",
+       "categories": "fixed",
+       "clearance_m": 40.2,
+       "horizontal_clearance_m": 304.1,
+       "nm": 0.05,
+       "from_nm": 9.89
+      },
+      {
+       "id": "5d57fb3b3599",
+       "class": "BRIDGE",
+       "name": "Carquinez Strait Bridge",
+       "categories": "fixed",
+       "nm": 0.03,
+       "from_nm": 9.94
+      },
+      {
+       "id": "70dd20cf3ccf",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 54.5,
+       "nm": 0.03,
+       "from_nm": 9.6
+      },
+      {
+       "id": "27869e522824",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 62.7,
+       "nm": 0.01,
+       "from_nm": 11.05
+      }
+     ],
+     "lowest_clearance": {
+      "clearance_m": 40.2,
+      "id": "fe34c454dd09",
+      "class": "BRIDGE",
+      "name": "Carquinez Strait Bridge",
+      "from_nm": 9.89,
+      "uncharted": 2
+     },
+     "off_land": {
+      "distance_nm": 1.0,
+      "reaches_distance": true,
+      "nm_inside_in_approaches": 0.0,
+      "nm_inside_elsewhere": 12.45,
+      "couldnt_keep": [
+       {
+        "from_nm": 6.49,
+        "nm": 12.45,
+        "start": [
+         -122.29327,
+         38.04573
+        ],
+        "end": [
+         -122.05014,
+         38.05997
+        ]
+       }
+      ],
+      "approaches": {
+       "from": {
+        "reaches_distance": true,
+        "shortest_way_out_nm": 0.0,
+        "approach_nm": 0.1
+       },
+       "to": {
+        "reaches_distance": false,
+        "searched_nm": 3.0
+       }
+      }
+     }
+    },
+    "search": {
+     "tiles": 2,
+     "triangles": 64994,
+     "cross_tile_links": 45,
+     "blocked_triangles": 34748,
+     "expanded": 23452,
+     "corridor_triangles": 710,
+     "load_s": 0.46,
+     "search_s": 1.71,
+     "funnel_s": 0.011,
+     "straighten_s": 5.5,
+     "funnel_cost_nm": 21.88,
+     "trip_cost_nm": 20.6,
+     "funnel_inside_nm": 13.05,
+     "trip_inside_nm": 12.46,
+     "funnel_outside_allowed_m": 0.0,
+     "trip_outside_allowed_m": 0.0,
+     "security_second_search": [
+      {
+       "triangles": 593,
+       "security_triangles": 12,
+       "triangles_after": 556,
+       "security_triangles_after": 0,
+       "expanded": 23262
+      }
+     ]
+    },
+    "build": {
+     "build": "2026112401",
+     "cells_sha1": "d5c2fc08fc587fb4d8ced76ba317b694907eae1b",
+     "cells": 7114,
+     "extractors": [
+      "enc6/scamin-all+0/ffcb0620"
+     ],
+     "extracted": "2026-10-23"
+    }
+   }
+  },
+  {
+   "name": "San Pablo Bay to Suisun Bay, 25 m mast",
+   "args": [
+    "--from=-122.42,38.01",
+    "--to=-122.05,38.06",
+    "--margin-ft",
+    "0",
+    "--air-draft-m",
+    "25"
+   ],
+   "tests": "With a mast height: spans with no charted clearance block, so the trip takes the charted spans; the Union Pacific lift bridge counts open and is listed \"needs opening\"; the lowest charted clearance passed under is given.",
+   "result": {
+    "name": "San Pablo Bay to Suisun Bay, 25 m mast",
+    "distance_nm": 19.06,
+    "time": "3 h 11 min at 6 kn",
+    "legs": 9,
+    "funnel_legs": 143,
+    "waypoints": [
+     [
+      -122.42,
+      38.01
+     ],
+     [
+      -122.2332457,
+      38.0669368
+     ],
+     [
+      -122.2318653,
+      38.0661439
+     ],
+     [
+      -122.2268921,
+      38.0641064
+     ],
+     [
+      -122.1715236,
+      38.0478879
+     ],
+     [
+      -122.1599558,
+      38.0347338
+     ],
+     [
+      -122.1208327,
+      38.038373
+     ],
+     [
+      -122.0951662,
+      38.048638
+     ],
+     [
+      -122.0810916,
+      38.0529223
+     ],
+     [
+      -122.05,
+      38.06
+     ]
+    ],
+    "leg_nm": [
+     9.48,
+     0.08,
+     0.27,
+     2.8,
+     0.96,
+     1.87,
+     1.36,
+     0.71,
+     1.53
+    ],
+    "settings": {
+     "draft_ft": 6,
+     "margin_ft": 0.0,
+     "limit_ft": 6.0,
+     "prefer_depth_ft": null,
+     "off_land_nm": null,
+     "approach_m": [
+      0.0,
+      0.0
+     ],
+     "slack": 0.02,
+     "weights": {
+      "shallower_than_preferred": 2.0,
+      "near_hazard": 1.0,
+      "kelp": 2.0,
+      "security_zone": 100.0,
+      "traffic_lane": 100.0,
+      "separation_zone": 100.0,
+      "listed_zones": 0.0
+     },
+     "air_draft_m": 25.0,
+     "unknown_clearance": "block",
+     "avoid_opening_bridges": false,
+     "security_first": "cant-keep",
+     "speed_kn": 6
+    },
+    "from": {
+     "asked": [
+      -122.42,
+      38.01
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "to": {
+     "asked": [
+      -122.05,
+      38.06
+     ],
+     "charted_least_depth_ft": 18
+    },
+    "through": {
+     "outside_mesh_samples": 0,
+     "least_charted_depth_ft": 12,
+     "nm_shallower_than_limit": 0.0,
+     "nm_shallower_than_preferred": null,
+     "nm_by_band_least_depth": {
+      "12 ft": 0.18,
+      "18 ft": 7.45,
+      "25 ft": 0.07,
+      "30 ft": 7.32,
+      "31 ft": 0.05,
+      "34 ft": 0.77,
+      "35 ft": 0.26,
+      "36 ft": 1.33,
+      "46 ft": 0.03,
+      "50 ft": 0.07,
+      "60 ft": 1.54
+     },
+     "zoc_nm": {
+      "1": 13.32,
+      "3": 5.74
+     },
+     "security_zone_nm": 0.0,
+     "traffic_lane_nm": 0.0,
+     "areas": [
+      {
+       "id": "72f78abfab66",
+       "class": "RESARE",
+       "info": "Regulated navigation area, 33 CFR 165.1185",
+       "restrictions": "entry_restricted",
+       "nm": 19.06,
+       "from_nm": 0.01
+      },
+      {
+       "id": "7582d946f621",
+       "class": "RESARE",
+       "name": "Benicia-Martinez Railroad Drawbridge Regulated Navigation Area",
+       "info": "33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 9.14,
+       "from_nm": 9.91
+      },
+      {
+       "id": "fff52c2cd6e9",
+       "class": "RESARE",
+       "name": "San Pablo Strait Channel",
+       "info": "Regulated Navigation Area, 33 CFR 165.1181",
+       "restrictions": "entry_restricted",
+       "nm": 1.84,
+       "from_nm": 0.33
+      },
+      {
+       "id": "86441cf70a77",
+       "class": "ACHARE",
+       "name": "Carquinez Strait Anchorage Area No.22",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 1.1,
+       "from_nm": 12.97
+      },
+      {
+       "id": "24f65df7bdf1",
+       "class": "CTNARE",
+       "info": "Changeable area",
+       "nm": 0.84,
+       "from_nm": 12.96
+      },
+      {
+       "id": "f401aa192fce",
+       "class": "RESARE",
+       "name": "MOTCO Safety Zone",
+       "info": "33 CFR 165.1198",
+       "restrictions": "stopping_prohibited",
+       "categories": "offshore_safety_zone",
+       "nm": 0.51,
+       "from_nm": 18.55
+      },
+      {
+       "id": "97fc4ef45fe3",
+       "class": "ACHARE",
+       "name": "Benicia Anchorage Area No.23",
+       "info": "33 CFR 110.224",
+       "categories": "unrestricted",
+       "nm": 0.49,
+       "from_nm": 14.07
+      },
+      {
+       "id": "1782840fb75f",
+       "class": "BRIDGE",
+       "name": "Carquinez Strait Bridge",
+       "categories": "fixed",
+       "clearance_m": 44.5,
+       "horizontal_clearance_m": 304.1,
+       "nm": 0.05,
+       "from_nm": 9.83
+      },
+      {
+       "id": "78a4daa761fe",
+       "class": "DMPGRD",
+       "info": "Disposal Area (dredged material) Depths from survey of 2020",
+       "categories": "spoil_ground",
+       "nm": 0.04,
+       "from_nm": 0.28
+      },
+      {
+       "id": "70dd20cf3ccf",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 54.5,
+       "nm": 0.04,
+       "from_nm": 9.72
+      },
+      {
+       "id": "ccd1190394db",
+       "class": "BRIDGE",
+       "name": "New Benicia / Martinez Highway Bridge, I-680 Northbound Highway Bridge",
+       "categories": "fixed",
+       "clearance_m": 46.6,
+       "horizontal_clearance_m": 174.9,
+       "nm": 0.04,
+       "from_nm": 15.54
+      },
+      {
+       "id": "f04d275213cb",
+       "class": "BRIDGE",
+       "name": "Benicia-Martinez Highway Bridge",
+       "categories": "fixed",
+       "clearance_m": 41.1,
+       "horizontal_clearance_m": 134.1,
+       "nm": 0.03,
+       "from_nm": 15.43
+      },
+      {
+       "id": "f9d7e118881e",
+       "class": "BRIDGE",
+       "name": "Union Pacific Railroad Lift Bridge",
+       "categories": "lift",
+       "clearance_closed_m": 21.3,
+       "clearance_open_m": 41.1,
+       "horizontal_clearance_m": 88.6,
+       "nm": 0.03,
+       "from_nm": 15.46,
+       "air_draft": "needs opening"
+      },
+      {
+       "id": "27869e522824",
+       "class": "CBLOHD",
+       "categories": "power_line",
+       "clearance_m": 62.7,
+       "nm": 0.01,
+       "from_nm": 11.12
+      }
+     ],
+     "lowest_clearance": {
+      "clearance_m": 41.1,
+      "id": "f04d275213cb",
+      "class": "BRIDGE",
+      "name": "Benicia-Martinez Highway Bridge",
+      "from_nm": 15.43,
+      "uncharted": 0
+     }
+    },
+    "search": {
+     "tiles": 2,
+     "triangles": 64994,
+     "cross_tile_links": 45,
+     "blocked_triangles": 35196,
+     "expanded": 15807,
+     "corridor_triangles": 657,
+     "load_s": 0.46,
+     "search_s": 0.61,
+     "funnel_s": 0.01,
+     "straighten_s": 1.47,
+     "funnel_cost_nm": 20.3,
+     "trip_cost_nm": 19.97,
+     "funnel_inside_nm": 0.0,
+     "trip_inside_nm": 0.0,
+     "funnel_outside_allowed_m": 0.0,
+     "trip_outside_allowed_m": 0.0
+    },
+    "build": {
+     "build": "2026112401",
+     "cells_sha1": "d5c2fc08fc587fb4d8ced76ba317b694907eae1b",
+     "cells": 7114,
+     "extractors": [
+      "enc6/scamin-all+0/ffcb0620"
+     ],
+     "extracted": "2026-10-23"
+    }
+   }
+  },
+  {
+   "name": "San Pablo Bay to Suisun Bay, 25 m mast, avoid bridges that open",
+   "args": [
+    "--from=-122.42,38.01",
+    "--to=-122.05,38.06",
+    "--margin-ft",
+    "0",
+    "--air-draft-m",
+    "25",
+    "--avoid-opening-bridges"
+   ],
+   "tests": "The lift bridge counts closed (21.3 m), and every way east passes under it: no route.",
+   "result": {
+    "name": "San Pablo Bay to Suisun Bay, 25 m mast, avoid bridges that open",
+    "error": "no route",
+    "expanded": 13712
+   }
+  }
+ ]
+}

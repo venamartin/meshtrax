@@ -51,11 +51,12 @@ jobs:
         run: dart test -r github
 
       # Offline routing, points of interest, coordinates, line of sight, the
-      # observer check and TRAX locations: pure Dart, each with its own
-      # pubspec. Tests that need local routing data skip here.
-      - name: Analyze and test traxroute, traxpoi, traxcoords, traxlos, traxheard and traxshare
+      # observer check, TRAX locations and routes on the water: pure Dart,
+      # each with its own pubspec. Tests that need local routing data skip
+      # here.
+      - name: Analyze and test traxroute, traxpoi, traxcoords, traxlos, traxheard, traxshare and traxwater
         run: |
-          for p in traxroute traxpoi traxcoords traxlos traxheard traxshare; do
+          for p in traxroute traxpoi traxcoords traxlos traxheard traxshare traxwater; do
             (cd packages/$p && dart pub get && dart analyze --fatal-infos --fatal-warnings && dart test -r github) || exit 1
           done
 

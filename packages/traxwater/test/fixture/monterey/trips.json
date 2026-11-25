@@ -1,0 +1,227 @@
+{
+ "set": "monterey",
+ "about": "Monterey Bay: a 1 nm trip in open water through the Monterey Bay security zone (listed, not avoided).",
+ "build": "2026112401",
+ "tiles": [
+  {
+   "file": "506_232.wrm",
+   "bytes": 809690,
+   "sha256": "f51e6ec7bc2b84703a4ffaf91efd1a5ed9906fbf2a8e00ce0dc7c133907f54cd",
+   "triangles": 26336,
+   "build": "2026112401"
+  },
+  {
+   "file": "507_232.wrm",
+   "bytes": 466047,
+   "sha256": "ad6c58c48ac470919371f80bd120606fc5d78aaf785f3076dbfe0531d4304c2d",
+   "triangles": 15105,
+   "build": "2026112401"
+  }
+ ],
+ "trips": [
+  {
+   "name": "Monterey to Moss Landing, 1 nm off",
+   "args": [
+    "--from=-121.8915,36.605",
+    "--to=-121.7915,36.8045",
+    "--off-land-nm",
+    "1"
+   ],
+   "tests": "The plan's starting values (6 ft draft + 2 ft, 1 nm off land, 6 kn). The distance comes first in open water: the trip keeps 1 nm outside the two harbour approaches and runs through the security zone, which it lists.",
+   "result": {
+    "name": "Monterey to Moss Landing, 1 nm off",
+    "distance_nm": 14.54,
+    "time": "2 h 25 min at 6 kn",
+    "legs": 4,
+    "funnel_legs": 59,
+    "waypoints": [
+     [
+      -121.8915,
+      36.605
+     ],
+     [
+      -121.8772876,
+      36.6264522
+     ],
+     [
+      -121.8981136,
+      36.7242235
+     ],
+     [
+      -121.812983,
+      36.7967776
+     ],
+     [
+      -121.7915,
+      36.8045
+     ]
+    ],
+    "leg_nm": [
+     1.46,
+     5.96,
+     5.99,
+     1.13
+    ],
+    "settings": {
+     "draft_ft": 6,
+     "margin_ft": 2,
+     "limit_ft": 8.0,
+     "prefer_depth_ft": null,
+     "off_land_nm": 1.0,
+     "approach_m": [
+      0.0,
+      0.0
+     ],
+     "slack": 0.02,
+     "weights": {
+      "shallower_than_preferred": 2.0,
+      "near_hazard": 1.0,
+      "kelp": 2.0,
+      "security_zone": 100.0,
+      "traffic_lane": 100.0,
+      "separation_zone": 100.0,
+      "listed_zones": 0.0
+     },
+     "air_draft_m": null,
+     "unknown_clearance": "block",
+     "avoid_opening_bridges": false,
+     "security_first": "cant-keep",
+     "speed_kn": 6
+    },
+    "from": {
+     "asked": [
+      -121.8915,
+      36.605
+     ],
+     "charted_least_depth_ft": 12
+    },
+    "to": {
+     "asked": [
+      -121.7915,
+      36.8045
+     ],
+     "charted_least_depth_ft": 30
+    },
+    "through": {
+     "outside_mesh_samples": 0,
+     "least_charted_depth_ft": 12,
+     "nm_shallower_than_limit": 0.0,
+     "nm_shallower_than_preferred": null,
+     "nm_by_band_least_depth": {
+      "12 ft": 0.01,
+      "18 ft": 0.09,
+      "30 ft": 0.27,
+      "60 ft": 0.74,
+      "120 ft": 3.18,
+      "180 ft": 4.72,
+      "240 ft": 5.26,
+      "300 ft": 0.27
+     },
+     "zoc_nm": {
+      "3": 1.46,
+      "4": 13.08
+     },
+     "security_zone_nm": 14.35,
+     "traffic_lane_nm": 0.0,
+     "areas": [
+      {
+       "id": "f14c90cf95dd",
+       "class": "RESARE",
+       "name": "Monterey Bay National Marine Sanctuary",
+       "info": "Protected area, 15 CFR 922",
+       "restrictions": "entry_restricted",
+       "categories": "ecological_reserve",
+       "nm": 14.35,
+       "from_nm": 0.2
+      },
+      {
+       "id": "f905d550a718",
+       "class": "RESARE",
+       "name": "Monterey Bay Security Zone",
+       "info": "Security Zone; 33 CFR 165.1183",
+       "restrictions": "entry_restricted",
+       "categories": "offshore_safety_zone",
+       "nm": 14.35,
+       "from_nm": 0.2
+      },
+      {
+       "id": "63a7a83fb01f",
+       "class": "RESARE",
+       "info": "33 CFR 334.1150",
+       "restrictions": "entry_restricted",
+       "categories": "military_area",
+       "nm": 2.81,
+       "from_nm": 3.18
+      },
+      {
+       "id": "2234b63651b8",
+       "class": "ACHARE",
+       "name": "Monterey Harbor Anchorage",
+       "info": "Special anchorage; 33 CFR 110.1 & 110.126",
+       "nm": 0.12,
+       "from_nm": 0.06
+      },
+      {
+       "id": "c912688a13a3",
+       "class": "CTNARE",
+       "info": "COLREGS demarcation line; 33 CFR 80.1134",
+       "nm": 0.01,
+       "from_nm": 0.18
+      }
+     ],
+     "lowest_clearance": {
+      "clearance_m": null,
+      "uncharted": 0
+     },
+     "off_land": {
+      "distance_nm": 1.0,
+      "reaches_distance": true,
+      "nm_inside_in_approaches": 2.35,
+      "nm_inside_elsewhere": 0.0,
+      "couldnt_keep": [],
+      "approaches": {
+       "from": {
+        "reaches_distance": true,
+        "shortest_way_out_nm": 1.5,
+        "approach_nm": 1.9
+       },
+       "to": {
+        "reaches_distance": true,
+        "shortest_way_out_nm": 1.25,
+        "approach_nm": 1.6
+       }
+      }
+     }
+    },
+    "search": {
+     "tiles": 2,
+     "triangles": 41441,
+     "cross_tile_links": 26,
+     "blocked_triangles": 16442,
+     "expanded": 10503,
+     "corridor_triangles": 272,
+     "load_s": 0.3,
+     "search_s": 0.46,
+     "funnel_s": 0.004,
+     "straighten_s": 1.1,
+     "funnel_cost_nm": 1695.47,
+     "trip_cost_nm": 1450.65,
+     "funnel_inside_nm": 0.0,
+     "trip_inside_nm": 0.0,
+     "funnel_outside_allowed_m": 0.0,
+     "trip_outside_allowed_m": 0.0,
+     "security_second_search": []
+    },
+    "build": {
+     "build": "2026112401",
+     "cells_sha1": "d5c2fc08fc587fb4d8ced76ba317b694907eae1b",
+     "cells": 7114,
+     "extractors": [
+      "enc6/scamin-all+0/ffcb0620"
+     ],
+     "extracted": "2026-10-23"
+    }
+   }
+  }
+ ]
+}
