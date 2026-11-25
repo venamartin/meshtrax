@@ -393,6 +393,52 @@ void main() {
           ['best', 'elsewhere', 'flood', 'flood']);
     });
 
+    // Simulator's scripted set, 2026-11-24: their packets were heard by
+    // one repeater and only a third one, with a delivery record, reached
+    // them. The best route's second try took the third one's place, and a
+    // flood delivered what that route would have.
+    group('a likely route to a repeater not tried yet', () {
+      final heard = via([0xA2, 0x77, 0xF5, 0xEE], est: 0.55);
+      final record = via([0xA2, 0x77, 0x5B, 0x98], est: 0.61);
+
+      List<PathSelection> plan(int budget, List<PathSelection> routes,
+              {List<PathSelection> tried = const [], int? floods}) =>
+          planAttempts(none,
+              radioWidth: 2,
+              budget: budget,
+              graphRoutes: routes,
+              tried: tried,
+              floods: floods,
+              bestTwice: true);
+
+      test('goes before the best route is repeated, once a route elsewhere '
+          'ranks second', () {
+        expect(plan(5, [best, heard, record]).take(3), [best, heard, record]);
+      });
+
+      test('keeps its place when the ladder is planned again', () {
+        expect(
+            plan(4, [best, heard, record], tried: [best], floods: 2).take(2),
+            [heard, record]);
+        expect(
+            plan(3, [best, heard, record], tried: [best, heard], floods: 2)
+                .first,
+            record);
+      });
+
+      test('their latest packet was heard by their usual repeater: the best '
+          'route twice, then that route before another way to the same '
+          'repeater', () {
+        expect(plan(5, [best, second, record]).take(3), [best, best, record]);
+      });
+
+      test('with a slot to spare the best route still gets its second try',
+          () {
+        expect(
+            plan(6, [best, heard, record]).take(4), [best, heard, record, best]);
+      });
+    });
+
     test('planned again after the first try failed: its second try is next',
         () {
       expect(ladder(4, [best, second], tried: [best], floods: 2),

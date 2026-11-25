@@ -141,7 +141,16 @@ me and who hears my contact, what path bytes should this DM use?*
     once. Planned again after that one failed, a second route to the
     other repeater took the last route slot from an 82% route and the
     message was lost (simulator's scripted set, 2026-11-24). A try that
-    never left my doorstep is not counted as a try of its route.
+    never left my doorstep is not counted as a try of its route. The
+    repeat replaces another corridor to the same doorstep, never a
+    likely route (50% or more) to a doorstep not tried yet, which is
+    what `_routesAfter` puts in its last place ("what is stored is
+    used before a flood"): such a route goes before other corridors,
+    and, once a route elsewhere was tried or ranks second, before the
+    best route's second try. In the same scripted set a contact heard
+    by one repeater and reached only by a third (61%) got the best
+    route's repeat in that third one's place, and a flood delivered
+    what the route would have.
   * **Only a likely route twice.** The second try is for a best route
     whose estimate is 50% or more (`repeatMinDelivery`); a weaker one
     keeps the ladder of before (each route once, two floods). The

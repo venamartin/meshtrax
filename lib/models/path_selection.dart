@@ -164,8 +164,10 @@ PathSelection resolvePathSelection(
 /// ladder above). Back to back when the next route ends at the same
 /// repeater (the contact has not moved); around the next route when that
 /// one ends elsewhere (the repeater that heard their latest packet goes
-/// second). With five tries: best, best, next, flood, flood; with three:
-/// best, best, flood.
+/// second). A likely route to a repeater not tried yet comes before
+/// another way to one that was, and, once a route elsewhere was tried,
+/// before the best route's second try. With five tries: best, best, next,
+/// flood, flood; with three: best, best, flood.
 List<PathSelection> planAttempts(
   Contact contact, {
   required int radioWidth,
@@ -209,9 +211,12 @@ List<PathSelection> planAttempts(
       routes.add(g);
     }
   } else {
-    String lastHop(PathSelection s) => s.hopCount == 0
-        ? 'direct'
-        : s.pathBytes.sublist(s.pathBytes.length - s.hashSize).join(',');
+    String lastHop(PathSelection s) {
+      final from = s.pathBytes.length - s.hashSize;
+      return s.hopCount == 0
+          ? 'direct'
+          : s.pathBytes.sublist(from < 0 ? 0 : from).join(',');
+    }
     final timesTried = <String, int>{};
     for (final t in tried) {
       if (!t.useFlood) timesTried[key(t)] = (timesTried[key(t)] ?? 0) + 1;
@@ -230,20 +235,44 @@ List<PathSelection> planAttempts(
       if (needsScore && (g.estDelivery ?? 1) < minDelivery) continue;
       others.add(g);
     }
-    // One route to another repeater goes between the best route's two
-    // tries. Once one has been tried, the best route's other try is next:
-    // a second route to that other repeater must not take its place
-    // (simulator, 2026-11-24: an 82% route lost its second try to a 16%
-    // one, and the message with it).
-    final around = others.isNotEmpty &&
-        lastHop(others.first) != lastHop(best) &&
-        !tried.any((t) => !t.useFlood && lastHop(t) != lastHop(best));
+    // The repeaters routes end at, tried or planned so far.
+    final ends = {
+      lastHop(best),
+      for (final t in tried)
+        if (!t.useFlood) lastHop(t),
+    };
+    // Where the contact is has come into question once a route to another
+    // repeater was tried, or ranks second (their latest packet was heard
+    // there): that one goes between the best route's two tries, once.
+    final triedElsewhere = ends.length > 1;
+    final second = !triedElsewhere &&
+            others.isNotEmpty &&
+            !ends.contains(lastHop(others.first))
+        ? others.removeAt(0)
+        : null;
+    if (second != null) ends.add(lastHop(second));
+    // A likely route to a repeater not tried yet is worth more than a
+    // repeat or another way to a repeater already tried: what is known to
+    // reach them is used before a flood. Anything less waits behind the
+    // best route's second try (simulator's scripted set, 2026-11-24: an
+    // 82% route lost its second try to a 16% second route to the other
+    // repeater, and the message with it; and a 61% route to a third
+    // repeater lost its turn to the best route's repeat, so a flood
+    // delivered what that route would have).
+    final fresh = [
+      for (final g in others)
+        if ((g.estDelivery ?? 1) >= repeatMinDelivery && ends.add(lastHop(g)))
+          g,
+    ];
+    final elsewhere = second != null || triedElsewhere;
     routes = [
       if (bestLeft == 2) best,
-      if (bestLeft >= 1 && !around) best,
-      if (around) others.first,
-      if (bestLeft >= 1 && around) best,
-      ...others.skip(around ? 1 : 0),
+      ?second,
+      // Back to back while nothing says they are elsewhere.
+      if (bestLeft >= 1 && !elsewhere) best,
+      ...fresh,
+      if (bestLeft >= 1 && elsewhere) best,
+      ...others.where((g) => !fresh.contains(g)),
     ];
   }
 
