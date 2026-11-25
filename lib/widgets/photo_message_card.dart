@@ -221,6 +221,7 @@ class PhotoMessageCard extends StatelessWidget {
             senderName: record.outgoing ? null : senderName,
             photoTime: photoTime,
             subjectOnly: record.subjectOnly,
+            subjectBox: record.subjectBox,
           ),
         ),
       ),
@@ -232,7 +233,11 @@ class PhotoMessageCard extends StatelessWidget {
               ? Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(image, fit: BoxFit.cover, gaplessPlayback: true),
+                    _framed(
+                      Image.file(image, fit: BoxFit.cover, gaplessPlayback: true),
+                      record.subjectBox,
+                      size,
+                    ),
                     const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
                     const PhotoFootprintMark(),
                   ],
@@ -266,6 +271,24 @@ class PhotoMessageCard extends StatelessWidget {
                   ),
                 ),
         ),
+      ),
+    );
+  }
+
+  /// [picture], a [size] square, zoomed in on [box]: a Subject only photo's
+  /// subject, as fractions of its side. Unchanged without one.
+  static Widget _framed(Widget picture, List<double>? box, double size) {
+    if (box == null) return picture;
+    final w = box[2] - box[0], h = box[3] - box[1];
+    final k = (1 / (w > h ? w : h)).clamp(1.0, 4.0);
+    final cx = (box[0] + box[2]) / 2 * size;
+    final cy = (box[1] + box[3]) / 2 * size;
+    return ClipRect(
+      child: Transform(
+        transform: Matrix4.identity()
+          ..translateByDouble(size / 2 - k * cx, size / 2 - k * cy, 0, 1)
+          ..scaleByDouble(k, k, 1, 1),
+        child: picture,
       ),
     );
   }
@@ -320,8 +343,10 @@ class PhotoViewerScreen extends StatefulWidget {
   final String? senderName;
   final DateTime? photoTime;
 
-  /// Only the subject was sent, on black: the viewer opens zoomed in on it.
+  /// Only the subject was sent, on black: the viewer opens zoomed in on it,
+  /// at [subjectBox] when it's known (fractions of the picture's side).
   final bool subjectOnly;
+  final List<double>? subjectBox;
 
   const PhotoViewerScreen({
     super.key,
@@ -331,6 +356,7 @@ class PhotoViewerScreen extends StatefulWidget {
     this.tag,
     this.senderName,
     this.subjectOnly = false,
+    this.subjectBox,
   }) : previewPng = null;
 
   const PhotoViewerScreen.preview(
@@ -338,6 +364,7 @@ class PhotoViewerScreen extends StatefulWidget {
     super.key,
     this.tag,
     this.subjectOnly = false,
+    this.subjectBox,
   }) : messageId = null,
        bytes = 0,
        photoTime = null,
@@ -416,6 +443,12 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   /// The lit part of a Subject only picture, to open zoomed in on.
   Future<void> _findSubject() async {
     if (!widget.subjectOnly) return;
+    if (widget.subjectBox case [final l, final t, final r, final b]) {
+      if (mounted) {
+        setState(() => _subject = (left: l, top: t, right: r, bottom: b));
+      }
+      return;
+    }
     final png =
         widget.previewPng ??
         PhotoStore.instance.imageFor(widget.messageId!)?.readAsBytesSync();

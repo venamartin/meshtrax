@@ -51,6 +51,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   String _working = '';
   Uint8List? _bitstream;
   Uint8List? _previewPng;
+
+  /// Of a Subject only preview: where its subject is, for the chat to frame.
+  List<double>? _previewBox;
   String? _previewNote;
   String _sendStatus = '';
   final _tag = TextEditingController();
@@ -377,6 +380,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       _step = _Step.working;
       _working = l10n.photo_checkingAndCoding;
       _previewPng = null;
+      _previewBox = null;
       _previewNote = null;
     });
     final store = PhotoStore.instance;
@@ -436,6 +440,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           return;
         }
         _previewPng = await rgbToPng(rebuilt.rgb!);
+        _previewBox = _sendsSubjectOnly ? subjectBoxOf(rebuilt.rgb!) : null;
       }
       if (mounted) setState(() => _step = _Step.ready);
     } catch (e) {
@@ -488,6 +493,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         _previewPng!,
         tag: _extras(connector).sentTag,
         subjectOnly: _sendsSubjectOnly,
+        subjectBox: _previewBox,
       ),
     ),
   );
@@ -630,6 +636,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         tag: _tag.text,
         position: _extras(connector).position,
         subjectOnly: _sendsSubjectOnly,
+        subjectBox: _previewBox,
         zeroHop: zeroHop,
         repairPacket: _repairPacket,
         previewPng: _previewPng,

@@ -8,7 +8,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:traxmap/traxmap.dart';
-import 'package:traxpix/traxpix.dart' show PhotoPosition;
+import 'package:traxpix/traxpix.dart' show PhotoPosition, litBox;
 import 'package:traxpix_litert/traxpix_litert.dart';
 
 import '../storage/prefs_manager.dart';
@@ -52,6 +52,11 @@ class PhotoRecord {
   /// viewer opens zoomed in on it.
   final bool subjectOnly;
 
+  /// Of a Subject only photo: where its subject is in the picture, as
+  /// fractions of its side (left, top, right, bottom), once known. The chat
+  /// and the viewer frame it.
+  List<double>? subjectBox;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -64,6 +69,7 @@ class PhotoRecord {
     this.position,
     this.packetsPassedOn,
     this.subjectOnly = false,
+    this.subjectBox,
   });
 
   Map<String, Object?> toJson() => {
@@ -78,6 +84,7 @@ class PhotoRecord {
     'position': position?.encode(),
     'packetsPassedOn': packetsPassedOn,
     'subjectOnly': subjectOnly,
+    'subjectBox': subjectBox,
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -95,10 +102,20 @@ class PhotoRecord {
     },
     packetsPassedOn: j['packetsPassedOn'] as int?,
     subjectOnly: j['subjectOnly'] as bool? ?? false,
+    subjectBox: (j['subjectBox'] as List<Object?>?)
+        ?.map((v) => (v as num).toDouble())
+        .toList(),
   );
 }
 
 enum RebuildOutcome { shown, flagged, noMemory, noModel, failed }
+
+/// Where a Subject only picture's subject is ([litBox]), as the list a
+/// [PhotoRecord] keeps; null when it fills the picture.
+List<double>? subjectBoxOf(Uint8List rgb) {
+  final b = litBox(rgb);
+  return b == null ? null : [b.left, b.top, b.right, b.bottom];
+}
 
 /// How much room rebuilt pictures may take: about 250 photos at ~400 KB.
 const int kPhotoCacheBytes = 100 * 1000 * 1000;
@@ -392,6 +409,7 @@ class PhotoStore extends ChangeNotifier {
       if (rgb != null) {
         _pngOf(messageId).writeAsBytesSync(await rgbToPng(rgb));
         _trimCache();
+        if (record.subjectOnly) record.subjectBox = subjectBoxOf(rgb);
       }
       _writeRecord(record);
       return flagged ? RebuildOutcome.flagged : RebuildOutcome.shown;
