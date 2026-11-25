@@ -201,6 +201,10 @@ class LiteRtImageCodecBackend {
 
   /// gs -> unet -> vae, as the lab's decode_compare.py runs them:
   /// `l_0 = unet(l_t) + residual`.
+  ///
+  /// Half precision overflows on some dark pictures, such as a large bright
+  /// subject on black, and then every value comes out NaN: the VAE runs again
+  /// in full precision, with the decoder's other models released first.
   Uint8List decodeLatentToRgb(Float32List yHat) {
     final gs = _gs ??= _load(bundle.gsPath);
     final unet = _unet ??= _load(bundle.unetPath);
@@ -212,7 +216,17 @@ class LiteRtImageCodecBackend {
     for (var i = 0; i < u.length; i++) {
       l0[i] = u[i] + residual[i];
     }
-    return _chwFloatsToRgb(vae.run([l0])['output_0']!);
+    var out = vae.run([l0])['output_0']!;
+    if (out.any((v) => !v.isFinite)) {
+      _releaseDecoder();
+      final full = _load(bundle.vaePath, weightCache: false);
+      try {
+        out = full.run([l0])['output_0']!;
+      } finally {
+        full.dispose();
+      }
+    }
+    return _chwFloatsToRgb(out);
   }
 
   /// A rebuilt picture enlarged 4x by the compact Real-ESRGAN model, then

@@ -125,6 +125,8 @@ How the models run:
 - **One worker isolate per job** (`ImageCodecSession.spawn`), which loads a model only when an operation needs it. It releases the entropy network's send and receive halves before compiling the decoder, the decoder before either half, and everything before the enlarger. The app opens a session for each rebuild or enlargement and closes it after, so nothing stays loaded between photos.
 - **Threads:** one per CPU core.
 - **Half precision:** the VAE and the enlarger are float32 models run with XNNPACK's `FORCE_FP16` flag, which keeps flat areas such as sky smooth. On a CPU that can't, they run in full precision.
+  - Half precision overflows on some dark pictures, such as a large bright subject on black (Subject only), and the VAE's whole output comes out NaN.
+  - The VAE then runs again in full precision, with the decoder's other models released first.
 - **Weight cache:** XNNPACK packs each model's weights once and keeps them in `Documents/ft8/xnnpack/` (about 1.1 GB, written during the first rebuild), mapped from there afterwards. The half-precision models never use it: in LiteRT 2.3.0 the cache aborts the app on a half-precision model (`MMapWeightCacheProvider::LookUpOrInsert`).
 
 ## Photos must code alike on every phone
