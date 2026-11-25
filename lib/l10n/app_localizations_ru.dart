@@ -1750,12 +1750,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appSettings_messaging => 'Обмен сообщениями';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Максимальное количество повторных попыток отправки сообщения';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Количество попыток повторной отправки сообщения перед тем, как пометить его как неудачное.';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

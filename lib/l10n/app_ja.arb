@@ -558,8 +558,6 @@
   "appSettings_advertisementNotifications": "広告通知",
   "appSettings_advertisementNotificationsSubtitle": "新しいノードが発見された場合に通知を表示する",
   "appSettings_messaging": "メッセージング",
-  "appSettings_maxMessageRetries": "最大メッセージ再試行回数",
-  "appSettings_maxMessageRetriesSubtitle": "メッセージを「失敗」とマークするまでの、再試行回数",
   "appSettings_battery": "バッテリー",
   "appSettings_batteryChemistry": "電池の化学",
   "appSettings_batteryChemistryPerDevice": "{deviceName} 単位",

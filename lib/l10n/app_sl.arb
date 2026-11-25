@@ -1911,8 +1911,6 @@
   "contact_teleEnv": "Okolje telemetrije",
   "contact_teleEnvSubtitle": "Dovoli deljenje podatkov okoljskih senzorjev",
   "contact_teleLocSubtitle": "Dovoli deljenje podatkov o lokaciji",
-  "appSettings_maxMessageRetries": "Najve število poskusov pošiljanja sporočil",
-  "appSettings_maxMessageRetriesSubtitle": "Število poskusov ponovnega poslanja, preden se sporočilo označuje kot neuspešno",
   "settings_telemetryModeUpdated": "Način telemetrije posodobljen",
   "map_showOverlaps": "Prekrivanje ključa ponovnega predvajanja",
   "map_runTraceWithReturnPath": "Vrni se nazaj po isti poti.",

@@ -1911,8 +1911,6 @@
   "contact_lastSeen": "Останній раз бачили",
   "contact_teleEnv": "Середовище телеметрії",
   "contact_teleEnvSubtitle": "Дозволити спільний доступ до даних датчиків середовища",
-  "appSettings_maxMessageRetries": "Максимальна кількість повторних спроб надсилання повідомлення",
-  "appSettings_maxMessageRetriesSubtitle": "Кількість спроб повторного відправлення повідомлення перед тим, як позначити його як невдале",
   "settings_telemetryModeUpdated": "Режим телеметрії оновлено",
   "map_showOverlaps": "Перекриття ключа повторювача",
   "map_runTraceWithReturnPath": "Повернутися назад тим же шляхом",

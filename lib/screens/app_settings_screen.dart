@@ -585,11 +585,18 @@ class AppSettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
-            title: Text(context.l10n.appSettings_maxMessageRetries),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(context.l10n.appSettings_maxDirectMessageTries),
+                ),
+                Text('${settingsService.settings.maxMessageRetries}'),
+              ],
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.l10n.appSettings_maxMessageRetriesSubtitle),
+                Text(context.l10n.appSettings_maxDirectMessageTriesSubtitle),
                 Slider(
                   value: settingsService.settings.maxMessageRetries.toDouble(),
                   min: 1,
@@ -604,7 +611,14 @@ class AppSettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
-            title: Text(context.l10n.appSettings_maxChannelMessageRetries),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(context.l10n.appSettings_maxChannelMessageRetries),
+                ),
+                Text('${settingsService.settings.maxChannelMessageRetries}'),
+              ],
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

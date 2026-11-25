@@ -1758,12 +1758,11 @@ class AppLocalizationsBg extends AppLocalizations {
   String get appSettings_messaging => 'Съобщения';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Максимален брой опити за изпращане на съобщение';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Брой опити за повторно изпращане, преди съобщението да бъде маркирано като неуспешно.';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

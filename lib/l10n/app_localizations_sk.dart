@@ -1742,12 +1742,11 @@ class AppLocalizationsSk extends AppLocalizations {
   String get appSettings_messaging => 'Správy';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Maximalný počet pokusov o doručenie správ';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Počet pokusov o odošleť pred označením správy ako neúspešnej';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

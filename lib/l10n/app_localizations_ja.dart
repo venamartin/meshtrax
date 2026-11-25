@@ -1686,11 +1686,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appSettings_messaging => 'メッセージング';
 
   @override
-  String get appSettings_maxMessageRetries => '最大メッセージ再試行回数';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'メッセージを「失敗」とマークするまでの、再試行回数';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries => 'チャンネルメッセージの最大再試行回数';

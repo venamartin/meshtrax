@@ -1279,8 +1279,6 @@
   "contact_clearChat": "Очистить чат",
   "contact_lastSeen": "Последний раз видели",
   "contact_teleBaseSubtitle": "Разрешить обмен уровнем заряда батареи и базовой телеметрией",
-  "appSettings_maxMessageRetries": "Максимальное количество повторных попыток отправки сообщения",
-  "appSettings_maxMessageRetriesSubtitle": "Количество попыток повторной отправки сообщения перед тем, как пометить его как неудачное.",
   "settings_telemetryModeUpdated": "Режим телеметрии обновлен",
   "map_showOverlaps": "Перекрытия ключа повтора",
   "map_runTraceWithReturnPath": "Вернуться обратно по тому же пути",

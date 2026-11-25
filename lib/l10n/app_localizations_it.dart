@@ -1758,12 +1758,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get appSettings_messaging => 'Messaggi';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Numero massimo di tentativi di invio del messaggio';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Numero di tentativi di riprova prima di considerare un messaggio come fallito.';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

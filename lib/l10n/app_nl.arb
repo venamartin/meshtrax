@@ -1911,8 +1911,6 @@
   "contact_lastSeen": "Laatst gezien",
   "contact_clearChat": "Chat leegmaken",
   "contact_teleBaseSubtitle": "Sta delen van batterij niveau en basis telemetrie toe",
-  "appSettings_maxMessageRetries": "Aantal pogingen om berichten te versturen",
-  "appSettings_maxMessageRetriesSubtitle": "Aantal pogingen om een bericht opnieuw te versturen voordat het als mislukt wordt gemarkeerd",
   "settings_telemetryModeUpdated": "Telemetrie-modus bijgewerkt",
   "map_showOverlaps": "Herhalingssleutel overlapt",
   "map_runTraceWithReturnPath": "Terugkeren op hetzelfde pad.",
