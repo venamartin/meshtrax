@@ -1,0 +1,154 @@
+{
+ "set": "antimeridian",
+ "about": "Open water across the 180 degree meridian in the Aleutians: one tile each side of it.",
+ "build": "2026112401",
+ "tiles": [
+  {
+   "file": "565_1439.wrm",
+   "bytes": 104405,
+   "sha256": "ad74d79f59c28ee34ac410d8ada4b8face3d4b9e0aa21cd166ed8af98caee015",
+   "triangles": 3437,
+   "build": "2026112401"
+  },
+  {
+   "file": "565_0.wrm",
+   "bytes": 105218,
+   "sha256": "117b3ced227301b02083b870c8cfcb57112fc51d0da82d71f33367edbbd527bf",
+   "triangles": 3446,
+   "build": "2026112401"
+  }
+ ],
+ "trips": [
+  {
+   "name": "Across the 180 degree meridian",
+   "args": [
+    "--from=179.8,51.4",
+    "--to=-179.8,51.4"
+   ],
+   "tests": "The tile join wraps: tile 565_1439's east edge (180) joins tile 565_0's west edge (-180).",
+   "result": {
+    "name": "Across the 180 degree meridian",
+    "distance_nm": 15.0,
+    "time": "2 h 30 min at 6 kn",
+    "legs": 1,
+    "funnel_legs": 15,
+    "waypoints": [
+     [
+      179.8,
+      51.4
+     ],
+     [
+      -179.8,
+      51.4
+     ]
+    ],
+    "leg_nm": [
+     15.0
+    ],
+    "settings": {
+     "draft_ft": 6,
+     "margin_ft": 2,
+     "limit_ft": 8.0,
+     "prefer_depth_ft": null,
+     "off_land_nm": null,
+     "approach_m": [
+      0.0,
+      0.0
+     ],
+     "slack": 0.02,
+     "weights": {
+      "shallower_than_preferred": 2.0,
+      "near_hazard": 1.0,
+      "kelp": 2.0,
+      "security_zone": 100.0,
+      "traffic_lane": 100.0,
+      "separation_zone": 100.0,
+      "listed_zones": 0.0
+     },
+     "air_draft_m": null,
+     "unknown_clearance": "block",
+     "avoid_opening_bridges": false,
+     "security_first": "cant-keep",
+     "speed_kn": 6
+    },
+    "from": {
+     "asked": [
+      179.8,
+      51.4
+     ],
+     "charted_least_depth_ft": 3281
+    },
+    "to": {
+     "asked": [
+      -179.8,
+      51.4
+     ],
+     "charted_least_depth_ft": 2400
+    },
+    "through": {
+     "outside_mesh_samples": 0,
+     "least_charted_depth_ft": 2400,
+     "nm_shallower_than_limit": 0.0,
+     "nm_shallower_than_preferred": null,
+     "nm_by_band_least_depth": {
+      "2400 ft": 3.11,
+      "3000 ft": 0.39,
+      "3281 ft": 1.88,
+      "3600 ft": 2.63,
+      "4200 ft": 2.88,
+      "4800 ft": 1.8,
+      "5400 ft": 1.98,
+      "6000 ft": 0.34
+     },
+     "zoc_nm": {
+      "4": 15.0
+     },
+     "security_zone_nm": 0.0,
+     "traffic_lane_nm": 0.0,
+     "areas": [
+      {
+       "id": "fb220d1b13a9",
+       "class": "RESARE",
+       "name": "Amchitka Area to be Avoided",
+       "info": "All ships 400 gross tonnage and upwards solely in transit should avoid the Area. This Area is IMO-Adopted (MSC IMO SN.1/Circ.331).",
+       "restrictions": "area_to_be_avoided",
+       "nm": 15.0,
+       "from_nm": 0.01
+      }
+     ],
+     "lowest_clearance": {
+      "clearance_m": null,
+      "uncharted": 0
+     }
+    },
+    "search": {
+     "tiles": 2,
+     "triangles": 6883,
+     "cross_tile_links": 15,
+     "blocked_triangles": 0,
+     "expanded": 5173,
+     "corridor_triangles": 91,
+     "load_s": 0.05,
+     "search_s": 0.2,
+     "funnel_s": 0.001,
+     "straighten_s": 0.07,
+     "funnel_cost_nm": 21.94,
+     "trip_cost_nm": 15.0,
+     "funnel_inside_nm": 0.0,
+     "trip_inside_nm": 0.0,
+     "funnel_outside_allowed_m": 0.0,
+     "trip_outside_allowed_m": 0.0
+    },
+    "build": {
+     "build": "2026112401",
+     "cells_sha1": "d5c2fc08fc587fb4d8ced76ba317b694907eae1b",
+     "cells": 7114,
+     "extractors": [
+      "enc6/scamin-all+0/ffcb0620"
+     ],
+     "extracted": "2026-10-23"
+    }
+   }
+  }
+ ]
+}

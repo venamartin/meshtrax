@@ -1,0 +1,13 @@
+name: traxwater
+description: >
+  Routes on the water for MeshTrax, worked out offline from the installed
+  water-routing tiles (WRM2, from NOAA's charts). Pure Dart, no network.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.8
