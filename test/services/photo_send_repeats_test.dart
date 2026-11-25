@@ -10,6 +10,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/services/heard_service.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
 import 'package:meshtrax/services/photo_rules.dart';
 import 'package:meshtrax/services/photo_store.dart';
@@ -18,6 +19,7 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:traxheard/traxheard.dart' show Sighting, channelDataPacketHash;
 import 'package:traxpix/traxpix.dart'
     show
         ImageCodecRatePoint,
@@ -424,7 +426,7 @@ void main() {
   group('on a MeshCore frequency, a photo through repeaters', () {
     final preset = meshCoreFrequenciesKhz.first;
 
-    test('that no repeater carried gives back its 30 minutes, when one was '
+    test('that no repeater carried gives back its 20 minutes, when one was '
         'heard in the last minute', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
@@ -520,6 +522,64 @@ void main() {
         rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
       )!;
       expect(record.subjectOnly, isTrue);
+    });
+  });
+
+  group('with observers', () {
+    final preset = meshCoreFrequenciesKhz.first;
+
+    /// [r] with Check sends with observers on, as the user turns it on.
+    Future<void> observe(_Radio r) async {
+      await PrefsManager.instance.setBool('heard_check_enabled', true);
+      await PrefsManager.instance.setString(
+        'heard_check_server',
+        'https://corescope.stonekitty.net',
+      );
+      HeardService.resetForTesting();
+      HeardService.instance.attach(r);
+      PhotoMesh.observerWaitOverride = const Duration(milliseconds: 300);
+    }
+
+    tearDown(() {
+      HeardService.resetForTesting();
+      PhotoMesh.observerWaitOverride = null;
+    });
+
+    test('a photo is asked about by all its packets, as the server files them',
+        () async {
+      final r = await radio((n, index) => true);
+      await observe(r);
+      final (row, _) = await send(r);
+      expect(HeardService.instance.hashesForTest(row.messageId), {
+        for (final blob in r.blobs)
+          channelDataPacketHash(channelKey: _psk, dataType: 0x0170, data: blob),
+      });
+    });
+
+    test('an observer that heard a photo no repeater carried keeps its 30 '
+        'minutes', () async {
+      final r = await radio((n, index) => false, freqKhz: preset);
+      await observe(r);
+      final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
+      await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      HeardService.instance.heardForTest(
+        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+        const [Sighting(observer: 'Ridge')],
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2000));
+      await pumpEventQueue(times: 200);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
+    });
+
+    test('with no observer hearing it, it gives them back after their last '
+        'answer', () async {
+      final r = await radio((n, index) => false, freqKhz: preset);
+      await observe(r);
+      await send(r);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
   });
 }

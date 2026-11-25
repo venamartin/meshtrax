@@ -34,11 +34,11 @@ All of the following is stored locally in the App's private storage on your devi
 | Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download or install from a drive, and the list of what's available | Show maps, plan routes and search for places without a connection |
 | Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
-| Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages (name, signal, how many repeaters), for the last 300 messages | Show the ear on a message and list the observers in its packet path |
+| Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages and photos (name, signal, how many repeaters), for the last 300 | Show the ear on a message and list the observers in its packet path |
 | Photos | For each photo sent or received in a chat: its code (the few hundred bytes that crossed the radio), its tag, its location if the sender included one, for a Subject only photo where its subject is in the picture, and, once it has been rebuilt and passed the safety check, the rebuilt picture. A picture the safety check flags is never kept. Rebuilt pictures are kept in a cache of at most 100 MB, oldest dropped first | Show photos in the chat without rebuilding them each time |
 | Photo reports | A photo you reported, until the report inbox has the report: who sent it, when, its size, whether the safety check hid it, what you wrote, and its code only if you chose to include it | Send the report when you have internet |
 | The photo model | About 1.2 GB, downloaded only when you choose, with its licence texts | Code and rebuild photos on your device |
-| Photo send times | When this radio last sent a photo on a MeshCore frequency | Keep to one photo every 10 minutes, and one through repeaters every 30 |
+| Photo send times | When this radio last sent a photo on a MeshCore frequency | Keep to one photo every 10 minutes, and one through repeaters every 20 |
 | TRAX mode | Your companion device's radio settings from before TRAX mode (frequency, bandwidth, spreading factor, coding rate, transmit power, Off-Grid Repeat), when it switched and the trip's end; your TRAX settings (preset, trip channel, trip end, Tell the group) | Put the radio back on its regular mesh when you leave TRAX mode, and remind you after the trip |
 
 **Sensitive data notice:** Channel pre-shared keys and community secret keys are cryptographic secrets. They are stored on your device so the App can decrypt mesh messages. Your **private** identity key is held by your MeshCore companion device/firmware, **not** by the App; it leaves the device only inside a backup file you ask for (see "Files you export").
@@ -65,9 +65,9 @@ The App contacts the MeshTrax map server, one third-party service, Giphy, and, o
 - **Their policy:** https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy
 
 ### 3. Observer server (optional, off by default)
-Observers are radios that report what they hear on the mesh to a server. **Check sends with observers** (App settings, Messaging) asks such a server whether your channel messages were heard, so the App doesn't send one again for nothing.
-- **When:** Only while the setting is on, about 10, 25 and 60 seconds after you send a channel message, until an observer has heard it. Saving a server also asks it one test question.
-- **What is sent:** The **fingerprint** (packet hash) of each channel message you send: 16 characters worked out from the encrypted packet. Never the message text, the channel, your name, contacts or location. Because the request comes from your device, the server sees your **IP address** and the time you sent; it can also see that the fingerprint matches a packet its observers heard, and so tell which packets came from your device.
+Observers are radios that report what they hear on the mesh to a server. **Check sends with observers** (App settings, Messaging) asks such a server whether your channel messages and photos were heard, so the App doesn't send one again for nothing.
+- **When:** Only while the setting is on, about 10, 25 and 60 seconds after you send a channel message or a photo, until an observer has heard it. Saving a server also asks it one test question.
+- **What is sent:** The **fingerprint** (packet hash) of each channel message you send, and of each packet of a photo you send: 16 characters worked out from the encrypted packet. Never the message text, the channel, your name, contacts or location. Because the request comes from your device, the server sees your **IP address** and the time you sent; it can also see that the fingerprint matches a packet its observers heard, and so tell which packets came from your device.
 - **Who runs it:** Not the developer. You pick the server: one from the App's list, whose question-answering service is open to anyone, or another address you type. Its operator's own policy applies.
 
 ### Earlier versions

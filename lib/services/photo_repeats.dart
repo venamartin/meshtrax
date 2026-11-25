@@ -44,8 +44,11 @@ class PhotoRepeats {
   String? messageId;
 
   /// Where the photo rules apply: the radio and the time this photo counted
-  /// against them, so its 30 minutes can be given back.
+  /// against them, so its time through repeaters can be given back.
   ({String radio, DateTime at})? counted;
+
+  /// When observers began to be asked about its packets, if they are.
+  DateTime? observersAskedAt;
 
   /// A copy of packet [index] came back as [blob] through [path], in
   /// [width]-byte repeater codes. [carOnly]: every repeater in its path

@@ -12,6 +12,7 @@ import '../helpers/path_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../models/channel_message.dart';
 import '../utils/app_logger.dart';
+import 'heard_service.dart';
 import 'notification_service.dart';
 import 'photo_repeats.dart';
 import 'photo_rules.dart';
@@ -122,6 +123,12 @@ class PhotoMesh {
   /// Photos of mine sent through repeaters, by channel slot and image id,
   /// while this radio listens for repeaters passing their packets on.
   final Map<(int, int), PhotoRepeats> _sent = {};
+
+  /// How long after observers are first asked about a photo its time through
+  /// repeaters waits for their answer before being given back; tests
+  /// shorten it.
+  @visibleForTesting
+  static Duration? observerWaitOverride;
 
   /// Writes of what was heard to chat rows and records, one at a time.
   Future<void> _writes = Future<void>.value();
@@ -242,9 +249,11 @@ class PhotoMesh {
   }
 
   /// Where the photo rules apply, a photo no repeater was heard carrying at
-  /// all, not even a car repeater or a packet sent again, gives back its 30
-  /// minutes when a repeater was heard in the last minute: this radio hears
-  /// repeaters, so none carried it. The 10 minutes stay.
+  /// all, not even a car repeater or a packet sent again, gives back its
+  /// [photoGapRepeaters] when a repeater was heard in the last minute: this radio hears
+  /// repeaters, so none carried it. Where observers are asked about it, only
+  /// once their last answer is in, and only if none heard it. The 10 minutes
+  /// stay.
   void _giveBackIfNotCarried(PhotoRepeats sent, int imgId) {
     final counted = sent.counted;
     if (counted == null ||
@@ -252,11 +261,31 @@ class PhotoMesh {
         !connector.repeaterHeardWithin(photoUncarriedRepeaterWindow)) {
       return;
     }
-    _log(
-      'no repeater carried ${_id(imgId)}, and one was heard in the last '
-      'minute: its 30 minutes are given back',
-    );
-    unawaited(notePhotoNotCarried(counted.radio, counted.at));
+    void giveBack() {
+      final id = sent.messageId;
+      if (id != null && (HeardService.instance.heardBy(id)?.isNotEmpty ?? false)) {
+        _log('an observer heard ${_id(imgId)}: its time through repeaters stays');
+        return;
+      }
+      _log(
+        'no repeater carried ${_id(imgId)}, and one was heard in the last '
+        'minute: its time through repeaters is given back',
+      );
+      unawaited(notePhotoNotCarried(counted.radio, counted.at));
+    }
+
+    final asked = sent.observersAskedAt;
+    if (asked == null) {
+      giveBack();
+      return;
+    }
+    final wait = asked
+        .add(
+          observerWaitOverride ??
+              HeardService.instance.lastAsk + const Duration(seconds: 5),
+        )
+        .difference(DateTime.now());
+    Timer(wait.isNegative ? Duration.zero : wait, giveBack);
   }
 
   /// The app's language, for the chat lines photos are filed as.
@@ -470,6 +499,18 @@ class PhotoMesh {
     if (messageId == null) return;
     final key = (channelIndex, set.imgId);
     final sent = _sent[key];
+    final channel = connector.channels
+        .where((c) => c.index == channelIndex)
+        .firstOrNull;
+    if (channel != null &&
+        HeardService.instance.trackPhoto(
+          messageId,
+          channel.psk,
+          dataTypeMeshTraxPhoto,
+          set.blobs,
+        )) {
+      sent?.observersAskedAt = DateTime.now();
+    }
     // Before the record, so the row never shows unheard while it waits.
     if (sent != null) connector.waitForRepeats(messageId, waiting: true);
     await PhotoStore.instance.save(
