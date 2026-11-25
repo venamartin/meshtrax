@@ -26,8 +26,6 @@
   "photo_tagTitle": "Štítok (voliteľný)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "Na frekvenciách MeshCore rádio posiela jednu fotku každých {gap} minút. Ďalšiu môžete poslať o {minutes} min.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "Na frekvenciách MeshCore rádio posiela jednu fotku cez opakovače každých {gap} minút. Ďalšiu cez opakovače môžete poslať o {minutes} min alebo jednu bez skokov hneď teraz.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Odoslať",

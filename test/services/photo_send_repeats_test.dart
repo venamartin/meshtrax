@@ -442,8 +442,8 @@ void main() {
   group('on a MeshCore frequency, a photo through repeaters', () {
     final preset = meshCoreFrequenciesKhz.first;
 
-    test('that no repeater carried gives back its 20 minutes, when one was '
-        'heard in the last minute', () async {
+    test('that no repeater carried gives back its time, when one was heard '
+        'in the last minute', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
       await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
@@ -455,11 +455,12 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 2000));
       await pumpEventQueue(times: 200);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
-      expect(
-        photoLastSent(r.selfPublicKeyHex),
-        isNotNull,
-        reason: 'the 10 minutes stay',
-      );
+    });
+
+    test('of one packet doesn\'t count', () async {
+      final r = await radio((n, index) => true, freqKhz: preset);
+      await send(r, bytes: 100);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
 
     test('keeps them when no repeater was heard in the last minute', () async {
@@ -477,10 +478,9 @@ void main() {
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
     });
 
-    test('zero hop counts only the 10 minutes', () async {
+    test('zero hop doesn\'t count', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       await send(r, zeroHop: true);
-      expect(photoLastSent(r.selfPublicKeyHex), isNotNull);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
   });

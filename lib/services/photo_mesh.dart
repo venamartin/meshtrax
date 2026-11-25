@@ -298,10 +298,10 @@ class PhotoMesh {
 
   /// Where the photo rules apply, a photo no repeater was heard carrying at
   /// all, not even a car repeater or a packet sent again, gives back its
-  /// [photoGapRepeaters] when a repeater was heard in the last minute: this radio hears
-  /// repeaters, so none carried it. Where observers are asked about it, only
-  /// once their last answer is in, and only if none heard it. The 10 minutes
-  /// stay.
+  /// time ([photoGapRepeaters]) when a repeater was heard in the last
+  /// minute: this radio hears repeaters, so none carried it. Where observers
+  /// are asked about it, only once their last answer is in, and only if none
+  /// heard it.
   void _giveBackIfNotCarried(PhotoRepeats sent, int imgId) {
     final counted = sent.counted;
     if (counted == null ||
@@ -612,8 +612,9 @@ class PhotoMesh {
   /// A packet no repeater was heard passing on goes once more, the same
   /// bytes, when the gap leaves time to hear one ([photoRepeatHeardWithin]).
   ///
-  /// Where the photo rules apply ([photoRulesApply]), the photo counts
-  /// against them once its packets are handed over ([notePhotoSent]).
+  /// Where the photo rules apply ([photoRulesApply]), a photo through
+  /// repeaters of more than one packet counts against them once its packets
+  /// are handed over ([notePhotoSent]).
   Future<ImageChunkSet> send(
     Uint8List bitstream,
     int channelIndex, {
@@ -674,14 +675,12 @@ class PhotoMesh {
               () => _stopListening(key),
             ),
     );
-    if (photoRulesApply(connector.currentFreqHz)) {
+    if (sent != null &&
+        photoRulesApply(connector.currentFreqHz) &&
+        photoGapRepeaters(sent.packets) > Duration.zero) {
       final counted = (radio: connector.selfPublicKeyHex, at: DateTime.now());
-      await notePhotoSent(
-        counted.radio,
-        counted.at,
-        viaRepeaters: !goesZeroHop,
-      );
-      sent?.counted = counted;
+      await notePhotoSent(counted.radio, counted.at);
+      sent.counted = counted;
     }
     _log(
       'sent ${bitstream.length} bytes on channel $channelIndex as '

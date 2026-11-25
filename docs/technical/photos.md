@@ -178,7 +178,15 @@ They apply on the frequencies of the presets in Radio settings, except the Off-G
 - **Every channel** may take a photo, Public included.
 - **Before each photo** the sender confirms it: its packets, its airtime, and as how many text messages that counts (a 69-byte text packet, `photoTextMessageAirBytes`). It also says whether repeaters pass it on. A photo is usually as much as 8 text messages.
 - **On Public and hashtag channels**, the first time, a longer explanation comes first: most people there won't see the photo, only MeshTrax shows photos, every repeater sends all of it again, and what's better. "Don't show this again" skips it from then on; the confirmation stays.
-- **Time limits:** one photo every 10 minutes from each radio, and one through repeaters every 20 minutes (`photoGapRepeaters`), kept per radio key. `PhotoMesh.send` counts a photo once its packets are handed over (`notePhotoSent`). Zero hop is the way to send another sooner. When the wait for its copies ends (see [Hearing it passed on](#hearing-it-passed-on)), a photo through repeaters of which no copy at all was heard, not even a car repeater's or one sent again, gives back its 20 minutes (`notePhotoNotCarried`), but only if a repeater was heard in the last minute (`photoUncarriedRepeaterWindow`, `MessageRetryService.repeaterHeardWithin`). A repeater heard then means this radio hears repeaters, so their silence means none carried it; without one, the silence could be this radio's, and the 20 minutes stay. Where observers are asked about the photo, the decision waits for their last answer, and an observer that heard any packet keeps the 20 minutes. The 10 minutes always stay. **Ignore the photo time limits** in App settings, Messaging, Photos (off by default, for testing) lifts both on that phone.
+- **Time limits:** through repeaters, a photo waits after the radio's last one by its own size, packets with the repair packet (`photoGapRepeaters`), checked on the preview page (`photoSendBlocked`).
+  - 1 packet: no wait. It is no more on the air than a long message, and it isn't counted, so it never holds back the next.
+  - 2 packets: 5 minutes; 3: 10 minutes; 4 to 6: 20 minutes.
+  - Zero hop never waits and isn't counted: it reaches only the radio's neighbours.
+  - The time is kept per radio key. `PhotoMesh.send` counts a photo once its packets are handed over (`notePhotoSent`).
+  - **Given back:** when the wait for its copies ends (see [Hearing it passed on](#hearing-it-passed-on)), a photo through repeaters of which no copy at all was heard gives back its time (`notePhotoNotCarried`). That excludes a car repeater's copy and one sent again.
+    - Only if a repeater was heard in the last minute (`photoUncarriedRepeaterWindow`, `MessageRetryService.repeaterHeardWithin`). A repeater heard then means this radio hears repeaters, so their silence means none carried it; without one, the silence could be this radio's, and the time stays.
+    - Where observers are asked about the photo, the decision waits for their last answer, and an observer that heard any packet keeps the time.
+  - **Ignore the photo time limits** in App settings, Messaging, Photos (off by default, for testing) lifts them on that phone.
 
 ## Subject only and Auto crop
 

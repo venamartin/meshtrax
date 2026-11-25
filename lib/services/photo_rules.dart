@@ -17,18 +17,22 @@ final Set<int> meshCoreFrequenciesKhz = {
 bool photoRulesApply(int? freqKhz) =>
     freqKhz != null && meshCoreFrequenciesKhz.contains(freqKhz);
 
-/// On a MeshCore frequency: one photo per radio in this long, however it
-/// goes.
-const Duration photoGapZeroHop = Duration(minutes: 10);
-
-/// On a MeshCore frequency: one photo through repeaters per radio in this
-/// long.
-const Duration photoGapRepeaters = Duration(minutes: 20);
+/// On a MeshCore frequency, how long after this radio's last photo through
+/// repeaters a photo of [packets] packets (the repair packet included) can
+/// go through repeaters: none for one packet, no more on the air than a long
+/// message, then 5, 10 and 20 minutes for 2, 3, and 4 or more. Zero hop has
+/// no limit: it reaches only the radio's neighbours.
+Duration photoGapRepeaters(int packets) => switch (packets) {
+  <= 1 => Duration.zero,
+  2 => const Duration(minutes: 5),
+  3 => const Duration(minutes: 10),
+  _ => const Duration(minutes: 20),
+};
 
 /// A photo through repeaters that no repeater was heard carrying gives back
-/// its [photoGapRepeaters] when a repeater was heard this recently as its
-/// wait ended: this radio hears repeaters, so their silence means none
-/// carried it.
+/// its time ([photoGapRepeaters]) when a repeater was heard this recently
+/// as its wait ended: this radio hears repeaters, so their silence means
+/// none carried it.
 const Duration photoUncarriedRepeaterWindow = Duration(minutes: 1);
 
 /// On a MeshCore frequency, at least this many packet airtimes from one
@@ -99,40 +103,26 @@ PhotoWarning photoWarningFor(Channel channel, int? freqKhz) {
       : PhotoWarning.airtime;
 }
 
-/// Why a photo can't be sent now (see [photoSendBlocked]).
-enum PhotoBlockReason {
-  /// One photo per [photoGapZeroHop], however it goes.
-  wait,
+/// The wait for a photo's size ([photoGapRepeaters]) and the minutes of it
+/// left, both whole minutes.
+typedef PhotoBlock = ({int gap, int minutes});
 
-  /// One photo through repeaters per [photoGapRepeaters].
-  waitRepeaters,
-}
-
-/// A [reason], and the minutes left before the next photo for a wait.
-typedef PhotoBlock = ({PhotoBlockReason reason, int minutes});
-
-/// Why a photo can't go out now, or null when it can. The rules hold only on
-/// a MeshCore preset's frequency, on every channel; off-grid and custom
-/// frequencies have none. [lastSent] is when this radio last sent one where
-/// the rules apply, and [lastSentViaRepeaters] when it last sent one through
-/// repeaters there.
+/// What a photo of [packets] packets still waits before it can go through
+/// repeaters, or null when it can go. The rules hold only on a MeshCore
+/// preset's frequency, on every channel; off-grid and custom frequencies
+/// have none, and zero hop has none anywhere. [lastSentViaRepeaters] is
+/// when this radio last sent a photo through repeaters where they apply.
 PhotoBlock? photoSendBlocked({
   required int? freqKhz,
-  required DateTime? lastSent,
-  DateTime? lastSentViaRepeaters,
-  bool viaRepeaters = false,
+  required DateTime? lastSentViaRepeaters,
+  required bool viaRepeaters,
+  required int packets,
   required DateTime now,
 }) {
-  if (!photoRulesApply(freqKhz)) return null;
-  final wait = _minutesLeft(lastSent, photoGapZeroHop, now);
-  if (wait != null) return (reason: PhotoBlockReason.wait, minutes: wait);
-  final waitVia = viaRepeaters
-      ? _minutesLeft(lastSentViaRepeaters, photoGapRepeaters, now)
-      : null;
-  if (waitVia != null) {
-    return (reason: PhotoBlockReason.waitRepeaters, minutes: waitVia);
-  }
-  return null;
+  if (!photoRulesApply(freqKhz) || !viaRepeaters) return null;
+  final gap = photoGapRepeaters(packets);
+  final left = _minutesLeft(lastSentViaRepeaters, gap, now);
+  return left == null ? null : (gap: gap.inMinutes, minutes: left);
 }
 
 int? _minutesLeft(DateTime? since, Duration gap, DateTime now) {
@@ -141,48 +131,34 @@ int? _minutesLeft(DateTime? since, Duration gap, DateTime now) {
   return (wait.inSeconds / 60).ceil();
 }
 
-String _lastSentKey(String radioKeyHex, {bool viaRepeaters = false}) =>
-    'photo_last_sent_${viaRepeaters ? 'via_' : ''}'
-    '${radioKeyHex.substring(0, 16)}';
+String _lastSentKey(String radioKeyHex) =>
+    'photo_last_sent_via_${radioKeyHex.substring(0, 16)}';
 
-DateTime? _lastSent(String radioKeyHex, {required bool viaRepeaters}) {
+/// When the radio with public key [radioKeyHex] last sent a photo through
+/// repeaters where the rules apply.
+DateTime? photoLastSentViaRepeaters(String radioKeyHex) {
   if (radioKeyHex.length < 16) return null;
-  final ms = PrefsManager.instance.getInt(
-    _lastSentKey(radioKeyHex, viaRepeaters: viaRepeaters),
-  );
+  final ms = PrefsManager.instance.getInt(_lastSentKey(radioKeyHex));
   return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
 }
 
-/// When the radio with public key [radioKeyHex] last sent a photo where the
-/// rules apply.
-DateTime? photoLastSent(String radioKeyHex) =>
-    _lastSent(radioKeyHex, viaRepeaters: false);
-
-/// When it last sent one through repeaters there.
-DateTime? photoLastSentViaRepeaters(String radioKeyHex) =>
-    _lastSent(radioKeyHex, viaRepeaters: true);
-
-Future<void> notePhotoSent(
-  String radioKeyHex,
-  DateTime at, {
-  bool viaRepeaters = false,
-}) async {
+/// The radio sent a photo through repeaters [at] that counts against the
+/// rules: one of more than one packet ([photoGapRepeaters]).
+Future<void> notePhotoSent(String radioKeyHex, DateTime at) async {
   if (radioKeyHex.length < 16) return;
-  for (final via in [false, if (viaRepeaters) true]) {
-    await PrefsManager.instance.setInt(
-      _lastSentKey(radioKeyHex, viaRepeaters: via),
-      at.millisecondsSinceEpoch,
-    );
-  }
+  await PrefsManager.instance.setInt(
+    _lastSentKey(radioKeyHex),
+    at.millisecondsSinceEpoch,
+  );
 }
 
-/// Gives back the [photoGapRepeaters] of the photo through repeaters sent
-/// [at], which no repeater carried: the next photo waits only the
-/// [photoGapZeroHop]. A later photo's time is left alone; an earlier one's
-/// had run out, or this one couldn't have gone.
+/// Gives back the time of the photo through repeaters sent [at], which no
+/// repeater carried: the next photo waits for none of it. A later photo's
+/// time is left alone; an earlier one's had run out, or this one couldn't
+/// have gone.
 Future<void> notePhotoNotCarried(String radioKeyHex, DateTime at) async {
   if (radioKeyHex.length < 16) return;
-  final key = _lastSentKey(radioKeyHex, viaRepeaters: true);
+  final key = _lastSentKey(radioKeyHex);
   if (PrefsManager.instance.getInt(key) != at.millisecondsSinceEpoch) return;
   await PrefsManager.instance.remove(key);
 }

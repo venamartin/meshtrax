@@ -18,8 +18,6 @@
   "photo_tagTitle": "Címke (nem kötelező)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "MeshCore-frekvenciákon egy rádió {gap} percenként egy fotót küld. A következőt {minutes} perc múlva küldheti el.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "MeshCore-frekvenciákon egy rádió {gap} percenként egy fotót küld repeatereken keresztül. A következőt repeatereken keresztül {minutes} perc múlva küldheti el, vagy most egyet ugrás nélkül.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Küldés",

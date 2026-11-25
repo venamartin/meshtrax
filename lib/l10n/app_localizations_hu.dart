@@ -162,7 +162,13 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
-    return '$packets packets · about $sendTime to send';
+    String _temp0 = intl.Intl.pluralLogic(
+      packets,
+      locale: localeName,
+      other: '$packets packets',
+      one: '1 packet',
+    );
+    return '$_temp0 · about $sendTime to send';
   }
 
   @override
@@ -171,12 +177,7 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String photo_blockedWait(int gap, int minutes) {
-    return 'MeshCore-frekvenciákon egy rádió $gap percenként egy fotót küld. A következőt $minutes perc múlva küldheti el.';
-  }
-
-  @override
-  String photo_blockedWaitRepeaters(int gap, int minutes) {
+  String photo_blockedWaitRepeaters(int packets, int gap, int minutes) {
     return 'MeshCore-frekvenciákon egy rádió $gap percenként egy fotót küld repeatereken keresztül. A következőt repeatereken keresztül $minutes perc múlva küldheti el, vagy most egyet ugrás nélkül.';
   }
 
@@ -324,7 +325,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.';
+      'For testing: send photos through repeaters without waiting between them.';
 
   @override
   String get photo_rebuilding => 'Rekonstruálás… kb. 20 s';

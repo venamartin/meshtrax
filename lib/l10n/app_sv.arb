@@ -26,8 +26,6 @@
   "photo_tagTitle": "Etikett (valfri)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "På MeshCore-frekvenser skickar en radio ett foto per {gap} minuter. Du kan skicka ett till om {minutes} min.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "På MeshCore-frekvenser skickar en radio ett foto via repeatrar per {gap} minuter. Du kan skicka ett till via repeatrar om {minutes} min, eller ett med nollhopp nu.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Skicka",

@@ -26,8 +26,6 @@
   "photo_tagTitle": "Етикет (по избор)",
   "photo_seconds": "{seconds} с",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "На честотите на MeshCore едно радио изпраща по една снимка на всеки {gap} минути. Можете да изпратите следваща след {minutes} мин.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "На честотите на MeshCore едно радио изпраща по една снимка през повторители на всеки {gap} минути. Можете да изпратите следваща през повторители след {minutes} мин или една без скок още сега.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Изпрати",

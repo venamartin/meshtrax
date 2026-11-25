@@ -26,8 +26,6 @@
   "photo_tagTitle": "Oznaka (neobvezno)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "Na frekvencah MeshCore radio pošilja eno fotografijo vsakih {gap} minut. Naslednjo lahko pošljete čez {minutes} min.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "Na frekvencah MeshCore radio pošilja eno fotografijo prek ponoviteljev vsakih {gap} minut. Naslednjo prek ponoviteljev lahko pošljete čez {minutes} min ali pa eno brez posrednikov že zdaj.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Pošlji",
