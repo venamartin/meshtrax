@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:traxroute/traxroute.dart' show PathType, RouteOptions;
+import 'package:traxwater/traxwater.dart' show WaterRouteOptions;
 
 import '../helpers/quick_reactions.dart';
 import '../helpers/terms_gate.dart';
@@ -139,6 +140,14 @@ class AppSettingsService extends ChangeNotifier {
 
   Future<void> setRouteOptions(RouteOptions value) async {
     await updateSettings(_settings.copyWith(routeOptions: value));
+  }
+
+  Future<void> setWaterRouteOptions(WaterRouteOptions value) async {
+    await updateSettings(_settings.copyWith(waterRouteOptions: value));
+  }
+
+  Future<void> setWaterBoatAskDismissed(bool value) async {
+    await updateSettings(_settings.copyWith(waterBoatAskDismissed: value));
   }
 
   /// Your antenna for line of sight, and the raised one's height.

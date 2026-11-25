@@ -39,7 +39,8 @@ String tileName(int ix, int iy) => '${iy}_$ix.wrm';
 /// An area or overhead object a tile lists, with the chart's own text and
 /// clearances. Its [id] is the same in every tile.
 class WaterArea {
-  WaterArea._(Map<String, Object?> j)
+  /// As the areas JSON at a tile's end lists it.
+  WaterArea.fromJson(Map<String, Object?> j)
     : id = j['id'] as String,
       chartClass = j['class'] as String,
       name = j['name'] as String?,
@@ -182,7 +183,7 @@ class WaterTile {
             as Map<String, Object?>;
     final areas = [
       for (final a in meta['areas'] as List)
-        WaterArea._(a as Map<String, Object?>),
+        WaterArea.fromJson(a as Map<String, Object?>),
     ];
     final sets = [
       for (final s in meta['sets'] as List)

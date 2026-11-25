@@ -8,6 +8,7 @@ import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
 import '../../services/poi_service.dart';
 import '../../services/routing_service.dart';
+import '../../services/water_routing_service.dart';
 import '../../utils/format_bytes.dart';
 import 'offline_maps_ui.dart';
 
@@ -30,6 +31,7 @@ class DownloadedTab extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final routing = context.watch<RoutingService?>();
     final poi = context.watch<PoiService?>();
+    final water = context.watch<WaterRoutingService?>();
     final active = maps.activeDownloads;
     final updates = maps.updates;
 
@@ -47,21 +49,25 @@ class DownloadedTab extends StatelessWidget {
         other.add(pack);
       }
     }
-    // Routing and points of interest count with their region's maps.
+    // Routing and points of interest count with their region's maps, and
+    // water routing with its chart area's charts.
     for (final path in {
       ...?routing?.installedRegions,
       ...?poi?.installedRegions,
+      ...?water?.installedRegions,
     }) {
       byRegion[path] ??= [];
     }
     final storage =
         maps.installedBytes +
         (routing?.totalBytes ?? 0) +
-        (poi?.totalBytes ?? 0);
+        (poi?.totalBytes ?? 0) +
+        (water?.totalBytes ?? 0);
     // Chart areas get their own section. Only paths holding nothing but
-    // charts: a card's Delete removes everything on its path.
+    // charts and their water routing: a card's Delete removes everything on
+    // its path.
     bool chartsOnly(String path) =>
-        byRegion[path]!.isNotEmpty &&
+        (byRegion[path]!.isNotEmpty || (water?.isInstalled(path) ?? false)) &&
         byRegion[path]!.every((p) => p.kind == PackKind.charts);
     int byName(String a, String b) => _regionName(
       maps,
@@ -74,7 +80,9 @@ class DownloadedTab extends StatelessWidget {
     // An area chart_areas.geojson doesn't know goes by its pack's name,
     // "Rhode Island (NOAA charts)", as its download row does.
     String chartName(String path) =>
-        maps.chartAreas?.byPackRegion(path)?.name ?? byRegion[path]!.first.name;
+        maps.chartAreas?.byPackRegion(path)?.name ??
+        byRegion[path]!.firstOrNull?.name ??
+        path;
     final chartPaths =
         [
           for (final path in byRegion.keys)
@@ -404,7 +412,9 @@ class _RegionRow extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final routing = context.watch<RoutingService?>();
     final poi = context.watch<PoiService?>();
+    final water = context.watch<WaterRoutingService?>();
     final hasRouting = routing?.isInstalled(path) ?? false;
+    final hasWater = water?.isInstalled(path) ?? false;
     final poiFiles = [
       for (final w in PoiDownload.values)
         if (poi?.isInstalled(path, w) ?? false) w,
@@ -412,21 +422,27 @@ class _RegionRow extends StatelessWidget {
     final bytes =
         packs.fold(0, (sum, p) => sum + maps.sizeOf(p)) +
         (hasRouting ? routing!.sizeOf(path) : 0) +
-        (poi?.sizeOf(path) ?? 0);
+        (poi?.sizeOf(path) ?? 0) +
+        (hasWater ? water!.sizeOf(path) : 0);
     final updates = [
       for (final e in maps.packsForRegion(path))
         if (maps.statusOf(e) == PackStatus.updateAvailable) e,
     ];
     final routingUpdate = routing?.updateAvailable(path) ?? false;
+    final waterUpdate = water?.updateAvailable(path) ?? false;
     final poiUpdates = {
       for (final w in poiFiles)
         if (poi!.updateAvailable(path, w)) w,
     };
     final hasUpdate =
-        updates.isNotEmpty || routingUpdate || poiUpdates.isNotEmpty;
+        updates.isNotEmpty ||
+        routingUpdate ||
+        poiUpdates.isNotEmpty ||
+        waterUpdate;
     void update() {
       if (updates.isNotEmpty) maps.download(updates);
       if (routingUpdate) routing!.download({path});
+      if (waterUpdate) water!.download({path});
       if (poiUpdates.isNotEmpty) poi!.download(path, poiUpdates);
     }
 
@@ -442,6 +458,7 @@ class _RegionRow extends StatelessWidget {
                     ))
                     .map((p) => installedLabel(l10n, p)),
               if (hasRouting) l10n.offlineMaps_kindRouting,
+              if (hasWater) l10n.offlineMaps_kindWaterRouting,
               for (final w in poiFiles)
                 switch (w) {
                   PoiDownload.points => l10n.offlineMaps_kindPoi,

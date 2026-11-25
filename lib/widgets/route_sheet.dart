@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:traxroute/traxroute.dart';
+import 'package:traxwater/traxwater.dart' hide LatLon;
 
 import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
@@ -15,6 +16,7 @@ import '../models/app_settings.dart';
 import '../storage/prefs_manager.dart';
 import 'elevation_profile.dart';
 import 'route_options.dart';
+import 'water_route_parts.dart';
 
 /// The colour a route is drawn in on the map and in its profile.
 Color routeColor(BuildContext context) =>
@@ -43,11 +45,63 @@ String routeDuration(BuildContext context, double seconds) {
   return context.l10n.route_hoursMinutes(minutes ~/ 60, minutes % 60);
 }
 
+/// A button under what a route sheet says: the other map's route where
+/// this one can't reach, or the download that's missing.
+typedef RouteSheetAction = ({
+  IconData icon,
+  String label,
+  VoidCallback onPressed,
+});
+
+/// What a route sheet shows of one kind of route.
+sealed class RouteSheetBody {
+  const RouteSheetBody();
+}
+
+/// A route on land: its path type and options, and the route found.
+class LandRouteBody extends RouteSheetBody {
+  final PathType pathType;
+  final ValueChanged<PathType> onPathType;
+  final RouteOptions options;
+  final ValueChanged<RouteOptions> onOptions;
+  final RouteResult? result;
+
+  /// The day the routing data was built.
+  final DateTime? dataDate;
+
+  const LandRouteBody({
+    required this.pathType,
+    required this.onPathType,
+    required this.options,
+    required this.onOptions,
+    required this.result,
+    this.dataDate,
+  });
+}
+
+/// A trip on the water: the boat, and the trip found.
+class WaterRouteBody extends RouteSheetBody {
+  final WaterRouteOptions boat;
+  final ValueChanged<WaterRouteOptions> onBoat;
+  final WaterTrip? trip;
+
+  /// What the data says must be shown with a trip, once.
+  final List<String> notices;
+
+  const WaterRouteBody({
+    required this.boat,
+    required this.onBoat,
+    required this.trip,
+    this.notices = const [],
+  });
+}
+
 /// The route to [destination], in a sheet over the bottom of the map that
 /// slides between three heights: a bar (where to, the distance, time and
-/// climb), open (adds the height profile, the path type and its options) and
-/// the whole map (adds the start and the directions). On a wide screen it is
-/// a panel at the [side] of the map instead.
+/// climb), open (adds the height profile, the path type and its options, or
+/// for a trip on the water what it passes and the boat) and the whole map
+/// (adds the start and the directions). On a wide screen it is a panel at
+/// the [side] of the map instead.
 class RouteSheet extends StatefulWidget {
   final String destination;
 
@@ -62,15 +116,8 @@ class RouteSheet extends StatefulWidget {
   /// When the route was found from your position, if you have since moved
   /// more than 100 m from there: it doesn't follow you.
   final DateTime? youWereAt;
-
-  /// The day the routing data was built.
-  final DateTime? dataDate;
   final VoidCallback onUseMyPosition;
-  final PathType pathType;
-  final ValueChanged<PathType> onPathType;
-  final RouteOptions options;
-  final ValueChanged<RouteOptions> onOptions;
-  final RouteResult? result;
+  final RouteSheetBody body;
   final bool loading;
   final String? error;
   final UnitSystem units;
@@ -78,6 +125,7 @@ class RouteSheet extends StatefulWidget {
 
   /// Hands the destination to another map app, as Navigate does.
   final VoidCallback? onOtherApp;
+  final List<RouteSheetAction> actions;
 
   /// Docked at the side of a wide screen: no handle, nothing to slide.
   final bool side;
@@ -93,28 +141,60 @@ class RouteSheet extends StatefulWidget {
   /// Set once the first route has said what the data can't know.
   static const conditionsToldKey = 'route_conditions_told';
 
-  const RouteSheet({
+  /// Set once the first trip on the water has shown the data's notice.
+  static const waterNoticeToldKey = 'water_notice_told';
+
+  /// A route on land.
+  RouteSheet({
     super.key,
     required this.destination,
     required this.start,
     this.positionMayBeOld = false,
     this.positionKnownAt,
     this.youWereAt,
-    this.dataDate,
+    DateTime? dataDate,
     required this.onUseMyPosition,
-    required this.pathType,
-    required this.onPathType,
-    required this.options,
-    required this.onOptions,
-    required this.result,
+    required PathType pathType,
+    required ValueChanged<PathType> onPathType,
+    required RouteOptions options,
+    required ValueChanged<RouteOptions> onOptions,
+    required RouteResult? result,
     required this.loading,
     required this.error,
     required this.units,
     required this.onClose,
     this.onOtherApp,
+    this.actions = const [],
     this.side = false,
     this.bottomInset = 0,
-  });
+  }) : body = LandRouteBody(
+         pathType: pathType,
+         onPathType: onPathType,
+         options: options,
+         onOptions: onOptions,
+         result: result,
+         dataDate: dataDate,
+       );
+
+  /// A trip on the water.
+  const RouteSheet.water({
+    super.key,
+    required this.destination,
+    required this.start,
+    this.positionMayBeOld = false,
+    this.positionKnownAt,
+    this.youWereAt,
+    required this.onUseMyPosition,
+    required WaterRouteBody water,
+    required this.loading,
+    required this.error,
+    required this.units,
+    required this.onClose,
+    this.actions = const [],
+    this.side = false,
+    this.bottomInset = 0,
+  }) : body = water,
+       onOtherApp = null;
 
   @override
   State<RouteSheet> createState() => RouteSheetState();
@@ -163,20 +243,33 @@ class RouteSheetState extends State<RouteSheet> {
   }
 
   /// The data can't say what a road or trail is like today (safety review
-  /// CH-17): the first route ever says so, once.
+  /// CH-17): the first route ever says so, once. The first trip on the water
+  /// shows the data's notice ("Not for navigation. …"), once.
   void _tellConditionsOnce() {
     final prefs = PrefsManager.instance;
-    if (widget.result == null ||
-        (prefs.getBool(RouteSheet.conditionsToldKey) ?? false)) {
-      return;
-    }
-    unawaited(prefs.setBool(RouteSheet.conditionsToldKey, true));
+    final body = widget.body;
+    final (found, key) = switch (body) {
+      LandRouteBody(:final result) => (
+        result != null,
+        RouteSheet.conditionsToldKey,
+      ),
+      WaterRouteBody(:final trip) => (
+        trip != null,
+        RouteSheet.waterNoticeToldKey,
+      ),
+    };
+    if (!found || (prefs.getBool(key) ?? false)) return;
+    unawaited(prefs.setBool(key, true));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          content: Text(context.l10n.route_conditionsCaveat),
+          content: Text(switch (body) {
+            LandRouteBody() => context.l10n.route_conditionsCaveat,
+            WaterRouteBody(notices: []) => context.l10n.water_notForNavigation,
+            WaterRouteBody(:final notices) => notices.join('\n\n'),
+          }),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -291,7 +384,7 @@ class RouteSheetState extends State<RouteSheet> {
           }
           _stopsBuilt = true;
           WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
-          final hasSteps = widget.result?.maneuvers.isNotEmpty ?? false;
+          final hasSteps = _hasSteps;
           final low = _low, mid = _mid;
           final top = hasSteps ? 1.0 : mid;
           final snaps = [if (mid - low > 0.02 && top - mid > 0.02) mid];
@@ -331,6 +424,11 @@ class RouteSheetState extends State<RouteSheet> {
     );
   }
 
+  bool get _hasSteps => switch (widget.body) {
+    LandRouteBody(:final result) => result?.maneuvers.isNotEmpty ?? false,
+    WaterRouteBody(:final trip) => trip?.legs.isNotEmpty ?? false,
+  };
+
   Widget _content(ScrollController? scroll) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
@@ -340,18 +438,28 @@ class RouteSheetState extends State<RouteSheet> {
       :start,
       :positionMayBeOld,
       :positionKnownAt,
-      :pathType,
-      :options,
-      :result,
       :loading,
       :error,
       :units,
       :side,
     ) = widget;
-    final r = result;
+    final land = widget.body is LandRouteBody
+        ? widget.body as LandRouteBody
+        : null;
+    final water = widget.body is WaterRouteBody
+        ? widget.body as WaterRouteBody
+        : null;
+    final r = land?.result;
+    final trip = water?.trip;
+    final found = r != null || trip != null;
     final youWereAt = widget.youWereAt;
-    final changed = !options.isDefaultFor(pathType);
-    final hasSteps = r != null && r.maneuvers.isNotEmpty;
+    final changed = switch (widget.body) {
+      LandRouteBody(:final options, :final pathType) => !options.isDefaultFor(
+        pathType,
+      ),
+      WaterRouteBody(:final boat) => boat != const WaterRouteOptions(),
+    };
+    final hasSteps = _hasSteps;
 
     // Its own surface: the rest scrolls under it.
     final header = Material(
@@ -426,15 +534,40 @@ class RouteSheetState extends State<RouteSheet> {
                         l10n.route_finding,
                         style: theme.textTheme.titleSmall,
                       )
-                    : error != null || r == null
+                    : error != null || !found
                     ? Text(
                         error ?? l10n.route_none,
                         style: theme.textTheme.bodyMedium,
                       )
+                    : trip != null
+                    ? Row(
+                        children: [
+                          Icon(
+                            Symbols.sailing,
+                            size: 18,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              [
+                                waterDistanceText(trip.distanceM, units),
+                                routeDuration(
+                                  context,
+                                  trip.time.inSeconds.toDouble(),
+                                ),
+                              ].join(' · '),
+                              style: theme.textTheme.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      )
                     : Row(
                         children: [
                           Icon(
-                            pathTypeIcon(r.pathType),
+                            pathTypeIcon(r!.pathType),
                             size: 18,
                             color: scheme.onSurfaceVariant,
                           ),
@@ -526,11 +659,33 @@ class RouteSheetState extends State<RouteSheet> {
                       color: routeColor(context),
                     ),
                   )
-                else if (loading && r == null)
+                else if (land != null && loading && r == null)
+                  const SizedBox(height: 64),
+                if (trip != null) ...[
+                  for (final note in waterTripNotes(
+                    l10n,
+                    trip,
+                    destination,
+                    units,
+                  )) ...[
+                    _Gap(icon: Icons.flag_outlined, text: note),
+                    const SizedBox(height: 12),
+                  ],
+                  WaterTripPasses(trip: trip, boat: water!.boat, units: units),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      l10n.water_notForNavigation,
+                      style: theme.textTheme.bodySmall!.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ] else if (water != null && loading)
                   const SizedBox(height: 64),
                 // There from the start of the search, so the sheet keeps
                 // its height.
-                if (widget.dataDate case final date? when r != null || loading)
+                if (land?.dataDate case final date? when r != null || loading)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
@@ -547,38 +702,89 @@ class RouteSheetState extends State<RouteSheet> {
               ],
             ),
           ),
+          if (widget.actions.isNotEmpty && !loading)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  for (final a in widget.actions)
+                    OutlinedButton.icon(
+                      onPressed: a.onPressed,
+                      icon: Icon(a.icon),
+                      label: Text(a.label),
+                    ),
+                ],
+              ),
+            ),
           const SizedBox(height: 12),
-          SegmentedButton<PathType>(
-            showSelectedIcon: false,
-            segments: [
-              for (final t in PathType.values)
-                ButtonSegment(
-                  value: t,
-                  icon: Icon(pathTypeIcon(t)),
-                  label: Text(pathTypeLabel(context, t)),
+          if (land case LandRouteBody(:final pathType, :final options)) ...[
+            SegmentedButton<PathType>(
+              showSelectedIcon: false,
+              segments: [
+                for (final t in PathType.values)
+                  ButtonSegment(
+                    value: t,
+                    icon: Icon(pathTypeIcon(t)),
+                    label: Text(pathTypeLabel(context, t)),
+                  ),
+              ],
+              selected: {pathType},
+              onSelectionChanged: (s) => land.onPathType(s.single),
+            ),
+            if (_optionsOpen) ...[
+              RouteOptionsSection(
+                pathType: pathType,
+                options: options,
+                onChanged: land.onOptions,
+              ),
+              if (changed)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => land.onOptions(options.resetFor(pathType)),
+                    child: Text(l10n.route_optionsReset),
+                  ),
                 ),
             ],
-            selected: {pathType},
-            onSelectionChanged: (s) => widget.onPathType(s.single),
-          ),
-          if (_optionsOpen) ...[
-            RouteOptionsSection(
-              pathType: pathType,
-              options: options,
-              onChanged: widget.onOptions,
-            ),
-            if (changed)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => widget.onOptions(options.resetFor(pathType)),
-                  child: Text(l10n.route_optionsReset),
+          ],
+          if (water case WaterRouteBody(:final boat)) ...[
+            // The boat's numbers; Tune opens them.
+            InkWell(
+              onTap: () => setState(() {
+                _optionsOpen = !_optionsOpen;
+                _to = _Stop.open;
+              }),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(Symbols.sailing, size: 20, color: scheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(boatSummary(l10n, boat, units))),
+                  ],
                 ),
               ),
+            ),
+            if (_optionsOpen) ...[
+              WaterRouteOptionsSection(
+                options: boat,
+                units: units,
+                onChanged: water.onBoat,
+              ),
+              if (changed)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => water.onBoat(const WaterRouteOptions()),
+                    child: Text(l10n.route_optionsReset),
+                  ),
+                ),
+            ],
           ],
           // Raises the sheet over the whole map, and brings it back. At the
           // side the directions are listed under it.
-          if (hasSteps || (loading && r == null))
+          if (hasSteps || (loading && !found))
             InkWell(
               onTap: side || !hasSteps
                   ? null
@@ -683,20 +889,36 @@ class RouteSheetState extends State<RouteSheet> {
                                 ),
                         ),
                       ),
-                      SliverList.builder(
-                        itemCount: r.maneuvers.length,
-                        itemBuilder: (context, i) {
-                          final m = r.maneuvers[i];
-                          return ListTile(
-                            title: Text(m.instruction),
-                            trailing: m.km > 0
-                                ? Text(
-                                    GeoFormat.distanceText(m.km * 1000, units),
-                                  )
-                                : null,
-                          );
-                        },
-                      ),
+                      if (trip != null)
+                        SliverList.builder(
+                          itemCount: trip.legs.length,
+                          itemBuilder: (context, i) => WaterLegTile(
+                            leg: trip.legs[i],
+                            units: units,
+                            time: routeDuration(
+                              context,
+                              trip.legs[i].time.inSeconds.toDouble(),
+                            ),
+                          ),
+                        )
+                      else
+                        SliverList.builder(
+                          itemCount: r!.maneuvers.length,
+                          itemBuilder: (context, i) {
+                            final m = r.maneuvers[i];
+                            return ListTile(
+                              title: Text(m.instruction),
+                              trailing: m.km > 0
+                                  ? Text(
+                                      GeoFormat.distanceText(
+                                        m.km * 1000,
+                                        units,
+                                      ),
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
                       const SliverToBoxAdapter(child: SizedBox(height: 8)),
                     ],
                   ),

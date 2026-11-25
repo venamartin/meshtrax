@@ -47,6 +47,7 @@ import 'services/region_service.dart';
 import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
+import 'services/water_routing_service.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 import 'utils/route_transitions.dart';
@@ -163,6 +164,10 @@ void main() async {
   final poiService = mapPacksService == null
       ? null
       : await PoiService.create(mapPacksService);
+  // Water routing, per chart area, beside the charts.
+  final waterRoutingService = mapPacksService == null
+      ? null
+      : WaterRoutingService.create(mapPacksService);
   // The photo model downloads through the map downloader; this installs what
   // it handed over while the app was closed.
   if (photosSupported && mapPacksService != null) {
@@ -204,6 +209,7 @@ void main() async {
       mapPacksService: mapPacksService,
       routingService: routingService,
       poiService: poiService,
+      waterRoutingService: waterRoutingService,
       chatTextScaleService: chatTextScaleService,
       uiViewStateService: uiViewStateService,
       sosService: sosService,
@@ -262,6 +268,7 @@ class MeshTraxApp extends StatefulWidget {
   final MapPacksService? mapPacksService;
   final RoutingService? routingService;
   final PoiService? poiService;
+  final WaterRoutingService? waterRoutingService;
   final ChatTextScaleService chatTextScaleService;
   final UiViewStateService uiViewStateService;
   final SosService sosService;
@@ -280,6 +287,7 @@ class MeshTraxApp extends StatefulWidget {
     required this.mapPacksService,
     this.routingService,
     this.poiService,
+    this.waterRoutingService,
     required this.chatTextScaleService,
     required this.uiViewStateService,
     required this.sosService,
@@ -464,6 +472,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
           ChangeNotifierProvider.value(value: routing),
         if (widget.poiService case final poi?)
           ChangeNotifierProvider.value(value: poi),
+        if (widget.waterRoutingService case final water?)
+          ChangeNotifierProvider.value(value: water),
       ],
       child: Consumer<AppSettingsService>(
         builder: (context, settingsService, child) {

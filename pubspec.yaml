@@ -102,6 +102,9 @@ dependencies:
     path: packages/traxpoi
   traxroute:
     path: packages/traxroute
+  # Routes on the water, offline from the water-routing tiles
+  traxwater:
+    path: packages/traxwater
   # Line of sight and radio reach, offline from the contours packs
   traxlos:
     path: packages/traxlos

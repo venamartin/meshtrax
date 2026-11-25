@@ -8,6 +8,8 @@ import '../../connector/meshcore_connector.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/l10n.dart';
 import '../../services/map_packs_service.dart';
+import '../../services/routing_service.dart' show RoutingDriveBlock;
+import '../../services/water_routing_service.dart';
 import '../../utils/format_bytes.dart';
 import '../../widgets/charts_notice_dialog.dart';
 import 'offline_maps_ui.dart';
@@ -16,7 +18,8 @@ import 'offline_maps_ui.dart';
 /// and download them together. Text only, one column (Martin, 2026-10-20).
 ///
 /// The selection belongs to the screen, so it survives switching tabs; it
-/// holds pack regions, so an area listed under two coasts is one tick.
+/// holds pack regions, so an area listed under two coasts is one tick, and
+/// [routingTick]s for the areas' water routing.
 class ChartsTab extends StatelessWidget {
   final Set<String> selected;
   final ValueChanged<Set<String>> onSelectionChanged;
@@ -31,11 +34,15 @@ class ChartsTab extends StatelessWidget {
     this.openArea,
   });
 
+  /// The tick of [area]'s water routing in the selection.
+  static String routingTick(String area) => 'routing:$area';
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final maps = context.watch<MapPacksService>();
+    final water = context.watch<WaterRoutingService?>();
     final index = maps.index;
     final areas = maps.chartAreas;
     if (index == null || areas == null) {
@@ -48,7 +55,28 @@ class ChartsTab extends StatelessWidget {
       for (final path in selected)
         if (maps.chartPackOf(path) case final e? when available(e)) e,
     ];
-    final bytes = toDownload.fold(0, (sum, e) => sum + e.bytes);
+    final routing = {
+      if (water != null)
+        for (final path in selected)
+          if (path.startsWith('routing:') &&
+              _routingStatus(maps, water, path.substring(8)) ==
+                  PackStatus.available)
+            path.substring(8),
+    };
+    final routingTodo = water?.downloadsFor(routing) ?? const <String>{};
+    final bytes =
+        toDownload.fold(0, (sum, e) => sum + e.bytes) +
+        routingTodo.fold<int>(
+          0,
+          (sum, area) =>
+              sum +
+              water!.bundleFor(area)!.bytes +
+              switch (water.chartFor(area)) {
+                final chart? when !toDownload.contains(chart) => chart.bytes,
+                _ => 0,
+              },
+        );
+    final count = {...toDownload.map((e) => e.region), ...routing}.length;
     final suggested = _suggested(context, maps, areas);
 
     void toggle(String path, bool on) => onSelectionChanged(
@@ -135,16 +163,19 @@ class ChartsTab extends StatelessWidget {
                 ],
               ),
             ),
-            if (toDownload.isNotEmpty)
+            if (toDownload.isNotEmpty || routing.isNotEmpty)
               _DownloadBar(
-                count: toDownload.length,
+                count: count,
                 bytes: bytes,
                 onDownload: () {
                   onSelectionChanged(
-                    {...selected}
-                      ..removeAll([for (final e in toDownload) e.region]),
+                    {...selected}..removeAll([
+                      for (final e in toDownload) e.region,
+                      for (final area in routing) routingTick(area),
+                    ]),
                   );
                   unawaited(maps.download(toDownload));
+                  if (routing.isNotEmpty) unawaited(water!.download(routing));
                 },
               ),
           ],
@@ -201,6 +232,7 @@ class _Coast extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final maps = context.watch<MapPacksService>();
+    final water = context.watch<WaterRoutingService?>();
     final listed = areas.inCoast(coast);
     final entries = {
       for (final a in listed) a.packRegion: maps.chartPackOf(a.packRegion),
@@ -257,7 +289,7 @@ class _Coast extends StatelessWidget {
             ),
           ),
         for (final area in listed)
-          if (entries[area.packRegion] case final entry?)
+          if (entries[area.packRegion] case final entry?) ...[
             PackRow(
               id: entry.id,
               bytes: entry.bytes,
@@ -267,8 +299,19 @@ class _Coast extends StatelessWidget {
               onTicked: (on) => onToggle(area.packRegion, on),
               title: Text(area.name),
               detail: _alsoIn(l10n, area),
-            )
-          else
+            ),
+            if (water != null && water.bundleFor(area.packRegion) != null)
+              _RoutingRow(
+                area: area.packRegion,
+                water: water,
+                ticked: selected.contains(
+                  ChartsTab.routingTick(area.packRegion),
+                ),
+                chartTicked: selected.contains(area.packRegion),
+                onTicked: (on) =>
+                    onToggle(ChartsTab.routingTick(area.packRegion), on),
+              ),
+          ] else
             ListTile(
               enabled: false,
               leading: const Checkbox(value: false, onChanged: null),
@@ -289,6 +332,81 @@ class _Coast extends StatelessWidget {
     return others.isEmpty
         ? null
         : l10n.offlineMaps_chartsAlsoIn(others.join(', '));
+  }
+}
+
+/// How [area]'s water routing download stands, as its row shows it.
+PackStatus _routingStatus(
+  MapPacksService maps,
+  WaterRoutingService water,
+  String area,
+) =>
+    maps.downloadStatus(WaterRoutingService.downloadId(area)) ??
+    (water.updateAvailable(area)
+        ? PackStatus.updateAvailable
+        : water.isInstalled(area)
+        ? PackStatus.installed
+        : PackStatus.available);
+
+/// An area's water routing, under its chart: its own tick and size,
+/// unticked to start. The chart comes too where the one on the device
+/// isn't the build the routing was made from, unless its own row is
+/// ticked.
+class _RoutingRow extends StatelessWidget {
+  final String area;
+  final WaterRoutingService water;
+  final bool ticked;
+  final bool chartTicked;
+  final ValueChanged<bool> onTicked;
+
+  const _RoutingRow({
+    required this.area,
+    required this.water,
+    required this.ticked,
+    required this.chartTicked,
+    required this.onTicked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final maps = context.watch<MapPacksService>();
+    final installed = water.isInstalled(area);
+    final block = installed ? null : water.driveBlock;
+    final Widget row;
+    if (water.rebuilding(area) || block != null) {
+      row = ListTile(
+        enabled: false,
+        leading: const Checkbox(value: false, onChanged: null),
+        title: Text(l10n.offlineMaps_kindWaterRouting),
+        subtitle: Text(switch (block) {
+          RoutingDriveBlock.older => l10n.offlineMaps_routingDriveOlder,
+          RoutingDriveBlock.incomplete =>
+            l10n.offlineMaps_routingDriveIncomplete,
+          null => l10n.offlineMaps_waterRoutingRebuilding,
+        }),
+        trailing: const Text('—', style: sizeStyle),
+      );
+    } else {
+      final chart = installed || chartTicked ? null : water.chartFor(area);
+      row = PackRow(
+        id: WaterRoutingService.downloadId(area),
+        bytes: chart == null
+            ? water.bundleFor(area)!.bytes
+            : water.bytesFor({area}),
+        status: _routingStatus(maps, water, area),
+        ticked: ticked,
+        onTicked: onTicked,
+        title: Text(l10n.offlineMaps_kindWaterRouting),
+        detail: chart == null
+            ? l10n.offlineMaps_kindWaterRoutingDetail
+            : maps.installedPack(chart.id) == null
+            ? l10n.offlineMaps_waterRoutingWithChart
+            : l10n.offlineMaps_waterRoutingUpdatesChart,
+      );
+    }
+    // Set in under its chart's row.
+    return Padding(padding: const EdgeInsets.only(left: 40), child: row);
   }
 }
 

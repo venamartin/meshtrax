@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Route;
 import 'package:traxmap/traxmap.dart' show LatLng, MapCamera;
 import 'package:traxroute/traxroute.dart' show RouteResult;
+import 'package:traxwater/traxwater.dart' show WaterTrip;
 
 import '../models/map_focus.dart';
 import '../storage/prefs_manager.dart';
@@ -15,12 +16,13 @@ const String contactsAllGroupsValue = '__all__';
 enum ChannelSortOption { manual, name, latestMessages, unread }
 
 /// The main map's route: where to, a start picked on the map (null: your
-/// position) and the route found (null: still to find).
-typedef MapRoute = ({
+/// position) and the route found (null: still to find), on land
+/// ([RouteResult]) or on the water ([WaterTrip]).
+typedef MapRoute<R> = ({
   String name,
   LatLng to,
   LatLng? from,
-  RouteResult? result,
+  R? result,
   LatLng? foundFrom,
   DateTime? foundAt,
 });
@@ -106,11 +108,18 @@ class UiViewStateService extends ChangeNotifier {
   /// screen in the map's place, and the route is there when the map is back.
   /// A route started on a map over a chat is kept here too. Not saved, so it
   /// goes with the app.
-  MapRoute? mapRoute;
+  MapRoute<RouteResult>? mapRoute;
 
   /// Whether the Map tab has shown [mapRoute]. A route started on a map
   /// over a chat is shown whole there the first time.
   bool mapRouteSeen = true;
+
+  /// The Map tab's trip on the water, kept as [mapRoute] is: charts show it
+  /// in the route's place.
+  MapRoute<WaterTrip>? mapWaterRoute;
+
+  /// Whether the Map tab has shown [mapWaterRoute].
+  bool mapWaterRouteSeen = true;
 
   /// The maps open now, the Map tab or ones over other screens, by route:
   /// how to show each something. What you tap on a map shows on it, never

@@ -19,6 +19,7 @@ import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/chat_text_scale_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
+import 'package:meshtrax/services/water_routing_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/utils/format_bytes.dart';
 
@@ -155,6 +156,7 @@ void main() {
     String? chartArea,
     String? region,
     MeshCoreConnector? radio,
+    WaterRoutingService? water,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -167,6 +169,8 @@ void main() {
           ),
           ChangeNotifierProvider(create: (_) => AppSettingsService()),
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
+          if (water != null)
+            ChangeNotifierProvider<WaterRoutingService?>.value(value: water),
         ],
         child: MaterialApp(
           locale: const Locale('en'),
@@ -636,5 +640,151 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  group('water routing', () {
+    const california = 'charts/us/california';
+    const bundleBytes = 27100000;
+
+    /// The index with water routing for California, and for Oregon built
+    /// from another chart than the index lists.
+    Future<(MapPacksService, WaterRoutingService)> withRouting(
+      WidgetTester tester,
+    ) async {
+      final index = jsonDecode(_chartsIndex) as Map<String, Object?>;
+      Map<String, Object> bundle(String region, String chartsSha256) => {
+        'url': 'water-routing/wrm-2/2026112401/$region.tar.gz',
+        'bytes': bundleBytes,
+        'unpacked_bytes': 3 * bundleBytes,
+        'sha256': 'a' * 64,
+        'charts_sha256': chartsSha256,
+      };
+      index['water_routing'] = {
+        'wrm-2': {
+          'build': '2026112401',
+          'regions': {
+            california: bundle(
+              california,
+              (index['packs'] as List).firstWhere(
+                    (p) => p['region'] == california,
+                  )['sha256']
+                  as String,
+            ),
+            'charts/us/oregon': bundle('charts/us/oregon', 'f' * 64),
+          },
+        },
+      };
+      routes['/maps/index.json'] = () =>
+          http.Response.bytes(utf8.encode(jsonEncode(index)), 200);
+      final maps = (await tester.runAsync(service))!;
+      final water = WaterRoutingService.create(maps);
+      addTearDown(water.dispose);
+      return (maps, water);
+    }
+
+    Finder row(String id) =>
+        find.byWidgetPredicate((w) => w is PackRow && w.id == id);
+    final routing = row(WaterRoutingService.downloadId(california));
+
+    testWidgets('its own tick under its chart; the chart comes too', (
+      tester,
+    ) async {
+      final (maps, water) = await withRouting(tester);
+      final chartBytes = maps.chartPackOf(california)!.bytes;
+      bool tickedIn(Finder row) => tester
+          .widget<Checkbox>(
+            find.descendant(of: row, matching: find.byType(Checkbox)),
+          )
+          .value!;
+
+      await open(tester, maps, water: water);
+      await tester.tap(find.text('West Coast'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Water routing'), findsNWidgets(2), reason: 'not WA');
+      expect(tickedIn(routing), isFalse, reason: 'unticked to start');
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text('Routes on the water. Its chart comes too.'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text(formatBytes(bundleBytes + chartBytes)),
+        ),
+        findsOneWidget,
+      );
+      final rebuilt = find.ancestor(
+        of: find.text('Being rebuilt for new charts'),
+        matching: find.byType(ListTile),
+      );
+      expect(tester.widget<ListTile>(rebuilt).enabled, isFalse);
+
+      await tester.tap(find.text('Routes on the water. Its chart comes too.'));
+      await tester.pumpAndSettle();
+      expect(tickedIn(routing), isTrue);
+      expect(
+        tickedIn(row(maps.chartPackOf(california)!.id)),
+        isFalse,
+        reason: 'a tick of its own',
+      );
+      expect(find.text('1 area'), findsOneWidget);
+      expect(
+        find.text('Download ${formatBytes(bundleBytes + chartBytes)}'),
+        findsOneWidget,
+      );
+
+      // With the chart ticked too, the routing row is the bundle alone,
+      // and the chart counts once.
+      await tester.tap(find.text('California'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text('Routes on the water'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text(formatBytes(bundleBytes)),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('1 area'), findsOneWidget);
+      expect(
+        find.text('Download ${formatBytes(bundleBytes + chartBytes)}'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('with its chart on the device, the bundle alone', (
+      tester,
+    ) async {
+      final (maps, water) = await withRouting(tester);
+      await tester.runAsync(() => installCharts(maps, california));
+      await open(tester, maps, water: water);
+      await tester.tap(find.text('West Coast'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text('Routes on the water'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: routing,
+          matching: find.text(formatBytes(bundleBytes)),
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }
