@@ -559,13 +559,16 @@ class MessageRetryService extends ChangeNotifier {
   /// sending, and one whose attempt ended meanwhile would pass for the
   /// next attempt with this one's bytes (simulator, 2026-11-24).
   bool awaitsAck(
-      String contactKey, int timestampSeconds, String text, int attempt) {
-    final id = _messageIdOf(contactKey, timestampSeconds, text);
-    final message = id == null ? null : _pendingMessages[id];
-    return message != null &&
-        _wireAttempts[id] == attempt &&
-        _wireRungs[id] == message.retryCount;
-  }
+          String contactKey, int timestampSeconds, String text, int attempt) =>
+      // Any message it could be: two with one text in one second read the
+      // same here, and the one that failed first still waits for a late ACK.
+      _pendingMessages.entries.any((e) =>
+          e.value.text == text &&
+          e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
+              timestampSeconds &&
+          _pendingContacts[e.key]?.publicKeyHex == contactKey &&
+          _wireAttempts[e.key] == attempt &&
+          _wireRungs[e.key] == e.value.retryCount);
 
   String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
       _pendingMessages.entries
