@@ -23,7 +23,7 @@ const Duration photoGapZeroHop = Duration(minutes: 10);
 
 /// On a MeshCore frequency: one photo through repeaters per radio in this
 /// long.
-const Duration photoGapRepeaters = Duration(minutes: 30);
+const Duration photoGapRepeaters = Duration(minutes: 20);
 
 /// A photo through repeaters that no repeater was heard carrying gives back
 /// its [photoGapRepeaters] when a repeater was heard this recently as its

@@ -54,6 +54,38 @@ String channelTextPacketHash({
   ].join();
 }
 
+/// MeshCore's payload type of channel data (PAYLOAD_TYPE_GRP_DATA).
+const _groupData = 0x06;
+
+/// The hash the mesh gives a channel datagram that a MeshCore companion
+/// radio sends (CMD_SEND_CHANNEL_DATA): [data] of data type [dataType], on
+/// the channel with secret [channelKey]. 16 lower-case hex characters, the
+/// hash an observer server files it under.
+///
+/// The radio seals the data type (2 bytes, little-endian), the length (1)
+/// and the data (sendGroupData) as it seals a text, behind the channel's
+/// 1-byte hash. None of it is random, so the hash is known before the radio
+/// sends, and a copy sent again has the same one.
+String channelDataPacketHash({
+  required Uint8List channelKey,
+  required int dataType,
+  required List<int> data,
+}) {
+  final plain = Uint8List.fromList([
+    dataType & 0xFF,
+    (dataType >> 8) & 0xFF,
+    data.length,
+    ...data,
+  ]);
+  final payload = BytesBuilder()
+    ..addByte(_channelHash(channelKey))
+    ..add(_seal(channelKey, plain));
+  final digest = sha256.convert([_groupData, ...payload.toBytes()]).bytes;
+  return [
+    for (final b in digest.take(8)) b.toRadixString(16).padLeft(2, '0'),
+  ].join();
+}
+
 /// The radio hashes all 32 bytes only when the second half isn't empty.
 int _channelHash(Uint8List key) {
   final wide = key.length > 16 && key.skip(16).any((b) => b != 0);

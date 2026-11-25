@@ -34,7 +34,47 @@ String _sealedHash(Uint8List key, int secs, String plainText) {
       .join();
 }
 
+/// A channel datagram sealed step by step as the radio does it
+/// (sendGroupData), and the hash of the packet, apart from the package's
+/// code: data type (little-endian), length and data, sealed, behind the
+/// channel hash, hashed with payload type 6.
+String _sealedDataHash(Uint8List key, int dataType, List<int> data) {
+  final bytes = [dataType & 0xFF, dataType >> 8, data.length, ...data];
+  final padded = Uint8List((bytes.length + 15) ~/ 16 * 16)
+    ..setRange(0, bytes.length, bytes);
+  final cipher = ECBBlockCipher(AESEngine())..init(true, KeyParameter(key));
+  final sealed = Uint8List(padded.length);
+  for (var i = 0; i < padded.length; i += 16) {
+    cipher.processBlock(padded, i, sealed, i);
+  }
+  final key32 = Uint8List(32)..setRange(0, 16, key);
+  final mac = Hmac(sha256, key32).convert(sealed).bytes;
+  final payload = [sha256.convert(key).bytes[0], mac[0], mac[1], ...sealed];
+  return sha256
+      .convert([0x06, ...payload])
+      .bytes
+      .take(8)
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join();
+}
+
 void main() {
+  test('the hash of a channel datagram the radio seals', () {
+    for (final length in [1, 12, 13, 157]) {
+      final data = List.generate(length, (i) => (i * 37 + 5) & 0xFF);
+      expect(
+        channelDataPacketHash(channelKey: _key, dataType: 0x0170, data: data),
+        _sealedDataHash(_key, 0x0170, data),
+        reason: '$length bytes',
+      );
+    }
+    expect(
+      channelDataPacketHash(channelKey: _key, dataType: 0x0170, data: [1]),
+      isNot(channelDataPacketHash(channelKey: _key, dataType: 0x0171, data: [1])),
+      reason: 'the data type is sealed in',
+    );
+  });
+
   test('the hash of the packet the radio seals', () {
     for (final text in ['hi', 'Pine cones are free', 'x' * 40, 'héllo 🌲']) {
       expect(

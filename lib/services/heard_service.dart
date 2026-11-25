@@ -215,6 +215,40 @@ class HeardService extends ChangeNotifier {
     );
   }
 
+  /// A photo of mine went out on the channel with secret [channelKey] as
+  /// [packets] of channel data type [dataType]: from now, asks about them
+  /// all together, as about a channel text, and the photo's row gets the
+  /// ear when an observer heard any of them. A packet sent again is the same
+  /// bytes, with the same hash. False when the check is off.
+  bool trackPhoto(
+    String messageId,
+    Uint8List channelKey,
+    int dataType,
+    List<Uint8List> packets,
+  ) {
+    if (!_enabled || _observerServer == null || packets.isEmpty) return false;
+    final hashes = [
+      for (final p in packets)
+        channelDataPacketHash(
+          channelKey: channelKey,
+          dataType: dataType,
+          data: p,
+        ),
+    ];
+    appLogger.info(
+      'Observer check for photo $messageId: ${hashes.join(', ')}',
+      tag: 'Heard',
+    );
+    _checker.track(messageId, hashes.first);
+    for (final hash in hashes.skip(1)) {
+      _checker.addHash(messageId, hash);
+    }
+    return true;
+  }
+
+  /// How long after a send its last ask comes.
+  Duration get lastAsk => _checker.askAfter.last;
+
   /// Our radio heard a copy back: its hash should be one we worked out. If
   /// it isn't, the log says so and the server is asked about it too.
   void _onOwnEcho(String messageId, String packetHash) {
@@ -286,6 +320,9 @@ class HeardService extends ChangeNotifier {
   @visibleForTesting
   bool checkingForTest(String messageId) =>
       _checker.hashesOf(messageId) != null;
+
+  @visibleForTesting
+  Set<String>? hashesForTest(String messageId) => _checker.hashesOf(messageId);
 
   /// Whether channel message [messageId], which only one repeater carried,
   /// may go out once more: an observer heard this radio, in that message's

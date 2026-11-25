@@ -76,7 +76,7 @@ void main() {
       );
     });
 
-    test('through repeaters, one every 30 minutes on top of that', () {
+    test('through repeaters, one every 20 minutes on top of that', () {
       final at = now.subtract(const Duration(minutes: 15));
       PhotoBlock? via({required bool viaRepeaters}) => photoSendBlocked(
         freqKhz: usa,
@@ -87,7 +87,7 @@ void main() {
       );
       expect(via(viaRepeaters: true), (
         reason: PhotoBlockReason.waitRepeaters,
-        minutes: 15,
+        minutes: 5,
       ));
       expect(via(viaRepeaters: false), isNull);
       expect(
@@ -176,7 +176,7 @@ void main() {
     expect(photoLastSentViaRepeaters(a), later);
   });
 
-  test('a photo no repeater carried gives back its 30 minutes, not its 10, '
+  test('a photo no repeater carried gives back its 20 minutes, not its 10, '
       'and leaves a later photo\'s alone', () async {
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
