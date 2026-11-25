@@ -150,6 +150,24 @@ me and who hears my contact, what path bytes should this DM use?*
     of 55 routed tries was answered, and with every route tried twice
     each DM cost 129 to 138 repeater transmissions against 89, and the
     longer ladders held the next DMs back for minutes.
+  * **Routed tries that keep going unanswered.** With missed ACKs no
+    longer held against a contact's repeater, a contact who had moved
+    and sent nothing got three routed tries before every flood: their
+    radio keeps the old way back, so a routed DM is taken and its ACK
+    lost, and none of 60 routed tries was answered. A DM took 138 s
+    at the median against 70 s on the code before, whose two-miss
+    gate cut the routed tries short. The retry service now counts
+    routed tries in a row to a contact that left this radio's first
+    repeater (or could not be listened for) and got no ACK
+    (`MessageRetryService.bestRouteOnlyAfter`, 3): from then on a
+    ladder to them is Pathfinder's best route (twice when it is a
+    likely one), then floods. A routed ACK resets the count; it is
+    forgotten an hour after the last such try. The count lives in
+    the retry service because it shapes the ladder; which route is
+    best stays Pathfinder's business. Sending the way-back packet a
+    second time was considered and left out: on that air the
+    firmware's own reached the contact 2 times in 18, so a second
+    copy would not have changed the picture.
   * **Simulated first** (the simulator's trial builds, before this
     code): 60 DMs between two radios at home, field-like links. Floods
     per DM 0.38 on the code before, 0.05 to 0.10 with the best route

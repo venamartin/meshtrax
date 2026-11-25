@@ -34,7 +34,8 @@ String _hex(List<int> b) =>
     b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
 class _Rig {
-  _Rig({int budget = 5}) {
+  _Rig({int budget = 5, DateTime Function()? clock})
+      : svc = MessageRetryService(clock: clock) {
     svc.initialize(RetryServiceConfig(
       // As the connector does: wait for a quiet radio, then send only a
       // copy that is still wanted.
@@ -48,8 +49,11 @@ class _Rig {
       },
       addMessage: (_, _) {},
       updateMessage: (_) {},
-      clearContactPath: (_) {},
-      setContactPath: (_, bytes, _, _) => written.add(_hex(bytes)),
+      clearContactPath: (_) => kinds.add('flood'),
+      setContactPath: (_, bytes, _, _) {
+        written.add(_hex(bytes));
+        kinds.add(_hex(bytes));
+      },
       calculateTimeout: (_, _, {contact}) => _timeoutMs,
       getSelfPublicKey: () => selfKey,
       pathHashByteWidth: () => 2,
@@ -77,15 +81,17 @@ class _Rig {
   final asked = <String>[];
   final sends = <({String text, int attempt, int ts})>[];
   final written = <String>[];
+  // What each send went out as: its route, or a flood.
+  final kinds = <String>[];
   final proofs = <String>[];
   final reported = <({String route, bool delivered, int? hopsHeard})>[];
-  final svc = MessageRetryService();
+  final MessageRetryService svc;
 
   int ackFor(int i) => MessageRetryService.computeExpectedAckHash(
       sends[i].ts, sends[i].attempt, sends[i].text, selfKey);
 
-  void sentLast() => svc.updateMessageFromSent(ackFor(sends.length - 1), 0,
-      isFlood: false);
+  void sentLast({bool flood = false}) =>
+      svc.updateMessageFromSent(ackFor(sends.length - 1), 0, isFlood: flood);
 
   /// A repeater's copy of send [i], heard with [hopsLeft] still to go.
   void copyOf(int i, List<int> hopsLeft, {String? text}) => svc.noteOwnCopy(
@@ -384,6 +390,154 @@ void main() {
       async.elapse(_wait);
       async.flushMicrotasks();
       expect(r.sends, hasLength(2));
+    });
+  });
+
+  // Simulator, 2026-11-24: a contact who had moved and sent nothing kept
+  // the old way back to this radio, so no routed DM to them was ever
+  // answered (0 of 60); only floods were. Three routes were tried before
+  // every flood, and a DM took twice as long as on the code before.
+  group('routed tries to a contact keep going unanswered', () {
+    final second = _route([0xA2, 0x77, 0xBE, 0xEF, 0xAA, 0x77]);
+    final home = _hex(_home.pathBytes);
+    final other = _hex(second.pathBytes);
+
+    void send(_Rig r, FakeAsync async, String text) {
+      r.svc.sendMessageWithRetry(contact: _bob, text: text);
+      async.flushMicrotasks();
+    }
+
+    /// The try in flight gets no ACK, and the next one goes out.
+    void fail(_Rig r, FakeAsync async) {
+      r.sentLast();
+      async.elapse(const Duration(milliseconds: _timeoutMs + 1));
+      async.elapse(
+          const Duration(milliseconds: MessageRetryService.retryBackoffMs));
+      async.flushMicrotasks();
+    }
+
+    void deliver(_Rig r, FakeAsync async, {bool flood = false}) {
+      r.sentLast(flood: flood);
+      r.svc.handleAckReceived(r.ackFor(r.sends.length - 1), 1500);
+      async.flushMicrotasks();
+    }
+
+    /// Three routed tries of one message unanswered, then its flood got
+    /// through. Nobody could be listened for.
+    _Rig threeUnanswered(FakeAsync async, {DateTime Function()? clock}) {
+      final r = _Rig(clock: clock)
+        ..hears = false
+        ..routes = [_home, second];
+      send(r, async, 'one');
+      fail(r, async);
+      fail(r, async);
+      fail(r, async);
+      deliver(r, async, flood: true);
+      expect(r.kinds, [home, home, other, 'flood']);
+      r.kinds.clear();
+      return r;
+    }
+
+    test('three in a row: the next message tries only the best route (twice, '
+        'being a likely one), then floods', () {
+      fakeAsync((async) {
+        final r = threeUnanswered(async);
+        send(r, async, 'two');
+        fail(r, async);
+        fail(r, async);
+        deliver(r, async, flood: true);
+        expect(r.kinds, [home, home, 'flood']);
+      });
+    });
+
+    test('a best route that is unlikely to work gets its one try, then '
+        'floods', () {
+      fakeAsync((async) {
+        PathSelection weak(List<int> bytes, double est) => PathSelection(
+              pathBytes: bytes,
+              hopCount: bytes.length ~/ 2,
+              hashSize: 2,
+              useFlood: false,
+              source: RouteSource.graph,
+              estDelivery: est,
+            );
+        final w1 = weak([0xA2, 0x77, 0x88, 0xA9, 0xFD, 0x33], 0.2);
+        final w2 = weak([0xA2, 0x77, 0xBE, 0xEF, 0xFD, 0x33], 0.15);
+        final w3 = weak([0xA2, 0x77, 0x10, 0x00, 0xFD, 0x33], 0.1);
+        final r = _Rig()
+          ..hears = false
+          ..routes = [w1, w2, w3];
+        send(r, async, 'one');
+        fail(r, async);
+        fail(r, async);
+        fail(r, async);
+        deliver(r, async, flood: true);
+        expect(r.kinds, [
+          _hex(w1.pathBytes),
+          _hex(w2.pathBytes),
+          _hex(w3.pathBytes),
+          'flood',
+        ]);
+
+        r.kinds.clear();
+        send(r, async, 'two');
+        fail(r, async);
+        deliver(r, async, flood: true);
+        expect(r.kinds, [_hex(w1.pathBytes), 'flood']);
+      });
+    });
+
+    test('one routed try answered, and the other routes are tried again', () {
+      fakeAsync((async) {
+        final r = threeUnanswered(async);
+        send(r, async, 'two');
+        deliver(r, async);
+        r.kinds.clear();
+
+        send(r, async, 'three');
+        fail(r, async);
+        fail(r, async);
+        expect(r.kinds, [home, home, other]);
+      });
+    });
+
+    test('tries that never left my own repeater are not counted', () {
+      fakeAsync((async) {
+        final r = _Rig()..routes = [_home, second];
+        send(r, async, 'one');
+        for (var i = 0; i < 3; i++) {
+          r.sentLast();
+          async.elapse(_wait);
+          async.flushMicrotasks();
+          r.sentLast();
+          async.elapse(_wait);
+          async.elapse(
+              const Duration(milliseconds: MessageRetryService.retryBackoffMs));
+          async.flushMicrotasks();
+        }
+        deliver(r, async, flood: true);
+        expect(r.kinds.last, 'flood');
+
+        r
+          ..hears = false
+          ..kinds.clear();
+        send(r, async, 'two');
+        fail(r, async);
+        fail(r, async);
+        expect(r.kinds, [home, home, other]);
+      });
+    });
+
+    test('an hour later it is forgotten', () {
+      fakeAsync((async) {
+        var now = DateTime(2026, 11, 24, 12);
+        final r = threeUnanswered(async, clock: () => now);
+        now = now.add(const Duration(minutes: 61));
+        send(r, async, 'two');
+        fail(r, async);
+        fail(r, async);
+        expect(r.kinds, [home, home, other]);
+      });
     });
   });
 

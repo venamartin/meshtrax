@@ -189,6 +189,31 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, int> _quickResends = {};
   static const int maxQuickResends = 2;
   static const Duration quickResendWindow = Duration(minutes: 1);
+  // Per contact: routed attempts in a row that got no ACK, and when the
+  // last of them was. Attempts that never left my first repeater are not
+  // counted.
+  final Map<String, ({int count, DateTime at})> _unanswered = {};
+
+  /// After this many routed attempts in a row to a contact got no ACK, a
+  /// ladder to them tries only Pathfinder's best route before it floods,
+  /// until a routed attempt is answered. A contact who has moved and sends
+  /// nothing keeps the old way back to this radio: their radio takes a
+  /// routed DM and its ACK goes nowhere, so every route to them looks
+  /// dead, and only a flood gets an answer (simulator, 2026-11-24: none of
+  /// 60 routed tries to such a contact was answered, and with three
+  /// routes tried before each flood a DM took twice as long as before).
+  static const int bestRouteOnlyAfter = 3;
+
+  /// How long that count is remembered after the last such attempt.
+  static const Duration unansweredMemory = Duration(hours: 1);
+
+  int _unansweredTo(String contactKey) {
+    final seen = _unanswered[contactKey];
+    if (seen == null) return 0;
+    final since = _now().difference(seen.at);
+    return since.isNegative || since > unansweredMemory ? 0 : seen.count;
+  }
+
   // The attempt numbers those sends went out with, and the number the
   // radio was last given for each message, with the attempt it was for.
   final Map<String, Set<int>> _resendAttempts = {};
@@ -429,15 +454,18 @@ class MessageRetryService extends ChangeNotifier {
   /// [contact]: no override, no manual resend, and Pathfinder can route.
   /// The first [keep] attempts already went out and stay as they were.
   void _plan(String messageId, Contact contact, {int keep = 0}) {
-    final routes = contact.pathOverride == null &&
+    final known = contact.pathOverride == null &&
             !_floodFirst.contains(messageId)
         ? _config?.graphRoutes?.call(contact)
         : null;
-    if (routes == null) {
+    if (known == null) {
       _pathfinderLadders.remove(messageId);
       _plans.remove(messageId);
       return;
     }
+    final routes = _unansweredTo(contact.publicKeyHex) >= bestRouteOnlyAfter
+        ? known.take(1).toList()
+        : known;
     final width = _radioWidth(contact);
     final old = _plans[messageId] ?? const <PathSelection>[];
     if (old.isEmpty || keep <= 0) {
@@ -1306,16 +1334,32 @@ class MessageRetryService extends ChangeNotifier {
   /// first hop). A late ACK still reports it delivered; the graph then
   /// sees one failure and one delivery on that route.
   void _reportTimedOut(String messageId, int attempt) {
-    final report = _config?.onAttemptResult;
     final contact = _pendingContacts[messageId];
     final selection = _attemptRoutes[messageId]?[attempt];
-    if (report == null || contact == null || selection == null) return;
+    if (contact == null || selection == null) return;
     if (selection.useFlood || !(_onAir[messageId]?.contains(attempt) ?? false)) {
       return;
     }
     if (!(_reported[messageId] ??= {}).add(attempt)) return;
-    final heard = _heardFor(messageId, attempt, delivered: false);
-    if (!heard.skip) report(contact, selection, false, null, heard.hops);
+    _routedResult(messageId, attempt, contact, selection, delivered: false);
+  }
+
+  /// How routed attempt [attempt] ended: for Pathfinder, and for the count
+  /// of attempts in a row to this contact that got no answer.
+  void _routedResult(
+      String messageId, int attempt, Contact contact, PathSelection selection,
+      {required bool delivered, int? tripTimeMs}) {
+    final heard = _heardFor(messageId, attempt, delivered: delivered);
+    final key = contact.publicKeyHex;
+    if (delivered) {
+      _unanswered.remove(key);
+    } else if (heard.hops != 0) {
+      _unanswered[key] = (count: _unansweredTo(key) + 1, at: _now());
+    }
+    if (!heard.skip) {
+      _config?.onAttemptResult
+          ?.call(contact, selection, delivered, tripTimeMs, heard.hops);
+    }
   }
 
   /// Tells the graph how each direct attempt ended, once: the acked one
@@ -1325,13 +1369,10 @@ class MessageRetryService extends ChangeNotifier {
   /// radio never accepted (a dropped link) says nothing about its route.
   void _reportAttempts(String messageId,
       {int? ackedAttempt, int? tripTimeMs, Set<int> unjudged = const {}}) {
-    final report = _config?.onAttemptResult;
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final routes = _attemptRoutes[messageId];
-    if (report == null || message == null || contact == null || routes == null) {
-      return;
-    }
+    if (message == null || contact == null || routes == null) return;
     final onAir = _onAir[messageId] ?? const <int>{};
     final reported = _reported[messageId] ?? const <int>{};
     final timedOut = message.status == MessageStatus.failed
@@ -1340,11 +1381,10 @@ class MessageRetryService extends ChangeNotifier {
     for (final MapEntry(key: i, value: selection) in routes.entries) {
       if (selection.useFlood || unjudged.contains(i)) continue;
       if (i == ackedAttempt) {
-        report(contact, selection, true, tripTimeMs,
-            _heardFor(messageId, i, delivered: true).hops);
+        _routedResult(messageId, i, contact, selection,
+            delivered: true, tripTimeMs: tripTimeMs);
       } else if (i < timedOut && onAir.contains(i) && !reported.contains(i)) {
-        final heard = _heardFor(messageId, i, delivered: false);
-        if (!heard.skip) report(contact, selection, false, null, heard.hops);
+        _routedResult(messageId, i, contact, selection, delivered: false);
       }
     }
   }
@@ -1727,6 +1767,7 @@ class MessageRetryService extends ChangeNotifier {
     _passOnTimers.clear();
     _passedOn.clear();
     _secondCopy.clear();
+    _unanswered.clear();
     for (final timer in _echoTimers.values) {
       timer.cancel();
     }

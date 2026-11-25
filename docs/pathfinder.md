@@ -41,6 +41,8 @@ Every delivery and every failure teaches it more. A failure counts against that 
 - *Their repeater* is set aside only when, twice in a row, a message missed through it and then got through another way. If the message got through by that same repeater in the end, nothing is held against it.
 - When MeshTrax can't listen for your repeater (it hasn't heard it lately), two failed tries in a row set it aside, as before.
 
+**When nobody answers on any route.** Someone who has moved and hasn't sent anything since still has the old way back to you stored in their radio. Their radio takes your routed message, but its receipt goes down that old way and never reaches you, so every route looks dead and only a flood gets an answer. After three routed tries in a row to one person got no receipt (tries that never left your own repeater don't count), MeshTrax tries only its best route to them before it floods. The first routed try that gets a receipt brings the full list of routes back, and after an hour without such a try it starts afresh.
+
 When it isn't sure which repeaters can hear you where you are, Pathfinder sends one short **Discover** call, at most once every 10 minutes. It does this:
 
 - before your first DM from a place where it has no record of who hears you (your radio needs GPS for it to know the place). The DM waits about five seconds for the answers and then goes by the repeater that heard you best, where it would otherwise have flooded;
