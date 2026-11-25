@@ -606,6 +606,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Verbinden';
 
   @override

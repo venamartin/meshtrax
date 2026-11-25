@@ -600,6 +600,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_ok => '알겠습니다';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => '연결';
 
   @override

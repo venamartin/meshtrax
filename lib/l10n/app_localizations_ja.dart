@@ -598,6 +598,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get common_ok => '了解';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => '接続する';
 
   @override

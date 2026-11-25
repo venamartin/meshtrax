@@ -19,6 +19,7 @@ import '../services/trax_beacon_service.dart';
 import '../services/trax_service.dart';
 import '../services/trip_positions.dart';
 import '../services/trip_service.dart';
+import 'experimental_title.dart';
 import 'line_of_sight_sheet.dart';
 import 'trax_dialogs.dart';
 
@@ -175,10 +176,12 @@ class _TraxSheetState extends State<TraxSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                on ? l10n.trax_isOn : l10n.trax_title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              ExperimentalTitle(
+                Text(
+                  on ? l10n.trax_isOn : l10n.trax_title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (subtitle.isNotEmpty)

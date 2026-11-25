@@ -1055,6 +1055,12 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get common_ok;
 
+  /// Tag after the titles of photos and TRAX mode while they are new. One short word, in capitals.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPERIMENTAL'**
+  String get common_experimental;
+
   /// No description provided for @common_connect.
   ///
   /// In en, this message translates to:

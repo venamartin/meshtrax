@@ -609,6 +609,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get common_ok => 'Добре';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Свържи се';
 
   @override

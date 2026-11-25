@@ -605,6 +605,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get common_ok => 'V redu';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Poveži se';
 
   @override

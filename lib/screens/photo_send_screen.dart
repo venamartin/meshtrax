@@ -22,6 +22,7 @@ import '../storage/prefs_manager.dart';
 import '../services/photo_mesh.dart';
 import '../services/photo_rules.dart';
 import '../services/photo_store.dart';
+import '../widgets/experimental_title.dart';
 import '../widgets/photo_ai_mark.dart';
 import '../widgets/photo_footprint_mark.dart';
 import '../widgets/photo_message_card.dart'
@@ -667,7 +668,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.l10n.photo_sendTitle(widget.channel.displayName)),
+        title: ExperimentalTitle(
+          Text(context.l10n.photo_sendTitle(widget.channel.displayName)),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(

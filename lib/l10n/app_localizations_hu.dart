@@ -606,6 +606,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_ok => 'Rendben';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Kapcsolódj';
 
   @override

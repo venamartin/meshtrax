@@ -595,6 +595,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_ok => '确定';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => '连接';
 
   @override

@@ -608,6 +608,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Conectar';
 
   @override

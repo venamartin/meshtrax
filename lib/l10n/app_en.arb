@@ -208,6 +208,8 @@
   "common_syncing_channels": "Reading channels...",
   "common_syncing_messages": "Reading messages...",
   "common_ok": "OK",
+  "common_experimental": "EXPERIMENTAL",
+  "@common_experimental": {"description": "Tag after the titles of photos and TRAX mode while they are new. One short word, in capitals."},
   "common_connect": "Connect",
   "common_unknownDevice": "Unknown Device",
   "common_save": "Save",

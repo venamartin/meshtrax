@@ -606,6 +606,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get common_ok => 'ОК';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Підключити';
 
   @override

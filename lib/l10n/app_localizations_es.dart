@@ -607,6 +607,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get common_ok => 'De acuerdo';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Conectar';
 
   @override

@@ -604,6 +604,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get common_ok => 'Okej';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Anslut';
 
   @override
