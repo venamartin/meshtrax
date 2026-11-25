@@ -52,7 +52,7 @@
   "@photo_clearTaps": {"description": "Forgets what the sender tapped, to tap again."},
   "photo_nothingThere": "Nothing to outline there. Tap the middle of it.",
   "@photo_nothingThere": {"description": "The tap found no object to outline."},
-  "photo_zeroHopNearbyOnly": "This channel is Nearby only: only radios in direct range get it",
+  "photo_zeroHopNearbyOnly": "This channel is Nearby only",
   "@photo_zeroHopNearbyOnly": {"description": "Under the Zero hop switch, which is on and can't be turned off, when the channel is set to Nearby only."},
   "photo_repairPacket": "Repair packet",
   "photo_repairPacketHint": "One more packet, so the photo still arrives if any one packet is lost",

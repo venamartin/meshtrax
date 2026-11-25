@@ -164,8 +164,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Nothing to outline there. Tap the middle of it.';
 
   @override
-  String get photo_zeroHopNearbyOnly =>
-      'This channel is Nearby only: only radios in direct range get it';
+  String get photo_zeroHopNearbyOnly => 'This channel is Nearby only';
 
   @override
   String get photo_repairPacket => 'Repair packet';

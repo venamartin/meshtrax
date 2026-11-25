@@ -90,6 +90,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   bool _tapping = false;
   bool _outlining = false;
 
+  /// Auto crop was pressed before anything was tapped: the first outline
+  /// crops to it.
+  bool _cropOnOutline = false;
+
   /// Only what was tapped goes, the rest black.
   bool _subjectOnly = false;
 
@@ -234,12 +238,22 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     );
   }
 
-  /// Subject only or Auto crop: crop to what was tapped, or ask for a tap.
-  void _chooseSubject({bool? subjectOnly}) {
+  /// Subject only on or off. It needs something tapped; the square stays
+  /// where the sender put it.
+  void _setSubjectOnly(bool on) {
     setState(() {
-      if (subjectOnly != null) _subjectOnly = subjectOnly;
+      _subjectOnly = on;
+      if (on && _mask == null) _tapping = true;
+    });
+  }
+
+  /// Auto crop: the square around what was tapped, or around the first thing
+  /// tapped next.
+  void _autoCrop() {
+    setState(() {
       if (_mask == null) {
         _tapping = true;
+        _cropOnOutline = true;
       } else {
         _frameSubject();
       }
@@ -253,11 +267,12 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     _shade?.dispose();
     _shade = null;
     _centred = false;
+    _cropOnOutline = false;
   }
 
   /// A tap on the photo at [local] (the crop view's photo coordinates):
-  /// outlines what's there, joined with what was tapped before, and crops
-  /// to it.
+  /// outlines what's there, joined with what was tapped before. Only Auto
+  /// crop moves the square.
   Future<void> _onTap(Offset local) async {
     if (_outlining) return;
     final l10n = context.l10n;
@@ -295,7 +310,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         _shade?.dispose();
         _shade = shade;
         _outlining = false;
-        _frameSubject();
+        if (_cropOnOutline) {
+          _cropOnOutline = false;
+          _frameSubject();
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -699,7 +717,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   ];
 
   List<Widget> _cropView(BuildContext context) => [
-    Text(context.l10n.photo_cropHint),
+    Text(
+      !_tapping
+          ? context.l10n.photo_cropHint
+          : _outlining
+          ? context.l10n.photo_outlining
+          : context.l10n.photo_tapWhatMatters,
+    ),
     const SizedBox(height: 12),
     LayoutBuilder(
       builder: (context, constraints) {
@@ -782,19 +806,21 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       runSpacing: 4,
       children: [
         FilterChip(
-          avatar: const Icon(Icons.center_focus_strong, size: 18),
           label: Text(context.l10n.photo_subjectOnly),
           selected: _subjectOnly,
-          onSelected: (on) => _chooseSubject(subjectOnly: on),
+          showCheckmark: false,
+          visualDensity: VisualDensity.compact,
+          onSelected: _setSubjectOnly,
         ),
         ActionChip(
-          avatar: const Icon(Icons.crop, size: 18),
           label: Text(context.l10n.photo_autoCrop),
-          onPressed: _chooseSubject,
+          visualDensity: VisualDensity.compact,
+          onPressed: _autoCrop,
         ),
         if (_mask != null)
           ActionChip(
             label: Text(context.l10n.photo_clearTaps),
+            visualDensity: VisualDensity.compact,
             onPressed: () => setState(() {
               _clearSubject();
               _tapping = true;
@@ -802,29 +828,26 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           ),
       ],
     ),
-    if (_tapping)
-      Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          _outlining
-              ? context.l10n.photo_outlining
-              : context.l10n.photo_tapWhatMatters,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ),
     SwitchListTile(
       contentPadding: EdgeInsets.zero,
+      dense: true,
       secondary: const Icon(Icons.face_retouching_off),
       title: Text(context.l10n.photo_blurFaces),
-      subtitle: Text(context.l10n.photo_blurFacesHint),
       value: _blurFaces,
       onChanged: (on) => setState(() => _blurFaces = on),
     ),
-    const SizedBox(height: 8),
-    FilledButton(onPressed: _preview, child: Text(context.l10n.photo_preview)),
-    TextButton(
-      onPressed: () => setState(() => _step = _Step.pick),
-      child: Text(context.l10n.photo_chooseAnother),
+    Row(
+      children: [
+        TextButton(
+          onPressed: () => setState(() => _step = _Step.pick),
+          child: Text(context.l10n.photo_chooseAnother),
+        ),
+        const Spacer(),
+        FilledButton(
+          onPressed: _preview,
+          child: Text(context.l10n.photo_preview),
+        ),
+      ],
     ),
   ];
 
@@ -880,7 +903,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             ),
           ),
         ),
-        Text(l10n.photo_previewTapHint, style: quiet),
       ],
       if (_previewNote != null) Text(_previewNote!, style: quiet),
       if (_faces > 0)
@@ -903,20 +925,18 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           labelText: l10n.photo_tagTitle,
           border: const OutlineInputBorder(),
           isDense: true,
+          counterText: '',
         ),
         onChanged: (_) => setState(() {}),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.place_outlined),
         title: Text(l10n.photo_includePosition),
-        subtitle: Text(
-          connector.hasSelfPosition
-              ? l10n.photo_positionFromRadio(
-                  photoPositionDistance(l10n, _positionBytes),
-                )
-              : l10n.photo_noPosition,
-        ),
+        subtitle: connector.hasSelfPosition
+            ? null
+            : Text(l10n.photo_noPosition),
         value: _includePosition && connector.hasSelfPosition,
         onChanged: sending || !connector.hasSelfPosition
             ? null
@@ -939,11 +959,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.near_me_outlined),
         title: Text(l10n.photo_zeroHop),
-        subtitle: Text(
-          nearbyOnly ? l10n.photo_zeroHopNearbyOnly : l10n.photo_zeroHopHint,
-        ),
+        subtitle: nearbyOnly ? Text(l10n.photo_zeroHopNearbyOnly) : null,
         value: zeroHop,
         onChanged: sending || nearbyOnly
             ? null
@@ -951,9 +970,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.healing_outlined),
         title: Text(l10n.photo_repairPacket),
-        subtitle: Text(l10n.photo_repairPacketHint),
         value: _repairPacket,
         onChanged: sending
             ? null
