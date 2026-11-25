@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/widgets/routing_dialog.dart';
@@ -115,7 +116,10 @@ Future<void> _openCustomPathDialog(WidgetTester tester) async {
   expect(find.text('Routing'), findsOneWidget);
 
   // The 2-byte fixture must read as two hops, never A2,77,BE,EF.
-  expect(find.textContaining('A277,BEEF'), findsOneWidget);
+  expect(
+    find.textContaining(PathHelper.wrapBetweenHops('A277,BEEF')),
+    findsOneWidget,
+  );
 
   await tester.tap(find.text('Custom path'));
   await tester.pumpAndSettle();

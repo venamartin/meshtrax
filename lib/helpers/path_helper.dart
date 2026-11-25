@@ -251,6 +251,12 @@ class PathHelper {
     return getHops(pathBytes, stride: stride).map(hopHex).join(',');
   }
 
+  /// [hexPath] from [formatPathHex] for a line on screen: a zero-width
+  /// space after each comma lets a long path wrap between hops, never
+  /// inside one. Only for text that is shown, never copied or parsed.
+  static String wrapBetweenHops(String hexPath) =>
+      hexPath.replaceAll(',', ',\u200B');
+
   /// Hops as repeater/room names where a contact's prefix matches at
   /// [stride], hex otherwise; ambiguous prefixes list every match.
   static String resolvePathNames(

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/path_helper.dart';
@@ -102,6 +103,40 @@ void main() {
         PathHelper.formatPathHex([0xAA, 0x00, 0xBE, 0xEF], stride: 2),
         'AA00,BEEF',
       );
+    });
+  });
+
+  group('wrapBetweenHops', () {
+    test('adds a break chance after each comma and nowhere else', () {
+      expect(
+        PathHelper.wrapBetweenHops('A1B2,C3D4,8F90'),
+        'A1B2,\u200BC3D4,\u200B8F90',
+      );
+      expect(PathHelper.wrapBetweenHops('A2'), 'A2');
+      expect(PathHelper.wrapBetweenHops(''), '');
+    });
+
+    testWidgets('a long path wraps between hops, never inside one', (
+      tester,
+    ) async {
+      const path = 'A1B2,C3D4,E5F6,0718,293A,4B5C,6D7E,8F90';
+      final hops = path.split(',').toSet();
+      final text = 'via ${PathHelper.wrapBetweenHops(path)}';
+      // The test font draws each character 10 px wide: from two hops
+      // wide up to one line for all of it.
+      for (var width = 100.0; width <= 450; width += 5) {
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: const TextStyle(fontSize: 10)),
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: width);
+        for (final line in _lines(painter, text)) {
+          for (final word in line.split(RegExp('[ ,\u200B]'))) {
+            if (word.isEmpty || word == 'via') continue;
+            expect(hops, contains(word), reason: 'at $width px: "$line"');
+          }
+        }
+        painter.dispose();
+      }
     });
   });
 
@@ -220,4 +255,16 @@ void main() {
       expect(PathHelper.hopsBefore([0xBE, 0xEF], path, stride: 2), isNull);
     });
   });
+}
+
+/// The text of each line [painter] laid [text] out on.
+List<String> _lines(TextPainter painter, String text) {
+  final lines = <String>[];
+  var start = 0;
+  while (start < text.length) {
+    final line = painter.getLineBoundary(TextPosition(offset: start));
+    lines.add(text.substring(line.start, line.end));
+    start = line.end > start ? line.end : start + 1;
+  }
+  return lines;
 }
