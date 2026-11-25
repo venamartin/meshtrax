@@ -9,5 +9,7 @@ library;
 export 'src/magnetic.dart'
     show decimalYear, magneticDeclination, magneticModelValidUntil;
 export 'src/route.dart' show routeOnWater;
+export 'src/store/catalog.dart';
+export 'src/store/water_store.dart';
 export 'src/trip.dart';
 export 'src/wrm.dart' show WaterArea, WaterTile, ringsNm, tileName;

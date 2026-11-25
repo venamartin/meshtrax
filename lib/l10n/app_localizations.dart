@@ -13048,6 +13048,36 @@ abstract class AppLocalizations {
   /// **'The drive\'s routing doesn\'t cover every region on this device.'**
   String get offlineMaps_routingDriveIncomplete;
 
+  /// No description provided for @offlineMaps_kindWaterRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Water routing'**
+  String get offlineMaps_kindWaterRouting;
+
+  /// No description provided for @offlineMaps_kindWaterRoutingDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes on the water'**
+  String get offlineMaps_kindWaterRoutingDetail;
+
+  /// No description provided for @offlineMaps_waterRoutingWithChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes on the water. Its chart comes too.'**
+  String get offlineMaps_waterRoutingWithChart;
+
+  /// No description provided for @offlineMaps_waterRoutingUpdatesChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes on the water. Its chart updates too.'**
+  String get offlineMaps_waterRoutingUpdatesChart;
+
+  /// No description provided for @offlineMaps_waterRoutingRebuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'Being rebuilt for new charts'**
+  String get offlineMaps_waterRoutingRebuilding;
+
   /// No description provided for @map_search.
   ///
   /// In en, this message translates to:
@@ -13113,6 +13143,385 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dropped pin'**
   String get route_pin;
+
+  /// No description provided for @water_yourBoat.
+  ///
+  /// In en, this message translates to:
+  /// **'Your boat'**
+  String get water_yourBoat;
+
+  /// No description provided for @water_yourBoatIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Every trip on the water keeps to these. Change them later in Route options.'**
+  String get water_yourBoatIntro;
+
+  /// No description provided for @water_boatDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'{draft} draft + {keel}'**
+  String water_boatDraft(String draft, String keel);
+
+  /// No description provided for @water_boatOffLand.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} off land'**
+  String water_boatOffLand(String distance);
+
+  /// No description provided for @water_boatMast.
+  ///
+  /// In en, this message translates to:
+  /// **'{height} mast'**
+  String water_boatMast(String height);
+
+  /// No description provided for @water_classRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted area'**
+  String get water_classRestricted;
+
+  /// No description provided for @water_classCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Caution area'**
+  String get water_classCaution;
+
+  /// No description provided for @water_classMilitary.
+  ///
+  /// In en, this message translates to:
+  /// **'Military area'**
+  String get water_classMilitary;
+
+  /// No description provided for @water_classAnchorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Anchorage'**
+  String get water_classAnchorage;
+
+  /// No description provided for @water_classDumping.
+  ///
+  /// In en, this message translates to:
+  /// **'Dumping ground'**
+  String get water_classDumping;
+
+  /// No description provided for @water_classTrafficLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic lane'**
+  String get water_classTrafficLane;
+
+  /// No description provided for @water_classSeparation.
+  ///
+  /// In en, this message translates to:
+  /// **'Separation zone'**
+  String get water_classSeparation;
+
+  /// No description provided for @water_classPrecautionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Precautionary area'**
+  String get water_classPrecautionary;
+
+  /// No description provided for @water_classInshoreTraffic.
+  ///
+  /// In en, this message translates to:
+  /// **'Inshore traffic zone'**
+  String get water_classInshoreTraffic;
+
+  /// No description provided for @water_classMarineFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Marine farm'**
+  String get water_classMarineFarm;
+
+  /// No description provided for @water_classBridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Bridge'**
+  String get water_classBridge;
+
+  /// No description provided for @water_classCable.
+  ///
+  /// In en, this message translates to:
+  /// **'Overhead cable'**
+  String get water_classCable;
+
+  /// No description provided for @water_classPipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Overhead pipe'**
+  String get water_classPipe;
+
+  /// No description provided for @water_classConveyor.
+  ///
+  /// In en, this message translates to:
+  /// **'Conveyor'**
+  String get water_classConveyor;
+
+  /// No description provided for @water_classGate.
+  ///
+  /// In en, this message translates to:
+  /// **'Gate'**
+  String get water_classGate;
+
+  /// No description provided for @water_movedLand.
+  ///
+  /// In en, this message translates to:
+  /// **'that point is on land or off the charts'**
+  String get water_movedLand;
+
+  /// No description provided for @water_movedShallow.
+  ///
+  /// In en, this message translates to:
+  /// **'it\'s too shallow there'**
+  String get water_movedShallow;
+
+  /// No description provided for @water_movedHazard.
+  ///
+  /// In en, this message translates to:
+  /// **'it\'s near a hazard too shallow for the boat'**
+  String get water_movedHazard;
+
+  /// No description provided for @water_movedNoEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'entry is prohibited there'**
+  String get water_movedNoEntry;
+
+  /// No description provided for @water_movedMast.
+  ///
+  /// In en, this message translates to:
+  /// **'something there is lower than the mast'**
+  String get water_movedMast;
+
+  /// No description provided for @water_startMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {distance} from the point picked: {why}.'**
+  String water_startMoved(String distance, String why);
+
+  /// No description provided for @water_endMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} from the point picked: {why}.'**
+  String water_endMoved(String distance, String why);
+
+  /// No description provided for @water_endsShortDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}: charted {band}. Drafts to {draft} get through.'**
+  String water_endsShortDepth(
+    String distance,
+    String destination,
+    String band,
+    String draft,
+  );
+
+  /// No description provided for @water_endsShortTooShallow.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}: charted {band}, too shallow to get through.'**
+  String water_endsShortTooShallow(
+    String distance,
+    String destination,
+    String band,
+  );
+
+  /// No description provided for @water_endsShortMast.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}: {objects} too low for the mast.'**
+  String water_endsShortMast(
+    String distance,
+    String destination,
+    String objects,
+  );
+
+  /// No description provided for @water_endsShortNoWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}: no charted water joins them.'**
+  String water_endsShortNoWater(String distance, String destination);
+
+  /// No description provided for @water_endsShortTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {distance} before {destination}: too long for one route. Plan it in parts.'**
+  String water_endsShortTooLong(String distance, String destination);
+
+  /// No description provided for @water_leastDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Least depth: charted {depth}'**
+  String water_leastDepth(String depth);
+
+  /// No description provided for @water_lowestClearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest clearance {height}'**
+  String water_lowestClearance(String height);
+
+  /// No description provided for @water_lowestClearanceUnder.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest clearance {height}, {name}'**
+  String water_lowestClearanceUnder(String height, String name);
+
+  /// No description provided for @water_shallower.
+  ///
+  /// In en, this message translates to:
+  /// **'Shallower than {depth}'**
+  String water_shallower(String depth);
+
+  /// No description provided for @water_poorSurvey.
+  ///
+  /// In en, this message translates to:
+  /// **'Poorly surveyed'**
+  String get water_poorSurvey;
+
+  /// No description provided for @water_needsOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'needs opening'**
+  String get water_needsOpening;
+
+  /// No description provided for @water_magneticModelOld.
+  ///
+  /// In en, this message translates to:
+  /// **'Bearings from a magnetic model valid to 2030'**
+  String get water_magneticModelOld;
+
+  /// No description provided for @water_couldntKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Closer than {distance} to land'**
+  String water_couldntKeep(String distance);
+
+  /// A row in a trip on the water that opens to the bridges and charted areas the trip passes
+  ///
+  /// In en, this message translates to:
+  /// **'On the way'**
+  String get water_onTheWay;
+
+  /// No description provided for @water_stretch.
+  ///
+  /// In en, this message translates to:
+  /// **'{length}, from {from} along'**
+  String water_stretch(String length, String from);
+
+  /// No description provided for @water_speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get water_speed;
+
+  /// No description provided for @water_draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get water_draft;
+
+  /// No description provided for @water_underKeel.
+  ///
+  /// In en, this message translates to:
+  /// **'Room under the keel'**
+  String get water_underKeel;
+
+  /// No description provided for @water_preferDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred depth'**
+  String get water_preferDepth;
+
+  /// No description provided for @water_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get water_none;
+
+  /// No description provided for @water_mastHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Mast height'**
+  String get water_mastHeight;
+
+  /// No description provided for @water_offLand.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance off land'**
+  String get water_offLand;
+
+  /// No description provided for @water_avoidLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic lanes'**
+  String get water_avoidLanes;
+
+  /// No description provided for @water_avoidSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security zones'**
+  String get water_avoidSecurity;
+
+  /// No description provided for @water_avoidOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Bridges that open'**
+  String get water_avoidOpening;
+
+  /// No description provided for @water_notForNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for navigation'**
+  String get water_notForNavigation;
+
+  /// No description provided for @water_noData.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Water routing for this chart area in Offline maps.'**
+  String get water_noData;
+
+  /// No description provided for @water_routingMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Water routing for {area} isn\'t on this phone.'**
+  String water_routingMissing(String area);
+
+  /// No description provided for @route_onLand.
+  ///
+  /// In en, this message translates to:
+  /// **'Route on land'**
+  String get route_onLand;
+
+  /// No description provided for @route_onWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Route on the water'**
+  String get route_onWater;
+
+  /// No description provided for @water_noTiles.
+  ///
+  /// In en, this message translates to:
+  /// **'No water routing here'**
+  String get water_noTiles;
+
+  /// No description provided for @water_mixedBuilds.
+  ///
+  /// In en, this message translates to:
+  /// **'Update water routing in Offline maps: its areas are of different builds.'**
+  String get water_mixedBuilds;
+
+  /// No description provided for @water_noWater.
+  ///
+  /// In en, this message translates to:
+  /// **'No water here the boat can use'**
+  String get water_noWater;
+
+  /// No description provided for @water_unchartedSpans.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Under 1 span with no charted clearance} other{Under {count} spans with no charted clearance}}'**
+  String water_unchartedSpans(int count);
 
   /// No description provided for @appSettings_coordinateFormat.
   ///

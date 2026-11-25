@@ -1,4 +1,5 @@
 import 'package:traxroute/traxroute.dart' show PathType, RouteOptions;
+import 'package:traxwater/traxwater.dart' show WaterRouteOptions;
 
 import 'channel.dart';
 
@@ -54,6 +55,12 @@ class AppSettings {
   /// The route sheet's path type and options, kept for every route.
   final PathType routePathType;
   final RouteOptions routeOptions;
+
+  /// The boat, for every trip on the water.
+  final WaterRouteOptions waterRouteOptions;
+
+  /// "Don't show this again" on the boat asked before a trip on the water.
+  final bool waterBoatAskDismissed;
 
   /// Line of sight: your antenna (`handHeld`, `vehicle` or `raised`), and
   /// the raised one's height in metres (null: 20 ft or 6 m).
@@ -172,6 +179,8 @@ class AppSettings {
     this.mapTheme = 'light',
     this.routePathType = PathType.hiking,
     this.routeOptions = const RouteOptions(),
+    this.waterRouteOptions = const WaterRouteOptions(),
+    this.waterBoatAskDismissed = false,
     this.losAntenna = 'handHeld',
     this.losRaisedM,
     this.notificationsEnabled = true,
@@ -260,6 +269,8 @@ class AppSettings {
       'map_theme': mapTheme,
       'route_path_type': routePathType.name,
       'route_options': routeOptions.toJson(),
+      'water_route_options': waterRouteOptions.toJson(),
+      'water_boat_ask_dismissed': waterBoatAskDismissed,
       'los_antenna': losAntenna,
       'los_raised_m': losRaisedM,
       'notifications_enabled': notificationsEnabled,
@@ -340,6 +351,13 @@ class AppSettings {
         final Map<String, dynamic> options => RouteOptions.fromJson(options),
         _ => const RouteOptions(),
       },
+      waterRouteOptions: switch (json['water_route_options']) {
+        final Map<String, dynamic> options => WaterRouteOptions.fromJson(
+          options,
+        ),
+        _ => const WaterRouteOptions(),
+      },
+      waterBoatAskDismissed: json['water_boat_ask_dismissed'] as bool? ?? false,
       losAntenna: json['los_antenna'] as String? ?? 'handHeld',
       losRaisedM: (json['los_raised_m'] as num?)?.toDouble(),
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
@@ -444,6 +462,8 @@ class AppSettings {
     String? mapTheme,
     PathType? routePathType,
     RouteOptions? routeOptions,
+    WaterRouteOptions? waterRouteOptions,
+    bool? waterBoatAskDismissed,
     String? losAntenna,
     double? losRaisedM,
     bool? notificationsEnabled,
@@ -508,6 +528,9 @@ class AppSettings {
       mapTheme: mapTheme ?? this.mapTheme,
       routePathType: routePathType ?? this.routePathType,
       routeOptions: routeOptions ?? this.routeOptions,
+      waterRouteOptions: waterRouteOptions ?? this.waterRouteOptions,
+      waterBoatAskDismissed:
+          waterBoatAskDismissed ?? this.waterBoatAskDismissed,
       losAntenna: losAntenna ?? this.losAntenna,
       losRaisedM: losRaisedM ?? this.losRaisedM,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,

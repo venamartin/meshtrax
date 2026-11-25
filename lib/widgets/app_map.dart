@@ -12,6 +12,7 @@ import '../screens/offline_maps_screen.dart';
 import '../services/app_settings_service.dart';
 import '../services/map_packs_service.dart';
 import '../services/routing_service.dart';
+import '../services/water_routing_service.dart';
 import '../utils/format_bytes.dart';
 import 'charts_notice_dialog.dart';
 
@@ -234,11 +235,16 @@ class _AppMapState extends State<AppMap> {
     final routingNotices = context.select<RoutingService?, List<String>?>(
       (r) => r?.notices,
     );
+    final waterCredits = context.select<WaterRoutingService?, List<String>?>(
+      (w) => w?.credits,
+    );
     final credits = [
       ...creditsIn([
         ...?style?.credits,
-        // Routes draw on any map while routing data is installed.
+        // Routes draw on any map while routing data is installed, and
+        // trips on the water on the charts.
         ...?routingCredits,
+        if (type == MapType.charts) ...?waterCredits,
         // The hints' park lists color the street map's parks.
         if (type == MapType.osm && settings.mapParks)
           ...?maps.hints?.parkCredits,

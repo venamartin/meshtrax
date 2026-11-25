@@ -23,6 +23,8 @@ import 'package:traxlos/traxlos.dart'
 import 'package:traxpoi/traxpoi.dart'
     show GeoPoint, PlaceDetail, PoiRegion, SummaryLink;
 import 'package:traxroute/traxroute.dart' as trax show RouteResult;
+import 'package:traxwater/traxwater.dart'
+    show WaterRoutingException, WaterRoutingProblem, WaterTrip;
 import 'package:traxshare/traxshare.dart' show TrailPoint;
 
 import '../connector/meshcore_connector.dart';
@@ -53,6 +55,7 @@ import '../services/trip_service.dart';
 import '../services/trax_service.dart';
 import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
+import '../services/water_routing_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/contact_search.dart';
 import '../utils/platform_info.dart';
@@ -66,6 +69,8 @@ import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
 import '../widgets/radio_ask_sheet.dart';
 import '../widgets/route_sheet.dart';
+import '../widgets/water_boat_dialog.dart';
+import '../widgets/water_route_parts.dart';
 import '../widgets/quick_switch_bar.dart';
 import 'chat_screen.dart';
 import 'chats_screen.dart';
@@ -203,7 +208,7 @@ class _MapScreenState extends State<MapScreen> {
 
   /// The route this map last kept in [UiViewStateService.mapRoute], or took
   /// from it. Another there since was kept by a map over a chat.
-  MapRoute? _keptRoute;
+  MapRoute<trax.RouteResult>? _keptRoute;
 
   /// The Map tab opened on a route started over a chat: shown whole.
   bool _routeUnseen = false;
@@ -230,6 +235,17 @@ class _MapScreenState extends State<MapScreen> {
   String? _routeError;
   int _routeGeneration = 0;
   final _sheetKey = GlobalKey<RouteSheetState>();
+
+  /// The trip on the water: charts show it in the route's place, and the
+  /// other maps the route on land. Each keeps its own, and switching maps
+  /// swaps them (owner, 2026-11-24).
+  final _water = _WaterRoute();
+  final _waterSheetKey = GlobalKey<RouteSheetState>();
+
+  /// Whether the map last built showed charts, and the land map shown
+  /// last: a route on land from the charts goes there.
+  bool? _builtOnWater;
+  MapType _landMapType = MapType.osm;
 
   // Line of sight or radio reach: one question at a time, in a sheet that
   // takes the route sheet's place while it is open. The worker isolate
@@ -288,6 +304,23 @@ class _MapScreenState extends State<MapScreen> {
   /// chat had none (owner, 2026-11-16, after Navigate).
   bool get _canFullScreen => !widget.pickPosition;
 
+  /// Charts show the trip on the water, the other maps the route on land.
+  bool get _onWater =>
+      MapType.parse(context.read<AppSettingsService>().settings.mapType) ==
+      MapType.charts;
+
+  /// Where the route shown goes, on land or on the water.
+  ({String name, LatLng point})? get _shownTo =>
+      _onWater ? _water.to : _routeTo;
+  bool get _shownFound => _onWater ? _water.trip != null : _route != null;
+  bool get _shownFinding => _onWater ? _water.finding : _routing;
+  GlobalKey<RouteSheetState> get _shownSheetKey =>
+      _onWater ? _waterSheetKey : _sheetKey;
+  Future<void> _findShown(LatLng? selfPosition) =>
+      _onWater ? _findWaterRoute(selfPosition) : _findRoute(selfPosition);
+  void _fitShown() => _onWater ? _fitWaterRoute() : _fitRoute();
+  void _clearShown() => _onWater ? _clearWaterRoute() : _clearRoute();
+
   @override
   void initState() {
     super.initState();
@@ -312,6 +345,12 @@ class _MapScreenState extends State<MapScreen> {
       _route = kept.result;
       _routeFoundFrom = kept.foundFrom?.toLatLong2();
       _routeFoundAt = kept.foundAt;
+    }
+    final keptWater = _water.kept = _isMapTab ? _viewState.mapWaterRoute : null;
+    if (keptWater != null) {
+      _water.unseen = !_viewState.mapWaterRouteSeen;
+      _viewState.mapWaterRouteSeen = true;
+      _water.take(keptWater);
     }
     final connector = _connector = context.read<MeshCoreConnector>();
     // A new channel message may carry a pin.
@@ -340,6 +379,11 @@ class _MapScreenState extends State<MapScreen> {
         !identical(_viewState.mapRoute, _keptRoute)) {
       _takeKeptRoute();
     }
+    if (_isMapTab &&
+        (ModalRoute.isCurrentOf(context) ?? false) &&
+        !identical(_viewState.mapWaterRoute, _water.kept)) {
+      _takeKeptWaterRoute();
+    }
   }
 
   /// Takes the route a map over a chat kept, and shows it whole.
@@ -363,6 +407,8 @@ class _MapScreenState extends State<MapScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_los != null) _closeLos();
+      // Charts show the trip on the water: the route waits for a land map.
+      if (_onWater) return;
       if (_route != null) return _fitRoute();
       final connector = _connector;
       unawaited(
@@ -375,6 +421,24 @@ class _MapScreenState extends State<MapScreen> {
               : null,
         ),
       );
+    });
+  }
+
+  /// Takes the trip on the water a map over a chat kept, as
+  /// [_takeKeptRoute] takes a route; it waits for the charts.
+  void _takeKeptWaterRoute() {
+    final kept = _water.kept = _viewState.mapWaterRoute;
+    _viewState.mapWaterRouteSeen = true;
+    _water.take(kept);
+    if (kept == null) return;
+    _followMe = false;
+    _followOf = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_los != null) _closeLos();
+      if (!_onWater) return;
+      if (_water.trip != null) return _fitWaterRoute();
+      unawaited(_findWaterRoute(_selfPosition(_connector)));
     });
   }
 
@@ -404,7 +468,11 @@ class _MapScreenState extends State<MapScreen> {
         unawaited(_moveTo(position, _focusZoom));
       case MapFocusRoute(:final position, :final label):
         // From your position, not a start picked for the route before.
-        _routeFrom = null;
+        if (_onWater) {
+          _water.from = null;
+        } else {
+          _routeFrom = null;
+        }
         _mapController.move(position.toOvm(), zoom: _focusZoom);
         final connector = _connector;
         _routeHere(
@@ -885,6 +953,20 @@ class _MapScreenState extends State<MapScreen> {
             ? LatLng(connector.selfLatitude!, connector.selfLongitude!)
             : null;
 
+        // Switching between the charts and the other maps swaps the route
+        // shown: one not found yet is found now.
+        final mapType = MapType.parse(settings.mapType) ?? MapType.osm;
+        final onWater = mapType == MapType.charts;
+        if (!onWater) _landMapType = mapType;
+        if (_builtOnWater != null && _builtOnWater != onWater) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _shownTo != null && !_shownFound && !_shownFinding) {
+              unawaited(_findShown(selfPosition));
+            }
+          });
+        }
+        _builtOnWater = onWater;
+
         // Once a run the Map tab goes to your position, as soon as the
         // radio's GPS has one, unless you've touched the map first. A map
         // still loading opens there.
@@ -952,20 +1034,19 @@ class _MapScreenState extends State<MapScreen> {
             if (widget.focus case final focus?) {
               // What it was asked to show. A route kept from the last visit
               // stays, found again if it wasn't.
-              if (_routeTo != null &&
-                  _route == null &&
-                  focus is! MapFocusRoute) {
-                unawaited(_findRoute(selfPosition));
+              if (_shownTo != null && !_shownFound && focus is! MapFocusRoute) {
+                unawaited(_findShown(selfPosition));
               }
               _show(focus);
-            } else if (_routeTo != null) {
+            } else if (_shownTo != null) {
               // A route kept from the last visit: the map stays as it was
               // left, and the route is found again if it wasn't. One
               // started over a chat is shown whole.
-              if (_route == null) {
-                unawaited(_findRoute(selfPosition));
-              } else if (!_keepView || _routeUnseen) {
-                _fitRoute();
+              if (!_shownFound) {
+                unawaited(_findShown(selfPosition));
+              } else if (!_keepView ||
+                  (onWater ? _water.unseen : _routeUnseen)) {
+                _fitShown();
               }
             } else if (_isMapTab && (_keepView || _viewState.mapWentToGps)) {
               // Where it was left, or on your position.
@@ -987,7 +1068,7 @@ class _MapScreenState extends State<MapScreen> {
         // A wide screen has the route at the side of the map, not over it.
         final screen = MediaQuery.sizeOf(context);
         final routeAtSide = screen.width >= 600 && screen.width > screen.height;
-        final sideSheet = routeAtSide && (_los != null || _routeTo != null);
+        final sideSheet = routeAtSide && (_los != null || _shownTo != null);
         final groupButton =
             traxOn &&
             _los == null &&
@@ -1003,7 +1084,7 @@ class _MapScreenState extends State<MapScreen> {
               allowBack &&
               !_fullScreen &&
               _los == null &&
-              (_routeTo == null || _overScreen),
+              (_shownTo == null || _overScreen),
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
             if (_fullScreen) return _setFullScreen(false);
@@ -1012,8 +1093,10 @@ class _MapScreenState extends State<MapScreen> {
               if (!(_losKey.currentState?.lower() ?? false)) _closeLos();
               return;
             }
-            if (_routeTo == null) return;
-            if (!(_sheetKey.currentState?.lower() ?? false)) _clearRoute();
+            if (_shownTo == null) return;
+            if (!(_shownSheetKey.currentState?.lower() ?? false)) {
+              _clearShown();
+            }
           },
           child: Scaffold(
             appBar: _fullScreen
@@ -1147,6 +1230,12 @@ class _MapScreenState extends State<MapScreen> {
                     width: RouteSheet.sideWidth,
                     child: _los != null
                         ? _buildLosSheet(side: true)
+                        : onWater
+                        ? _buildWaterSheet(
+                            settingsService,
+                            selfPosition,
+                            side: true,
+                          )
                         : _buildRouteSheet(
                             settingsService,
                             selfPosition,
@@ -1212,7 +1301,9 @@ class _MapScreenState extends State<MapScreen> {
                                       ),
                               ),
                           ..._trailLines(tripPositions, beacon),
-                          ..._routeOverlays(),
+                          ...onWater
+                              ? _waterOverlays(darkMap: mapDark)
+                              : _routeOverlays(),
                           ..._losOverlays(),
                           if (_isBuildingPathTrace && _points.length > 1)
                             MapLine(
@@ -1356,8 +1447,10 @@ class _MapScreenState extends State<MapScreen> {
                 ? null
                 : _los != null
                 ? _buildLosSheet(side: false)
-                : _routeTo == null
+                : _shownTo == null
                 ? null
+                : onWater
+                ? _buildWaterSheet(settingsService, selfPosition, side: false)
                 : _buildRouteSheet(settingsService, selfPosition, side: false),
             bottomNavigationBar: _overScreen || _fullScreen
                 ? null
@@ -2017,11 +2110,7 @@ class _MapScreenState extends State<MapScreen> {
     _SharedMarker? marker,
   }) {
     final l10n = context.l10n;
-    final routing = context.read<RoutingService?>();
-    final canRoute =
-        routing != null &&
-        routing.available &&
-        routing.offeredAt((lat: position.latitude, lon: position.longitude));
+    final canRoute = _canRouteAt(position);
     final format = coordFormatOf(context.read<AppSettingsService>().settings);
     final lines = positionLines(position.latitude, position.longitude, format);
     final selfPosition = _selfPosition(_connector);
@@ -2976,18 +3065,14 @@ class _MapScreenState extends State<MapScreen> {
     String? title,
     Future<void>? centerAfter,
   }) {
-    final routing = context.read<RoutingService?>();
-    final canRoute =
-        routing != null &&
-        routing.available &&
-        routing.offeredAt((lat: position.latitude, lon: position.longitude));
+    final canRoute = _canRouteAt(position);
     final format = coordFormatOf(context.read<AppSettingsService>().settings);
     final lines = positionLines(position.latitude, position.longitude, format);
     final name = title ?? lines.first;
     // What's set already, so it's clear whether a route goes from or to.
     final l10n = context.l10n;
-    final to = _routeTo;
-    final from = _routeFrom;
+    final to = _shownTo;
+    final from = _onWater ? _water.from : _routeFrom;
     final startNow = from != null
         ? l10n.route_startNow(
             positionLines(from.latitude, from.longitude, format).first,
@@ -3398,7 +3483,28 @@ class _MapScreenState extends State<MapScreen> {
     return out;
   }
 
+  /// Whether Route here is on offer at [point] on the map shown: routing
+  /// on land, or on the charts water routing.
+  bool _canRouteAt(LatLng point) {
+    if (_onWater) {
+      return context.read<WaterRoutingService?>()?.offeredAt(point.toOvm()) ??
+          false;
+    }
+    final routing = context.read<RoutingService?>();
+    return routing != null &&
+        routing.available &&
+        routing.offeredAt((lat: point.latitude, lon: point.longitude));
+  }
+
   void _routeHere(String name, LatLng to, LatLng? selfPosition) {
+    if (_onWater) {
+      unawaited(_waterHere(name, to, selfPosition));
+    } else {
+      _landHere(name, to, selfPosition);
+    }
+  }
+
+  void _landHere(String name, LatLng to, LatLng? selfPosition) {
     final routing = context.read<RoutingService?>();
     if (routing == null || !routing.hasRoutingData) {
       showDismissibleSnackBar(
@@ -3414,9 +3520,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _routeFromHere(LatLng from, LatLng? selfPosition) {
-    setState(() => _routeFrom = from);
-    if (_routeTo != null) {
-      unawaited(_findRoute(selfPosition));
+    setState(() {
+      if (_onWater) {
+        _water.from = from;
+      } else {
+        _routeFrom = from;
+      }
+    });
+    if (_shownTo != null) {
+      unawaited(_findShown(selfPosition));
     } else {
       showDismissibleSnackBar(
         context,
@@ -3556,23 +3668,23 @@ class _MapScreenState extends State<MapScreen> {
   void _fitRoute() {
     final r = _route, to = _routeTo;
     if (r == null || to == null) return;
-    final sheet = _sheetKey.currentState;
-    _mapController.fitPoints(
-      [
-        for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
-        to.point.toOvm(),
-      ],
-      padding: EdgeInsets.fromLTRB(
-        48,
-        48,
-        48 + MapControls.width,
-        // A sheet over most of the map still leaves the route some of it.
-        sheet == null
-            ? 48
-            : max(48, min(sheet.restHeight() + 48, sheet.room - 120)),
-      ),
-    );
+    _mapController.fitPoints([
+      for (final p in r.points) LatLng(p.lat, p.lon).toOvm(),
+      to.point.toOvm(),
+    ], padding: _routePadding(_sheetKey.currentState));
   }
+
+  /// Room around a route fitted on the map: clear of the map's buttons and
+  /// of [sheet].
+  EdgeInsets _routePadding(RouteSheetState? sheet) => EdgeInsets.fromLTRB(
+    48,
+    48,
+    48 + MapControls.width,
+    // A sheet over most of the map still leaves the route some of it.
+    sheet == null
+        ? 48
+        : max(48, min(sheet.restHeight() + 48, sheet.room - 120)),
+  );
 
   void _clearRoute() {
     setState(() {
@@ -3664,6 +3776,15 @@ class _MapScreenState extends State<MapScreen> {
         if (to == null) return;
         unawaited(LinkHandler.openInMapsApp(context, to.point, label: to.name));
       },
+      actions: [
+        if ((_route, _routeTo) case (final r?, final to?)
+            when !r.reachesDestination && _waterOfferedAt(to.point))
+          (
+            icon: Icons.directions_boat_outlined,
+            label: context.l10n.route_onWater,
+            onPressed: () => unawaited(_routeOnOtherMap(to, selfPosition)),
+          ),
+      ],
       side: side,
       // With no quick-switch bar under the map, the sheet reaches the
       // screen's edge.
@@ -3712,6 +3833,316 @@ class _MapScreenState extends State<MapScreen> {
         MapMarker(
           id: 'route-start',
           position: LatLng(r.points.first.lat, r.points.first.lon).toOvm(),
+          color: routeStartColor,
+          radius: 7,
+          interactive: false,
+        ),
+      ],
+      MapMarker(
+        id: 'route-end',
+        position: to.point.toOvm(),
+        color: const Color(0xFFC62828),
+        radius: 7,
+        interactive: false,
+      ),
+    ];
+  }
+
+  /// Whether a chart area at [point] has water routing, on the device or
+  /// to download, for a route on land that can't reach it.
+  bool _waterOfferedAt(LatLng point) =>
+      context.read<WaterRoutingService?>()?.areaAt(point.toOvm()) != null;
+
+  /// The other map's route to where the one shown can't reach: the land
+  /// map's from the charts, the charts' from a land map. Each map's route
+  /// keeps its own start.
+  Future<void> _routeOnOtherMap(
+    ({String name, LatLng point}) to,
+    LatLng? selfPosition,
+  ) async {
+    final toWater = !_onWater;
+    await context.read<AppSettingsService>().setMapType(
+      toWater ? MapType.charts.name : _landMapType.name,
+    );
+    if (!mounted) return;
+    if (toWater) {
+      await _waterHere(to.name, to.point, selfPosition);
+    } else {
+      _landHere(to.name, to.point, selfPosition);
+    }
+  }
+
+  Future<void> _waterHere(String name, LatLng to, LatLng? selfPosition) async {
+    final water = context.read<WaterRoutingService?>();
+    if (water == null || !water.hasRoutingData) {
+      final area = water?.areaAt(to.toOvm());
+      showDismissibleSnackBar(
+        context,
+        content: Text(context.l10n.water_noData),
+        action: area == null
+            ? null
+            : SnackBarAction(
+                label: context.l10n.navigate_showDownload,
+                onPressed: () => _showWaterDownload(area.packRegion),
+              ),
+      );
+      return;
+    }
+    if (!await askWaterBoatIfNeeded(context, notices: water.notices) ||
+        !mounted) {
+      return;
+    }
+    // One sheet at a time: the trip's takes over.
+    if (_los != null) _closeLos();
+    setState(() => _water.to = (name: name, point: to));
+    unawaited(_findWaterRoute(selfPosition));
+  }
+
+  /// Offline maps on the charts, with [area]'s water routing ticked.
+  void _showWaterDownload(String? area) => unawaited(
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => area == null
+            ? const OfflineMapsScreen(initialTab: OfflineMapsTab.charts)
+            : OfflineMapsScreen(initialWaterRouting: area),
+      ),
+    ),
+  );
+
+  Future<void> _findWaterRoute(LatLng? selfPosition) async {
+    final w = _water;
+    final to = w.to;
+    final water = context.read<WaterRoutingService?>();
+    if (to == null || water == null) return;
+    final from = w.from ?? selfPosition;
+    final generation = ++w.generation;
+    final l10n = context.l10n;
+    if (from == null) {
+      setState(() {
+        w.trip = null;
+        w.finding = false;
+        w.error = l10n.route_noStart;
+        w.problem = null;
+      });
+      _keepWaterRoute();
+      return;
+    }
+    setState(() {
+      w.finding = true;
+      w.error = null;
+      w.problem = null;
+    });
+    _keepWaterRoute();
+    final boat = context.read<AppSettingsService>().settings.waterRouteOptions;
+    try {
+      final trip = await water.route(
+        (lat: from.latitude, lon: from.longitude),
+        (lat: to.point.latitude, lon: to.point.longitude),
+        options: boat,
+      );
+      if (!mounted || generation != w.generation) return;
+      setState(() {
+        w.trip = trip;
+        w.finding = false;
+        w.foundFrom = from;
+        w.foundAt = DateTime.now();
+      });
+      _keepWaterRoute();
+      // Once the sheet is laid out for this trip, to fit clear of it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && generation == w.generation && _onWater) {
+          _fitWaterRoute();
+        }
+      });
+    } on Object catch (e) {
+      appLogger.warn('Water route failed: $e', tag: 'Routing');
+      if (!mounted || generation != w.generation) return;
+      final problem = e is WaterRoutingException ? e.problem : null;
+      setState(() {
+        w.trip = null;
+        w.finding = false;
+        w.problem = problem;
+        w.error = switch (problem) {
+          WaterRoutingProblem.noTiles => l10n.water_noTiles,
+          WaterRoutingProblem.mixedBuilds => l10n.water_mixedBuilds,
+          WaterRoutingProblem.noWater => l10n.water_noWater,
+          null => l10n.route_none,
+        };
+      });
+    }
+  }
+
+  void _fitWaterRoute() {
+    final trip = _water.trip, to = _water.to;
+    if (trip == null || to == null) return;
+    _mapController.fitPoints([
+      for (final p in trip.waypoints) LatLng(p.lat, p.lon).toOvm(),
+      to.point.toOvm(),
+    ], padding: _routePadding(_waterSheetKey.currentState));
+  }
+
+  void _clearWaterRoute() {
+    setState(_water.clear);
+    _keepWaterRoute();
+  }
+
+  /// Keeps the trip on the water for the Map tab, as [_keepRoute] keeps the
+  /// route on land.
+  void _keepWaterRoute() {
+    if (widget.pickPosition) return;
+    final w = _water;
+    if (!(_pageRoute?.isCurrent ?? true) &&
+        !identical(_viewState.mapWaterRoute, w.kept)) {
+      return;
+    }
+    final to = w.to;
+    _viewState.mapWaterRoute = w.kept = to == null
+        ? null
+        : (
+            name: to.name,
+            to: to.point.toOvm(),
+            from: w.from?.toOvm(),
+            result: w.finding ? null : w.trip,
+            foundFrom: w.foundFrom?.toOvm(),
+            foundAt: w.foundAt,
+          );
+    _viewState.mapWaterRouteSeen = _isMapTab;
+  }
+
+  Widget _buildWaterSheet(
+    AppSettingsService settingsService,
+    LatLng? selfPosition, {
+    required bool side,
+  }) {
+    final settings = settingsService.settings;
+    final l10n = context.l10n;
+    final water = context.read<WaterRoutingService?>();
+    final routing = context.read<RoutingService?>();
+    final w = _water;
+    final to = w.to!;
+    final from = w.from;
+    final foundFrom = w.foundFrom;
+    final movedAway =
+        from == null &&
+        w.trip != null &&
+        foundFrom != null &&
+        selfPosition != null &&
+        const Distance().as(LengthUnit.Meter, foundFrom, selfPosition) > 100;
+    // Short of the place, or no water there: the land map's route where it
+    // has one. Routing missing at an end: its download.
+    final short =
+        w.trip?.endsShort != null ||
+        w.problem == WaterRoutingProblem.noTiles ||
+        w.problem == WaterRoutingProblem.noWater;
+    final missing = [
+      for (final p in [to.point, ?(from ?? selfPosition)])
+        if (water?.areaAt(p.toOvm()) case final area?
+            when !water!.isInstalled(area.packRegion))
+          area.packRegion,
+    ].firstOrNull;
+    return RouteSheet.water(
+      key: side ? null : _waterSheetKey,
+      destination: to.name,
+      start: from == null
+          ? null
+          : positionLines(
+              from.latitude,
+              from.longitude,
+              coordFormatOf(settings),
+            ).first,
+      positionMayBeOld: _connector.selfPositionMayBeOld,
+      positionKnownAt: _connector.selfGpsChangedAt,
+      youWereAt: movedAway ? w.foundAt : null,
+      onUseMyPosition: () {
+        setState(() => w.from = null);
+        unawaited(_findWaterRoute(selfPosition));
+      },
+      water: WaterRouteBody(
+        boat: settings.waterRouteOptions,
+        onBoat: (boat) async {
+          await settingsService.setWaterRouteOptions(boat);
+          unawaited(_findWaterRoute(selfPosition));
+        },
+        trip: w.trip,
+        notices: water?.notices ?? const [],
+      ),
+      loading: w.finding,
+      error: w.error,
+      units: settings.unitSystem,
+      onClose: _clearWaterRoute,
+      actions: [
+        if (short &&
+            routing != null &&
+            routing.available &&
+            routing.offeredAt((
+              lat: to.point.latitude,
+              lon: to.point.longitude,
+            )))
+          (
+            icon: Icons.directions_outlined,
+            label: l10n.route_onLand,
+            onPressed: () => unawaited(_routeOnOtherMap(to, selfPosition)),
+          ),
+        if (w.problem == WaterRoutingProblem.mixedBuilds ||
+            (w.problem == WaterRoutingProblem.noTiles && missing != null))
+          (
+            icon: Icons.download_outlined,
+            label: l10n.navigate_showDownload,
+            onPressed: () => _showWaterDownload(missing),
+          ),
+      ],
+      side: side,
+      // With no quick-switch bar under the map, the sheet reaches the
+      // screen's edge.
+      bottomInset: side || !_overScreen
+          ? 0
+          : MediaQuery.paddingOf(context).bottom,
+    );
+  }
+
+  /// The trip on the water, on the chart in its own colour: dotted from
+  /// the point picked to where it starts, and on from where it ends to the
+  /// place asked for.
+  List<MapOverlay> _waterOverlays({required bool darkMap}) {
+    final to = _water.to;
+    if (to == null) return const [];
+    final trip = _water.trip;
+    final color = waterRouteColor(darkMap: darkMap);
+    final points = [
+      for (final p in trip?.waypoints ?? const <({double lat, double lon})>[])
+        LatLng(p.lat, p.lon).toOvm(),
+    ];
+    return [
+      if (trip != null && points.length > 1) ...[
+        if (trip.from.movedM > 1)
+          MapLine(
+            id: 'route-start-gap',
+            points: [
+              LatLng(trip.from.asked.lat, trip.from.asked.lon).toOvm(),
+              points.first,
+            ],
+            color: color,
+            width: 2,
+            pattern: MapLinePattern.dotted,
+          ),
+        if (trip.endsShort != null || trip.to.movedM > 1)
+          MapLine(
+            id: 'route-rest',
+            points: [points.last, to.point.toOvm()],
+            color: color,
+            width: 2,
+            pattern: MapLinePattern.dotted,
+          ),
+        MapLine(
+          id: 'route',
+          points: points,
+          color: color.withValues(alpha: 0.85),
+          width: 5,
+        ),
+        MapMarker(
+          id: 'route-start',
+          position: points.first,
           color: routeStartColor,
           radius: 7,
           interactive: false,
@@ -3856,11 +4287,7 @@ class _MapScreenState extends State<MapScreen> {
     final name = detail.place.name.isEmpty
         ? poiKindLabel(context.l10n, detail.place.kind)
         : detail.place.name;
-    final routing = context.read<RoutingService?>();
-    final canRoute =
-        routing != null &&
-        routing.available &&
-        routing.offeredAt((lat: detail.place.lat, lon: detail.place.lon));
+    final canRoute = _canRouteAt(point);
     await _showPointSheet(
       point,
       centerAfter: centerAfter,
@@ -4908,4 +5335,43 @@ class _SharedMarker {
   String get signature =>
       '$id|${position.latitude},${position.longitude}|'
       '${updatedAt?.millisecondsSinceEpoch}|${cancelledAt != null}';
+}
+
+/// A trip on the water on the main map, kept as the route on land is:
+/// where to and from (null: your position), the trip found, and from where
+/// and when.
+class _WaterRoute {
+  ({String name, LatLng point})? to;
+  LatLng? from;
+  WaterTrip? trip;
+  LatLng? foundFrom;
+  DateTime? foundAt;
+  bool finding = false;
+  String? error;
+
+  /// Why there's no trip, where the data says.
+  WaterRoutingProblem? problem;
+  int generation = 0;
+
+  /// The trip this map last kept in [UiViewStateService.mapWaterRoute], or
+  /// took from it.
+  MapRoute<WaterTrip>? kept;
+
+  /// The Map tab opened on a trip started over a chat: shown whole.
+  bool unseen = false;
+
+  /// Takes [kept] as this trip: one still being found is dropped.
+  void take(MapRoute<WaterTrip>? kept) {
+    generation++;
+    to = kept == null ? null : (name: kept.name, point: kept.to.toLatLong2());
+    from = kept?.from?.toLatLong2();
+    trip = kept?.result;
+    foundFrom = kept?.foundFrom?.toLatLong2();
+    foundAt = kept?.foundAt;
+    finding = false;
+    error = null;
+    problem = null;
+  }
+
+  void clear() => take(null);
 }

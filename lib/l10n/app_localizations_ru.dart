@@ -7722,6 +7722,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'Данные маршрутов на накопителе охватывают не все регионы этого устройства.';
 
   @override
+  String get offlineMaps_kindWaterRouting => 'Water routing';
+
+  @override
+  String get offlineMaps_kindWaterRoutingDetail => 'Routes on the water';
+
+  @override
+  String get offlineMaps_waterRoutingWithChart =>
+      'Routes on the water. Its chart comes too.';
+
+  @override
+  String get offlineMaps_waterRoutingUpdatesChart =>
+      'Routes on the water. Its chart updates too.';
+
+  @override
+  String get offlineMaps_waterRoutingRebuilding =>
+      'Being rebuilt for new charts';
+
+  @override
   String get map_search => 'Поиск';
 
   @override
@@ -7759,6 +7777,249 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get route_pin => 'Точка на карте';
+
+  @override
+  String get water_yourBoat => 'Your boat';
+
+  @override
+  String get water_yourBoatIntro =>
+      'Every trip on the water keeps to these. Change them later in Route options.';
+
+  @override
+  String water_boatDraft(String draft, String keel) {
+    return '$draft draft + $keel';
+  }
+
+  @override
+  String water_boatOffLand(String distance) {
+    return '$distance off land';
+  }
+
+  @override
+  String water_boatMast(String height) {
+    return '$height mast';
+  }
+
+  @override
+  String get water_classRestricted => 'Restricted area';
+
+  @override
+  String get water_classCaution => 'Caution area';
+
+  @override
+  String get water_classMilitary => 'Military area';
+
+  @override
+  String get water_classAnchorage => 'Anchorage';
+
+  @override
+  String get water_classDumping => 'Dumping ground';
+
+  @override
+  String get water_classTrafficLane => 'Traffic lane';
+
+  @override
+  String get water_classSeparation => 'Separation zone';
+
+  @override
+  String get water_classPrecautionary => 'Precautionary area';
+
+  @override
+  String get water_classInshoreTraffic => 'Inshore traffic zone';
+
+  @override
+  String get water_classMarineFarm => 'Marine farm';
+
+  @override
+  String get water_classBridge => 'Bridge';
+
+  @override
+  String get water_classCable => 'Overhead cable';
+
+  @override
+  String get water_classPipe => 'Overhead pipe';
+
+  @override
+  String get water_classConveyor => 'Conveyor';
+
+  @override
+  String get water_classGate => 'Gate';
+
+  @override
+  String get water_movedLand => 'that point is on land or off the charts';
+
+  @override
+  String get water_movedShallow => 'it\'s too shallow there';
+
+  @override
+  String get water_movedHazard =>
+      'it\'s near a hazard too shallow for the boat';
+
+  @override
+  String get water_movedNoEntry => 'entry is prohibited there';
+
+  @override
+  String get water_movedMast => 'something there is lower than the mast';
+
+  @override
+  String water_startMoved(String distance, String why) {
+    return 'Starts $distance from the point picked: $why.';
+  }
+
+  @override
+  String water_endMoved(String distance, String why) {
+    return 'Ends $distance from the point picked: $why.';
+  }
+
+  @override
+  String water_endsShortDepth(
+    String distance,
+    String destination,
+    String band,
+    String draft,
+  ) {
+    return 'Ends $distance before $destination: charted $band. Drafts to $draft get through.';
+  }
+
+  @override
+  String water_endsShortTooShallow(
+    String distance,
+    String destination,
+    String band,
+  ) {
+    return 'Ends $distance before $destination: charted $band, too shallow to get through.';
+  }
+
+  @override
+  String water_endsShortMast(
+    String distance,
+    String destination,
+    String objects,
+  ) {
+    return 'Ends $distance before $destination: $objects too low for the mast.';
+  }
+
+  @override
+  String water_endsShortNoWater(String distance, String destination) {
+    return 'Ends $distance before $destination: no charted water joins them.';
+  }
+
+  @override
+  String water_endsShortTooLong(String distance, String destination) {
+    return 'Ends $distance before $destination: too long for one route. Plan it in parts.';
+  }
+
+  @override
+  String water_leastDepth(String depth) {
+    return 'Least depth: charted $depth';
+  }
+
+  @override
+  String water_lowestClearance(String height) {
+    return 'Lowest clearance $height';
+  }
+
+  @override
+  String water_lowestClearanceUnder(String height, String name) {
+    return 'Lowest clearance $height, $name';
+  }
+
+  @override
+  String water_shallower(String depth) {
+    return 'Shallower than $depth';
+  }
+
+  @override
+  String get water_poorSurvey => 'Poorly surveyed';
+
+  @override
+  String get water_needsOpening => 'needs opening';
+
+  @override
+  String get water_magneticModelOld =>
+      'Bearings from a magnetic model valid to 2030';
+
+  @override
+  String water_couldntKeep(String distance) {
+    return 'Closer than $distance to land';
+  }
+
+  @override
+  String get water_onTheWay => 'On the way';
+
+  @override
+  String water_stretch(String length, String from) {
+    return '$length, from $from along';
+  }
+
+  @override
+  String get water_speed => 'Speed';
+
+  @override
+  String get water_draft => 'Draft';
+
+  @override
+  String get water_underKeel => 'Room under the keel';
+
+  @override
+  String get water_preferDepth => 'Preferred depth';
+
+  @override
+  String get water_none => 'None';
+
+  @override
+  String get water_mastHeight => 'Mast height';
+
+  @override
+  String get water_offLand => 'Distance off land';
+
+  @override
+  String get water_avoidLanes => 'Traffic lanes';
+
+  @override
+  String get water_avoidSecurity => 'Security zones';
+
+  @override
+  String get water_avoidOpening => 'Bridges that open';
+
+  @override
+  String get water_notForNavigation => 'Not for navigation';
+
+  @override
+  String get water_noData =>
+      'Download Water routing for this chart area in Offline maps.';
+
+  @override
+  String water_routingMissing(String area) {
+    return 'Water routing for $area isn\'t on this phone.';
+  }
+
+  @override
+  String get route_onLand => 'Route on land';
+
+  @override
+  String get route_onWater => 'Route on the water';
+
+  @override
+  String get water_noTiles => 'No water routing here';
+
+  @override
+  String get water_mixedBuilds =>
+      'Update water routing in Offline maps: its areas are of different builds.';
+
+  @override
+  String get water_noWater => 'No water here the boat can use';
+
+  @override
+  String water_unchartedSpans(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Under $count spans with no charted clearance',
+      one: 'Under 1 span with no charted clearance',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get appSettings_coordinateFormat => 'Формат координат';

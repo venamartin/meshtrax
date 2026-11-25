@@ -11,6 +11,7 @@ import '../../services/drive_folder.dart';
 import '../../services/map_packs_service.dart';
 import '../../services/poi_service.dart';
 import '../../services/routing_service.dart';
+import '../../services/water_routing_service.dart';
 import '../../utils/format_bytes.dart';
 
 /// What a pack is, in the user's words: "Map", "Contours 20 ft", "Hill
@@ -63,6 +64,8 @@ String itemLabel(AppLocalizations l10n, DownloadItem item) => switch (item) {
   final PackIndexEntry e => entryLabel(l10n, e),
   DownloadFile(kind: RoutingService.downloadKind) =>
     l10n.offlineMaps_kindRouting,
+  DownloadFile(kind: WaterRoutingService.downloadKind) =>
+    l10n.offlineMaps_kindWaterRouting,
   DownloadFile(kind: PoiService.pointsKind) => l10n.offlineMaps_kindPoi,
   DownloadFile(kind: PoiService.addressesKind) =>
     l10n.offlineMaps_kindAddresses,
@@ -175,9 +178,11 @@ Future<void> confirmDeleteRegion(
   if (!context.mounted) return;
   final routing = context.read<RoutingService?>();
   final poi = context.read<PoiService?>();
+  final water = context.read<WaterRoutingService?>();
   await maps.deleteRegion(path);
   await routing?.remove(path);
   await poi?.remove(path);
+  await water?.remove(path);
   if (context.mounted) {
     showDismissibleSnackBar(
       context,

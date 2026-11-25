@@ -59,6 +59,59 @@ void main() {
     });
   });
 
+  // On the charts Navigate is a trip on the water (owner, 2026-11-24).
+  group('plan on the charts', () {
+    const area = (path: 'charts/us/california', name: 'California');
+
+    NavigatePlan planWater({
+      bool canRoute = true,
+      ({String path, String name})? where = area,
+      bool installed = true,
+      bool hasRoutingData = true,
+      int? bytes = 28000000,
+      bool hasPosition = true,
+    }) => NavigateHelper.planWater(
+      canRoute: canRoute,
+      area: where,
+      installed: installed,
+      hasRoutingData: hasRoutingData,
+      downloadBytes: bytes,
+      hasPosition: hasPosition,
+    );
+
+    test("its area's water routing on the phone: a trip there", () {
+      expect(planWater(), isA<NavigateRoute>());
+      expect(planWater(hasPosition: false), isA<NavigateNeedsStart>());
+    });
+
+    test("its area's water routing to download, with its chart", () {
+      final p = planWater(installed: false, hasRoutingData: false);
+      expect(p, isA<NavigateNeedsDownload>());
+      p as NavigateNeedsDownload;
+      expect(
+        (p.regionPath, p.regionName, p.bytes, p.water),
+        (area.path, 'California', 28000000, true),
+      );
+    });
+
+    test('away from the areas, a trip from what is on the phone', () {
+      expect(planWater(where: null), isA<NavigateRoute>());
+      expect(
+        planWater(installed: false, bytes: null),
+        isA<NavigateRoute>(),
+        reason: 'it ends short, or says why, and offers the land map',
+      );
+      expect(
+        planWater(where: null, hasRoutingData: false),
+        isA<NavigateNoRouting>(),
+      );
+    });
+
+    test('no water routing at all hands the point on', () {
+      expect(planWater(canRoute: false), isA<NavigateOtherApp>());
+    });
+  });
+
   Future<void> pump(WidgetTester tester, Widget child) => tester.pumpWidget(
         MaterialApp(
           locale: const Locale('en'),
@@ -106,6 +159,29 @@ void main() {
     await tester.tapAt(const Offset(5, 5));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets("on the charts the download is the area's water routing", (
+    tester,
+  ) async {
+    const bytes = 28 * 1000 * 1000;
+    await actOn(
+      tester,
+      const NavigateNeedsDownload(
+        'charts/us/california',
+        'California',
+        bytes,
+        water: true,
+      ),
+    );
+    expect(
+      find.text(
+        "Water routing for California isn't on this phone. "
+        'Its download is ${formatBytes(bytes)}.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Show download'), findsOneWidget);
   });
 
   testWidgets('no position: pick a start or another app', (tester) async {

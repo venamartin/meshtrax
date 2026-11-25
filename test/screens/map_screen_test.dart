@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxcoords/traxcoords.dart';
 import 'package:traxmap/traxmap.dart';
 import 'package:traxroute/traxroute.dart';
+import 'package:traxwater/traxwater.dart'
+    show EndsShort, EndsShortReason, WaterRouteOptions, WaterRoutingProblem;
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
@@ -31,6 +33,7 @@ import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
 import 'package:meshtrax/services/routing_service.dart';
 import 'package:meshtrax/services/ui_view_state_service.dart';
+import 'package:meshtrax/services/water_routing_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/icon_help.dart';
@@ -39,8 +42,10 @@ import 'package:meshtrax/widgets/map_layers_sheet.dart';
 import 'package:meshtrax/widgets/quick_switch_bar.dart';
 import 'package:meshtrax/widgets/room_login_dialog.dart';
 import 'package:meshtrax/widgets/route_sheet.dart';
+import 'package:meshtrax/widgets/water_route_parts.dart';
 
 import '../helpers/map_fakes.dart';
+import '../helpers/water_fakes.dart';
 
 class _FakeConnector extends MeshCoreConnector {
   _FakeConnector({required this.nodes, this.self, this.gps});
@@ -264,6 +269,8 @@ void main() {
     MeshCoreConnector connector, {
     Widget screen = const MapScreen(),
     RoutingService? routing,
+    WaterRoutingService? water,
+    String mapType = 'osm',
     Size view = const Size(800, 900),
     UiViewStateService? viewState,
   }) async {
@@ -280,7 +287,8 @@ void main() {
                   ..setMapShowRepeaters(true)
                   ..setMapShowOtherNodes(true)
                   ..setMapShowMarkers(true)
-                  ..setMapShowGuessedLocations(guessedLocationsOn),
+                  ..setMapShowGuessedLocations(guessedLocationsOn)
+                  ..setMapType(mapType),
           ),
           if (viewState != null)
             ChangeNotifierProvider.value(value: viewState)
@@ -289,6 +297,7 @@ void main() {
           ChangeNotifierProvider<MapPacksService>.value(value: maps),
           ChangeNotifierProvider.value(value: PathGraphService()),
           if (routing != null) ChangeNotifierProvider.value(value: routing),
+          if (water != null) ChangeNotifierProvider.value(value: water),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -1227,6 +1236,291 @@ void main() {
       await settle(tester);
       expect(header, findsOneWidget);
       expect(routing.requests, hasLength(1));
+    });
+  });
+
+  // Charts show the trip on the water and the other maps the route on land:
+  // the two never mix (owner, 2026-11-24).
+  group('a trip on the water', () {
+    late FakeWaterRouting water;
+    late _Routing routing;
+
+    setUp(() {
+      maps = MapPacksService(
+        manager: PackManager(Directory('${tmp.path}/packs')),
+        downloader: _NoDownloads(),
+        cacheDir: tmp,
+        styles: StyleRegistry(MemoryStyles(maps: const ['osm', 'charts'])),
+      );
+    });
+
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    AppSettingsService settings(WidgetTester tester) =>
+        tester.element(find.byType(MapScreen)).read<AppSettingsService>();
+
+    Future<void> setMap(WidgetTester tester, String type) async {
+      await settings(tester).setMapType(type);
+      await settle(tester);
+    }
+
+    Future<void> routeHere(WidgetTester tester) async {
+      tester.widget<AppMap>(find.byType(AppMap)).onLongPress!(
+        const LatLng(41.8, -71.4),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Route here'));
+      await settle(tester);
+    }
+
+    Future<void> showCharts(
+      WidgetTester tester, {
+      WaterRoutingProblem? problem,
+      EndsShort? endsShort,
+      UiViewStateService? viewState,
+      Size view = const Size(800, 900),
+      bool askBoat = false,
+    }) async {
+      water = FakeWaterRouting(maps, problem: problem, endsShort: endsShort);
+      routing = _Routing(maps);
+      await pumpMap(
+        tester,
+        _FakeConnector(nodes: const [], self: const ll.LatLng(41.81, -71.42)),
+        routing: routing,
+        water: water,
+        mapType: 'charts',
+        viewState: viewState,
+        view: view,
+      );
+      if (!askBoat) await settings(tester).setWaterBoatAskDismissed(true);
+    }
+
+    RouteSheetBody? body(WidgetTester tester) {
+      final sheets = find.byType(RouteSheet);
+      return sheets.evaluate().isEmpty
+          ? null
+          : tester.widget<RouteSheet>(sheets).body;
+    }
+
+    testWidgets('on the charts, Route here finds one in its own colour', (
+      tester,
+    ) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      await showCharts(tester);
+      await routeHere(tester);
+
+      expect(body(tester), isA<WaterRouteBody>());
+      expect(find.text('5.0 nm · 50 min'), findsOneWidget);
+      expect(water.requests, [const WaterRouteOptions()]);
+      expect(routing.requests, isEmpty);
+      expect(
+        overlay<MapLine>(tester, 'route').color,
+        waterRouteColor(darkMap: false).withValues(alpha: 0.85),
+      );
+    });
+
+    Finder inDialog(Finder f) =>
+        find.descendant(of: find.byType(AlertDialog), matching: f);
+
+    Future<void> tapInDialog(WidgetTester tester, Finder f) async {
+      await tester.ensureVisible(inDialog(f));
+      await tester.pumpAndSettle();
+      await tester.tap(inDialog(f));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'before each new trip the boat, until "Don\'t show this again"',
+      (tester) async {
+        await showCharts(tester, askBoat: true);
+        await routeHere(tester);
+        expect(inDialog(find.text('Your boat')), findsOneWidget);
+        expect(water.requests, isEmpty, reason: 'asked first');
+        expect(
+          inDialog(find.text('Not for navigation')),
+          findsOneWidget,
+          reason: "the first time, the data's notice is in it",
+        );
+
+        await tapInDialog(tester, find.widgetWithText(ChoiceChip, 'None'));
+        await tapInDialog(tester, find.text('OK'));
+        expect(water.requests, [const WaterRouteOptions(offLandNm: null)]);
+        expect(
+          settings(tester).settings.waterRouteOptions,
+          const WaterRouteOptions(offLandNm: null),
+        );
+        expect(body(tester), isA<WaterRouteBody>());
+        expect(find.byType(AlertDialog), findsNothing, reason: 'no 2nd notice');
+
+        // The next trip asks again, without the notice.
+        await routeHere(tester);
+        expect(inDialog(find.text('Your boat')), findsOneWidget);
+        expect(inDialog(find.text('Not for navigation')), findsNothing);
+        await tapInDialog(tester, find.text("Don't show this again"));
+        await tapInDialog(tester, find.text('OK'));
+        expect(water.requests, hasLength(2));
+        expect(settings(tester).settings.waterBoatAskDismissed, isTrue);
+
+        await routeHere(tester);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(water.requests, hasLength(3));
+      },
+    );
+
+    testWidgets('a number still being typed counts; Cancel finds nothing', (
+      tester,
+    ) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      await showCharts(tester, askBoat: true);
+      await routeHere(tester);
+      await tapInDialog(tester, find.text('Cancel'));
+      expect(water.requests, isEmpty);
+      expect(body(tester), isNull);
+
+      await routeHere(tester);
+      final mast = inDialog(
+        find.descendant(
+          of: find
+              .ancestor(
+                of: find.text('Mast height'),
+                matching: find.byType(Row),
+              )
+              .first,
+          matching: find.byType(TextField),
+        ),
+      );
+      await tester.ensureVisible(mast);
+      await tester.enterText(mast, '12');
+      await tester.tap(inDialog(find.text('OK')));
+      await tester.pumpAndSettle();
+      expect(water.requests.single.mastHeightM, 12, reason: 'metres here');
+    });
+
+    testWidgets('on a wide screen, a panel at the side with its legs', (
+      tester,
+    ) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      await showCharts(tester, view: const Size(1200, 800));
+      await routeHere(tester);
+
+      expect(body(tester), isA<WaterRouteBody>());
+      final map = tester.getRect(find.byType(AppMap));
+      final panel = tester.getRect(find.byType(RouteSheet));
+      expect(panel.left, 0);
+      expect(panel.width, RouteSheet.sideWidth);
+      expect(map.left, greaterThan(panel.right));
+      expect(find.text('67°M · 5.0 nm'), findsOneWidget);
+    });
+
+    testWidgets('the first trip shows the data\'s notice, once', (
+      tester,
+    ) async {
+      await showCharts(tester);
+      await routeHere(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Not for navigation'), findsWidgets);
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+
+      await routeHere(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('each map keeps its own: switching swaps them, X ends one', (
+      tester,
+    ) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      await showCharts(tester);
+      await routeHere(tester);
+      expect(body(tester), isA<WaterRouteBody>());
+
+      // The street map has no trip on the water, and a route of its own.
+      await setMap(tester, 'osm');
+      expect(body(tester), isNull);
+      expect(overlays(tester).where((o) => o.id == 'route'), isEmpty);
+      await routeHere(tester);
+      expect(body(tester), isA<LandRouteBody>());
+      expect(routing.requests, hasLength(1));
+
+      // Back on the charts: the trip as it was, not found again.
+      await setMap(tester, 'charts');
+      expect(body(tester), isA<WaterRouteBody>());
+      expect(water.requests, hasLength(1));
+
+      // X ends the trip; the route on land stays.
+      await tester.tap(find.byTooltip('Clear route'));
+      await settle(tester);
+      expect(body(tester), isNull);
+      await setMap(tester, 'osm');
+      expect(body(tester), isA<LandRouteBody>());
+      expect(routing.requests, hasLength(1));
+    });
+
+    testWidgets('one that ends short offers the route on land', (tester) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      await showCharts(
+        tester,
+        endsShort: const EndsShort(
+          reason: EndsShortReason.noConnection,
+          remainingM: 3704,
+          lowObjects: [],
+          deepestWayM: null,
+        ),
+      );
+      await routeHere(tester);
+      expect(
+        find.textContaining('no charted water joins them'),
+        findsOneWidget,
+      );
+      expect(overlay<MapLine>(tester, 'route-rest').points, hasLength(2));
+
+      await tester.tap(find.text('Route on land'));
+      await settle(tester);
+      expect(settings(tester).settings.mapType, 'osm');
+      expect(body(tester), isA<LandRouteBody>());
+      expect(routing.requests, hasLength(1));
+    });
+
+    testWidgets('no water routing at the place says so and offers the land', (
+      tester,
+    ) async {
+      await showCharts(tester, problem: WaterRoutingProblem.noTiles);
+      await routeHere(tester);
+      expect(find.text('No water routing here'), findsOneWidget);
+      expect(find.text('Route on land'), findsOneWidget);
+      // No chart area at either end to get it for.
+      expect(find.text('Show download'), findsNothing);
+    });
+
+    testWidgets('areas of different builds offer the download', (tester) async {
+      await showCharts(tester, problem: WaterRoutingProblem.mixedBuilds);
+      await routeHere(tester);
+      expect(
+        find.text(
+          'Update water routing in Offline maps: its areas are of different '
+          'builds.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Show download'), findsOneWidget);
+      expect(find.text('Route on land'), findsNothing);
+    });
+
+    testWidgets('the Map tab keeps the trip apart from the route on land', (
+      tester,
+    ) async {
+      await PrefsManager.instance.setBool(RouteSheet.waterNoticeToldKey, true);
+      final viewState = UiViewStateService();
+      await showCharts(tester, viewState: viewState);
+      await routeHere(tester);
+      expect(viewState.mapWaterRoute?.result, isNotNull);
+      expect(viewState.mapRoute, isNull);
     });
   });
 

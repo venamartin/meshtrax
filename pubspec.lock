@@ -1468,6 +1468,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  traxwater:
+    dependency: "direct main"
+    description:
+      path: "packages/traxwater"
+      relative: true
+    source: path
+    version: "0.1.0"
   typed_data:
     dependency: transitive
     description:

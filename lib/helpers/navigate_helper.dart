@@ -3,14 +3,16 @@ import 'dart:async';
 import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:traxmap/traxmap.dart' as traxmap show LatLng;
+import 'package:traxmap/traxmap.dart' as traxmap show LatLng, MapType;
 
 import '../connector/meshcore_connector.dart';
 import '../l10n/l10n.dart';
 import '../models/map_focus.dart';
 import '../screens/map_screen.dart';
 import '../screens/offline_maps_screen.dart';
+import '../services/app_settings_service.dart';
 import '../services/routing_service.dart';
+import '../services/water_routing_service.dart';
 import '../utils/format_bytes.dart';
 import 'link_handler.dart';
 
@@ -29,12 +31,19 @@ class NavigateNeedsStart extends NavigatePlan {
   const NavigateNeedsStart();
 }
 
-/// The place's region has routing to download.
+/// The place's region has routing to download: on the charts, its chart
+/// area's water routing.
 class NavigateNeedsDownload extends NavigatePlan {
   final String regionPath;
   final String regionName;
   final int bytes;
-  const NavigateNeedsDownload(this.regionPath, this.regionName, this.bytes);
+  final bool water;
+  const NavigateNeedsDownload(
+    this.regionPath,
+    this.regionName,
+    this.bytes, {
+    this.water = false,
+  });
 }
 
 /// There's no routing to get for the place.
@@ -48,7 +57,8 @@ class NavigateOtherApp extends NavigatePlan {
 }
 
 /// Navigate on a Location or SOS card: our own offline routing first, else
-/// what to download or another map app (owner, 2026-11-16).
+/// what to download or another map app (owner, 2026-11-16). On the charts it
+/// is a trip on the water (owner, 2026-11-24).
 class NavigateHelper {
   /// The plan for a point in [region] (null: no downloadable region there).
   /// [downloadBytes] is null when no routing is on offer for the region.
@@ -69,13 +79,64 @@ class NavigateHelper {
     return const NavigateNoRouting();
   }
 
+  /// The plan on the charts for a point in chart [area] (null: no chart
+  /// area there has water routing). Away from the areas on the device a
+  /// trip is still tried: it ends short or says why, and offers the land
+  /// map.
+  static NavigatePlan planWater({
+    required bool canRoute,
+    required ({String path, String name})? area,
+    required bool installed,
+    required bool hasRoutingData,
+    required int? downloadBytes,
+    required bool hasPosition,
+  }) {
+    if (!canRoute) return const NavigateOtherApp();
+    final route = hasPosition
+        ? const NavigateRoute()
+        : const NavigateNeedsStart();
+    if (area != null && installed) return route;
+    if (area != null && downloadBytes != null) {
+      return NavigateNeedsDownload(
+        area.path,
+        area.name,
+        downloadBytes,
+        water: true,
+      );
+    }
+    return hasRoutingData ? route : const NavigateNoRouting();
+  }
+
   static Future<void> navigate(
     BuildContext context,
     LatLng position, {
     String? label,
   }) async {
-    final routing = context.read<RoutingService?>();
     final connector = context.read<MeshCoreConnector>();
+    final hasPosition = connector.hasValidLocation(
+      connector.selfLatitude,
+      connector.selfLongitude,
+    );
+    final settings = context.read<AppSettingsService>().settings;
+    if (traxmap.MapType.parse(settings.mapType) == traxmap.MapType.charts) {
+      final water = context.read<WaterRoutingService?>();
+      final area = water?.areaAt(
+        traxmap.LatLng(position.latitude, position.longitude),
+      );
+      final todo = area == null
+          ? const <String>{}
+          : water!.downloadsFor({area.packRegion});
+      final plan = NavigateHelper.planWater(
+        canRoute: water != null,
+        area: area == null ? null : (path: area.packRegion, name: area.name),
+        installed: area != null && water!.isInstalled(area.packRegion),
+        hasRoutingData: water?.hasRoutingData ?? false,
+        downloadBytes: todo.isEmpty ? null : water!.bytesFor(todo),
+        hasPosition: hasPosition,
+      );
+      return act(context, plan, position, label: label);
+    }
+    final routing = context.read<RoutingService?>();
     final region = routing?.maps.regions?.regionAt(
       traxmap.LatLng(position.latitude, position.longitude),
     );
@@ -86,10 +147,7 @@ class NavigateHelper {
       region: region == null ? null : (path: region.path, name: region.name),
       installed: region != null && routing!.isInstalled(region.path),
       downloadBytes: offered ? routing.bytesFor({region.path}) : null,
-      hasPosition: connector.hasValidLocation(
-        connector.selfLatitude,
-        connector.selfLongitude,
-      ),
+      hasPosition: hasPosition,
     );
     await act(context, plan, position, label: label);
   }
@@ -116,19 +174,27 @@ class NavigateHelper {
         l10n.navigate_pickStart,
         route,
       ),
-      NavigateNeedsDownload(:final regionPath, :final regionName, :final bytes) => (
-        '${l10n.navigate_routingMissing(regionName)} '
-            '${l10n.navigate_routingSize(formatBytes(bytes))}',
-        l10n.navigate_showDownload,
-        () => unawaited(
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OfflineMapsScreen(initialRegionPath: regionPath),
+      NavigateNeedsDownload(
+        :final regionPath,
+        :final regionName,
+        :final bytes,
+        :final water,
+      ) =>
+        (
+          '${water ? l10n.water_routingMissing(regionName) : l10n.navigate_routingMissing(regionName)} '
+              '${l10n.navigate_routingSize(formatBytes(bytes))}',
+          l10n.navigate_showDownload,
+          () => unawaited(
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => water
+                    ? OfflineMapsScreen(initialWaterRouting: regionPath)
+                    : OfflineMapsScreen(initialRegionPath: regionPath),
+              ),
             ),
           ),
         ),
-      ),
       NavigateNoRouting() => (l10n.navigate_noRoutingHere, null, null),
     };
     if (plan is NavigateOtherApp) return otherApp();

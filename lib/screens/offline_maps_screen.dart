@@ -29,6 +29,9 @@ class OfflineMapsScreen extends StatefulWidget {
   /// Opens the Charts tab with this chart area ticked (its pack region).
   final String? initialChartArea;
 
+  /// Opens the Charts tab with this chart area's water routing ticked.
+  final String? initialWaterRouting;
+
   /// Opens the Maps tab with these packs ticked for one download, from one
   /// region or several (the contours line of sight is missing).
   final List<String>? initialPacks;
@@ -38,6 +41,7 @@ class OfflineMapsScreen extends StatefulWidget {
     this.initialRegionPath,
     this.initialTab,
     this.initialChartArea,
+    this.initialWaterRouting,
     this.initialPacks,
   });
 
@@ -72,12 +76,17 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
     _browsePath = _selectedPath == null
         ? null
         : maps.regions?[_selectedPath!]?.parentPath;
-    _chartSelection = {?widget.initialChartArea};
+    _chartSelection = {
+      ?widget.initialChartArea,
+      if (widget.initialWaterRouting case final area?)
+        ChartsTab.routingTick(area),
+    };
     final offer = widget.initialPacks;
     _offer = offer == null || offer.isEmpty ? null : offer;
     // Maps unless asked otherwise, packs on the device or not: opening on
     // Downloaded hid what there is to get (owner, 2026-11-16).
-    final tab = widget.initialChartArea != null
+    final tab =
+        widget.initialChartArea != null || widget.initialWaterRouting != null
         ? OfflineMapsTab.charts
         : widget.initialTab ?? OfflineMapsTab.maps;
     _tabs = TabController(
@@ -208,7 +217,8 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen>
                           _tabs.animateTo(OfflineMapsTab.charts.index),
                     ),
                   ChartsTab(
-                    openArea: widget.initialChartArea,
+                    openArea:
+                        widget.initialChartArea ?? widget.initialWaterRouting,
                     selected: _chartSelection,
                     onSelectionChanged: (s) =>
                         setState(() => _chartSelection = s),

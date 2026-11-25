@@ -3,15 +3,16 @@ import 'wrm.dart';
 /// A place, in degrees.
 typedef LatLon = ({double lat, double lon});
 
-/// The boat and the trip's limits. The defaults are the plan's starting
-/// values: 6 kn, 6 ft draft with 2 ft under the keel, 1 nm off land.
+/// The boat and the trip's limits. The defaults are the starting values:
+/// 6 kn, 6 ft draft with 2 ft under the keel, 0.25 nm off land (1 nm was
+/// too far off for most water, owner 2026-11-25).
 class WaterRouteOptions {
   const WaterRouteOptions({
     this.speedKn = 6,
     this.draftM = 6 * 0.3048,
     this.underKeelM = 2 * 0.3048,
     this.preferDepthM,
-    this.offLandNm = 1,
+    this.offLandNm = 0.25,
     this.mastHeightM,
     this.avoidTrafficLanes = true,
     this.avoidSecurityZones = true,
@@ -40,6 +41,67 @@ class WaterRouteOptions {
   /// A bridge that opens counts at its closed clearance; otherwise at its
   /// open clearance, listed "needs opening".
   final bool avoidOpeningBridges;
+
+  /// As [toJson] writes it; what it lacks takes the starting value.
+  factory WaterRouteOptions.fromJson(Map<String, Object?> json) {
+    double? number(String key) => (json[key] as num?)?.toDouble();
+    const start = WaterRouteOptions();
+    return WaterRouteOptions(
+      speedKn: number('speed_kn') ?? start.speedKn,
+      draftM: number('draft_m') ?? start.draftM,
+      underKeelM: number('under_keel_m') ?? start.underKeelM,
+      preferDepthM: number('prefer_depth_m'),
+      offLandNm: json.containsKey('off_land_nm')
+          ? number('off_land_nm')
+          : start.offLandNm,
+      mastHeightM: number('mast_height_m'),
+      avoidTrafficLanes:
+          json['avoid_traffic_lanes'] as bool? ?? start.avoidTrafficLanes,
+      avoidSecurityZones:
+          json['avoid_security_zones'] as bool? ?? start.avoidSecurityZones,
+      avoidOpeningBridges:
+          json['avoid_opening_bridges'] as bool? ?? start.avoidOpeningBridges,
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+    'speed_kn': speedKn,
+    'draft_m': draftM,
+    'under_keel_m': underKeelM,
+    'prefer_depth_m': ?preferDepthM,
+    // Null is a choice here: no distance off land.
+    'off_land_nm': offLandNm,
+    'mast_height_m': ?mastHeightM,
+    'avoid_traffic_lanes': avoidTrafficLanes,
+    'avoid_security_zones': avoidSecurityZones,
+    'avoid_opening_bridges': avoidOpeningBridges,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is WaterRouteOptions &&
+      other.speedKn == speedKn &&
+      other.draftM == draftM &&
+      other.underKeelM == underKeelM &&
+      other.preferDepthM == preferDepthM &&
+      other.offLandNm == offLandNm &&
+      other.mastHeightM == mastHeightM &&
+      other.avoidTrafficLanes == avoidTrafficLanes &&
+      other.avoidSecurityZones == avoidSecurityZones &&
+      other.avoidOpeningBridges == avoidOpeningBridges;
+
+  @override
+  int get hashCode => Object.hash(
+    speedKn,
+    draftM,
+    underKeelM,
+    preferDepthM,
+    offLandNm,
+    mastHeightM,
+    avoidTrafficLanes,
+    avoidSecurityZones,
+    avoidOpeningBridges,
+  );
 }
 
 enum WaterRoutingProblem {

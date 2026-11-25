@@ -16,6 +16,7 @@ import '../services/notification_service.dart';
 import '../services/poi_service.dart';
 import '../services/routing_service.dart';
 import '../services/ui_view_state_service.dart';
+import '../services/water_routing_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/heard_check_settings.dart';
@@ -1341,6 +1342,7 @@ class _OfflineMapsTile extends StatelessWidget {
     final maps = context.watch<MapPacksService>();
     final routing = context.watch<RoutingService?>();
     final poi = context.watch<PoiService?>();
+    final water = context.watch<WaterRoutingService?>();
     // Chart areas count apart from land regions: paths holding only charts.
     final kinds = <String, Set<PackKind>>{};
     for (final p in maps.installed) {
@@ -1373,7 +1375,8 @@ class _OfflineMapsTile extends StatelessWidget {
                 formatBytes(
                   maps.installedBytes +
                       (routing?.totalBytes ?? 0) +
-                      (poi?.totalBytes ?? 0),
+                      (poi?.totalBytes ?? 0) +
+                      (water?.totalBytes ?? 0),
                 ),
               ].join(' · '),
       ),
