@@ -2191,13 +2191,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _waitForRadioQuiet(lastInboundRxTime: _lastContactMsgRxTime);
       // An earlier copy's ACK came during the wait: this one would only be
-      // ACKed again, and its SENT would find no message waiting for it.
+      // ACKed again, and its SENT would find no message waiting for it. Or
+      // its attempt ended during the wait: sent now, it would be taken for
+      // the next attempt.
       final retry = _retryService;
       if (retry != null &&
-          !retry.awaitsAck(contact.publicKeyHex, timestampSeconds, text)) {
+          !retry.awaitsAck(
+              contact.publicKeyHex, timestampSeconds, text, attempt)) {
         appLogger.info(
-          'Not sending attempt $attempt to ${contact.name}: delivered '
-          'while it waited for a quiet radio',
+          'Not sending attempt $attempt to ${contact.name}: it was '
+          'delivered, or its turn ended, while it waited for a quiet radio',
           tag: 'AckHash',
         );
         return;

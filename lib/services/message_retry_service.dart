@@ -169,11 +169,12 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _reported = {};
   // Routed attempts whose first repeater is listened for, and how many
   // hops of the route were heard passing each on so far; the watch for
-  // the attempt in flight; and the attempts sent a second time as the same
-  // packet (see [_armPassOnWatch]).
+  // the attempt in flight; and the attempts whose packet was asked to go
+  // out a second time, true once the radio took that copy (see
+  // [_armPassOnWatch]).
   final Map<String, Map<int, int>> _passedOn = {};
   final Map<String, Timer> _passOnTimers = {};
-  final Map<String, Set<int>> _sentTwice = {};
+  final Map<String, Map<int, bool>> _secondCopy = {};
   // Waiting for a repeater: the watch for a repeater's copy of a flood
   // in flight, how long it was, when a message was parked for lack of one,
   // and how often it has been sent again on a repeater coming into range.
@@ -189,9 +190,10 @@ class MessageRetryService extends ChangeNotifier {
   static const int maxQuickResends = 2;
   static const Duration quickResendWindow = Duration(minutes: 1);
   // The attempt numbers those sends went out with, and the number the
-  // radio was last given for each message.
+  // radio was last given for each message, with the attempt it was for.
   final Map<String, Set<int>> _resendAttempts = {};
   final Map<String, int> _wireAttempts = {};
+  final Map<String, int> _wireRungs = {};
   // Every send the radio took for each ACK code: the firmware hashes only
   // an attempt's low two bits into its ACK (composeMsgPacket), so attempts
   // 0 and 4 of one DM share a code, as a rung and its resends do.
@@ -457,7 +459,12 @@ class MessageRetryService extends ChangeNotifier {
             radioWidth: width,
             budget: old.length - kept.length,
             graphRoutes: routes,
-            tried: kept,
+            // An attempt that never left my doorstep tried nothing of its
+            // route.
+            tried: [
+              for (var i = 0; i < kept.length; i++)
+                if (!_silent(messageId, i)) kept[i],
+            ],
             floods: owed,
             bestTwice: true),
       ];
@@ -517,11 +524,20 @@ class MessageRetryService extends ChangeNotifier {
   bool isSendingTo(String contactKey) => _activeMessages
       .any((id) => _pendingContacts[id]?.publicKeyHex == contactKey);
 
-  /// Whether the DM [text] to [contactKey] stamped [timestampSeconds] still
-  /// waits for its ACK. A copy of it that waited for a quiet radio while
-  /// the ACK came is not worth sending.
-  bool awaitsAck(String contactKey, int timestampSeconds, String text) =>
-      _messageIdOf(contactKey, timestampSeconds, text) != null;
+  /// Whether the copy numbered [attempt] of the DM [text] to [contactKey]
+  /// stamped [timestampSeconds] should still go out: the DM waits for its
+  /// ACK, and the attempt this copy was made for is the one running. A
+  /// copy that waited for a quiet radio while the ACK came is not worth
+  /// sending, and one whose attempt ended meanwhile would pass for the
+  /// next attempt with this one's bytes (simulator, 2026-11-24).
+  bool awaitsAck(
+      String contactKey, int timestampSeconds, String text, int attempt) {
+    final id = _messageIdOf(contactKey, timestampSeconds, text);
+    final message = id == null ? null : _pendingMessages[id];
+    return message != null &&
+        _wireAttempts[id] == attempt &&
+        _wireRungs[id] == message.retryCount;
+  }
 
   String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
       _pendingMessages.entries
@@ -635,6 +651,7 @@ class MessageRetryService extends ChangeNotifier {
         return;
       }
       _wireAttempts[messageId] = wireAttempt;
+      _wireRungs[messageId] = attempt;
       _registerExpectedAck(
           messageId, message, contact, wireAttempt, timestampSeconds);
       if (!same) {
@@ -699,7 +716,9 @@ class MessageRetryService extends ChangeNotifier {
     }
   }
 
-  void _startPreSentTimer(String messageId) {
+  /// [copy]: the attempt's packet is going out a second time
+  /// ([_notPassedOn]); the message stays "sent" while it does.
+  void _startPreSentTimer(String messageId, {bool copy = false}) {
     final config = _config;
 
     // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
@@ -712,7 +731,9 @@ class MessageRetryService extends ChangeNotifier {
       const Duration(milliseconds: preSentTimeoutMs),
       () {
         // Only act if the message is still pending (no RESP_CODE_SENT received yet)
-        if (_pendingMessages[messageId]?.status == MessageStatus.pending) {
+        final status = _pendingMessages[messageId]?.status;
+        if (status == MessageStatus.pending ||
+            (copy && status == MessageStatus.sent)) {
           config?.debugLogService?.warn(
             'No RESP_CODE_SENT received within ${preSentTimeoutMs}ms for message $messageId — triggering retry',
             tag: 'AckHash',
@@ -876,6 +897,11 @@ class MessageRetryService extends ChangeNotifier {
     _pendingMessages[messageId] = updatedMessage;
     config.updateMessage(updatedMessage);
 
+    // The radio took the second copy of this attempt's packet.
+    final copies = _secondCopy[messageId];
+    if (copies?[message.retryCount] == false) {
+      copies![message.retryCount] = true;
+    }
     _startTimeoutTimer(messageId, actualTimeout);
     _armEchoWatch(messageId, contact, updatedMessage, actualTimeout,
         isFlood: isFlood);
@@ -892,6 +918,12 @@ class MessageRetryService extends ChangeNotifier {
   /// onRecvPacket, wasSeen), so nothing is doubled on the air but this
   /// radio's own transmission, and the receiver never gets two. Not heard
   /// again: the attempt is over now, without waiting out its ACK.
+  ///
+  /// The second copy waits for a quiet radio like any send, which after a
+  /// message came in is several seconds. The attempt's ACK wait stops
+  /// while it does and starts again when the radio takes the copy:
+  /// running on, it ended the attempt on one unheard copy, and the copy
+  /// then went out as the next attempt (simulator, 2026-11-24).
   void _armPassOnWatch(String messageId, Contact contact, Message message,
       {bool? isFlood}) {
     final config = _config;
@@ -941,12 +973,15 @@ class MessageRetryService extends ChangeNotifier {
     final hop = PathHelper.firstHopHex(selection.pathBytes,
             stride: selection.hashSize) ??
         'The first repeater';
-    if ((_sentTwice[messageId] ??= {}).add(rung)) {
+    final copies = _secondCopy[messageId] ??= {};
+    if (!copies.containsKey(rung)) {
+      copies[rung] = false;
       _config?.debugLogService?.info(
         '$hop was not heard passing "${_short(message.text)}" to '
         '${contact.name} on: sending the same packet once more',
         tag: 'AckHash',
       );
+      _startPreSentTimer(messageId, copy: true);
       _send(messageId, same: true);
       return;
     }
@@ -960,6 +995,26 @@ class MessageRetryService extends ChangeNotifier {
     );
     _timeoutTimers.remove(messageId)?.cancel();
     _handleTimeout(messageId);
+  }
+
+  /// Whether attempt [rung] of [messageId] never left my doorstep, as far
+  /// as can be told: its first repeater was listened for and heard passing
+  /// on neither of the two copies sent.
+  bool _silent(String messageId, int rung) =>
+      _passedOn[messageId]?[rung] == 0 &&
+      _secondCopy[messageId]?[rung] == true;
+
+  /// What Pathfinder is told of how far attempt [rung] was heard passed
+  /// on. [skip]: a failed attempt whose first repeater was listened for
+  /// and not heard, with one copy sent, says nothing: most likely two
+  /// radios sent at once, and one such miss is no doubt about a doorstep.
+  ({int? hops, bool skip}) _heardFor(String messageId, int rung,
+      {required bool delivered}) {
+    final hops = _passedOn[messageId]?[rung];
+    if (hops != 0) return (hops: hops, skip: false);
+    // Delivered, the doorstep heard it whatever was heard here.
+    if (delivered) return (hops: null, skip: false);
+    return (hops: 0, skip: !_silent(messageId, rung));
   }
 
   /// A repeater's copy of a routed DM of mine was read from the radio's RX
@@ -1259,7 +1314,8 @@ class MessageRetryService extends ChangeNotifier {
       return;
     }
     if (!(_reported[messageId] ??= {}).add(attempt)) return;
-    report(contact, selection, false, null, _passedOn[messageId]?[attempt]);
+    final heard = _heardFor(messageId, attempt, delivered: false);
+    if (!heard.skip) report(contact, selection, false, null, heard.hops);
   }
 
   /// Tells the graph how each direct attempt ended, once: the acked one
@@ -1284,9 +1340,11 @@ class MessageRetryService extends ChangeNotifier {
     for (final MapEntry(key: i, value: selection) in routes.entries) {
       if (selection.useFlood || unjudged.contains(i)) continue;
       if (i == ackedAttempt) {
-        report(contact, selection, true, tripTimeMs, _passedOn[messageId]?[i]);
+        report(contact, selection, true, tripTimeMs,
+            _heardFor(messageId, i, delivered: true).hops);
       } else if (i < timedOut && onAir.contains(i) && !reported.contains(i)) {
-        report(contact, selection, false, null, _passedOn[messageId]?[i]);
+        final heard = _heardFor(messageId, i, delivered: false);
+        if (!heard.skip) report(contact, selection, false, null, heard.hops);
       }
     }
   }
@@ -1311,7 +1369,7 @@ class MessageRetryService extends ChangeNotifier {
     _reported.remove(messageId);
     _passedOn.remove(messageId);
     _passOnTimers.remove(messageId)?.cancel();
-    _sentTwice.remove(messageId);
+    _secondCopy.remove(messageId);
     _echoTimers.remove(messageId)?.cancel();
     _echoWaitMs.remove(messageId);
     _echoObservable.remove(messageId);
@@ -1323,6 +1381,7 @@ class MessageRetryService extends ChangeNotifier {
     _quickResends.remove(messageId);
     _resendAttempts.remove(messageId);
     _wireAttempts.remove(messageId);
+    _wireRungs.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -1667,7 +1726,7 @@ class MessageRetryService extends ChangeNotifier {
     }
     _passOnTimers.clear();
     _passedOn.clear();
-    _sentTwice.clear();
+    _secondCopy.clear();
     for (final timer in _echoTimers.values) {
       timer.cancel();
     }
@@ -1686,6 +1745,7 @@ class MessageRetryService extends ChangeNotifier {
     _quickResends.clear();
     _resendAttempts.clear();
     _wireAttempts.clear();
+    _wireRungs.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();

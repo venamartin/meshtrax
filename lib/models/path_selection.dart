@@ -230,13 +230,20 @@ List<PathSelection> planAttempts(
       if (needsScore && (g.estDelivery ?? 1) < minDelivery) continue;
       others.add(g);
     }
-    final sameEnd = others.isEmpty || lastHop(others.first) == lastHop(best);
+    // One route to another repeater goes between the best route's two
+    // tries. Once one has been tried, the best route's other try is next:
+    // a second route to that other repeater must not take its place
+    // (simulator, 2026-11-24: an 82% route lost its second try to a 16%
+    // one, and the message with it).
+    final around = others.isNotEmpty &&
+        lastHop(others.first) != lastHop(best) &&
+        !tried.any((t) => !t.useFlood && lastHop(t) != lastHop(best));
     routes = [
       if (bestLeft == 2) best,
-      if (bestLeft >= 1 && sameEnd) best,
-      if (!sameEnd) others.first,
-      if (bestLeft >= 1 && !sameEnd) best,
-      ...others.skip(sameEnd ? 0 : 1),
+      if (bestLeft >= 1 && !around) best,
+      if (around) others.first,
+      if (bestLeft >= 1 && around) best,
+      ...others.skip(around ? 1 : 0),
     ];
   }
 

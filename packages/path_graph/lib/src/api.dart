@@ -508,6 +508,11 @@ class PathGraph {
 
   // Doorsteps of mine not heard passing on a packet sent twice, and when:
   // a doubt, ended by that doorstep's next proof or by [_doubtMinutes].
+  // A doubt asks for one Discover and no more. It takes two such misses
+  // with no proof in between to set a doorstep aside
+  // ([PathGraphConfig.selfFailGate]): giving way as soon as another
+  // repeater proved itself took a doorstep that heard 85% of my packets
+  // out twice in ten messages (simulator, 2026-11-24).
   final Map<String, int> _silentAt = {};
   static const _doubtMinutes = 10;
 
@@ -1794,14 +1799,6 @@ class PathGraph {
     final cell = _cell;
     for (final c in eligible) {
       var hold = doorstepHold(c, now: now);
-      // In doubt, and another repeater has proved since that it hears
-      // me (its own proof would have ended the doubt): that one starts
-      // the routes until this one proves itself again.
-      if (hold == null &&
-          _inDoubt(c.repeaterHash, now) &&
-          (_lastSelfProofAt ?? 0) > _silentAt[c.repeaterHash]!) {
-        hold = FloodReason.doorstepsFailing;
-      }
       var use = c;
       // Where the radio is known, a doorstep starts a route only if it
       // was heard hearing me around here and has not failed here since;

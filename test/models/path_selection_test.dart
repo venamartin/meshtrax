@@ -372,6 +372,27 @@ void main() {
           ['best', 'elsewhere', 'best', 'flood', 'flood']);
     });
 
+    test('planned again after the first try, the next route ending at '
+        'another repeater: that one, then the best route again', () {
+      expect(ladder(4, [best, elsewhere, second], tried: [best], floods: 2),
+          ['elsewhere', 'best', 'flood', 'flood']);
+    });
+
+    // Simulator, 2026-11-24: after the route to the other repeater failed,
+    // a second route there took the last route slot from an 82% route.
+    test('planned again after the route to the other repeater was tried: '
+        "the best route's second try comes before another route there", () {
+      final again = via([0xA2, 0x77, 0x10, 0x00, 0xC0, 0xDE], est: 0.16);
+      expect(
+          ladder(3, [best, again, second],
+              tried: [best, elsewhere], floods: 2),
+          ['best', 'flood', 'flood']);
+      expect(
+          ladder(4, [best, again, second],
+              tried: [best, elsewhere], floods: 2),
+          ['best', 'elsewhere', 'flood', 'flood']);
+    });
+
     test('planned again after the first try failed: its second try is next',
         () {
       expect(ladder(4, [best, second], tried: [best], floods: 2),

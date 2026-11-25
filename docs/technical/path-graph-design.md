@@ -93,15 +93,24 @@ me and who hears my contact, what path bytes should this DM use?*
     as carried; listened for and not heard, the same packet sent twice,
     it is a doubt about my doorstep alone (no link was tried, nothing
     is said about their end); nobody could be listened for, it is
-    charged as before.
+    charged as before. A try counts as not heard only when both copies
+    went out: one unheard copy is most often two radios sending at
+    once, and a failed try with only that to show is not reported at
+    all. The second copy waits for a quiet radio like any send, so the
+    try's ACK wait stops until the radio takes it; left running, it
+    ended tries on one copy, and the copy then went out as the next try
+    with the old bytes (simulator, 2026-11-24).
   * **My doorstep.** `selfFailGate` stays 2 and now counts only tries
     whose first repeater was not heard, so the drive case it was tuned
     on (GPS off, the home repeater out of range, so nothing to listen
-    for) is as it was. A doorstep in doubt gives way as soon as another
-    repeater has proved since that it hears me, until its own next
-    proof or ten minutes; the doubt is a reason for the automatic
-    Discover (`DiscoverReason.doorstepSilent`), whose answers are those
-    proofs. "Failed here" is set only when the count reaches the gate.
+    for) is as it was. One such miss is a doubt: a reason for the
+    automatic Discover (`DiscoverReason.doorstepSilent`), whose answer
+    from that doorstep ends it, and nothing more. A first version let a
+    doorstep in doubt give way as soon as another repeater proved it
+    hears me; in the simulator a doorstep that heard 85% of the packets
+    lost its place twice in ten messages to one that heard 60%, each
+    time on one miss and one Discover request it happened not to hear.
+    "Failed here" is set only when the count reaches the gate.
   * **Their doorstep.** A miss is only remembered (15 minutes). The
     next delivery to the contact settles it: by the same repeater (a
     retry on the route, or a flood whose path reply names it), nothing
@@ -128,7 +137,11 @@ me and who hears my contact, what path bytes should this DM use?*
     (`planAttempts` `bestTwice`): best, best, next, flood, flood with
     five tries; best, best, flood with three. Where the next route ends
     at another repeater (their latest packet was heard there), it goes
-    second and the best gets its second try after it.
+    second and the best gets its second try after it: one such route,
+    once. Planned again after that one failed, a second route to the
+    other repeater took the last route slot from an 82% route and the
+    message was lost (simulator's scripted set, 2026-11-24). A try that
+    never left my doorstep is not counted as a try of its route.
   * **Only a likely route twice.** The second try is for a best route
     whose estimate is 50% or more (`repeatMinDelivery`); a weaker one
     keeps the ladder of before (each route once, two floods). The

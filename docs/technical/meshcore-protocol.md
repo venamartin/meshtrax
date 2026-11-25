@@ -743,6 +743,13 @@ repeater takes itself off the front, `removeSelfFromPath`).
   repeater's longest wait before it passes a routed packet on (`getDirectRetransmitDelay`,
   0 to 5 x airtime x `direct_tx_delay_factor`, 0.3 by default), its airtime, and a second
   for a busy channel. About 2 s at 0.3 s airtime.
+- **The second copy never goes out late.** The app holds every send until the radio has
+  been quiet, which after a message came in is several seconds. The attempt's ACK wait
+  stops while the copy waits and starts again when the radio takes it (`RESP_CODE_SENT`).
+  A copy whose attempt has ended meanwhile is not sent (`MessageRetryService.awaitsAck`):
+  it carries that attempt's bytes, so it would be taken for the next attempt, and a
+  repeater that had passed the first copy on would drop it. An attempt counts as "not
+  passed on" only when both copies went out and neither was heard.
 - **Limits.** A repeater's table holds 160 hashes (`SimpleMeshTables`), so on very busy
   air it can have forgotten the first copy and pass the second on as well; the receiver
   then drops it, unless it has forgotten too. A repeater that hears this radio and is not

@@ -132,8 +132,11 @@ void main() {
       expect(mine('A277').failedSinceProof, 0);
     });
 
-    test('another repeater answers and it does not: that one starts the '
-        'routes, until it proves itself again', () {
+    // Simulator, 2026-11-24: a doorstep that heard 85% of my packets lost
+    // its place twice in ten messages to one that heard 60%, each time on
+    // one such miss and one Discover request it happened not to hear.
+    test('another repeater answers the Discover and it does not: it still '
+        'starts the routes; a second miss, and the other one does', () {
       // Bob is reachable from BEEF too.
       for (var i = 0; i < 5; i++) {
         graph.reportSendResult(path([...beef, ...aa77]), true,
@@ -145,11 +148,14 @@ void main() {
       expect(firstHop(), 'A277');
 
       missed(0);
-      expect(firstHop(), 'A277', reason: 'nobody else has spoken yet');
       nowMillis += 3000;
       graph.observeDiscoverResults(
           [const DiscoverResponse(repeaterHash: 'BEEF', uplinkSnr: 2)],
           failureEpisode: false);
+      expect(firstHop(), 'A277',
+          reason: 'one miss and one answer not heard are chance');
+
+      missed(0);
       expect(firstHop(), 'BEEF');
 
       nowMillis += 2000;

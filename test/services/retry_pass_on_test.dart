@@ -36,8 +36,16 @@ String _hex(List<int> b) =>
 class _Rig {
   _Rig({int budget = 5}) {
     svc.initialize(RetryServiceConfig(
-      sendMessage: (_, text, attempt, ts) =>
-          sends.add((text: text, attempt: attempt, ts: ts)),
+      // As the connector does: wait for a quiet radio, then send only a
+      // copy that is still wanted.
+      sendMessage: (_, text, attempt, ts) async {
+        if (quietWait > Duration.zero) await Future<void>.delayed(quietWait);
+        if (!svc.awaitsAck(_bob.publicKeyHex, ts, text, attempt)) {
+          skipped++;
+          return;
+        }
+        sends.add((text: text, attempt: attempt, ts: ts));
+      },
       addMessage: (_, _) {},
       updateMessage: (_) {},
       clearContactPath: (_) {},
@@ -63,6 +71,8 @@ class _Rig {
 
   final selfKey = Uint8List.fromList(List.generate(32, (i) => 0x42 + i));
   bool hears = true;
+  Duration quietWait = Duration.zero;
+  int skipped = 0;
   List<PathSelection> routes = [_home];
   final asked = <String>[];
   final sends = <({String text, int attempt, int ts})>[];
@@ -190,6 +200,98 @@ void main() {
 
       async.elapse(const Duration(milliseconds: _timeoutMs));
       expect(r.reported.single.hopsHeard, 0);
+    });
+  });
+
+  // Simulator, 2026-11-24: a message came in as the try went out, so the
+  // second copy waited five seconds for a quiet radio. The try's ACK wait
+  // ran out first, on one copy, and the copy then went out as the next try.
+  test('the second copy waits for a quiet radio: the try waits with it', () {
+    fakeAsync((async) {
+      final r = start(async)..quietWait = const Duration(seconds: 12);
+      async.elapse(_wait);
+      async.elapse(const Duration(seconds: 11));
+      expect(r.sends, hasLength(1));
+      expect(r.reported, isEmpty, reason: 'the try is not over on one copy');
+
+      async.elapse(const Duration(seconds: 1));
+      async.flushMicrotasks();
+      expect(r.sends, hasLength(2));
+      expect(r.sends[1], r.sends[0]);
+      r.quietWait = Duration.zero;
+      r.sentLast();
+      r.copyOf(1, _afterA277);
+      async.elapse(const Duration(milliseconds: _timeoutMs - 100));
+      expect(r.reported, isEmpty, reason: 'its ACK wait starts with the copy');
+    });
+  });
+
+  test('a copy still waiting when its try ends is not sent: it would pass '
+      'for the next try, and one unheard copy says nothing', () {
+    fakeAsync((async) {
+      final r = start(async)..quietWait = const Duration(seconds: 19);
+      async.elapse(_wait);
+      // The radio never takes the copy: the try ends on its safety timer.
+      async.elapse(const Duration(seconds: 15));
+      expect(r.reported, isEmpty);
+      r.quietWait = Duration.zero;
+
+      async.elapse(const Duration(seconds: 4));
+      async.flushMicrotasks();
+      expect(r.skipped, 1, reason: 'the copy came out of its wait too late');
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(r.sends.map((s) => s.attempt), [0, 1]);
+    });
+  });
+
+  group('the next route ends at another repeater', () {
+    const elsewhere = PathSelection(
+      pathBytes: [0xA2, 0x77, 0xC0, 0xDE],
+      hopCount: 2,
+      hashSize: 2,
+      useFlood: false,
+      source: RouteSource.graph,
+      estDelivery: 0.3,
+    );
+
+    _Rig begin(FakeAsync async) {
+      final r = _Rig()..routes = [_home, elsewhere];
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      r.sentLast();
+      return r;
+    }
+
+    void nextTry(FakeAsync async) {
+      async.elapse(
+          const Duration(milliseconds: MessageRetryService.retryBackoffMs));
+      async.flushMicrotasks();
+    }
+
+    test('heard passed on and no ACK: the route was tried, the other '
+        'repeater is next', () {
+      fakeAsync((async) {
+        final r = begin(async);
+        r.copyOf(0, _afterA277);
+        async.elapse(const Duration(milliseconds: _timeoutMs + 1));
+        nextTry(async);
+        expect(r.written.last, _hex(elsewhere.pathBytes));
+      });
+    });
+
+    test('not heard passing on either copy: nothing of the route was tried, '
+        'so it is next again', () {
+      fakeAsync((async) {
+        final r = begin(async);
+        async.elapse(_wait);
+        async.flushMicrotasks();
+        r.sentLast();
+        async.elapse(_wait);
+        nextTry(async);
+        expect(r.sends, hasLength(3));
+        expect(r.written.last, _hex(_home.pathBytes));
+      });
     });
   });
 
