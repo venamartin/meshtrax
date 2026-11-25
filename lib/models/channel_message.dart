@@ -252,7 +252,11 @@ class ChannelMessage {
 
       final decodedText = Smaz.tryDecodePrefixed(actualText) ?? actualText;
 
-      final explicitHopCount = PathHelper.pathLenHops(pathLen);
+      // Path length 0xFF: the packet came direct, not flooded, which a
+      // channel packet does only zero hop, from a radio in range (firmware
+      // MyMesh.cpp: isRouteFlood() ? path_len : 0xFF).
+      final floodHops = PathHelper.pathLenHops(pathLen);
+      final explicitHopCount = floodHops < 0 ? 0 : floodHops;
       final hashSize = PathHelper.pathLenWidth(pathLen);
       // Queue-delivered frames carry a path_len byte but NO path bytes —
       // keep the count instead of recomputing 0 from the empty path, which
@@ -260,11 +264,9 @@ class ChannelMessage {
       // (parity with _parseContactMessage). The wire byte is
       // (hashSize-1)<<6 | hopCount (firmware Packet.h), so the extract
       // helpers yield final values; nothing downstream may rescale them.
-      final actualHopCount = explicitHopCount < 0
-          ? -1
-          : (pathBytes.isEmpty
-              ? explicitHopCount
-              : PathHelper.getHopCount(pathBytes, stride: hashSize));
+      final actualHopCount = pathBytes.isEmpty
+          ? explicitHopCount
+          : PathHelper.getHopCount(pathBytes, stride: hashSize);
 
       return ChannelMessage(
         senderKey: null,

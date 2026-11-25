@@ -153,11 +153,22 @@ void main() {
     });
 
     test('path_len 0 (flood heard directly) is Direct', () {
-      expect(ChannelMessage.fromFrame(frame(0))!.pathLength, 0);
+      final msg = ChannelMessage.fromFrame(frame(0))!;
+      expect(msg.pathLength, 0);
+      expect(msg.heardDirect, isTrue);
     });
 
-    test('path_len 0xFF (non-flood) stays -1', () {
-      expect(ChannelMessage.fromFrame(frame(0xFF))!.pathLength, -1);
+    test('path_len 0xFF: it came direct, zero hop (Nearby only), so Direct',
+        () {
+      // A channel packet that isn't a flood came straight from a radio in
+      // range; read as -1, it showed "Flood" and no Direct mark.
+      final msg = ChannelMessage.fromFrame(frame(0xFF))!;
+      expect(msg.pathLength, 0);
+      expect(msg.heardDirect, isTrue);
+    });
+
+    test('a flood through repeaters is not Direct', () {
+      expect(ChannelMessage.fromFrame(frame(0x42))!.heardDirect, isFalse);
     });
   });
 }

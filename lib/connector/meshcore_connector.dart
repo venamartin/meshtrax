@@ -10205,6 +10205,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             pathLength: packet.isFlood ? packet.hopCount : 0,
             pathBytes: packet.pathBytes,
             pathHashSize: packet.hashSize,
+            // No repeater in its path: this radio heard the sender's own,
+            // a flood's first copy or a zero-hop one (Nearby only).
+            heardDirect: packet.hopCount == 0,
             channelIndex: channel.index,
             packetHash: pktHash,
             regionCode: regionCode,
