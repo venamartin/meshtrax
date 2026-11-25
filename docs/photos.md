@@ -35,7 +35,7 @@ Through repeaters, your radio listens for each packet being passed on:
 On the frequencies of MeshCore's standard presets, photos share the air with everyone, so MeshTrax holds them back:
 - Before each photo it asks you to confirm, with how much airtime the photo takes, measured in text messages (a photo is usually as much as 8), and whether repeaters pass it on.
 - On Public and hashtag channels it first explains that most people there won't see the photo, since only MeshTrax shows photos, and what's better: zero hop, a private channel, a tighter crop, one photo rather than a series. **Don't show this again** skips that explanation, not the question.
-- One photo every 10 minutes from each radio, and one through repeaters every 30 minutes: zero hop is the way to send another sooner.
+- One photo every 10 minutes from each radio, and one through repeaters every 30 minutes: zero hop is the way to send another sooner. A photo no repeater was heard carrying doesn't count toward the 30 minutes, as long as your radio heard a repeater in the last minute: then none carried it.
 - At least four packets' airtime between packets, so a photo takes no more than about a quarter of the air around you. Through repeaters, MeshTrax waits longer, until each packet has cleared the repeaters near you.
 
 The Off-Grid presets, TRAX included, and custom frequencies have none of these limits.

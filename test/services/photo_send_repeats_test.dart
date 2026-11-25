@@ -11,6 +11,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
+import 'package:meshtrax/services/photo_rules.dart';
 import 'package:meshtrax/services/photo_store.dart';
 import 'package:meshtrax/services/region_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -30,7 +31,8 @@ final _psk = Uint8List.fromList(List.generate(16, (i) => 0x40 + i));
 /// The repeater that passes packets on: A277, in 2-byte codes.
 const _repeater = [0xA2, 0x77];
 
-/// A radio on 920 MHz whose photo packets come back from repeater A277 as
+/// A radio, on 920 MHz unless a test says, whose photo packets come back from
+/// repeater A277 as
 /// [echo] says, for the [n]th packet handed over (0 first), packet [index]
 /// of the photo.
 class _Radio extends MeshCoreConnector {
@@ -57,6 +59,11 @@ class _Radio extends MeshCoreConnector {
 
   @override
   bool get repeaterHeardRecently => heardLately;
+
+  bool heardThisMinute = true;
+
+  @override
+  bool repeaterHeardWithin(Duration window) => heardThisMinute;
 
   @override
   int estimatePacketAirtimeMs(int bytes) => airtimeMs;
@@ -92,7 +99,7 @@ class _Radio extends MeshCoreConnector {
   }
 }
 
-Uint8List _selfInfo() {
+Uint8List _selfInfo({int freqKhz = 920000}) {
   final w = BytesBuilder();
   w.add([respCodeSelfInfo, advTypeChat, 20, 22]);
   w.add(Uint8List.fromList(List.filled(32, 0x77)));
@@ -100,7 +107,7 @@ Uint8List _selfInfo() {
   w.add([0, 0, 0, 1]);
   w.add(
     (ByteData(8)
-          ..setUint32(0, 920000, Endian.little)
+          ..setUint32(0, freqKhz, Endian.little)
           ..setUint32(4, 62500, Endian.little))
         .buffer
         .asUint8List(),
@@ -183,9 +190,12 @@ void main() {
     MeshCoreConnector.channelRepeatWait = repeatWait;
   });
 
-  Future<_Radio> radio(bool Function(int n, int index) echo) async {
+  Future<_Radio> radio(
+    bool Function(int n, int index) echo, {
+    int freqKhz = 920000,
+  }) async {
     final r = _Radio(echo);
-    r.handleFrameForTest(_selfInfo());
+    r.handleFrameForTest(_selfInfo(freqKhz: freqKhz));
     await pumpEventQueue(times: 200);
     r.handleFrameForTest(_channelInfo());
     await pumpEventQueue(times: 200);
@@ -402,6 +412,52 @@ void main() {
       final photo = await row(r);
       expect(photo.heardDirect, isTrue);
       expect(photo.pathLength, 0);
+    });
+  });
+
+  group('on a MeshCore frequency, a photo through repeaters', () {
+    final preset = meshCoreFrequenciesKhz.first;
+
+    test('that no repeater carried gives back its 30 minutes, when one was '
+        'heard in the last minute', () async {
+      final r = await radio((n, index) => false, freqKhz: preset);
+      final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
+      await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
+      expect(
+        photoLastSentViaRepeaters(r.selfPublicKeyHex),
+        isNotNull,
+        reason: 'counted once its packets were handed over',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2000));
+      await pumpEventQueue(times: 200);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
+      expect(
+        photoLastSent(r.selfPublicKeyHex),
+        isNotNull,
+        reason: 'the 10 minutes stay',
+      );
+    });
+
+    test('keeps them when no repeater was heard in the last minute', () async {
+      final r = await radio((n, index) => false, freqKhz: preset)
+        ..heardThisMinute = false;
+      await send(r);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
+    });
+
+    test('keeps them when any repeater carried it, even a car repeater',
+        () async {
+      final r = await radio((n, index) => index == 0, freqKhz: preset)
+        ..isCarRepeater = (hop, width) => true;
+      await send(r);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
+    });
+
+    test('zero hop counts only the 10 minutes', () async {
+      final r = await radio((n, index) => false, freqKhz: preset);
+      await send(r, zeroHop: true);
+      expect(photoLastSent(r.selfPublicKeyHex), isNotNull);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
   });
 }

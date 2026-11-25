@@ -175,4 +175,31 @@ void main() {
     expect(photoLastSent(a), later);
     expect(photoLastSentViaRepeaters(a), later);
   });
+
+  test('a photo no repeater carried gives back its 30 minutes, not its 10, '
+      'and leaves a later photo\'s alone', () async {
+    SharedPreferences.setMockInitialValues({});
+    PrefsManager.reset();
+    await PrefsManager.initialize();
+    const a = 'aabbccddeeff00112233445566778899';
+    await notePhotoSent(a, now, viaRepeaters: true);
+    await notePhotoNotCarried(a, now);
+    expect(photoLastSent(a), now);
+    expect(photoLastSentViaRepeaters(a), isNull);
+    expect(
+      photoSendBlocked(
+        freqKhz: meshCoreFrequenciesKhz.first,
+        lastSent: photoLastSent(a),
+        lastSentViaRepeaters: photoLastSentViaRepeaters(a),
+        viaRepeaters: true,
+        now: now.add(const Duration(minutes: 11)),
+      ),
+      isNull,
+    );
+
+    final later = now.add(const Duration(minutes: 40));
+    await notePhotoSent(a, later, viaRepeaters: true);
+    await notePhotoNotCarried(a, now);
+    expect(photoLastSentViaRepeaters(a), later);
+  });
 }

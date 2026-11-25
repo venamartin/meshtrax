@@ -200,12 +200,15 @@ class MessageRetryService extends ChangeNotifier {
 
   /// Whether a repeater was heard within [repeaterHeardWindow]: where
   /// none was, a direct route can't be relied on.
-  bool get repeaterHeardRecently {
+  bool get repeaterHeardRecently => repeaterHeardWithin(repeaterHeardWindow);
+
+  /// Whether a repeater was heard within [window].
+  bool repeaterHeardWithin(Duration window) {
     final at = _repeaterHeardAt;
     if (at == null) return false;
     // A clock set back can't tell: no park, the default.
     final since = _now().difference(at);
-    return !since.isNegative && since < repeaterHeardWindow;
+    return !since.isNegative && since < window;
   }
   final Map<String, AckHashMapping> _ackHashToMessageId = {};
   final Map<String, List<int>> _expectedAckHashes = {};

@@ -232,12 +232,31 @@ class PhotoMesh {
       'repeaters passed on ${sent.passedOnCount} of ${sent.packets} packets '
       'of ${_id(key.$2)}; copies heard: ${sent.copies}',
     );
+    _giveBackIfNotCarried(sent, key.$2);
     final id = sent.messageId;
     if (id == null) return;
     _showRepeats(sent);
     _writes = _writes.then(
       (_) => connector.waitForRepeats(id, waiting: false),
     );
+  }
+
+  /// Where the photo rules apply, a photo no repeater was heard carrying at
+  /// all, not even a car repeater or a packet sent again, gives back its 30
+  /// minutes when a repeater was heard in the last minute: this radio hears
+  /// repeaters, so none carried it. The 10 minutes stay.
+  void _giveBackIfNotCarried(PhotoRepeats sent, int imgId) {
+    final counted = sent.counted;
+    if (counted == null ||
+        sent.copies > 0 ||
+        !connector.repeaterHeardWithin(photoUncarriedRepeaterWindow)) {
+      return;
+    }
+    _log(
+      'no repeater carried ${_id(imgId)}, and one was heard in the last '
+      'minute: its 30 minutes are given back',
+    );
+    unawaited(notePhotoNotCarried(counted.radio, counted.at));
   }
 
   /// The app's language, for the chat lines photos are filed as.
@@ -480,6 +499,9 @@ class PhotoMesh {
   /// packet on, until [MeshCoreConnector.channelRepeatWait] after the last.
   /// A packet no repeater was heard passing on goes once more, the same
   /// bytes, when the gap leaves time to hear one ([photoRepeatHeardWithin]).
+  ///
+  /// Where the photo rules apply ([photoRulesApply]), the photo counts
+  /// against them once its packets are handed over ([notePhotoSent]).
   Future<ImageChunkSet> send(
     Uint8List bitstream,
     int channelIndex, {
@@ -536,6 +558,15 @@ class PhotoMesh {
               () => _stopListening(key),
             ),
     );
+    if (photoRulesApply(connector.currentFreqHz)) {
+      final counted = (radio: connector.selfPublicKeyHex, at: DateTime.now());
+      await notePhotoSent(
+        counted.radio,
+        counted.at,
+        viaRepeaters: !goesZeroHop,
+      );
+      sent?.counted = counted;
+    }
     _log(
       'sent ${bitstream.length} bytes on channel $channelIndex as '
       '${set.blobs.length} packets '

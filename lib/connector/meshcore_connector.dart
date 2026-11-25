@@ -1549,6 +1549,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get repeaterHeardRecently =>
       _retryService?.repeaterHeardRecently ?? false;
 
+  /// A repeater's transmission reached this radio within [window].
+  bool repeaterHeardWithin(Duration window) =>
+      _retryService?.repeaterHeardWithin(window) ?? false;
+
   /// Channel retries in App settings: how often a channel message no
   /// repeater passed on goes again (0 to 3).
   int get channelRetries =>

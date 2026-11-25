@@ -446,13 +446,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       setState(() => _step = _Step.ready);
       return;
     }
-    if (photoRulesApply(connector.currentFreqHz)) {
-      await notePhotoSent(
-        connector.selfPublicKeyHex,
-        DateTime.now(),
-        viaRepeaters: !zeroHop,
-      );
-    }
     if (mounted) Navigator.of(context).pop();
   }
 

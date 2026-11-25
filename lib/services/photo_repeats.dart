@@ -43,6 +43,10 @@ class PhotoRepeats {
   /// The photo's chat row, once it is filed.
   String? messageId;
 
+  /// Where the photo rules apply: the radio and the time this photo counted
+  /// against them, so its 30 minutes can be given back.
+  ({String radio, DateTime at})? counted;
+
   /// A copy of packet [index] came back as [blob] through [path], in
   /// [width]-byte repeater codes. [carOnly]: every repeater in its path
   /// moves with the user, so it says nothing of the mesh (as for channel
