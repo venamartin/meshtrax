@@ -362,7 +362,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_sendFigures.
   ///
   /// In en, this message translates to:
-  /// **'{packets} packets · about {sendTime} to send'**
+  /// **'{packets, plural, =1{1 packet} other{{packets} packets}} · about {sendTime} to send'**
   String photo_sendFigures(int packets, String sendTime);
 
   /// No description provided for @photo_seconds.
@@ -371,17 +371,11 @@ abstract class AppLocalizations {
   /// **'{seconds} s'**
   String photo_seconds(String seconds);
 
-  /// No description provided for @photo_blockedWait.
-  ///
-  /// In en, this message translates to:
-  /// **'On MeshCore frequencies, a radio sends one photo every {gap} minutes. You can send another in {minutes} min.'**
-  String photo_blockedWait(int gap, int minutes);
-
   /// No description provided for @photo_blockedWaitRepeaters.
   ///
   /// In en, this message translates to:
-  /// **'On MeshCore frequencies, a radio sends one photo through repeaters every {gap} minutes. You can send another through repeaters in {minutes} min, or one zero hop now.'**
-  String photo_blockedWaitRepeaters(int gap, int minutes);
+  /// **'On MeshCore frequencies, a photo of {packets} packets goes through repeaters {gap} minutes after your last one. Send it in {minutes} min, or zero hop now.'**
+  String photo_blockedWaitRepeaters(int packets, int gap, int minutes);
 
   /// No description provided for @photo_send.
   ///
@@ -608,7 +602,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_ignoreTimeLimitsHint.
   ///
   /// In en, this message translates to:
-  /// **'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.'**
+  /// **'For testing: send photos through repeaters without waiting between them.'**
   String get photo_ignoreTimeLimitsHint;
 
   /// No description provided for @photo_rebuilding.

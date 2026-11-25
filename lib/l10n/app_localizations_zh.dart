@@ -158,7 +158,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
-    return '$packets packets · about $sendTime to send';
+    String _temp0 = intl.Intl.pluralLogic(
+      packets,
+      locale: localeName,
+      other: '$packets packets',
+      one: '1 packet',
+    );
+    return '$_temp0 · about $sendTime to send';
   }
 
   @override
@@ -167,12 +173,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String photo_blockedWait(int gap, int minutes) {
-    return '在 MeshCore 频率上，电台每 $gap 分钟可发送一张照片。您可以在 $minutes 分钟后发送下一张。';
-  }
-
-  @override
-  String photo_blockedWaitRepeaters(int gap, int minutes) {
+  String photo_blockedWaitRepeaters(int packets, int gap, int minutes) {
     return '在 MeshCore 频率上，电台每 $gap 分钟可经转发节点发送一张照片。您可以在 $minutes 分钟后再经转发节点发送一张，或现在以零跳发送一张。';
   }
 
@@ -320,7 +321,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.';
+      'For testing: send photos through repeaters without waiting between them.';
 
   @override
   String get photo_rebuilding => '正在重建… 约 20 秒';

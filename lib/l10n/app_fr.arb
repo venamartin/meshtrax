@@ -26,8 +26,6 @@
   "photo_tagTitle": "Étiquette (facultative)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "Sur les fréquences MeshCore, une radio envoie une photo toutes les {gap} minutes. Vous pourrez en envoyer une autre dans {minutes} min.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "Sur les fréquences MeshCore, une radio envoie une photo via des répéteurs toutes les {gap} minutes. Vous pourrez en envoyer une autre via des répéteurs dans {minutes} min, ou une en zéro saut dès maintenant.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Envoyer",

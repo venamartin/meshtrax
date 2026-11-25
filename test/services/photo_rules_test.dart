@@ -57,54 +57,72 @@ void main() {
     });
   });
 
-  group('on a MeshCore frequency', () {
-    PhotoBlock? blocked({DateTime? lastSent}) =>
-        photoSendBlocked(freqKhz: usa, lastSent: lastSent, now: now);
+  group('on a MeshCore frequency, through repeaters', () {
+    final threeMinutesAgo = now.subtract(const Duration(minutes: 3));
+
+    PhotoBlock? blocked(
+      int packets, {
+      DateTime? lastSentViaRepeaters,
+      bool viaRepeaters = true,
+    }) => photoSendBlocked(
+      freqKhz: usa,
+      lastSentViaRepeaters: lastSentViaRepeaters,
+      viaRepeaters: viaRepeaters,
+      packets: packets,
+      now: now,
+    );
 
     test('every channel may take a photo, Public too', () {
-      expect(blocked(), isNull);
+      expect(blocked(6), isNull);
     });
 
-    test('one photo per radio every 10 minutes, zero hop', () {
-      expect(blocked(lastSent: now.subtract(const Duration(minutes: 3))), (
-        reason: PhotoBlockReason.wait,
+    test('a photo waits by its size after the last one', () {
+      expect(photoGapRepeaters(1), Duration.zero);
+      expect(photoGapRepeaters(2), const Duration(minutes: 5));
+      expect(photoGapRepeaters(3), const Duration(minutes: 10));
+      expect(photoGapRepeaters(4), const Duration(minutes: 20));
+      expect(photoGapRepeaters(6), const Duration(minutes: 20));
+      expect(blocked(1, lastSentViaRepeaters: threeMinutesAgo), isNull);
+      expect(blocked(2, lastSentViaRepeaters: threeMinutesAgo), (
+        gap: 5,
+        minutes: 2,
+      ));
+      expect(blocked(3, lastSentViaRepeaters: threeMinutesAgo), (
+        gap: 10,
         minutes: 7,
       ));
+      expect(blocked(5, lastSentViaRepeaters: threeMinutesAgo), (
+        gap: 20,
+        minutes: 17,
+      ));
       expect(
-        blocked(lastSent: now.subtract(const Duration(minutes: 10))),
+        blocked(
+          5,
+          lastSentViaRepeaters: now.subtract(const Duration(minutes: 20)),
+        ),
         isNull,
       );
     });
 
-    test('through repeaters, one every 20 minutes on top of that', () {
-      final at = now.subtract(const Duration(minutes: 15));
-      PhotoBlock? via({required bool viaRepeaters}) => photoSendBlocked(
-        freqKhz: usa,
-        lastSent: at,
-        lastSentViaRepeaters: at,
-        viaRepeaters: viaRepeaters,
-        now: now,
-      );
-      expect(via(viaRepeaters: true), (
-        reason: PhotoBlockReason.waitRepeaters,
-        minutes: 5,
-      ));
-      expect(via(viaRepeaters: false), isNull);
+    test('zero hop never waits', () {
       expect(
-        photoSendBlocked(
-          freqKhz: usa,
-          lastSent: now.subtract(const Duration(minutes: 5)),
-          lastSentViaRepeaters: null,
-          viaRepeaters: true,
-          now: now,
-        ),
-        (reason: PhotoBlockReason.wait, minutes: 5),
+        blocked(6, lastSentViaRepeaters: now, viaRepeaters: false),
+        isNull,
       );
     });
   });
 
   test('off a MeshCore frequency, nothing is held back', () {
-    expect(photoSendBlocked(freqKhz: 920000, lastSent: now, now: now), isNull);
+    expect(
+      photoSendBlocked(
+        freqKhz: 920000,
+        lastSentViaRepeaters: now,
+        viaRepeaters: true,
+        packets: 6,
+        now: now,
+      ),
+      isNull,
+    );
   });
 
   group('the gap between packets', () {
@@ -165,40 +183,37 @@ void main() {
     const a = 'aabbccddeeff00112233445566778899';
     const b = '99887766554433221100ffeeddccbbaa';
     await notePhotoSent(a, now);
-    expect(photoLastSent(a), now);
-    expect(photoLastSent(b), isNull);
-    expect(photoLastSent(''), isNull);
-    expect(photoLastSentViaRepeaters(a), isNull);
+    expect(photoLastSentViaRepeaters(a), now);
+    expect(photoLastSentViaRepeaters(b), isNull);
+    expect(photoLastSentViaRepeaters(''), isNull);
 
     final later = now.add(const Duration(hours: 1));
-    await notePhotoSent(a, later, viaRepeaters: true);
-    expect(photoLastSent(a), later);
+    await notePhotoSent(a, later);
     expect(photoLastSentViaRepeaters(a), later);
   });
 
-  test('a photo no repeater carried gives back its 20 minutes, not its 10, '
-      'and leaves a later photo\'s alone', () async {
+  test('a photo no repeater carried gives back its time, and leaves a later '
+      'photo\'s alone', () async {
     SharedPreferences.setMockInitialValues({});
     PrefsManager.reset();
     await PrefsManager.initialize();
     const a = 'aabbccddeeff00112233445566778899';
-    await notePhotoSent(a, now, viaRepeaters: true);
+    await notePhotoSent(a, now);
     await notePhotoNotCarried(a, now);
-    expect(photoLastSent(a), now);
     expect(photoLastSentViaRepeaters(a), isNull);
     expect(
       photoSendBlocked(
         freqKhz: meshCoreFrequenciesKhz.first,
-        lastSent: photoLastSent(a),
         lastSentViaRepeaters: photoLastSentViaRepeaters(a),
         viaRepeaters: true,
-        now: now.add(const Duration(minutes: 11)),
+        packets: 6,
+        now: now.add(const Duration(minutes: 1)),
       ),
       isNull,
     );
 
     final later = now.add(const Duration(minutes: 40));
-    await notePhotoSent(a, later, viaRepeaters: true);
+    await notePhotoSent(a, later);
     await notePhotoNotCarried(a, now);
     expect(photoLastSentViaRepeaters(a), later);
   });

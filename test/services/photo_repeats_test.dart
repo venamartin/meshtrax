@@ -119,5 +119,35 @@ void main() {
       heard(r, 0, viaA, carOnly: true);
       expect(r.sendAgain(1), isFalse);
     });
+
+    test('and counts each time it does', () {
+      final r = photo(2);
+      expect(r.sendAgain(0), isTrue);
+      r.sentAgain(0);
+      expect(r.timesAgain(0), 2);
+      expect(r.timesAgain(1), 0);
+    });
+  });
+
+  group('after observers answer, unconfirmed are', () {
+    test('the data packets neither passed on nor heard by an observer', () {
+      final r = photo(4);
+      heard(r, 0, viaA);
+      expect(r.unconfirmed({2}), [1, 3]);
+    });
+
+    test('none once all are confirmed, one way or the other', () {
+      final r = photo(3);
+      heard(r, 1, viaA);
+      expect(r.unconfirmed({0, 2}), isEmpty);
+    });
+
+    test('none when the repair packet can stand in for the one missing', () {
+      final r = photo(4, hasRepair: true);
+      heard(r, 0, viaA);
+      expect(r.unconfirmed({1, 3}), isEmpty);
+      expect(r.unconfirmed({1}), [2]);
+      expect(r.unconfirmed({3}), [1, 2]);
+    });
   });
 }

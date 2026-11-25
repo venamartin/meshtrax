@@ -26,8 +26,6 @@
   "photo_tagTitle": "Тег (необязательно)",
   "photo_seconds": "{seconds} с",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "На частотах MeshCore радио отправляет одно фото раз в {gap} мин. Следующее можно отправить через {minutes} мин.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "На частотах MeshCore радио отправляет через репитеры одно фото раз в {gap} мин. Следующее через репитеры можно отправить через {minutes} мин, а с нулевым хопом — прямо сейчас.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Отправить",

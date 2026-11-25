@@ -885,9 +885,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         ? null
         : photoSendBlocked(
             freqKhz: connector.currentFreqHz,
-            lastSent: photoLastSent(key),
             lastSentViaRepeaters: photoLastSentViaRepeaters(key),
             viaRepeaters: !zeroHop,
+            packets: packets,
             now: DateTime.now(),
           );
     return [
@@ -994,16 +994,14 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ),
       if (blocked != null) ...[
         const SizedBox(height: 8),
-        Text(switch (blocked.reason) {
-          PhotoBlockReason.wait => l10n.photo_blockedWait(
-            photoGapZeroHop.inMinutes,
+        Text(
+          l10n.photo_blockedWaitRepeaters(
+            packets,
+            blocked.gap,
             blocked.minutes,
           ),
-          PhotoBlockReason.waitRepeaters => l10n.photo_blockedWaitRepeaters(
-            photoGapRepeaters.inMinutes,
-            blocked.minutes,
-          ),
-        }, style: quiet?.copyWith(color: theme.colorScheme.error)),
+          style: quiet?.copyWith(color: theme.colorScheme.error),
+        ),
       ],
       const SizedBox(height: 16),
       Row(

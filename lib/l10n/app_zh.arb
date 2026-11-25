@@ -26,8 +26,6 @@
   "photo_tagTitle": "标签（可选）",
   "photo_seconds": "{seconds} 秒",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "在 MeshCore 频率上，电台每 {gap} 分钟可发送一张照片。您可以在 {minutes} 分钟后发送下一张。",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "在 MeshCore 频率上，电台每 {gap} 分钟可经转发节点发送一张照片。您可以在 {minutes} 分钟后再经转发节点发送一张，或现在以零跳发送一张。",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "发送",

@@ -7,7 +7,8 @@ LiteRT models:
   which turns the bitstream back into the model's latents;
 - the decoder, in three parts, which rebuilds a 512 x 512 picture from them
   (its last part, a float32 model, runs in half precision, which keeps flat
-  areas such as sky smooth);
+  areas such as sky smooth, and again in full precision when half precision
+  overflows, as it does on some dark pictures);
 - the 4x enlarger, the compact Real-ESRGAN model, which turns a rebuilt
   picture into a 2048 x 2048 one, also in half precision;
 - a small image safety classifier, which checks a photo before it is sent and

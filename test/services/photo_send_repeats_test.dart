@@ -250,6 +250,22 @@ void main() {
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
   });
 
+  test('a photo of one packet no repeater passed on goes once more', () async {
+    final r = await radio((n, index) => n == 1);
+    final (row, record) = await send(r, bytes: 100);
+    expect(_indexes(r.blobs), [0, 0]);
+    expect(r.blobs[1], r.blobs[0]);
+    expect(row.status, ChannelMessageStatus.delivered);
+    expect(record.packetsPassedOn, 1);
+  });
+
+  test('a photo of one packet a repeater passed on goes once only', () async {
+    final r = await radio((n, index) => true);
+    final (row, _) = await send(r, bytes: 100);
+    expect(_indexes(r.blobs), [0]);
+    expect(row.status, ChannelMessageStatus.delivered);
+  });
+
   test('after a packet sent again goes unheard, no more go while nothing is '
       'heard, and the photo stays sent', () async {
     final r = await radio((n, index) => index == 0);
@@ -426,8 +442,8 @@ void main() {
   group('on a MeshCore frequency, a photo through repeaters', () {
     final preset = meshCoreFrequenciesKhz.first;
 
-    test('that no repeater carried gives back its 20 minutes, when one was '
-        'heard in the last minute', () async {
+    test('that no repeater carried gives back its time, when one was heard '
+        'in the last minute', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
       await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
@@ -439,11 +455,12 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 2000));
       await pumpEventQueue(times: 200);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
-      expect(
-        photoLastSent(r.selfPublicKeyHex),
-        isNotNull,
-        reason: 'the 10 minutes stay',
-      );
+    });
+
+    test('of one packet doesn\'t count', () async {
+      final r = await radio((n, index) => true, freqKhz: preset);
+      await send(r, bytes: 100);
+      expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
 
     test('keeps them when no repeater was heard in the last minute', () async {
@@ -461,10 +478,9 @@ void main() {
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
     });
 
-    test('zero hop counts only the 10 minutes', () async {
+    test('zero hop doesn\'t count', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       await send(r, zeroHop: true);
-      expect(photoLastSent(r.selfPublicKeyHex), isNotNull);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
   });
@@ -538,11 +554,65 @@ void main() {
       HeardService.resetForTesting();
       HeardService.instance.attach(r);
       PhotoMesh.observerWaitOverride = const Duration(milliseconds: 300);
+      PhotoMesh.observerAnswerOverride = const Duration(milliseconds: 500);
     }
 
     tearDown(() {
       HeardService.resetForTesting();
       PhotoMesh.observerWaitOverride = null;
+      PhotoMesh.observerAnswerOverride = null;
+    });
+
+    /// Sends a 3-packet photo on Trip that no repeater passes on; once it
+    /// is filed, the observers heard packets [heard] (by index).
+    Future<String> sendHeard(_Radio r, Set<int> heard) async {
+      final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
+      await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      final id = rows.singleWhere(PhotoMesh.isPhotoMessage).messageId;
+      for (final i in heard) {
+        HeardService.instance.heardForTest(
+          HeardService.photoPacketId(id, i),
+          [Sighting(observer: 'Ridge $i')],
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 2500));
+      await pumpEventQueue(times: 200);
+      return id;
+    }
+
+    test('a packet an observer heard puts the ear on the photo, and isn\'t '
+        'sent again; one nobody confirmed goes once more at their first '
+        'answer', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      final id = await sendHeard(r, {1});
+      // Packet 1 (index 0) went once more already, before the answer.
+      expect(_indexes(r.blobs), [0, 0, 1, 2, 2]);
+      expect(r.blobs[4], r.blobs[3]);
+      expect(HeardService.instance.photoPacketsHeard(id), {1});
+      expect(
+        HeardService.instance.heardBy(id)!.map((s) => s.observer),
+        ['Ridge 1'],
+      );
+    });
+
+    test('nothing goes again on their answer where no observer has heard '
+        'this radio', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      await sendHeard(r, {});
+      expect(_indexes(r.blobs), [0, 0, 1, 2]);
+    });
+
+    test('a photo the observers heard whole goes no more', () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      final id = await sendHeard(r, {0, 1, 2});
+      expect(_indexes(r.blobs), [0, 0, 1, 2]);
+      expect(HeardService.instance.heardBy(id), hasLength(3));
     });
 
     test('a photo is asked about by all its packets, as the server files them',
@@ -556,7 +626,7 @@ void main() {
       });
     });
 
-    test('an observer that heard a photo no repeater carried keeps its 30 '
+    test('an observer that heard a photo no repeater carried keeps its 20 '
         'minutes', () async {
       final r = await radio((n, index) => false, freqKhz: preset);
       await observe(r);

@@ -18,8 +18,6 @@
   "photo_tagTitle": "タグ（任意）",
   "photo_seconds": "{seconds}秒",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "MeshCoreの周波数では、無線機が送れる写真は{gap}分に1枚です。次の写真はあと{minutes}分で送れます。",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "MeshCoreの周波数では、無線機がリピーター経由で送れる写真は{gap}分に1枚です。リピーター経由の次の写真はあと{minutes}分で送れます。ゼロホップなら今すぐ1枚送れます。",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "送信",

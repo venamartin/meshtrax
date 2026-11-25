@@ -203,12 +203,14 @@ const double _floodWaitMaxAirtimes = 2.5;
 ///
 /// Capped so that all [packets] still go out within three quarters of the
 /// receiver's [kImageReassemblyTtl]; never shorter than [photoPacketGap].
+/// A photo of one packet waits as long after it, so a repeater's copy can be
+/// heard before it would go once more.
 Duration photoPacketGapFlood(Duration packetAirtime, {required int packets}) {
   final gap = photoPacketGap(packetAirtime);
-  if (packets < 2) return gap;
   final clear =
       packetAirtime * (1 + 2 * (1 + _floodWaitMaxAirtimes)) +
       const Duration(milliseconds: 500);
+  if (packets < 2) return clear;
   final cap = kImageReassemblyTtl * 0.75 ~/ (packets - 1);
   final spaced = clear < cap ? clear : cap;
   return spaced > gap ? spaced : gap;
@@ -1503,6 +1505,31 @@ class ImageChunkTransport {
     // Keep the queue alive even if this send fails.
     _sendQueue = job.then((_) {}, onError: (Object _) {});
     return sentOnce.future;
+  }
+
+  /// [blobs], packets of a photo already sent as a flood, once more, the
+  /// same bytes, each [gap] after the one before, in their turn after any
+  /// photo still going out.
+  Future<void> resendBlobs(
+    List<Uint8List> blobs, {
+    required int channelIndex,
+    Duration gap = Duration.zero,
+  }) {
+    final job = _sendQueue.then((_) async {
+      for (final blob in blobs) {
+        if (gap > Duration.zero) await Future<void>.delayed(gap);
+        await send(
+          buildSendChannelDataFrame(
+            channelIndex: channelIndex,
+            dataType: sendDataType,
+            payload: blob,
+            pathLen: outPathUnknown,
+          ),
+        );
+      }
+    });
+    _sendQueue = job.then((_) {}, onError: (Object _) {});
+    return job;
   }
 
   /// Feeds a raw inbound companion frame. Non-image frames are ignored.

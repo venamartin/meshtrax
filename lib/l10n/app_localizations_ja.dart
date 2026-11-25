@@ -159,7 +159,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
-    return '$packets packets · about $sendTime to send';
+    String _temp0 = intl.Intl.pluralLogic(
+      packets,
+      locale: localeName,
+      other: '$packets packets',
+      one: '1 packet',
+    );
+    return '$_temp0 · about $sendTime to send';
   }
 
   @override
@@ -168,12 +174,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String photo_blockedWait(int gap, int minutes) {
-    return 'MeshCoreの周波数では、無線機が送れる写真は$gap分に1枚です。次の写真はあと$minutes分で送れます。';
-  }
-
-  @override
-  String photo_blockedWaitRepeaters(int gap, int minutes) {
+  String photo_blockedWaitRepeaters(int packets, int gap, int minutes) {
     return 'MeshCoreの周波数では、無線機がリピーター経由で送れる写真は$gap分に1枚です。リピーター経由の次の写真はあと$minutes分で送れます。ゼロホップなら今すぐ1枚送れます。';
   }
 
@@ -321,7 +322,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos without waiting 10 minutes between them, or 30 through repeaters.';
+      'For testing: send photos through repeaters without waiting between them.';
 
   @override
   String get photo_rebuilding => '再構成中… 約20秒';

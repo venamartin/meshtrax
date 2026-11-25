@@ -78,6 +78,12 @@ class HeardService extends ChangeNotifier {
   /// The region each recent send of mine went out in.
   final _sendRegion = <String, String>{};
 
+  /// Photos of mine asked about packet by packet: each packet's id to its
+  /// photo and index, and per photo its packets' ids and those heard.
+  final _photoPacket = <String, (String, int)>{};
+  final _photoPackets = <String, List<String>>{};
+  final _photoPacketsHeard = <String, Set<int>>{};
+
   /// Per region: unheard sends in a row, and until when it counts as
   /// having no observer.
   final _regions = <String, ({int misses, DateTime? quietUntil})>{};
@@ -216,37 +222,76 @@ class HeardService extends ChangeNotifier {
   }
 
   /// A photo of mine went out on the channel with secret [channelKey] as
-  /// [packets] of channel data type [dataType]: from now, asks about them
-  /// all together, as about a channel text, and the photo's row gets the
-  /// ear when an observer heard any of them. A packet sent again is the same
-  /// bytes, with the same hash. False when the check is off.
+  /// [packets] of channel data type [dataType], in [region] if any: from
+  /// now, asks about each packet on its own, as about a channel text, and
+  /// the photo's row gets the ear when an observer heard any of them. A
+  /// packet sent again is the same bytes, with the same hash. False when
+  /// the check is off, or the region has no observer.
   bool trackPhoto(
     String messageId,
     Uint8List channelKey,
     int dataType,
-    List<Uint8List> packets,
-  ) {
+    List<Uint8List> packets, {
+    String? region,
+  }) {
     if (!_enabled || _observerServer == null || packets.isEmpty) return false;
-    final hashes = [
-      for (final p in packets)
-        channelDataPacketHash(
-          channelKey: channelKey,
-          dataType: dataType,
-          data: p,
-        ),
-    ];
+    if (region != null) {
+      if (_regionQuiet(region)) return false;
+      _sendRegion.remove(messageId);
+      _sendRegion[messageId] = region;
+      while (_sendRegion.length > _keptMessages) {
+        _sendRegion.remove(_sendRegion.keys.first);
+      }
+    }
+    final ids = <String>[];
+    final hashes = <String>[];
+    for (final (i, p) in packets.indexed) {
+      final id = photoPacketId(messageId, i);
+      final hash = channelDataPacketHash(
+        channelKey: channelKey,
+        dataType: dataType,
+        data: p,
+      );
+      _checker.track(id, hash);
+      _photoPacket[id] = (messageId, i);
+      ids.add(id);
+      hashes.add(hash);
+    }
+    _photoPackets[messageId] = ids;
+    _photoPacketsHeard[messageId] = {};
+    while (_photoPackets.length > _keptMessages) {
+      final old = _photoPackets.keys.first;
+      _photoPackets.remove(old)?.forEach(_photoPacket.remove);
+      _photoPacketsHeard.remove(old);
+    }
     appLogger.info(
       'Observer check for photo $messageId: ${hashes.join(', ')}',
       tag: 'Heard',
     );
-    _checker.track(messageId, hashes.first);
-    for (final hash in hashes.skip(1)) {
-      _checker.addHash(messageId, hash);
-    }
     return true;
   }
 
-  /// How long after a send its last ask comes.
+  /// The id packet [index] of photo [messageId] is asked about by.
+  static String photoPacketId(String messageId, int index) =>
+      '$messageId/${index + 1}';
+
+  /// The packets of photo [messageId] an observer heard, by index.
+  Set<int> photoPacketsHeard(String messageId) =>
+      _photoPacketsHeard[messageId] ?? const {};
+
+  /// Whether the packets of photo [messageId] that neither a repeater nor
+  /// an observer was heard to carry may go once more: on the terms of a
+  /// channel text only one repeater carried.
+  bool mayResendPhoto(String messageId) =>
+      _mayResendAfterOneRepeater(messageId);
+
+  /// Packets of photo [messageId] went out once more: a miss unless an
+  /// observer hears the photo by the last ask.
+  void notePhotoResent(String messageId) =>
+      _onResentAfterOneRepeater(messageId);
+
+  /// How long after a send its first and last asks come.
+  Duration get firstAsk => _checker.askAfter.first;
   Duration get lastAsk => _checker.askAfter.last;
 
   /// Our radio heard a copy back: its hash should be one we worked out. If
@@ -322,7 +367,11 @@ class HeardService extends ChangeNotifier {
       _checker.hashesOf(messageId) != null;
 
   @visibleForTesting
-  Set<String>? hashesForTest(String messageId) => _checker.hashesOf(messageId);
+  Set<String>? hashesForTest(String messageId) {
+    final ids = _photoPackets[messageId];
+    if (ids == null) return _checker.hashesOf(messageId);
+    return {for (final id in ids) ...?_checker.hashesOf(id)};
+  }
 
   /// Whether channel message [messageId], which only one repeater carried,
   /// may go out once more: an observer heard this radio, in that message's
@@ -366,10 +415,24 @@ class HeardService extends ChangeNotifier {
   void heardForTest(String messageId, List<Sighting> sightings) =>
       _onHeard(messageId, sightings);
 
-  void _onHeard(String messageId, List<Sighting> sightings) {
+  void _onHeard(String id, List<Sighting> heardNow) {
+    // A photo's packet: the photo is heard, by every observer of any packet.
+    final packet = _photoPacket.remove(id);
+    final messageId = packet?.$1 ?? id;
+    var sightings = heardNow;
+    if (packet != null) {
+      _photoPacketsHeard[messageId]?.add(packet.$2);
+      final kept = _heard[messageId] ?? const <Sighting>[];
+      sightings = [
+        ...kept,
+        for (final s in heardNow)
+          if (!kept.any((k) => k.observer == s.observer)) s,
+      ];
+    }
     appLogger.info(
-      'Observers heard $messageId: '
-      '${sightings.map((s) => s.observer).join(', ')}',
+      'Observers heard $messageId'
+      '${packet == null ? '' : ' (packet ${packet.$2 + 1})'}: '
+      '${heardNow.map((s) => s.observer).join(', ')}',
       tag: 'Heard',
     );
     // An ear starts the row again: a resend still waiting on its own ear

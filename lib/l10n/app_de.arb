@@ -26,8 +26,6 @@
   "photo_tagTitle": "Stichwort (optional)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "Auf MeshCore-Frequenzen sendet ein Funkgerät alle {gap} Minuten ein Foto. Ein weiteres können Sie in {minutes} Min. senden.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "Auf MeshCore-Frequenzen sendet ein Funkgerät alle {gap} Minuten ein Foto über Repeater. Ein weiteres über Repeater können Sie in {minutes} Min. senden, oder jetzt eines per Zero-Hop.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Senden",

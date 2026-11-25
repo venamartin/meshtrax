@@ -26,8 +26,6 @@
   "photo_tagTitle": "Label (optioneel)",
   "photo_seconds": "{seconds} s",
   "@photo_seconds": {"placeholders": {"seconds": {"type": "String"}}},
-  "photo_blockedWait": "Op MeshCore-frequenties verstuurt een radio elke {gap} minuten één foto. Over {minutes} min kun je er weer een versturen.",
-  "@photo_blockedWait": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_blockedWaitRepeaters": "Op MeshCore-frequenties verstuurt een radio elke {gap} minuten één foto via repeaters. Over {minutes} min kun je er weer een via repeaters versturen, of nu meteen een zero hop.",
   "@photo_blockedWaitRepeaters": {"placeholders": {"gap": {"type": "int"}, "minutes": {"type": "int"}}},
   "photo_send": "Versturen",
