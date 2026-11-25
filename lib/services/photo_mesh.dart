@@ -129,7 +129,16 @@ class PhotoMesh {
 
   PhotoMesh._(this.connector) {
     _frames = connector.receivedFrames.listen((frame) {
-      _ensureTransport()?.handleFrame(frame);
+      final parsed = parseChannelDataFrame(frame);
+      if (parsed == null || parsed.dataType != dataTypeMeshTraxPhoto) return;
+      _ensureTransport();
+      // Path length 0xFF: it came direct, which a photo does only zero hop.
+      final hops = PathHelper.pathLenHops(parsed.pathLenByte);
+      _reassembler?.addChunk(
+        parsed.payload,
+        channelIndex: parsed.channelIndex,
+        hops: hops < 0 ? 0 : hops,
+      );
     });
     // The radio's raw log too: there a photo sent through repeaters reaches
     // every radio along the way, not only the last. Chunks heard both ways
@@ -141,7 +150,11 @@ class PhotoMesh {
     connector.onRawChannelData = (channelIndex, dataType, blob, path, width) {
       if (dataType != dataTypeMeshTraxPhoto) return;
       _ensureTransport();
-      final outcome = _reassembler?.addChunk(blob, channelIndex: channelIndex);
+      final outcome = _reassembler?.addChunk(
+        blob,
+        channelIndex: channelIndex,
+        hops: PathHelper.getHopCount(path, stride: width),
+      );
       final header = outcome?.header;
       if (outcome?.status == ImageChunkStatus.fromSelf && header != null) {
         _heardOwnPacket(channelIndex, header, blob, path, width);
@@ -340,6 +353,7 @@ class PhotoMesh {
             ? _l10n.photo_unreadable(_id(r.key.imgId))
             : _l10n.photo_needsNewer(_id(r.key.imgId)),
         isOutgoing: false,
+        hops: r.fewestHops,
         packetHash:
             'photo-unreadable:${prefix.toRadixString(16)}:${r.key.imgId}:'
             '${DateTime.now().millisecondsSinceEpoch}',
@@ -352,6 +366,7 @@ class PhotoMesh {
       senderName: sender,
       text: _text(r.key.imgId, parts.extras.tag),
       isOutgoing: false,
+      hops: r.fewestHops,
       packetHash:
           'photo:${prefix.toRadixString(16)}:${r.key.imgId}:'
           '${DateTime.now().millisecondsSinceEpoch}',
@@ -384,6 +399,7 @@ class PhotoMesh {
       senderName: sender,
       text: incompleteText(_l10n, f),
       isOutgoing: false,
+      hops: f.fewestHops,
       packetHash:
           'photo-incomplete:${prefix.toRadixString(16)}:${f.key.imgId}:'
           '${f.expiredAt.millisecondsSinceEpoch}',
@@ -457,7 +473,8 @@ class PhotoMesh {
 
   /// Sends a coded photo on [channelIndex], one chunk at a time, with its
   /// [extras] ahead of it and the repair chunk last if [repairPacket]: as a
-  /// flood, the way the radio sends the channel's messages, or zero hop.
+  /// flood, the way the radio sends the channel's messages, or zero hop: always
+  /// on a Nearby only channel.
   ///
   /// Through repeaters, this radio then listens for them passing each
   /// packet on, until [MeshCoreConnector.channelRepeatWait] after the last.
@@ -475,17 +492,17 @@ class PhotoMesh {
     if (transport == null) {
       throw const PhotoSendException(PhotoSendFailure.notConnected);
     }
+    // A Nearby only channel sends every photo zero hop, whatever was asked.
+    final goesZeroHop = zeroHop || connector.isNearbyOnlyChannel(channelIndex);
     final payload = photoPayload(bitstream, extras);
     final airtimeMs = connector.estimatePacketAirtimeMs;
     final gap = photoGapFor(
       payload.length,
-      zeroHop: zeroHop,
+      zeroHop: goesZeroHop,
       repairPacket: repairPacket,
       airtimeMs: airtimeMs,
       shared: photoRulesApply(connector.currentFreqHz),
     );
-    // A Nearby only channel goes out zero hop, whatever was asked.
-    final flood = !zeroHop && !connector.isNearbyOnlyChannel(channelIndex);
     final chunks = transport.chunk(
       payload: payload,
       metadata: ImageStreamMetadata(
@@ -496,9 +513,9 @@ class PhotoMesh {
     );
     final imgId = chunks.imgId;
     final key = (channelIndex, imgId);
-    final sent = flood
-        ? PhotoRepeats(blobs: chunks.blobs, hasRepair: chunks.hasParity)
-        : null;
+    final sent = goesZeroHop
+        ? null
+        : PhotoRepeats(blobs: chunks.blobs, hasRepair: chunks.hasParity);
     if (sent != null) _sent[key] = sent;
     final airtime = Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
     final hearsInTime = gap >= photoRepeatHeardWithin(airtime);
@@ -507,7 +524,7 @@ class PhotoMesh {
       chunks,
       channelIndex: channelIndex,
       gap: gap,
-      zeroHop: zeroHop,
+      zeroHop: goesZeroHop,
       resend: sent != null && hearsInTime
           ? (i) => _sendAgain(sent, imgId, i)
           : null,
@@ -521,7 +538,8 @@ class PhotoMesh {
     );
     _log(
       'sent ${bitstream.length} bytes on channel $channelIndex as '
-      '${set.blobs.length} packets ${flood ? 'as a flood' : 'zero hop'}, '
+      '${set.blobs.length} packets '
+      '${goesZeroHop ? 'zero hop' : 'as a flood'}, '
       '${gap.inMilliseconds} ms apart, in ${sw.elapsedMilliseconds} ms',
     );
     return set;

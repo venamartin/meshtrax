@@ -640,12 +640,17 @@ class ImageReassemblyResult {
   /// Number of data chunks in the image.
   final int chunkCount;
 
+  /// The fewest repeaters any copy of its chunks came through: 0 when this
+  /// radio heard the sender's own. Null when no copy said.
+  final int? fewestHops;
+
   const ImageReassemblyResult({
     required this.key,
     required this.metadata,
     required this.data,
     required this.recoveredWithParity,
     required this.chunkCount,
+    this.fewestHops,
   });
 }
 
@@ -658,6 +663,9 @@ class ImageReassemblyFailure {
   final DateTime firstSeen;
   final DateTime expiredAt;
 
+  /// As [ImageReassemblyResult.fewestHops], of the chunks that came.
+  final int? fewestHops;
+
   /// Why it was given up on. Defaults to [ImageReassemblyFailureReason.expired]
   /// so existing call sites keep compiling.
   final ImageReassemblyFailureReason reason;
@@ -669,6 +677,7 @@ class ImageReassemblyFailure {
     required this.hadParity,
     required this.firstSeen,
     required this.expiredAt,
+    this.fewestHops,
     this.reason = ImageReassemblyFailureReason.expired,
   });
 
@@ -760,6 +769,10 @@ class _PendingImage {
   Uint8List? parityBody;
   DateTime lastSeen;
 
+  /// The fewest repeaters any copy of a chunk came through; null when none
+  /// said.
+  int? fewestHops;
+
   _PendingImage({
     required this.key,
     required this.total,
@@ -771,6 +784,12 @@ class _PendingImage {
   bool get isComplete => bodies.length == total;
 
   bool get isRecoverable => bodies.length == total - 1 && hasParity;
+
+  void heard(int? hops) {
+    if (hops != null && (fewestHops == null || hops < fewestHops!)) {
+      fewestHops = hops;
+    }
+  }
 }
 
 /// Collects chunks into whole images. Pure Dart, no IO, injectable clock.
@@ -860,6 +879,7 @@ class ImageReassembler {
           receivedDataChunks: entry.bodies.length,
           hadParity: entry.hasParity,
           firstSeen: entry.firstSeen,
+          fewestHops: entry.fewestHops,
           expiredAt: at,
           reason: ImageReassemblyFailureReason.disconnected,
         ),
@@ -888,6 +908,7 @@ class ImageReassembler {
           receivedDataChunks: entry.bodies.length,
           hadParity: entry.hasParity,
           firstSeen: entry.firstSeen,
+          fewestHops: entry.fewestHops,
           expiredAt: at,
           reason: ImageReassemblyFailureReason.channelChanged,
         ),
@@ -895,13 +916,16 @@ class ImageReassembler {
     }
   }
 
-  /// Feeds one received GRP_DATA blob.
+  /// Feeds one received GRP_DATA blob. [hops]: how many repeaters this copy
+  /// came through, 0 when heard from the sender's own radio; null when not
+  /// known. The image keeps the fewest.
   ///
   /// [now] overrides the clock for tests. Expired entries are swept first, so
   /// a caller that only ever calls [addChunk] still gets TTL behaviour.
   ImageChunkOutcome addChunk(
     Uint8List blob, {
     int channelIndex = 0,
+    int? hops,
     DateTime? now,
   }) {
     final at = now ?? _clock();
@@ -960,6 +984,7 @@ class ImageReassembler {
       _evictOverflow(at);
     }
     entry.lastSeen = at;
+    entry.heard(hops);
 
     if (header.isParity) {
       if (entry.parityBody != null) {
@@ -980,6 +1005,7 @@ class ImageReassembler {
           firstSeen: at,
         );
         fresh.bodies[header.index] = Uint8List.fromList(body);
+        fresh.heard(hops);
         _pending[key] = fresh;
         return ImageChunkOutcome(ImageChunkStatus.conflicting, header: header);
       }
@@ -1005,6 +1031,7 @@ class ImageReassembler {
             receivedDataChunks: entry.bodies.length,
             hadParity: entry.hasParity,
             firstSeen: entry.firstSeen,
+            fewestHops: entry.fewestHops,
             expiredAt: at,
             reason: finish.reason!,
           ),
@@ -1033,6 +1060,7 @@ class ImageReassembler {
           receivedDataChunks: entry.bodies.length,
           hadParity: entry.hasParity,
           firstSeen: entry.firstSeen,
+          fewestHops: entry.fewestHops,
           expiredAt: at,
         ),
       );
@@ -1087,6 +1115,7 @@ class ImageReassembler {
           receivedDataChunks: victim.bodies.length,
           hadParity: victim.hasParity,
           firstSeen: victim.firstSeen,
+          fewestHops: victim.fewestHops,
           expiredAt: at,
           reason: ImageReassemblyFailureReason.overflow,
         ),
@@ -1166,6 +1195,7 @@ class ImageReassembler {
         data: data,
         recoveredWithParity: recovered,
         chunkCount: entry.total,
+        fewestHops: entry.fewestHops,
       ),
     );
   }

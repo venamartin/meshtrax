@@ -40,6 +40,8 @@
   "@photo_positionAt": {"placeholders": {"position": {"type": "String"}, "distance": {"type": "String"}}},
   "photo_zeroHop": "Zero hop",
   "photo_zeroHopHint": "Only radios in direct range; repeaters don't pass it on",
+  "photo_zeroHopNearbyOnly": "This channel is Nearby only: only radios in direct range get it",
+  "@photo_zeroHopNearbyOnly": {"description": "Under the Zero hop switch, which is on and can't be turned off, when the channel is set to Nearby only."},
   "photo_repairPacket": "Repair packet",
   "photo_repairPacketHint": "One more packet, so the photo still arrives if any one packet is lost",
   "photo_sendFigures": "{packets} packets · about {sendTime} to send",

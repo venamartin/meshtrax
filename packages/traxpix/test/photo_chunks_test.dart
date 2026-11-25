@@ -1488,4 +1488,44 @@ void main() {
       );
     });
   });
+
+  group('how far a photo came', () {
+    ImageChunkSet photo(int imgId) => buildImageChunks(
+      payload: payloadOf(450),
+      metadata: ft8Meta,
+      senderPrefix: senderA,
+      imgId: imgId,
+    );
+
+    test('it keeps the fewest repeaters any copy came through', () {
+      final set = photo(40);
+      final r = ImageReassembler();
+      r.addChunk(set.blobs[0], hops: 2);
+      // The same chunk again, heard from the sender's own radio.
+      r.addChunk(set.blobs[0], hops: 0);
+      r.addChunk(set.blobs[1], hops: 1);
+      expect(r.addChunk(set.blobs[2], hops: 3).result!.fewestHops, 0);
+    });
+
+    test('through repeaters only, the fewest of them', () {
+      final set = photo(41);
+      final r = ImageReassembler();
+      r.addChunk(set.blobs[0], hops: 3);
+      r.addChunk(set.blobs[1], hops: 2);
+      expect(r.addChunk(set.blobs[2], hops: 2).result!.fewestHops, 2);
+    });
+
+    test('unknown when no copy said', () {
+      expect(feed(ImageReassembler(), photo(42).blobs)!.fewestHops, isNull);
+    });
+
+    test('an incomplete photo says it too', () {
+      final failures = <ImageReassemblyFailure>[];
+      final start = DateTime(2026, 1, 1, 12);
+      final r = ImageReassembler(onFailed: failures.add);
+      r.addChunk(photo(43).blobs[0], hops: 1, now: start);
+      r.evictExpired(now: start.add(const Duration(minutes: 2)));
+      expect(failures.single.fewestHops, 1);
+    });
+  });
 }

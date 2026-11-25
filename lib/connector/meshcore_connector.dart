@@ -4731,12 +4731,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// same-text messages from one sender within five minutes. Returns the
   /// message id the photo store keys the photo by, or null when the channel
   /// slot is unknown. [notify] false files it quietly, with no notification.
+  /// [hops], of a received photo: the fewest repeaters any of its packets
+  /// came through, 0 when this radio heard the sender's own (Direct, as for
+  /// a message); null when unknown.
   Future<String?> ingestPhotoMessage({
     required int channelIndex,
     required String senderName,
     required String text,
     required bool isOutgoing,
     required String packetHash,
+    int? hops,
     bool notify = true,
   }) async {
     final message = ChannelMessage(
@@ -4745,8 +4749,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       timestamp: DateTime.now(),
       isOutgoing: isOutgoing,
       status: ChannelMessageStatus.sent,
-      pathLength: 0,
-      heardDirect: !isOutgoing,
+      pathLength: isOutgoing ? 0 : hops,
+      heardDirect: !isOutgoing && hops == 0,
       channelIndex: channelIndex,
       packetHash: packetHash,
     );
