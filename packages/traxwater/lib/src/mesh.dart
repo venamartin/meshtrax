@@ -33,6 +33,7 @@ class WaterMesh {
     this.centroid,
     this.row,
     this.depth,
+    this.depthTo,
     this.flags,
     this.ring,
     this.zoc,
@@ -76,8 +77,8 @@ class WaterMesh {
     }
     final xy = Float64List(2 * nv);
     final tri = Int32List(3 * nt), nbr = Int32List(3 * nt), row = Int32List(nt);
-    final depth = Float32List(na), hazardInner = Float32List(na);
-    final hazardOuter = Float32List(na);
+    final depth = Float32List(na), depthTo = Float32List(na);
+    final hazardInner = Float32List(na), hazardOuter = Float32List(na);
     final flags = Uint16List(na), ring = Uint8List(na), zoc = Uint8List(na);
     final rowSet = Int32List(na);
     final byId = <String, WaterArea>{};
@@ -116,6 +117,7 @@ class WaterMesh {
       ];
       for (var j = 0; j < t.depth.length; j++) {
         depth[ro + j] = t.depth[j];
+        depthTo[ro + j] = t.depthTo[j];
         flags[ro + j] = t.flags[j];
         ring[ro + j] = t.ring[j];
         zoc[ro + j] = t.zoc[j];
@@ -271,6 +273,7 @@ class WaterMesh {
       centroid,
       row,
       depth,
+      depthTo,
       flags,
       ring,
       zoc,
@@ -312,7 +315,7 @@ class WaterMesh {
 
   /// Each triangle's attribute row; the rows of every tile follow.
   final Int32List row;
-  final Float32List depth;
+  final Float32List depth, depthTo;
   final Uint16List flags;
   final Uint8List ring;
   final Uint8List zoc;

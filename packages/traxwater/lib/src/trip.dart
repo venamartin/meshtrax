@@ -74,6 +74,7 @@ class WaterTrip {
     required this.securityZoneM,
     required this.trafficLaneM,
     required this.leastDepthM,
+    required this.leastDepthToM,
     required this.shallowerThanPreferredM,
     required this.surveyM,
     required this.offLand,
@@ -100,6 +101,10 @@ class WaterTrip {
 
   /// The least charted depth on the way, or null where none is charted.
   final double? leastDepthM;
+
+  /// The deep end of the depth band charted at [leastDepthM] (6–12 ft is
+  /// 1.8–3.6 m), or null where none is charted.
+  final double? leastDepthToM;
 
   /// With a preferred depth: the metres shallower than it.
   final double? shallowerThanPreferredM;
@@ -216,6 +221,8 @@ class EndsShort {
     required this.remainingM,
     required this.lowObjects,
     required this.deepestWayM,
+    this.deepestWayToM,
+    this.deepestDraftM,
   });
 
   final EndsShortReason reason;
@@ -229,6 +236,15 @@ class EndsShort {
   /// For [EndsShortReason.depth]: how deep the deepest way on is at its
   /// shallowest (the charted depth, or a hazard's within 15 m).
   final double? deepestWayM;
+
+  /// For [EndsShortReason.depth]: the deep end of the depth band charted
+  /// there (6–12 ft is 1.8–3.6 m), or null where a hazard sets the depth or
+  /// no band is charted.
+  final double? deepestWayToM;
+
+  /// For [EndsShortReason.depth]: the deepest draft that gets through with
+  /// the trip's room under the keel; 0 where none does.
+  final double? deepestDraftM;
 }
 
 enum BridgeNote {

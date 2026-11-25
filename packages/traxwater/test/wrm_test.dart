@@ -35,6 +35,9 @@ void main() {
     final zone = tile.areas.singleWhere((a) => a.id == 'f905d550a718');
     expect(zone.name, 'Monterey Bay Security Zone');
     expect(zone.isOverhead, isFalse);
+    for (var r = 0; r < tile.depth.length; r++) {
+      expect(tile.depthTo[r], greaterThan(tile.depth[r]));
+    }
   });
 
   test('reads opening bridges and their clearances', () {

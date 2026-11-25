@@ -4,13 +4,26 @@ import 'dart:typed_data';
 import 'package:traxwater/src/wrm.dart' show tileDeg, tileUnits;
 import 'package:traxwater/traxwater.dart';
 
-/// A rectangle of open water in a tile, [depth] metres deep: x from [x0] to
-/// [x1] and y from [y0] to [y1], as fractions of the tile from its
-/// south-west corner.
-typedef Water = ({double x0, double y0, double x1, double y1, double depth});
+/// A rectangle of open water in a tile, charted [depth] to [to] metres
+/// deep: x from [x0] to [x1] and y from [y0] to [y1], as fractions of the
+/// tile from its south-west corner.
+typedef Water = ({
+  double x0,
+  double y0,
+  double x1,
+  double y1,
+  double depth,
+  double? to,
+});
 
-Water water(double x0, double y0, double x1, double y1, {double depth = 50}) =>
-    (x0: x0, y0: y0, x1: x1, y1: y1, depth: depth);
+Water water(
+  double x0,
+  double y0,
+  double x1,
+  double y1, {
+  double depth = 50,
+  double? to,
+}) => (x0: x0, y0: y0, x1: x1, y1: y1, depth: depth, to: to);
 
 /// A point in tile (ix, iy), at fractions of it from its south-west corner.
 LatLon at(int ix, int iy, double x, double y) =>
@@ -34,14 +47,15 @@ WaterTile waterTile(int ix, int iy, List<Water> waters) {
       return vertices.length ~/ 2 - 1;
     },
   );
-  final triangles = <int>[], rows = <int>[], depths = <double>[];
+  final triangles = <int>[], rows = <int>[], depths = <(double, double?)>[];
   for (final w in waters) {
     final a = vertex(w.x0, w.y0), b = vertex(w.x1, w.y0);
     final c = vertex(w.x1, w.y1), d = vertex(w.x0, w.y1);
     // Counter-clockwise.
     triangles.addAll([a, b, c, a, c, d]);
-    if (!depths.contains(w.depth)) depths.add(w.depth);
-    rows.addAll([depths.indexOf(w.depth), depths.indexOf(w.depth)]);
+    if (!depths.contains((w.depth, w.to))) depths.add((w.depth, w.to));
+    final row = depths.indexOf((w.depth, w.to));
+    rows.addAll([row, row]);
   }
   // Neighbour k is across the edge from vertex k to vertex k + 1.
   final neighbours = List.filled(triangles.length, -1),
@@ -92,13 +106,13 @@ WaterTile waterTile(int ix, int iy, List<Water> waters) {
   triangles.forEach(i32);
   neighbours.forEach(i32);
   rows.forEach(u16);
-  for (final depth in depths) {
+  for (final (depth, to) in depths) {
     // DRVAL1, flags, orientation, ring, CATZOC, the hazards within 15 and
     // 100 m, clearance, DRVAL2 and area set.
     f32(depth);
     [0, 0].forEach(u16);
     [6, 1].forEach(u8);
-    [double.nan, double.nan, double.nan, double.nan].forEach(f32);
+    [double.nan, double.nan, double.nan, to ?? double.nan].forEach(f32);
     u16(0);
   }
   i32(json.length);
