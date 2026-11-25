@@ -43,7 +43,7 @@ class WaterRouteOptions {
 }
 
 enum WaterRoutingProblem {
-  /// No tiles around the trip.
+  /// No tiles at an end of the trip, or within two tiles of it.
   noTiles,
 
   /// Tiles of two builds: the installed areas need updating together.
@@ -205,6 +205,9 @@ enum EndsShortReason {
 
   /// No water joins the two ends.
   noConnection,
+
+  /// The way on takes more tiles than one route can: plan it in parts.
+  tooLong,
 }
 
 class EndsShort {
@@ -314,6 +317,7 @@ class WaterSearchStats {
   const WaterSearchStats({
     required this.tiles,
     required this.triangles,
+    required this.searches,
     required this.expanded,
     required this.loadMs,
     required this.searchMs,
@@ -324,7 +328,11 @@ class WaterSearchStats {
   final int tiles;
   final int triangles;
 
-  /// Triangles the main search took off its queue.
+  /// How many times the search ran: more than once where the water ran on
+  /// past the tiles it had.
+  final int searches;
+
+  /// Triangles the last main search took off its queue.
   final int expanded;
   final int loadMs;
   final int searchMs;

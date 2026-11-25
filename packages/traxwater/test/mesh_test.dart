@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:traxwater/src/mesh.dart';
+import 'package:traxwater/src/wrm.dart' show tileColumns;
 import 'package:traxwater/traxwater.dart';
 
 import 'support/fixture.dart';
@@ -11,7 +12,7 @@ void main() {
 
   test('joins tiles across the 180° meridian', () {
     // From 179.75° E to 179.75° W: tile 1439, then tile 0 east of it.
-    final mesh = WaterMesh.load(179.75, 51.3, 180.25, 51.5, set.tile);
+    final mesh = WaterMesh.load([set.tile(1439, 565)!, set.tile(0, 565)!]);
     expect(mesh.tileCount, 2);
     final east = set.tile(1439, 565)!.triangleCount;
     var across = 0;
@@ -24,6 +25,16 @@ void main() {
     expect(mesh.toLatLon(0, 0).lon.abs(), closeTo(180, 1e-9));
   });
 
+  test('says where the water runs on into a tile it hasn\'t got', () {
+    const west = 565 * tileColumns + 1439, east = 565 * tileColumns;
+    final alone = WaterMesh.load([set.tile(1439, 565)!]);
+    expect(alone.frontierTile, contains(east));
+    expect(alone.frontierTile, isNot(contains(west)));
+    final both = WaterMesh.load([set.tile(1439, 565)!, set.tile(0, 565)!]);
+    expect(both.frontierTile, isNot(contains(east)));
+    expect(both.frontierTile, isNot(contains(west)));
+  });
+
   test('refuses tiles of two builds', () {
     final other = WaterTile.parse(
       Uint8List.fromList(
@@ -32,13 +43,7 @@ void main() {
       ),
     );
     expect(
-      () => WaterMesh.load(
-        179.75,
-        51.3,
-        180.25,
-        51.5,
-        (ix, iy) => ix == 0 ? other : set.tile(ix, iy),
-      ),
+      () => WaterMesh.load([set.tile(1439, 565)!, other]),
       throwsA(
         isA<WaterRoutingException>().having(
           (e) => e.problem,

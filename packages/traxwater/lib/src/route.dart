@@ -42,9 +42,20 @@ const _wPreferred = 2.0, _wNearHazard = 1.0, _wKelp = 2.0, _wAvoid = 100.0;
 /// would block costs this many times more.
 const _relaxedCost = 1000.0;
 
-/// A trip on the water from [from] to [to], over the tiles [tileAt] gives
-/// (null where there's none), for the boat in [options]. [when] sets the
-/// magnetic variation of the courses.
+/// A trip searches at most this many triangles unless told otherwise:
+/// Seattle to San Diego takes about 2.6 million.
+const _maxTriangles = 4000000;
+
+/// A trip on the water from [from] to [to], for the boat in [options].
+/// [hasTile] says which tiles there are, and [tileAt] reads one (null where
+/// it can't). [when] sets the magnetic variation of the courses.
+///
+/// The search follows the tiles: the shortest chain of tiles whose water
+/// joins, from the start's to the end's, with the tiles around them. Where
+/// the water the boat can use runs on past those, the tiles it runs into
+/// join, with the tiles around them, and it searches again. A trip that would
+/// take more than [maxTriangles] ends short as too long, and where no tiles
+/// join the ends, it ends short at the water nearest the end.
 ///
 /// Limits take triangles out: the depth with room under the keel, hazards
 /// within 15 m, "entry prohibited", and with a mast height whatever is
@@ -52,189 +63,535 @@ const _relaxedCost = 1000.0;
 /// closer than it (outside the harbour approaches), then the cost, which
 /// adds for security zones, traffic lanes, kelp, water near a hazard and
 /// water shallower than preferred. Where the distance can't be kept anyway,
-/// security zones come first instead. The corridor of triangles is pulled
-/// taut, then straightened where a straight leg stays in the water and
-/// costs no more.
+/// security zones come first instead (never without [secondSearch], for
+/// comparing with the builder's test router). The corridor of triangles is
+/// pulled taut, then straightened where a straight leg stays in the water
+/// and costs no more.
 ///
-/// Throws a [WaterRoutingException] when there are no tiles, or tiles of
-/// two builds.
+/// Throws a [WaterRoutingException] when there are no tiles at an end, or
+/// tiles of two builds.
 WaterTrip routeOnWater(
   LatLon from,
-  LatLon to,
-  WaterTile? Function(int ix, int iy) tileAt, {
+  LatLon to, {
+  required bool Function(int ix, int iy) hasTile,
+  required WaterTile? Function(int ix, int iy) tileAt,
   WaterRouteOptions options = const WaterRouteOptions(),
   DateTime? when,
-}) {
-  final watch = Stopwatch()..start();
-  return routeOnMesh(
-    meshAround(from, to, tileAt),
-    from,
-    to,
-    options,
-    when: when ?? DateTime.now(),
-    watch: watch,
-  );
-}
-
-/// The tiles [routeOnWater] searches: those within 0.3° of the box around
-/// the two ends, across the 180° meridian where the ends are either side
-/// of it.
-WaterMesh meshAround(
-  LatLon from,
-  LatLon to,
-  WaterTile? Function(int ix, int iy) tileAt,
-) {
-  var toLon = to.lon;
-  if ((toLon - from.lon).abs() > 180) toLon += toLon < from.lon ? 360 : -360;
-  const margin = 0.3;
-  return WaterMesh.load(
-    math.min(from.lon, toLon) - margin,
-    math.min(from.lat, to.lat) - margin,
-    math.max(from.lon, toLon) + margin,
-    math.max(from.lat, to.lat) + margin,
-    tileAt,
-  );
-}
-
-/// [routeOnWater] over a loaded mesh. Without [secondSearch], security
-/// zones never come first (for comparing).
-WaterTrip routeOnMesh(
-  WaterMesh m,
-  LatLon from,
-  LatLon to,
-  WaterRouteOptions o, {
-  required DateTime when,
-  Stopwatch? watch,
+  int maxTriangles = _maxTriangles,
   bool secondSearch = true,
 }) {
-  watch ??= Stopwatch()..start();
-  final loadMs = watch.elapsedMilliseconds;
-  final n = m.triangleCount;
-  if (n == 0) throw const WaterRoutingException(WaterRoutingProblem.noTiles);
-  final lim = o.draftM + o.underKeelM - _chartRoundingM;
-  final rows = _Rows(m, o, lim);
-  final cost = rows.triangles(m);
-  final (s, sx, sy, fromEnd) = _end(m, rows, cost, from);
-  final (g, askedX, askedY, toEnd) = _end(m, rows, cost, to);
-  var (goal, gx, gy) = (g, askedX, askedY);
+  final watch = Stopwatch()..start();
+  bool has(int key) => hasTile(key % tileColumns, key ~/ tileColumns);
+  WaterTile? read(int key) {
+    final ix = key % tileColumns, iy = key ~/ tileColumns;
+    final t = tileAt(ix, iy);
+    if (t != null && (t.ix != ix || t.iy != iy)) {
+      throw FormatException('tile ${t.iy}_${t.ix} read as ${iy}_$ix');
+    }
+    return t;
+  }
 
-  final inside = Float64List(n), zone = Uint8List(n);
-  var inner = 0;
-  final offLand = o.offLandNm;
-  if (offLand != null) {
-    inner = ringsNm.where((r) => r <= offLand + 1e-9).length;
-    _approach(m, cost, inner, s, offLand, zone);
-    _approach(m, cost, inner, g, offLand, zone);
-    for (var t = 0; t < n; t++) {
-      if (m.ring[m.row[t]] < inner && zone[t] == 0) inside[t] = 1;
+  final chain = _chain(from, to, has, read);
+  final keys = <int>[], taken = <int>{};
+  void take(int key) {
+    for (final k in _around(key)) {
+      if (taken.add(k) && has(k)) keys.add(k);
     }
   }
 
-  final searchWatch = Stopwatch()..start();
-  final search = _AStar(m, cost, inside).run(s, g, gx, gy);
-  EndsShort? short;
-  if (!search.found) {
-    // The water the search reached nearest the end.
-    var best = double.infinity;
-    for (var t = 0; t < n; t++) {
-      if (search.closed[t] == 0) continue;
-      final (x, y) = _closest(m, t, askedX, askedY);
-      final d = (x - askedX) * (x - askedX) + (y - askedY) * (y - askedY);
-      if (d < best) (best, goal, gx, gy) = (d, t, x, y);
+  chain.tiles.forEach(take);
+  var searches = 0, loadMs = watch.elapsedMilliseconds, searchMs = 0;
+  while (true) {
+    final loading = Stopwatch()..start();
+    final tiles = <WaterTile>[], loaded = <int>{};
+    var triangles = 0, cut = false;
+    for (final k in keys) {
+      final t = read(k);
+      if (t == null) continue;
+      if (triangles + t.triangleCount > maxTriangles) {
+        cut = true;
+        break;
+      }
+      triangles += t.triangleCount;
+      tiles.add(t);
+      loaded.add(k);
     }
-    short = _whyShort(m, rows, o, inside, s, g);
-  }
-  var (tris, steps) = search.pathTo(goal);
-  Float64List? keep;
-  if (secondSearch && offLand != null && o.avoidSecurityZones) {
-    final sec = Float64List(n);
-    for (var t = 0; t < n; t++) {
-      if (m.flags[m.row[t]] & flagSecurityZone != 0) sec[t] = 1;
+    final m = WaterMesh.load(tiles);
+    loadMs += loading.elapsedMilliseconds;
+    final search = _Search(
+      m,
+      from,
+      to,
+      options,
+      goalIn: chain.reaches && loaded.contains(chain.goal),
+    );
+    searches++;
+    searchMs += search.ms;
+    if (!search.found && search.goal >= 0 && !cut) {
+      final before = keys.length;
+      for (final k in search.frontier()) {
+        if (has(k)) take(k);
+      }
+      if (keys.length > before) continue;
     }
-    var ran = false;
-    (tris, steps, ran) = _securityFirst(m, cost, inside, sec, tris, steps);
-    if (ran) keep = sec;
-  }
-  final searchMs = searchWatch.elapsedMilliseconds;
-
-  final straightenWatch = Stopwatch()..start();
-  final taut = _funnel(m, tris, steps, sx, sy, gx, gy);
-  final path = _straighten(m, taut, cost, [inside, ?keep]);
-  final straightenMs = straightenWatch.elapsedMilliseconds;
-
-  final points = [
-    for (var i = 0; i < path.length; i++)
-      if (i == 0 && fromEnd.moved == null)
-        from
-      else if (i == path.length - 1 && toEnd.moved == null && short == null)
-        to
-      else
-        m.toLatLon(path[i].$1, path[i].$2),
-  ];
-  final speed = o.speedKn * _nm / 3600;
-  final legs = <WaterLeg>[], scale = <double>[];
-  for (var i = 0; i + 1 < points.length; i++) {
-    final (d, course) = _rhumb(points[i], points[i + 1]);
-    final variation = magneticDeclination(points[i].lat, points[i].lon, when);
-    legs.add(
-      WaterLeg(
-        from: points[i],
-        to: points[i + 1],
-        distanceM: d,
-        courseTrue: course,
-        courseMagnetic: (course - variation) % 360,
-        time: Duration(milliseconds: (d / speed * 1000).round()),
-      ),
-    );
-    final flat = math.sqrt(
-      math.pow(path[i + 1].$1 - path[i].$1, 2) +
-          math.pow(path[i + 1].$2 - path[i].$2, 2),
-    );
-    scale.add(flat > 0 ? d / flat : 1);
-  }
-  if (short != null && points.isNotEmpty) {
-    short = EndsShort(
-      reason: short.reason,
-      remainingM: _rhumb(points.last, to).$1,
-      lowObjects: short.lowObjects,
-      deepestWayM: short.deepestWayM,
-    );
-  }
-
-  final through = _Along(m, cost, inside, zone, inner, o)..walk(path, scale);
-  return WaterTrip(
-    legs: legs,
-    from: fromEnd,
-    to: toEnd,
-    endsShort: short,
-    areas: through.areas(),
-    securityZoneM: through.securityM,
-    trafficLaneM: through.laneM,
-    leastDepthM: through.leastDepthM,
-    shallowerThanPreferredM: o.preferDepthM == null ? null : through.shallowM,
-    surveyM: through.surveyM,
-    offLand: offLand == null
-        ? null
-        : OffLand(
-            distanceNm: offLand,
-            reachesDistance: through.reaches,
-            insideInApproachesM: through.insideInApproachesM,
-            insideElsewhereM: through.insideElsewhereM,
-            couldntKeep: through.stretches(),
-          ),
-    lowestClearance: through.lowest(),
-    outsideM: through.outsideM,
-    magneticModelExpired: decimalYear(when) > magneticModelValidUntil,
-    stats: WaterSearchStats(
-      tiles: m.tileCount,
-      triangles: n,
-      expanded: search.expanded,
+    return search.trip(
+      when: when ?? DateTime.now(),
+      secondSearch: secondSearch,
+      because: !chain.reaches || (!cut && search.goal < 0)
+          ? EndsShortReason.noConnection
+          : cut
+          ? EndsShortReason.tooLong
+          : null,
+      watch: watch,
+      searches: searches,
       loadMs: loadMs,
       searchMs: searchMs,
-      straightenMs: straightenMs,
-      totalMs: watch.elapsedMilliseconds,
-    ),
-  );
+    );
+  }
+}
+
+/// The tiles a trip follows: the shortest chain of tiles whose water joins,
+/// from the part of the water at the start (in its tile, or the nearest
+/// tile within two) to the part at the end. Where none joins them, the chain
+/// runs to the tile it reaches nearest the end.
+///
+/// A tile's water joins the next tile's where their border edges share a
+/// stretch, as the mesh joins them, and its own parts are what join inside
+/// it, so the chain never crosses land.
+({List<int> tiles, int goal, bool reaches}) _chain(
+  LatLon from,
+  LatLon to,
+  bool Function(int key) has,
+  WaterTile? Function(int key) read,
+) {
+  final startKey = _tileNear(from, has), goalKey = _tileNear(to, has);
+  if (startKey == null || goalKey == null) {
+    throw const WaterRoutingException(WaterRoutingProblem.noTiles);
+  }
+  final joins = <int, _Joins?>{};
+  _Joins? joinsOf(int key) => joins.putIfAbsent(key, () {
+    final t = read(key);
+    return t == null ? null : _Joins(t);
+  });
+  int? partAt(int key, LatLon p) {
+    final t = read(key);
+    if (t == null) return null;
+    return (joins[key] = _Joins(t, p)).atPart;
+  }
+
+  final startPart = partAt(startKey, from), goalPart = partAt(goalKey, to);
+  if (startPart == null || goalPart == null) {
+    throw const WaterRoutingException(WaterRoutingProblem.noTiles);
+  }
+  final goal = goalKey << 20 | goalPart;
+  final ids = <int, int>{}, nodes = <int>[], best = <double>[];
+  final back = <int>[], done = <int>{};
+  int idOf(int node) => ids.putIfAbsent(node, () {
+    nodes.add(node);
+    best.add(double.infinity);
+    back.add(-1);
+    return nodes.length - 1;
+  });
+  final heap = _Heap();
+  final first = idOf(startKey << 20 | startPart);
+  best[first] = 0;
+  heap.push(_apart(startKey, goalKey), 0, first);
+  var reached = -1, nearest = first, nearestApart = double.infinity;
+  while (heap.isNotEmpty) {
+    final i = heap.pop();
+    if (!done.add(i)) continue;
+    final node = nodes[i], key = node >> 20, part = node & 0xfffff;
+    if (node == goal) {
+      reached = i;
+      break;
+    }
+    final apart = _apart(key, goalKey);
+    if (apart < nearestApart) (nearest, nearestApart) = (i, apart);
+    final here = joins[key]!;
+    for (var side = 0; side < 4; side++) {
+      final mine = here.sides[part * 4 + side];
+      final next = _across(key, side);
+      if (mine == null || next == null || !has(next)) continue;
+      final there = joinsOf(next);
+      if (there == null) continue;
+      for (final q in there.partsOn[side ^ 1]) {
+        if (!_overlap(mine, there.sides[q * 4 + (side ^ 1)]!)) continue;
+        final n = idOf(next << 20 | q);
+        final d = best[i] + _apart(key, next);
+        if (done.contains(n) || d >= best[n]) continue;
+        best[n] = d;
+        back[n] = i;
+        heap.push(d + _apart(next, goalKey), 0, n);
+      }
+    }
+  }
+  final tiles = <int>[];
+  for (var i = reached >= 0 ? reached : nearest; i >= 0; i = back[i]) {
+    tiles.add(nodes[i] >> 20);
+  }
+  return (tiles: tiles.reversed.toList(), goal: goalKey, reaches: reached >= 0);
+}
+
+/// A tile's water in the parts that join inside it, and for each part and
+/// side of the tile (0 west, 1 east, 2 south, 3 north) the stretches of the
+/// side it meets: lo, hi, … in units along the side, merged. Given [at], it
+/// also finds the part there.
+class _Joins {
+  factory _Joins(WaterTile t, [LatLon? at]) {
+    final n = t.triangleCount, up = Int32List(n);
+    for (var i = 0; i < n; i++) {
+      up[i] = i;
+    }
+    int root(int a) {
+      while (up[a] != a) {
+        a = up[a] = up[up[a]];
+      }
+      return a;
+    }
+
+    for (var j = 0; j < 3 * n; j++) {
+      final b = t.neighbours[j];
+      if (b < 0) continue;
+      final ra = root(j ~/ 3), rb = root(b);
+      if (ra != rb) up[ra] = rb;
+    }
+    final part = Int32List(n), ids = <int, int>{};
+    for (var i = 0; i < n; i++) {
+      part[i] = ids.putIfAbsent(root(i), () => ids.length);
+    }
+    final x0 = t.ix * tileUnits - 1800000000, x1 = x0 + tileUnits;
+    final y0 = t.iy * tileUnits - 900000000, y1 = y0 + tileUnits;
+    final v = t.vertices, raw = <int, List<int>>{};
+    for (var j = 0; j < t.triangles.length; j++) {
+      if (t.neighbours[j] >= 0) continue;
+      final a = 2 * t.triangles[j];
+      final b = 2 * t.triangles[j - j % 3 + (j + 1) % 3];
+      final ax = v[a], ay = v[a + 1], bx = v[b], by = v[b + 1];
+      void add(int side, int p, int q) => (raw[part[j ~/ 3] * 4 + side] ??= [])
+          .addAll([math.min(p, q), math.max(p, q)]);
+      if (ax == bx && ax == x0) add(0, ay, by);
+      if (ax == bx && ax == x1) add(1, ay, by);
+      if (ay == by && ay == y0) add(2, ax, bx);
+      if (ay == by && ay == y1) add(3, ax, bx);
+    }
+    final sides = <int, List<int>>{};
+    final partsOn = [<int>[], <int>[], <int>[], <int>[]];
+    for (final MapEntry(:key, :value) in raw.entries) {
+      final order = List.generate(value.length ~/ 2, (i) => 2 * i)
+        ..sort((p, q) => value[p].compareTo(value[q]));
+      final merged = <int>[];
+      for (final i in order) {
+        if (merged.isNotEmpty && value[i] <= merged.last) {
+          merged.last = math.max(merged.last, value[i + 1]);
+        } else {
+          merged.addAll([value[i], value[i + 1]]);
+        }
+      }
+      sides[key] = merged;
+      partsOn[key % 4].add(key ~/ 4);
+    }
+    return _Joins._(
+      sides,
+      partsOn,
+      at == null ? -1 : part[_nearestTriangle(t, at)],
+    );
+  }
+
+  _Joins._(this.sides, this.partsOn, this.atPart);
+
+  final Map<int, List<int>> sides;
+
+  /// By side, the parts that meet it.
+  final List<List<int>> partsOn;
+
+  /// The part at the point the tile was read for, or −1.
+  final int atPart;
+}
+
+/// The triangle of [t] that holds [p], or else the one nearest it.
+int _nearestTriangle(WaterTile t, LatLon p) {
+  final v = t.vertices, tri = t.triangles;
+  final px = p.lon * 1e7, py = p.lat * 1e7;
+  final k = math.cos(p.lat * math.pi / 180);
+  var best = 0, bestD = double.infinity;
+  for (var i = 0; i < t.triangleCount && bestD > 0; i++) {
+    var d = 0.0, inside = true;
+    for (var e = 0; e < 3; e++) {
+      final a = 2 * tri[3 * i + e], b = 2 * tri[3 * i + (e + 1) % 3];
+      final ax = (v[a] - px) * k, ay = v[a + 1] - py;
+      final bx = (v[b] - px) * k, by = v[b + 1] - py;
+      if (ax * by - ay * bx < 0) inside = false;
+      final ex = bx - ax, ey = by - ay, l = ex * ex + ey * ey;
+      final s = l == 0 ? 0.0 : (-(ax * ex + ay * ey) / l).clamp(0.0, 1.0);
+      final dx = ax + s * ex, dy = ay + s * ey;
+      d = e == 0 ? dx * dx + dy * dy : math.min(d, dx * dx + dy * dy);
+    }
+    if (inside) d = 0;
+    if (d < bestD) (best, bestD) = (i, d);
+  }
+  return best;
+}
+
+/// Whether two lists of stretches (lo, hi, …, sorted) share any length.
+bool _overlap(List<int> a, List<int> b) {
+  var i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    if (math.min(a[i + 1], b[j + 1]) > math.max(a[i], b[j])) return true;
+    if (a[i + 1] < b[j + 1]) {
+      i += 2;
+    } else {
+      j += 2;
+    }
+  }
+  return false;
+}
+
+/// The tile across [side] of tile [key] (0 west, 1 east, 2 south, 3
+/// north), or null past a pole.
+int? _across(int key, int side) {
+  final r = key ~/ tileColumns, c = key % tileColumns;
+  return switch (side) {
+    0 => r * tileColumns + (c - 1) % tileColumns,
+    1 => r * tileColumns + (c + 1) % tileColumns,
+    2 => r > 0 ? key - tileColumns : null,
+    _ => r + 1 < tileRows ? key + tileColumns : null,
+  };
+}
+
+/// The tile at [p], or else the nearest within two tiles of it, or null.
+int? _tileNear(LatLon p, bool Function(int key) has) {
+  final u = (p.lon + 180) / tileDeg, v = (p.lat + 90) / tileDeg;
+  final k = math.cos(p.lat * math.pi / 180);
+  int? found;
+  var best = double.infinity;
+  for (var dr = -2; dr <= 2; dr++) {
+    for (var dc = -2; dc <= 2; dc++) {
+      final r = v.floor() + dr, c = u.floor() + dc;
+      if (r < 0 || r >= tileRows) continue;
+      final key = r * tileColumns + c % tileColumns;
+      if (!has(key)) continue;
+      final ex = math.max(0.0, math.max(c - u, u - c - 1)) * k;
+      final ey = math.max(0.0, math.max(r - v, v - r - 1));
+      final d = ex * ex + ey * ey;
+      if (d < best) (found, best) = (key, d);
+    }
+  }
+  return found;
+}
+
+/// Tile [key] and the tiles around it, corners too.
+Iterable<int> _around(int key) sync* {
+  final r = key ~/ tileColumns, c = key % tileColumns;
+  for (var dr = -1; dr <= 1; dr++) {
+    if (r + dr < 0 || r + dr >= tileRows) continue;
+    for (var dc = -1; dc <= 1; dc++) {
+      yield (r + dr) * tileColumns + (c + dc) % tileColumns;
+    }
+  }
+}
+
+/// How far apart two tiles are, in tiles (a column narrower by cos lat).
+double _apart(int a, int b) {
+  final ra = a ~/ tileColumns, rb = b ~/ tileColumns;
+  final dc = (a % tileColumns - b % tileColumns).abs();
+  final x =
+      math.min(dc, tileColumns - dc) *
+      math.cos(((ra + rb + 1) / 2 * tileDeg - 90) * math.pi / 180);
+  return math.sqrt(x * x + (ra - rb) * (ra - rb));
+}
+
+/// One search over a mesh: the trip's ends, costs and A*. [goal] is the
+/// end's triangle, or −1 where the end isn't in the mesh.
+class _Search {
+  _Search(this.m, this.from, this.to, this.o, {required bool goalIn})
+    : rows = _Rows(m, o, o.draftM + o.underKeelM - _chartRoundingM),
+      inside = Float64List(m.triangleCount),
+      zone = Uint8List(m.triangleCount) {
+    final n = m.triangleCount;
+    if (n == 0) throw const WaterRoutingException(WaterRoutingProblem.noTiles);
+    cost = rows.triangles(m);
+    final (s, x, y, fromAt) = _end(m, rows, cost, from);
+    start = s;
+    sx = x;
+    sy = y;
+    fromEnd = fromAt;
+    if (goalIn) {
+      final (g, ex, ey, toAt) = _end(m, rows, cost, to);
+      goal = g;
+      gx = ex;
+      gy = ey;
+      toEnd = toAt;
+    } else {
+      final (ex, ey) = m.toXY(to.lat, to.lon);
+      goal = -1;
+      gx = ex;
+      gy = ey;
+      toEnd = WaterEnd(asked: to, at: to, movedM: 0, moved: null, depthM: null);
+    }
+    final offLand = o.offLandNm;
+    if (offLand != null) {
+      inner = ringsNm.where((r) => r <= offLand + 1e-9).length;
+      _approach(m, cost, inner, start, offLand, zone);
+      if (goal >= 0) _approach(m, cost, inner, goal, offLand, zone);
+      for (var t = 0; t < n; t++) {
+        if (m.ring[m.row[t]] < inner && zone[t] == 0) inside[t] = 1;
+      }
+    }
+    final w = Stopwatch()..start();
+    astar = _AStar(m, cost, inside).run(start, goal, gx, gy);
+    ms = w.elapsedMilliseconds;
+  }
+
+  final WaterMesh m;
+  final LatLon from, to;
+  final WaterRouteOptions o;
+  final _Rows rows;
+  final Float64List inside;
+  final Uint8List zone;
+  late final Float64List cost;
+  late final int start, goal;
+  late final double sx, sy, gx, gy;
+  late final WaterEnd fromEnd, toEnd;
+  var inner = 0;
+  late final _AStar astar;
+  late final int ms;
+
+  bool get found => astar.found;
+
+  /// The tiles not in the mesh that the water the search reached runs on
+  /// into.
+  Set<int> frontier() => {
+    for (var j = 0; j < m.frontierTri.length; j++)
+      if (astar.closed[m.frontierTri[j]] != 0) m.frontierTile[j],
+  };
+
+  /// The trip. Where the search didn't reach the end, it ends short
+  /// [because] of that, or for the reason [_whyShort] finds.
+  WaterTrip trip({
+    required DateTime when,
+    required bool secondSearch,
+    required EndsShortReason? because,
+    required Stopwatch watch,
+    required int searches,
+    required int loadMs,
+    required int searchMs,
+  }) {
+    final more = Stopwatch()..start();
+    final n = m.triangleCount;
+    var (end, ex, ey) = (goal, gx, gy);
+    EndsShort? short;
+    if (!found) {
+      // The water the search reached nearest the end.
+      var best = double.infinity;
+      for (var t = 0; t < n; t++) {
+        if (astar.closed[t] == 0) continue;
+        final (x, y) = _closest(m, t, gx, gy);
+        final d = (x - gx) * (x - gx) + (y - gy) * (y - gy);
+        if (d < best) (best, end, ex, ey) = (d, t, x, y);
+      }
+      short = because == null
+          ? _whyShort(m, rows, o, inside, start, goal)
+          : EndsShort(
+              reason: because,
+              remainingM: 0,
+              lowObjects: const [],
+              deepestWayM: null,
+            );
+    }
+    var (tris, steps) = astar.pathTo(end);
+    Float64List? keep;
+    final offLand = o.offLandNm;
+    if (secondSearch && offLand != null && o.avoidSecurityZones) {
+      final sec = Float64List(n);
+      for (var t = 0; t < n; t++) {
+        if (m.flags[m.row[t]] & flagSecurityZone != 0) sec[t] = 1;
+      }
+      var ran = false;
+      (tris, steps, ran) = _securityFirst(m, cost, inside, sec, tris, steps);
+      if (ran) keep = sec;
+    }
+    final moreMs = more.elapsedMilliseconds;
+
+    final straightenWatch = Stopwatch()..start();
+    final taut = _funnel(m, tris, steps, sx, sy, ex, ey);
+    final path = _straighten(m, taut, cost, [inside, ?keep]);
+    final straightenMs = straightenWatch.elapsedMilliseconds;
+
+    final points = [
+      for (var i = 0; i < path.length; i++)
+        if (i == 0 && fromEnd.moved == null)
+          from
+        else if (i == path.length - 1 && toEnd.moved == null && short == null)
+          to
+        else
+          m.toLatLon(path[i].$1, path[i].$2),
+    ];
+    final speed = o.speedKn * _nm / 3600;
+    final legs = <WaterLeg>[], scale = <double>[];
+    for (var i = 0; i + 1 < points.length; i++) {
+      final (d, course) = _rhumb(points[i], points[i + 1]);
+      final variation = magneticDeclination(points[i].lat, points[i].lon, when);
+      legs.add(
+        WaterLeg(
+          from: points[i],
+          to: points[i + 1],
+          distanceM: d,
+          courseTrue: course,
+          courseMagnetic: (course - variation) % 360,
+          time: Duration(milliseconds: (d / speed * 1000).round()),
+        ),
+      );
+      final flat = math.sqrt(
+        math.pow(path[i + 1].$1 - path[i].$1, 2) +
+            math.pow(path[i + 1].$2 - path[i].$2, 2),
+      );
+      scale.add(flat > 0 ? d / flat : 1);
+    }
+    if (short != null && points.isNotEmpty) {
+      short = EndsShort(
+        reason: short.reason,
+        remainingM: _rhumb(points.last, to).$1,
+        lowObjects: short.lowObjects,
+        deepestWayM: short.deepestWayM,
+      );
+    }
+
+    final through = _Along(m, cost, inside, zone, inner, o)..walk(path, scale);
+    return WaterTrip(
+      legs: legs,
+      from: fromEnd,
+      to: toEnd,
+      endsShort: short,
+      areas: through.areas(),
+      securityZoneM: through.securityM,
+      trafficLaneM: through.laneM,
+      leastDepthM: through.leastDepthM,
+      shallowerThanPreferredM: o.preferDepthM == null ? null : through.shallowM,
+      surveyM: through.surveyM,
+      offLand: offLand == null
+          ? null
+          : OffLand(
+              distanceNm: offLand,
+              reachesDistance: through.reaches,
+              insideInApproachesM: through.insideInApproachesM,
+              insideElsewhereM: through.insideElsewhereM,
+              couldntKeep: through.stretches(),
+            ),
+      lowestClearance: through.lowest(),
+      outsideM: through.outsideM,
+      magneticModelExpired: decimalYear(when) > magneticModelValidUntil,
+      stats: WaterSearchStats(
+        tiles: m.tileCount,
+        triangles: n,
+        searches: searches,
+        expanded: astar.expanded,
+        loadMs: loadMs,
+        searchMs: searchMs + moreMs,
+        straightenMs: straightenMs,
+        totalMs: watch.elapsedMilliseconds,
+      ),
+    );
+  }
 }
 
 /// Each attribute row's limits (why it's out, 0 when the boat can use it)

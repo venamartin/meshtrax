@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:traxwater/src/route.dart';
 import 'package:traxwater/traxwater.dart';
 
 /// A set of the engine fixture (test/fixture/README.md): tiles cut from a
@@ -18,10 +17,13 @@ class FixtureSet {
   final List trips;
   final _tiles = <String, WaterTile?>{};
 
-  WaterTile? tile(int ix, int iy) => _tiles.putIfAbsent('${iy}_$ix', () {
-    final f = File('test/fixture/$name/${tileName(ix, iy)}.gz');
-    return f.existsSync() ? WaterTile.parse(tileBytes(name, ix, iy)) : null;
-  });
+  bool has(int ix, int iy) =>
+      File('test/fixture/$name/${tileName(ix, iy)}.gz').existsSync();
+
+  WaterTile? tile(int ix, int iy) => _tiles.putIfAbsent(
+    '${iy}_$ix',
+    () => has(ix, iy) ? WaterTile.parse(tileBytes(name, ix, iy)) : null,
+  );
 }
 
 /// A fixture tile's bytes.
@@ -67,12 +69,12 @@ WaterTrip tripOf(
   List<String> args, {
   WaterRouteOptions? options,
 }) {
-  final from = pointOf(args, 'from'), to = pointOf(args, 'to');
-  return routeOnMesh(
-    meshAround(from, to, set.tile),
-    from,
-    to,
-    options ?? optionsOf(args),
+  return routeOnWater(
+    pointOf(args, 'from'),
+    pointOf(args, 'to'),
+    hasTile: set.has,
+    tileAt: set.tile,
+    options: options ?? optionsOf(args),
     when: DateTime.utc(2026, 11, 24),
     secondSearch: !args.contains('never'),
   );
