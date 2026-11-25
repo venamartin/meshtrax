@@ -23,7 +23,7 @@ The phones that receive it rebuild a picture from that code with the same model.
 5. To show where you are, turn on **Include location** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's location now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
 6. Tap **Send**. MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first.
 
-A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
+A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. On a Nearby only channel every photo goes zero hop. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
 
 Through repeaters, your radio listens for each packet being passed on:
 - A packet no repeater was heard passing on goes once more ("Packet 2 of 4 again"), while the others can still put the photo together. It doesn't when **Max Channel Message Retries** is 0, or when no repeater has been heard for 10 minutes. After a packet sent again, no more go until a repeater is heard passing some packet of the photo on. A repeater you marked in Pathfinder as moving with you doesn't count.
@@ -35,7 +35,7 @@ Through repeaters, your radio listens for each packet being passed on:
 On the frequencies of MeshCore's standard presets, photos share the air with everyone, so MeshTrax holds them back:
 - Before each photo it asks you to confirm, with how much airtime the photo takes, measured in text messages (a photo is usually as much as 8), and whether repeaters pass it on.
 - On Public and hashtag channels it first explains that most people there won't see the photo, since only MeshTrax shows photos, and what's better: zero hop, a private channel, a tighter crop, one photo rather than a series. **Don't show this again** skips that explanation, not the question.
-- One photo every 10 minutes from each radio, and one through repeaters every 30 minutes: zero hop is the way to send another sooner.
+- One photo every 10 minutes from each radio, and one through repeaters every 30 minutes: zero hop is the way to send another sooner. A photo no repeater was heard carrying doesn't count toward the 30 minutes, as long as your radio heard a repeater in the last minute: then none carried it.
 - At least four packets' airtime between packets, so a photo takes no more than about a quarter of the air around you. Through repeaters, MeshTrax waits longer, until each packet has cleared the repeaters near you.
 
 The Off-Grid presets, TRAX included, and custom frequencies have none of these limits.

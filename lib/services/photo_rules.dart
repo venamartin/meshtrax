@@ -25,6 +25,12 @@ const Duration photoGapZeroHop = Duration(minutes: 10);
 /// long.
 const Duration photoGapRepeaters = Duration(minutes: 30);
 
+/// A photo through repeaters that no repeater was heard carrying gives back
+/// its [photoGapRepeaters] when a repeater was heard this recently as its
+/// wait ended: this radio hears repeaters, so their silence means none
+/// carried it.
+const Duration photoUncarriedRepeaterWindow = Duration(minutes: 1);
+
 /// On a MeshCore frequency, at least this many packet airtimes from one
 /// photo packet to the next, so a photo takes no more than about a quarter of
 /// the air around the sender. Slow settings get less where a photo would
@@ -168,4 +174,15 @@ Future<void> notePhotoSent(
       at.millisecondsSinceEpoch,
     );
   }
+}
+
+/// Gives back the [photoGapRepeaters] of the photo through repeaters sent
+/// [at], which no repeater carried: the next photo waits only the
+/// [photoGapZeroHop]. A later photo's time is left alone; an earlier one's
+/// had run out, or this one couldn't have gone.
+Future<void> notePhotoNotCarried(String radioKeyHex, DateTime at) async {
+  if (radioKeyHex.length < 16) return;
+  final key = _lastSentKey(radioKeyHex, viaRepeaters: true);
+  if (PrefsManager.instance.getInt(key) != at.millisecondsSinceEpoch) return;
+  await PrefsManager.instance.remove(key);
 }

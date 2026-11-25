@@ -144,6 +144,10 @@ class AppLocalizationsKo extends AppLocalizations {
       'Only radios in direct range; repeaters don\'t pass it on';
 
   @override
+  String get photo_zeroHopNearbyOnly =>
+      'This channel is Nearby only: only radios in direct range get it';
+
+  @override
   String get photo_repairPacket => 'Repair packet';
 
   @override

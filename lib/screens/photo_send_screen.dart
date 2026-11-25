@@ -296,6 +296,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     }
   }
 
+  /// A Nearby only channel sends every photo zero hop.
+  bool _nearbyOnly(MeshCoreConnector connector) =>
+      connector.isNearbyOnlyChannel(widget.channel.index);
+
+  bool _goesZeroHop(MeshCoreConnector connector) =>
+      _zeroHop || _nearbyOnly(connector);
+
   /// On a MeshCore frequency the sender confirms what the photo costs. On
   /// Public or a hashtag channel they first read why a photo there asks a lot
   /// of the mesh, until they say not to show it again.
@@ -326,7 +333,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
               messages,
             ),
             if (open) l10n.photo_confirmOpenChannel(widget.channel.displayName),
-            _zeroHop ? l10n.photo_confirmZeroHop : l10n.photo_confirmFlood,
+            _goesZeroHop(connector)
+                ? l10n.photo_confirmZeroHop
+                : l10n.photo_confirmFlood,
           ].join('\n\n'),
         ),
         actions: [
@@ -403,6 +412,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     final l10n = context.l10n;
     final connector = context.read<MeshCoreConnector>();
     if (!await _confirmSend(connector) || !mounted) return;
+    final zeroHop = _goesZeroHop(connector);
     setState(() {
       _step = _Step.sending;
       _sendStatus = l10n.photo_sending;
@@ -413,7 +423,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         widget.channel.index,
         tag: _tag.text,
         position: _extras(connector).position,
-        zeroHop: _zeroHop,
+        zeroHop: zeroHop,
         repairPacket: _repairPacket,
         previewPng: _previewPng,
         onProgress: (p) {
@@ -435,13 +445,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           .showSnackBar(SnackBar(content: Text(l10n.photo_notSent(why))));
       setState(() => _step = _Step.ready);
       return;
-    }
-    if (photoRulesApply(connector.currentFreqHz)) {
-      await notePhotoSent(
-        connector.selfPublicKeyHex,
-        DateTime.now(),
-        viaRepeaters: !_zeroHop,
-      );
     }
     if (mounted) Navigator.of(context).pop();
   }
@@ -584,12 +587,14 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       color: theme.colorScheme.onSurfaceVariant,
     );
     final connector = context.watch<MeshCoreConnector>();
+    final nearbyOnly = _nearbyOnly(connector);
+    final zeroHop = _zeroHop || nearbyOnly;
     final packets = _packets(connector);
     final airtimeMs = connector.estimatePacketAirtimeMs;
     final sendTime =
         photoGapFor(
               photoPayload(_bitstream!, _extras(connector)).length,
-              zeroHop: _zeroHop,
+              zeroHop: zeroHop,
               repairPacket: _repairPacket,
               airtimeMs: airtimeMs,
               shared: photoRulesApply(connector.currentFreqHz),
@@ -604,7 +609,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             freqKhz: connector.currentFreqHz,
             lastSent: photoLastSent(key),
             lastSentViaRepeaters: photoLastSentViaRepeaters(key),
-            viaRepeaters: !_zeroHop,
+            viaRepeaters: !zeroHop,
             now: DateTime.now(),
           );
     return [
@@ -688,9 +693,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         contentPadding: EdgeInsets.zero,
         secondary: const Icon(Icons.near_me_outlined),
         title: Text(l10n.photo_zeroHop),
-        subtitle: Text(l10n.photo_zeroHopHint),
-        value: _zeroHop,
-        onChanged: sending ? null : (on) => setState(() => _zeroHop = on),
+        subtitle: Text(
+          nearbyOnly ? l10n.photo_zeroHopNearbyOnly : l10n.photo_zeroHopHint,
+        ),
+        value: zeroHop,
+        onChanged: sending || nearbyOnly
+            ? null
+            : (on) => setState(() => _zeroHop = on),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,

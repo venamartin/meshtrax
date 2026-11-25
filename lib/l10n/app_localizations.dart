@@ -329,6 +329,12 @@ abstract class AppLocalizations {
   /// **'Only radios in direct range; repeaters don\'t pass it on'**
   String get photo_zeroHopHint;
 
+  /// Under the Zero hop switch, which is on and can't be turned off, when the channel is set to Nearby only.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel is Nearby only: only radios in direct range get it'**
+  String get photo_zeroHopNearbyOnly;
+
   /// No description provided for @photo_repairPacket.
   ///
   /// In en, this message translates to:

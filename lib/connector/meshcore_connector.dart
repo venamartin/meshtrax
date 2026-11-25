@@ -1549,6 +1549,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get repeaterHeardRecently =>
       _retryService?.repeaterHeardRecently ?? false;
 
+  /// A repeater's transmission reached this radio within [window].
+  bool repeaterHeardWithin(Duration window) =>
+      _retryService?.repeaterHeardWithin(window) ?? false;
+
   /// Channel retries in App settings: how often a channel message no
   /// repeater passed on goes again (0 to 3).
   int get channelRetries =>
@@ -4731,12 +4735,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// same-text messages from one sender within five minutes. Returns the
   /// message id the photo store keys the photo by, or null when the channel
   /// slot is unknown. [notify] false files it quietly, with no notification.
+  /// [hops], of a received photo: the fewest repeaters any of its packets
+  /// came through, 0 when this radio heard the sender's own (Direct, as for
+  /// a message); null when unknown.
   Future<String?> ingestPhotoMessage({
     required int channelIndex,
     required String senderName,
     required String text,
     required bool isOutgoing,
     required String packetHash,
+    int? hops,
     bool notify = true,
   }) async {
     final message = ChannelMessage(
@@ -4745,8 +4753,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       timestamp: DateTime.now(),
       isOutgoing: isOutgoing,
       status: ChannelMessageStatus.sent,
-      pathLength: 0,
-      heardDirect: !isOutgoing,
+      pathLength: isOutgoing ? 0 : hops,
+      heardDirect: !isOutgoing && hops == 0,
       channelIndex: channelIndex,
       packetHash: packetHash,
     );
@@ -10201,6 +10209,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             pathLength: packet.isFlood ? packet.hopCount : 0,
             pathBytes: packet.pathBytes,
             pathHashSize: packet.hashSize,
+            // No repeater in its path: this radio heard the sender's own,
+            // a flood's first copy or a zero-hop one (Nearby only).
+            heardDirect: packet.hopCount == 0,
             channelIndex: channel.index,
             packetHash: pktHash,
             regionCode: regionCode,
