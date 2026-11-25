@@ -4,20 +4,25 @@ import 'dart:typed_data';
 import 'trip.dart';
 import 'wrm.dart';
 
-/// Metres per degree in the search's flat projection, as the builder's test
-/// router has it.
+/// Metres per degree at the middle latitude, as the builder's test router
+/// has it.
 const _metresPerDeg = 111320.0;
 const _unit = 1e-7;
 
-/// The tiles around a trip joined into one mesh, in a flat projection about
-/// the box's centre: x = (lon − lon0) × cos(lat0) × 111,320 m and
-/// y = (lat − lat0) × 111,320 m.
+/// The Mercator latitude of [lat], in degrees.
+double _psi(double lat) =>
+    math.log(math.tan(math.pi / 4 + lat * math.pi / 360)) * 180 / math.pi;
+
+/// A trip's tiles joined into one mesh, in a Mercator projection true to
+/// scale in the middle of them: x = (lon − lon0) × k and y = (ψ(lat) −
+/// ψ(lat0)) × k, with ψ the Mercator latitude in degrees and k = cos(lat0) ×
+/// 111,320 m. A straight line in it is a rhumb line, as a chart draws a leg.
 class WaterMesh {
   WaterMesh._(
     this.tileCount,
     this.buildInfo,
     this._lon0,
-    this._lat0,
+    this._psi0,
     this._kx,
     this.xy,
     this.tri,
@@ -35,46 +40,34 @@ class WaterMesh {
     this.hazardOuter,
     this.rowSet,
     this.sets,
+    this.frontierTri,
+    this.frontierTile,
     Float64List box,
   ) : _index = _Index(box, row.length);
 
-  /// Joins the tiles that touch the box [w], [s], [e], [n] (degrees; a box
-  /// across the 180° meridian runs past it), as [tileAt] gives them.
+  /// Joins [tiles], each once, into one mesh.
   ///
   /// Tiles join along the stretches their border edges share, and across
-  /// the meridian tile 1439's east edge meets tile 0's west edge. Throws a
-  /// [WaterRoutingException] for tiles of two builds.
-  factory WaterMesh.load(
-    double w,
-    double s,
-    double e,
-    double n,
-    WaterTile? Function(int ix, int iy) tileAt,
-  ) {
-    final tiles = <WaterTile>[], cols = <int>[];
-    final iy0 = math.max(0, ((s + 90) / tileDeg).floor());
-    final iy1 = math.min(tileRows, ((n + 90) / tileDeg).ceil());
-    for (
-      var col = ((w + 180) / tileDeg).floor();
-      col < ((e + 180) / tileDeg).ceil();
-      col++
-    ) {
-      for (var iy = iy0; iy < iy1; iy++) {
-        final ix = col % tileColumns;
-        final t = tileAt(ix, iy);
-        if (t == null) continue;
-        if (t.ix != ix || t.iy != iy) {
-          throw FormatException('tile ${t.iy}_${t.ix} read as ${iy}_$ix');
-        }
-        tiles.add(t);
-        cols.add(col);
-      }
-    }
+  /// the 180° meridian tile 1439's east edge meets tile 0's west edge:
+  /// longitudes run on from the first tile's, past 180 where the tiles
+  /// cross it. Throws a [WaterRoutingException] for tiles of two builds.
+  factory WaterMesh.load(List<WaterTile> tiles) {
     if ({for (final t in tiles) t.build}.length > 1) {
       throw const WaterRoutingException(WaterRoutingProblem.mixedBuilds);
     }
-    final lat0 = (s + n) / 2, lon0 = (w + e) / 2;
+    final first = tiles.isEmpty ? 0 : tiles.first.ix;
+    final cols = [
+      for (final t in tiles)
+        t.ix + tileColumns * ((first - t.ix) / tileColumns).round(),
+    ];
+    double middle(List<int> cells, double offset) => cells.isEmpty
+        ? 0
+        : (cells.reduce(math.min) + cells.reduce(math.max) + 1) / 2 * tileDeg -
+              offset;
+    final lon0 = middle(cols, 180);
+    final lat0 = middle([for (final t in tiles) t.iy], 90);
     final kx = math.cos(lat0 * math.pi / 180) * _metresPerDeg;
+    final psi0 = _psi(lat0);
     var nv = 0, nt = 0, na = 0;
     for (final t in tiles) {
       nv += t.vertices.length ~/ 2;
@@ -98,7 +91,7 @@ class WaterMesh {
       final v = t.vertices;
       for (var j = 0; j < v.length; j += 2) {
         xy[2 * vo + j] = ((v[j] + shift) * _unit - lon0) * kx;
-        xy[2 * vo + j + 1] = (v[j + 1] * _unit - lat0) * _metresPerDeg;
+        xy[2 * vo + j + 1] = (_psi(v[j + 1] * _unit) - psi0) * kx;
       }
       for (var j = 0; j < t.triangles.length; j++) {
         tri[3 * to + j] = t.triangles[j] + vo;
@@ -175,6 +168,33 @@ class WaterMesh {
         if (ay == by && ay == y1) add(3, ax, bx, g);
       }
     }
+    // Where the water runs on into a tile that isn't loaded.
+    final loaded = {
+      for (var i = 0; i < tiles.length; i++) sideKey(cols[i], tiles[i].iy, 0),
+    };
+    final frontierTri = <int>[], frontierTile = <int>[];
+    for (var i = 0; i < tiles.length; i++) {
+      final col = cols[i], iy = tiles[i].iy;
+      for (final (side, dc, dr) in [
+        (0, -1, 0),
+        (1, 1, 0),
+        (2, 0, -1),
+        (3, 0, 1),
+      ]) {
+        final segs = sides[sideKey(col, iy, side)], r = iy + dr;
+        if (segs == null ||
+            r < 0 ||
+            r >= tileRows ||
+            loaded.contains(sideKey(col + dc, r, 0))) {
+          continue;
+        }
+        for (var j = 0; j < segs.length; j += 3) {
+          frontierTri.add(segs[j + 2]);
+          frontierTile.add(r * tileColumns + (col + dc) % tileColumns);
+        }
+      }
+    }
+
     final from = <int>[], toTri = <int>[], pts = <double>[];
     for (var i = 0; i < tiles.length; i++) {
       final col = cols[i], iy = tiles[i].iy;
@@ -206,11 +226,11 @@ class WaterMesh {
                 ...vertical
                     ? [
                         (line * _unit - lon0) * kx,
-                        (p * _unit - lat0) * _metresPerDeg,
+                        (_psi(p * _unit) - psi0) * kx,
                       ]
                     : [
                         (p * _unit - lon0) * kx,
-                        (line * _unit - lat0) * _metresPerDeg,
+                        (_psi(line * _unit) - psi0) * kx,
                       ],
             ];
             from.addAll([g, others[o + 2]]);
@@ -240,7 +260,7 @@ class WaterMesh {
       tiles.length,
       tiles.isEmpty ? null : tiles.first.buildInfo,
       lon0,
-      lat0,
+      psi0,
       kx,
       xy,
       tri,
@@ -258,6 +278,8 @@ class WaterMesh {
       hazardOuter,
       rowSet,
       sets,
+      Int32List.fromList(frontierTri),
+      Int32List.fromList(frontierTile),
       box,
     );
   }
@@ -266,7 +288,7 @@ class WaterMesh {
 
   /// The build the tiles are from (their areas JSON's `build` object).
   final Map<String, Object?>? buildInfo;
-  final double _lon0, _lat0, _kx;
+  final double _lon0, _psi0, _kx;
 
   /// Vertices: x, y in metres.
   final Float64List xy;
@@ -303,25 +325,32 @@ class WaterMesh {
   /// The area sets of every tile, joined by area id.
   final List<List<WaterArea>> sets;
 
+  /// Where the water runs on into a tile that isn't in the mesh: the
+  /// triangle at the edge, and that tile (iy × 1440 + ix).
+  final Int32List frontierTri, frontierTile;
+
   final _Index _index;
 
   int get triangleCount => row.length;
 
-  /// Into the projection, taking the longitude nearest the box's centre
-  /// (past 180 across the meridian).
+  /// Into the projection, taking the longitude nearest the middle (past 180
+  /// across the meridian).
   (double, double) toXY(double lat, double lon) {
     final d = lon - _lon0;
     return (
       (d - 360 * (d / 360).roundToDouble()) * _kx,
-      (lat - _lat0) * _metresPerDeg,
+      (_psi(lat) - _psi0) * _kx,
     );
   }
 
   /// Back to degrees, with the longitude between −180 and 180.
-  ({double lat, double lon}) toLatLon(double x, double y) => (
-    lat: y / _metresPerDeg + _lat0,
-    lon: (x / _kx + _lon0 + 180) % 360 - 180,
-  );
+  ({double lat, double lon}) toLatLon(double x, double y) {
+    final psi = (y / _kx + _psi0) * math.pi / 180;
+    return (
+      lat: math.atan((math.exp(psi) - math.exp(-psi)) / 2) * 180 / math.pi,
+      lon: (x / _kx + _lon0 + 180) % 360 - 180,
+    );
+  }
 
   /// The stretch a step from triangle [t] crosses: [via] 0 to 2 is t's edge
   /// from vertex via to via + 1, 3 and up a link across a tile edge.

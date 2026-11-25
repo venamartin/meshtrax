@@ -176,7 +176,8 @@ void main() {
       () => routeOnWater(
         (lat: 36.6, lon: -121.9),
         (lat: 36.8, lon: -121.8),
-        (ix, iy) => null,
+        hasTile: (ix, iy) => false,
+        tileAt: (ix, iy) => null,
       ),
       throwsA(
         isA<WaterRoutingException>().having(
