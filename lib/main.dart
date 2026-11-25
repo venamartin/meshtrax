@@ -303,7 +303,7 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
       onResume: () => NotificationService().cancelAll(),
       onDetach: () => widget.connector.disconnect(manual: true),
     );
-    // Notifications don't show on desktop; the snackbar covers every
+    // Notifications don't show on Windows; the snackbar covers every
     // platform while the app is open.
     _blockedCliSubscription = widget.connector.blockedCliCommands.listen((
       blocked,

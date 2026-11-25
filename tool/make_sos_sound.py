@@ -5,8 +5,9 @@
 
   python3 tool/make_sos_sound.py
 
-Writes android/app/src/main/res/raw/sos_morse.wav (16-bit mono PCM). Change
-the pitch or the speed here, run it again, and give the Android category in
+Writes android/app/src/main/res/raw/sos_morse.wav (16-bit mono PCM) and the
+same file in assets/sounds, which the Linux app plays. Change the pitch or
+the speed here, run it again, and give the Android category in
 NotificationService.sosChannelId a new id: Android keeps a category's sound
 from when it was first made.
 """
@@ -22,7 +23,11 @@ RATE = 22050
 RAMP_S = 0.005  # soft edges, so the keying doesn't click
 LEVEL = 0.9
 
-OUT = Path(__file__).resolve().parent.parent / 'android/app/src/main/res/raw/sos_morse.wav'
+ROOT = Path(__file__).resolve().parent.parent
+OUTS = [
+    ROOT / 'android/app/src/main/res/raw/sos_morse.wav',
+    ROOT / 'assets/sounds/sos_morse.wav',
+]
 
 
 def units() -> list[tuple[bool, int]]:
@@ -55,14 +60,15 @@ def samples() -> list[int]:
 
 
 def main() -> None:
-    OUT.parent.mkdir(parents=True, exist_ok=True)
     data = samples()
-    with wave.open(str(OUT), 'wb') as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(RATE)
-        w.writeframes(struct.pack(f'<{len(data)}h', *data))
-    print(f'{OUT}: {len(data) / RATE:.2f} s')
+    for out in OUTS:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with wave.open(str(out), 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(RATE)
+            w.writeframes(struct.pack(f'<{len(data)}h', *data))
+        print(f'{out}: {len(data) / RATE:.2f} s')
 
 
 if __name__ == '__main__':
