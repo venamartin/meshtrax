@@ -1,4 +1,5 @@
 import 'image_safety.dart';
+import 'tap_segmenter.dart';
 
 /// The BlazeFace models' file names, as MediaPipe publishes them.
 const String kFaceShortRangeFile = 'blaze_face_short_range.tflite';
@@ -29,6 +30,10 @@ class ImageCodecBundle {
   final String? faceShortPath;
   final String? faceFullPath;
 
+  /// MediaPipe's tap model, which outlines what the sender taps for Subject
+  /// only and Auto crop. It comes with the app, beside the face models.
+  final String? tapPath;
+
   const ImageCodecBundle({
     required this.sidePath,
     required this.hyperPath,
@@ -43,6 +48,7 @@ class ImageCodecBundle {
     this.safetyRule = ImageSafetyRule.standard,
     this.faceShortPath,
     this.faceFullPath,
+    this.tapPath,
   });
 
   /// The ft8 files in [dir], as `kImageCodecFiles` names them, with the
@@ -64,6 +70,7 @@ class ImageCodecBundle {
     weightCacheDir: weightCache ? '$dir/xnnpack' : null,
     faceShortPath: facesDir == null ? null : '$facesDir/$kFaceShortRangeFile',
     faceFullPath: facesDir == null ? null : '$facesDir/$kFaceFullRangeFile',
+    tapPath: facesDir == null ? null : '$facesDir/$kTapSegmenterFile',
   );
 
   List<String> get allPaths => [

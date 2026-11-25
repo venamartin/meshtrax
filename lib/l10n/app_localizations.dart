@@ -191,12 +191,6 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get photo_preview;
 
-  /// No description provided for @photo_previewTapHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap the picture to zoom in or enhance it 4×'**
-  String get photo_previewTapHint;
-
   /// No description provided for @photo_changeCrop.
   ///
   /// In en, this message translates to:
@@ -250,12 +244,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Blur faces'**
   String get photo_blurFaces;
-
-  /// No description provided for @photo_blurFacesHint.
-  ///
-  /// In en, this message translates to:
-  /// **'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.'**
-  String get photo_blurFacesHint;
 
   /// No description provided for @photo_facesBlurred.
   ///
@@ -323,16 +311,46 @@ abstract class AppLocalizations {
   /// **'Zero hop'**
   String get photo_zeroHop;
 
-  /// No description provided for @photo_zeroHopHint.
+  /// Option under the photo being prepared: only what the sender taps is sent, the rest made black, so the photo takes fewer packets.
   ///
   /// In en, this message translates to:
-  /// **'Only radios in direct range; repeaters don\'t pass it on'**
-  String get photo_zeroHopHint;
+  /// **'Subject only'**
+  String get photo_subjectOnly;
+
+  /// Button under the photo being prepared: crops the square around what the sender taps.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto crop'**
+  String get photo_autoCrop;
+
+  /// Hint under the photo while the sender picks the subject for Subject only or Auto crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap what matters. Tap more things to add them.'**
+  String get photo_tapWhatMatters;
+
+  /// Shown while the app outlines what the sender just tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlining…'**
+  String get photo_outlining;
+
+  /// Forgets what the sender tapped, to tap again.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get photo_clearTaps;
+
+  /// The tap found no object to outline.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to outline there. Tap the middle of it.'**
+  String get photo_nothingThere;
 
   /// Under the Zero hop switch, which is on and can't be turned off, when the channel is set to Nearby only.
   ///
   /// In en, this message translates to:
-  /// **'This channel is Nearby only: only radios in direct range get it'**
+  /// **'This channel is Nearby only'**
   String get photo_zeroHopNearbyOnly;
 
   /// No description provided for @photo_repairPacket.
@@ -340,12 +358,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Repair packet'**
   String get photo_repairPacket;
-
-  /// No description provided for @photo_repairPacketHint.
-  ///
-  /// In en, this message translates to:
-  /// **'One more packet, so the photo still arrives if any one packet is lost'**
-  String get photo_repairPacketHint;
 
   /// No description provided for @photo_sendFigures.
   ///

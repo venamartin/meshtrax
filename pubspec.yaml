@@ -183,6 +183,11 @@ flutter:
     - assets/models/blaze_face_short_range.tflite
     - assets/models/blaze_face_full_range.tflite
     - assets/licenses/BlazeFace-NOTICE.txt
+    # MediaPipe's Interactive Segmenter (magic_touch, Apache-2.0, registered
+    # in main.dart), which outlines what the sender taps for Subject only and
+    # Auto crop.
+    - assets/models/magic_touch.tflite
+    - assets/licenses/MagicTouch-NOTICE.txt
 
   # Code text in messages, the same on every platform. SIL Open Font
   # License 1.1, registered in main.dart's licenses.

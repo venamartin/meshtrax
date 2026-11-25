@@ -48,10 +48,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photo_preview => 'Vorschau';
 
   @override
-  String get photo_previewTapHint =>
-      'Tap the picture to zoom in or enhance it 4×';
-
-  @override
   String get photo_changeCrop => 'Change crop';
 
   @override
@@ -83,10 +79,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get photo_blurFaces => 'Blur faces';
-
-  @override
-  String get photo_blurFacesHint =>
-      'On this phone, before the photo is coded. The AI can\'t rebuild faces, so it would make them up.';
 
   @override
   String photo_facesBlurred(int count) {
@@ -143,19 +135,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photo_zeroHop => 'Zero hop';
 
   @override
-  String get photo_zeroHopHint =>
-      'Only radios in direct range; repeaters don\'t pass it on';
+  String get photo_subjectOnly => 'Subject only';
 
   @override
-  String get photo_zeroHopNearbyOnly =>
-      'This channel is Nearby only: only radios in direct range get it';
+  String get photo_autoCrop => 'Auto crop';
+
+  @override
+  String get photo_tapWhatMatters =>
+      'Tap what matters. Tap more things to add them.';
+
+  @override
+  String get photo_outlining => 'Outlining…';
+
+  @override
+  String get photo_clearTaps => 'Clear';
+
+  @override
+  String get photo_nothingThere =>
+      'Nothing to outline there. Tap the middle of it.';
+
+  @override
+  String get photo_zeroHopNearbyOnly => 'This channel is Nearby only';
 
   @override
   String get photo_repairPacket => 'Repair packet';
-
-  @override
-  String get photo_repairPacketHint =>
-      'One more packet, so the photo still arrives if any one packet is lost';
 
   @override
   String photo_sendFigures(int packets, String sendTime) {

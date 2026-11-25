@@ -8,7 +8,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:traxmap/traxmap.dart';
-import 'package:traxpix/traxpix.dart' show PhotoPosition;
+import 'package:traxpix/traxpix.dart' show PhotoPosition, litBox;
 import 'package:traxpix_litert/traxpix_litert.dart';
 
 import '../storage/prefs_manager.dart';
@@ -48,6 +48,15 @@ class PhotoRecord {
   /// a received photo, or one sent before MeshTrax listened for them.
   int? packetsPassedOn;
 
+  /// The sender kept only what they tapped, on black ("Subject only"): the
+  /// viewer opens zoomed in on it.
+  final bool subjectOnly;
+
+  /// Of a Subject only photo: where its subject is in the picture, as
+  /// fractions of its side (left, top, right, bottom), once known. The chat
+  /// and the viewer frame it.
+  List<double>? subjectBox;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -59,6 +68,8 @@ class PhotoRecord {
     this.tag,
     this.position,
     this.packetsPassedOn,
+    this.subjectOnly = false,
+    this.subjectBox,
   });
 
   Map<String, Object?> toJson() => {
@@ -72,6 +83,8 @@ class PhotoRecord {
     'tag': tag,
     'position': position?.encode(),
     'packetsPassedOn': packetsPassedOn,
+    'subjectOnly': subjectOnly,
+    'subjectBox': subjectBox,
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -88,10 +101,21 @@ class PhotoRecord {
       _ => null,
     },
     packetsPassedOn: j['packetsPassedOn'] as int?,
+    subjectOnly: j['subjectOnly'] as bool? ?? false,
+    subjectBox: (j['subjectBox'] as List<Object?>?)
+        ?.map((v) => (v as num).toDouble())
+        .toList(),
   );
 }
 
 enum RebuildOutcome { shown, flagged, noMemory, noModel, failed }
+
+/// Where a Subject only picture's subject is ([litBox]), as the list a
+/// [PhotoRecord] keeps; null when it fills the picture.
+List<double>? subjectBoxOf(Uint8List rgb) {
+  final b = litBox(rgb);
+  return b == null ? null : [b.left, b.top, b.right, b.bottom];
+}
 
 /// How much room rebuilt pictures may take: about 250 photos at ~400 KB.
 const int kPhotoCacheBytes = 100 * 1000 * 1000;
@@ -168,15 +192,19 @@ class PhotoStore extends ChangeNotifier {
 
   ImageCodecBundle get bundle => ft8Bundle(_models);
 
-  /// The bundle for coding a photo to send: [bundle] and the two face models,
-  /// which come with the app. LiteRT reads models from files, so they're
+  /// The bundle for coding a photo to send: [bundle], the two face models and
+  /// the tap model for Subject only and Auto crop, which come with the app. LiteRT reads models from files, so they're
   /// copied to the cache folder, which no backup includes, whenever they
   /// aren't there.
   Future<ImageCodecBundle> sendingBundle() async {
     await load();
     final faces = '${(await getApplicationCacheDirectory()).path}/faces';
     Directory(faces).createSync(recursive: true);
-    for (final name in [kFaceShortRangeFile, kFaceFullRangeFile]) {
+    for (final name in [
+      kFaceShortRangeFile,
+      kFaceFullRangeFile,
+      kTapSegmenterFile,
+    ]) {
       final file = File('$faces/$name');
       final data = await rootBundle.load('assets/models/$name');
       if (file.existsSync() && file.lengthSync() == data.lengthInBytes) {
@@ -381,6 +409,7 @@ class PhotoStore extends ChangeNotifier {
       if (rgb != null) {
         _pngOf(messageId).writeAsBytesSync(await rgbToPng(rgb));
         _trimCache();
+        if (record.subjectOnly) record.subjectBox = subjectBoxOf(rgb);
       }
       _writeRecord(record);
       return flagged ? RebuildOutcome.flagged : RebuildOutcome.shown;

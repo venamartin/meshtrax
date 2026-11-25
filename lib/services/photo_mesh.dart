@@ -400,6 +400,7 @@ class PhotoMesh {
         recoveredWithParity: r.recoveredWithParity,
         tag: parts.extras.tag,
         position: parts.extras.position,
+        subjectOnly: parts.extras.subjectOnly,
       ),
       parts.bitstream,
     );
@@ -437,12 +438,18 @@ class PhotoMesh {
     int channelIndex, {
     String? tag,
     PhotoPosition? position,
+    bool subjectOnly = false,
+    List<double>? subjectBox,
     bool zeroHop = false,
     bool repairPacket = true,
     Uint8List? previewPng,
     void Function(ImageSendProgress)? onProgress,
   }) async {
-    final extras = PhotoExtras(tag: tag, position: position);
+    final extras = PhotoExtras(
+      tag: tag,
+      position: position,
+      subjectOnly: subjectOnly,
+    );
     final tagged = extras.sentTag;
     final set = await send(
       bitstream,
@@ -474,6 +481,8 @@ class PhotoMesh {
         tag: tagged,
         position: position,
         packetsPassedOn: sent?.passedOnCount,
+        subjectOnly: subjectOnly,
+        subjectBox: subjectBox,
       ),
       bitstream,
       png: previewPng,

@@ -30,6 +30,10 @@ const int kPhotoItemTag = 1;
 /// Item 2, the sender's position: see [PhotoPosition].
 const int kPhotoItemPosition = 2;
 
+/// Item 3, no data: the sender kept only what they tapped and made the rest
+/// black ("Subject only"), so a viewer opens zoomed in on the subject.
+const int kPhotoItemSubjectOnly = 3;
+
 /// The sizes a position may take, in bytes: about 10 km, 600 m, 40 m and 2 m.
 const List<int> kPhotoPositionSizes = [3, 4, 5, 6];
 
@@ -116,7 +120,10 @@ class PhotoExtras {
   final String? tag;
   final PhotoPosition? position;
 
-  const PhotoExtras({this.tag, this.position});
+  /// Only the subject was kept, on black.
+  final bool subjectOnly;
+
+  const PhotoExtras({this.tag, this.position, this.subjectOnly = false});
 
   /// The tag as it's sent: trimmed, and null when blank.
   String? get sentTag {
@@ -125,7 +132,7 @@ class PhotoExtras {
   }
 
   /// Whether nothing would be sent, so the photo byte's extras bit stays off.
-  bool get isEmpty => sentTag == null && position == null;
+  bool get isEmpty => sentTag == null && position == null && !subjectOnly;
 }
 
 /// [bitstream] with [extras] ahead of it, or [bitstream] itself when there
@@ -142,6 +149,7 @@ Uint8List photoPayload(Uint8List bitstream, PhotoExtras extras) {
   if (extras.position case final position?) {
     items.add((kPhotoItemPosition, position.encode()));
   }
+  if (extras.subjectOnly) items.add((kPhotoItemSubjectOnly, const <int>[]));
   if (items.isEmpty) return bitstream;
   final out = BytesBuilder(copy: false);
   for (var i = 0; i < items.length; i++) {
@@ -183,6 +191,7 @@ PhotoPayloadParts? photoPayloadParts(
   }
   String? tag;
   PhotoPosition? position;
+  var subjectOnly = false;
   var needsNewerApp = false;
   var at = 0;
   while (true) {
@@ -197,6 +206,8 @@ PhotoPayloadParts? photoPayloadParts(
         tag ??= text.isEmpty ? null : text;
       case kPhotoItemPosition:
         position ??= PhotoPosition.decode(data);
+      case kPhotoItemSubjectOnly:
+        subjectOnly = true;
       default:
         if (type & _mustUnderstand != 0) needsNewerApp = true;
     }
@@ -204,7 +215,7 @@ PhotoPayloadParts? photoPayloadParts(
     if (type & _anotherFollows == 0) break;
   }
   return PhotoPayloadParts(
-    extras: PhotoExtras(tag: tag, position: position),
+    extras: PhotoExtras(tag: tag, position: position, subjectOnly: subjectOnly),
     bitstream: Uint8List.sublistView(payload, at),
     needsNewerApp: needsNewerApp,
   );

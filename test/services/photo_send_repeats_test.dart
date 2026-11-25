@@ -19,7 +19,13 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxpix/traxpix.dart'
-    show ImageCodecRatePoint, ImageStreamMetadata, buildImageChunks;
+    show
+        ImageCodecRatePoint,
+        ImageStreamMetadata,
+        PhotoExtras,
+        buildImageChunks,
+        kPhotoItemSubjectOnly,
+        photoPayload;
 
 // A photo sent through repeaters: the radio hears its packets again only as
 // repeaters pass them on, in its raw log. A packet nobody passed on goes once
@@ -458,6 +464,62 @@ void main() {
       await send(r, zeroHop: true);
       expect(photoLastSent(r.selfPublicKeyHex), isNotNull);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
+    });
+  });
+
+  group('Subject only', () {
+    test('a photo sent so carries its mark, and keeps where its subject is',
+        () async {
+      final r = await radio((n, index) => false);
+      final bitstream = Uint8List.fromList(List.generate(300, (i) => i * 7));
+      await PhotoMesh.of(r).sendPhoto(
+        bitstream,
+        1,
+        subjectOnly: true,
+        subjectBox: [0.2, 0.3, 0.7, 0.8],
+        repairPacket: false,
+      );
+      final first = r.blobs.first;
+      expect(first[4] & 0x80, isNot(0), reason: 'the photo byte has extras');
+      expect(first.sublist(5, 7), [kPhotoItemSubjectOnly, 0]);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      final record = PhotoStore.instance.recordFor(
+        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+      )!;
+      expect(record.subjectOnly, isTrue);
+      expect(record.subjectBox, [0.2, 0.3, 0.7, 0.8]);
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    });
+
+    test('a photo received so is marked so', () async {
+      final r = await radio((n, index) => false);
+      PhotoMesh.of(r);
+      final blobs = buildImageChunks(
+        payload: photoPayload(
+          Uint8List.fromList(List.generate(300, (i) => i * 3)),
+          const PhotoExtras(subjectOnly: true),
+        ),
+        metadata: const ImageStreamMetadata(
+          rate: ImageCodecRatePoint.ft8,
+          hasExtras: true,
+        ),
+        senderPrefix: 0xBEEF,
+        imgId: 0x31,
+        parity: false,
+      ).blobs;
+      for (final blob in blobs) {
+        r.handleFrameForTest(_received(blob, 0x41));
+      }
+      await pumpEventQueue(times: 200);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      final record = PhotoStore.instance.recordFor(
+        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+      )!;
+      expect(record.subjectOnly, isTrue);
     });
   });
 }

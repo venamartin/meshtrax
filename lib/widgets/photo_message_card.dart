@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:traxpix/traxpix.dart' show PhotoPosition;
+import 'package:traxpix/traxpix.dart' show PhotoPosition, litBox;
 
 import '../helpers/link_handler.dart';
 import '../helpers/navigate_helper.dart';
@@ -220,6 +220,8 @@ class PhotoMessageCard extends StatelessWidget {
             tag: record.tag,
             senderName: record.outgoing ? null : senderName,
             photoTime: photoTime,
+            subjectOnly: record.subjectOnly,
+            subjectBox: record.subjectBox,
           ),
         ),
       ),
@@ -231,7 +233,11 @@ class PhotoMessageCard extends StatelessWidget {
               ? Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(image, fit: BoxFit.cover, gaplessPlayback: true),
+                    _framed(
+                      Image.file(image, fit: BoxFit.cover, gaplessPlayback: true),
+                      record.subjectBox,
+                      size,
+                    ),
                     const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
                     const PhotoFootprintMark(),
                   ],
@@ -265,6 +271,24 @@ class PhotoMessageCard extends StatelessWidget {
                   ),
                 ),
         ),
+      ),
+    );
+  }
+
+  /// [picture], a [size] square, zoomed in on [box]: a Subject only photo's
+  /// subject, as fractions of its side. Unchanged without one.
+  static Widget _framed(Widget picture, List<double>? box, double size) {
+    if (box == null) return picture;
+    final w = box[2] - box[0], h = box[3] - box[1];
+    final k = (1 / (w > h ? w : h)).clamp(1.0, 4.0);
+    final cx = (box[0] + box[2]) / 2 * size;
+    final cy = (box[1] + box[3]) / 2 * size;
+    return ClipRect(
+      child: Transform(
+        transform: Matrix4.identity()
+          ..translateByDouble(size / 2 - k * cx, size / 2 - k * cy, 0, 1)
+          ..scaleByDouble(k, k, 1, 1),
+        child: picture,
       ),
     );
   }
@@ -319,6 +343,11 @@ class PhotoViewerScreen extends StatefulWidget {
   final String? senderName;
   final DateTime? photoTime;
 
+  /// Only the subject was sent, on black: the viewer opens zoomed in on it,
+  /// at [subjectBox] when it's known (fractions of the picture's side).
+  final bool subjectOnly;
+  final List<double>? subjectBox;
+
   const PhotoViewerScreen({
     super.key,
     required String this.messageId,
@@ -326,12 +355,16 @@ class PhotoViewerScreen extends StatefulWidget {
     required DateTime this.photoTime,
     this.tag,
     this.senderName,
+    this.subjectOnly = false,
+    this.subjectBox,
   }) : previewPng = null;
 
   const PhotoViewerScreen.preview(
     Uint8List this.previewPng, {
     super.key,
     this.tag,
+    this.subjectOnly = false,
+    this.subjectBox,
   }) : messageId = null,
        bytes = 0,
        photoTime = null,
@@ -351,6 +384,11 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   Offset? _doubleTapAt;
   bool _faded = false;
   Timer? _fadeTimer;
+
+  /// Where a Subject only picture's subject is, as fractions of its side,
+  /// and whether the view has opened on it yet.
+  ({double left, double top, double right, double bottom})? _subject;
+  bool _framed = false;
 
   static bool get _phone =>
       !kIsWeb &&
@@ -398,7 +436,57 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
       );
       if (_problem != null) return;
     }
+    await _findSubject();
     if (photoAutoEnlargeAllowed && store.enlargeAutomatically) await _enlarge();
+  }
+
+  /// The lit part of a Subject only picture, to open zoomed in on.
+  Future<void> _findSubject() async {
+    if (!widget.subjectOnly) return;
+    if (widget.subjectBox case [final l, final t, final r, final b]) {
+      if (mounted) {
+        setState(() => _subject = (left: l, top: t, right: r, bottom: b));
+      }
+      return;
+    }
+    final png =
+        widget.previewPng ??
+        PhotoStore.instance.imageFor(widget.messageId!)?.readAsBytesSync();
+    if (png == null) return;
+    final image = await decodePng(png);
+    final side = image.width;
+    final rgba = (await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    ))!.buffer.asUint8List();
+    image.dispose();
+    final rgb = Uint8List(side * side * 3);
+    for (var i = 0, j = 0; j < rgba.length; i += 3, j += 4) {
+      rgb[i] = rgba[j];
+      rgb[i + 1] = rgba[j + 1];
+      rgb[i + 2] = rgba[j + 2];
+    }
+    final box = litBox(rgb, side: side);
+    if (mounted && box != null) setState(() => _subject = box);
+  }
+
+  /// The view that frames [box] (fractions of the square picture, which is
+  /// centred in [size]) with a little room around it.
+  static Matrix4 _framing(
+    ({double left, double top, double right, double bottom}) box,
+    Size size,
+  ) {
+    final s = size.shortestSide;
+    final ox = (size.width - s) / 2, oy = (size.height - s) / 2;
+    final w = (box.right - box.left) * s, h = (box.bottom - box.top) * s;
+    final k = (0.92 * (size.width / w < size.height / h
+            ? size.width / w
+            : size.height / h))
+        .clamp(1.0, 6.0);
+    final cx = ox + (box.left + box.right) / 2 * s;
+    final cy = oy + (box.top + box.bottom) / 2 * s;
+    return Matrix4.identity()
+      ..translateByDouble(size.width / 2 - k * cx, size.height / 2 - k * cy, 0, 1)
+      ..scaleByDouble(k, k, 1, 1);
   }
 
   void _wake() {
@@ -603,7 +691,19 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
             Positioned.fill(
               child: !shown
                   ? Center(child: _status(context))
-                  : GestureDetector(
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final subject = _subject;
+                        if (subject != null && !_framed) {
+                          _framed = true;
+                          final size = constraints.biggest;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              _zoom.value = _framing(subject, size);
+                            }
+                          });
+                        }
+                        return GestureDetector(
                       onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
                       onDoubleTap: _toggleZoom,
                       child: InteractiveViewer(
@@ -629,6 +729,8 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                           ),
                         ),
                       ),
+                    );
+                      },
                     ),
             ),
             if (shown)

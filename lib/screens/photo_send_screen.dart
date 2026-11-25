@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -50,6 +51,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   String _working = '';
   Uint8List? _bitstream;
   Uint8List? _previewPng;
+
+  /// Of a Subject only preview: where its subject is, for the chat to frame.
+  List<double>? _previewBox;
   String? _previewNote;
   String _sendStatus = '';
   final _tag = TextEditingController();
@@ -76,6 +80,31 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   /// Asked for fresh positions while the switch is on.
   MeshCoreConnector? _positionSource;
 
+  /// What the sender tapped for Subject only or Auto crop, as x, y pairs
+  /// from 0 to 1 over the photo, and its outline: 512 x 512 over the photo
+  /// stretched to a square, as the tap model sees it.
+  final List<double> _taps = [];
+  Uint8List? _mask;
+
+  /// The outline shown on the crop square: everything else shaded.
+  ui.Image? _shade;
+
+  /// Waiting for taps, and outlining the last one.
+  bool _tapping = false;
+  bool _outlining = false;
+
+  /// Auto crop was pressed before anything was tapped: the first outline
+  /// crops to it.
+  bool _cropOnOutline = false;
+
+  /// Only what was tapped goes, the rest black.
+  bool _subjectOnly = false;
+
+  /// The tap model's worker, kept while the sender taps, and the photo
+  /// stretched to its square.
+  ImageCodecSession? _tapSession;
+  Uint8List? _stretched;
+
   /// The sender has read why photos on Public and hashtag channels ask a lot
   /// of the mesh, and asked not to see it again.
   static const _openChannelKey = 'photo_open_channel_explained';
@@ -85,6 +114,8 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   void dispose() {
     _transform.dispose();
     _source?.dispose();
+    _shade?.dispose();
+    unawaited(_tapSession?.dispose());
     _tag.dispose();
     _positionSource?.removeSelfPositionViewer();
     super.dispose();
@@ -123,6 +154,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       _source = frame.image;
       _centred = false;
       _transform.value = Matrix4.identity();
+      _clearSubject();
+      _subjectOnly = false;
+      _tapping = false;
+      _stretched = null;
       _step = _Step.crop;
     });
   }
@@ -133,30 +168,50 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     return _viewport / math.min(s.width, s.height);
   }
 
-  /// The part of the photo inside the square, in photo pixels.
-  Rect get _cropRect {
-    final s = _source!;
+  /// The square in the crop view, in photo pixels. Once a subject is
+  /// chosen it may run past the photo, where black fills in.
+  PhotoSquare get _cropSquare {
     final inverse = Matrix4.inverted(_transform.value);
     final a = MatrixUtils.transformPoint(inverse, Offset.zero) / _fit;
     final b =
         MatrixUtils.transformPoint(inverse, Offset(_viewport, _viewport)) /
         _fit;
-    return Rect.fromPoints(
-      a,
-      b,
-    ).intersect(Rect.fromLTWH(0, 0, s.width.toDouble(), s.height.toDouble()));
+    return (left: a.dx, top: a.dy, side: b.dx - a.dx);
   }
 
-  /// The crop scaled to 512x512 packed RGB, what the codec takes.
+  /// The crop scaled to 512x512 packed RGB, what the codec takes, black past
+  /// the photo's edges.
   Future<Uint8List> _cropToRgb() async {
-    final recorder = ui.PictureRecorder();
-    Canvas(recorder).drawImageRect(
-      _source!,
-      _cropRect,
-      const Rect.fromLTWH(0, 0, 512, 512),
-      Paint()..filterQuality = FilterQuality.high,
+    final s = _source!;
+    final sq = _cropSquare;
+    final src = Rect.fromLTWH(sq.left, sq.top, sq.side, sq.side).intersect(
+      Rect.fromLTWH(0, 0, s.width.toDouble(), s.height.toDouble()),
     );
-    final image = await recorder.endRecording().toImage(512, 512);
+    final k = 512 / sq.side;
+    final recorder = ui.PictureRecorder();
+    final c = Canvas(recorder)
+      ..drawRect(
+        const Rect.fromLTWH(0, 0, 512, 512),
+        Paint()..color = const Color(0xFF000000),
+      );
+    if (!src.isEmpty) {
+      c.drawImageRect(
+        s,
+        src,
+        Rect.fromLTRB(
+          (src.left - sq.left) * k,
+          (src.top - sq.top) * k,
+          (src.right - sq.left) * k,
+          (src.bottom - sq.top) * k,
+        ),
+        Paint()..filterQuality = FilterQuality.high,
+      );
+    }
+    return _toRgb(await recorder.endRecording().toImage(512, 512));
+  }
+
+  /// [image], 512 x 512, as packed RGB; [image] is disposed.
+  static Future<Uint8List> _toRgb(ui.Image image) async {
     final rgba = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
         .buffer
         .asUint8List();
@@ -170,12 +225,162 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     return rgb;
   }
 
+  /// The whole photo stretched to the tap model's 512 x 512 square.
+  Future<Uint8List> _stretchedRgb() async {
+    if (_stretched case final done?) return done;
+    final s = _source!;
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder).drawImageRect(
+      s,
+      Rect.fromLTWH(0, 0, s.width.toDouble(), s.height.toDouble()),
+      const Rect.fromLTWH(0, 0, 512, 512),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+    return _stretched = await _toRgb(
+      await recorder.endRecording().toImage(512, 512),
+    );
+  }
+
+  /// Subject only on or off. It needs something tapped; the square stays
+  /// where the sender put it.
+  void _setSubjectOnly(bool on) {
+    setState(() {
+      _subjectOnly = on;
+      if (on && _mask == null) _tapping = true;
+    });
+  }
+
+  /// Auto crop: the square around what was tapped, or around the first thing
+  /// tapped next.
+  void _autoCrop() {
+    setState(() {
+      if (_mask == null) {
+        _tapping = true;
+        _cropOnOutline = true;
+      } else {
+        _frameSubject();
+      }
+    });
+  }
+
+  /// Forgets what was tapped; the square goes back to the photo's middle.
+  void _clearSubject() {
+    _taps.clear();
+    _mask = null;
+    _shade?.dispose();
+    _shade = null;
+    _centred = false;
+    _cropOnOutline = false;
+  }
+
+  /// A tap on the photo at [local] (the crop view's photo coordinates):
+  /// outlines what's there, joined with what was tapped before. Only Auto
+  /// crop moves the square.
+  Future<void> _onTap(Offset local) async {
+    if (_outlining) return;
+    final l10n = context.l10n;
+    final s = _source!;
+    final store = PhotoStore.instance;
+    if (!await store.modelsReady()) {
+      _say(l10n.photo_modelMissing);
+      return;
+    }
+    final x = (local.dx / (s.width * _fit)).clamp(0.0, 1.0);
+    final y = (local.dy / (s.height * _fit)).clamp(0.0, 1.0);
+    setState(() => _outlining = true);
+    try {
+      final session = _tapSession ??= await ImageCodecSession.spawn(
+        await store.sendingBundle(),
+      );
+      final taps = [..._taps, x, y];
+      final mask = await session.segment(await _stretchedRgb(), taps);
+      if (!mounted) return;
+      if (subjectSquare(mask, 512, s.width, s.height) == null) {
+        setState(() => _outlining = false);
+        _say(l10n.photo_nothingThere);
+        return;
+      }
+      final shade = await _shadeOf(mask);
+      if (!mounted) {
+        shade.dispose();
+        return;
+      }
+      setState(() {
+        _taps
+          ..clear()
+          ..addAll(taps);
+        _mask = mask;
+        _shade?.dispose();
+        _shade = shade;
+        _outlining = false;
+        if (_cropOnOutline) {
+          _cropOnOutline = false;
+          _frameSubject();
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _outlining = false);
+      _say(l10n.photo_prepareFailed('$e'));
+    }
+  }
+
+  /// Black over everything outside [mask], as an image to lay over the photo.
+  static Future<ui.Image> _shadeOf(Uint8List mask) {
+    final rgba = Uint8List(512 * 512 * 4);
+    for (var i = 0; i < mask.length; i++) {
+      rgba[i * 4 + 3] = ((255 - mask[i]) * 0.75).round();
+    }
+    final done = Completer<ui.Image>();
+    ui.decodeImageFromPixels(
+      rgba,
+      512,
+      512,
+      ui.PixelFormat.rgba8888,
+      done.complete,
+    );
+    return done.future;
+  }
+
+  /// Puts the square around what was tapped.
+  void _frameSubject() {
+    final s = _source!;
+    final sq = subjectSquare(_mask!, 512, s.width, s.height);
+    if (sq == null) return;
+    final k = _viewport / (sq.side * _fit);
+    _centred = true;
+    _transform.value = Matrix4.identity()
+      ..translateByDouble(-sq.left * _fit * k, -sq.top * _fit * k, 0, 1)
+      ..scaleByDouble(k, k, 1, 1);
+  }
+
+  void _say(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// What's coded: the crop, with everything outside the outline black for
+  /// Subject only.
+  Uint8List _composed(Uint8List rgb) {
+    final mask = _mask;
+    if (!_subjectOnly || mask == null) return rgb;
+    final s = _source!;
+    return blackOutside(
+      rgb,
+      cropMask(mask, 512, s.width, s.height, _cropSquare),
+    );
+  }
+
+  bool get _sendsSubjectOnly => _subjectOnly && _mask != null;
+
   Future<void> _preview() async {
     final l10n = context.l10n;
     setState(() {
       _step = _Step.working;
       _working = l10n.photo_checkingAndCoding;
       _previewPng = null;
+      _previewBox = null;
       _previewNote = null;
     });
     final store = PhotoStore.instance;
@@ -185,7 +390,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     }
     ImageCodecSession? codec;
     try {
-      final rgb = await _cropToRgb();
+      final rgb = _composed(await _cropToRgb());
+      // Its models leave memory before the photo model's come in.
+      await _tapSession?.dispose();
+      _tapSession = null;
       codec = await ImageCodecSession.spawn(await store.sendingBundle());
       final cover = _blurFaces ? FaceCover.blur : FaceCover.none;
       var sent = await codec.encode(rgb, faces: cover);
@@ -232,6 +440,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           return;
         }
         _previewPng = await rgbToPng(rebuilt.rgb!);
+        _previewBox = _sendsSubjectOnly ? subjectBoxOf(rebuilt.rgb!) : null;
       }
       if (mounted) setState(() => _step = _Step.ready);
     } catch (e) {
@@ -258,6 +467,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   /// What goes with the picture: the tag as typed and, when switched on, the
   /// radio's position at the chosen accuracy.
   PhotoExtras _extras(MeshCoreConnector connector) => PhotoExtras(
+    subjectOnly: _sendsSubjectOnly,
     tag: _tag.text,
     position: _includePosition && connector.hasSelfPosition
         ? PhotoPosition.at(
@@ -268,8 +478,8 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         : null,
   );
 
-  /// Packets the coded photo takes with its extras, and the repair packet
-  /// when it's on.
+  /// Packets the coded photo takes with its extras (Subject only's marker
+  /// among them), and the repair packet when it's on.
   int _packets(MeshCoreConnector connector) =>
       imageDataChunkCount(
         photoPayload(_bitstream!, _extras(connector)).length,
@@ -282,6 +492,8 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       builder: (_) => PhotoViewerScreen.preview(
         _previewPng!,
         tag: _extras(connector).sentTag,
+        subjectOnly: _sendsSubjectOnly,
+        subjectBox: _previewBox,
       ),
     ),
   );
@@ -423,6 +635,8 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         widget.channel.index,
         tag: _tag.text,
         position: _extras(connector).position,
+        subjectOnly: _sendsSubjectOnly,
+        subjectBox: _previewBox,
         zeroHop: zeroHop,
         repairPacket: _repairPacket,
         previewPng: _previewPng,
@@ -510,7 +724,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   ];
 
   List<Widget> _cropView(BuildContext context) => [
-    Text(context.l10n.photo_cropHint),
+    Text(
+      !_tapping
+          ? context.l10n.photo_cropHint
+          : _outlining
+          ? context.l10n.photo_outlining
+          : context.l10n.photo_tapWhatMatters,
+    ),
     const SizedBox(height: 12),
     LayoutBuilder(
       builder: (context, constraints) {
@@ -545,16 +765,39 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
                 child: SizedBox(
                   width: _viewport,
                   height: _viewport,
-                  child: InteractiveViewer(
-                    transformationController: _transform,
-                    constrained: false,
-                    minScale: 1,
-                    maxScale: 8,
-                    boundaryMargin: EdgeInsets.zero,
-                    child: SizedBox(
-                      width: w,
-                      height: h,
-                      child: RawImage(image: s, fit: BoxFit.fill),
+                  child: ColoredBox(
+                    color: Colors.black,
+                    child: InteractiveViewer(
+                      transformationController: _transform,
+                      constrained: false,
+                      minScale: _mask == null ? 1 : 0.2,
+                      maxScale: 8,
+                      boundaryMargin: _mask == null
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.all(double.infinity),
+                      child: GestureDetector(
+                        onTapUp: _tapping
+                            ? (d) => unawaited(_onTap(d.localPosition))
+                            : null,
+                        child: SizedBox(
+                          width: w,
+                          height: h,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              RawImage(image: s, fit: BoxFit.fill),
+                              if (_shade case final shade?)
+                                Opacity(
+                                  opacity: _subjectOnly ? 1 : 0.45,
+                                  child: RawImage(
+                                    image: shade,
+                                    fit: BoxFit.fill,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -564,19 +807,54 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         );
       },
     ),
+    const SizedBox(height: 8),
+    Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        FilterChip(
+          label: Text(context.l10n.photo_subjectOnly),
+          selected: _subjectOnly,
+          showCheckmark: false,
+          visualDensity: VisualDensity.compact,
+          onSelected: _setSubjectOnly,
+        ),
+        ActionChip(
+          label: Text(context.l10n.photo_autoCrop),
+          visualDensity: VisualDensity.compact,
+          onPressed: _autoCrop,
+        ),
+        if (_mask != null)
+          ActionChip(
+            label: Text(context.l10n.photo_clearTaps),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => setState(() {
+              _clearSubject();
+              _tapping = true;
+            }),
+          ),
+      ],
+    ),
     SwitchListTile(
       contentPadding: EdgeInsets.zero,
+      dense: true,
       secondary: const Icon(Icons.face_retouching_off),
       title: Text(context.l10n.photo_blurFaces),
-      subtitle: Text(context.l10n.photo_blurFacesHint),
       value: _blurFaces,
       onChanged: (on) => setState(() => _blurFaces = on),
     ),
-    const SizedBox(height: 8),
-    FilledButton(onPressed: _preview, child: Text(context.l10n.photo_preview)),
-    TextButton(
-      onPressed: () => setState(() => _step = _Step.pick),
-      child: Text(context.l10n.photo_chooseAnother),
+    Row(
+      children: [
+        TextButton(
+          onPressed: () => setState(() => _step = _Step.pick),
+          child: Text(context.l10n.photo_chooseAnother),
+        ),
+        const Spacer(),
+        FilledButton(
+          onPressed: _preview,
+          child: Text(context.l10n.photo_preview),
+        ),
+      ],
     ),
   ];
 
@@ -632,7 +910,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             ),
           ),
         ),
-        Text(l10n.photo_previewTapHint, style: quiet),
       ],
       if (_previewNote != null) Text(_previewNote!, style: quiet),
       if (_faces > 0)
@@ -655,20 +932,18 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           labelText: l10n.photo_tagTitle,
           border: const OutlineInputBorder(),
           isDense: true,
+          counterText: '',
         ),
         onChanged: (_) => setState(() {}),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.place_outlined),
         title: Text(l10n.photo_includePosition),
-        subtitle: Text(
-          connector.hasSelfPosition
-              ? l10n.photo_positionFromRadio(
-                  photoPositionDistance(l10n, _positionBytes),
-                )
-              : l10n.photo_noPosition,
-        ),
+        subtitle: connector.hasSelfPosition
+            ? null
+            : Text(l10n.photo_noPosition),
         value: _includePosition && connector.hasSelfPosition,
         onChanged: sending || !connector.hasSelfPosition
             ? null
@@ -691,11 +966,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.near_me_outlined),
         title: Text(l10n.photo_zeroHop),
-        subtitle: Text(
-          nearbyOnly ? l10n.photo_zeroHopNearbyOnly : l10n.photo_zeroHopHint,
-        ),
+        subtitle: nearbyOnly ? Text(l10n.photo_zeroHopNearbyOnly) : null,
         value: zeroHop,
         onChanged: sending || nearbyOnly
             ? null
@@ -703,9 +977,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
         secondary: const Icon(Icons.healing_outlined),
         title: Text(l10n.photo_repairPacket),
-        subtitle: Text(l10n.photo_repairPacketHint),
         value: _repairPacket,
         onChanged: sending
             ? null
