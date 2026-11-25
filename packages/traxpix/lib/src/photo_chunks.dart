@@ -68,6 +68,7 @@
 ///   to 7 packets with the repair packet, most often 4.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -112,7 +113,9 @@ const int dataTypeMeshTraxPhoto = 0x0170;
 ///     hash, MAC) + the ciphertext: whole 16-byte blocks of data type (2) +
 ///     length (1) + blob. 157 makes 160 bytes of ciphertext, so a 165-byte
 ///     packet heard with up to 8 bytes of path (4 repeaters with 2-byte IDs)
-///     = **157** <- used
+///     = **157** <- used. A flood in a region carries 4 bytes of transport
+///     codes too, leaving up to 4 bytes of path; the first repeater's copy
+///     still fits at any hash width (172 bytes at 3-byte IDs)
 ///   * app  `maxFrameSize` 172 - 9 byte RESP header = 163
 ///   * BLE  ATT_MTU 176 - 3 notify - 9 resp header  = 164
 ///   * radio `MAX_GROUP_DATA_LENGTH` 184 - 16 - 3   = 165
@@ -210,6 +213,17 @@ Duration photoPacketGapFlood(Duration packetAirtime, {required int packets}) {
   final spaced = clear < cap ? clear : cap;
   return spaced > gap ? spaced : gap;
 }
+
+/// How soon after a photo packet goes out as a flood the first repeater's
+/// copy of it has come back, at worst: the packet's airtime, the repeater's
+/// longest wait ([_floodWaitMaxAirtimes]; repeaters' receive delay is off by
+/// default, `rx_delay_base` 0), the copy's airtime, then the half second. A
+/// gap at least this long knows, when the next packet is due, whether a
+/// repeater passed the last one on. A repeater that has to wait for a busy
+/// channel can come later than this.
+Duration photoRepeatHeardWithin(Duration packetAirtime) =>
+    packetAirtime * (2 + _floodWaitMaxAirtimes) +
+    const Duration(milliseconds: 500);
 
 // ---------------------------------------------------------------------------
 // Rate point <-> wire code
@@ -1276,10 +1290,14 @@ class ImageSendProgress {
   final int totalChunks;
   final bool isParityChunk;
 
+  /// The packet went out once more: no repeater was heard passing it on.
+  final bool again;
+
   const ImageSendProgress({
     required this.sentChunks,
     required this.totalChunks,
     required this.isParityChunk,
+    this.again = false,
   });
 
   double get fraction => totalChunks == 0 ? 1 : sentChunks / totalChunks;
@@ -1313,14 +1331,22 @@ class ImageChunkTransport {
 
   Future<void> _sendQueue = Future<void>.value();
 
-  /// Chunks and transmits [payload]. Chunks go out strictly sequentially,
-  /// [gap] apart (see [photoPacketGap] and [photoPacketGapFlood]), and
-  /// concurrent calls are serialised behind each other. They go as a flood,
-  /// like a channel message, so the radio sends them in the way it sends the
-  /// channel's messages; with [zeroHop], only to the radios in direct range,
-  /// never repeated.
-  ///
-  /// Returns the chunk set that was sent.
+  /// The packets [payload] goes out as, under a new image id, for a caller
+  /// that needs them before they go (to know its own packets when a
+  /// repeater's copy comes back) and then hands them to [sendChunks].
+  ImageChunkSet chunk({
+    required Uint8List payload,
+    required ImageStreamMetadata metadata,
+    bool parity = true,
+  }) => buildImageChunks(
+    payload: payload,
+    metadata: metadata,
+    senderPrefix: senderPrefix,
+    imgId: _ids.next(),
+    parity: parity,
+  );
+
+  /// Chunks and transmits [payload], as [sendChunks] does.
   Future<ImageChunkSet> sendImage({
     required Uint8List payload,
     required ImageStreamMetadata metadata,
@@ -1329,18 +1355,63 @@ class ImageChunkTransport {
     int? imgId,
     Duration gap = Duration.zero,
     bool zeroHop = false,
+    bool Function(int index)? resend,
+    Duration? resendWindow,
     void Function(ImageSendProgress progress)? onProgress,
-  }) {
-    final set = buildImageChunks(
+    void Function()? onDone,
+  }) => sendChunks(
+    buildImageChunks(
       payload: payload,
       metadata: metadata,
       senderPrefix: senderPrefix,
       imgId: imgId ?? _ids.next(),
       parity: parity,
-    );
-    final completed = _sendQueue.then((_) async {
-      for (var i = 0; i < set.blobs.length; i++) {
-        if (i > 0 && gap > Duration.zero) await Future<void>.delayed(gap);
+    ),
+    channelIndex: channelIndex,
+    gap: gap,
+    zeroHop: zeroHop,
+    resend: resend,
+    resendWindow: resendWindow,
+    onProgress: onProgress,
+    onDone: onDone,
+  );
+
+  /// Transmits [set]'s packets strictly sequentially, [gap] apart (see
+  /// [photoPacketGap] and [photoPacketGapFlood]), and concurrent calls are
+  /// serialised behind each other. They go as a flood, like a channel
+  /// message, so the radio sends them in the way it sends the channel's
+  /// messages; with [zeroHop], only to the radios in direct range, never
+  /// repeated.
+  ///
+  /// With [resend], a packet can go out once more, the same bytes again (a
+  /// channel datagram has no timestamp, so every repeater that already
+  /// passed it on drops the copy as seen). [resend] is asked about each
+  /// packet once, when the next one is due and, for the last, a gap after
+  /// it, and only while every packet, this one again included, still goes
+  /// out within [resendWindow] of the first (three quarters of the
+  /// receiver's [kImageReassemblyTtl] by default). A true answer sends it
+  /// at once; the next packet follows a gap later.
+  ///
+  /// Returns [set] once every packet has gone out the first time. The check
+  /// after the last packet runs on in the queue; [onDone] says when this
+  /// photo is done with, failed or not.
+  Future<ImageChunkSet> sendChunks(
+    ImageChunkSet set, {
+    int channelIndex = 0,
+    Duration gap = Duration.zero,
+    bool zeroHop = false,
+    bool Function(int index)? resend,
+    Duration? resendWindow,
+    void Function(ImageSendProgress progress)? onProgress,
+    void Function()? onDone,
+  }) {
+    final window = resendWindow ?? kImageReassemblyTtl * 0.75;
+    final last = set.blobs.length - 1;
+    final sentOnce = Completer<ImageChunkSet>();
+    final job = _sendQueue.then((_) async {
+      var handedOver = 0;
+      final asked = <int>{};
+      Future<void> put(int i, {bool again = false}) async {
         await send(
           buildSendChannelDataFrame(
             channelIndex: channelIndex,
@@ -1349,19 +1420,59 @@ class ImageChunkTransport {
             pathLen: zeroHop ? pathLenZeroHop : outPathUnknown,
           ),
         );
+        handedOver++;
         onProgress?.call(
           ImageSendProgress(
             sentChunks: i + 1,
             totalChunks: set.blobs.length,
-            isParityChunk: set.hasParity && i == set.blobs.length - 1,
+            isParityChunk: set.hasParity && i == last,
+            again: again,
           ),
         );
       }
-      return set;
+
+      // Packet [i] once more, now, with [later] packets still to go: one gap
+      // per hand-over after the first is the photo's span on air.
+      bool again(int i, int later) =>
+          resend != null &&
+          asked.add(i) &&
+          gap * (handedOver + later) <= window &&
+          resend(i);
+
+      Future<void> pause() async {
+        if (gap > Duration.zero) await Future<void>.delayed(gap);
+      }
+
+      try {
+        for (var i = 0; i <= last; i++) {
+          if (i > 0) {
+            await pause();
+            if (again(i - 1, last - i + 1)) {
+              await put(i - 1, again: true);
+              await pause();
+            }
+          }
+          await put(i);
+        }
+      } catch (e, s) {
+        sentOnce.completeError(e, s);
+        onDone?.call();
+        return;
+      }
+      sentOnce.complete(set);
+      if (resend != null) {
+        try {
+          await pause();
+          if (again(last, 0)) await put(last, again: true);
+        } catch (_) {
+          // The photo is out already; a copy the radio refused is no loss.
+        }
+      }
+      onDone?.call();
     });
     // Keep the queue alive even if this send fails.
-    _sendQueue = completed.then((_) {}, onError: (Object _) {});
-    return completed;
+    _sendQueue = job.then((_) {}, onError: (Object _) {});
+    return sentOnce.future;
   }
 
   /// Feeds a raw inbound companion frame. Non-image frames are ignored.

@@ -690,8 +690,9 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, Timer> _channelRepeatTimers = {};
   final Map<String, int> _channelMessageRetries = {};
 
-  /// How long a channel send waits for a repeater to pass it on.
-  @visibleForTesting
+  /// How long a channel send waits for a repeater to pass it on: a
+  /// message after the radio took it, a photo after its last packet. Tests
+  /// shorten it.
   static Duration channelRepeatWait = const Duration(seconds: 30);
 
   /// The repeater codes heard carrying each channel message of mine that
@@ -1494,8 +1495,70 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   bool get isSyncingChannels => _isSyncingChannels;
   
   bool isChannelMessageRetrying(String messageId) {
-    return _channelRepeatTimers.containsKey(messageId) || 
-           _channelMessageTimers.containsKey(messageId);
+    return _channelRepeatTimers.containsKey(messageId) ||
+           _channelMessageTimers.containsKey(messageId) ||
+           _repeatWaits.contains(messageId);
+  }
+
+  /// My channel rows waiting for repeats that another part of the app
+  /// listens for itself (a photo's packets): shown as still going, not as
+  /// unheard, until it says the wait is over.
+  final Set<String> _repeatWaits = {};
+
+  /// My channel row [messageId] waits for repeats, or no longer does.
+  void waitForRepeats(String messageId, {required bool waiting}) {
+    final changed = waiting
+        ? _repeatWaits.add(messageId)
+        : _repeatWaits.remove(messageId);
+    if (changed) notifyListeners();
+  }
+
+  /// Writes on my channel row [messageId] what was heard of it, for a send
+  /// that hears its own copies (a photo's packets): the [copies] heard, the
+  /// [paths] they came through in [pathHashSize]-byte codes, and delivered
+  /// once [delivered]. A delivered row stays delivered.
+  Future<void> recordOwnRepeats(
+    String messageId, {
+    required int copies,
+    required List<Uint8List> paths,
+    required int pathHashSize,
+    required bool delivered,
+  }) async {
+    var longest = Uint8List(0);
+    for (final p in paths) {
+      if (p.length > longest.length) longest = p;
+    }
+    final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
+      messageId,
+      (m) => !m.isOutgoing
+          ? m
+          : m.copyWith(
+              repeatCount: copies,
+              pathBytes: longest,
+              pathHashSize: pathHashSize,
+              pathLength: PathHelper.getHopCount(longest, stride: pathHashSize),
+              pathVariants: _mergePathVariants(m.pathVariants, paths),
+              status: delivered ? ChannelMessageStatus.delivered : m.status,
+            ),
+    );
+    if (updated) notifyListeners();
+  }
+
+  /// A repeater's transmission reached this radio in the last 10 minutes
+  /// (MessageRetryService.repeaterHeardWindow).
+  bool get repeaterHeardRecently =>
+      _retryService?.repeaterHeardRecently ?? false;
+
+  /// Channel retries in App settings: how often a channel message no
+  /// repeater passed on goes again (0 to 3).
+  int get channelRetries =>
+      _appSettingsService?.settings.maxChannelMessageRetries ?? 1;
+
+  /// Whether channel slot [channelIndex] is Nearby only: its sends go out
+  /// zero hop, whatever they ask for.
+  bool isNearbyOnlyChannel(int channelIndex) {
+    final channel = _findChannelByIndex(channelIndex);
+    return channel != null && _isNearbyOnly(channel.idKey);
   }
   int get channelSyncProgress =>
       _isSyncingChannels && _totalChannelsToRequest > 0
@@ -10189,9 +10252,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// Each channel datagram the radio logged, decrypted with its live
   /// channel's key: the slot, the data type and the blob, as a CHANNEL_DATA
-  /// push would give them.
-  void Function(int channelIndex, int dataType, Uint8List blob)?
-      onRawChannelData;
+  /// push would give them, and for a flood the repeaters it came through
+  /// ([path], in [pathHashSize]-byte codes; empty for a copy sent direct or
+  /// zero hop). The radio logs its own flood only as a repeater's copy.
+  void Function(
+    int channelIndex,
+    int dataType,
+    Uint8List blob,
+    Uint8List path,
+    int pathHashSize,
+  )? onRawChannelData;
 
   void _handleRawGroupData(_RawPacket packet) {
     final hook = onRawChannelData;
@@ -10210,6 +10280,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         channel.index,
         plain[0] | (plain[1] << 8),
         Uint8List.sublistView(plain, 3, 3 + length),
+        packet.isFlood ? packet.pathBytes : Uint8List(0),
+        packet.hashSize,
       );
       return;
     }

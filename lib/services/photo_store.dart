@@ -43,6 +43,11 @@ class PhotoRecord {
   /// Where the sender sent it from, when they included their position.
   final PhotoPosition? position;
 
+  /// Of a photo this radio sent through repeaters: how many of its
+  /// [packets] a repeater was heard passing on. Null for one sent zero hop,
+  /// a received photo, or one sent before MeshTrax listened for them.
+  int? packetsPassedOn;
+
   PhotoRecord({
     required this.messageId,
     required this.bytes,
@@ -53,6 +58,7 @@ class PhotoRecord {
     this.reported = false,
     this.tag,
     this.position,
+    this.packetsPassedOn,
   });
 
   Map<String, Object?> toJson() => {
@@ -65,6 +71,7 @@ class PhotoRecord {
     'reported': reported,
     'tag': tag,
     'position': position?.encode(),
+    'packetsPassedOn': packetsPassedOn,
   };
 
   factory PhotoRecord.fromJson(Map<String, Object?> j) => PhotoRecord(
@@ -80,6 +87,7 @@ class PhotoRecord {
       final List<Object?> b => PhotoPosition.decode(b.cast<int>()),
       _ => null,
     },
+    packetsPassedOn: j['packetsPassedOn'] as int?,
   );
 }
 
@@ -226,6 +234,17 @@ class PhotoStore extends ChangeNotifier {
     for (final f in [_pngOf(messageId), File('$_dir/$messageId.aeic')]) {
       if (f.existsSync()) f.deleteSync();
     }
+    _writeRecord(record);
+    notifyListeners();
+  }
+
+  /// Records that repeaters were heard passing on [count] of the packets of
+  /// my photo [messageId].
+  Future<void> notePassedOn(String messageId, int count) async {
+    await load();
+    final record = _records[messageId];
+    if (record == null || record.packetsPassedOn == count) return;
+    record.packetsPassedOn = count;
     _writeRecord(record);
     notifyListeners();
   }
@@ -378,19 +397,35 @@ class PhotoStore extends ChangeNotifier {
   /// Enlarges a rebuilt photo 4x and checks it, in the same queue as the
   /// rebuilds, so the two never share the memory; frees the map's memory if
   /// short. The enlarged picture isn't kept: it's for the screen showing it.
-  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(String messageId) {
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlarge(String messageId) =>
+      _enlargeQueued(() async {
+        await load();
+        try {
+          return imageFor(messageId)?.readAsBytesSync();
+        } on FileSystemException catch (e) {
+          appLogger.warn('Enlarging a photo: $e', tag: 'Photos');
+          return null;
+        }
+      });
+
+  /// The same for the sender's preview, before the photo is sent.
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> enlargePng(
+    Uint8List png,
+  ) => _enlargeQueued(() async => png);
+
+  Future<({RebuildOutcome outcome, Uint8List? rgb})> _enlargeQueued(
+    Future<Uint8List?> Function() png,
+  ) {
     final done = Completer<({RebuildOutcome outcome, Uint8List? rgb})>();
     _queue = _queue.then((_) async {
-      done.complete(await _enlarge(messageId));
+      done.complete(await _enlarge(await png()));
     });
     return done.future;
   }
 
   Future<({RebuildOutcome outcome, Uint8List? rgb})> _enlarge(
-    String messageId,
+    Uint8List? png,
   ) async {
-    await load();
-    final png = imageFor(messageId);
     if (png == null) return (outcome: RebuildOutcome.failed, rgb: null);
     if (!await modelsReady()) {
       return (outcome: RebuildOutcome.noModel, rgb: null);
@@ -404,7 +439,7 @@ class PhotoStore extends ChangeNotifier {
     }
     ImageCodecSession? codec;
     try {
-      final rgb = await pngToRgb(png.readAsBytesSync());
+      final rgb = await pngToRgb(png);
       codec = await ImageCodecSession.spawn(bundle);
       final enlarged = await codec.enhance(rgb);
       return enlarged.flagged

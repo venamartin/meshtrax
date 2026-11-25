@@ -306,22 +306,36 @@ enum _ViewerAction { details, report, block }
 /// it opens, if the setting is on. The controls fade after a few seconds,
 /// as the full-screen map's do, and come back on a touch.
 class PhotoViewerScreen extends StatefulWidget {
-  final String messageId;
+  /// The photo in the chat; null for [previewPng].
+  final String? messageId;
+
+  /// The sender's preview before sending, zoomed and enhanced the same way,
+  /// with no Save or menu.
+  final Uint8List? previewPng;
   final int bytes;
   final String? tag;
 
   /// The sender of a received photo, which can be reported; null for ours.
   final String? senderName;
-  final DateTime photoTime;
+  final DateTime? photoTime;
 
   const PhotoViewerScreen({
     super.key,
-    required this.messageId,
+    required String this.messageId,
     required this.bytes,
-    required this.photoTime,
+    required DateTime this.photoTime,
     this.tag,
     this.senderName,
-  });
+  }) : previewPng = null;
+
+  const PhotoViewerScreen.preview(
+    Uint8List this.previewPng, {
+    super.key,
+    this.tag,
+  }) : messageId = null,
+       bytes = 0,
+       photoTime = null,
+       senderName = null;
 
   @override
   State<PhotoViewerScreen> createState() => _PhotoViewerScreenState();
@@ -375,8 +389,9 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   /// where the phone and the setting allow.
   Future<void> _start() async {
     final store = PhotoStore.instance;
-    if (store.imageFor(widget.messageId) == null) {
-      final outcome = await store.rebuild(widget.messageId);
+    final messageId = widget.messageId;
+    if (messageId != null && store.imageFor(messageId) == null) {
+      final outcome = await store.rebuild(messageId);
       if (!mounted) return;
       setState(
         () => _problem = outcome == RebuildOutcome.shown ? null : outcome,
@@ -397,7 +412,11 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   Future<void> _enlarge() async {
     if (_enlarging || _enlarged != null) return;
     setState(() => _enlarging = true);
-    final result = await PhotoStore.instance.enlarge(widget.messageId);
+    final store = PhotoStore.instance;
+    final preview = widget.previewPng;
+    final result = preview != null
+        ? await store.enlargePng(preview)
+        : await store.enlarge(widget.messageId!);
     final rgb = result.rgb;
     final image = rgb == null ? null : await rgbToImage(rgb, side: 2048);
     if (!mounted) {
@@ -425,7 +444,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   /// its "AI reconstructed" mark.
   Future<void> _save() async {
     final l10n = context.l10n;
-    final file = PhotoStore.instance.imageFor(widget.messageId);
+    final file = PhotoStore.instance.imageFor(widget.messageId!);
     if (file == null) return;
     final small = _enlarged == null
         ? await decodePng(file.readAsBytesSync())
@@ -466,12 +485,13 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
       case _ViewerAction.report when sender != null:
         await reportPhoto(
           context,
-          messageId: widget.messageId,
+          messageId: widget.messageId!,
           sender: sender,
-          photoTime: widget.photoTime,
+          photoTime: widget.photoTime!,
         );
         if (mounted &&
-            PhotoStore.instance.recordFor(widget.messageId)?.reported == true) {
+            PhotoStore.instance.recordFor(widget.messageId!)?.reported ==
+                true) {
           Navigator.of(context).pop();
         }
       case _ViewerAction.block when sender != null:
@@ -557,7 +577,12 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final padding = MediaQuery.paddingOf(context);
-    final file = PhotoStore.instance.imageFor(widget.messageId);
+    final messageId = widget.messageId;
+    final preview = widget.previewPng;
+    final file = messageId == null
+        ? null
+        : PhotoStore.instance.imageFor(messageId);
+    final shown = file != null || preview != null;
     final enlarged = _enlarged;
     final tag = widget.tag;
     final button = IconButton.styleFrom(
@@ -576,7 +601,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: file == null
+              child: !shown
                   ? Center(child: _status(context))
                   : GestureDetector(
                       onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
@@ -595,7 +620,9 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                                         image: enlarged,
                                         fit: BoxFit.contain,
                                       )
-                                    : Image.file(file, fit: BoxFit.contain),
+                                    : preview != null
+                                    ? Image.memory(preview, fit: BoxFit.contain)
+                                    : Image.file(file!, fit: BoxFit.contain),
                                 const PhotoFootprintMark(),
                               ],
                             ),
@@ -604,7 +631,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                       ),
                     ),
             ),
-            if (file != null)
+            if (shown)
               Positioned(
                 left: 16,
                 bottom: 16 + padding.bottom,
@@ -631,27 +658,28 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                         icon: const Icon(Icons.download_outlined),
                         onPressed: _save,
                       ),
-                    PopupMenuButton<_ViewerAction>(
-                      style: button,
-                      icon: const Icon(Icons.more_vert),
-                      onSelected: _act,
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: _ViewerAction.details,
-                          child: Text(l10n.photo_details),
-                        ),
-                        if (widget.senderName case final sender?) ...[
+                    if (messageId != null)
+                      PopupMenuButton<_ViewerAction>(
+                        style: button,
+                        icon: const Icon(Icons.more_vert),
+                        onSelected: _act,
+                        itemBuilder: (context) => [
                           PopupMenuItem(
-                            value: _ViewerAction.report,
-                            child: Text(l10n.photo_report),
+                            value: _ViewerAction.details,
+                            child: Text(l10n.photo_details),
                           ),
-                          PopupMenuItem(
-                            value: _ViewerAction.block,
-                            child: Text(l10n.photo_block(sender)),
-                          ),
+                          if (widget.senderName case final sender?) ...[
+                            PopupMenuItem(
+                              value: _ViewerAction.report,
+                              child: Text(l10n.photo_report),
+                            ),
+                            PopupMenuItem(
+                              value: _ViewerAction.block,
+                              child: Text(l10n.photo_block(sender)),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
                   ],
                 ),
               ),
@@ -663,7 +691,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                 right: 16,
                 child: Center(child: PhotoTagLabel(tag, onDark: true)),
               ),
-            if (file != null && enlarged == null)
+            if (shown && enlarged == null)
               Positioned(
                 bottom: 12 + padding.bottom,
                 left: 0,

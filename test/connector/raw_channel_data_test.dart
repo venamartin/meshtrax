@@ -52,8 +52,17 @@ Uint8List _channelInfo() => Uint8List.fromList([
 ]);
 
 /// [blob] as data type [type] on the channel keyed [key], sealed as the
-/// firmware seals a GRP_DATA packet, and logged after repeater AB.
-Uint8List _logged(int type, List<int> blob, Uint8List key) {
+/// firmware seals a GRP_DATA packet, and logged after the repeaters in
+/// [path] ([width]-byte codes; repeater AB by default), sent direct unless
+/// [flood].
+Uint8List _logged(
+  int type,
+  List<int> blob,
+  Uint8List key, {
+  bool flood = false,
+  List<int> path = const [0xAB],
+  int width = 1,
+}) {
   final plain = [type & 0xFF, type >> 8, blob.length, ...blob];
   final padded = Uint8List((plain.length + 15) ~/ 16 * 16)
     ..setRange(0, plain.length, plain);
@@ -68,8 +77,8 @@ Uint8List _logged(int type, List<int> blob, Uint8List key) {
   ).convert(sealed).bytes;
   return Uint8List.fromList([
     pushCodeLogRxData, 0x14, 0xA0, // SNR, RSSI
-    (0x06 << 2) | 0x02, // group datagram, direct
-    1, 0xAB, // its path: repeater AB
+    (0x06 << 2) | (flood ? 0x01 : 0x02), // group datagram, flood or direct
+    ((width - 1) << 6) | (path.length ~/ width), ...path, // its path
     crypto.sha256.convert(key).bytes[0],
     mac[0], mac[1],
     ...sealed,
@@ -80,7 +89,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _Connector c;
-  late List<(int, int, List<int>)> heard;
+  late List<(int, int, List<int>, List<int>, int)> heard;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -89,8 +98,8 @@ void main() {
     AppDatabase.useInMemoryForTesting();
     c = _Connector();
     heard = [];
-    c.onRawChannelData = (slot, type, blob) =>
-        heard.add((slot, type, List.of(blob)));
+    c.onRawChannelData = (slot, type, blob, path, width) =>
+        heard.add((slot, type, List.of(blob), List.of(path), width));
     c.handleFrameForTest(_selfInfo());
     await pumpEventQueue(times: 200);
     c.handleFrameForTest(_channelInfo());
@@ -105,6 +114,26 @@ void main() {
     expect(heard.single.$1, 1);
     expect(heard.single.$2, 0x0170);
     expect(heard.single.$3, blob);
+    // A direct copy's path is the hops still to go, not who carried it.
+    expect(heard.single.$4, isEmpty);
+  });
+
+  test('a flooded copy says which repeaters carried it', () {
+    final blob = List.generate(157, (i) => 255 - i);
+    c.handleFrameForTest(
+      _logged(
+        0x0170,
+        blob,
+        _psk,
+        flood: true,
+        path: [0xA2, 0x77, 0xBE, 0xEF],
+        width: 2,
+      ),
+    );
+    expect(heard, hasLength(1));
+    expect(heard.single.$3, blob);
+    expect(heard.single.$4, [0xA2, 0x77, 0xBE, 0xEF]);
+    expect(heard.single.$5, 2);
   });
 
   test('a datagram for a channel this radio lacks is not', () {

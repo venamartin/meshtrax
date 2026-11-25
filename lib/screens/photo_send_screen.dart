@@ -23,7 +23,8 @@ import '../services/photo_rules.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_ai_mark.dart';
 import '../widgets/photo_footprint_mark.dart';
-import '../widgets/photo_message_card.dart' show photoPositionDistance;
+import '../widgets/photo_message_card.dart'
+    show PhotoViewerScreen, photoPositionDistance;
 
 enum _Step { pick, crop, working, ready, flagged, sending }
 
@@ -42,6 +43,10 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
   final _transform = TransformationController();
   double _viewport = 320;
   bool _centred = false;
+
+  /// Fingers on the crop square. While any are down the page holds still,
+  /// so a pinch or a drag there always moves the photo.
+  int _cropFingers = 0;
   String _working = '';
   Uint8List? _bitstream;
   Uint8List? _previewPng;
@@ -271,6 +276,16 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ) +
       (_repairPacket ? 1 : 0);
 
+  /// The preview full screen, as receivers will have it: zoom, Enhance 4x.
+  void _openPreview(MeshCoreConnector connector) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PhotoViewerScreen.preview(
+        _previewPng!,
+        tag: _extras(connector).sentTag,
+      ),
+    ),
+  );
+
   void _watchPosition(MeshCoreConnector connector, bool on) {
     _includePosition = on;
     if (on && _positionSource == null) {
@@ -404,7 +419,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         onProgress: (p) {
           if (mounted) {
             setState(
-              () => _sendStatus = p.isParityChunk
+              () => _sendStatus = p.again
+                  ? l10n.photo_sendingPacketAgain(p.sentChunks, p.totalChunks)
+                  : p.isParityChunk
                   ? l10n.photo_sendingRepairPacket(p.sentChunks, p.totalChunks)
                   : l10n.photo_sendingPacket(p.sentChunks, p.totalChunks),
             );
@@ -438,6 +455,9 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       ),
       body: SafeArea(
         child: ListView(
+          physics: _step == _Step.crop && _cropFingers > 0
+              ? const NeverScrollableScrollPhysics()
+              : null,
           padding: const EdgeInsets.all(16),
           children: switch (_step) {
             _Step.pick => _pickView(context),
@@ -503,27 +523,36 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
           );
         }
         return Center(
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
+          child: Listener(
+            onPointerDown: (_) => setState(() => _cropFingers++),
+            onPointerUp: (_) => setState(
+              () => _cropFingers = math.max(0, _cropFingers - 1),
             ),
-            child: ClipRect(
-              child: SizedBox(
-                width: _viewport,
-                height: _viewport,
-                child: InteractiveViewer(
-                  transformationController: _transform,
-                  constrained: false,
-                  minScale: 1,
-                  maxScale: 8,
-                  boundaryMargin: EdgeInsets.zero,
-                  child: SizedBox(
-                    width: w,
-                    height: h,
-                    child: RawImage(image: s, fit: BoxFit.fill),
+            onPointerCancel: (_) => setState(
+              () => _cropFingers = math.max(0, _cropFingers - 1),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              child: ClipRect(
+                child: SizedBox(
+                  width: _viewport,
+                  height: _viewport,
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    constrained: false,
+                    minScale: 1,
+                    maxScale: 8,
+                    boundaryMargin: EdgeInsets.zero,
+                    child: SizedBox(
+                      width: w,
+                      height: h,
+                      child: RawImage(image: s, fit: BoxFit.fill),
+                    ),
                   ),
                 ),
               ),
@@ -561,6 +590,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         photoGapFor(
               photoPayload(_bitstream!, _extras(connector)).length,
               zeroHop: _zeroHop,
+              repairPacket: _repairPacket,
               airtimeMs: airtimeMs,
               shared: photoRulesApply(connector.currentFreqHz),
             ) *
@@ -578,22 +608,27 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             now: DateTime.now(),
           );
     return [
-      if (_previewPng != null)
+      if (_previewPng != null) ...[
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  Image.memory(_previewPng!, width: double.infinity),
-                  const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
-                  const Positioned.fill(child: PhotoFootprintMark()),
-                ],
+            child: GestureDetector(
+              onTap: () => _openPreview(connector),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    Image.memory(_previewPng!, width: double.infinity),
+                    const Positioned(left: 8, bottom: 6, child: PhotoAiMark()),
+                    const Positioned.fill(child: PhotoFootprintMark()),
+                  ],
+                ),
               ),
             ),
           ),
         ),
+        Text(l10n.photo_previewTapHint, style: quiet),
+      ],
       if (_previewNote != null) Text(_previewNote!, style: quiet),
       if (_faces > 0)
         Text(

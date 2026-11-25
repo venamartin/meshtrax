@@ -43,19 +43,20 @@ int photoTextMessages(Duration onAir, int Function(int bytes) airtimeMs) =>
     (onAir.inMilliseconds / airtimeMs(photoTextMessageAirBytes)).round();
 
 /// The pause after each packet of a photo whose payload is [payloadBytes]
-/// long: zero hop, or as a flood through repeaters; [airtimeMs] is the
-/// radio's airtime for a packet of so many bytes. On a frequency [shared]
-/// with other MeshCore users, at least [photoMinGapAirtimes] airtimes, as long
-/// as every packet still goes out within three quarters of the receiver's
-/// reassembly window.
+/// long, with the repair packet if [repairPacket]: zero hop, or as a flood
+/// through repeaters; [airtimeMs] is the radio's airtime for a packet of so
+/// many bytes. On a frequency [shared] with other MeshCore users, at least
+/// [photoMinGapAirtimes] airtimes, as long as every packet still goes out
+/// within three quarters of the receiver's reassembly window.
 Duration photoGapFor(
   int payloadBytes, {
   required bool zeroHop,
+  required bool repairPacket,
   required int Function(int bytes) airtimeMs,
   bool shared = false,
 }) {
   final airtime = Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
-  final packets = imageDataChunkCount(payloadBytes) + 1;
+  final packets = imageDataChunkCount(payloadBytes) + (repairPacket ? 1 : 0);
   final gap = zeroHop
       ? photoPacketGap(airtime)
       : photoPacketGapFlood(airtime, packets: packets);

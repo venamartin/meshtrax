@@ -1744,12 +1744,33 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                     : _statusIcon(context, message),
                           ),
                       ] else if (isPhoto) ...[
-                        PhotoMessageCard(
-                          messageId: message.messageId,
-                          senderName: message.senderName,
-                          photoTime: message.timestamp,
-                          size: (MediaQuery.sizeOf(context).width * 0.65 - 24)
-                              .clamp(120.0, 240.0),
+                        Stack(
+                          children: [
+                            PhotoMessageCard(
+                              messageId: message.messageId,
+                              senderName: message.senderName,
+                              photoTime: message.timestamp,
+                              size: (MediaQuery.sizeOf(context).width * 0.65 -
+                                      24)
+                                  .clamp(120.0, 240.0),
+                            ),
+                            if (!enableTracing && isOutgoing)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    color: displayBubbleColor,
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(10),
+                                      topRight: Radius.circular(12),
+                                    ),
+                                  ),
+                                  child: _statusIcon(context, message),
+                                ),
+                              ),
+                          ],
                         ),
                       ] else ...[
                         if (cleanDisplayText.isNotEmpty)
@@ -2029,23 +2050,36 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
 
   /// Sent, the wait for a repeat is over, and neither a radio nor an
   /// observer repeated it: nothing says anyone got it. Never on a Nearby
-  /// only channel, where no repeat is ever expected.
+  /// only channel, where no repeat is ever expected. A photo sent through
+  /// repeaters is unheard while some packet a receiver needs wasn't heard
+  /// passed on (it is delivered once all were).
   bool _isUnheard(BuildContext context, ChannelMessage message) =>
       message.isOutgoing &&
       message.status == ChannelMessageStatus.sent &&
-      message.repeatCount == 0 &&
+      (PhotoMesh.isPhotoMessage(message)
+          ? _photoOf(message)?.packetsPassedOn != null
+          : message.repeatCount == 0) &&
       _channelRegion(context) != RegionHelper.nearbyOnly &&
       !context.select<MeshCoreConnector, bool>(
         (c) => c.isChannelMessageRetrying(message.messageId),
       );
 
+  static PhotoRecord? _photoOf(ChannelMessage message) =>
+      PhotoStore.instance.recordFor(message.messageId);
+
   String? _channelRegion(BuildContext context) =>
       Provider.of<RegionService?>(context, listen: false)
           ?.regionOf(widget.channel.idKey);
 
-  /// The long-press text of the amber check: in a region, which one, and
-  /// that repeaters that don't know it drop the message.
-  String? _unheardHint(BuildContext context) {
+  /// The long-press text of the amber check: for a photo some of whose
+  /// packets were passed on, how many; in a region, which one, and that
+  /// repeaters that don't know it drop the message.
+  String? _unheardHint(BuildContext context, ChannelMessage message) {
+    final photo = PhotoMesh.isPhotoMessage(message) ? _photoOf(message) : null;
+    final passedOn = photo?.packetsPassedOn ?? 0;
+    if (photo != null && passedOn > 0) {
+      return context.l10n.photo_passedOnSome(passedOn, photo.packets);
+    }
     final region = _channelRegion(context);
     return RegionHelper.isRegionName(region)
         ? context.l10n.chat_channelNoSignRegion(region!)
@@ -2067,7 +2101,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
           isDelivered: message.status == ChannelMessageStatus.delivered,
           isFailed: message.status == ChannelMessageStatus.failed,
           isUnheard: unheard && !_observerHeard(message),
-          unheardHint: _unheardHint(context),
+          unheardHint: _unheardHint(context, message),
         ),
       ),
     );
@@ -2086,7 +2120,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
               isAcked: true,
               isFailed: failed,
               isUnheard: true,
-              unheardHint: _unheardHint(context),
+              unheardHint: _unheardHint(context, message),
             );
           }
           return Icon(

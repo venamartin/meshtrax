@@ -2,16 +2,18 @@ import 'dart:async';
 import 'dart:io' show File, Platform;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/services.dart' show MethodChannel;
 import 'package:traxpix/traxpix.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/path_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../models/channel_message.dart';
 import '../utils/app_logger.dart';
 import 'notification_service.dart';
+import 'photo_repeats.dart';
 import 'photo_rules.dart';
 import 'photo_store.dart';
 
@@ -99,6 +101,13 @@ class PhotoMesh {
   static PhotoMesh of(MeshCoreConnector connector) =>
       _instance ??= PhotoMesh._(connector);
 
+  /// A fresh one for the next [of], for tests with a connector of their own.
+  @visibleForTesting
+  static void resetForTest() {
+    _instance?.dispose();
+    _instance = null;
+  }
+
   final MeshCoreConnector connector;
   ImageChunkTransport? _transport;
   ImageReassembler? _reassembler;
@@ -110,24 +119,111 @@ class PhotoMesh {
   /// 60 s after its first chunk, even when nothing else comes in.
   late final Timer _sweep;
 
+  /// Photos of mine sent through repeaters, by channel slot and image id,
+  /// while this radio listens for repeaters passing their packets on.
+  final Map<(int, int), PhotoRepeats> _sent = {};
+
+  /// Writes of what was heard to chat rows and records, one at a time.
+  Future<void> _writes = Future<void>.value();
+  final Set<PhotoRepeats> _toWrite = {};
+
   PhotoMesh._(this.connector) {
     _frames = connector.receivedFrames.listen((frame) {
       _ensureTransport()?.handleFrame(frame);
     });
     // The radio's raw log too: there a photo sent through repeaters reaches
     // every radio along the way, not only the last. Chunks heard both ways
-    // arrive twice, which the reassembler ignores.
+    // arrive twice, which the reassembler ignores. A copy of a packet of my
+    // own is a repeater passing it on.
     // A deleted photo message takes its picture and bytes with it.
     connector.onChannelMessageDeleted = (id) =>
         unawaited(PhotoStore.instance.forget(id));
-    connector.onRawChannelData = (channelIndex, dataType, blob) {
+    connector.onRawChannelData = (channelIndex, dataType, blob, path, width) {
       if (dataType != dataTypeMeshTraxPhoto) return;
       _ensureTransport();
-      _reassembler?.addChunk(blob, channelIndex: channelIndex);
+      final outcome = _reassembler?.addChunk(blob, channelIndex: channelIndex);
+      final header = outcome?.header;
+      if (outcome?.status == ImageChunkStatus.fromSelf && header != null) {
+        _heardOwnPacket(channelIndex, header, blob, path, width);
+      }
     };
     _sweep = Timer.periodic(
       const Duration(seconds: 5),
       (_) => _reassembler?.evictExpired(),
+    );
+  }
+
+  /// A repeater passed on packet [header] of a photo of mine, heard as
+  /// [blob]; [path] is the repeaters the copy came through. Its first
+  /// repeater heard this radio directly, which Pathfinder hears of as of a
+  /// channel text's echo, once per photo, and only for an exact copy: never
+  /// that a packet was not passed on.
+  void _heardOwnPacket(
+    int channelIndex,
+    ImageChunkHeader header,
+    Uint8List blob,
+    Uint8List path,
+    int width,
+  ) {
+    final sent = _sent[(channelIndex, header.imgId)];
+    if (sent == null || path.isEmpty) return;
+    final carOnly = PathHelper.getHops(path, stride: width)
+        .every((hop) => connector.isCarRepeater?.call(hop, width) == true);
+    if (!sent.note(header.index, blob, path, width, carOnly: carOnly)) return;
+    if (sent.firstThrough(path, width)) {
+      connector.onOwnEchoHeard?.call(path, width);
+    }
+    _showRepeats(sent);
+  }
+
+  /// Puts what was heard of [sent] on its chat row and record, once it is
+  /// filed. Writes go one at a time, each with the latest.
+  void _showRepeats(PhotoRepeats sent) {
+    if (sent.messageId == null || !_toWrite.add(sent)) return;
+    _writes = _writes.then((_) async {
+      _toWrite.remove(sent);
+      final id = sent.messageId!;
+      await PhotoStore.instance.notePassedOn(id, sent.passedOnCount);
+      await connector.recordOwnRepeats(
+        id,
+        copies: sent.copies,
+        paths: sent.paths,
+        pathHashSize: sent.pathHashSize,
+        delivered: sent.complete,
+      );
+    }).catchError((Object e) => _log('could not note the repeats: $e'));
+  }
+
+  /// Whether packet [index] of photo [imgId] goes out once more: no
+  /// repeater was heard passing it on, though one was heard lately, and
+  /// channel retries aren't off (see [PhotoRepeats.sendAgain]).
+  bool _sendAgain(PhotoRepeats sent, int imgId, int index) {
+    if (connector.channelRetries == 0 ||
+        !connector.repeaterHeardRecently ||
+        !sent.sendAgain(index)) {
+      return false;
+    }
+    _log(
+      'no repeater was heard passing on packet ${index + 1} of '
+      '${sent.packets} of ${_id(imgId)}: sending it again',
+    );
+    return true;
+  }
+
+  /// The wait after the last packet of photo [key] is over: what was heard
+  /// stays as it is, and its row stops waiting.
+  void _stopListening((int, int) key) {
+    final sent = _sent.remove(key);
+    if (sent == null) return;
+    _log(
+      'repeaters passed on ${sent.passedOnCount} of ${sent.packets} packets '
+      'of ${_id(key.$2)}; copies heard: ${sent.copies}',
+    );
+    final id = sent.messageId;
+    if (id == null) return;
+    _showRepeats(sent);
+    _writes = _writes.then(
+      (_) => connector.waitForRepeats(id, waiting: false),
     );
   }
 
@@ -298,7 +394,9 @@ class PhotoMesh {
   /// Sends a coded photo as the channel sends its messages, or zero hop, with
   /// the sender's [tag] and [position] if any and a repair packet if
   /// [repairPacket], and files it in the chat as ours, with the sender's
-  /// preview as its picture (what the receivers will see).
+  /// preview as its picture (what the receivers will see). Sent through
+  /// repeaters, its row shows Delivered once a repeater was heard passing on
+  /// every packet the receivers need.
   Future<void> sendPhoto(
     Uint8List bitstream,
     int channelIndex, {
@@ -328,6 +426,10 @@ class PhotoMesh {
           'photo:own:${set.imgId}:${DateTime.now().millisecondsSinceEpoch}',
     );
     if (messageId == null) return;
+    final key = (channelIndex, set.imgId);
+    final sent = _sent[key];
+    // Before the record, so the row never shows unheard while it waits.
+    if (sent != null) connector.waitForRepeats(messageId, waiting: true);
     await PhotoStore.instance.save(
       PhotoRecord(
         messageId: messageId,
@@ -336,15 +438,31 @@ class PhotoMesh {
         outgoing: true,
         tag: tagged,
         position: position,
+        packetsPassedOn: sent?.passedOnCount,
       ),
       bitstream,
       png: previewPng,
     );
+    if (sent != null) {
+      sent.messageId = messageId;
+      _showRepeats(sent);
+      // The wait may have run out while the record was written.
+      if (!_sent.containsKey(key)) {
+        _writes = _writes.then(
+          (_) => connector.waitForRepeats(messageId, waiting: false),
+        );
+      }
+    }
   }
 
   /// Sends a coded photo on [channelIndex], one chunk at a time, with its
   /// [extras] ahead of it and the repair chunk last if [repairPacket]: as a
   /// flood, the way the radio sends the channel's messages, or zero hop.
+  ///
+  /// Through repeaters, this radio then listens for them passing each
+  /// packet on, until [MeshCoreConnector.channelRepeatWait] after the last.
+  /// A packet no repeater was heard passing on goes once more, the same
+  /// bytes, when the gap leaves time to hear one ([photoRepeatHeardWithin]).
   Future<ImageChunkSet> send(
     Uint8List bitstream,
     int channelIndex, {
@@ -358,28 +476,52 @@ class PhotoMesh {
       throw const PhotoSendException(PhotoSendFailure.notConnected);
     }
     final payload = photoPayload(bitstream, extras);
+    final airtimeMs = connector.estimatePacketAirtimeMs;
     final gap = photoGapFor(
       payload.length,
       zeroHop: zeroHop,
-      airtimeMs: connector.estimatePacketAirtimeMs,
+      repairPacket: repairPacket,
+      airtimeMs: airtimeMs,
       shared: photoRulesApply(connector.currentFreqHz),
     );
-    final sw = Stopwatch()..start();
-    final set = await transport.sendImage(
+    // A Nearby only channel goes out zero hop, whatever was asked.
+    final flood = !zeroHop && !connector.isNearbyOnlyChannel(channelIndex);
+    final chunks = transport.chunk(
       payload: payload,
       metadata: ImageStreamMetadata(
         rate: ImageCodecRatePoint.ft8,
         hasExtras: !extras.isEmpty,
       ),
-      channelIndex: channelIndex,
       parity: repairPacket,
+    );
+    final imgId = chunks.imgId;
+    final key = (channelIndex, imgId);
+    final sent = flood
+        ? PhotoRepeats(blobs: chunks.blobs, hasRepair: chunks.hasParity)
+        : null;
+    if (sent != null) _sent[key] = sent;
+    final airtime = Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
+    final hearsInTime = gap >= photoRepeatHeardWithin(airtime);
+    final sw = Stopwatch()..start();
+    final set = await transport.sendChunks(
+      chunks,
+      channelIndex: channelIndex,
       gap: gap,
       zeroHop: zeroHop,
+      resend: sent != null && hearsInTime
+          ? (i) => _sendAgain(sent, imgId, i)
+          : null,
       onProgress: onProgress,
+      onDone: sent == null
+          ? null
+          : () => Timer(
+              MeshCoreConnector.channelRepeatWait,
+              () => _stopListening(key),
+            ),
     );
     _log(
       'sent ${bitstream.length} bytes on channel $channelIndex as '
-      '${set.blobs.length} packets ${zeroHop ? 'zero hop' : 'as a flood'}, '
+      '${set.blobs.length} packets ${flood ? 'as a flood' : 'zero hop'}, '
       '${gap.inMilliseconds} ms apart, in ${sw.elapsedMilliseconds} ms',
     );
     return set;

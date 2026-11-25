@@ -48,6 +48,10 @@ class AppLocalizationsSv extends AppLocalizations {
   String get photo_preview => 'Förhandsgranska';
 
   @override
+  String get photo_previewTapHint =>
+      'Tap the picture to zoom in or enhance it 4×';
+
+  @override
   String get photo_changeCrop => 'Change crop';
 
   @override
@@ -183,6 +187,16 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String photo_sendingRepairPacket(int sent, int total) {
     return 'Paket $sent av $total (reparation)';
+  }
+
+  @override
+  String photo_sendingPacketAgain(int sent, int total) {
+    return 'Packet $sent of $total again';
+  }
+
+  @override
+  String photo_passedOnSome(int heard, int total) {
+    return 'Sent · repeaters passed on $heard of its $total packets';
   }
 
   @override
