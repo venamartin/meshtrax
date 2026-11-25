@@ -1939,8 +1939,6 @@
   "contact_lastSeen": "Zuletzt gesehen",
   "contact_clearChat": "Chat löschen",
   "contact_teleEnvSubtitle": "Teilen von Umgebungsensordaten zulassen",
-  "appSettings_maxMessageRetries": "Maximale Anzahl an Wiederholungsversuchen",
-  "appSettings_maxMessageRetriesSubtitle": "Anzahl der Versuche, eine Nachricht erneut zu senden, bevor sie als fehlgeschlagen markiert wird.",
   "settings_telemetryModeUpdated": "Telemetriemodus aktualisiert",
   "map_showOverlaps": "Überlappungen der Repeater-Taste",
   "map_runTraceWithReturnPath": "Auf dem gleichen Pfad zurückkehren.",

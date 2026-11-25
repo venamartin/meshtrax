@@ -26,6 +26,7 @@ import '../services/notification_service.dart';
 import '../storage/app_database.dart';
 import '../utils/app_logger.dart';
 import '../widgets/app_bar.dart';
+import '../widgets/experimental_title.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'app_settings_screen.dart';
 import 'app_debug_log_screen.dart';
@@ -423,7 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const TraxIcon(size: 24),
-            title: Text(l10n.trax_settings),
+            title: ExperimentalTitle(Text(l10n.trax_settings)),
             subtitle: Text(l10n.settings_traxSettingsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(

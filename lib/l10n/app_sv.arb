@@ -1911,8 +1911,6 @@
   "contact_teleBaseSubtitle": "Tillåt delning av batterinivå och grundläggande telemetri",
   "contact_teleLoc": "Telemetridata plats",
   "contact_teleLocSubtitle": "Tillåt delning av platsdata",
-  "appSettings_maxMessageRetries": "Maximalt antal försök",
-  "appSettings_maxMessageRetriesSubtitle": "Antal försök att skicka om ett meddelande innan det markeras som misslyckat.",
   "settings_telemetryModeUpdated": "Telemetri-läge uppdaterat",
   "map_showOverlaps": "Repeater-nyckelöverlappningar",
   "map_runTraceWithReturnPath": "Gå tillbaka på samma väg",

@@ -595,6 +595,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_ok => '确定';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => '连接';
 
   @override
@@ -1668,10 +1671,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_messaging => '消息';
 
   @override
-  String get appSettings_maxMessageRetries => '最大消息重试次数';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle => '在将消息标记为失败之前，允许尝试的次数';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries => '频道消息最大重试次数';

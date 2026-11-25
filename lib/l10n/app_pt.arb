@@ -1911,8 +1911,6 @@
   "contact_nameAndNoteHint": "Fica neste dispositivo e nas cópias de segurança do rádio. Nunca é enviado.",
   "contact_settings": "Configurações de Contato",
   "contact_teleBaseSubtitle": "Permitir compartilhamento do nível da bateria e telemetria básica",
-  "appSettings_maxMessageRetries": "Número máximo de tentativas de envio de mensagens",
-  "appSettings_maxMessageRetriesSubtitle": "Número de tentativas de reenvio antes de classificar uma mensagem como falha.",
   "settings_telemetryModeUpdated": "Modo de telemetria atualizado",
   "map_showOverlaps": "Sobreposições da Chave Repeater",
   "map_runTraceWithReturnPath": "Retornar ao mesmo caminho.",

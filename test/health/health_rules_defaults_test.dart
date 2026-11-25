@@ -131,14 +131,9 @@ void main() {
     expect(sentFrame(cmdSetOtherParams)![4], 1, reason: '2 ACKs');
     expect(sentFrame(cmdSetPathHashMode)![2], 1, reason: '2-byte codes');
 
-    expect(
-      await findings(
-        (r) =>
-            r.id.startsWith('radio_auto_add') ||
-            r.id == 'radio_path_hash_width',
-      ),
-      isEmpty,
-    );
+    // Every radio rule agrees with what first connect sets. The name is the
+    // one thing left: only the user can choose it.
+    expect(await findings((r) => r.needsRadio), ['radio_name']);
   });
 
   test('a used radio keeps what it does, for the check to offer', () async {

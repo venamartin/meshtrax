@@ -1911,8 +1911,6 @@
   "contact_lastSeen": "Naposledy videný",
   "contact_teleBase": "Báza telemetrie",
   "contact_teleEnvSubtitle": "Povoliť zdieľanie údajov senzorov prostredia",
-  "appSettings_maxMessageRetries": "Maximalný počet pokusov o doručenie správ",
-  "appSettings_maxMessageRetriesSubtitle": "Počet pokusov o odošleť pred označením správy ako neúspešnej",
   "settings_telemetryModeUpdated": "Režim telemetrie bol aktualizovaný",
   "map_showOverlaps": "Prekrývanie opakovača kľúča",
   "map_runTraceWithReturnPath": "Vráťte sa späť po tej istej ceste.",

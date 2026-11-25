@@ -10,6 +10,7 @@ import '../services/photo_mesh.dart' show photoAutoEnlargeAllowed;
 import '../services/photo_reports.dart';
 import '../services/photo_store.dart';
 import '../utils/format_bytes.dart';
+import 'experimental_title.dart';
 
 /// Photos, in App settings' Messaging card: the switch that turns them on,
 /// then the photo model (it downloads through the map downloader, so it also
@@ -36,7 +37,7 @@ class PhotoSettingsSection extends StatelessWidget {
           children: [
             SwitchListTile(
               secondary: const Icon(Icons.photo_camera_outlined),
-              title: Text(l10n.photo_settingsTitle),
+              title: ExperimentalTitle(Text(l10n.photo_settingsTitle)),
               subtitle: Text(
                 l10n.photo_enableHint(
                   formatBytes(PhotoModelDownloads.totalBytes),

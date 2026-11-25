@@ -1949,8 +1949,6 @@
   "contact_settings": "Ustawienia kontaktowe",
   "contact_lastSeen": "Ostatnio widziany",
   "contact_teleBaseSubtitle": "Pozwól na udostępnianie poziomu naładowania baterii i podstawowych danych telemetrycznych",
-  "appSettings_maxMessageRetries": "Maksymalna liczba prób wysłania wiadomości",
-  "appSettings_maxMessageRetriesSubtitle": "Liczba prób ponownego wysłania wiadomości przed oznaczaniem jej jako nieudanej",
   "settings_telemetryModeUpdated": "Tryb telemetryczny zaktualizowany",
   "map_showOverlaps": "Nakładające się klucze przekaźników",
   "map_runTraceWithReturnPath": "Wróć tą samą ścieżką",

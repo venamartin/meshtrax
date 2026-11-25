@@ -600,6 +600,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_ok => '알겠습니다';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => '연결';
 
   @override
@@ -1691,10 +1694,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_messaging => '메시징';
 
   @override
-  String get appSettings_maxMessageRetries => '최대 메시지 재시도 횟수';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle => '메시지를 실패로 처리하기 전 시도 횟수';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries => '채널 메시지 최대 재시도 횟수';

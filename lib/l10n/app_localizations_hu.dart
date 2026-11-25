@@ -606,6 +606,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_ok => 'Rendben';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Kapcsolódj';
 
   @override
@@ -1755,12 +1758,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get appSettings_messaging => 'Üzenetek küldése';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Maximális üzenetek újraküldési próbálkozások';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'A próbálkozások száma, mielőtt egy üzenetet hibásnak jelölünk.';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

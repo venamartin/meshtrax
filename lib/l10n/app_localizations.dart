@@ -1055,6 +1055,12 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get common_ok;
 
+  /// Tag after the titles of photos and TRAX mode while they are new. One short word, in capitals.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPERIMENTAL'**
+  String get common_experimental;
+
   /// No description provided for @common_connect.
   ///
   /// In en, this message translates to:
@@ -3047,17 +3053,17 @@ abstract class AppLocalizations {
   /// **'Messaging'**
   String get appSettings_messaging;
 
-  /// No description provided for @appSettings_maxMessageRetries.
+  /// No description provided for @appSettings_maxDirectMessageTries.
   ///
   /// In en, this message translates to:
-  /// **'Max Message Retries'**
-  String get appSettings_maxMessageRetries;
+  /// **'Max Direct Message Tries'**
+  String get appSettings_maxDirectMessageTries;
 
-  /// No description provided for @appSettings_maxMessageRetriesSubtitle.
+  /// No description provided for @appSettings_maxDirectMessageTriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Send attempts before a message is marked failed. Known routes get the first tries; the rest flood.'**
-  String get appSettings_maxMessageRetriesSubtitle;
+  /// **'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.'**
+  String get appSettings_maxDirectMessageTriesSubtitle;
 
   /// No description provided for @appSettings_maxChannelMessageRetries.
   ///

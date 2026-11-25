@@ -200,7 +200,7 @@ class ChannelMessagePathScreen extends StatelessWidget {
                   _formatHopCount(PathHelper.getHopCount(variants[i], stride: message.pathHashSize), l10n),
                 ),
               ),
-              subtitle: Text(message.displayPathVariants[i]),
+              subtitle: Text(PathHelper.wrapBetweenHops(message.displayPathVariants[i])),
               trailing: const Icon(Icons.map_outlined, size: 20),
               onTap: () => _openPathMap(
                 context,
@@ -547,7 +547,7 @@ class _ChannelMessagePathMapScreenState
               Text(
                 l10n.channelPath_selectedPathLabel(
                   label,
-                  PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize),
+                  PathHelper.wrapBetweenHops(PathHelper.formatPathHex(selectedPath.pathBytes, stride: widget.message.pathHashSize)),
                 ),
                 style: TextStyle(color: Colors.grey[700], fontSize: 12),
               ),

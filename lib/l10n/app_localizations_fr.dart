@@ -609,6 +609,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Connecter';
 
   @override
@@ -1762,12 +1765,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appSettings_messaging => 'Messagerie';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Nombre maximal de tentatives de récupération de messages';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Nombre de tentatives de relance avant de marquer un message comme ayant échoué.';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

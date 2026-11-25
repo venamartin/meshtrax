@@ -22,7 +22,6 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/icon_help.dart';
 import 'package:meshtrax/widgets/my_location_button.dart';
-import 'package:meshtrax/widgets/pathfinder_help_dialog.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
 
 // The TRAX button made four 48 dp icons, and the owner's radio name was cut
@@ -69,7 +68,6 @@ class _Radio extends MeshCoreConnector {
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({
-      PathfinderHelpDialog.prefKey: true,
       LocationButtonNote.prefKey: true,
     });
     PrefsManager.reset();

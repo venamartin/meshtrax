@@ -1939,8 +1939,6 @@
   "contact_teleBaseSubtitle": "Permitir el intercambio de nivel de batería y telemetría básica",
   "contact_teleEnv": "Entorno de Telemetría",
   "contact_teleEnvSubtitle": "Permitir el intercambio de datos de sensores de entorno",
-  "appSettings_maxMessageRetries": "Número máximo de reintentos de envío de mensajes",
-  "appSettings_maxMessageRetriesSubtitle": "Número de intentos de reintento antes de marcar un mensaje como fallido.",
   "settings_telemetryModeUpdated": "Modo de telemetría actualizado",
   "map_showOverlaps": "Superposiciones de tecla repetidora",
   "map_runTraceWithReturnPath": "Volver atrás por el mismo camino.",

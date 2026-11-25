@@ -19,6 +19,7 @@ import '../helpers/snack_bar_builder.dart';
 import '../helpers/markdown_helper.dart';
 import '../helpers/message_facts.dart';
 import '../helpers/mention_helper.dart';
+import '../helpers/path_helper.dart';
 import '../services/photo_mesh.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_message_card.dart';
@@ -1935,7 +1936,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                                 ? const EdgeInsets.symmetric(horizontal: 8)
                                 : EdgeInsets.zero,
                             child: Text(
-                              'via $displayPathString',
+                              'via ${PathHelper.wrapBetweenHops(displayPathString)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey[600],

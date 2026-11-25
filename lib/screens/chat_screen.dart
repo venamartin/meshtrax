@@ -3095,7 +3095,7 @@ class _MessageBubble extends StatelessWidget {
                                 ? const EdgeInsets.symmetric(horizontal: 8)
                                 : EdgeInsets.zero,
                             child: Text(
-                              'via $viaLabel',
+                              'via ${PathHelper.wrapBetweenHops(viaLabel!)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: displayMetaColor,

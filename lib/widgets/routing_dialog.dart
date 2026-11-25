@@ -125,7 +125,9 @@ class _RoutingDialog extends StatelessWidget {
       return pathfinderOn ? l10n.routing_noRoutePathfinder : l10n.routing_noRoute;
     }
     if (c.pathLength == 0) return l10n.chat_direct;
-    final hops = PathHelper.formatPathHex(c.path, stride: c.pathHashSize);
+    final hops = PathHelper.wrapBetweenHops(
+      PathHelper.formatPathHex(c.path, stride: c.pathHashSize),
+    );
     return '${l10n.chat_hopsCount(c.pathLength)} · $hops';
   }
 
@@ -135,10 +137,12 @@ class _RoutingDialog extends StatelessWidget {
     if (c.pathOverride == 0 || bytes == null || bytes.isEmpty) {
       return context.l10n.chat_direct;
     }
-    return PathHelper.formatPathHex(
-      bytes,
-      stride: c.overrideHashSize(
-        context.read<MeshCoreConnector>().pathHashByteWidth,
+    return PathHelper.wrapBetweenHops(
+      PathHelper.formatPathHex(
+        bytes,
+        stride: c.overrideHashSize(
+          context.read<MeshCoreConnector>().pathHashByteWidth,
+        ),
       ),
     );
   }

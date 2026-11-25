@@ -1911,8 +1911,6 @@
   "contact_teleLocSubtitle": "Позволи споделяне на данни за местоположение",
   "contact_teleLoc": "Местоположение на телеметрията",
   "contact_teleEnvSubtitle": "Позволи споделяне на данни от средносферните датчици",
-  "appSettings_maxMessageRetries": "Максимален брой опити за изпращане на съобщение",
-  "appSettings_maxMessageRetriesSubtitle": "Брой опити за повторно изпращане, преди съобщението да бъде маркирано като неуспешно.",
   "settings_telemetryModeUpdated": "Режим на телеметрията е обновен",
   "map_showOverlaps": "Покриване на ключа на повтаряча",
   "map_runTraceWithReturnPath": "Върни се по същия път.",

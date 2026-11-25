@@ -558,8 +558,6 @@
   "appSettings_advertisementNotifications": "Reklám értesítések",
   "appSettings_advertisementNotificationsSubtitle": "A figyelmeztetést megjelenítve, amikor új csomópontok kerülnek felfedezésre.",
   "appSettings_messaging": "Üzenetek küldése",
-  "appSettings_maxMessageRetries": "Maximális üzenetek újraküldési próbálkozások",
-  "appSettings_maxMessageRetriesSubtitle": "A próbálkozások száma, mielőtt egy üzenetet hibásnak jelölünk.",
   "appSettings_battery": "Akku",
   "appSettings_batteryChemistry": "Aakkum töltés kémia",
   "appSettings_batteryChemistryPerDevice": "Beállítások {deviceName}-hez",

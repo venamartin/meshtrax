@@ -606,6 +606,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_experimental => 'EXPERIMENTAL';
+
+  @override
   String get common_connect => 'Verbinden';
 
   @override
@@ -1749,12 +1752,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appSettings_messaging => 'Berichten';
 
   @override
-  String get appSettings_maxMessageRetries =>
-      'Aantal pogingen om berichten te versturen';
+  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
 
   @override
-  String get appSettings_maxMessageRetriesSubtitle =>
-      'Aantal pogingen om een bericht opnieuw te versturen voordat het als mislukt wordt gemarkeerd';
+  String get appSettings_maxDirectMessageTriesSubtitle =>
+      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>

@@ -1911,8 +1911,6 @@
   "contact_lastSeen": "Dernière fois vu",
   "contact_clearChat": "Effacer la conversation",
   "contact_teleBaseSubtitle": "Autoriser le partage du niveau de batterie et de la télémétrie de base",
-  "appSettings_maxMessageRetries": "Nombre maximal de tentatives de récupération de messages",
-  "appSettings_maxMessageRetriesSubtitle": "Nombre de tentatives de relance avant de marquer un message comme ayant échoué.",
   "settings_telemetryModeUpdated": "Le mode télémétrie a été mis à jour",
   "map_showOverlaps": "Chevauchement de la touche répétitive",
   "map_runTraceWithReturnPath": "Revenir sur le même chemin.",
