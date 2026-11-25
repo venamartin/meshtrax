@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform, Process, ProcessStartMode;
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart' show MaterialPageRoute;
@@ -102,13 +102,37 @@ class NotificationService {
     }
   }
 
+  /// Linux desktops: pop-ups over D-Bus and a tone the app plays itself.
+  /// The target platform, not the host's, so tests on a Linux machine
+  /// (Android unless they say otherwise) never sound one.
+  static bool get _onLinux => defaultTargetPlatform == TargetPlatform.linux;
+
+  /// Where the app shows no notifications: Windows, and tests run on Linux.
+  static bool get _unsupported =>
+      Platform.isWindows || (Platform.isLinux && !_onLinux);
+
+  /// Linux: whether pop-ups can show, worked out after start so the first
+  /// frame never waits on the desktop.
+  Future<bool>? _linuxPopUps;
+
+  /// Whether this platform shows the app's notifications now.
+  Future<bool> _canShow() async {
+    if (_unsupported) return false;
+    if (!await _ensureInitialized()) return false;
+    return await _linuxPopUps ?? true;
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Skip notification initialization on Windows and Linux (plugin not supported)
-    if (Platform.isWindows || Platform.isLinux) {
+    if (_unsupported) {
       _isInitialized = true;
       debugPrint('Notifications unavailable on this platform');
+      return;
+    }
+    if (_onLinux) {
+      _isInitialized = true;
+      _linuxPopUps = _initializeLinux();
       return;
     }
 
@@ -150,6 +174,41 @@ class NotificationService {
 
     _isInitialized = true;
     debugPrint('Notifications initialized (mobile platform)');
+  }
+
+  /// No session bus means no desktop to show pop-ups on (a console or
+  /// ssh login); the tone still plays.
+  Future<bool> _initializeLinux() async {
+    if (!hasSessionBus(Platform.environment)) {
+      debugPrint('Notifications: no D-Bus session, tone only');
+      return false;
+    }
+    try {
+      await _notifications
+          .initialize(
+            settings: InitializationSettings(
+              linux: LinuxInitializationSettings(
+                defaultActionName: _l10n.chat_open,
+              ),
+            ),
+            onDidReceiveNotificationResponse: handleTap,
+          )
+          .timeout(const Duration(seconds: 5));
+      return true;
+    } catch (e) {
+      debugPrint('Notifications unavailable on this desktop: $e');
+      return false;
+    }
+  }
+
+  @visibleForTesting
+  static bool hasSessionBus(Map<String, String> env) {
+    final address = env['DBUS_SESSION_BUS_ADDRESS'];
+    if (address != null && address.isNotEmpty) return true;
+    final runtime = env['XDG_RUNTIME_DIR'];
+    return runtime != null &&
+        runtime.isNotEmpty &&
+        File('$runtime/bus').existsSync();
   }
 
   Future<bool> _ensureInitialized() async {
@@ -291,6 +350,99 @@ class NotificationService {
 
   /// "SOS" in Morse, twice (tool/make_sos_sound.py), played as an alarm.
   static const _sosSound = RawResourceAndroidNotificationSound('sos_morse');
+
+  /// Linux: the tones the app plays itself, since a desktop's notification
+  /// service may play none (dunst doesn't). A message sounds the desktop's
+  /// own message sound, an SOS the Morse alarm Android sounds.
+  static const linuxMessageSound =
+      '/usr/share/sounds/freedesktop/stereo/message-new-instant.oga';
+
+  static String get linuxSosSound =>
+      '${File(Platform.resolvedExecutable).parent.path}'
+      '/data/flutter_assets/assets/sounds/sos_morse.wav';
+
+  /// Every tone the app plays, before it plays.
+  @visibleForTesting
+  static void Function(String sound)? debugOnTone;
+
+  /// Messages close together sound once; an SOS always sounds.
+  static const _toneGap = Duration(seconds: 2);
+  DateTime? _lastToneAt;
+
+  /// The SOS tone playing, stopped when the SOS is taken back.
+  Process? _sosTone;
+
+  void _playTone({bool sos = false}) {
+    if (!_onLinux) return;
+    final now = DateTime.now();
+    final last = _lastToneAt;
+    if (!sos && last != null && now.difference(last) < _toneGap) return;
+    _lastToneAt = now;
+    final sound = sos ? linuxSosSound : linuxMessageSound;
+    final hook = debugOnTone;
+    if (hook != null) {
+      hook(sound);
+      return;
+    }
+    unawaited(_play(sound, sos: sos));
+  }
+
+  /// paplay talks to PulseAudio and to PipeWire's stand-in for it, pw-play
+  /// only to PipeWire.
+  @visibleForTesting
+  static String? soundPlayer(Map<String, String> env) {
+    final dirs = (env['PATH'] ?? '').split(':').where((d) => d.isNotEmpty);
+    for (final name in const ['paplay', 'pw-play']) {
+      for (final dir in dirs) {
+        if (File('$dir/$name').existsSync()) return '$dir/$name';
+      }
+    }
+    return null;
+  }
+
+  Future<void> _play(String sound, {required bool sos}) async {
+    final player = soundPlayer(Platform.environment);
+    if (player == null || !File(sound).existsSync()) {
+      debugPrint('No tone: player $player, sound $sound');
+      return;
+    }
+    try {
+      final process = await Process.start(player, [
+        sound,
+      ], mode: ProcessStartMode.inheritStdio);
+      if (sos) {
+        _sosTone?.kill();
+        _sosTone = process;
+      }
+      unawaited(
+        process.exitCode.then((_) {
+          if (identical(_sosTone, process)) _sosTone = null;
+        }),
+      );
+    } catch (e) {
+      debugPrint('Failed to play a tone: $e');
+    }
+  }
+
+  void _stopSosTone() {
+    _sosTone?.kill();
+    _sosTone = null;
+  }
+
+  /// A Linux pop-up, quiet since the app sounds the tone itself.
+  @visibleForTesting
+  static LinuxNotificationDetails linuxDetails(
+    AppLocalizations l10n, {
+    LinuxNotificationCategory? category,
+    LinuxNotificationUrgency? urgency,
+    List<LinuxNotificationAction> actions = const [],
+  }) => LinuxNotificationDetails(
+    category: category,
+    urgency: urgency,
+    suppressSound: true,
+    defaultActionName: l10n.chat_open,
+    actions: actions,
+  );
 
   /// Android lets a category through Do Not Disturb only when the user says
   /// so in its settings ([openSosSettings]); asking for it here takes
@@ -439,6 +591,25 @@ class NotificationService {
           ],
   );
 
+  @visibleForTesting
+  static LinuxNotificationDetails channelLinuxDetails(
+    AppLocalizations l10n, {
+    String? traxAction,
+  }) => linuxDetails(
+    l10n,
+    category: LinuxNotificationCategory.imReceived,
+    actions: traxAction == null
+        ? const []
+        : [
+            LinuxNotificationAction(
+              key: traxAction,
+              label: traxAction == traxFollowAction
+                  ? l10n.trax_switchToo
+                  : l10n.trax_leaveToo,
+            ),
+          ],
+  );
+
   /// A channel message with TRAX mode's button, one per channel and clear
   /// of the other ids, so the chat after it doesn't take the button away.
   @visibleForTesting
@@ -502,8 +673,12 @@ class NotificationService {
         gotIt: gotIt,
       ),
     );
-    if (!await _ensureInitialized()) return;
-    if (Platform.isWindows || Platform.isLinux) return;
+    if (cancelled) {
+      _stopSosTone();
+    } else {
+      _playTone(sos: true);
+    }
+    if (!await _canShow()) return;
     try {
       await _notifications.show(
         id: id,
@@ -513,6 +688,18 @@ class NotificationService {
           android: sosAndroidDetails(l10n, silent: cancelled, gotIt: gotIt),
           iOS: DarwinNotificationDetails(presentSound: !cancelled),
           macOS: DarwinNotificationDetails(presentSound: !cancelled),
+          linux: linuxDetails(
+            l10n,
+            urgency: cancelled ? null : LinuxNotificationUrgency.critical,
+            actions: gotIt
+                ? [
+                    LinuxNotificationAction(
+                      key: sosGotItAction,
+                      label: l10n.sos_gotIt,
+                    ),
+                  ]
+                : const [],
+          ),
         ),
         payload: payload,
       );
@@ -542,9 +729,9 @@ class NotificationService {
         payload: traxEndedPayload,
       ),
     );
-    if (Platform.isWindows || Platform.isLinux) return;
+    _playTone();
     try {
-      if (!await _ensureInitialized()) return;
+      if (!await _canShow()) return;
       await _notifications.show(
         id: traxEndedId,
         title: title,
@@ -553,6 +740,7 @@ class NotificationService {
           android: traxAndroidDetails(l10n),
           iOS: const DarwinNotificationDetails(),
           macOS: const DarwinNotificationDetails(),
+          linux: linuxDetails(l10n),
         ),
         payload: traxEndedPayload,
       );
@@ -685,8 +873,8 @@ class NotificationService {
     String? contactId,
     int? badgeCount,
   }) async {
-    if (!await _ensureInitialized()) return;
-    if (Platform.isWindows || Platform.isLinux) return;
+    _playTone();
+    if (!await _canShow()) return;
 
     final androidDetails = AndroidNotificationDetails(
       'meshtrax_messages',
@@ -700,6 +888,10 @@ class NotificationService {
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
+      linux: linuxDetails(
+        _l10n,
+        category: LinuxNotificationCategory.imReceived,
+      ),
     );
 
     final id = (contactId ?? contactName).hashCode.abs();
@@ -724,8 +916,7 @@ class NotificationService {
     required String contactType,
     String? contactId,
   }) async {
-    if (!await _ensureInitialized()) return;
-    if (Platform.isWindows || Platform.isLinux) return;
+    if (!await _canShow()) return;
 
     final androidDetails = AndroidNotificationDetails(
       'meshtrax_adverts',
@@ -739,6 +930,11 @@ class NotificationService {
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
+      linux: linuxDetails(
+        _l10n,
+        category: LinuxNotificationCategory.presenceOnline,
+        urgency: LinuxNotificationUrgency.low,
+      ),
     );
 
     final id = (contactId ?? contactName).hashCode.abs() ^ 0x0A;
@@ -761,8 +957,8 @@ class NotificationService {
     String? mentionMessageId,
     String? traxAction,
   }) async {
-    if (!await _ensureInitialized()) return;
-    if (Platform.isWindows || Platform.isLinux) return;
+    _playTone();
+    if (!await _canShow()) return;
 
     final androidDetails = channelAndroidDetails(_l10n, traxAction: traxAction);
     const darwinDetails = DarwinNotificationDetails();
@@ -770,6 +966,7 @@ class NotificationService {
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
+      linux: channelLinuxDetails(_l10n, traxAction: traxAction),
     );
 
     final preview = formatNotificationText(message.trim());
@@ -890,11 +1087,22 @@ class NotificationService {
 
   /// Clears the app's notifications, all but the ones [_kept] holds.
   Future<void> cancelAll() async {
-    if (Platform.isWindows || Platform.isLinux) return;
-    if (!await _ensureInitialized()) return;
+    _stopSosTone();
+    if (!await _canShow()) return;
     _pendingNotifications.clear();
     if (_kept.isEmpty) {
       await _notifications.cancelAll();
+    } else if (_onLinux) {
+      // Linux can't list what shows; the plugin keeps the ids it showed.
+      final shown = await _notifications
+              .resolvePlatformSpecificImplementation<
+                LinuxFlutterLocalNotificationsPlugin
+              >()
+              ?.getSystemIdMap() ??
+          const <int, int>{};
+      for (final id in shown.keys) {
+        if (!_kept.contains(id)) await _notifications.cancel(id: id);
+      }
     } else {
       for (final shown in await _notifications.getActiveNotifications()) {
         final id = shown.id;
@@ -908,8 +1116,10 @@ class NotificationService {
 
   /// Stops an SOS alert, even mid-sound: [chatKey] and [senderName] as
   /// [showSosNotification] had them.
-  Future<void> cancelSos(String chatKey, String senderName) =>
-      cancel(sosNotificationId(chatKey, senderName));
+  Future<void> cancelSos(String chatKey, String senderName) {
+    _stopSosTone();
+    return cancel(sosNotificationId(chatKey, senderName));
+  }
 
   /// Every notification the app takes back, before the platform does.
   @visibleForTesting
@@ -918,8 +1128,7 @@ class NotificationService {
   Future<void> cancel(int id) async {
     debugOnCancel?.call(id);
     _kept.remove(id);
-    if (Platform.isWindows || Platform.isLinux) return;
-    if (!await _ensureInitialized()) return;
+    if (!await _canShow()) return;
     await _notifications.cancel(id: id);
   }
 

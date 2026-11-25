@@ -52,7 +52,7 @@ dependencies:
   shared_preferences_android: ">=2.4.23 <2.5.0"
   uuid: ^4.3.3
   latlong2: ^0.9.1
-  # Notifications for Android/iOS (Disabled on Windows if ATL headers are missing)
+  # Notifications on Android, iOS, macOS and Linux (not on Windows yet)
   flutter_local_notifications: ^21.0.0
   crypto: ^3.0.3
   pointycastle: ^4.0.0
@@ -173,6 +173,8 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/map_layers/
+    # The SOS alarm the Linux app plays (tool/make_sos_sound.py).
+    - assets/sounds/
     - assets/fonts/JetBrainsMono-OFL.txt
     # LiteRT's licence and its third-party notices, from Google's AAR; the
     # photo model's runtime ships inside the app. Registered in main.dart.
