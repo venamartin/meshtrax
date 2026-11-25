@@ -26,6 +26,11 @@ void main() {
           helpSections: (_) => const [
             CliHelpSection('General', [
               CliHelpEntry(command: 'ver', description: 'Shows the version.'),
+              CliHelpEntry(
+                command: 'set tx {dbm}',
+                description: 'Sets the power.',
+                getCommand: 'get tx',
+              ),
             ]),
           ],
         ),
@@ -89,6 +94,20 @@ void main() {
 
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         'ver');
+    expect(sent, isEmpty);
+  });
+
+  testWidgets("a setting's get button fills the input with the get",
+      (tester) async {
+    await pumpConsole(tester);
+
+    await tester.tap(find.byIcon(Icons.help_outline));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ActionChip, 'get tx'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'get tx');
     expect(sent, isEmpty);
   });
 }

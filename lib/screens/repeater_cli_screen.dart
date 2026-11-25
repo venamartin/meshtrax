@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../connector/meshcore_connector.dart';
@@ -115,6 +116,7 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
     final l10n = context.l10n;
     final connector = context.watch<MeshCoreConnector>();
     final repeater = _resolveRepeater(connector);
+    final room = repeater.type == advTypeRoom;
 
     return CliConsole(
       title: l10n.repeater_cliTitle,
@@ -129,259 +131,253 @@ class _RepeaterCliScreenState extends State<RepeaterCliScreen> {
       ],
       debugFrameFor: (command) =>
           buildSendCliCommandFrame(widget.repeater.publicKey, command),
-      quickCommands: [
-        CliQuickCommand(l10n.repeater_cliQuickAdvertise, 'advert'),
-        CliQuickCommand(l10n.repeater_cliQuickGetName, 'get name'),
-        CliQuickCommand(l10n.repeater_cliQuickGetRadio, 'get radio'),
-        CliQuickCommand(l10n.repeater_cliQuickGetTx, 'get tx'),
-        CliQuickCommand(l10n.repeater_cliQuickDiscovery, 'discover.neighbors'),
-        CliQuickCommand(l10n.repeater_cliQuickNeighbors, 'neighbors'),
-        CliQuickCommand(l10n.repeater_cliQuickVersion, 'ver'),
-        CliQuickCommand(l10n.repeater_cliQuickClock, 'clock'),
-        CliQuickCommand(l10n.repeater_cliQuickClockSync, 'clock sync'),
-      ],
-      helpNote: l10n.repeater_commandsListNote,
-      helpSections: _helpSections,
+      quickCommands: repeaterCliQuickCommands(l10n, room: room),
+      helpNote: l10n.repeater_cliHelpIntro,
+      helpSections: (context) =>
+          repeaterCliHelpSections(context.l10n, room: room),
     );
   }
+}
 
-  List<CliHelpSection> _helpSections(BuildContext context) {
-    final l10n = context.l10n;
-    final generalCommands = [
-      CliHelpEntry(command: 'advert', description: l10n.repeater_cliHelpAdvert),
-      CliHelpEntry(command: 'reboot', description: l10n.repeater_cliHelpReboot),
-      CliHelpEntry(command: 'clock', description: l10n.repeater_cliHelpClock),
-      CliHelpEntry(
-        command: 'password {new-password}',
-        description: l10n.repeater_cliHelpPassword,
-      ),
-      CliHelpEntry(command: 'ver', description: l10n.repeater_cliHelpVersion),
-      CliHelpEntry(
-        command: 'clear stats',
-        description: l10n.repeater_cliHelpClearStats,
-      ),
-    ];
+/// The quick commands over a repeater's console, or a room server's.
+List<CliQuickCommand> repeaterCliQuickCommands(
+  AppLocalizations l10n, {
+  required bool room,
+}) => [
+  if (!room) ...[
+    CliQuickCommand(l10n.repeater_cliQuickRepeatOn, 'set repeat on'),
+    CliQuickCommand(l10n.repeater_cliQuickRepeatOff, 'set repeat off'),
+  ],
+  CliQuickCommand(l10n.repeater_cliQuickAdvertise, 'advert'),
+  CliQuickCommand(l10n.repeater_cliQuickGetName, 'get name'),
+  CliQuickCommand(l10n.repeater_cliQuickGetRadio, 'get radio'),
+  CliQuickCommand(l10n.repeater_cliQuickGetTx, 'get tx'),
+  // A room answers these with "Unknown command" and "not supported".
+  if (!room) ...[
+    CliQuickCommand(l10n.repeater_cliQuickDiscovery, 'discover.neighbors'),
+    CliQuickCommand(l10n.repeater_cliQuickNeighbors, 'neighbors'),
+  ],
+  CliQuickCommand(l10n.repeater_cliQuickVersion, 'ver'),
+  CliQuickCommand(l10n.repeater_cliQuickClock, 'clock'),
+  CliQuickCommand(l10n.repeater_cliQuickClockSync, 'clock sync'),
+];
 
-    final settingsCommands = [
+/// What a repeater, or a room server, takes over the mesh in firmware 1.18:
+/// MeshCore's CommonCLI and CommonRadioPrefs, and each role's own commands
+/// in its MyMesh. Commands the firmware takes only over USB are left out.
+List<CliHelpSection> repeaterCliHelpSections(
+  AppLocalizations l10n, {
+  required bool room,
+}) {
+  CliHelpEntry command(String text, String description) =>
+      CliHelpEntry(command: text, description: description);
+  // A setting's set command, with the get that reads it back.
+  CliHelpEntry setting(String name, String value, String description) =>
       CliHelpEntry(
-        command: 'set af {air-time-factor}',
-        description: l10n.repeater_cliHelpSetAf,
-      ),
-      CliHelpEntry(
-        command: 'set tx {tx-power-dbm}',
-        description: l10n.repeater_cliHelpSetTx,
-      ),
-      CliHelpEntry(
-        command: 'set repeat {on|off}',
-        description: l10n.repeater_cliHelpSetRepeat,
-      ),
-      CliHelpEntry(
-        command: 'set allow.read.only {on|off}',
-        description: l10n.repeater_cliHelpSetAllowReadOnly,
-      ),
-      CliHelpEntry(
-        command: 'set flood.max {max-hops}',
-        description: l10n.repeater_cliHelpSetFloodMax,
-      ),
-      CliHelpEntry(
-        command: 'set int.thresh {db}',
-        description: l10n.repeater_cliHelpSetIntThresh,
-      ),
-      CliHelpEntry(
-        command: 'set agc.reset.interval {seconds}',
-        description: l10n.repeater_cliHelpSetAgcResetInterval,
-      ),
-      CliHelpEntry(
-        command: 'set multi.acks {0|1}',
-        description: l10n.repeater_cliHelpSetMultiAcks,
-      ),
-      CliHelpEntry(
-        command: 'set advert.interval {minutes}',
-        description: l10n.repeater_cliHelpSetAdvertInterval,
-      ),
-      CliHelpEntry(
-        command: 'set flood.advert.interval {hours}',
-        description: l10n.repeater_cliHelpSetFloodAdvertInterval,
-      ),
-      CliHelpEntry(
-        command: 'set guest.password {guess-password}',
-        description: l10n.repeater_cliHelpSetGuestPassword,
-      ),
-      CliHelpEntry(
-        command: 'set name {name}',
-        description: l10n.repeater_cliHelpSetName,
-      ),
-      CliHelpEntry(
-        command: 'set lat {latitude}',
-        description: l10n.repeater_cliHelpSetLat,
-      ),
-      CliHelpEntry(
-        command: 'set lon {longitude}',
-        description: l10n.repeater_cliHelpSetLon,
-      ),
-      CliHelpEntry(
-        command: 'set radio {freq},{bw},{sf},{cr}',
-        description: l10n.repeater_cliHelpSetRadio,
-      ),
-      CliHelpEntry(
-        command: 'set rxdelay {base}',
-        description: l10n.repeater_cliHelpSetRxDelay,
-      ),
-      CliHelpEntry(
-        command: 'set txdelay {factor}',
-        description: l10n.repeater_cliHelpSetTxDelay,
-      ),
-      CliHelpEntry(
-        command: 'set direct.txdelay {factor}',
-        description: l10n.repeater_cliHelpSetDirectTxDelay,
-      ),
-      CliHelpEntry(
-        command: 'set bridge.enabled {on|off}',
-        description: l10n.repeater_cliHelpSetBridgeEnabled,
-      ),
-      CliHelpEntry(
-        command: 'set bridge.delay {0-10000}',
-        description: l10n.repeater_cliHelpSetBridgeDelay,
-      ),
-      CliHelpEntry(
-        command: 'set bridge.source {rx|tx}',
-        description: l10n.repeater_cliHelpSetBridgeSource,
-      ),
-      CliHelpEntry(
-        command: 'set bridge.baud {speed}',
-        description: l10n.repeater_cliHelpSetBridgeBaud,
-      ),
-      CliHelpEntry(
-        command: 'set bridge.secret {shared-secret}',
-        description: l10n.repeater_cliHelpSetBridgeSecret,
-      ),
-      CliHelpEntry(
-        command: 'set adc.multiplier {factor}',
-        description: l10n.repeater_cliHelpSetAdcMultiplier,
-      ),
-      CliHelpEntry(
-        command: 'tempradio {freq},{bw},{sf},{cr},{minutes}',
-        description: l10n.repeater_cliHelpTempRadio,
-      ),
-      CliHelpEntry(
-        command: 'setperm {pubkey-hex} {permissions}',
-        description: l10n.repeater_cliHelpSetPerm,
-      ),
-    ];
+        command: 'set $name $value',
+        description: description,
+        getCommand: 'get $name',
+      );
 
-    final bridgeCommands = [
-      CliHelpEntry(
-        command: 'get bridge.type',
-        description: l10n.repeater_cliHelpGetBridgeType,
+  return [
+    CliHelpSection(l10n.repeater_general, [
+      command('advert', l10n.repeater_cliHelpAdvert),
+      command('advert.zerohop', l10n.repeater_cliHelpAdvertZeroHop),
+      command('clock', l10n.repeater_cliHelpClock),
+      command('clock sync', l10n.repeater_cliHelpClockSync),
+      command('time {epoch-seconds}', l10n.repeater_cliHelpTime),
+      command('ver', l10n.repeater_cliHelpVersion),
+      command('board', l10n.repeater_cliHelpBoard),
+      command('get role', l10n.repeater_cliHelpGetRole),
+      command('get public.key', l10n.repeater_cliHelpGetPublicKey),
+      command('reboot', l10n.repeater_cliHelpReboot),
+      command('clkreboot', l10n.repeater_cliHelpClkReboot),
+      command('poweroff', l10n.repeater_cliHelpPowerOff),
+      command('start ota', l10n.repeater_cliHelpStartOta),
+      command('clear stats', l10n.repeater_cliHelpClearStats),
+      command('password {new-password}', l10n.repeater_cliHelpPassword),
+    ]),
+    if (room)
+      CliHelpSection(l10n.repeater_cliSectionRoom, [
+        command('room.post {message}', l10n.repeater_cliHelpRoomPost),
+      ]),
+    CliHelpSection(l10n.repeater_cliSectionRadio, [
+      setting(
+        'radio',
+        '{freq},{bw},{sf},{cr}',
+        l10n.repeater_cliHelpSetRadio,
       ),
-    ];
-
-    final loggingCommands = [
-      CliHelpEntry(
-        command: 'log start',
-        description: l10n.repeater_cliHelpLogStart,
+      command(
+        'tempradio {freq},{bw},{sf},{cr},{minutes}',
+        l10n.repeater_cliHelpTempRadio,
       ),
-      CliHelpEntry(
-        command: 'log stop',
-        description: l10n.repeater_cliHelpLogStop,
+      command('get freq', l10n.repeater_cliHelpGetFreq),
+      setting('tx', '{tx-power-dbm}', l10n.repeater_cliHelpSetTxPower),
+      setting('af', '{air-time-factor}', l10n.repeater_cliHelpSetAf),
+      setting('dutycycle', '{1-100}', l10n.repeater_cliHelpSetDutyCycle),
+      setting('cad', '{on|off}', l10n.repeater_cliHelpSetCad),
+      setting('radio.rxgain', '{on|off}', l10n.repeater_cliHelpSetRxGain),
+      setting('int.thresh', '{db}', l10n.repeater_cliHelpSetIntThresh),
+      setting(
+        'agc.reset.interval',
+        '{seconds}',
+        l10n.repeater_cliHelpSetAgcResetInterval,
       ),
-      CliHelpEntry(
-        command: 'log erase',
-        description: l10n.repeater_cliHelpLogErase,
+      setting('rxdelay', '{base}', l10n.repeater_cliHelpSetRxDelay),
+      setting('txdelay', '{factor}', l10n.repeater_cliHelpSetTxDelay),
+      setting(
+        'direct.txdelay',
+        '{factor}',
+        l10n.repeater_cliHelpSetDirectTxDelay,
       ),
-    ];
-
-    final neighborCommands = [
-      CliHelpEntry(
-        command: 'neighbors',
-        description: l10n.repeater_cliHelpNeighbors,
+      setting('extra.sf', '{sf},{sf},{sf}', l10n.repeater_cliHelpSetExtraSf),
+    ]),
+    CliHelpSection(l10n.repeater_settingsCategory, [
+      setting('name', '{name}', l10n.repeater_cliHelpSetName),
+      setting('lat', '{latitude}', l10n.repeater_cliHelpSetLat),
+      setting('lon', '{longitude}', l10n.repeater_cliHelpSetLon),
+      setting('owner.info', '{text}', l10n.repeater_cliHelpSetOwnerInfo),
+      setting(
+        'advert.interval',
+        '{minutes}',
+        l10n.repeater_cliHelpSetAdvertInterval,
       ),
-      CliHelpEntry(
-        command: 'neighbor.remove {pubkey-prefix}',
-        description: l10n.repeater_cliHelpNeighborRemove,
+      setting(
+        'flood.advert.interval',
+        '{hours}',
+        l10n.repeater_cliHelpSetFloodAdvertInterval,
       ),
-    ];
-
-    final regionCommands = [
-      CliHelpEntry(command: 'region', description: l10n.repeater_cliHelpRegion),
-      CliHelpEntry(
-        command: 'region load',
-        description: l10n.repeater_cliHelpRegionLoad,
+      if (!room) ...[
+        setting('repeat', '{on|off}', l10n.repeater_cliHelpSetRepeat),
+        setting('flood.max', '{max-hops}', l10n.repeater_cliHelpSetFloodMax),
+        setting(
+          'flood.max.unscoped',
+          '{max-hops}',
+          l10n.repeater_cliHelpSetFloodMaxUnscoped,
+        ),
+        setting(
+          'flood.max.advert',
+          '{max-hops}',
+          l10n.repeater_cliHelpSetFloodMaxAdvert,
+        ),
+        setting(
+          'loop.detect',
+          '{off|minimal|moderate|strict}',
+          l10n.repeater_cliHelpSetLoopDetect,
+        ),
+      ],
+      setting('path.hash.mode', '{0|1|2}', l10n.repeater_cliHelpSetPathHashMode),
+      setting('multi.acks', '{0|1}', l10n.repeater_cliHelpSetMultiAcks),
+      setting(
+        'guest.password',
+        '{guest-password}',
+        l10n.repeater_cliHelpSetGuestPassword,
       ),
-      CliHelpEntry(
-        command: 'region get {* | name-prefix}',
-        description: l10n.repeater_cliHelpRegionGet,
+      if (room)
+        setting(
+          'allow.read.only',
+          '{on|off}',
+          l10n.repeater_cliHelpSetAllowReadOnly,
+        ),
+      command(
+        'setperm {pubkey-hex} {permissions}',
+        l10n.repeater_cliHelpSetPerm,
       ),
-      CliHelpEntry(
-        command: 'region put {name} {* | parent-name-prefix}',
-        description: l10n.repeater_cliHelpRegionPut,
+      command('set prv.key {private-key-hex}', l10n.repeater_cliHelpSetPrvKey),
+    ]),
+    CliHelpSection(l10n.repeater_cliSectionPower, [
+      command('power', l10n.repeater_cliHelpPower),
+      command('powersaving', l10n.repeater_cliHelpPowerSaving),
+      command('powersaving {on|off}', l10n.repeater_cliHelpPowerSavingSet),
+      setting(
+        'adc.multiplier',
+        '{factor}',
+        l10n.repeater_cliHelpSetAdcMultiplier,
       ),
-      CliHelpEntry(
-        command: 'region remove {name}',
-        description: l10n.repeater_cliHelpRegionRemove,
+      command('get pwrmgt.support', l10n.repeater_cliHelpGetPwrmgtSupport),
+      command('get pwrmgt.source', l10n.repeater_cliHelpGetPwrmgtSource),
+      command(
+        'get pwrmgt.bootreason',
+        l10n.repeater_cliHelpGetPwrmgtBootReason,
       ),
-      CliHelpEntry(
-        command: 'region allowf {* | name-prefix}',
-        description: l10n.repeater_cliHelpRegionAllowf,
+      command('get pwrmgt.bootmv', l10n.repeater_cliHelpGetPwrmgtBootMv),
+      command('get bootloader.ver', l10n.repeater_cliHelpGetBootloaderVer),
+    ]),
+    if (!room)
+      CliHelpSection(l10n.repeater_neighborsRepeaterOnly, [
+        command('neighbors', l10n.repeater_cliHelpNeighbors),
+        command('discover.neighbors', l10n.repeater_cliHelpDiscoverNeighbors),
+        command(
+          'neighbor.remove {pubkey-prefix}',
+          l10n.repeater_cliHelpNeighborRemove,
+        ),
+      ]),
+    CliHelpSection(l10n.repeater_cliSectionRegions, [
+      command('region', l10n.repeater_cliHelpRegions),
+      command('region def {name} {name|parent} ...', l10n.repeater_cliHelpRegionDef),
+      command('region load', l10n.repeater_cliHelpRegionLoad),
+      command('region get {* | name-prefix}', l10n.repeater_cliHelpRegionGet),
+      command(
+        'region put {name} {* | parent-name-prefix}',
+        l10n.repeater_cliHelpRegionPut,
       ),
-      CliHelpEntry(
-        command: 'region denyf {* | name-prefix}',
-        description: l10n.repeater_cliHelpRegionDenyf,
+      command('region remove {name}', l10n.repeater_cliHelpRegionRemove),
+      command(
+        'region allowf {* | name-prefix}',
+        l10n.repeater_cliHelpRegionAllowf,
       ),
-      CliHelpEntry(
-        command: 'region home',
-        description: l10n.repeater_cliHelpRegionHome,
+      command(
+        'region denyf {* | name-prefix}',
+        l10n.repeater_cliHelpRegionDenyf,
       ),
-      CliHelpEntry(
-        command: 'region home {* | name-prefix}',
-        description: l10n.repeater_cliHelpRegionHomeSet,
+      command('region list {allowed|denied}', l10n.repeater_cliHelpRegionList),
+      command('region home', l10n.repeater_cliHelpRegionHome),
+      command(
+        'region home {* | name-prefix}',
+        l10n.repeater_cliHelpRegionHomeSet,
       ),
-      CliHelpEntry(
-        command: 'region save',
-        description: l10n.repeater_cliHelpRegionSave,
+      command('region default', l10n.repeater_cliHelpRegionDefault),
+      command(
+        'region default {name | <null>}',
+        l10n.repeater_cliHelpRegionDefaultSet,
       ),
-    ];
-
-    final gpsCommands = [
-      CliHelpEntry(command: 'gps', description: l10n.repeater_cliHelpGps),
-      CliHelpEntry(
-        command: 'gps {on|off}',
-        description: l10n.repeater_cliHelpGpsOnOff,
+      command('region save', l10n.repeater_cliHelpRegionSave),
+    ], note: l10n.repeater_regionNote),
+    CliHelpSection(l10n.repeater_gpsManagement, [
+      command('gps', l10n.repeater_cliHelpGps),
+      command('gps {on|off}', l10n.repeater_cliHelpGpsOnOff),
+      command('gps sync', l10n.repeater_cliHelpGpsSync),
+      command('gps setloc', l10n.repeater_cliHelpGpsSetLoc),
+      command('gps advert', l10n.repeater_cliHelpGpsAdvert),
+      command('gps advert {none|share|prefs}', l10n.repeater_cliHelpGpsAdvertSet),
+      command('gps diag', l10n.repeater_cliHelpGpsDiag),
+    ], note: l10n.repeater_gpsNote),
+    CliHelpSection(l10n.repeater_cliSectionSensors, [
+      command('sensor list', l10n.repeater_cliHelpSensorList),
+      command('sensor get {key}', l10n.repeater_cliHelpSensorGet),
+      command('sensor set {key} {value}', l10n.repeater_cliHelpSensorSet),
+    ]),
+    CliHelpSection(l10n.repeater_bridge, [
+      command('get bridge.type', l10n.repeater_cliHelpGetBridgeType),
+      setting(
+        'bridge.enabled',
+        '{on|off}',
+        l10n.repeater_cliHelpSetBridgeEnabled,
       ),
-      CliHelpEntry(
-        command: 'gps sync',
-        description: l10n.repeater_cliHelpGpsSync,
+      setting('bridge.delay', '{0-10000}', l10n.repeater_cliHelpSetBridgeDelay),
+      setting('bridge.source', '{rx|tx}', l10n.repeater_cliHelpSetBridgeSource),
+      setting('bridge.baud', '{speed}', l10n.repeater_cliHelpSetBridgeBaud),
+      setting('bridge.channel', '{1-14}', l10n.repeater_cliHelpSetBridgeChannel),
+      setting(
+        'bridge.secret',
+        '{shared-secret}',
+        l10n.repeater_cliHelpSetBridgeSecret,
       ),
-      CliHelpEntry(
-        command: 'gps setloc',
-        description: l10n.repeater_cliHelpGpsSetLoc,
-      ),
-      CliHelpEntry(
-        command: 'gps advert',
-        description: l10n.repeater_cliHelpGpsAdvert,
-      ),
-      CliHelpEntry(
-        command: 'gps advert {none|share|prefs}',
-        description: l10n.repeater_cliHelpGpsAdvertSet,
-      ),
-    ];
-
-    return [
-      CliHelpSection(l10n.repeater_general, generalCommands),
-      CliHelpSection(l10n.repeater_settingsCategory, settingsCommands),
-      CliHelpSection(l10n.repeater_bridge, bridgeCommands),
-      CliHelpSection(l10n.repeater_logging, loggingCommands),
-      CliHelpSection(l10n.repeater_neighborsRepeaterOnly, neighborCommands),
-      CliHelpSection(
-        l10n.repeater_regionManagementRepeaterOnly,
-        regionCommands,
-        note: l10n.repeater_regionNote,
-      ),
-      CliHelpSection(
-        l10n.repeater_gpsManagement,
-        gpsCommands,
-        note: l10n.repeater_gpsNote,
-      ),
-    ];
-  }
+    ]),
+    CliHelpSection(l10n.repeater_logging, [
+      command('log start', l10n.repeater_cliHelpLogStart),
+      command('log stop', l10n.repeater_cliHelpLogStop),
+      command('log erase', l10n.repeater_cliHelpLogErase),
+    ]),
+  ];
 }

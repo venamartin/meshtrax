@@ -3446,6 +3446,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get repeater_cliQuickDiscovery => '近隣を発見する';
 
   @override
+  String get repeater_cliQuickRepeatOn => 'Repeat On';
+
+  @override
+  String get repeater_cliQuickRepeatOff => 'Repeat Off';
+
+  @override
   String get repeater_cliHelpAdvert => '広告用資料を送る';
 
   @override
@@ -3466,9 +3472,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get repeater_cliHelpSetAf => '空き時間係数を設定します。';
-
-  @override
-  String get repeater_cliHelpSetTx => 'LoRaの送信電力をdBmで設定します。（設定変更後、再起動が必要です）';
 
   @override
   String get repeater_cliHelpSetRepeat => 'このノードに対するリピーターの役割を有効化または無効化します。';
@@ -3579,10 +3582,6 @@ class AppLocalizationsJa extends AppLocalizations {
       '隣接リストから、最初に一致するエントリ（pubkeyプレフィックス（16進数）で特定）を削除します。';
 
   @override
-  String get repeater_cliHelpRegion =>
-      '（特定のシリーズのみ）定義されたすべての地域と、現在の洪水許可状況を一覧表示します。';
-
-  @override
   String get repeater_cliHelpRegionLoad =>
       '注：これは特殊な複数コマンドの呼び出しです。その後の各コマンドは、地域名であり（スペースを使用して親階層を示し、少なくとも1つのスペースが必要です）、空行/コマンドで終了します。';
 
@@ -3636,6 +3635,183 @@ class AppLocalizationsJa extends AppLocalizations {
   String get repeater_cliHelpGpsAdvertSet => '場所に関する広告設定を行います。';
 
   @override
+  String get repeater_cliHelpIntro =>
+      'Tap a command to put it in the box, then replace the parts in curly brackets. Tap a get button to read that setting. These are the commands of firmware 1.18; older firmware may not have them all.';
+
+  @override
+  String get repeater_cliSectionRadio => 'Radio';
+
+  @override
+  String get repeater_cliSectionPower => 'Power';
+
+  @override
+  String get repeater_cliSectionRegions => 'Regions';
+
+  @override
+  String get repeater_cliSectionSensors => 'Sensors';
+
+  @override
+  String get repeater_cliSectionRoom => 'Room Server';
+
+  @override
+  String get repeater_cliHelpAdvertZeroHop =>
+      'Sends an advert that only radios in direct range hear. Repeaters don\'t pass it on.';
+
+  @override
+  String get repeater_cliHelpClockSync =>
+      'Sets the device\'s clock to your phone\'s time. The clock can only move forward.';
+
+  @override
+  String get repeater_cliHelpTime =>
+      'Sets the clock to a Unix time in seconds. The clock can only move forward.';
+
+  @override
+  String get repeater_cliHelpBoard => 'Shows the board\'s maker and model.';
+
+  @override
+  String get repeater_cliHelpGetRole =>
+      'Shows the firmware\'s role, such as repeater or room server.';
+
+  @override
+  String get repeater_cliHelpGetPublicKey => 'Shows the device\'s public key.';
+
+  @override
+  String get repeater_cliHelpClkReboot =>
+      'Sets the clock back to May 2024 and reboots. Use it when the clock is ahead, then run clock sync.';
+
+  @override
+  String get repeater_cliHelpPowerOff =>
+      'Turns the device off until its button is pressed or its power is cycled. shutdown does the same.';
+
+  @override
+  String get repeater_cliHelpStartOta =>
+      'Starts a firmware update over the air, on boards that support it. The reply says how to connect.';
+
+  @override
+  String get repeater_cliHelpRoomPost =>
+      'Posts a message in the room from the room server itself.';
+
+  @override
+  String get repeater_cliHelpGetFreq => 'Shows the radio frequency in MHz.';
+
+  @override
+  String get repeater_cliHelpSetTxPower =>
+      'Sets the LoRa transmit power in dBm. It takes effect at once.';
+
+  @override
+  String get repeater_cliHelpSetDutyCycle =>
+      'Sets the share of time the radio may spend sending, in percent. It\'s the air-time factor in other units.';
+
+  @override
+  String get repeater_cliHelpSetCad =>
+      'Turns channel activity detection on or off: the radio listens for other LoRa signals before it sends.';
+
+  @override
+  String get repeater_cliHelpSetRxGain =>
+      'Turns boosted receive gain on or off, on radios that have it.';
+
+  @override
+  String get repeater_cliHelpSetExtraSf =>
+      'LR2021 radios only: also listens for up to three more spreading factors.';
+
+  @override
+  String get repeater_cliHelpSetOwnerInfo =>
+      'Sets the owner details the device gives with its name and version when asked. Use | for a new line.';
+
+  @override
+  String get repeater_cliHelpSetFloodMaxUnscoped =>
+      'Like flood.max, but for flood packets sent without a region.';
+
+  @override
+  String get repeater_cliHelpSetFloodMaxAdvert =>
+      'Like flood.max, but for adverts. The default is 8.';
+
+  @override
+  String get repeater_cliHelpSetLoopDetect =>
+      'Sets how strictly the repeater drops flood packets that go round in a loop. The default is minimal.';
+
+  @override
+  String get repeater_cliHelpSetPathHashMode =>
+      'Sets how many bytes each hop adds to a packet\'s path: 0 for 1 byte, 1 for 2 bytes, 2 for 3 bytes.';
+
+  @override
+  String get repeater_cliHelpSetPrvKey =>
+      'Replaces the device\'s identity with this private key. Reboot to apply. The old identity is lost unless you saved its key.';
+
+  @override
+  String get repeater_cliHelpPower =>
+      'Shows the battery voltage, and whether USB, solar or other external power is connected.';
+
+  @override
+  String get repeater_cliHelpPowerSaving => 'Shows whether power saving is on.';
+
+  @override
+  String get repeater_cliHelpPowerSavingSet =>
+      'Turns power saving on or off. nRF52 boards start saving at once, ESP32 boards after 2 minutes.';
+
+  @override
+  String get repeater_cliHelpGetPwrmgtSupport =>
+      'Shows whether the board has power management.';
+
+  @override
+  String get repeater_cliHelpGetPwrmgtSource =>
+      'Shows whether the device runs on external power or on its battery.';
+
+  @override
+  String get repeater_cliHelpGetPwrmgtBootReason =>
+      'Shows why the device last started and why it last shut down.';
+
+  @override
+  String get repeater_cliHelpGetPwrmgtBootMv =>
+      'Shows the battery voltage when the device last started.';
+
+  @override
+  String get repeater_cliHelpGetBootloaderVer =>
+      'Shows the bootloader version, on nRF52 boards.';
+
+  @override
+  String get repeater_cliHelpDiscoverNeighbors =>
+      'Asks nearby repeaters to answer, to fill the neighbors list.';
+
+  @override
+  String get repeater_cliHelpRegions =>
+      'Lists the regions and which ones may flood (F).';
+
+  @override
+  String get repeater_cliHelpRegionDef =>
+      'Adds regions in one command: each name goes under the one before it. Write name|parent to put the next name under that parent instead.';
+
+  @override
+  String get repeater_cliHelpRegionList =>
+      'Lists the regions that may flood (allowed) or may not (denied).';
+
+  @override
+  String get repeater_cliHelpRegionDefault =>
+      'Shows the default region: the one this device\'s own flood packets go out in.';
+
+  @override
+  String get repeater_cliHelpRegionDefaultSet =>
+      'Sets the default region, or <null> for none. A new name is added as a region. Saved at once.';
+
+  @override
+  String get repeater_cliHelpGpsDiag =>
+      'Shows GPS details for finding problems.';
+
+  @override
+  String get repeater_cliHelpSensorList =>
+      'Lists the board\'s sensor settings. Add a number to start further down the list.';
+
+  @override
+  String get repeater_cliHelpSensorGet => 'Shows one sensor setting.';
+
+  @override
+  String get repeater_cliHelpSensorSet => 'Changes one sensor setting.';
+
+  @override
+  String get repeater_cliHelpSetBridgeChannel =>
+      'Sets the Wi-Fi channel for ESP-NOW bridges.';
+
+  @override
   String get repeater_commandsListTitle => 'コマンド一覧';
 
   @override
@@ -3656,9 +3832,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get repeater_neighborsRepeaterOnly => '近隣住民（リピーターのみ）';
-
-  @override
-  String get repeater_regionManagementRepeaterOnly => '地域管理（ブロードキャスト用のみ）';
 
   @override
   String get repeater_regionNote => '地域レベルでの管理のため、地域定義と権限の管理を行うための機能が導入されました。';

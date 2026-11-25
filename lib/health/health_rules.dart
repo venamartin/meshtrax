@@ -856,11 +856,13 @@ final List<HealthRule> healthRules = [
     id: 'app_channel_retries_observers',
     enabled: true,
     severity: HealthSeverity.suggestion,
-    title: 'Channel messages are resent at most once',
+    title: 'Give unheard channel messages more tries',
     why:
-        'Check sends with observers stops resending as soon as an observer '
-        'heard the message, so a resend goes out only when nobody did. With '
-        '2 or 3 retries, a message nobody heard gets more chances.',
+        'When your radio hears no repeater pass a channel message on, '
+        'MeshTrax sends it again at most once. With Check sends with observers '
+        'on, it asks the observer server first and never resends a message an '
+        'observer heard, so extra tries only go to messages that really '
+        "didn't get out. Fix sets channel retries to 2.",
     check: (ctx) async =>
         HeardService.instance.enabled && ctx.app.maxChannelMessageRetries < 2,
     fix: HealthFix.apply,

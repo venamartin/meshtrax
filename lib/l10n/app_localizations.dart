@@ -6166,6 +6166,18 @@ abstract class AppLocalizations {
   /// **'Discover Neighbors'**
   String get repeater_cliQuickDiscovery;
 
+  /// No description provided for @repeater_cliQuickRepeatOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat On'**
+  String get repeater_cliQuickRepeatOn;
+
+  /// No description provided for @repeater_cliQuickRepeatOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat Off'**
+  String get repeater_cliQuickRepeatOff;
+
   /// No description provided for @repeater_cliHelpAdvert.
   ///
   /// In en, this message translates to:
@@ -6207,12 +6219,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sets the air-time-factor.'**
   String get repeater_cliHelpSetAf;
-
-  /// No description provided for @repeater_cliHelpSetTx.
-  ///
-  /// In en, this message translates to:
-  /// **'Sets LoRa transmit power in dBm. (reboot to apply)'**
-  String get repeater_cliHelpSetTx;
 
   /// No description provided for @repeater_cliHelpSetRepeat.
   ///
@@ -6325,7 +6331,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeater_cliHelpSetBridgeSource.
   ///
   /// In en, this message translates to:
-  /// **'Choose wether the bridge will retransmit received packets or transmitted packets.'**
+  /// **'Choose whether the bridge will retransmit received packets or transmitted packets.'**
   String get repeater_cliHelpSetBridgeSource;
 
   /// No description provided for @repeater_cliHelpSetBridgeBaud.
@@ -6394,12 +6400,6 @@ abstract class AppLocalizations {
   /// **'Removes first matching entry (by pubkey prefix (hex)), from neighbors list.'**
   String get repeater_cliHelpNeighborRemove;
 
-  /// No description provided for @repeater_cliHelpRegion.
-  ///
-  /// In en, this message translates to:
-  /// **'(serial only) Lists all defined regions and current flood permissions.'**
-  String get repeater_cliHelpRegion;
-
   /// No description provided for @repeater_cliHelpRegionLoad.
   ///
   /// In en, this message translates to:
@@ -6439,7 +6439,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeater_cliHelpRegionHome.
   ///
   /// In en, this message translates to:
-  /// **'Replies with the current \'home\' region. (Note applied anywhere yet, reserved for future)'**
+  /// **'Replies with the current \'home\' region. (Not applied anywhere yet, reserved for future)'**
   String get repeater_cliHelpRegionHome;
 
   /// No description provided for @repeater_cliHelpRegionHomeSet.
@@ -6490,6 +6490,288 @@ abstract class AppLocalizations {
   /// **'Sets location advert configuration.'**
   String get repeater_cliHelpGpsAdvertSet;
 
+  /// No description provided for @repeater_cliHelpIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a command to put it in the box, then replace the parts in curly brackets. Tap a get button to read that setting. These are the commands of firmware 1.18; older firmware may not have them all.'**
+  String get repeater_cliHelpIntro;
+
+  /// No description provided for @repeater_cliSectionRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get repeater_cliSectionRadio;
+
+  /// No description provided for @repeater_cliSectionPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get repeater_cliSectionPower;
+
+  /// No description provided for @repeater_cliSectionRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions'**
+  String get repeater_cliSectionRegions;
+
+  /// No description provided for @repeater_cliSectionSensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get repeater_cliSectionSensors;
+
+  /// No description provided for @repeater_cliSectionRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room Server'**
+  String get repeater_cliSectionRoom;
+
+  /// No description provided for @repeater_cliHelpAdvertZeroHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends an advert that only radios in direct range hear. Repeaters don\'t pass it on.'**
+  String get repeater_cliHelpAdvertZeroHop;
+
+  /// No description provided for @repeater_cliHelpClockSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the device\'s clock to your phone\'s time. The clock can only move forward.'**
+  String get repeater_cliHelpClockSync;
+
+  /// No description provided for @repeater_cliHelpTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the clock to a Unix time in seconds. The clock can only move forward.'**
+  String get repeater_cliHelpTime;
+
+  /// No description provided for @repeater_cliHelpBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the board\'s maker and model.'**
+  String get repeater_cliHelpBoard;
+
+  /// No description provided for @repeater_cliHelpGetRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the firmware\'s role, such as repeater or room server.'**
+  String get repeater_cliHelpGetRole;
+
+  /// No description provided for @repeater_cliHelpGetPublicKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the device\'s public key.'**
+  String get repeater_cliHelpGetPublicKey;
+
+  /// No description provided for @repeater_cliHelpClkReboot.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the clock back to May 2024 and reboots. Use it when the clock is ahead, then run clock sync.'**
+  String get repeater_cliHelpClkReboot;
+
+  /// No description provided for @repeater_cliHelpPowerOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns the device off until its button is pressed or its power is cycled. shutdown does the same.'**
+  String get repeater_cliHelpPowerOff;
+
+  /// No description provided for @repeater_cliHelpStartOta.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts a firmware update over the air, on boards that support it. The reply says how to connect.'**
+  String get repeater_cliHelpStartOta;
+
+  /// No description provided for @repeater_cliHelpRoomPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts a message in the room from the room server itself.'**
+  String get repeater_cliHelpRoomPost;
+
+  /// No description provided for @repeater_cliHelpGetFreq.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the radio frequency in MHz.'**
+  String get repeater_cliHelpGetFreq;
+
+  /// No description provided for @repeater_cliHelpSetTxPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the LoRa transmit power in dBm. It takes effect at once.'**
+  String get repeater_cliHelpSetTxPower;
+
+  /// No description provided for @repeater_cliHelpSetDutyCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the share of time the radio may spend sending, in percent. It\'s the air-time factor in other units.'**
+  String get repeater_cliHelpSetDutyCycle;
+
+  /// No description provided for @repeater_cliHelpSetCad.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns channel activity detection on or off: the radio listens for other LoRa signals before it sends.'**
+  String get repeater_cliHelpSetCad;
+
+  /// No description provided for @repeater_cliHelpSetRxGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns boosted receive gain on or off, on radios that have it.'**
+  String get repeater_cliHelpSetRxGain;
+
+  /// No description provided for @repeater_cliHelpSetExtraSf.
+  ///
+  /// In en, this message translates to:
+  /// **'LR2021 radios only: also listens for up to three more spreading factors.'**
+  String get repeater_cliHelpSetExtraSf;
+
+  /// No description provided for @repeater_cliHelpSetOwnerInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the owner details the device gives with its name and version when asked. Use | for a new line.'**
+  String get repeater_cliHelpSetOwnerInfo;
+
+  /// No description provided for @repeater_cliHelpSetFloodMaxUnscoped.
+  ///
+  /// In en, this message translates to:
+  /// **'Like flood.max, but for flood packets sent without a region.'**
+  String get repeater_cliHelpSetFloodMaxUnscoped;
+
+  /// No description provided for @repeater_cliHelpSetFloodMaxAdvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Like flood.max, but for adverts. The default is 8.'**
+  String get repeater_cliHelpSetFloodMaxAdvert;
+
+  /// No description provided for @repeater_cliHelpSetLoopDetect.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets how strictly the repeater drops flood packets that go round in a loop. The default is minimal.'**
+  String get repeater_cliHelpSetLoopDetect;
+
+  /// No description provided for @repeater_cliHelpSetPathHashMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets how many bytes each hop adds to a packet\'s path: 0 for 1 byte, 1 for 2 bytes, 2 for 3 bytes.'**
+  String get repeater_cliHelpSetPathHashMode;
+
+  /// No description provided for @repeater_cliHelpSetPrvKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces the device\'s identity with this private key. Reboot to apply. The old identity is lost unless you saved its key.'**
+  String get repeater_cliHelpSetPrvKey;
+
+  /// No description provided for @repeater_cliHelpPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the battery voltage, and whether USB, solar or other external power is connected.'**
+  String get repeater_cliHelpPower;
+
+  /// No description provided for @repeater_cliHelpPowerSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows whether power saving is on.'**
+  String get repeater_cliHelpPowerSaving;
+
+  /// No description provided for @repeater_cliHelpPowerSavingSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns power saving on or off. nRF52 boards start saving at once, ESP32 boards after 2 minutes.'**
+  String get repeater_cliHelpPowerSavingSet;
+
+  /// No description provided for @repeater_cliHelpGetPwrmgtSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows whether the board has power management.'**
+  String get repeater_cliHelpGetPwrmgtSupport;
+
+  /// No description provided for @repeater_cliHelpGetPwrmgtSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows whether the device runs on external power or on its battery.'**
+  String get repeater_cliHelpGetPwrmgtSource;
+
+  /// No description provided for @repeater_cliHelpGetPwrmgtBootReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows why the device last started and why it last shut down.'**
+  String get repeater_cliHelpGetPwrmgtBootReason;
+
+  /// No description provided for @repeater_cliHelpGetPwrmgtBootMv.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the battery voltage when the device last started.'**
+  String get repeater_cliHelpGetPwrmgtBootMv;
+
+  /// No description provided for @repeater_cliHelpGetBootloaderVer.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the bootloader version, on nRF52 boards.'**
+  String get repeater_cliHelpGetBootloaderVer;
+
+  /// No description provided for @repeater_cliHelpDiscoverNeighbors.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks nearby repeaters to answer, to fill the neighbors list.'**
+  String get repeater_cliHelpDiscoverNeighbors;
+
+  /// No description provided for @repeater_cliHelpRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists the regions and which ones may flood (F).'**
+  String get repeater_cliHelpRegions;
+
+  /// No description provided for @repeater_cliHelpRegionDef.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds regions in one command: each name goes under the one before it. Write name|parent to put the next name under that parent instead.'**
+  String get repeater_cliHelpRegionDef;
+
+  /// No description provided for @repeater_cliHelpRegionList.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists the regions that may flood (allowed) or may not (denied).'**
+  String get repeater_cliHelpRegionList;
+
+  /// No description provided for @repeater_cliHelpRegionDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the default region: the one this device\'s own flood packets go out in.'**
+  String get repeater_cliHelpRegionDefault;
+
+  /// No description provided for @repeater_cliHelpRegionDefaultSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the default region, or <null> for none. A new name is added as a region. Saved at once.'**
+  String get repeater_cliHelpRegionDefaultSet;
+
+  /// No description provided for @repeater_cliHelpGpsDiag.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows GPS details for finding problems.'**
+  String get repeater_cliHelpGpsDiag;
+
+  /// No description provided for @repeater_cliHelpSensorList.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists the board\'s sensor settings. Add a number to start further down the list.'**
+  String get repeater_cliHelpSensorList;
+
+  /// No description provided for @repeater_cliHelpSensorGet.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows one sensor setting.'**
+  String get repeater_cliHelpSensorGet;
+
+  /// No description provided for @repeater_cliHelpSensorSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes one sensor setting.'**
+  String get repeater_cliHelpSensorSet;
+
+  /// No description provided for @repeater_cliHelpSetBridgeChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the Wi-Fi channel for ESP-NOW bridges.'**
+  String get repeater_cliHelpSetBridgeChannel;
+
   /// No description provided for @repeater_commandsListTitle.
   ///
   /// In en, this message translates to:
@@ -6531,12 +6813,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Neighbors (Repeater only)'**
   String get repeater_neighborsRepeaterOnly;
-
-  /// No description provided for @repeater_regionManagementRepeaterOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Region Management (Repeater only)'**
-  String get repeater_regionManagementRepeaterOnly;
 
   /// No description provided for @repeater_regionNote.
   ///
