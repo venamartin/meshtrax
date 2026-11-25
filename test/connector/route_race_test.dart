@@ -180,7 +180,7 @@ void main() {
     c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
     bob = c.contacts.firstWhere((x) => x.name == 'Bob');
     credited = [];
-    c.onSendAttemptResult = (_, selection, delivered, _) => credited.add((
+    c.onSendAttemptResult = (_, selection, delivered, _, _) => credited.add((
           route: selection.useFlood ? 'flood' : _hex(selection.pathBytes),
           delivered: delivered,
         ));

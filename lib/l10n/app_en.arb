@@ -645,8 +645,6 @@
   "settings_telemetryEnvironmentMode": "Telemetry Environment Mode",
   "settings_advertLocation": "Advert Location",
   "settings_advertLocationSubtitle": "Include location in advert.",
-  "settings_multiAck": "Multi-ACKs",
-  "settings_multiAckSubtitle": "Send a second ACK when a direct message reaches you on a route, so the sender is more likely to hear it. With Pathfinder on, MeshTrax sends it on another route.",
   "settings_telemetryModeUpdated": "Telemetry mode updated",
   "settings_actions": "Actions",
   "settings_sendAdvertisement": "Send Advertisement",

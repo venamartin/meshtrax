@@ -210,25 +210,8 @@ bool _onAnyPreset(MeshCoreConnector c) {
   );
 }
 
-Future<void> _setMultiAcks(HealthContext ctx, int multiAcks) {
-  final c = ctx.connector;
-  return c.setTelemetryModeBase(
-    c.telemetryModeBase,
-    c.telemetryModeLoc,
-    c.telemetryModeEnv,
-    c.advertLocationPolicy,
-    multiAcks,
-  );
-}
-
 bool _radioHasAutoAdd(MeshCoreConnector c) => firmwareSupports(
   RadioSetting.autoAdd,
-  c.firmwareVerCode,
-  c.firmwareVersion,
-);
-
-bool _radioHasMultiAcks(MeshCoreConnector c) => firmwareSupports(
-  RadioSetting.multiAcks,
   c.firmwareVerCode,
   c.firmwareVersion,
 );
@@ -393,27 +376,6 @@ final List<HealthRule> healthRules = [
     fix: HealthFix.apply,
     fixDescription: 'Turn on overwrite oldest contact.',
     apply: (ctx) => ctx.connector.setAutoAddConfig(overwriteOldest: true),
-  ),
-  HealthRule(
-    id: 'radio_multi_acks',
-    enabled: true,
-    severity: HealthSeverity.suggestion,
-    title: 'Radio sends only one ACK for direct messages',
-    why:
-        'If the only ACK is lost, the sender thinks the message failed even '
-        'though you received it. A second ACK gives the sender another chance '
-        'to hear it, for one more short transmission.',
-    needsRadio: true,
-    check: (ctx) async =>
-        _radioHasMultiAcks(ctx.connector) && ctx.connector.multiAcks == 0,
-    fix: HealthFix.apply,
-    fixDescription:
-        'Send a second ACK when a direct message arrives on a route.',
-    apply: (ctx) => _setMultiAcks(ctx, 1),
-    notes:
-        'Extra ACKs: 0 = 1 ACK, 1 = 2 ACKs. Interacts with Pathfinder. A message '
-        'that arrives by flood gets one reply whatever this says '
-        '(BaseChatMesh.cpp).',
   ),
   HealthRule(
     id: 'radio_client_repeat',

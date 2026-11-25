@@ -108,7 +108,7 @@ class _Harness {
         getSelfPublicKey: () => selfKey,
         onFloodDelivered: (c) => floodDeliveries.add(c.publicKeyHex),
         graphRoutes: graphRoutes == null ? null : (_) => graphRoutes,
-        onAttemptResult: (_, selection, delivered, _) => attempts
+        onAttemptResult: (_, selection, delivered, _, _) => attempts
             .add((bytes: selection.pathBytes.join(","), delivered: delivered)),
       ),
     );
@@ -1035,7 +1035,7 @@ void main() {
       estDelivery: 0.5,
     );
 
-    test('a graph route is written first, then the ladder floods', () {
+    test('a graph route gets two tries, then the ladder floods', () {
       fakeAsync((async) {
         final h = _Harness(graphRoutes: const [g1]);
         final contact = _makeContact(
@@ -1048,6 +1048,14 @@ void main() {
         expect(h.pathPushes, equals([g1.pathBytes]));
         expect(h.lastUpdate!.pathLength, equals(2));
         expect(h.lastUpdate!.routeSource, equals(RouteSource.graph));
+
+        // A missed ACK is most often two radios sending at once: the
+        // route is tried again before anything else (owner, 2026-11-24).
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        expect(h.pathPushes, equals([g1.pathBytes, g1.pathBytes]));
+        expect(h.pathResets, equals(0));
+        expect(h.lastUpdate!.pathLength, equals(2));
 
         async.elapse(const Duration(milliseconds: retryGap));
         h.sent(text);
@@ -1105,6 +1113,8 @@ void main() {
         h.sent(text);
         async.elapse(const Duration(milliseconds: retryGap));
         h.sent(text);
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
         expect(h.lastUpdate!.pathLength, equals(-1), reason: 'flooding now');
 
         h.retryService.handleAckReceived(h.ackHashFor(0, text), 9000);
@@ -1117,10 +1127,11 @@ void main() {
             h.attempts,
             equals([
               (bytes: g1.pathBytes.join(","), delivered: false),
+              (bytes: g1.pathBytes.join(","), delivered: false),
               (bytes: g1.pathBytes.join(","), delivered: true),
             ]),
-            reason: 'its timeout was reported when it happened; the late ACK '
-                'adds the delivery; the flood in flight is not judged');
+            reason: 'each timeout was reported when it happened; the late '
+                'ACK adds the delivery; the flood in flight is not judged');
       });
     });
 
@@ -1128,7 +1139,7 @@ void main() {
         () {
       fakeAsync((async) {
         final h = _Harness(graphRoutes: const [g1, g2]);
-        h.retryService.setMaxRetries(4);
+        h.retryService.setMaxRetries(5);
         final contact = _makeContact(publicKey: recipientKey);
 
         h.retryService.sendMessageWithRetry(contact: contact, text: text);
@@ -1136,20 +1147,32 @@ void main() {
         h.sent(text);
         async.elapse(const Duration(milliseconds: retryGap));
         h.sent(text);
-        expect(h.pathPushes, equals([g1.pathBytes, g2.pathBytes]));
-        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
-            reason: 'judged at its timeout, so the next rung can be re-planned');
-
-        h.retryService.handleAckReceived(h.ackHashFor(1, text), 1500);
+        // g2 ends at the same repeater as g1 (the contact has not moved),
+        // so g1 goes twice first.
+        async.elapse(const Duration(milliseconds: retryGap));
+        h.sent(text);
+        expect(h.pathPushes,
+            equals([g1.pathBytes, g1.pathBytes, g2.pathBytes]));
         expect(
             h.attempts,
             equals([
+              (bytes: g1.pathBytes.join(","), delivered: false),
+              (bytes: g1.pathBytes.join(","), delivered: false),
+            ]),
+            reason: 'judged at each timeout, so the next rung can be '
+                're-planned');
+
+        h.retryService.handleAckReceived(h.ackHashFor(2, text), 1500);
+        expect(
+            h.attempts,
+            equals([
+              (bytes: g1.pathBytes.join(","), delivered: false),
               (bytes: g1.pathBytes.join(","), delivered: false),
               (bytes: g2.pathBytes.join(","), delivered: true),
             ]));
 
         async.elapse(const Duration(minutes: 10));
-        expect(h.attempts.length, equals(2));
+        expect(h.attempts.length, equals(3));
       });
     });
 
@@ -1168,11 +1191,15 @@ void main() {
         h.sent(text);
         async.elapse(const Duration(milliseconds: _Harness.timeoutMs + 1));
         expect(h.lastUpdate!.status, equals(MessageStatus.failed));
-        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
-            reason: 'the route attempt was judged at its timeout');
+        final twice = [
+          (bytes: g1.pathBytes.join(","), delivered: false),
+          (bytes: g1.pathBytes.join(","), delivered: false),
+        ];
+        expect(h.attempts, equals(twice),
+            reason: 'each route attempt was judged at its timeout');
 
         async.elapse(MessageRetryService.lateAckGrace);
-        expect(h.attempts, equals([(bytes: g1.pathBytes.join(","), delivered: false)]),
+        expect(h.attempts, equals(twice),
             reason: 'the grace reports nothing twice; floods are never judged');
       });
     });

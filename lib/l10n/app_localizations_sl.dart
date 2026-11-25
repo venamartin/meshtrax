@@ -1441,13 +1441,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get settings_advertLocationSubtitle => 'Vključi lokacijo v oglas.';
 
   @override
-  String get settings_multiAck => 'Več potrdil';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši. Ko je Pathfinder vklopljen, ga MeshTrax pošlje po drugi poti.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Način telemetrije posodobljen';
 
   @override

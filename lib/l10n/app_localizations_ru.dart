@@ -1446,13 +1446,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Включить местоположение в объявление';
 
   @override
-  String get settings_multiAck => 'Несколько подтверждений';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Отправлять второе подтверждение, когда личное сообщение приходит к вам по маршруту, чтобы отправитель с большей вероятностью его услышал. Если Pathfinder включён, MeshTrax отправляет его по другому маршруту.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Режим телеметрии обновлен';
 
   @override

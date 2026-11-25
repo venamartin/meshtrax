@@ -1452,13 +1452,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'Uwzględnij lokalizację w ogłoszeniu';
 
   @override
-  String get settings_multiAck => 'Wielokrotne potwierdzenia odbioru';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Wysyłaj drugie potwierdzenie, gdy wiadomość prywatna dotrze do Ciebie trasą, aby nadawca miał większą szansę je usłyszeć. Gdy Pathfinder jest włączony, MeshTrax wysyła je inną trasą.';
-
-  @override
   String get settings_telemetryModeUpdated =>
       'Tryb telemetryczny zaktualizowany';
 

@@ -124,7 +124,6 @@ void main() {
       atLeastPerContact(g.telemetryModeLoc),
       atLeastPerContact(g.telemetryModeEnv),
       g.advertLocationPolicy,
-      g.multiAcks,
     );
     await g.setContactFlags(
       rocketOnGwq,

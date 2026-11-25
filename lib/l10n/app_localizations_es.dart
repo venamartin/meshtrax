@@ -1448,13 +1448,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings_advertLocationSubtitle => 'Incluir ubicación en anuncio';
 
   @override
-  String get settings_multiAck => 'Múltiples respuestas de confirmación';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Envía una segunda confirmación cuando un mensaje directo te llega por una ruta, para que el remitente tenga más probabilidades de oírla. Con Pathfinder activado, MeshTrax la envía por otra ruta.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Modo de telemetría actualizado';
 
   @override

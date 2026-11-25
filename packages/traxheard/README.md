@@ -71,8 +71,11 @@ so no ear appeared, and a second try would most likely have reached them.
 
 **The rule.** It applies only when traxheard has proven that it works for
 this radio: an observer heard one of this radio's own channel messages in
-the last 2 hours. "The server answers" is not proof, because it says
-nothing about coverage where the radio is now.
+the last 24 hours. "The server answers" is not proof, because it says
+nothing about coverage where the radio is now. It was 2 hours until
+2026-11-24: a quiet morning then switched the rule off for the very next
+message, which only the home repeater carried. A radio taken out of the
+observers' reach is stopped by the back-off below, after three resends.
 - **A send is out there** when an observer heard it, or when the copies our
   radio heard came through 2 or more different repeaters.
   - **Repeaters are counted by their codes**, over all the copies. A277 and
@@ -95,7 +98,7 @@ nothing about coverage where the radio is now.
   covers a radio out of the observers' coverage (another state), a radio
   out of range, and a server that isn't working.
 - **Everything else is as before:** the switch off, no internet, the
-  server down, or no ear in the last 2 hours all mean one repeat, stop.
+  server down, or no ear in the last 24 hours all mean one repeat, stop.
 - **The proof is kept per radio** and survives a restart. Picking another
   server starts over: what one server's observers heard says nothing
   about another's.
@@ -123,7 +126,7 @@ nothing about coverage where the radio is now.
 **Who owns what:**
 - **HeardService** answers the connector's
   `mayResendAfterOneRepeater(messageId)`: an ear for this radio, in that
-  message's region if it has one, in the last 2 hours; the region isn't
+  message's region if it has one, in the last 24 hours; the region isn't
   quiet; and fewer than 3 misses in a row. The connector reports each of these resends through
   `onResentAfterOneRepeater`, so HeardService can count the misses.
 - **Pathfinder** answers `isCarRepeater(hop, width)`, which is true for a

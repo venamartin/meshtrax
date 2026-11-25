@@ -215,6 +215,40 @@ class PassingCopyOpener {
     return null;
   }
 
+  /// A copy of a DM this radio sent to one of [contactKeys], read from its
+  /// RX log: a repeater passing it on. The MAC passes only with their key
+  /// and this radio's, so it is this radio's packet and no other. [attempt]
+  /// is the number it was sent with: the tail byte above 3, else the two
+  /// bits in the flags (BaseChatMesh::composeMsgPacket). Null for anything
+  /// else, and for a contact who shares this radio's first key byte: a copy
+  /// to them reads the same as one from them.
+  ({Uint8List contactKey, int timestamp, int attempt, Uint8List textBytes})?
+  openOwn({
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    if (payload.length < 2 + _macSize + _blockSize) return null;
+    if (payload[1] != _selfKey[0] || payload[0] == _selfKey[0]) return null;
+    final macAndData = Uint8List.fromList(payload.sublist(2));
+    for (final key in contactKeys) {
+      if (key.length != pubKeySize || key[0] != payload[0]) continue;
+      final secret = sharedSecret(key);
+      if (secret == null) continue;
+      final plain = macThenDecrypt(secret, macAndData);
+      if (plain == null || plain.length <= 5) continue;
+      if (plain[4] >> 2 != txtTypePlain) return null;
+      final end = _textEnd(plain, 5);
+      final tail = end + 1 < plain.length ? plain[end + 1] : 0;
+      return (
+        contactKey: key,
+        timestamp: ByteData.sublistView(plain).getUint32(0, Endian.little),
+        attempt: tail > 3 ? tail : plain[4] & 0x03,
+        textBytes: Uint8List.fromList(plain.sublist(5, end)),
+      );
+    }
+    return null;
+  }
+
   /// The ACK code inside a path reply to this radio from one of
   /// [contactKeys]: a DM it sent reached them by flood, and the reply
   /// carries the ACK (BaseChatMesh::onPeerDataRecv, createPathReturn: path
@@ -223,6 +257,49 @@ class PassingCopyOpener {
     required List<int> payload,
     required Iterable<Uint8List> contactKeys,
   }) {
+    final plain = _openPathPacket(payload, contactKeys)?.plain;
+    if (plain == null) return null;
+    final extraAt = 1 + PathHelper.pathLenBytes(plain[0]);
+    if (plain.length < extraAt + 5) return null;
+    if ((plain[extraAt] & 0x0F) != payloadTypeACK) return null;
+    // The encrypted reply is padded with zeroes, so a 0 here may be an
+    // older receiver's 4-byte ACK: only a number above 3 is trusted.
+    final attempt = plain.length > extraAt + 5 ? plain[extraAt + 5] : 0;
+    return (
+      code: ByteData.sublistView(plain, extraAt + 1, extraAt + 5)
+          .getUint32(0, Endian.little),
+      pathReply: true,
+      attempt: attempt > 3 ? attempt : null,
+    );
+  }
+
+  /// The route a path packet to this radio from one of [contactKeys] hands
+  /// it: the way this radio's packets reach them. In their reply to a flood
+  /// of mine it is the path that flood travelled to them, first hop first
+  /// (Mesh::createPathReturn). Null for any other packet.
+  ({Uint8List contactKey, int pathLenRaw, Uint8List path})? pathReplyRoute({
+    required List<int> payload,
+    required Iterable<Uint8List> contactKeys,
+  }) {
+    final opened = _openPathPacket(payload, contactKeys);
+    if (opened == null) return null;
+    final plain = opened.plain;
+    final bytes = PathHelper.pathLenBytes(plain[0]);
+    if (PathHelper.pathLenHops(plain[0]) < 0 || plain.length < 1 + bytes) {
+      return null;
+    }
+    return (
+      contactKey: opened.key,
+      pathLenRaw: plain[0],
+      path: Uint8List.fromList(plain.sublist(1, 1 + bytes)),
+    );
+  }
+
+  /// A path packet's payload, decrypted, with the contact it came from.
+  ({Uint8List key, Uint8List plain})? _openPathPacket(
+    List<int> payload,
+    Iterable<Uint8List> contactKeys,
+  ) {
     if (payload.length < 2 + _macSize + _blockSize) return null;
     if (payload[0] != _selfKey[0]) return null;
     final macAndData = Uint8List.fromList(payload.sublist(2));
@@ -231,22 +308,46 @@ class PassingCopyOpener {
       final secret = sharedSecret(key);
       if (secret == null) continue;
       final plain = macThenDecrypt(secret, macAndData);
-      if (plain == null) continue;
-      final extraAt = 1 + PathHelper.pathLenBytes(plain[0]);
-      if (plain.length < extraAt + 5) return null;
-      if ((plain[extraAt] & 0x0F) != payloadTypeACK) return null;
-      // The encrypted reply is padded with zeroes, so a 0 here may be an
-      // older receiver's 4-byte ACK: only a number above 3 is trusted.
-      final attempt =
-          plain.length > extraAt + 5 ? plain[extraAt + 5] : 0;
-      return (
-        code: ByteData.sublistView(plain, extraAt + 1, extraAt + 5)
-            .getUint32(0, Endian.little),
-        pathReply: true,
-        attempt: attempt > 3 ? attempt : null,
-      );
+      if (plain != null) return (key: key, plain: plain);
     }
     return null;
+  }
+
+  /// A path packet for [contactKey], the firmware's own kind
+  /// (Mesh::createPathReturn with nothing extra): it hands their radio
+  /// [wayBack] ([wayBackLen] is its path length byte) as the way to reach
+  /// this one, and their radio stores it in place of the route it holds
+  /// (BaseChatMesh::onContactPathRecv). Sent direct on [routePath]
+  /// ([routePathLen]), so it asks for no path in return. Null without a
+  /// secret for them, or without a route for either.
+  Uint8List? wayBackPacket({
+    required Uint8List contactKey,
+    required int wayBackLen,
+    required List<int> wayBack,
+    required int routePathLen,
+    required List<int> routePath,
+  }) {
+    if (PathHelper.pathLenHops(wayBackLen) < 0 ||
+        PathHelper.pathLenHops(routePathLen) < 0) {
+      return null;
+    }
+    final secret = sharedSecret(contactKey);
+    if (secret == null) return null;
+    return Uint8List.fromList([
+      (payloadTypePATH << 2) | _routeDirect,
+      routePathLen & 0xFF,
+      ...routePath.sublist(0, PathHelper.pathLenBytes(routePathLen)),
+      contactKey[0],
+      _selfKey[0],
+      ...encryptThenMac(secret, [
+        wayBackLen & 0xFF,
+        ...wayBack.sublist(0, PathHelper.pathLenBytes(wayBackLen)),
+        // No extra: a dummy type and four random bytes keep the packet
+        // from repeating an earlier one, as the firmware does.
+        0xFF,
+        for (var i = 0; i < 4; i++) _random.nextInt(256),
+      ]),
+    ]);
   }
 
   /// The ACK a plain or MULTIPART ACK packet carries, else null.
@@ -302,6 +403,22 @@ class PassingCopyOpener {
       aes.processBlock(enc, off, out, off);
     }
     return out;
+  }
+
+  /// Utils::encryptThenMAC: AES-128-ECB with the first 16 bytes of the
+  /// secret, the last block padded with zeroes, and in front of it the
+  /// 2-byte HMAC-SHA256 of the ciphertext, keyed with the whole secret.
+  static Uint8List encryptThenMac(Uint8List secret, List<int> plain) {
+    final blocks = (plain.length + _blockSize - 1) ~/ _blockSize;
+    final padded = Uint8List(blocks * _blockSize)..setAll(0, plain);
+    final aes = AESEngine()
+      ..init(true, KeyParameter(Uint8List.fromList(secret.sublist(0, 16))));
+    final enc = Uint8List(padded.length);
+    for (var off = 0; off < padded.length; off += _blockSize) {
+      aes.processBlock(padded, off, enc, off);
+    }
+    final mac = crypto.Hmac(crypto.sha256, secret).convert(enc).bytes;
+    return Uint8List.fromList([mac[0], mac[1], ...enc]);
   }
 
   /// The raw packets for CMD_SEND_RAW_PACKET that carry [ack] back the way

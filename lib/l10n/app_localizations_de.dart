@@ -1451,13 +1451,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ort in der Anzeige einbeziehen';
 
   @override
-  String get settings_multiAck => 'Mehrere Bestätigungen';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Eine zweite Bestätigung senden, wenn eine Direktnachricht Sie über eine Route erreicht, damit der Absender sie eher hört. Mit Pathfinder sendet MeshTrax sie über eine andere Route.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Telemetriemodus aktualisiert';
 
   @override

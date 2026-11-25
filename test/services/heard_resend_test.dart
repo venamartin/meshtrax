@@ -12,8 +12,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxheard/traxheard.dart';
 
 // The owner, 2026-11-19: a message only one repeater carried goes out once
-// more only while observers really hear this radio (an ear in the last 2
-// hours), and these resends stop after 3 misses in a row until an ear.
+// more only while observers really hear this radio (an ear in the last
+// day; 2 hours until 2026-11-24), and these resends stop after 3 misses in
+// a row until an ear.
 final _self = Uint8List.fromList(List.filled(32, 0x77));
 final _other = Uint8List.fromList(List.filled(32, 0x55));
 
@@ -86,10 +87,13 @@ void main() {
     expect(allowed(), isTrue);
   });
 
-  test('an ear counts for 2 hours', () async {
-    await attach(lastEar: {_self: const Duration(minutes: 119)});
+  test('an ear counts for a day', () async {
+    // The field case of 2026-11-24: the last ear at 5:49, a message at 8:25.
+    await attach(lastEar: {_self: const Duration(hours: 2, minutes: 36)});
     expect(allowed(), isTrue);
-    await attach(lastEar: {_self: const Duration(minutes: 121)});
+    await attach(lastEar: {_self: const Duration(hours: 23, minutes: 59)});
+    expect(allowed(), isTrue);
+    await attach(lastEar: {_self: const Duration(hours: 24, minutes: 1)});
     expect(allowed(), isFalse);
   });
 

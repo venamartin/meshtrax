@@ -12,8 +12,9 @@ class PlaceRow {
   int seenCount;
   int lastSeenDay;
 
-  /// A direct send from this repeater got no ACK here since it last
-  /// proved it hears me here: the row no longer makes it eligible.
+  /// This repeater was held for failing my sends here
+  /// ([PathGraphConfig.selfFailGate]) and has not proved since that it
+  /// hears me here: the row no longer makes it eligible.
   bool failedHere;
 }
 

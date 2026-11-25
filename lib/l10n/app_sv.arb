@@ -2047,8 +2047,6 @@
   "chat_sendMessage": "Skicka meddelande",
   "repeater_guestTools": "Gästverktyg",
   "room_guest": "Information om servern",
-  "settings_multiAck": "Flera bekräftelser",
-  "settings_multiAckSubtitle": "Skicka en andra bekräftelse när ett direktmeddelande når dig via en rutt, så att avsändaren lättare hör den. Med Pathfinder på skickar MeshTrax den via en annan rutt.",
   "chat_resendingByRoute": "Skickar igen via din angivna rutt",
   "room_mute": "Tysta rummet",
   "room_unmute": "Slå på ljud för rummet",

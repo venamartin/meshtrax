@@ -61,6 +61,16 @@ class TimeoutHelper {
   /// (getDirectRetransmitDelay, 0 to 5 x airtime x factor).
   static const double repeaterDirectTxDelayFactor = 0.3;
 
+  /// How long after the radio took a routed packet its first repeater's
+  /// copy of it can still be heard: this radio's airtime, the repeater's
+  /// longest wait before it passes a routed packet on
+  /// (getDirectRetransmitDelay), its airtime, and a second for a busy
+  /// channel on either side. ~2 s at 0.3 s airtime, ~3 s at 0.6 s.
+  static int passOnWaitMs(int airtimeMs) =>
+      (airtimeMs * (2 + retransmitDelaySpan * repeaterDirectTxDelayFactor))
+          .round() +
+      1000;
+
   /// TXT_ACK_DELAY (BaseChatMesh.cpp): a companion waits this long before
   /// it sends the ACK for a message it opened.
   static const int ackDelayMs = 200;
@@ -94,6 +104,22 @@ class TimeoutHelper {
   /// An expired timer can run before those frames (simulator, 2026-11-22:
   /// the radio's copy waited over a second behind a DM's intake and reply).
   static const int standInRecheckMs = 100;
+
+  /// How long after a flood to this radio was first heard the app waits
+  /// before it sends the sender a corrected way back
+  /// (MeshCoreConnector._repairWayBack). The radio's own answer has to
+  /// reach them first, or it would replace the correction: it leaves within
+  /// 500 ms (TXT_ACK_DELAY for a flooded path return, 500 ms for the routed
+  /// path that answers a path reply, Mesh.cpp) and, as a flood, crosses
+  /// [hops] + 1 legs, each a repeater's longest wait and one airtime. Then a
+  /// second for busy air.
+  static int wayBackRepairDelayMs(int airtimeMs, int hops) =>
+      500 +
+      ((hops + 1) *
+              airtimeMs *
+              (1 + retransmitDelaySpan * repeaterTxDelayFactor))
+          .ceil() +
+      1000;
 
   /// Floor for the final attempt of a retry ladder on a fast path.
   static const int lastAttemptFloorMs = 8000;

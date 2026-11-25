@@ -293,4 +293,219 @@ void main() {
           ['flood', 'flood', 'flood']);
     });
   });
+
+  // Owner, 2026-11-24: a missed ACK is most often two radios sending at
+  // once, about one try in four at home, so one is no reason to leave a
+  // route. Pathfinder's first choice gets two tries.
+  group("a DM's ladder: the best route twice", () {
+    PathSelection via(List<int> bytes, {double est = 0.6}) => PathSelection(
+          pathBytes: bytes,
+          hopCount: bytes.length ~/ 2,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: est,
+        );
+    // Three ways to the contact's repeater AA77, and one to C0DE.
+    final best = via([0xA2, 0x77, 0xAA, 0x77], est: 0.74);
+    final second = via([0xA2, 0x77, 0xF5, 0xEE, 0xAA, 0x77], est: 0.55);
+    final third = via([0xA2, 0x77, 0xBE, 0xEF, 0xAA, 0x77], est: 0.48);
+    final elsewhere = via([0xA2, 0x77, 0xC0, 0xDE], est: 0.3);
+    final none = Contact(
+      publicKey: Uint8List.fromList(List.filled(32, 9)),
+      name: 'B',
+      type: 1,
+      pathLength: -1,
+      path: Uint8List(0),
+      pathHashSize: 2,
+      lastSeen: DateTime(2026, 11, 24),
+    );
+
+    String name(PathSelection s) => s.useFlood
+        ? 'flood'
+        : identical(s, best)
+            ? 'best'
+            : identical(s, second)
+                ? 'second'
+                : identical(s, third)
+                    ? 'third'
+                    : 'elsewhere';
+
+    List<String> ladder(int budget, List<PathSelection> routes,
+            {List<PathSelection> tried = const [], int? floods}) =>
+        planAttempts(none,
+                radioWidth: 2,
+                budget: budget,
+                graphRoutes: routes,
+                tried: tried,
+                floods: floods,
+                bestTwice: true)
+            .map(name)
+            .toList();
+
+    test('five tries: best, best, the next route, then two floods', () {
+      expect(ladder(5, [best, second, third]),
+          ['best', 'best', 'second', 'flood', 'flood']);
+    });
+
+    test('four tries: best, best, two floods', () {
+      expect(ladder(4, [best, second]), ['best', 'best', 'flood', 'flood']);
+    });
+
+    test('three tries: best, best, and one flood', () {
+      expect(ladder(3, [best, second]), ['best', 'best', 'flood']);
+    });
+
+    test('two tries and one: the route, then a flood; the route alone', () {
+      expect(ladder(2, [best, second]), ['best', 'flood']);
+      expect(ladder(1, [best, second]), ['best']);
+    });
+
+    test('one route known: it is tried twice, never a third time', () {
+      expect(ladder(5, [best]), ['best', 'best', 'flood', 'flood', 'flood']);
+    });
+
+    test('the next route ends at another repeater (their latest packet was '
+        'heard there): it goes second, and the best gets its second try after',
+        () {
+      expect(ladder(5, [best, elsewhere, second]),
+          ['best', 'elsewhere', 'best', 'flood', 'flood']);
+    });
+
+    test('planned again after the first try, the next route ending at '
+        'another repeater: that one, then the best route again', () {
+      expect(ladder(4, [best, elsewhere, second], tried: [best], floods: 2),
+          ['elsewhere', 'best', 'flood', 'flood']);
+    });
+
+    // Simulator, 2026-11-24: after the route to the other repeater failed,
+    // a second route there took the last route slot from an 82% route.
+    test('planned again after the route to the other repeater was tried: '
+        "the best route's second try comes before another route there", () {
+      final again = via([0xA2, 0x77, 0x10, 0x00, 0xC0, 0xDE], est: 0.16);
+      expect(
+          ladder(3, [best, again, second],
+              tried: [best, elsewhere], floods: 2),
+          ['best', 'flood', 'flood']);
+      expect(
+          ladder(4, [best, again, second],
+              tried: [best, elsewhere], floods: 2),
+          ['best', 'elsewhere', 'flood', 'flood']);
+    });
+
+    // Simulator's scripted set, 2026-11-24: their packets were heard by
+    // one repeater and only a third one, with a delivery record, reached
+    // them. The best route's second try took the third one's place, and a
+    // flood delivered what that route would have.
+    group('a likely route to a repeater not tried yet', () {
+      final heard = via([0xA2, 0x77, 0xF5, 0xEE], est: 0.55);
+      final record = via([0xA2, 0x77, 0x5B, 0x98], est: 0.61);
+
+      List<PathSelection> plan(int budget, List<PathSelection> routes,
+              {List<PathSelection> tried = const [], int? floods}) =>
+          planAttempts(none,
+              radioWidth: 2,
+              budget: budget,
+              graphRoutes: routes,
+              tried: tried,
+              floods: floods,
+              bestTwice: true);
+
+      test('goes before the best route is repeated, once a route elsewhere '
+          'ranks second', () {
+        expect(plan(5, [best, heard, record]).take(3), [best, heard, record]);
+      });
+
+      test('keeps its place when the ladder is planned again', () {
+        expect(
+            plan(4, [best, heard, record], tried: [best], floods: 2).take(2),
+            [heard, record]);
+        expect(
+            plan(3, [best, heard, record], tried: [best, heard], floods: 2)
+                .first,
+            record);
+      });
+
+      test('their latest packet was heard by their usual repeater: the best '
+          'route twice, then that route before another way to the same '
+          'repeater', () {
+        expect(plan(5, [best, second, record]).take(3), [best, best, record]);
+      });
+
+      test('with a slot to spare the best route still gets its second try',
+          () {
+        expect(
+            plan(6, [best, heard, record]).take(4), [best, heard, record, best]);
+      });
+    });
+
+    test('planned again after the first try failed: its second try is next',
+        () {
+      expect(ladder(4, [best, second], tried: [best], floods: 2),
+          ['best', 'second', 'flood', 'flood']);
+    });
+
+    test('planned again after both of its tries: the next route, then floods',
+        () {
+      expect(ladder(3, [best, second, third], tried: [best, best], floods: 2),
+          ['second', 'flood', 'flood']);
+    });
+
+    test('planned again with a new best route: that one gets two tries', () {
+      expect(ladder(4, [second, best], tried: [best], floods: 2),
+          ['second', 'second', 'flood', 'flood']);
+    });
+
+    test('a weak second route is left out while better is on offer', () {
+      final weak = via([0xA2, 0x77, 0x10, 0x00, 0xAA, 0x77], est: 0.02);
+      expect(ladder(5, [best, weak]).where((n) => n != 'best' && n != 'flood'),
+          isEmpty);
+    });
+
+    // Simulator, 2026-11-24: a contact who had moved was reachable only
+    // over long unproven routes; none of 55 tries on them was answered.
+    test('a best route that is unlikely to work gets one try, and the '
+        'ladder is as it was', () {
+      final long = via([0xA2, 0x77, 0x10, 0x00, 0x40, 0x00], est: 0.12);
+      final longer =
+          via([0xA2, 0x77, 0x10, 0x00, 0x20, 0x00, 0xF4, 0xD5], est: 0.06);
+      List<String> kinds(int budget) => planAttempts(none,
+              radioWidth: 2,
+              budget: budget,
+              graphRoutes: [long, longer],
+              bestTwice: true)
+          .map((s) => s.useFlood
+              ? 'flood'
+              : identical(s, long)
+                  ? 'long'
+                  : 'longer')
+          .toList();
+      expect(kinds(5), ['long', 'longer', 'flood', 'flood', 'flood']);
+      expect(kinds(3), ['long', 'flood', 'flood']);
+    });
+
+    test('just likely enough: twice', () {
+      final even = via([0xA2, 0x77, 0xAA, 0x77], est: repeatMinDelivery);
+      expect(
+          planAttempts(none,
+                  radioWidth: 2,
+                  budget: 3,
+                  graphRoutes: [even],
+                  bestTwice: true)
+              .map((s) => s.useFlood),
+          [false, false, true]);
+    });
+
+    test('Pathfinder knows nothing: every try floods', () {
+      expect(ladder(3, const []), ['flood', 'flood', 'flood']);
+    });
+
+    test('other ladders are as they were: each route once', () {
+      expect(
+          planAttempts(none,
+                  radioWidth: 2, budget: 5, graphRoutes: [best, second, third])
+              .map(name),
+          ['best', 'second', 'third', 'flood', 'flood']);
+    });
+  });
 }

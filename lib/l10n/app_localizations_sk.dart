@@ -1442,13 +1442,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get settings_advertLocationSubtitle => 'Zahrnúť polohu do inzerátu';
 
   @override
-  String get settings_multiAck => 'Viaceré ACK';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Pošle druhé potvrdenie, keď k vám priama správa dorazí po trase, aby ho odosielateľ skôr počul. So zapnutým Pathfinderom ho MeshTrax pošle inou trasou.';
-
-  @override
   String get settings_telemetryModeUpdated =>
       'Režim telemetrie bol aktualizovaný';
 

@@ -1399,13 +1399,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_advertLocationSubtitle => '광고에 위치 정보를 포함하세요.';
 
   @override
-  String get settings_multiAck => '다중 ACK';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      '다이렉트 메시지가 경로를 통해 도착하면 두 번째 ACK를 보내 발신자가 받을 가능성을 높입니다. Pathfinder가 켜져 있으면 MeshTrax가 다른 경로로 보냅니다.';
-
-  @override
   String get settings_telemetryModeUpdated => '텔레메트리 모드 업데이트 완료';
 
   @override

@@ -327,7 +327,6 @@ Future<void> _writeModes(
     location ?? c.telemetryModeLoc,
     c.telemetryModeEnv,
     advert ?? c.advertLocationPolicy,
-    c.multiAcks,
   );
   unawaited(c.refreshRadioSettings());
 }

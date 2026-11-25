@@ -2085,8 +2085,6 @@
   "room_guest": "Szoba szerver információk",
   "chat_sendMessage": "Üzenet küldése",
   "repeater_guest": "Adatok a repeaterről",
-  "settings_multiAck": "Többszörös visszaigazolások",
-  "settings_multiAckSubtitle": "Második visszaigazolást küld, ha egy közvetlen üzenet útvonalon érkezik meg, így a feladó nagyobb eséllyel hallja azt. Bekapcsolt Pathfinderrel a MeshTrax másik útvonalon küldi.",
   "chat_resendingByRoute": "Újraküldés a beállított útvonalon",
   "room_mute": "Szoba némítása",
   "room_unmute": "Szoba némításának feloldása",

@@ -1452,13 +1452,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Incluir localização no anúncio';
 
   @override
-  String get settings_multiAck => 'Multi-ACKs';
-
-  @override
-  String get settings_multiAckSubtitle =>
-      'Envia um segundo ACK quando uma mensagem direta chega até você por uma rota, para que o remetente tenha mais chances de ouvi-lo. Com o Pathfinder ligado, o MeshTrax envia-o por outra rota.';
-
-  @override
   String get settings_telemetryModeUpdated => 'Modo de telemetria atualizado';
 
   @override

@@ -95,12 +95,8 @@ void main() {
 
       echo(a277); // the flood's echo: it still hears me
       expect(graph.egressCandidates().single.failedSinceProof, 0);
-      // Their end keeps its own count (owner, 2026-10-24): nothing yet shows
-      // 1312 reaches Bob, so the next send still floods.
-      expect(floodReason(), FloodReason.theirDoorstepsFailing);
-      // The flood's PATH reply names the route it took: 1312 did reach him.
-      graph.reportSendResult(path([...a277, ...r1312]), true,
-          contactPubkey: bobPk, tally: false);
+      // Missed ACKs alone are not held against his end (owner,
+      // 2026-11-24): the route is offered again.
       expect(firstHop(), 'a277');
     });
 
@@ -216,6 +212,29 @@ void main() {
 
       nowMillis += 3 * 60 * minute;
       expect(firstHop(), 'beef');
+    });
+  });
+
+  // What the app asks before it corrects a contact's way back to me: is
+  // this the repeater my own routes start at, here and now?
+  group('a repeater a route may start at now', () {
+    test('one proven to hear me is, one I only hear is not', () {
+      echo(a277);
+      heardLast(beef);
+      expect(graph.startsRoutesNow('A277'), isTrue);
+      expect(graph.startsRoutesNow('a277'), isTrue);
+      expect(graph.startsRoutesNow('BEEF'), isFalse);
+      expect(graph.startsRoutesNow('1312'), isFalse);
+    });
+
+    test('not while it is held, and again once it proves itself', () {
+      provenCorridor([...a277, ...r1312]);
+      expect(graph.startsRoutesNow('A277'), isTrue);
+      failed([...a277, ...r1312]);
+      failed([...a277, ...r1312]);
+      expect(graph.startsRoutesNow('A277'), isFalse);
+      echo(a277);
+      expect(graph.startsRoutesNow('A277'), isTrue);
     });
   });
 }

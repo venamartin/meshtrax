@@ -106,7 +106,7 @@ void main() {
   }
 
   Future<void> failedStep(_Connector c) async {
-    c.onSendAttemptResult!(_bob, _viaA277, false, null);
+    c.onSendAttemptResult!(_bob, _viaA277, false, null, null);
     await settle();
   }
 
@@ -130,6 +130,57 @@ void main() {
     await settle();
     expect(c.discovers, 1);
     await service.stop();
+  });
+
+  // Owner, 2026-11-24: "a discover is super valuable data on what repeaters
+  // can hear you. I thought we included a discover in the plan
+  // automatically." Before, it went out only after a send had failed.
+  group('before the first try of a DM', () {
+    test('where nobody has been heard hearing the radio: one Discover first, '
+        'and the try waits for its answers', () async {
+      final (service, c) = await doubtful();
+      final wait = c.beforeFirstDmAttempt!(_bob);
+      expect(wait, isNotNull);
+      await settle();
+      expect(c.discovers, 1);
+      expect(c.lastAutomatic, isTrue);
+
+      expect(c.beforeFirstDmAttempt!(_bob), isNull,
+          reason: 'the ten-minute cap: the next DM goes at once');
+      await service.stop();
+    });
+
+    test('where a repeater is on record, the DM goes at once', () async {
+      final c = _Connector();
+      final service = PathGraphService()..autoDiscoverJitterMax = Duration.zero;
+      await service.start(c, database: NativeDatabase.memory());
+      c.fix(36.9712, -121.7334);
+      service.graph!.reportSendResult(
+          Uint8List.fromList(_viaA277.pathBytes), true,
+          contactPubkey: _bob.publicKeyHex);
+      expect(c.beforeFirstDmAttempt!(_bob), isNull);
+      expect(c.discovers, 0);
+      await service.stop();
+    });
+
+    test('a gate that holds an automatic Discover: the DM goes at once',
+        () async {
+      final (service, c) = await doubtful();
+      c.foreignAt = DateTime.now().subtract(const Duration(seconds: 30));
+      expect(c.beforeFirstDmAttempt!(_bob), isNull);
+      expect(c.discovers, 0);
+      await service.stop();
+    });
+
+    test('a contact whose route the user picked: the DM goes at once',
+        () async {
+      final (service, c) = await doubtful();
+      final pinned = _bob.copyWith(
+          pathOverride: 1, pathOverrideBytes: Uint8List.fromList([0xA2, 0x77]));
+      expect(c.beforeFirstDmAttempt!(pinned), isNull);
+      expect(c.discovers, 0);
+      await service.stop();
+    });
   });
 
   test('no doubt, no Discover', () async {

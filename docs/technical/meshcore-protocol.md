@@ -585,15 +585,23 @@ the connector's `_openPassingCopy`):
   never finished.
 
 ### The second ACK, from MeshTrax on another route
-With Multi-ACKs on, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy) on the
-**same** stored route as the first, and a DM that arrived by flood gets only the flooded
-PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19: "either
-the companion sends two acks or it sends one and the app sends the second"):
+With its `multi_acks` set, the firmware's `sendAckTo` sends its extra ACK (a MULTIPART copy)
+on the **same** stored route as the first, and a DM that arrived by flood gets only the
+flooded PATH+ACK. With Pathfinder on, MeshTrax takes the second ACK over (owner, 2026-11-19:
+"either the companion sends two acks or it sends one and the app sends the second"):
+- **Two ACKs, always, and no switch** (owner, 2026-11-24). There used to be a Multi-ACKs
+  switch whose choice was kept per radio on the phone. A phone with no stored choice read
+  it from the radio, and a radio the app itself had left at one ACK (below) then read as
+  "off" and was saved as the user's choice; Health check read the radio's setting, not the
+  choice, so it complained while the app was sending the second ACK and kept quiet when
+  the choice was off. Now nothing is stored and nobody chooses: `_applyAckMode` alone
+  decides the radio's `multi_acks`, and `setTelemetryModeBase` writes what it decided.
 - **The radio sends one.** While the app is connected, has the radio's key and the firmware
-  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. The Multi-ACKs switch
-  keeps the user's choice per radio (`MeshCoreConnector.twoAcks`), so it stays on. A
-  manual disconnect sets the radio back to 1; after a link that drops, the radio sends one
-  ACK until the app is back.
+  has `CMD_SEND_RAW_PACKET`, the radio's `multi_acks` is set to 0. Where the app can't send
+  the second ACK (Pathfinder off, no key, older firmware), it is set to 1 and the radio
+  sends both on its stored route. A manual disconnect sets the radio back to 1; after a
+  link that drops, the radio sends one ACK until the app is back, since nothing can be
+  written to it by then.
 - **The app sends the other**, for every copy of a DM or room post to this radio that it
   can read in the RX log (it computes the exact ACK from the decrypted copy), once per
   send, `TXT_ACK_DELAY` plus 300 ms after the copy, as the extra ACK would follow the
@@ -670,6 +678,83 @@ The connector keeps what it saw of each ACK in the RX log (`HeardAck`) for the g
 `MessageRetryService.handleAckReceived` picks the attempt it fits (`_rungAcked`). When it
 can't tell (the ACK wasn't seen), no route is credited or failed for those attempts, and no
 flood is counted delivered; the DM is still delivered.
+
+### The way back a flood teaches, and the correction MeshTrax sends
+A radio answers the **first** copy of a flood it hears, and the answer hands the sender
+that copy's path as their route to it: a flooded DM gets a path return carrying
+`packet->path` (`BaseChatMesh::onPeerDataRecv`), a flooded path reply gets a reciprocal
+path carrying `pkt->path` (`Mesh::onRecvPacket`), and the sender stores it whatever it held
+(`onContactPathRecv`: "we just replace the current out_path regardless").
+- **The trap.** A copy heard straight from a far repeater is always the first, because the
+  nearer repeaters only pass on what that one sent. The sender is then told a route that
+  ends at a repeater this radio hears now and then. Their ACKs and routed DMs come only by
+  that repeater's own transmission; a nearer repeater hears them but isn't on the route, so
+  it passes nothing on. Seen in the simulator on 2026-11-24, and in the owner's data: his
+  radio heard one such repeater directly 1,098 times against 5,027 packets heard passing it
+  and then his own repeater, and one of a contact's last five flooded DMs came from it
+  first. The sender's missed ACKs then look like failed sends.
+- **The correction** (`MeshCoreConnector._repairWayBack`, owner 2026-11-24). The app sees
+  every copy in the RX log. When the first copy's last repeater is not one Pathfinder would
+  start this radio's routes at (`isOwnDoorstep`, `PathGraph.startsRoutesNow`) and a later
+  copy of the same packet, within 8 s, came through one that is, the app sends the sender
+  a path packet of the firmware's own kind with the later copy's path
+  (`PassingCopyOpener.wayBackPacket`: `createPathReturn` with nothing extra, 0xFF and four
+  random bytes). It goes direct on Pathfinder's best route to them, else the stored one,
+  after `TimeoutHelper.wayBackRepairDelayMs`, so the radio's own answer arrives first and
+  the correction replaces it.
+- **What it never does:** touch a route that already ends at such a repeater; send a path
+  no copy travelled; act on a routed copy the app merely picked up on its way; go out as a
+  flood (no route to them, nothing is sent); or run with Pathfinder off, without the
+  radio's key, or on firmware without `CMD_SEND_RAW_PACKET`.
+- **How much it matters** depends on how often the far repeater is heard directly. At the
+  owner's one copy in five, the simulator put it at 1 to 7 lost ACKs in about 80 routed
+  tries; at 65% it dominated. It also depends on how often the sender floods: every
+  delivered flood teaches the way back again, right or wrong, so a sender that stays on
+  its route keeps a wrong lesson longer (simulator: 48 s when the next send flooded, two
+  to three minutes when the sends stayed on the route).
+
+### A routed packet heard passed on, and the same packet sent again
+The radio logs every packet it receives before it handles it (`Dispatcher::checkRecv`,
+`logRxRaw`), so the RX log carries its first repeater's copy of a routed packet the radio
+itself just sent: the same payload, the path shorter by the hops already done (each
+repeater takes itself off the front, `removeSelfFromPath`).
+- **Telling it is mine** (`PassingCopyOpener.openOwn`). A TXT_MSG whose source byte is
+  this radio's and whose MAC passes with the secret shared with a contact whose first key
+  byte is the destination byte. Inside are the timestamp, the attempt number (its low two
+  bits in the flags byte; the whole number in the byte after the text's terminator when
+  it is above 3, `composeMsgPacket`) and the text. A contact sharing this radio's first key
+  byte is left out: a packet to them reads the same as one from them.
+- **What it says.** The hops left are the tail of the route the attempt went out on, so
+  the repeater just before that tail sent this copy. It received the packet, and so did
+  every repeater before it; the first of them heard this radio.
+- **A repeater passes a routed packet on once.** `Mesh::onRecvPacket` forwards a direct
+  packet only when `!_tables->wasSeen(pkt)`, and the receiver opens a text packet only
+  then too. The hash covers the payload type and payload, not the path
+  (`Packet::calculatePacketHash`). The sending radio marks its own packet seen and sends
+  it whatever the table says (`Mesh::sendDirect`, `sendFlood`).
+- **The same attempt number, timestamp and text give the same bytes** (AES-128-ECB, zero
+  padded, nothing random). So handing the radio the same `CMD_SEND_TXT_MSG` a second
+  time is a retry of the first hop alone: a repeater that missed the first copy passes
+  this one on, a repeater that passed the first on drops it, and the receiver never gets
+  two. The expected ACK is the same. This is why a new try of a message must carry a new
+  attempt number, and why a copy that must NOT be dropped (a parked message sent again)
+  takes a number of its own (`MessageRetryService._resendAttempt`).
+- **How long to listen** (`TimeoutHelper.passOnWaitMs`): this radio's airtime, the
+  repeater's longest wait before it passes a routed packet on (`getDirectRetransmitDelay`,
+  0 to 5 x airtime x `direct_tx_delay_factor`, 0.3 by default), its airtime, and a second
+  for a busy channel. About 2 s at 0.3 s airtime.
+- **The second copy never goes out late.** The app holds every send until the radio has
+  been quiet, which after a message came in is several seconds. The attempt's ACK wait
+  stops while the copy waits and starts again when the radio takes it (`RESP_CODE_SENT`).
+  A copy whose attempt has ended meanwhile is not sent (`MessageRetryService.awaitsAck`):
+  it carries that attempt's bytes, so it would be taken for the next attempt, and a
+  repeater that had passed the first copy on would drop it. An attempt counts as "not
+  passed on" only when both copies went out and neither was heard.
+- **Limits.** A repeater's table holds 160 hashes (`SimpleMeshTables`), so on very busy
+  air it can have forgotten the first copy and pass the second on as well; the receiver
+  then drops it, unless it has forgotten too. A repeater that hears this radio and is not
+  heard by it says nothing by its silence, so the app listens only for a repeater it heard
+  in the last 10 minutes (a flood's last hop, or its own advert).
 
 ### ADV_TYPE constants
 | Value | Meaning |

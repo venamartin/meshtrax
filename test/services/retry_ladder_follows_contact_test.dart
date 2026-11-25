@@ -43,7 +43,7 @@ class _Rig {
       getSelfPublicKey: () => selfKey,
       pathHashByteWidth: () => 2,
       graphRoutes: graph == null ? null : (_) => graph,
-      onAttemptResult: (_, sel, delivered, _) => reported.add((
+      onAttemptResult: (_, sel, delivered, _, _) => reported.add((
         bytes: sel.useFlood ? 'flood' : _hex(sel.pathBytes),
         delivered: delivered,
       )),
@@ -156,7 +156,7 @@ void main() {
         r.nextAttempt(async);
       }
       expect([for (final s in r.sends) s.onAir],
-          [_hex(_g1.pathBytes), null, null, null],
+          [_hex(_g1.pathBytes), _hex(_g1.pathBytes), null, null],
           reason: 'the planned four attempts, ending on the planned floods');
     });
   });
@@ -181,7 +181,9 @@ void main() {
         async.flushMicrotasks();
         r.sentLast();
         r.svc.handleAckReceived(r.ackFor(1), 900);
-        expect(r.reported, [(bytes: _hex(g2.pathBytes), delivered: true)]);
+        expect(r.reported, [(bytes: _hex(_g1.pathBytes), delivered: true)],
+            reason: 'its second try delivered, and the first, which never '
+                'left the app, is no failure of the route');
       });
     });
 
@@ -193,7 +195,10 @@ void main() {
         r.sentLast();
         r.nextAttempt(async);
         r.svc.handleAckReceived(r.ackFor(1), 900);
-        expect(r.reported, [(bytes: _hex(_g1.pathBytes), delivered: false)]);
+        expect(r.reported, [
+          (bytes: _hex(_g1.pathBytes), delivered: false),
+          (bytes: _hex(_g1.pathBytes), delivered: true),
+        ]);
       });
     });
 

@@ -2047,8 +2047,6 @@
   "chat_sendMessage": "Pošlji sporočilo",
   "room_guest": "Informacije o strežniku",
   "repeater_guestTools": "Naložila za goste",
-  "settings_multiAck": "Več potrdil",
-  "settings_multiAckSubtitle": "Pošlje drugo potrdilo, ko zasebno sporočilo do vas pride po poti, da ga pošiljatelj laže sliši. Ko je Pathfinder vklopljen, ga MeshTrax pošlje po drugi poti.",
   "chat_resendingByRoute": "Ponovno pošiljanje po nastavljeni poti",
   "room_mute": "Utišaj sobo",
   "room_unmute": "Prekliči utišanje sobe",

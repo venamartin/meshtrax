@@ -23,17 +23,32 @@ It's careful about what it believes. A repeater code it has never heard before o
 ## What happens when you send
 
 1. Pathfinder tries its best route.
-2. If that fails, it tries its next best one. If their latest message was first heard by a different repeater than the one Pathfinder ranks first, the next route ends there. Otherwise it is another way to the same repeater.
-3. Before it gives up on routes, a repeater that has delivered to them before gets a try.
-4. It floods only as a last resort.
+2. If no receipt comes, it tries that same route once more, when it is a route Pathfinder rates as likely to work (50% or better). A missing receipt on such a route usually means two radios sent at the same moment, not that the route is broken. A route it rates lower gets one try, and the next route follows.
+3. With five tries (Max Message Retries), another route follows: another way to the same repeater.
+4. It floods only as a last resort: the last two tries, or only the last one when you have three tries and the best route was tried twice.
+
+One exception to step 2: if their latest message was first heard by a different repeater than the one Pathfinder ranks first, a route ending at that repeater goes second, and the best route gets its second try after it. And a route that is likely to work and ends at a repeater not tried yet is worth more than a repeat: it goes before another way to a repeater already tried, and, once a route to a different repeater has been tried, before the best route's second try.
+
+**Listening for your own message.** Your radio hears the first repeater pass your DM on, and MeshTrax recognises the message as yours. Then it knows the message left your side, whatever happens further along, and that repeater isn't blamed if no receipt comes. If MeshTrax doesn't hear it within a few seconds, the message most likely never reached the repeater, so your radio sends the very same packet once more. A repeater that did pass the first one on ignores the copy, so nothing travels across the mesh twice, and the other person never gets it twice. If the repeater stays silent the second time too, that try ends at once and the next begins after the usual short pause. The second copy waits for quiet air like any send, and the try's clock waits with it. MeshTrax only listens for a repeater your radio has heard in the last 10 minutes.
 
 Which repeater hears them? The ones that were first to pass on their own messages, ranked by how often they did and how often a message through them was delivered. Their latest messages can overrule that record: a repeater that only passed their message on from another repeater, or missed their last two messages, is tried after the others until it hears them first again. Nothing is forgotten when that happens. And when a send through the top repeater fails while their latest message came in through another repeater, that other repeater goes first, until a send through it fails too.
 
 Every delivery and every failure teaches it more. A failure counts against that link for a while, then fades: a day later it counts half as much, and after a few days hardly at all. So one bad moment doesn't block a good link for good.
 
-When it isn't sure which repeaters can hear you where you are, Pathfinder sends one short **Discover** call. It does this only after a send has failed, and at most once every 10 minutes.
+**One missing receipt never drops a route.** A failed try is counted against the part that failed:
 
-**When no repeater hears you.** After a flood, MeshTrax listens for a repeater passing your message on. If none does, but your radio heard a repeater in the last 10 minutes, the message waits, showing only its wait icon, and goes again when a repeater is next heard, up to three times. If no repeater is heard for 10 minutes while it waits, it shows Failed, so your later messages to the same person can go. With no repeater heard in the last 10 minutes it doesn't wait at all: it uses its remaining tries and shows Failed if no receipt comes. A receipt that arrives up to 5 minutes after Failed still marks it delivered. This works the same with Pathfinder on or off.
+- *Your repeater* is set aside only when it twice in a row wasn't heard passing your message on. One such miss only makes MeshTrax ask which repeaters hear you (a Discover call). It comes back the moment it is heard passing something of yours on, or answers a Discover call.
+- *Their repeater* is set aside only when, twice in a row, a message missed through it and then got through another way. If the message got through by that same repeater in the end, nothing is held against it.
+- When MeshTrax can't listen for your repeater (it hasn't heard it lately), two failed tries in a row set it aside, as before.
+
+**When nobody answers on any route.** Someone who has moved and hasn't sent anything since still has the old way back to you stored in their radio. Their radio takes your routed message, but its receipt goes down that old way and never reaches you, so every route looks dead and only a flood gets an answer. After three routed tries in a row to one person got no receipt (tries that never left your own repeater don't count), MeshTrax tries only its best route to them before it floods. The first routed try that gets a receipt brings the full list of routes back, and after an hour without such a try it starts afresh.
+
+When it isn't sure which repeaters can hear you where you are, Pathfinder sends one short **Discover** call, at most once every 10 minutes. It does this:
+
+- before your first DM from a place where it has no record of who hears you (your radio needs GPS for it to know the place). The DM waits about five seconds for the answers and then goes by the repeater that heard you best, where it would otherwise have flooded;
+- after a send has failed and it has a doubt about your side, such as a repeater that wasn't heard passing your message on.
+
+**When no repeater hears you.** After a flood, MeshTrax listens for a repeater passing your message on. If none does, but your radio heard a repeater within the last minute, the same packet goes out again straight away, up to twice, and nothing is shown: two radios most likely sent at once. If still none does, or the last repeater was heard longer ago but within the last 10 minutes, the message waits, showing only its wait icon, and goes again when a repeater is next heard, up to three times. If no repeater is heard for 10 minutes while it waits, it shows Failed, so your later messages to the same person can go. With no repeater heard in the last 10 minutes it doesn't wait at all: it uses its remaining tries and shows Failed if no receipt comes. A receipt that arrives up to 5 minutes after Failed still marks it delivered. This works the same with Pathfinder on or off.
 
 ## Delivery receipts
 
@@ -47,7 +62,11 @@ So a stale stored route loses receipts: your message got there, but you never le
 
 **Staying out of the way.** A contact's stored route is rewritten at most once every 10 minutes, except that a route Pathfinder has stopped listing is replaced at once. A contact is left alone while a message of yours to them is still being tried, and for 6 minutes after one of yours failed every attempt. A guessed route is stored only as the first choice, with one guessed hop at most. And if you picked a route for a contact yourself in the routing dialog, Pathfinder never touches it.
 
-Two things this doesn't change. Pathfinder never uses the stored route for its own sends; those always go on its list and then flood. And the radio's option to send each receipt twice (Multi-ACKs) works the same with or without Pathfinder.
+One thing this doesn't change: Pathfinder never uses the stored route for its own sends; those always go on its list and then flood.
+
+**When a flood teaches the wrong way back.** A radio answers the first copy of a flooded message it hears, and that answer tells the sender which way to reach it. If your radio happens to hear a far repeater directly, one that can't hear you, that copy always arrives first, and the sender is taught a way back that ends where you can't be reached. MeshTrax notices when the same message also arrived through a repeater that does hear you, and sends the sender that copy's route as a correction. It never guesses a route, and it leaves a way back that already ends at your repeater alone.
+
+**Two receipts for every message.** A direct message that reaches you on a route is always answered with two receipts (ACKs), so the sender has two chances to hear one. There is no setting for it. Your radio sends the first on its stored route. With Pathfinder on, MeshTrax sends the second on another route, and your radio is set to send only its one. With Pathfinder off, your radio sends both on the same route. If the Bluetooth link to your radio drops, the radio sends one receipt on its own until MeshTrax is connected again.
 
 ## What you see
 

@@ -564,7 +564,7 @@ void main() {
             're: ${m.text.length > 40 ? m.text.substring(0, 40) : m.text}';
         final target = live(who);
         final graphRoutes = c.graphRouteCandidates?.call(target);
-        blog('reply $n plan at the send: ${graphRoutes == null ? 'the firmware ladder' : planAttempts(target, radioWidth: c.pathHashByteWidth, budget: settings.settings.maxMessageRetries, graphRoutes: graphRoutes).map(fmtSelection).join(' | ')}');
+        blog('reply $n plan at the send: ${graphRoutes == null ? 'the firmware ladder' : planAttempts(target, radioWidth: c.pathHashByteWidth, budget: settings.settings.maxMessageRetries, graphRoutes: graphRoutes, bestTwice: true).map(fmtSelection).join(' | ')}');
         replies.add(_Reply(n, text, DateTime.now()));
         await c.sendMessage(target, text);
         blog('reply $n sent: "$text"');

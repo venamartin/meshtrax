@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:crypto/crypto.dart';
+import '../helpers/path_helper.dart';
 import '../helpers/timeout_helper.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
@@ -59,9 +60,23 @@ class RetryServiceConfig {
   final Function(Contact)? onFloodDelivered;
   // Pathfinder's ranked routes to a contact, best first; null while it is off.
   final List<PathSelection>? Function(Contact)? graphRoutes;
-  // How one direct attempt ended: the route it went on, whether its ACK came.
-  final void Function(Contact, PathSelection, bool delivered, int? tripTimeMs)?
-      onAttemptResult;
+  // How one direct attempt ended: the route it went on, whether its ACK
+  // came, and how many hops of the route were heard passing it on (0: the
+  // first repeater was listened for and not heard; null: nobody could be
+  // listened for).
+  final void Function(Contact, PathSelection, bool delivered,
+      int? tripTimeMs, int? hopsHeard)? onAttemptResult;
+  // Pathfinder may ask for a moment before a message's first attempt: the
+  // time a Discover's answers take, where it does not know who hears this
+  // radio. Null: send now.
+  final Future<void>? Function(Contact)? beforeFirstAttempt;
+  // Whether the repeater [hop] ([width] bytes) would be heard passing a
+  // routed DM of mine on: the app can read its own packets in the radio's
+  // RX log, and that repeater was heard lately.
+  final bool Function(List<int> hop, int width)? hearsPassOnBy;
+  // A repeater was heard passing a routed attempt on, for the first time:
+  // the first repeater of its route heard this radio.
+  final void Function(Contact, PathSelection)? onPassedOn;
   // An attempt is about to go out: Pathfinder gates my own echoes on it.
   final void Function(Contact, PathSelection, int attempt)? onAttemptStarted;
   // The radio confirmed an ACK for a message to this contact (uint32 hash).
@@ -98,6 +113,9 @@ class RetryServiceConfig {
     this.onFloodDelivered,
     this.graphRoutes,
     this.onAttemptResult,
+    this.beforeFirstAttempt,
+    this.hearsPassOnBy,
+    this.onPassedOn,
     this.onAttemptStarted,
     this.onAckMatched,
     this.onLadderEnded,
@@ -110,9 +128,9 @@ class RetryServiceConfig {
 
 /// Sends a contact message and retries it until an ACK arrives.
 ///
-/// With Pathfinder able to route, the ladder is planned once per message
-/// by [planAttempts]: Pathfinder's routes, best first, then floods; the
-/// radio's stored route is never tried. Otherwise (Pathfinder off, a user
+/// With Pathfinder able to route, the ladder is planned by [planAttempts]:
+/// Pathfinder's best route twice, then its next, then floods; the radio's
+/// stored route is never tried. Otherwise (Pathfinder off, a user
 /// override, a manual resend) each attempt is resolved from the live
 /// contact: the known route (the override, else the firmware's) gets one
 /// try, two at 4 or more attempts, then floods. A flood resets the path,
@@ -149,6 +167,14 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _onAir = {};
   // Attempts already reported to Pathfinder as failed, at their timeout.
   final Map<String, Set<int>> _reported = {};
+  // Routed attempts whose first repeater is listened for, and how many
+  // hops of the route were heard passing each on so far; the watch for
+  // the attempt in flight; and the attempts whose packet was asked to go
+  // out a second time, true once the radio took that copy (see
+  // [_armPassOnWatch]).
+  final Map<String, Map<int, int>> _passedOn = {};
+  final Map<String, Timer> _passOnTimers = {};
+  final Map<String, Map<int, bool>> _secondCopy = {};
   // Waiting for a repeater: the watch for a repeater's copy of a flood
   // in flight, how long it was, when a message was parked for lack of one,
   // and how often it has been sent again on a repeater coming into range.
@@ -158,10 +184,41 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, bool> _parkedReady = {};
   final Map<String, Timer> _cooldownTimers = {};
   final Map<String, int> _autoResends = {};
+  // How often a flood nobody passed on went out again at once, a repeater
+  // having been heard within [quickResendWindow] (see [_park]).
+  final Map<String, int> _quickResends = {};
+  static const int maxQuickResends = 2;
+  static const Duration quickResendWindow = Duration(minutes: 1);
+  // Per contact: routed attempts in a row that got no ACK, and when the
+  // last of them was. Attempts that never left my first repeater are not
+  // counted.
+  final Map<String, ({int count, DateTime at})> _unanswered = {};
+
+  /// After this many routed attempts in a row to a contact got no ACK, a
+  /// ladder to them tries only Pathfinder's best route before it floods,
+  /// until a routed attempt is answered. A contact who has moved and sends
+  /// nothing keeps the old way back to this radio: their radio takes a
+  /// routed DM and its ACK goes nowhere, so every route to them looks
+  /// dead, and only a flood gets an answer (simulator, 2026-11-24: none of
+  /// 60 routed tries to such a contact was answered, and with three
+  /// routes tried before each flood a DM took twice as long as before).
+  static const int bestRouteOnlyAfter = 3;
+
+  /// How long that count is remembered after the last such attempt.
+  static const Duration unansweredMemory = Duration(hours: 1);
+
+  int _unansweredTo(String contactKey) {
+    final seen = _unanswered[contactKey];
+    if (seen == null) return 0;
+    final since = _now().difference(seen.at);
+    return since.isNegative || since > unansweredMemory ? 0 : seen.count;
+  }
+
   // The attempt numbers those sends went out with, and the number the
-  // radio was last given for each message.
+  // radio was last given for each message, with the attempt it was for.
   final Map<String, Set<int>> _resendAttempts = {};
   final Map<String, int> _wireAttempts = {};
+  final Map<String, int> _wireRungs = {};
   // Every send the radio took for each ACK code: the firmware hashes only
   // an attempt's low two bits into its ACK (composeMsgPacket), so attempts
   // 0 and 4 of one DM share a code, as a rung and its resends do.
@@ -341,7 +398,28 @@ class MessageRetryService extends ChangeNotifier {
       final messageId = queue.removeAt(0);
       if (_pendingMessages.containsKey(messageId)) {
         _activeMessages.add(messageId);
-        _send(messageId);
+        final contact = _pendingContacts[messageId];
+        final wait = contact == null
+            ? null
+            : _config?.beforeFirstAttempt?.call(contact);
+        if (wait == null) {
+          _send(messageId);
+        } else {
+          // The ladder is planned again from what the wait brought; a
+          // wait that failed still ends in the send.
+          void go() {
+            final to = _pendingContacts[messageId];
+            if (to == null ||
+                !_pendingMessages.containsKey(messageId) ||
+                _resolvedMessages.contains(messageId)) {
+              return;
+            }
+            _plan(messageId, to);
+            _send(messageId);
+          }
+
+          wait.then((_) => go(), onError: (_) => go());
+        }
         return;
       }
     }
@@ -350,9 +428,9 @@ class MessageRetryService extends ChangeNotifier {
   /// Sends [messageId]'s current attempt. One that throws (a radio write
   /// that failed) fails the message: left pending with no timer, it would
   /// hold every later message to the contact behind it for good.
-  void _send(String messageId, {bool resend = false}) {
+  void _send(String messageId, {bool resend = false, bool same = false}) {
     final attempt = _pendingMessages[messageId]?.retryCount;
-    _attemptSend(messageId, resend: resend).catchError((e) {
+    _attemptSend(messageId, resend: resend, same: same).catchError((e) {
       debugPrint('_attemptSend threw for $messageId: $e');
       final message = _pendingMessages[messageId];
       final contact = _pendingContacts[messageId];
@@ -379,20 +457,26 @@ class MessageRetryService extends ChangeNotifier {
   /// [contact]: no override, no manual resend, and Pathfinder can route.
   /// The first [keep] attempts already went out and stay as they were.
   void _plan(String messageId, Contact contact, {int keep = 0}) {
-    final routes = contact.pathOverride == null &&
+    final known = contact.pathOverride == null &&
             !_floodFirst.contains(messageId)
         ? _config?.graphRoutes?.call(contact)
         : null;
-    if (routes == null) {
+    if (known == null) {
       _pathfinderLadders.remove(messageId);
       _plans.remove(messageId);
       return;
     }
+    final routes = _unansweredTo(contact.publicKeyHex) >= bestRouteOnlyAfter
+        ? known.take(1).toList()
+        : known;
     final width = _radioWidth(contact);
     final old = _plans[messageId] ?? const <PathSelection>[];
     if (old.isEmpty || keep <= 0) {
       _plans[messageId] = planAttempts(contact,
-          radioWidth: width, budget: _budgetFor(messageId), graphRoutes: routes);
+          radioWidth: width,
+          budget: _budgetFor(messageId),
+          graphRoutes: routes,
+          bestTwice: true);
     } else {
       // The rungs already sent stay; the rest is planned again from the
       // routes not yet tried, still closing with the floods the ladder
@@ -406,8 +490,14 @@ class MessageRetryService extends ChangeNotifier {
             radioWidth: width,
             budget: old.length - kept.length,
             graphRoutes: routes,
-            tried: kept,
-            floods: owed),
+            // An attempt that never left my doorstep tried nothing of its
+            // route.
+            tried: [
+              for (var i = 0; i < kept.length; i++)
+                if (!_silent(messageId, i)) kept[i],
+            ],
+            floods: owed,
+            bestTwice: true),
       ];
     }
     _pathfinderLadders.add(messageId);
@@ -465,11 +555,23 @@ class MessageRetryService extends ChangeNotifier {
   bool isSendingTo(String contactKey) => _activeMessages
       .any((id) => _pendingContacts[id]?.publicKeyHex == contactKey);
 
-  /// Whether the DM [text] to [contactKey] stamped [timestampSeconds] still
-  /// waits for its ACK. A copy of it that waited for a quiet radio while
-  /// the ACK came is not worth sending.
-  bool awaitsAck(String contactKey, int timestampSeconds, String text) =>
-      _messageIdOf(contactKey, timestampSeconds, text) != null;
+  /// Whether the copy numbered [attempt] of the DM [text] to [contactKey]
+  /// stamped [timestampSeconds] should still go out: the DM waits for its
+  /// ACK, and the attempt this copy was made for is the one running. A
+  /// copy that waited for a quiet radio while the ACK came is not worth
+  /// sending, and one whose attempt ended meanwhile would pass for the
+  /// next attempt with this one's bytes (simulator, 2026-11-24).
+  bool awaitsAck(
+          String contactKey, int timestampSeconds, String text, int attempt) =>
+      // Any message it could be: two with one text in one second read the
+      // same here, and the one that failed first still waits for a late ACK.
+      _pendingMessages.entries.any((e) =>
+          e.value.text == text &&
+          e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
+              timestampSeconds &&
+          _pendingContacts[e.key]?.publicKeyHex == contactKey &&
+          _wireAttempts[e.key] == attempt &&
+          _wireRungs[e.key] == e.value.retryCount);
 
   String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
       _pendingMessages.entries
@@ -537,7 +639,12 @@ class MessageRetryService extends ChangeNotifier {
     return attempt;
   }
 
-  Future<void> _attemptSend(String messageId, {bool resend = false}) async {
+  /// [resend]: a parked rung goes out again as a new packet
+  /// ([_resendAttempt]). [same]: the attempt in flight goes out again as
+  /// the same packet ([_armPassOnWatch]); its ACK wait runs on until the
+  /// radio takes this copy.
+  Future<void> _attemptSend(String messageId,
+      {bool resend = false, bool same = false}) async {
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final config = _config;
@@ -555,7 +662,11 @@ class MessageRetryService extends ChangeNotifier {
     );
 
     final attempt = message.retryCount;
-    final wireAttempt = resend ? _resendAttempt(messageId, attempt) : attempt;
+    final wireAttempt = same
+        ? _wireAttempts[messageId] ?? attempt
+        : resend
+            ? _resendAttempt(messageId, attempt)
+            : attempt;
     final timestampSeconds = message.timestamp.millisecondsSinceEpoch ~/ 1000;
     Future<void> send() async {
       // Re-validate after the route write — a timer or ACK could have
@@ -574,12 +685,16 @@ class MessageRetryService extends ChangeNotifier {
         return;
       }
       _wireAttempts[messageId] = wireAttempt;
+      _wireRungs[messageId] = attempt;
       _registerExpectedAck(
           messageId, message, contact, wireAttempt, timestampSeconds);
-      config.onAttemptStarted?.call(contact, selection, attempt);
-      // Before the send, as always: its RESP_CODE_SENT replaces this timer
-      // with the real one, and can arrive while the send is awaited.
-      _startPreSentTimer(messageId);
+      if (!same) {
+        config.onAttemptStarted?.call(contact, selection, attempt);
+        // Before the send, as always: its RESP_CODE_SENT replaces this
+        // timer with the real one, and can arrive while the send is
+        // awaited.
+        _startPreSentTimer(messageId);
+      }
       await config.sendMessage(
           contact, message.text, wireAttempt, timestampSeconds);
     }
@@ -635,7 +750,9 @@ class MessageRetryService extends ChangeNotifier {
     }
   }
 
-  void _startPreSentTimer(String messageId) {
+  /// [copy]: the attempt's packet is going out a second time
+  /// ([_notPassedOn]); the message stays "sent" while it does.
+  void _startPreSentTimer(String messageId, {bool copy = false}) {
     final config = _config;
 
     // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
@@ -648,7 +765,9 @@ class MessageRetryService extends ChangeNotifier {
       const Duration(milliseconds: preSentTimeoutMs),
       () {
         // Only act if the message is still pending (no RESP_CODE_SENT received yet)
-        if (_pendingMessages[messageId]?.status == MessageStatus.pending) {
+        final status = _pendingMessages[messageId]?.status;
+        if (status == MessageStatus.pending ||
+            (copy && status == MessageStatus.sent)) {
           config?.debugLogService?.warn(
             'No RESP_CODE_SENT received within ${preSentTimeoutMs}ms for message $messageId — triggering retry',
             tag: 'AckHash',
@@ -812,10 +931,181 @@ class MessageRetryService extends ChangeNotifier {
     _pendingMessages[messageId] = updatedMessage;
     config.updateMessage(updatedMessage);
 
+    // The radio took the second copy of this attempt's packet.
+    final copies = _secondCopy[messageId];
+    if (copies?[message.retryCount] == false) {
+      copies![message.retryCount] = true;
+    }
     _startTimeoutTimer(messageId, actualTimeout);
     _armEchoWatch(messageId, contact, updatedMessage, actualTimeout,
         isFlood: isFlood);
+    _armPassOnWatch(messageId, contact, updatedMessage, isFlood: isFlood);
     return true;
+  }
+
+  /// A routed attempt just left the radio. Its first repeater sends it on
+  /// within [TimeoutHelper.passOnWaitMs], and this radio hears that when it
+  /// has heard that repeater lately ([RetryServiceConfig.hearsPassOnBy]).
+  /// Not heard: most likely the packet never reached the repeater (two
+  /// radios sending at once), so the same packet goes out once more. A
+  /// repeater that did pass the first on drops the second unsent (Mesh.cpp
+  /// onRecvPacket, wasSeen), so nothing is doubled on the air but this
+  /// radio's own transmission, and the receiver never gets two. Not heard
+  /// again: the attempt is over now, without waiting out its ACK.
+  ///
+  /// The second copy waits for a quiet radio like any send, which after a
+  /// message came in is several seconds. The attempt's ACK wait stops
+  /// while it does and starts again when the radio takes the copy:
+  /// running on, it ended the attempt on one unheard copy, and the copy
+  /// then went out as the next attempt (simulator, 2026-11-24).
+  void _armPassOnWatch(String messageId, Contact contact, Message message,
+      {bool? isFlood}) {
+    final config = _config;
+    final airtime = config?.estimateAirtime;
+    final rung = message.retryCount;
+    final selection = _attemptRoutes[messageId]?[rung];
+    if (config == null || airtime == null || selection == null) return;
+    if ((isFlood ?? false) ||
+        selection.useFlood ||
+        selection.hopCount <= 0 ||
+        selection.pathBytes.length < selection.hashSize) {
+      return;
+    }
+    // A 1-byte code is shared by too many repeaters to say which one was
+    // heard lately.
+    if (selection.hashSize < 2) return;
+    if ((_passedOn[messageId]?[rung] ?? 0) > 0) return;
+    final firstHop = selection.pathBytes.sublist(0, selection.hashSize);
+    if (!(config.hearsPassOnBy?.call(firstHop, selection.hashSize) ?? false)) {
+      return;
+    }
+    (_passedOn[messageId] ??= {})[rung] = 0;
+    final waitMs = TimeoutHelper.passOnWaitMs(airtime(txtMsgPacketBytes(
+        _sentBytes(contact, message).length,
+        hops: selection.pathBytes.length)));
+    _passOnTimers[messageId]?.cancel();
+    _passOnTimers[messageId] = Timer(
+        Duration(milliseconds: waitMs), () => _notPassedOn(messageId, rung));
+  }
+
+  Uint8List _sentBytes(Contact contact, Message message) => utf8.encode(
+      _config?.prepareContactOutboundText?.call(contact, message.text) ??
+          message.text);
+
+  void _notPassedOn(String messageId, int rung) {
+    _passOnTimers.remove(messageId);
+    final message = _pendingMessages[messageId];
+    final contact = _pendingContacts[messageId];
+    final selection = _attemptRoutes[messageId]?[rung];
+    if (message == null || contact == null || selection == null) return;
+    // Not on this attempt any more, or settled.
+    if (message.retryCount != rung ||
+        message.status != MessageStatus.sent ||
+        _resolvedMessages.contains(messageId)) {
+      return;
+    }
+    final hop = PathHelper.firstHopHex(selection.pathBytes,
+            stride: selection.hashSize) ??
+        'The first repeater';
+    final copies = _secondCopy[messageId] ??= {};
+    if (!copies.containsKey(rung)) {
+      copies[rung] = false;
+      _config?.debugLogService?.info(
+        '$hop was not heard passing "${_short(message.text)}" to '
+        '${contact.name} on: sending the same packet once more',
+        tag: 'AckHash',
+      );
+      _startPreSentTimer(messageId, copy: true);
+      _send(messageId, same: true);
+      return;
+    }
+    // The last attempt keeps its whole wait: nothing follows that could
+    // use the time, and its ACK may still come.
+    if (rung >= _attemptBudget(messageId) - 1) return;
+    _config?.debugLogService?.warn(
+      '$hop was not heard passing "${_short(message.text)}" to '
+      '${contact.name} on, twice: attempt ${rung + 1} is over',
+      tag: 'AckHash',
+    );
+    _timeoutTimers.remove(messageId)?.cancel();
+    _handleTimeout(messageId);
+  }
+
+  /// Whether attempt [rung] of [messageId] never left my doorstep, as far
+  /// as can be told: its first repeater was listened for and heard passing
+  /// on neither of the two copies sent.
+  bool _silent(String messageId, int rung) =>
+      _passedOn[messageId]?[rung] == 0 &&
+      _secondCopy[messageId]?[rung] == true;
+
+  /// What Pathfinder is told of how far attempt [rung] was heard passed
+  /// on. [skip]: a failed attempt whose first repeater was listened for
+  /// and not heard, with one copy sent, says nothing: most likely two
+  /// radios sent at once, and one such miss is no doubt about a doorstep.
+  ({int? hops, bool skip}) _heardFor(String messageId, int rung,
+      {required bool delivered}) {
+    final hops = _passedOn[messageId]?[rung];
+    if (hops != 0) return (hops: hops, skip: false);
+    // Delivered, the doorstep heard it whatever was heard here.
+    if (delivered) return (hops: null, skip: false);
+    return (hops: 0, skip: !_silent(messageId, rung));
+  }
+
+  /// A repeater's copy of a routed DM of mine was read from the radio's RX
+  /// log: the DM stamped [timestampSeconds] to [contactKey], sent as
+  /// attempt [wireAttempt] with [textBytes], heard with [hopsLeft] still to
+  /// go ([hopWidth] bytes each). The hops of its route before those have
+  /// carried it, and the first of them heard this radio.
+  void noteOwnCopy(String contactKey, int timestampSeconds, int wireAttempt,
+      List<int> textBytes, List<int> hopsLeft, int hopWidth) {
+    final config = _config;
+    if (config == null) return;
+    for (final MapEntry(key: id, value: message)
+        in _pendingMessages.entries) {
+      final contact = _pendingContacts[id];
+      // A routed attempt goes out under its own number.
+      final selection = _attemptRoutes[id]?[wireAttempt];
+      if (contact == null ||
+          contact.publicKeyHex != contactKey ||
+          message.timestamp.millisecondsSinceEpoch ~/ 1000 !=
+              timestampSeconds ||
+          selection == null ||
+          selection.useFlood ||
+          selection.hashSize != hopWidth ||
+          !listEquals<int>(_sentBytes(contact, message), textBytes)) {
+        continue;
+      }
+      final route = selection.pathBytes;
+      final done = route.length - hopsLeft.length;
+      if (done <= 0 ||
+          done % hopWidth != 0 ||
+          !listEquals<int>(route.sublist(done), hopsLeft)) {
+        return;
+      }
+      final hops = done ~/ hopWidth;
+      final heard = _passedOn[id] ??= {};
+      final before = heard[wireAttempt] ?? 0;
+      if (before >= hops) return;
+      heard[wireAttempt] = hops;
+      if (message.retryCount == wireAttempt) {
+        _passOnTimers.remove(id)?.cancel();
+      }
+      // How long it took is logged: the wait is sized from firmware
+      // defaults, and a repeater's owner can set its delay longer.
+      final sentAt = message.sentAt;
+      final after = sentAt == null || message.retryCount != wireAttempt
+          ? ''
+          : ', ${DateTime.now().difference(sentAt).inMilliseconds} ms '
+              'after the radio took it';
+      config.debugLogService?.info(
+        '${PathHelper.formatPathHex(route.sublist(done - hopWidth, done), stride: hopWidth)} '
+        'passed "${_short(message.text)}" to ${contact.name} on '
+        '(attempt ${wireAttempt + 1}, hop $hops of ${selection.hopCount}$after)',
+        tag: 'AckHash',
+      );
+      if (before == 0) config.onPassedOn?.call(contact, selection);
+      return;
+    }
   }
 
   /// A flood just left the radio: if a repeater's copy of it can be seen
@@ -883,6 +1173,30 @@ class MessageRetryService extends ChangeNotifier {
         '${repeaterHeardWindow.inMinutes} min — not waiting for one',
         tag: 'AckHash',
       );
+      return;
+    }
+    // A repeater was heard within the last minute, so one is in range: the
+    // flood most likely met another transmission. The same packet goes
+    // out again now, with nothing shown: a repeater that did pass the
+    // first on drops it, so the mesh never carries the flood twice (owner,
+    // 2026-11-24: 30 s parked beside a repeater 30 m away).
+    final heardAt = _repeaterHeardAt;
+    final quick = _quickResends[messageId] ?? 0;
+    if (heardAt != null &&
+        quick < maxQuickResends &&
+        // Parked before, it keeps the pace of a parked message.
+        !_autoResends.containsKey(messageId) &&
+        !_now().difference(heardAt).isNegative &&
+        _now().difference(heardAt) < quickResendWindow) {
+      _quickResends[messageId] = quick + 1;
+      config.debugLogService?.info(
+        'No repeater passed on "${_short(message.text)}" to ${contact.name} '
+        'within ${((_echoWaitMs[messageId] ?? 0) / 1000).toStringAsFixed(0)} s, '
+        'but one was heard ${_now().difference(heardAt).inSeconds} s ago: '
+        'sending the same packet again (${quick + 1}/$maxQuickResends)',
+        tag: 'AckHash',
+      );
+      _send(messageId, same: true);
       return;
     }
     // The ACK wait is cancelled, not the ACK itself: a copy I failed to
@@ -1026,15 +1340,32 @@ class MessageRetryService extends ChangeNotifier {
   /// first hop). A late ACK still reports it delivered; the graph then
   /// sees one failure and one delivery on that route.
   void _reportTimedOut(String messageId, int attempt) {
-    final report = _config?.onAttemptResult;
     final contact = _pendingContacts[messageId];
     final selection = _attemptRoutes[messageId]?[attempt];
-    if (report == null || contact == null || selection == null) return;
+    if (contact == null || selection == null) return;
     if (selection.useFlood || !(_onAir[messageId]?.contains(attempt) ?? false)) {
       return;
     }
     if (!(_reported[messageId] ??= {}).add(attempt)) return;
-    report(contact, selection, false, null);
+    _routedResult(messageId, attempt, contact, selection, delivered: false);
+  }
+
+  /// How routed attempt [attempt] ended: for Pathfinder, and for the count
+  /// of attempts in a row to this contact that got no answer.
+  void _routedResult(
+      String messageId, int attempt, Contact contact, PathSelection selection,
+      {required bool delivered, int? tripTimeMs}) {
+    final heard = _heardFor(messageId, attempt, delivered: delivered);
+    final key = contact.publicKeyHex;
+    if (delivered) {
+      _unanswered.remove(key);
+    } else if (heard.hops != 0) {
+      _unanswered[key] = (count: _unansweredTo(key) + 1, at: _now());
+    }
+    if (!heard.skip) {
+      _config?.onAttemptResult
+          ?.call(contact, selection, delivered, tripTimeMs, heard.hops);
+    }
   }
 
   /// Tells the graph how each direct attempt ended, once: the acked one
@@ -1044,13 +1375,10 @@ class MessageRetryService extends ChangeNotifier {
   /// radio never accepted (a dropped link) says nothing about its route.
   void _reportAttempts(String messageId,
       {int? ackedAttempt, int? tripTimeMs, Set<int> unjudged = const {}}) {
-    final report = _config?.onAttemptResult;
     final message = _pendingMessages[messageId];
     final contact = _pendingContacts[messageId];
     final routes = _attemptRoutes[messageId];
-    if (report == null || message == null || contact == null || routes == null) {
-      return;
-    }
+    if (message == null || contact == null || routes == null) return;
     final onAir = _onAir[messageId] ?? const <int>{};
     final reported = _reported[messageId] ?? const <int>{};
     final timedOut = message.status == MessageStatus.failed
@@ -1059,9 +1387,10 @@ class MessageRetryService extends ChangeNotifier {
     for (final MapEntry(key: i, value: selection) in routes.entries) {
       if (selection.useFlood || unjudged.contains(i)) continue;
       if (i == ackedAttempt) {
-        report(contact, selection, true, tripTimeMs);
+        _routedResult(messageId, i, contact, selection,
+            delivered: true, tripTimeMs: tripTimeMs);
       } else if (i < timedOut && onAir.contains(i) && !reported.contains(i)) {
-        report(contact, selection, false, null);
+        _routedResult(messageId, i, contact, selection, delivered: false);
       }
     }
   }
@@ -1084,6 +1413,9 @@ class MessageRetryService extends ChangeNotifier {
     _attemptRoutes.remove(messageId);
     _onAir.remove(messageId);
     _reported.remove(messageId);
+    _passedOn.remove(messageId);
+    _passOnTimers.remove(messageId)?.cancel();
+    _secondCopy.remove(messageId);
     _echoTimers.remove(messageId)?.cancel();
     _echoWaitMs.remove(messageId);
     _echoObservable.remove(messageId);
@@ -1092,8 +1424,10 @@ class MessageRetryService extends ChangeNotifier {
     _cooldownTimers.remove(messageId)?.cancel();
     _parkLimitTimers.remove(messageId)?.cancel();
     _autoResends.remove(messageId);
+    _quickResends.remove(messageId);
     _resendAttempts.remove(messageId);
     _wireAttempts.remove(messageId);
+    _wireRungs.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -1118,6 +1452,7 @@ class MessageRetryService extends ChangeNotifier {
       tag: 'AckHash',
     );
 
+    _passOnTimers.remove(messageId)?.cancel();
     _reportTimedOut(messageId, message.retryCount);
     final timedOut = _attemptRoutes[messageId]?[message.retryCount];
     if (timedOut != null &&
@@ -1148,9 +1483,13 @@ class MessageRetryService extends ChangeNotifier {
       );
 
       _timeoutTimers[messageId] = Timer(Duration(milliseconds: backoffMs), () {
-        if (_pendingMessages.containsKey(messageId)) {
-          _send(messageId);
-        }
+        final waiting = _pendingMessages[messageId];
+        final to = _pendingContacts[messageId];
+        if (waiting == null || to == null) return;
+        // What the wait brought counts too: a Discover's answers, a
+        // repeater heard passing the last attempt on after all.
+        _plan(messageId, to, keep: waiting.retryCount);
+        _send(messageId);
       });
     } else {
       _fail(messageId, message, contact);
@@ -1428,6 +1767,13 @@ class MessageRetryService extends ChangeNotifier {
     _attemptRoutes.clear();
     _onAir.clear();
     _reported.clear();
+    for (final timer in _passOnTimers.values) {
+      timer.cancel();
+    }
+    _passOnTimers.clear();
+    _passedOn.clear();
+    _secondCopy.clear();
+    _unanswered.clear();
     for (final timer in _echoTimers.values) {
       timer.cancel();
     }
@@ -1443,8 +1789,10 @@ class MessageRetryService extends ChangeNotifier {
     _parkedReady.clear();
     _cooldownTimers.clear();
     _autoResends.clear();
+    _quickResends.clear();
     _resendAttempts.clear();
     _wireAttempts.clear();
+    _wireRungs.clear();
     _expectedAckHashes.clear();
     _ackHistory.clear();
     _ackHashToMessageId.clear();

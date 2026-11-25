@@ -569,7 +569,6 @@ class TraxService extends ChangeNotifier {
     _connector.telemetryModeLoc,
     _connector.telemetryModeEnv,
     on ? 1 : 0,
-    _connector.multiAcks,
   );
 
   Future<void> _saveSession(String radioKey, TraxSession session) =>

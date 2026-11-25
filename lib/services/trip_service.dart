@@ -405,7 +405,6 @@ class TripService extends ChangeNotifier {
           loc,
           c.telemetryModeEnv,
           c.advertLocationPolicy,
-          c.multiAcks,
         );
         grants.modesSet = true;
       }
@@ -469,7 +468,6 @@ class TripService extends ChangeNotifier {
         back(c.telemetryModeLoc, grants.modeLoc),
         c.telemetryModeEnv,
         c.advertLocationPolicy,
-        c.multiAcks,
       );
     }
     if (grants.gpsSet && c.gpsOn) await c.setGps(false);

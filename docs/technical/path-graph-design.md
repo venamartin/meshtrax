@@ -58,6 +58,143 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-24 — a failed try is charged by where it broke; one missed
+  ACK drops nothing.** Owner: "it jumps to flood really fast on
+  failures, even when the other person has not moved", "one failed ack
+  is not a good way to dump learned routing", and "with GPS enabled it
+  should be obvious I did not move".
+  * **The case.** At home, the repeater 30 m away (2,006 proofs), the
+    contact at home too. One routed DM got no ACK in 6.8 s. The next
+    try was a flood, 17 s later the keeper had cleared the stored route
+    of ten contacts, a flood parked for 32 s, and the DM was delivered
+    after 103 s. The DMs before and after went through on the same
+    route in about 2 s; 7 of 9 route tries around it delivered.
+  * **Three causes, all a single missed ACK or two.** (1) Where the
+    radio knew its area, every failed try marked its first repeater
+    "failed here" (`_failPlace`), which closed every route to every
+    contact until a proof there: knowing the radio had not moved made
+    it drop the repeater faster. (2) `selfFailGate` 2 counted every
+    failed try. (3) `contactFailGate` 2 counted every failed try
+    against the contact's repeater, and a flood that then got through
+    by that same repeater did not clear it on the phone: the keeper
+    rewrote the stored route 35 to 52 ms after the ACK, so the contact
+    read back held the app's own route and the proof was skipped.
+  * **What a missed ACK is.** About one try in four at home, by the
+    owner's log; in the simulator with field-like links, most are the
+    packet lost before the first repeater took it (two radios sending
+    at once), the rest the ACK lost on its way back.
+  * **What tells where it broke.** This radio hears its first repeater
+    pass a routed packet on, and the app can tell the packet is its own
+    (see meshcore-protocol.md, "A routed packet heard passed on").
+    The retry service reports, per try, how many hops were heard
+    passing it on (`reportSendResult` `hopsHeard`):
+    heard, my doorstep is not charged and it is a proof
+    (`observePassedOn`), and the links up to the last hop heard count
+    as carried; listened for and not heard, the same packet sent twice,
+    it is a doubt about my doorstep alone (no link was tried, nothing
+    is said about their end); nobody could be listened for, it is
+    charged as before. A try counts as not heard only when both copies
+    went out: one unheard copy is most often two radios sending at
+    once, and a failed try with only that to show is not reported at
+    all. The second copy waits for a quiet radio like any send, so the
+    try's ACK wait stops until the radio takes it; left running, it
+    ended tries on one copy, and the copy then went out as the next try
+    with the old bytes (simulator, 2026-11-24).
+  * **My doorstep.** `selfFailGate` stays 2 and now counts only tries
+    whose first repeater was not heard, so the drive case it was tuned
+    on (GPS off, the home repeater out of range, so nothing to listen
+    for) is as it was. One such miss is a doubt: a reason for the
+    automatic Discover (`DiscoverReason.doorstepSilent`), whose answer
+    from that doorstep ends it, and nothing more. A first version let a
+    doorstep in doubt give way as soon as another repeater proved it
+    hears me; in the simulator a doorstep that heard 85% of the packets
+    lost its place twice in ten messages to one that heard 60%, each
+    time on one miss and one Discover request it happened not to hear.
+    "Failed here" is set only when the count reaches the gate.
+  * **Their doorstep.** A miss is only remembered (15 minutes). The
+    next delivery to the contact settles it: by the same repeater (a
+    retry on the route, or a flood whose path reply names it), nothing
+    is held; by another repeater, or by a flood with no path named (a
+    room sends none), one count against it, however many tries missed.
+    `contactFailGate` 2 therefore means two such deliveries in a row.
+    The route a path reply names is read from the packet itself
+    (`PassingCopyOpener.pathReplyRoute`), not from the contact read
+    back.
+  * **Discover before the first try.** The automatic Discover went out
+    only after a failed step. Where the radio knows its area and
+    nothing was heard hearing it there (`noDoorstepHere`,
+    `movedSinceProof`), the first DM flooded and its echo taught the
+    doorstep. Now one Discover goes first and the try waits 5 s for the
+    answers (`PathGraphService._beforeFirstAttempt`), under the same
+    gates and the ten-minute cap; held by a gate, the DM goes at once
+    as before. It saves the flood where the contact's way back ends at
+    a repeater that hears the radio in both places; after a real move
+    the first DM still floods, to teach their radio the way back
+    (`movedSinceTheyReachedMe`). A silent doorstep's Discover waits a
+    second at most, not up to five, so its answers are in before the
+    next try is planned.
+  * **The ladder.** Pathfinder's best route gets two tries
+    (`planAttempts` `bestTwice`): best, best, next, flood, flood with
+    five tries; best, best, flood with three. Where the next route ends
+    at another repeater (their latest packet was heard there), it goes
+    second and the best gets its second try after it: one such route,
+    once. Planned again after that one failed, a second route to the
+    other repeater took the last route slot from an 82% route and the
+    message was lost (simulator's scripted set, 2026-11-24). A try that
+    never left my doorstep is not counted as a try of its route. The
+    repeat replaces another corridor to the same doorstep, never a
+    likely route (50% or more) to a doorstep not tried yet, which is
+    what `_routesAfter` puts in its last place ("what is stored is
+    used before a flood"): such a route goes before other corridors,
+    and, once a route elsewhere was tried or ranks second, before the
+    best route's second try. In the same scripted set a contact heard
+    by one repeater and reached only by a third (61%) got the best
+    route's repeat in that third one's place, and a flood delivered
+    what the route would have.
+  * **Only a likely route twice.** The second try is for a best route
+    whose estimate is 50% or more (`repeatMinDelivery`); a weaker one
+    keeps the ladder of before (each route once, two floods). The
+    simulator's case: a contact who had moved and sent nothing was
+    reachable only over three to five unproven links at 50% each. None
+    of 55 routed tries was answered, and with every route tried twice
+    each DM cost 129 to 138 repeater transmissions against 89, and the
+    longer ladders held the next DMs back for minutes.
+  * **Routed tries that keep going unanswered.** With missed ACKs no
+    longer held against a contact's repeater, a contact who had moved
+    and sent nothing got three routed tries before every flood: their
+    radio keeps the old way back, so a routed DM is taken and its ACK
+    lost, and none of 60 routed tries was answered. A DM took 138 s
+    at the median against 70 s on the code before, whose two-miss
+    gate cut the routed tries short. The retry service now counts
+    routed tries in a row to a contact that left this radio's first
+    repeater (or could not be listened for) and got no ACK
+    (`MessageRetryService.bestRouteOnlyAfter`, 3): from then on a
+    ladder to them is Pathfinder's best route (twice when it is a
+    likely one), then floods. A routed ACK resets the count; it is
+    forgotten an hour after the last such try. The count lives in
+    the retry service because it shapes the ladder; which route is
+    best stays Pathfinder's business. Sending the way-back packet a
+    second time was considered and left out: on that air the
+    firmware's own reached the contact 2 times in 18, so a second
+    copy would not have changed the picture.
+  * **Simulated first** (the simulator's trial builds, before this
+    code): 60 DMs between two radios at home, field-like links. Floods
+    per DM 0.38 on the code before, 0.05 to 0.10 with the best route
+    twice and no place mark; repeater transmissions per DM 9.7 against
+    about 7; all 60 delivered either way. After a missed routed try the
+    next was a flood 17 times of 17 before, 2 to 4 of about 25 after.
+  * **The costs.** With three tries one flood closes the ladder, not
+    two: about one DM in 60 showed failed though it had arrived (its
+    ACKs were lost). Where a contact's way back loses many ACKs, routes
+    are tried more often before a flood and the slowest DMs get no
+    faster. A room on a repeater it does not hear (the 2026-10-24 case)
+    is now held after two posts that had to flood, not after two tries.
+  * **Rejected.** Raising both gates to 4 (the first trial): it fixed
+    home and would have left a moved radio without GPS on its dead
+    home repeater for four tries. Counting a held place after one miss
+    only when GPS is off: knowing the place is evidence for the
+    repeater with a record there, not against it.
+
 * **2026-11-23 — distance alone overrules no doorstep.** The 60 km rule
   (`contactFarKm`) is gone. It held that a doorstep farther than 60 km
   from the repeater that just heard a contact could not hear them, and

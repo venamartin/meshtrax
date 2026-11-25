@@ -45,7 +45,6 @@ class _Radio extends MeshCoreConnector {
     int location,
     int env,
     int advert,
-    int multiAcks,
   ) async {
     modeWrites.add((base, location, env));
     this.base = base;
