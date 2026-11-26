@@ -10,8 +10,8 @@ import '../models/app_settings.dart';
 import '../services/self_motion.dart';
 
 /// How fast and which way the radio's GPS is going, and how high it is,
-/// at the map's bottom left while the map keeps you in the middle. The
-/// radio is read every 3 s while it shows.
+/// at the map's bottom left while the map keeps you in the middle and the
+/// reading is fresh. The radio is read every 3 s while it shows.
 class SpeedCard extends StatefulWidget {
   final MeshCoreConnector connector;
   final UnitSystem units;
@@ -57,16 +57,13 @@ class _SpeedCardState extends State<SpeedCard> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final old = _connector.selfPositionMayBeOld;
-    final motion = old ? null : SelfMotion.instance.motionNow();
+    final motion = SelfMotion.instance.motionNow();
     final still = motion?.stillFor != null;
     final heading = motion?.heading;
     final speed = still ? 0.0 : motion?.speed;
     final altitude = gps == null || gps.altitude == 0 ? null : gps.altitude;
     final quiet = scheme.onSurfaceVariant;
-    final text = theme.textTheme.bodyLarge?.copyWith(
-      color: old ? quiet : scheme.onSurface,
-    );
+    final text = theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface);
 
     final (figure, unit) = GeoFormat.speedParts(
       speed ?? 0,
@@ -100,7 +97,6 @@ class _SpeedCardState extends State<SpeedCard> {
       container: true,
       excludeSemantics: true,
       label: [
-        if (old) l10n.map_lastKnown,
         '${l10n.map_speed} $number $unit',
         if (still) l10n.map_notMoving,
         if (headingText != null) '${l10n.map_heading} $headingText',
@@ -137,7 +133,7 @@ class _SpeedCardState extends State<SpeedCard> {
                           style: theme.textTheme.displaySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             height: 1,
-                            color: old ? quiet : scheme.onSurface,
+                            color: scheme.onSurface,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -151,12 +147,7 @@ class _SpeedCardState extends State<SpeedCard> {
                     ),
                   ),
                 ),
-                if (old)
-                  line(
-                    Icon(Icons.gps_not_fixed, size: 16, color: quiet),
-                    l10n.map_lastKnown,
-                  )
-                else if (still)
+                if (still)
                   line(
                     Icon(Icons.pause_circle_outline, size: 16, color: quiet),
                     l10n.map_notMoving,

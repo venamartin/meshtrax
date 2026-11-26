@@ -1550,7 +1550,8 @@ void main() {
       // Martin, 2026-11-26: speed, altitude and heading in the lower left
       // while the map keeps you in the middle, gone once it is dragged.
       testWidgets('your speed while it follows you: above the group button, '
-          'alone out of TRAX mode, gone after a drag', (tester) async {
+          'alone out of TRAX mode, gone while the reading may be old and '
+          'after a drag', (tester) async {
         startServices();
         radio
           ..lat = _here.lat
@@ -1576,6 +1577,21 @@ void main() {
           tester.getTopLeft(card).dx,
           closeTo(tester.getTopLeft(group).dx, 0.5),
         );
+
+        // Martin: hidden rather than grey; the grey dot says it.
+        radio
+          ..fresh = false
+          ..changed();
+        await settle(tester);
+        expect(card, findsNothing);
+        expect(radio.speedViewers, 0);
+        expect(creditsLeft(), MapControls.width);
+        radio
+          ..fresh = true
+          ..changed();
+        await settle(tester);
+        expect(card, findsOneWidget);
+        expect(radio.speedViewers, 1);
 
         trax
           ..on = false

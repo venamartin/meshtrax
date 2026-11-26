@@ -16,13 +16,12 @@ import 'package:traxwater/traxwater.dart';
 // keeps you in the middle (a card, chosen from three layouts); knots and
 // °M on the charts.
 class _Radio extends MeshCoreConnector {
-  bool fresh = true;
   int speedViewers = 0;
 
   @override
   bool get gpsOn => true;
   @override
-  bool get selfGpsIsFresh => fresh;
+  bool get selfGpsIsFresh => true;
   @override
   void addSpeedViewer() => speedViewers++;
   @override
@@ -123,21 +122,6 @@ void main() {
     expect(find.text('mph'), findsOneWidget);
     expect(find.textContaining('ft'), findsNothing);
     expect(find.text('Not moving'), findsNothing);
-  });
-
-  testWidgets('a reading that may be old: last known, in grey', (tester) async {
-    await pumpCard(tester);
-    await drive(tester);
-    radio.fresh = false;
-    await reading(tester, lat0 + 5 * step);
-    expect(find.text('Last known'), findsOneWidget);
-    expect(find.text('—'), findsOneWidget);
-    expect(find.text('N 0°'), findsNothing);
-    final context = tester.element(find.byType(SpeedCard));
-    expect(
-      tester.widget<Text>(find.text('200 ft')).style?.color,
-      Theme.of(context).colorScheme.onSurfaceVariant,
-    );
   });
 
   testWidgets('on the charts: knots and degrees magnetic', (tester) async {

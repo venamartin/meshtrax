@@ -1078,8 +1078,12 @@ class _MapScreenState extends State<MapScreen> {
             !_isBuildingPathTrace &&
             !widget.pickPosition;
         // Your speed, heading and altitude while the map keeps you in the
-        // middle.
-        final showSpeed = _followMe && connector.gpsOn && !held;
+        // middle, gone while the GPS reading may be old (Martin).
+        final showSpeed =
+            _followMe &&
+            connector.gpsOn &&
+            !connector.selfPositionMayBeOld &&
+            !held;
 
         return PopScope(
           // Back leaves full screen and line of sight first. On the Map tab
