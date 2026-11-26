@@ -927,6 +927,7 @@ class StructuredMessageCard extends StatelessWidget {
       lead: _badge(p, Icons.location_on),
       overline: m.label == null || m.isSendersOwn ? null : l10n.chat_location,
       title: title,
+      chips: _motionChips(context, p, m),
       lines: [?m.note],
       position: m.position,
       positionLabel: pinLabel,
@@ -1116,22 +1117,77 @@ class StructuredMessageCard extends StatelessWidget {
     );
   }
 
-  Widget _chip(StructuredPalette p, String text, {bool highlight = false}) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        decoration: BoxDecoration(
-          color: highlight ? p.accent : p.tonal,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: highlight ? p.onAccent : p.onTonal,
-            fontSize: 12 * textScale,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
+  /// [icon] turned by [degrees] when given; [tooltip] names what it shows.
+  Widget _chip(
+    StructuredPalette p,
+    String text, {
+    bool highlight = false,
+    IconData? icon,
+    double? degrees,
+    String? tooltip,
+  }) {
+    final color = highlight ? p.onAccent : p.onTonal;
+    final label = Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: 12 * textScale,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: highlight ? p.accent : p.tonal,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: icon == null
+          ? label
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.rotate(
+                  angle: (degrees ?? 0) * math.pi / 180,
+                  child: Icon(icon, size: 14 * textScale, color: color),
+                ),
+                const SizedBox(width: 4),
+                label,
+              ],
+            ),
+    );
+    return tooltip == null ? chip : Tooltip(message: tooltip, child: chip);
+  }
+
+  /// Which way, how fast and how high the sender was going, as the map
+  /// shows it for TRAX.
+  List<Widget> _motionChips(
+    BuildContext context,
+    StructuredPalette p,
+    LocationMessage m,
+  ) {
+    if (m.altitude == null && m.heading == null && m.speed == null) {
+      return const [];
+    }
+    final l10n = context.l10n;
+    final units = context.select<AppSettingsService, UnitSystem>(
+      (s) => s.settings.unitSystem,
+    );
+    return [
+      if (m.isStill)
+        _chip(p, l10n.map_notMoving, icon: Icons.pause_circle_outline)
+      else ...[
+        if (m.heading case final h?)
+          _chip(p, GeoFormat.headingText(h),
+              icon: Icons.north, degrees: h, tooltip: l10n.map_heading),
+        if (m.speed case final v?)
+          _chip(p, GeoFormat.speedText(v, units),
+              icon: Icons.speed, tooltip: l10n.map_speed),
+      ],
+      if (m.altitude case final a?)
+        _chip(p, GeoFormat.heightText(a, units),
+            icon: Icons.terrain, tooltip: l10n.gps_altitude),
+    ];
+  }
 
   Widget _map(
     BuildContext context,

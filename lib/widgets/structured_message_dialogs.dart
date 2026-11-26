@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../helpers/date_time_helper.dart';
+import '../helpers/geo_format.dart';
 import '../helpers/maps_link.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
@@ -16,7 +17,9 @@ import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../screens/map_screen.dart';
 import '../services/app_settings_service.dart';
+import '../services/self_motion.dart';
 import '../services/sos_service.dart';
+import '../storage/prefs_manager.dart';
 import 'drawing_canvas.dart';
 import 'drawing_map_view.dart';
 
@@ -84,6 +87,7 @@ class StructuredMessageDialogs {
         mine: true,
         initialPosition: _radioPosition(connector),
         initialNote: note,
+        connector: connector,
       ),
     );
     return message?.toWire();
@@ -357,22 +361,34 @@ class _LocationDialog extends StatefulWidget {
   final String? initialTitle;
   final String? action;
 
+  /// The radio, for My location: its GPS can add heading, speed and
+  /// altitude.
+  final MeshCoreConnector? connector;
+
   const _LocationDialog({
     required this.mine,
     this.initialPosition,
     this.initialNote,
     this.initialTitle,
     this.action,
+    this.connector,
   });
 
   @override
   State<_LocationDialog> createState() => _LocationDialogState();
 }
 
+typedef _Motion = ({double? altitude, double? heading, double? speed});
+
 class _LocationDialogState extends State<_LocationDialog> {
+  /// The last pick: also send heading, speed and altitude.
+  static const _withMotionKey = 'location_send_motion';
+
   late final _label = TextEditingController(text: widget.initialTitle);
   final _note = TextEditingController();
   late LatLng? _position = widget.initialPosition;
+  bool _withMotion =
+      PrefsManager.instance.getBool(_withMotionKey) ?? false;
 
   @override
   void dispose() {
@@ -381,17 +397,66 @@ class _LocationDialogState extends State<_LocationDialog> {
     super.dispose();
   }
 
+  /// Heading, speed and altitude are the radio's: offered while its GPS is
+  /// on and the field still holds its position.
+  bool get _offersMotion {
+    final radio = widget.connector;
+    return radio != null &&
+        radio.gpsOn &&
+        _position != null &&
+        _position == widget.initialPosition;
+  }
+
+  /// What the radio knows now: a speed of 0 and no heading standing still,
+  /// neither before it has gone far enough to tell.
+  _Motion _motionNow() {
+    final gps = widget.connector?.selfGps.value;
+    final motion = SelfMotion.instance.motion();
+    final still = motion?.stillFor != null;
+    return (
+      altitude: gps == null || gps.altitude == 0 ? null : gps.altitude,
+      heading: still ? null : motion?.heading,
+      speed: still ? 0 : motion?.speed,
+    );
+  }
+
+  String _motionText(BuildContext context, _Motion m) {
+    final l10n = context.l10n;
+    final units = context.read<AppSettingsService>().settings.unitSystem;
+    return [
+      if (m.speed == 0 && m.heading == null)
+        l10n.map_notMoving
+      else if (m.heading == null && m.speed == null)
+        l10n.location_motionNotKnown
+      else ...[
+        if (m.heading case final h?) GeoFormat.headingText(h),
+        if (m.speed case final v?) GeoFormat.speedText(v, units),
+      ],
+      if (m.altitude case final a?) GeoFormat.heightText(a, units),
+    ].join(' · ');
+  }
+
+  void _pickMotion(bool? withMotion) {
+    if (withMotion == null) return;
+    setState(() => _withMotion = withMotion);
+    unawaited(PrefsManager.instance.setBool(_withMotionKey, withMotion));
+  }
+
   LocationMessage _message() {
     final label = widget.mine
         ? LocationMessage.myLocationLabel
         : _label.text.trim();
     final note = _note.text.trim();
+    final motion = _offersMotion && _withMotion ? _motionNow() : null;
     // Without a title, readers take the first text for one, so a lone
     // note goes out as the title.
     return LocationMessage(
       position: _position!,
       label: label.isNotEmpty ? label : (note.isEmpty ? null : note),
       note: label.isNotEmpty && note.isNotEmpty ? note : null,
+      altitude: motion?.altitude,
+      heading: motion?.heading,
+      speed: motion?.speed,
     );
   }
 
@@ -426,6 +491,37 @@ class _LocationDialogState extends State<_LocationDialog> {
           textCapitalization: TextCapitalization.sentences,
           decoration: _field(l10n.dialog_note),
         ),
+        if (_offersMotion) ...[
+          _gap,
+          // A new reading can change what would go with it.
+          ValueListenableBuilder(
+            valueListenable: widget.connector!.selfGps,
+            builder: (context, _, _) => RadioGroup<bool>(
+              groupValue: _withMotion,
+              onChanged: _pickMotion,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<bool>(
+                    value: false,
+                    title: Text(l10n.location_sendPositionOnly),
+                    dense: true,
+                    visualDensity: _rowDensity,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  RadioListTile<bool>(
+                    value: true,
+                    title: Text(l10n.location_sendWithMotion),
+                    subtitle: Text(_motionText(context, _motionNow())),
+                    dense: true,
+                    visualDensity: _rowDensity,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
       actions: [
         TextButton(

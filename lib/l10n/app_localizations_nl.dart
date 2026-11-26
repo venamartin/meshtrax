@@ -6220,6 +6220,15 @@ class AppLocalizationsNl extends AppLocalizations {
       'Je radio heeft nog geen positie. Kies er een op de kaart.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Invoegen';
 
   @override

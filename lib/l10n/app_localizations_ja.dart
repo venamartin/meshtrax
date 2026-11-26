@@ -5982,6 +5982,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tray_noRadioPosition => '無線機の位置がまだわかりません。地図上で選んでください。';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => '挿入';
 
   @override

@@ -4,6 +4,12 @@ import 'package:meshtrax/helpers/geo_format.dart';
 import 'package:meshtrax/models/app_settings.dart';
 
 void main() {
+  test('a heading: its compass point and degrees', () {
+    expect(GeoFormat.headingText(269.6), 'W 270°');
+    expect(GeoFormat.headingText(359.6), 'N 0°');
+    expect(GeoFormat.headingText(44), 'NE 44°');
+  });
+
   test('compass points, including the edges', () {
     expect(GeoFormat.compass8(0), 'N');
     expect(GeoFormat.compass8(22.4), 'N');

@@ -6155,6 +6155,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your radio has no location yet. Pick one on the map.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Insert';
 
   @override

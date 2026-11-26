@@ -70,9 +70,21 @@ sealed class StructuredMessage {
 
   static final _leadingMention = RegExp(r'^@\[[^\]]+\][ \n]?');
 
+  /// Another app's `loc: lat,lon`: read like bare coordinates, never sent.
+  static final _locLine = RegExp(
+    r'^loc:\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$',
+    caseSensitive: false,
+  );
+
   static LatLng? parseCoordinates(String field) {
     final m = coordinatePattern.firstMatch(field.trim());
     if (m == null || m.start != 0 || m.end != field.trim().length) return null;
+    return _bounded(double.tryParse(m.group(1)!), double.tryParse(m.group(2)!));
+  }
+
+  static LatLng? _locCoordinates(String line) {
+    final m = _locLine.firstMatch(line);
+    if (m == null) return null;
     return _bounded(double.tryParse(m.group(1)!), double.tryParse(m.group(2)!));
   }
 
@@ -168,13 +180,17 @@ sealed class StructuredMessage {
       case 'location':
       case 'poi':
         if (sorted.position == null) return null;
+        final extensions = Map.of(sorted.extensions);
         return LocationMessage(
           position: sorted.position!,
           label: sorted.freeText.isNotEmpty ? sorted.freeText[0] : null,
           note: sorted.freeText.length > 1 ? sorted.freeText[1] : null,
           link: sorted.link,
           extraText: sorted.freeText.skip(2).toList(),
-          extensions: sorted.extensions,
+          altitude: LocationMessage._take(extensions, 'alt', LocationMessage._metres),
+          heading: LocationMessage._take(extensions, 'hdg', LocationMessage._degrees),
+          speed: LocationMessage._take(extensions, 'spd', LocationMessage._metresPerSecond),
+          extensions: extensions,
         );
       case 'sos':
         if (sorted.position == null) return null;
@@ -255,7 +271,7 @@ sealed class StructuredMessage {
     String? name;
     final free = <String>[];
     for (final line in lines) {
-      final coords = parseCoordinates(line);
+      final coords = parseCoordinates(line) ?? _locCoordinates(line);
       if (coords != null && position == null) {
         position = coords;
         continue;
@@ -468,10 +484,22 @@ class LocationMessage extends StructuredMessage {
   final String? label;
   final String? note;
 
+  /// Metres above sea level, from the sender's GPS: `alt=35m`.
+  final double? altitude;
+
+  /// Degrees clockwise from north, while moving: `hdg=270`.
+  final double? heading;
+
+  /// Metres a second, 0 standing still: `spd=15km/h` on the air.
+  final double? speed;
+
   const LocationMessage({
     required this.position,
     this.label,
     this.note,
+    this.altitude,
+    this.heading,
+    this.speed,
     super.link,
     super.extraText,
     super.extensions,
@@ -480,6 +508,56 @@ class LocationMessage extends StructuredMessage {
   /// The sender's own position: titled [myLocationLabel], in any case.
   bool get isSendersOwn =>
       label?.trim().toLowerCase() == myLocationLabel.toLowerCase();
+
+  /// Standing still: a speed of 0 and no heading.
+  bool get isStill => speed == 0 && heading == null;
+
+  /// The value under [key] read by [read], taken out of [extensions]; a
+  /// value it can't read stays there, shown as sent.
+  static double? _take(
+    Map<String, String> extensions,
+    String key,
+    double? Function(String) read,
+  ) {
+    final raw = extensions[key];
+    final value = raw == null ? null : read(raw.trim().toLowerCase());
+    if (value != null) extensions.remove(key);
+    return value;
+  }
+
+  static final _number = RegExp(r'^(-?\d+(?:\.\d+)?)\s*(.*)$');
+
+  static double? _metres(String raw) {
+    final m = _number.firstMatch(raw);
+    if (m == null) return null;
+    final v = double.parse(m.group(1)!);
+    return switch (m.group(2)) {
+      '' || 'm' => v,
+      'ft' => v * 0.3048,
+      _ => null,
+    };
+  }
+
+  static double? _degrees(String raw) {
+    final m = _number.firstMatch(raw);
+    if (m == null || (m.group(2) != '' && m.group(2) != '°')) return null;
+    final v = double.parse(m.group(1)!);
+    return v < 0 || v > 360 ? null : v % 360;
+  }
+
+  static double? _metresPerSecond(String raw) {
+    final m = _number.firstMatch(raw);
+    if (m == null) return null;
+    final v = double.parse(m.group(1)!);
+    if (v < 0) return null;
+    return switch (m.group(2)) {
+      '' || 'km/h' => v / 3.6,
+      'mph' => v * 0.44704,
+      'kn' || 'kt' => v * 0.514444,
+      'm/s' => v,
+      _ => null,
+    };
+  }
 
   @override
   String get keyword => 'Location';
@@ -498,7 +576,18 @@ class LocationMessage extends StructuredMessage {
       lines.add('Location: $head');
       lines.add(StructuredMessage.formatCoordinates(position));
     }
-    _appendCommon(lines, note: note, link: link, extraText: extraText, extensions: extensions);
+    _appendCommon(
+      lines,
+      note: note,
+      link: link,
+      extraText: extraText,
+      extensions: {
+        if (altitude case final a?) 'alt': '${a.round()}m',
+        if (heading case final h?) 'hdg': '${h.round() % 360}',
+        if (speed case final v?) 'spd': '${(v * 3.6).round()}km/h',
+        ...extensions,
+      },
+    );
     return lines.join('\n');
   }
 }

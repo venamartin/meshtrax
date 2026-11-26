@@ -6255,6 +6255,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ihr Funkgerät hat noch keine Position. Wählen Sie eine auf der Karte.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Einfügen';
 
   @override
