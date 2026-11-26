@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshtrax/helpers/add_input.dart';
+import 'package:meshtrax/helpers/meshcore_qr.dart';
 import 'package:meshtrax/models/channel.dart';
 
 // One box on the Add page takes any contact or channel format (owner,
@@ -64,6 +65,19 @@ void main() {
       final kept = c.withCapitals;
       expect(kept.name, '#BayArea');
       expect(kept.pskHex, _hashtagKey('#BayArea'));
+    });
+
+    // Martin scanned #offroad's QR code and the card said Private channel
+    // (2026-11-26): its link carries the name and the key worked out from it.
+    test("a hashtag channel's link or QR code is a hashtag channel", () {
+      final c = channel(
+        MeshCoreQr.encodeChannel('#offroad', _hashtagKey('#offroad')),
+      );
+      expect(c.name, '#offroad');
+      expect(c.isHashtag, isTrue);
+      expect(c.hasCapitals, isFalse, reason: 'no Keep capitals for a link');
+      final other = channel(MeshCoreQr.encodeChannel('#offroad', _secret));
+      expect(other.isHashtag, isFalse, reason: 'its own key: private');
     });
 
     test('a single word is its hashtag channel', () {

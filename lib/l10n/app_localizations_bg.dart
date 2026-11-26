@@ -6294,7 +6294,36 @@ class AppLocalizationsBg extends AppLocalizations {
   String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
 
   @override
-  String get add_title => 'Add contact or channel';
+  String get add_title => 'New Channel or Contact';
+
+  @override
+  String get add_or => 'Or';
+
+  @override
+  String get add_hashtagRow => 'Join a hashtag channel';
+
+  @override
+  String get add_hashtagRowHelp => 'Type its name after the #';
+
+  @override
+  String get add_keyRow => 'Enter a name and a key';
+
+  @override
+  String get add_keyRowHelp =>
+      'A channel\'s secret key, or a contact\'s public key';
+
+  @override
+  String get add_name => 'Name';
+
+  @override
+  String get add_key => 'Key';
+
+  @override
+  String get add_keyInvalid =>
+      'A channel\'s key is 32 characters, a contact\'s 64.';
+
+  @override
+  String get add_typePerson => 'Person';
 
   @override
   String get add_box => 'Paste or type';

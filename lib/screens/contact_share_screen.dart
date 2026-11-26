@@ -51,6 +51,8 @@ class ContactShareScreen extends StatelessWidget {
         actions: [QrShareButton(data: qrData, name: name)],
       ),
       body: SingleChildScrollView(
+        // Clear of the phone's navigation bar, drawn over the app.
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Column(

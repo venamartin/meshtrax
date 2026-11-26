@@ -10531,8 +10531,62 @@ abstract class AppLocalizations {
   /// No description provided for @add_title.
   ///
   /// In en, this message translates to:
-  /// **'Add contact or channel'**
+  /// **'New Channel or Contact'**
   String get add_title;
+
+  /// No description provided for @add_or.
+  ///
+  /// In en, this message translates to:
+  /// **'Or'**
+  String get add_or;
+
+  /// No description provided for @add_hashtagRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a hashtag channel'**
+  String get add_hashtagRow;
+
+  /// No description provided for @add_hashtagRowHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Type its name after the #'**
+  String get add_hashtagRowHelp;
+
+  /// No description provided for @add_keyRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and a key'**
+  String get add_keyRow;
+
+  /// No description provided for @add_keyRowHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A channel\'s secret key, or a contact\'s public key'**
+  String get add_keyRowHelp;
+
+  /// No description provided for @add_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get add_name;
+
+  /// No description provided for @add_key.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get add_key;
+
+  /// No description provided for @add_keyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'A channel\'s key is 32 characters, a contact\'s 64.'**
+  String get add_keyInvalid;
+
+  /// No description provided for @add_typePerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get add_typePerson;
 
   /// No description provided for @add_box.
   ///
