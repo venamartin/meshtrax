@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -8,27 +10,50 @@ import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/app_settings_service.dart';
 import '../services/radio_ask_service.dart';
+import '../services/trip_positions.dart';
 
 /// Asks [contact]'s radio where it is and shows the answer as it comes:
-/// where, when, its battery, and whether the position may be old.
+/// where, when, its battery, and whether the position may be old. In TRAX
+/// mode it asks their phone for their track too.
 class RadioAskSheet extends StatelessWidget {
-  const RadioAskSheet({super.key, required this.contact, this.onShowOnMap});
+  const RadioAskSheet({
+    super.key,
+    required this.contact,
+    this.onShowOnMap,
+    this.asksTrack = false,
+  });
 
   final Contact contact;
   final ValueChanged<LatLng>? onShowOnMap;
+  final bool asksTrack;
 
   static Future<void> show(
     BuildContext context,
     Contact contact, {
     ValueChanged<LatLng>? onShowOnMap,
   }) {
-    context.read<RadioAskService>().ask(contact);
+    final asksTrack = _ask(context, contact);
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => RadioAskSheet(contact: contact, onShowOnMap: onShowOnMap),
+      builder: (_) => RadioAskSheet(
+        contact: contact,
+        onShowOnMap: onShowOnMap,
+        asksTrack: asksTrack,
+      ),
     );
+  }
+
+  /// True when it asked for the track too.
+  static bool _ask(BuildContext context, Contact contact) {
+    context.read<RadioAskService>().ask(contact);
+    final trip = context.read<TripPositions?>();
+    if (trip == null || !trip.canAskTrack || contact.publicKeyHex.length < 8) {
+      return false;
+    }
+    unawaited(trip.askTrack(contact.publicKeyHex.substring(0, 8)));
+    return true;
   }
 
   @override
@@ -122,6 +147,13 @@ class RadioAskSheet extends StatelessWidget {
               Text(l10n.radioAsk_noAnswer, style: warn),
               const SizedBox(height: 12),
             ],
+            if (asksTrack) ...[
+              Text(
+                l10n.radioAsk_trackAsked,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+            ],
             if (status != null)
               Row(
                 children: [
@@ -150,7 +182,7 @@ class RadioAskSheet extends StatelessWidget {
                   ),
                 if (!busy)
                   TextButton(
-                    onPressed: () => service.ask(contact),
+                    onPressed: () => _ask(context, contact),
                     child: Text(l10n.radioAsk_askAgain),
                   ),
                 TextButton(

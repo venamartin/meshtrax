@@ -14,6 +14,7 @@ TraxReport _report({
   int? battery = 81,
   bool mayBeOld = false,
   bool requester = true,
+  TraxMapIcon icon = TraxMapIcon.hike,
   String? name,
   double? heading,
   double? speed,
@@ -30,6 +31,7 @@ TraxReport _report({
   battery: battery,
   mayBeOld: mayBeOld,
   requester: requester,
+  icon: icon,
   name: name,
   heading: heading,
   speed: speed,
@@ -159,6 +161,26 @@ void main() {
     );
   });
 
+  test('the icon goes in the low 4 bits of the last byte; one this build '
+      'doesn\'t know, or none as before 243, is the hiker', () {
+    for (final icon in TraxMapIcon.values) {
+      final bytes = _report(icon: icon).encode();
+      expect(bytes.length, TraxReport.size);
+      expect(bytes[28], icon.index);
+      expect(TraxReport.decode(bytes)!.icon, icon);
+    }
+    final bytes = _report(icon: TraxMapIcon.boat).encode();
+    bytes[28] |= 0xF0;
+    expect(
+      TraxReport.decode(bytes)!.icon,
+      TraxMapIcon.boat,
+      reason: 'free bits',
+    );
+    bytes[28] = 0x0F;
+    expect(TraxReport.decode(bytes)!.icon, TraxMapIcon.hike);
+    expect(TraxReport.decode(_report().encode())!.icon, TraxMapIcon.hike);
+  });
+
   test('the name goes in an extension block', () {
     final bytes = _report(name: 'Trail Radio').encode();
     expect(bytes.length, TraxReport.size + 3 + 11);
@@ -177,6 +199,54 @@ void main() {
 
   test('an empty name sends no extension block', () {
     expect(_report(name: '').encode().length, TraxReport.size);
+  });
+
+  test('with a track, the name stays where a build before 243 reads it, '
+      'and their trail is passed over', () {
+    final track = TrackBlock(
+      gridM: 8,
+      keepHours: 48,
+      pieces: [
+        TrackPiece(
+          minute: TrackPiece.minuteOf(DateTime.utc(2026, 11, 21, 18)),
+          endMinute: TrackPiece.minuteOf(DateTime.utc(2026, 11, 21, 18, 20)),
+          points: const [
+            (lat: 36.4500, lon: -116.8600),
+            (lat: 36.4550, lon: -116.8640),
+          ],
+        ),
+      ],
+    );
+    final bytes = TraxReport(
+      seq: 1,
+      senderPrefix: Uint8List.fromList([0xB4, 0xE1, 0x02, 0x9C]),
+      session: 0xA1B2,
+      sentAt: DateTime.utc(2026, 11, 21, 18, 30, 5),
+      lat: 36.4570,
+      lon: -116.8660,
+      name: 'Cy',
+      track: track,
+    ).encode();
+    expect(bytes.sublist(29, 34), [4, 1, 2, 0x43, 0x79], reason: 'the name');
+    expect(bytes[13] & 0x04, 0, reason: 'not their trail\'s bit');
+    final read = TraxReport.decode(bytes)!;
+    expect(read.name, 'Cy');
+    expect(read.track!.pieces.single.points, hasLength(2));
+
+    // Theirs: bit 10, a grid, a count and the points, then the name.
+    final trail = encodeTrail(wirePosition(36.4570, -116.8660), 8, const [
+      (lat: 36.4550, lon: -116.8640),
+      (lat: 36.4500, lon: -116.8600),
+    ]);
+    final old = Uint8List.fromList([
+      ..._report().encode(),
+      8, 2, ...trail,
+      4, 1, 2, 0x43, 0x79, //
+    ]);
+    old[13] |= 0x84;
+    final theirs = TraxReport.decode(old)!;
+    expect(theirs.lat, closeTo(36.4570, 1e-5));
+    expect((theirs.name, theirs.track), (null, null));
   });
 
   test('unknown extension tags are skipped', () {

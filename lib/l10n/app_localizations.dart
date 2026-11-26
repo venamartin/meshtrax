@@ -1979,6 +1979,84 @@ abstract class AppLocalizations {
   /// **'Posts on the trip channel; others follow with one tap.'**
   String get trax_tellGroupHint;
 
+  /// No description provided for @trax_keepTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my track'**
+  String get trax_keepTrack;
+
+  /// No description provided for @trax_keepTrackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How far back your line goes, for you and the trip. Older parts are deleted on every phone.'**
+  String get trax_keepTrackHint;
+
+  /// No description provided for @trax_keepTrackHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours'**
+  String trax_keepTrackHours(int hours);
+
+  /// No description provided for @trax_keepTrackWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'1 week'**
+  String get trax_keepTrackWeek;
+
+  /// TRAX settings: the icon the other trip members see for you on their maps.
+  ///
+  /// In en, this message translates to:
+  /// **'Your icon'**
+  String get trax_icon;
+
+  /// No description provided for @trax_iconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the trip sees you on the map.'**
+  String get trax_iconHint;
+
+  /// No description provided for @trax_iconHike.
+  ///
+  /// In en, this message translates to:
+  /// **'Hike'**
+  String get trax_iconHike;
+
+  /// No description provided for @trax_iconVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get trax_iconVehicle;
+
+  /// No description provided for @trax_iconBoat.
+  ///
+  /// In en, this message translates to:
+  /// **'Boat'**
+  String get trax_iconBoat;
+
+  /// No description provided for @trax_iconMotorcycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Motorcycle'**
+  String get trax_iconMotorcycle;
+
+  /// No description provided for @trax_iconBicycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bicycle'**
+  String get trax_iconBicycle;
+
+  /// No description provided for @trax_iconAircraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get trax_iconAircraft;
+
+  /// The TRAX icon for a radio left at camp.
+  ///
+  /// In en, this message translates to:
+  /// **'Camp'**
+  String get trax_iconCamp;
+
   /// No description provided for @trax_followBody.
   ///
   /// In en, this message translates to:
@@ -2212,6 +2290,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'may be old'**
   String get trax_mayBeOld;
+
+  /// Asks a trip member's phone, on the trip channel, for the pieces of their track this phone lacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for track'**
+  String get trax_askTrack;
+
+  /// No description provided for @trax_trackAsked.
+  ///
+  /// In en, this message translates to:
+  /// **'Track asked {time}'**
+  String trax_trackAsked(String time);
 
   /// No description provided for @trax_group.
   ///
@@ -3718,6 +3808,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask again'**
   String get radioAsk_askAgain;
+
+  /// No description provided for @radioAsk_trackAsked.
+  ///
+  /// In en, this message translates to:
+  /// **'Also asked their phone for their track; it shows on the map.'**
+  String get radioAsk_trackAsked;
 
   /// No description provided for @radioAsk_mapLabel.
   ///

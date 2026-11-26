@@ -22,6 +22,7 @@ import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/models/radio_settings.dart';
 import 'package:meshtrax/models/trax.dart';
 import 'package:meshtrax/screens/map_screen.dart';
+import 'package:meshtrax/screens/trax_settings_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
@@ -261,12 +262,13 @@ TraxReport _report(
   double lon = -116.8660,
   bool mayBeOld = false,
   String? name,
-  Trail? trail,
+  TrackBlock? track,
   int? altitude,
   int? battery,
   double? heading,
   double? speed,
   Duration? stillFor,
+  TraxMapIcon icon = TraxMapIcon.hike,
 }) => TraxReport(
   seq: 0,
   senderPrefix: _key(b).sublist(0, 4),
@@ -277,12 +279,13 @@ TraxReport _report(
   mayBeOld: mayBeOld,
   requester: true,
   name: name,
-  trail: trail,
+  track: track,
   heading: heading,
   speed: speed,
   stillFor: stillFor,
   altitude: altitude,
   battery: battery,
+  icon: icon,
 );
 
 ChannelDatagram _datagram(
@@ -302,6 +305,27 @@ ChannelDatagram _datagram(
 /// [metres] north of [_here].
 TrailPoint _north(double metres) =>
     (lat: _here.lat + metres / 111320, lon: _here.lon);
+
+/// One piece of a member's track, [points] oldest first, from [from] to
+/// [to] minutes after [_t0].
+TrackBlock _block(
+  List<TrailPoint> points, {
+  int from = -20,
+  int to = 0,
+  int gridM = 8,
+  int keepHours = 48,
+}) => TrackBlock(
+  gridM: gridM,
+  keepHours: keepHours,
+  pieces: [
+    TrackPiece(
+      minute: TrackPiece.minuteOf(_t0) + from,
+      endMinute: TrackPiece.minuteOf(_t0) + to,
+      gridM: gridM,
+      points: points,
+    ),
+  ],
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -327,6 +351,18 @@ void main() {
       ),
     );
   });
+
+  /// Zigzag north from [_here], a reading every 10 s, every point a
+  /// corner: [steps] of them on from step [from].
+  void zigzag(FakeAsync async, int steps, {int from = 0}) {
+    for (var i = from; i < from + steps; i++) {
+      radio.read(
+        _north(20.0 * i).lat,
+        _here.lon + (i.isEven ? 30 : -30) / 89550,
+      );
+      async.elapse(const Duration(seconds: 10));
+    }
+  }
 
   group('locations heard', () {
     late TripPositions positions;
@@ -381,12 +417,14 @@ void main() {
       expect(positions.of(bo)!.heardAt, sent);
     });
 
-    test('a trail replaces the line; live positions extend it, and a gap '
-        'starts a new part', () {
-      final trail = (gridM: 8, points: [_north(-200), _north(-400)]);
-      radio.datagrams.add(_datagram(_report(0x11, trail: trail)));
+    test('their newest piece starts the line\'s tail again from its end; '
+        'live positions extend it, and a gap starts a new part', () {
+      radio.datagrams.add(
+        _datagram(_report(0x11, track: _block([_north(-400), _north(-200)]))),
+      );
+      expect(positions.of(bo)!.track.pieces, hasLength(1));
       expect(positions.of(bo)!.line, hasLength(1));
-      expect(positions.of(bo)!.line.single, hasLength(3));
+      expect(positions.of(bo)!.line.single, hasLength(3), reason: 'and here');
       expect(
         positions.of(bo)!.line.single.first.lat,
         closeTo(_north(-400).lat, 1e-4),
@@ -440,17 +478,138 @@ void main() {
       expect((still.heading, still.speed), (null, null));
     });
 
+    test('their icon is their latest report\'s, kept across restarts; the '
+        'hiker from a build before 243', () async {
+      radio.datagrams.add(_datagram(_report(0x11, icon: TraxMapIcon.boat)));
+      expect(positions.of(bo)!.icon, TraxMapIcon.boat);
+      positions.dispose();
+      positions = TripPositions(radio, trax, clock: clock);
+      expect(positions.of(bo)!.icon, TraxMapIcon.boat, reason: 'restart');
+      radio.datagrams.add(_datagram(_report(0x11)));
+      expect(positions.of(bo)!.icon, TraxMapIcon.hike);
+    });
+
     test('kept per radio across restarts, for 30 days', () async {
-      radio.datagrams.add(_datagram(_report(0x11, name: 'Bo')));
+      radio.datagrams.add(
+        _datagram(
+          _report(
+            0x11,
+            name: 'Bo',
+            track: _block([_north(-400), _north(-200)]),
+          ),
+        ),
+      );
       positions.dispose();
 
       positions = TripPositions(radio, trax, clock: clock);
       expect(positions.of(bo)!.name, 'Bo');
+      expect(positions.of(bo)!.track.pieces, hasLength(1), reason: 'track');
+      expect(positions.of(bo)!.line.single, hasLength(3), reason: 'and tail');
 
       positions.dispose();
       now = _t0.add(const Duration(days: 31));
       positions = TripPositions(radio, trax, clock: clock);
       expect(positions.all, isEmpty);
+    });
+
+    test('pieces add up by their minute: one reaching later, or as far on '
+        'a finer grid, takes its place; an older report brings its pieces, '
+        'not its position', () {
+      final minute = TrackPiece.minuteOf(_t0);
+      void heard(TrackBlock block, {int seconds = 0, double north = 0}) =>
+          radio.datagrams.add(
+            _datagram(
+              _report(
+                0x11,
+                sentAt: _t0.add(Duration(seconds: seconds)),
+                lat: _north(north).lat,
+                track: block,
+              ),
+            ),
+          );
+      TrackPiece only() => positions.of(bo)!.track.pieces.values.single;
+
+      heard(_block([_north(-400), _north(-200)], to: -5, gridM: 24));
+      heard(
+        _block([_north(-400), _north(-200), _north(-100)], gridM: 24),
+        seconds: 30,
+      );
+      expect((only().endMinute, only().gridM), (minute, 24), reason: 'later');
+      heard(_block([_north(-400), _north(-150), _north(-100)]), seconds: 60);
+      expect(only().gridM, 8, reason: 'finer');
+      heard(_block([_north(-400), _north(-100)], gridM: 40), seconds: 90);
+      expect(only().gridM, 8, reason: 'not a coarser one');
+
+      heard(
+        _block([_north(-3000), _north(-2500)], from: -90, to: -60),
+        seconds: -600,
+        north: -2500,
+      );
+      expect(positions.of(bo)!.track.pieces, hasLength(2));
+      expect(positions.of(bo)!.lat, closeTo(_here.lat, 1e-6), reason: 'older');
+    });
+
+    test('each piece goes as many hours after its last point as its member '
+        'keeps it, the positions since with it; their place stays', () {
+      fakeAsync((async) {
+        final positions = TripPositions(
+          radio,
+          trax,
+          clock: () => _t0.add(async.elapsed),
+        );
+        radio.datagrams.add(
+          _datagram(
+            _report(
+              0x11,
+              track: _block([_north(-400), _north(-200)], keepHours: 6),
+            ),
+          ),
+        );
+        async.elapse(const Duration(hours: 5, minutes: 55));
+        expect(positions.of(bo)!.track.pieces, hasLength(1));
+        expect(positions.of(bo)!.line, isNotEmpty);
+        async.elapse(const Duration(minutes: 15));
+        expect(positions.of(bo)!.track.isEmpty, isTrue);
+        expect(positions.of(bo)!.line, isEmpty, reason: 'the tail too');
+        expect(positions.of(bo)!.lat, closeTo(_here.lat, 1e-6));
+        positions.dispose();
+      });
+    });
+
+    test('asking a member for their track: on the trip channel, with the '
+        'pieces held at their finest', () async {
+      final minute = TrackPiece.minuteOf(_t0);
+      radio.datagrams
+        ..add(
+          _datagram(
+            _report(
+              0x11,
+              track: _block([_north(-400), _north(-200)], from: -60, to: -40),
+            ),
+          ),
+        )
+        ..add(
+          _datagram(
+            _report(
+              0x11,
+              track: _block([_north(-200), _north(0)], from: -40, gridM: 24),
+            ),
+          ),
+        );
+      expect(positions.canAskTrack, isTrue);
+      expect(await positions.askTrack('11111111'), isTrue);
+      final (channel, type, payload) = radio.sends.single;
+      expect((channel, type), (_trip, traxshareDataType));
+      final ask = TraxAsk.decode(payload)!;
+      expect(ask.target, _key(0x11).sublist(0, 4));
+      expect(ask.senderPrefix, _key(0xAB).sublist(0, 4));
+      expect(ask.have, [minute - 60], reason: 'not the coarse one');
+      expect(positions.askedAt('11111111'), _t0);
+
+      trax.on = false;
+      expect(positions.canAskTrack, isFalse);
+      expect(await positions.askTrack('11111111'), isFalse);
+      expect(radio.sends, hasLength(1));
     });
   });
 
@@ -698,10 +857,11 @@ void main() {
             async.elapse(const Duration(seconds: 5));
           }
           final r = TraxReport.decode(radio.sends.last.$3)!;
-          if (r.trail case final trail?) {
+          if (r.track case final track?) {
             trails.add(i);
-            expect(trail.points.last.lat, lessThan(r.lat), reason: 'behind');
-            expect(trail.points.length, lessThanOrEqualTo(2), reason: 'DP');
+            final points = track.pieces.single.points;
+            expect(points.first.lat, lessThan(r.lat), reason: 'behind');
+            expect(points.length, lessThanOrEqualTo(2), reason: 'DP');
           }
         }
         // The first report with a trail to send; in the first only when the
@@ -717,6 +877,177 @@ void main() {
         );
         beacon.dispose();
         expect(radio.viewers, 0);
+        trip.dispose();
+      });
+    });
+
+    test('between trails one older piece goes, halfway, alone and without '
+        'the name', () {
+      fakeAsync((async) {
+        DateTime fake() => _t0.add(async.elapsed);
+        final trip = TripService(radio, trax, _Asks(radio), clock: fake);
+        final beacon = TraxBeaconService(
+          radio,
+          trax,
+          trip,
+          random: Random(2),
+          clock: fake,
+        );
+        // Enough pieces that a trail carries two or more.
+        zigzag(async, 180);
+        radio.sends.clear();
+        zigzag(async, 300, from: 180);
+        DateTime? trailAt;
+        var olderSince = 0;
+        var older = 0;
+        for (final (_, _, payload) in radio.sends) {
+          final r = TraxReport.decode(payload)!;
+          final pieces = r.track?.pieces.length ?? 0;
+          if (pieces >= 2) {
+            if (trailAt != null) expect(olderSince, 1, reason: 'one between');
+            trailAt = r.sentAt;
+            olderSince = 0;
+          } else if (pieces == 1) {
+            expect(r.name, isNull);
+            if (trailAt != null) {
+              expect(
+                r.sentAt.difference(trailAt),
+                greaterThanOrEqualTo(const Duration(minutes: 5)),
+              );
+            }
+            olderSince++;
+            older++;
+          }
+        }
+        expect(older, greaterThanOrEqualTo(3));
+        expect(
+          radio.sends.every((s) => s.$3.length <= TraxReport.maxSize),
+          isTrue,
+        );
+        beacon.dispose();
+        trip.dispose();
+      });
+    });
+
+    test('a member\'s ask: the trail within seconds, then each piece they '
+        'lack, newest first, a tenth of the interval apart; not one heard '
+        'while away, nor one for another radio', () {
+      fakeAsync((async) {
+        DateTime fake() => _t0.add(async.elapsed);
+        final trip = TripService(radio, trax, _Asks(radio), clock: fake);
+        final beacon = TraxBeaconService(
+          radio,
+          trax,
+          trip,
+          random: Random(2),
+          clock: fake,
+        );
+        zigzag(async, 300);
+        final minutes = beacon.track.missing(const []);
+        expect(minutes.length, greaterThanOrEqualTo(3));
+        void ask(int target, {List<int> have = const [], bool away = false}) =>
+            radio.datagrams.add(
+              ChannelDatagram(
+                channel: _trip,
+                dataType: traxshareDataType,
+                payload: TraxAsk(
+                  seq: 1,
+                  senderPrefix: _key(0x11).sublist(0, 4),
+                  session: 3,
+                  sentAt: fake(),
+                  target: _key(target).sublist(0, 4),
+                  have: have,
+                ).encode(),
+                receivedAt: fake(),
+                fromBacklog: away,
+              ),
+            );
+        List<TraxReport> sent() => [
+          for (final (_, _, payload) in radio.sends)
+            if (TraxReport.decode(payload) case final r? when r.track != null)
+              r,
+        ];
+
+        radio.sends.clear();
+        ask(0x22);
+        ask(0xAB, away: true);
+        async.elapse(const Duration(seconds: 3));
+        expect(sent(), isEmpty);
+
+        ask(0xAB, have: [minutes.last]);
+        async.elapse(const Duration(seconds: 3));
+        expect(sent().single.track!.pieces.first.minute, minutes.first);
+        async.elapse(const Duration(minutes: 2));
+        final answers = sent().skip(1).toList();
+        expect(
+          [for (final r in answers) r.track!.pieces.single.minute],
+          minutes.sublist(0, minutes.length - 1),
+          reason: 'all but the one held, newest first',
+        );
+        for (var i = 1; i < answers.length; i++) {
+          expect(
+            answers[i].sentAt.difference(answers[i - 1].sentAt).inSeconds,
+            greaterThanOrEqualTo(6),
+          );
+        }
+        for (final r in answers) {
+          expect(r.track!.gridM, TrackPiece.fineGridM);
+          expect(r.name, isNull);
+        }
+        beacon.dispose();
+        trip.dispose();
+      });
+    });
+
+    test(
+      'Keep my track comes from TRAX settings: 48 hours unless set',
+      () async {
+        expect(const TraxSetup().keepTrackHours, 48);
+        TraxSetup back(Map<String, dynamic> json) =>
+            TraxSetup.fromJson(jsonDecode(jsonEncode(json)));
+        expect(
+          back(const TraxSetup(keepTrackHours: 12).toJson()).keepTrackHours,
+          12,
+        );
+        expect(back({'keep_track_hours': 5}).keepTrackHours, 48, reason: 'no');
+        final trip = TripService(radio, trax, _Asks(radio));
+        final beacon = TraxBeaconService(radio, trax, trip, random: Random(1));
+        expect(beacon.track.keepHours, 48);
+        await trax.updateSetup(trax.setup.copyWith(keepTrackHours: 168));
+        expect(beacon.track.keepHours, 168);
+        beacon.dispose();
+        trip.dispose();
+      },
+    );
+
+    test('Your icon comes from TRAX settings, the hiker unless set, and goes '
+        'in every report', () async {
+      expect(const TraxSetup().icon, TraxMapIcon.hike);
+      TraxSetup back(Map<String, dynamic> json) =>
+          TraxSetup.fromJson(jsonDecode(jsonEncode(json)));
+      expect(
+        back(const TraxSetup(icon: TraxMapIcon.boat).toJson()).icon,
+        TraxMapIcon.boat,
+      );
+      expect(back({'icon': 'sled'}).icon, TraxMapIcon.hike);
+      await trax.updateSetup(trax.setup.copyWith(icon: TraxMapIcon.vehicle));
+      fakeAsync((async) {
+        DateTime fake() => _t0.add(async.elapsed);
+        final trip = TripService(radio, trax, _Asks(radio), clock: fake);
+        radio.read(36.4570, -116.8660);
+        final beacon = TraxBeaconService(
+          radio,
+          trax,
+          trip,
+          random: Random(1),
+          clock: fake,
+        );
+        async.elapse(const Duration(minutes: 3));
+        expect(radio.sends.length, greaterThanOrEqualTo(2));
+        for (final (_, _, payload) in radio.sends) {
+          expect(TraxReport.decode(payload)!.icon, TraxMapIcon.vehicle);
+        }
+        beacon.dispose();
         trip.dispose();
       });
     });
@@ -737,21 +1068,125 @@ void main() {
         walk(10);
         walk(30);
         walk(60);
-        expect(track.trail(), hasLength(3), reason: '0, 30, 60');
-        expect(track.trail().first.lat, closeTo(_north(60).lat, 1e-9));
+        expect(track.recent.single, hasLength(3), reason: '0, 30, 60');
+        expect(track.recent.single.last.lat, closeTo(_north(60).lat, 1e-9));
 
         radio.fresh = false;
         for (var i = 0; i < 13; i++) {
           walk(60);
         }
-        expect(track.trail(), isEmpty, reason: 'no live reading for 2 min');
         radio.fresh = true;
         walk(500);
         walk(530);
-        expect(track.trail(), hasLength(2), reason: 'a new part');
+        expect(track.recent, hasLength(2), reason: 'no live reading for 2 min');
         walk(5530);
-        expect(track.trail(), hasLength(1), reason: '500 m/s is a jump');
-        expect(track.recent, hasLength(2));
+        walk(5560);
+        expect(track.recent, hasLength(3), reason: '500 m/s is a jump');
+        expect(track.missing(const []), hasLength(3), reason: 'three pieces');
+        track.dispose();
+      });
+    });
+
+    test(
+      'a piece closes once it would not fit a report at its finest, and '
+      'the next starts where it ended; the trail starts with the open one',
+      () {
+        fakeAsync((async) {
+          final track = TraxTrack(radio, clock: () => _t0.add(async.elapsed))
+            ..start();
+          zigzag(async, 300);
+          final minutes = track.missing(const []);
+          expect(minutes.length, greaterThanOrEqualTo(3));
+          final here = radio.selfGps.value!;
+          final anchor = wirePosition(here.latitude, here.longitude);
+          final room = TraxReport.trackRoom();
+          final pieces = [
+            for (final m in minutes.reversed)
+              track.piece(m, anchor, room)!.pieces.single,
+          ];
+          for (var i = 1; i < pieces.length; i++) {
+            expect(pieces[i].points.first, pieces[i - 1].points.last);
+            expect(pieces[i].minute, greaterThan(pieces[i - 1].minute));
+          }
+          for (final m in minutes.skip(1)) {
+            final alone = track.piece(m, anchor, room)!;
+            expect(alone.gridM, TrackPiece.fineGridM, reason: 'at its finest');
+            expect(alone.encode(anchor).length, lessThanOrEqualTo(room));
+          }
+          expect(track.recent, hasLength(1), reason: 'one line');
+          final trail = track.trail(
+            anchor,
+            TraxReport.trackRoom(name: 'Trail Radio'),
+          )!;
+          expect(trail.pieces.first.minute, minutes.first);
+          expect(trail.pieces.length, greaterThanOrEqualTo(2));
+          track.dispose();
+        });
+      },
+    );
+
+    test('each piece goes Keep my track\'s hours after its last point', () {
+      fakeAsync((async) {
+        final track = TraxTrack(radio, clock: () => _t0.add(async.elapsed))
+          ..start();
+        void walk(double north) {
+          radio.read(_north(north).lat, _here.lon);
+          async.elapse(const Duration(seconds: 10));
+        }
+
+        walk(0);
+        walk(30);
+        walk(60);
+        radio.fresh = false;
+        for (var i = 0; i < 13; i++) {
+          walk(60);
+        }
+        radio.fresh = true;
+        walk(500);
+        walk(530);
+        expect(track.missing(const []), hasLength(2));
+        track.keepHours = 6;
+        async.elapse(const Duration(hours: 5, minutes: 58));
+        expect(track.missing(const []), hasLength(1), reason: 'the first');
+        async.elapse(const Duration(minutes: 5));
+        expect(track.missing(const []), isEmpty);
+        expect(track.recent, isEmpty);
+        track.dispose();
+      });
+    });
+
+    test('kept across restarts in its pieces; an older app\'s points start '
+        'it over', () {
+      fakeAsync((async) {
+        DateTime fake() => _t0.add(async.elapsed);
+        var track = TraxTrack(radio, clock: fake)..start();
+        zigzag(async, 200);
+        final pieces = track.missing(const []);
+        final line = track.recent.single;
+        track.dispose();
+        async.flushMicrotasks();
+
+        track = TraxTrack(radio, clock: fake)..start();
+        expect(track.missing(const []), pieces);
+        expect(track.recent.single, hasLength(line.length));
+        expect(track.recent.single.last.lat, closeTo(line.last.lat, 1e-5));
+        track.dispose();
+        async.flushMicrotasks();
+
+        unawaited(
+          PrefsManager.instance.setString(
+            TraxTrack.keyFor(radio.selfPublicKeyHex),
+            jsonEncode([
+              [
+                [36.457, -116.866, 0],
+                [36.458, -116.866, 30000],
+              ],
+            ]),
+          ),
+        );
+        async.flushMicrotasks();
+        track = TraxTrack(radio, clock: fake)..start();
+        expect(track.recent, isEmpty);
         track.dispose();
       });
     });
@@ -794,7 +1229,8 @@ void main() {
           ..start();
         radio.read(_here.lat, _here.lon);
         async.elapse(const Duration(seconds: 10));
-        expect(track.trail(), isEmpty);
+        expect(track.recent, isEmpty);
+        expect(track.missing(const []), isEmpty);
         track.dispose();
       });
     });
@@ -887,7 +1323,7 @@ void main() {
       }
       radio.datagrams.add(
         _datagram(
-          _report(0x11, trail: (gridM: 8, points: [_north(300), _north(600)])),
+          _report(0x11, track: _block([_north(600), _north(300)])),
           receivedAt: now,
         ),
       );
@@ -1333,6 +1769,120 @@ void main() {
       expect(find.text('Chat'), findsNothing);
       expect(find.text('Ask Dee\'s radio'), findsNothing);
       await close();
+      await stopServices(tester);
+    });
+
+    testWidgets('in TRAX mode an ask brings their track too: with their '
+        'radio for a contact, alone on the card of a member who isn\'t one, '
+        'and from the group for one with no location yet', (tester) async {
+      await tester.runAsync(
+        () => trax.updateSetup(trax.setup.copyWith(added: {cy.publicKeyHex})),
+      );
+      startServices();
+      radio.datagrams.add(
+        _datagram(_report(0x55, name: 'Dee', lat: 36.46), receivedAt: now),
+      );
+      await pumpApp(tester, const MapScreen());
+      Future<void> settle() async {
+        for (var i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      TraxAsk lastAsk() => TraxAsk.decode(radio.sends.last.$3)!;
+
+      marker(tester, 'trip:55555555').onTap!();
+      await settle();
+      expect(find.text('Ask Dee\'s radio'), findsNothing);
+      await tester.tap(find.text('Ask for track'));
+      await settle();
+      expect(lastAsk().target, _key(0x55).sublist(0, 4));
+      expect(find.textContaining('Track asked'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await settle();
+
+      await tester.tap(find.byTooltip('TRAX group'));
+      await settle();
+      await tester.tap(find.text('Cy: no location yet'));
+      await settle();
+      await settle();
+      expect(asks.asked, ['Cy']);
+      expect(lastAsk().target, _key(0x22).sublist(0, 4));
+      expect(
+        find.text(
+          'Also asked their phone for their track; it shows on the map.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Close'));
+      await settle();
+      await stopServices(tester);
+    });
+
+    testWidgets('a member shows as the icon they picked: their pin, their '
+        'card and the TRAX group', (tester) async {
+      startServices();
+      radio.datagrams.add(
+        _datagram(
+          _report(0x55, name: 'Dee', lat: 36.46, icon: TraxMapIcon.boat),
+          receivedAt: now,
+        ),
+      );
+      await pumpApp(tester, const MapScreen());
+      Future<void> settle() async {
+        for (var i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      final pin = marker(tester, 'trip:55555555');
+      expect(
+        ((pin.child! as Container).child! as Icon).icon,
+        Icons.directions_boat,
+      );
+      final avatar = find.descendant(
+        of: find.byType(CircleAvatar),
+        matching: find.byIcon(Icons.directions_boat),
+      );
+      pin.onTap!();
+      await settle();
+      expect(avatar, findsOneWidget, reason: 'card');
+      await tester.tapAt(const Offset(10, 10));
+      await settle();
+      await tester.tap(find.byTooltip('TRAX group'));
+      await settle();
+      expect(avatar, findsOneWidget, reason: 'list');
+      await stopServices(tester);
+    });
+
+    testWidgets('Your icon in TRAX settings: the hiker unless picked, from '
+        'seven', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      startServices();
+      await pumpApp(tester, const TraxSettingsScreen());
+      const hint = 'How the trip sees you on the map.';
+      expect(find.text('Hike · $hint'), findsOneWidget);
+      await tester.tap(find.text('Your icon'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      for (final name in [
+        'Hike',
+        'Vehicle',
+        'Boat',
+        'Motorcycle',
+        'Bicycle',
+        'Aircraft',
+        'Camp',
+      ]) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      await tester.tap(find.text('Boat'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(trax.setup.icon, TraxMapIcon.boat);
+      expect(find.text('Boat · $hint'), findsOneWidget);
       await stopServices(tester);
     });
 

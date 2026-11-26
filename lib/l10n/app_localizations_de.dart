@@ -1141,6 +1141,48 @@ class AppLocalizationsDe extends AppLocalizations {
       'Postet im Tour-Kanal; die anderen folgen mit einem Tippen.';
 
   @override
+  String get trax_keepTrack => 'Keep my track';
+
+  @override
+  String get trax_keepTrackHint =>
+      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+
+  @override
+  String trax_keepTrackHours(int hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String get trax_keepTrackWeek => '1 week';
+
+  @override
+  String get trax_icon => 'Your icon';
+
+  @override
+  String get trax_iconHint => 'How the trip sees you on the map.';
+
+  @override
+  String get trax_iconHike => 'Hike';
+
+  @override
+  String get trax_iconVehicle => 'Vehicle';
+
+  @override
+  String get trax_iconBoat => 'Boat';
+
+  @override
+  String get trax_iconMotorcycle => 'Motorcycle';
+
+  @override
+  String get trax_iconBicycle => 'Bicycle';
+
+  @override
+  String get trax_iconAircraft => 'Aircraft';
+
+  @override
+  String get trax_iconCamp => 'Camp';
+
+  @override
   String trax_followBody(String name, String time) {
     return '$name ist bis $time in den TRAX-Modus gewechselt. Auch wechseln?';
   }
@@ -1290,6 +1332,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trax_mayBeOld => 'evtl. veraltet';
+
+  @override
+  String get trax_askTrack => 'Ask for track';
+
+  @override
+  String trax_trackAsked(String time) {
+    return 'Track asked $time';
+  }
 
   @override
   String get trax_group => 'TRAX group';
@@ -2171,6 +2221,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get radioAsk_askAgain => 'Erneut fragen';
+
+  @override
+  String get radioAsk_trackAsked =>
+      'Also asked their phone for their track; it shows on the map.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {

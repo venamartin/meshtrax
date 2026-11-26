@@ -48,8 +48,11 @@ Options:
 
 Reports go out as MeshTrax sends them: every 30 s per person in the group,
 +/-20 %, the first 10-30 s after the start; the trail in the first report,
-then in every 5th, no sooner than 10 minutes after the last. Places in the
-output are distances from the start, never coordinates.
+then in every 5th, no sooner than 10 minutes after the last, and one older
+piece of the track halfway between. A member's MeshTrax asking one of them
+for their track gets the trail, then each piece it lacks, a few seconds
+apart. Places in the output are distances from the start, never
+coordinates.
 
 It reads the messages waiting on the radio, and they are gone from it
 after: give it a radio of its own, not one an app uses. When it stops, it
@@ -383,6 +386,18 @@ Future<void> _report(
           otherMessages++;
           continue;
         }
+        if (TraxAsk.decode(d.data) case final ask?) {
+          final now = DateTime.now();
+          for (final p in people) {
+            if (_hex(p.prefix) != _hex(ask.target)) continue;
+            p.ask(ask, now);
+            stdout.writeln(
+              '${_hhmmss(now)}  ${_hex(ask.senderPrefix)} asked ${p.name} '
+              'for their track, holding ${ask.have.length} pieces',
+            );
+          }
+          continue;
+        }
         final r = TraxReport.decode(d.data);
         final who = r == null ? null : _hex(r.senderPrefix);
         if (r == null || ours.contains(who)) continue;
@@ -578,11 +593,16 @@ String _describe(SimPerson p, TraxReport r, DateTime now, TrailPoint origin) {
     '#${r.seq}'.padRight(4),
     _offset(origin, (lat: r.lat, lon: r.lon)).padRight(24),
     motion.padRight(20),
-    if (r.trail case final t?)
-      'trail ${t.points.length} point${t.points.length == 1 ? '' : 's'}',
+    if (r.track case final t?) '${p.carried.name} ${_pieces(t)}',
     if (r.name != null) 'name',
     '${r.encode().length} B',
   ].join('  ');
+}
+
+String _pieces(TrackBlock t) {
+  final points = t.pieces.fold(0, (n, p) => n + p.points.length);
+  return '${t.pieces.length} piece${t.pieces.length == 1 ? '' : 's'}, '
+      '$points points, ${t.gridM} m grid';
 }
 
 String _heard(TraxReport r, SimPerson near) {

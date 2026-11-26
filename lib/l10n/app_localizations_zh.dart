@@ -1094,6 +1094,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trax_tellGroupHint => '在行程频道发布消息；其他人轻点一下即可跟随。';
 
   @override
+  String get trax_keepTrack => 'Keep my track';
+
+  @override
+  String get trax_keepTrackHint =>
+      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+
+  @override
+  String trax_keepTrackHours(int hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String get trax_keepTrackWeek => '1 week';
+
+  @override
+  String get trax_icon => 'Your icon';
+
+  @override
+  String get trax_iconHint => 'How the trip sees you on the map.';
+
+  @override
+  String get trax_iconHike => 'Hike';
+
+  @override
+  String get trax_iconVehicle => 'Vehicle';
+
+  @override
+  String get trax_iconBoat => 'Boat';
+
+  @override
+  String get trax_iconMotorcycle => 'Motorcycle';
+
+  @override
+  String get trax_iconBicycle => 'Bicycle';
+
+  @override
+  String get trax_iconAircraft => 'Aircraft';
+
+  @override
+  String get trax_iconCamp => 'Camp';
+
+  @override
   String trax_followBody(String name, String time) {
     return '$name 已切换到 TRAX 模式，直到 $time。你也切换吗？';
   }
@@ -1233,6 +1275,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trax_mayBeOld => '可能已过时';
+
+  @override
+  String get trax_askTrack => 'Ask for track';
+
+  @override
+  String trax_trackAsked(String time) {
+    return 'Track asked $time';
+  }
 
   @override
   String get trax_group => 'TRAX group';
@@ -2064,6 +2114,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get radioAsk_askAgain => '再次询问';
+
+  @override
+  String get radioAsk_trackAsked =>
+      'Also asked their phone for their track; it shows on the map.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:traxshare/traxshare.dart' show TraxMapIcon;
 
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
+import '../helpers/trax_icons.dart';
 import '../l10n/l10n.dart';
 import '../models/channel.dart';
 import '../models/contact.dart';
@@ -18,9 +20,9 @@ import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/trax_dialogs.dart';
 import 'app_settings_screen.dart';
 
-/// TRAX settings: the preset, the trip channel, the trip's end, Tell the
-/// group, and Trip setup: the trip members and what they may do. One set
-/// per phone.
+/// TRAX settings: the preset, the trip channel, the trip's end, how long
+/// my track is kept, Tell the group, and Trip setup: the trip members and
+/// what they may do. One set per phone.
 class TraxSettingsScreen extends StatelessWidget {
   const TraxSettingsScreen({super.key});
 
@@ -109,6 +111,23 @@ class TraxSettingsScreen extends StatelessWidget {
                     : null,
               ),
               onTap: () => _pickEnd(context, trax),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(l10n.trax_keepTrack),
+              subtitle: Text(
+                '${_keepText(context, setup.keepTrackHours)} · '
+                '${l10n.trax_keepTrackHint}',
+              ),
+              onTap: () => _pickKeep(context, trax),
+            ),
+            ListTile(
+              leading: Icon(traxIconData(setup.icon)),
+              title: Text(l10n.trax_icon),
+              subtitle: Text(
+                '${traxIconName(l10n, setup.icon)} · ${l10n.trax_iconHint}',
+              ),
+              onTap: () => _pickIcon(context, trax),
             ),
             SwitchListTile(
               secondary: const Icon(Icons.campaign_outlined),
@@ -301,6 +320,66 @@ class TraxSettingsScreen extends StatelessWidget {
     if (picked.$1 != null && context.mounted) {
       await offerSosThroughDnd(context);
     }
+  }
+
+  static String _keepText(BuildContext context, int hours) => hours == 168
+      ? context.l10n.trax_keepTrackWeek
+      : context.l10n.trax_keepTrackHours(hours);
+
+  Future<void> _pickKeep(BuildContext context, TraxService trax) async {
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(context.l10n.trax_keepTrack),
+        children: [
+          RadioGroup<int>(
+            groupValue: trax.setup.keepTrackHours,
+            onChanged: (hours) => Navigator.pop(context, hours),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final hours in TraxSetup.keepTrackChoices)
+                  RadioListTile<int>(
+                    value: hours,
+                    title: Text(_keepText(context, hours)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await trax.updateSetup(trax.setup.copyWith(keepTrackHours: picked));
+  }
+
+  Future<void> _pickIcon(BuildContext context, TraxService trax) async {
+    final l10n = context.l10n;
+    final picked = await showDialog<TraxMapIcon>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(l10n.trax_icon),
+        children: [
+          RadioGroup<TraxMapIcon>(
+            groupValue: trax.setup.icon,
+            onChanged: (icon) => Navigator.pop(context, icon),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final icon in TraxMapIcon.values)
+                  RadioListTile<TraxMapIcon>(
+                    value: icon,
+                    title: Text(traxIconName(l10n, icon)),
+                    secondary: Icon(traxIconData(icon)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await trax.updateSetup(trax.setup.copyWith(icon: picked));
   }
 
   Future<void> _pickEnd(BuildContext context, TraxService trax) async {

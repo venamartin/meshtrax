@@ -15,8 +15,8 @@ TRAX is for a group on a remote trip: no cell service, no repeaters, radios that
 - **TRAX mode** moves the group's radios to an off-grid frequency with **Off-Grid Repeat** on, so every radio relays for the others. Nobody on the regular mesh hears a radio in TRAX mode, Public included.
 - **The trip** is a private channel. Its members are found from who posted there.
 - **Members can ask my radio:** each member's radio answers the others' position requests by itself, so a member can be found with their phone dead, locked or in a pocket.
-- **Locations:** in TRAX mode, every member's MeshTrax sends its radio's location to the trip channel on a timer, with the trail behind it now and then. On the regular mesh a location goes only when asked.
-- **The map** shows one pin per member, a card with their latest figures, their trail and the group's list.
+- **Locations:** in TRAX mode, every member's MeshTrax sends its radio's location to the trip channel on a timer, with the trail behind it now and then and older pieces of their track between. A member can ask for the rest. On the regular mesh a location goes only when asked.
+- **The map** shows one pin per member, a card with their latest figures, their track and the group's list.
 
 **Code:**
 - `lib/services/trax_service.dart`: the switch, Leave and the prompts.
@@ -25,7 +25,7 @@ TRAX is for a group on a remote trip: no cell service, no repeaters, radios that
 - `lib/services/trax_beacon_service.dart`: sending locations.
 - `lib/services/trax_track.dart`: your own track.
 - `lib/services/trip_positions.dart`: the locations received.
-- `packages/traxshare`: the report format and the trail.
+- `packages/traxshare`: the report format, the track's pieces and the ask.
 - `lib/models/trax.dart`: settings, saved radios and presets.
 - `TraxMessage` in `lib/helpers/structured_message.dart`.
 - Screens and widgets:
@@ -45,6 +45,8 @@ One set per phone, in the preferences store under `trax_setup`:
   - not Public, and not empty or nameless;
   - not a hashtag channel, whose key `sha256('#' + name)` anyone can work out. A `#` name cut at the radio's 31-byte limit can't be checked, so it counts as a hashtag channel.
 - **Trip ends:** a date and time. Switching needs one in the future.
+- **Keep my track:** 48 hours by default (`keepTrackHours`: 6, 12, 24, 48 or 72 hours, or a week). It is how far back your own line goes, what the group gets of it, and when every phone deletes each piece of it.
+- **Your icon:** how the trip sees you on their maps, cards and TRAX group list (`icon`): Hike (default), Vehicle, Boat, Motorcycle, Bicycle, Aircraft or Camp. Your own position stays the blue GPS dot.
 - **Tell the group:** on by default.
 - **Trip members:** everyone who posted on the trip channel in the last 30 days and is the one contact of that name on this radio, matched by name as the @ list does. New posters are added as they post. Members can be added or removed by hand (`added`, `removed`). A poster who isn't a contact shows "Not a contact on this radio".
 - **Members can ask my radio:** on by default (`askMyRadio`). See [Trip setup](#trip-setup-members-can-ask-my-radio).
@@ -64,12 +66,13 @@ A companion radio answers a telemetry request by itself with its GPS position (`
 
 ### Ask their radio
 
-In a DM's menu, a map pin's dialog and the member card:
+In a DM's menu, a map pin's dialog, the member card and the group's list (for a member with no location yet):
 
 - The asking radio keeps one telemetry request in flight (`MyMesh.cpp` 1689 to 1690), so asks queue, one at a time, with 3 tries each.
 - A try floods only when no repeater has been heard lately. Otherwise it uses the request ladder, which ends in floods.
 - It reads twice, a minute apart. Matching readings, or an altitude of exactly 0, say the position may be old. An answer with no position says the GPS may be off.
 - The answer becomes that person's pin as a radio answer, with its time and source.
+- In TRAX mode the same tap asks their MeshTrax for their track, and the sheet says so. With their phone off, only the radio's answer comes. A member who isn't a contact has **Ask for track** on their card instead; it says when it last asked. See [The ask](#the-ask).
 
 ## One tap
 
@@ -169,18 +172,32 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
   - the position to 1e-5°, the fix age and the altitude;
   - the radio's battery, and a "may be old" flag;
   - how the person is moving. While moving, that is heading (1.4° steps) and speed (0.5 m/s steps), worked out over the last 50 m or more of the track, because the radio reports positions in 11 m steps. From 2 minutes after the last move, it is "not moving" (bit 12) and for how many minutes, held in the speed byte.
-  - the sender's name every 30 minutes.
+  - the sender's name every 30 minutes;
+  - their icon (`TraxMapIcon`) in the low 4 bits of the last byte, in every report: 0 is Hike, as builds before test build 243 send, and one a build doesn't know shows as Hike. The high 4 bits are free.
 - **The data type** is `0x0171` (`71 01` on air), in MeshTrax's block `0x0170` to `0x017F`, requested in meshcore-dev/MeshCore#3925. Channel datagrams need companion firmware 1.15 (version code 11). On older firmware the sheet says "This radio's firmware can't send your location to the trip. Update it."
-- **The trail:**
-  - which reports carry it: the first, then every 5th, and never sooner than 10 minutes after the last;
-  - how far back: up to 10 miles, to the newest break;
-  - how it's thinned: Douglas-Peucker from 15 m, doubled until it fits, then bisected to within 1 m;
-  - how it's packed: points on a grid of max(8, ε/2) m, with each step stored as zigzag exp-Golomb (k = 3);
-  - its size: at most 157 bytes with the name. A winding 10-mile trail fits in about 58 points.
-
-  Trails every 10 minutes add about 0.25 % airtime for two people, and about 2.5 % for ten.
-- **Your track** (`TraxTrack`): while TRAX mode is on, the radio is read every 10 s, and a point is kept every 25 m. The track breaks after 2 minutes without a live reading, or at a jump faster than 60 m/s. It is there for the trail and for your own line on the map; there is no list of saved tracks.
+- **Your track** (`TraxTrack`): while TRAX mode is on, the radio is read every 10 s, and a point is kept every 25 m. It is kept in pieces (`TrackPiece`), for your own line on the map and for the reports; there is no list of saved tracks.
+  - A piece closes once its points, thinned to 15 m on an 8 m grid, would take more than 108 bytes, or at 500 points. The next starts at its last point.
+  - A break closes it too: 2 minutes without a live reading, or a jump faster than 60 m/s. Nothing is drawn or sent across a break.
+  - A piece is named by the minute of its first point. Two begun in one minute are named a minute apart.
+  - Each piece is deleted Keep my track's hours after its last point, here and on the trip's phones: the hours go with it. Until then it stays across restarts and TRAX mode off and on.
+- **What a report carries of it** (`TrackBlock`, mask bit 13, after the report's 29 bytes and the name): the grid, the hours kept, and for each piece its minute (low 16 bits), its span in minutes and its number of points. Then come all the points, newest first, each a step from the one before, the first from the report's position, as zigzag exp-Golomb (k = 3) on the grid. At most 157 bytes with the name.
+  - Builds before test build 243 sent a trail with bit 10, before the name. Between them and later builds, positions still go both ways, but tracks don't, and an older build's name only comes in a report without a trail.
+  - **The trail** goes in the first report, then every 5th, and never sooner than 10 minutes after the last. It carries the open piece, then as many closed ones as lie within 10 miles, whole. They are thinned alike: Douglas-Peucker from 15 m, doubled until they fit, then bisected to within 1 m, on a grid of max(8, ε/2) m.
+  - **One older piece** goes halfway between trails, alone, at its finest and without the name. Each piece goes once a round, in a new random order every round, except those the latest trail carried at their finest. A piece closed during a round waits for the next. A phone that hears only some reports gets the track bit by bit.
+  - Trails add about 0.25 % airtime for two people and 2.5 % for ten, and older pieces up to as much again. With two to four people a trail goes every 10 minutes, so ten older pieces take about 100 minutes; with ten people, about 250.
 - **What's received** (`TripPositions`): the latest location from each member is kept for 30 days, per radio. A member's pin shows for 24 hours after their last report.
+  - Their track is kept by piece. One that reaches later, or as far on a finer grid, takes the place of its minute's piece, even from an older report. Each goes when the member's hours have passed since its last point; their last place stays. At most 5,000 points a member, the oldest pieces first.
+  - Their line is their pieces, then the positions reported since the newest, which a report with the newest piece starts again from its end.
+
+### The ask
+
+A member's MeshTrax asks another's for their track with a `TraxAsk`: version 1, subtype 3, on the trip channel, with the same data type.
+
+- 17 bytes, and 2 for each piece held: the reports' 12-byte header, the first 4 bytes of the key of the member asked, how many pieces are held, then each one's minute (low 16 bits). It lists only pieces held at their finest (grid 8 m), up to 70.
+- The member's phone, in TRAX mode and connected, answers within about 3 s with a trail. Then it sends each piece the asker lacks, newest first and alone in a report, a tenth of the interval apart (6 s for two people, 30 s for ten) and at least 3 s apart. Pieces that trail carried at their finest are left out.
+- An ask heard while the app was away isn't answered: the asker asks again.
+- To get a member's track the next day: open the TRAX group and tap them. Their card has Ask; a contact with no location yet is asked straight away.
+- Each piece costs about 0.6 s of airtime at the mesh's own preset, before relays.
 
 ### The group check
 
@@ -204,11 +221,11 @@ The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again*
   - One row of figures, each named on a long-press: heading with an arrow, speed or "Stopped N min", elevation, and the radio's battery with its bars (red below 20 %).
   - Chat and Ask their radio, for a contact.
 
-  It keeps up as reports come in, and its "ago" counts on every 30 s. Their trail shows in orange while it is open, over your own track in blue.
+  It keeps up as reports come in, and its "ago" counts on every 30 s. Their track shows in orange while it is open, over your own track in blue.
 - **A person's info** (a node's dialog): last heard, location, distance from you, heading, speed or "not moving since", elevation, radio battery and path. Each comes from the newest of the TRAX report, the radio's answer and the advert. People get no line of sight or radio reach; repeaters, rooms and sensors keep both.
 - **The TRAX group button,** at the bottom left in TRAX mode (three people), opens the group's list.
   - Rows are sorted by name and show distance, direction and when last heard. They are grey when the reading may be old, and members with no location come last.
-  - A pick opens the card with the map on them.
+  - A pick opens the card with the map on them. A contact with no location yet has their radio asked, and in TRAX mode their phone for their track.
   - The map's credits and offline card sit to the right of the button.
 - **Following:** My location keeps you in the middle as the radio's position moves, until the map is dragged; a zoom doesn't stop it, and the button is filled meanwhile.
   - A tapped member, or one picked from a list, is followed the same way, with the card open or closed. Their trail stays until another member is tapped.
@@ -244,7 +261,7 @@ There is no "all contacts" choice: a radio set to allow all says so in red, with
 ## Bench simulator: `tool/trax_sim`
 
 Pretend trip members for a bench, through a companion radio on a serial port (`--port`) or over Bluetooth (`--ble NAME`, already paired, through BlueZ).
-- They walk a winding trail (`--walk NAME`), drive a road (`--drive NAME`) or follow a GPX track (`--gpx FILE=NAME`). Each sends reports by the rules above.
+- They walk a winding trail (`--walk NAME`), drive a road (`--drive NAME`) or follow a GPX track (`--gpx FILE=NAME`). Each sends reports by the rules above, older pieces included, and answers an ask for their track.
 - `--radio 918,62.5,7,5` sets the radio first. When the simulator stops (Ctrl-C or SIGTERM), it puts the radio back as it was, Off-Grid Repeat included, and takes off a trip channel it added.
 - It has no default port: on a shared machine the only serial port can be another program's radio.
 - It prints distances from the start, never coordinates.
@@ -279,8 +296,8 @@ These are ideas from the closed plans, kept for later. None of them is decided.
   - Route here to a member, carrying the time of their position;
   - "Details for a search" and "Send to this channel" on their card.
 - **In reports:**
-  - a one-tap status (OK, need help, heading back) and an optional "back by" time;
-  - trail settings (length, on and off);
+  - a one-tap status (OK, need help, heading back) and an optional "back by" time. The status could take the high 4 bits of the last byte;
+  - a setting to turn the trail off;
   - an early report on a sharp turn;
   - a "drawn to within N m" note on a trail.
 - **Who got it:** which members' radios got a channel message.

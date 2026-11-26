@@ -28,7 +28,9 @@ class TripPosition {
     this.stillSince,
     this.mayBeOld = false,
     this.name,
-    this.line = const [],
+    this.icon = TraxMapIcon.hike,
+    required this.track,
+    this.tail = const [],
   });
 
   /// The first 4 bytes of the sender's key, as 8 hex digits.
@@ -58,9 +60,31 @@ class TripPosition {
   /// The sender's radio name, from the reports that carry it.
   final String? name;
 
-  /// The way they came, each part oldest first: their latest trail, then
-  /// the positions reported since. A part ends where reports stopped.
-  final List<List<TrailPoint>> line;
+  /// How they show on the map, as they picked it.
+  final TraxMapIcon icon;
+
+  /// The pieces of their track this phone has.
+  final MemberTrack track;
+
+  /// The positions reported since the newest piece, each part oldest first.
+  /// A part ends where reports stopped.
+  final List<List<TrailPoint>> tail;
+
+  /// The way they came, each part oldest first: their track, then the
+  /// positions reported since, on from where it ends.
+  List<List<TrailPoint>> get line {
+    final lines = trackLines(track.inOrder);
+    for (final part in tail) {
+      if (lines.isNotEmpty &&
+          part.isNotEmpty &&
+          lines.last.last == part.first) {
+        lines.last.addAll(part.skip(1));
+      } else {
+        lines.add([...part]);
+      }
+    }
+    return lines;
+  }
 
   Uint8List get prefixBytes => Uint8List.fromList([
     for (var i = 0; i < 8; i += 2)
@@ -79,14 +103,28 @@ class TripPosition {
     'still': ?stillSince?.millisecondsSinceEpoch,
     if (mayBeOld) 'old': true,
     'name': ?name,
-    if (line.isNotEmpty)
-      'line': [
-        for (final part in line)
-          [
-            for (final p in part) [_round(p.lat), _round(p.lon)],
-          ],
-      ],
+    if (icon != TraxMapIcon.hike) 'icon': icon.name,
+    if (!track.isEmpty)
+      'track': {
+        'keep': track.keepHours,
+        'pieces': [
+          for (final p in track.inOrder)
+            [p.minute, p.endMinute, p.gridM, _points(p.points)],
+        ],
+      },
+    if (tail.isNotEmpty) 'tail': [for (final part in tail) _points(part)],
   };
+
+  static List<List<double>> _points(List<TrailPoint> points) => [
+    for (final p in points) [_round(p.lat), _round(p.lon)],
+  ];
+
+  static List<TrailPoint> _readPoints(Object? json) => [
+    if (json is List)
+      for (final p in json)
+        if (p case [final num lat, final num lon])
+          (lat: lat.toDouble(), lon: lon.toDouble()),
+  ];
 
   static double _round(double v) => (v * 1e5).round() / 1e5;
 
@@ -114,15 +152,33 @@ class TripPosition {
           : null,
       mayBeOld: json['old'] == true,
       name: name is String ? name : null,
-      line: [
-        if (json['line'] case final List parts)
-          for (final part in parts)
-            if (part is List)
-              [
-                for (final p in part)
-                  if (p case [final num lat, final num lon])
-                    (lat: lat.toDouble(), lon: lon.toDouble()),
-              ],
+      icon:
+          TraxMapIcon.values.where((i) => i.name == json['icon']).firstOrNull ??
+          TraxMapIcon.hike,
+      track: switch (json['track']) {
+        {'keep': final int keep, 'pieces': final List pieces} => MemberTrack(
+          keepHours: keep,
+          pieces: {
+            for (final p in pieces)
+              if (p case [
+                final int minute,
+                final int end,
+                final int grid,
+                final List points,
+              ])
+                minute: TrackPiece(
+                  minute: minute,
+                  endMinute: end,
+                  gridM: grid,
+                  points: _readPoints(points),
+                ),
+          },
+        ),
+        _ => MemberTrack(),
+      },
+      tail: [
+        if (json['tail'] case final List parts)
+          for (final part in parts) _readPoints(part),
       ],
     );
   }
@@ -131,18 +187,27 @@ class TripPosition {
 /// The trip members' locations, as their MeshTrax sends them to the trip
 /// channel in TRAX mode: the latest from each sender, kept per radio for 30
 /// days, so a member's last known place stays after their reports stop.
+/// Their track is kept as long as their phone says ("Keep my track").
 class TripPositions extends ChangeNotifier {
-  TripPositions(this._connector, this._trax, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now {
+  TripPositions(
+    this._connector,
+    this._trax, {
+    DateTime Function()? clock,
+    Random? random,
+  }) : _clock = clock ?? DateTime.now,
+       _session = (random ?? Random()).nextInt(0x10000) {
     _datagrams = _connector.channelDatagrams.listen(_onDatagram);
     _connector.addListener(_onConnector);
+    _expiry = Timer.periodic(_expireEvery, (_) => _expire());
     _onConnector();
   }
 
   final MeshCoreConnector _connector;
   final TraxService _trax;
   final DateTime Function() _clock;
+  final int _session;
   late final StreamSubscription<ChannelDatagram> _datagrams;
+  late final Timer _expiry;
 
   static const keepFor = Duration(days: 30);
 
@@ -157,14 +222,20 @@ class TripPositions extends ChangeNotifier {
 
   /// A reported position this close to the line's end isn't added.
   static const _gateM = 25.0;
-  static const _maxLinePoints = 1000;
+  static const _maxTailPoints = 1000;
+
+  /// Per member, the oldest pieces going first.
+  static const _maxTrackPoints = 5000;
   static const _saveEvery = Duration(seconds: 30);
+  static const _expireEvery = Duration(minutes: 5);
 
   static String keyFor(String radioKey) => 'trip_positions_$radioKey';
 
   final _byPrefix = <String, TripPosition>{};
+  final _askedAt = <String, DateTime>{};
   String _radioKey = '';
   Timer? _saveTimer;
+  int _seq = 0;
 
   Iterable<TripPosition> get all => _byPrefix.values;
 
@@ -179,6 +250,50 @@ class TripPositions extends ChangeNotifier {
       ? null
       : _byPrefix[pubKeyToHex(contact.publicKey.sublist(0, 4))];
 
+  /// Whether this phone can ask a member's MeshTrax for their track: in TRAX
+  /// mode, with a trip channel.
+  bool get canAskTrack => _trax.isOn && _trax.tripChannel != null;
+
+  /// When this phone last asked [prefix]'s MeshTrax for their track.
+  DateTime? askedAt(String prefix) => _askedAt[prefix];
+
+  /// Asks the MeshTrax of [prefix] (8 hex digits), on the trip channel, for
+  /// their trail and the pieces of their track this phone lacks; true when
+  /// the radio took it.
+  Future<bool> askTrack(String prefix) async {
+    final trip = _trax.tripChannel;
+    final self = _connector.selfPublicKey;
+    if (!canAskTrack ||
+        trip == null ||
+        self == null ||
+        self.length < 4 ||
+        prefix.length != 8) {
+      return false;
+    }
+    final ask = TraxAsk(
+      seq: _seq,
+      senderPrefix: Uint8List.fromList(self.sublist(0, 4)),
+      session: _session,
+      sentAt: _clock(),
+      target: Uint8List.fromList([
+        for (var i = 0; i < 8; i += 2)
+          int.parse(prefix.substring(i, i + 2), radix: 16),
+      ]),
+      have: _byPrefix[prefix]?.track.held() ?? const [],
+    );
+    _seq = (_seq + 1) & 0xFF;
+    if (!await _connector.sendChannelData(
+      trip,
+      traxshareDataType,
+      ask.encode(),
+    )) {
+      return false;
+    }
+    _askedAt[prefix] = _clock();
+    notifyListeners();
+    return true;
+  }
+
   void _onConnector() {
     final key = _connector.selfPublicKeyHex;
     if (key.isEmpty || key == _radioKey) return;
@@ -188,6 +303,7 @@ class TripPositions extends ChangeNotifier {
     _saveTimer = null;
     _radioKey = key;
     _byPrefix.clear();
+    _askedAt.clear();
     final raw = PrefsManager.instance.getString(keyFor(key));
     if (raw != null) {
       try {
@@ -202,6 +318,7 @@ class TripPositions extends ChangeNotifier {
       } catch (_) {}
     }
     _prune();
+    _expire(notify: false);
     notifyListeners();
   }
 
@@ -219,7 +336,15 @@ class TripPositions extends ChangeNotifier {
     }
     final prefix = pubKeyToHex(report.senderPrefix);
     final before = _byPrefix[prefix];
+    final now = _clock();
+    final track = before?.track ?? MemberTrack();
+    final block = report.track;
+    final grew = block != null && track.add(block);
+    if (grew) _trim(track);
+    final expired = track.expire(now);
+    // Its pieces count, but not its position.
     if (before != null && before.sentAt.isAfter(report.sentAt.add(_slack))) {
+      if (grew || expired) _changed();
       return;
     }
     // From the backlog, the radio heard it some time before it was read: the
@@ -228,7 +353,8 @@ class TripPositions extends ChangeNotifier {
         ? report.sentAt.toLocal()
         : d.receivedAt;
     _byPrefix[prefix] = TripPosition(
-      line: _line(before, report, heardAt),
+      track: track,
+      tail: _tail(before, report, track, heardAt),
       prefix: prefix,
       lat: report.lat,
       lon: report.lon,
@@ -244,8 +370,13 @@ class TripPositions extends ChangeNotifier {
       },
       mayBeOld: report.mayBeOld,
       name: report.name ?? before?.name,
+      icon: report.icon,
     );
     _prune();
+    _changed();
+  }
+
+  void _changed() {
     _saveTimer ??= Timer(_saveEvery, () {
       _saveTimer = null;
       unawaited(_save());
@@ -253,45 +384,89 @@ class TripPositions extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// A trail replaces the line; a live position extends it, or starts a
-  /// new part after a gap. A position that may be old is left out of it.
-  static List<List<TrailPoint>> _line(
+  /// A report with their newest piece starts the tail again, from that
+  /// piece's end; a live position extends it, or starts a new part after a
+  /// gap. A position that may be old is left out of it.
+  static List<List<TrailPoint>> _tail(
     TripPosition? before,
     TraxReport report,
+    MemberTrack track,
     DateTime heardAt,
   ) {
     final here = (lat: report.lat, lon: report.lon);
-    if (report.trail case final trail?) {
+    final newest = track.inOrder.lastOrNull;
+    if (newest != null && report.track?.pieces.first.minute == newest.minute) {
       return [
-        [...trail.points.reversed, here],
+        if (!report.mayBeOld) [newest.points.last, here],
       ];
     }
-    final line = before?.line ?? const <List<TrailPoint>>[];
-    if (report.mayBeOld) return line;
-    final last = line.lastOrNull?.lastOrNull;
+    final tail = before?.tail ?? const <List<TrailPoint>>[];
+    if (report.mayBeOld) return tail;
+    final last = tail.lastOrNull?.lastOrNull;
     final List<List<TrailPoint>> out;
     if (last == null ||
         before == null ||
         before.mayBeOld ||
         heardAt.difference(before.heardAt) > lineGap) {
       out = [
-        ...line,
+        ...tail,
         [here],
       ];
     } else if (_metres(last, here) < _gateM) {
-      return line;
+      return tail;
     } else {
       out = [
-        ...line.sublist(0, line.length - 1),
-        [...line.last, here],
+        ...tail.sublist(0, tail.length - 1),
+        [...tail.last, here],
       ];
     }
     var count = out.fold(0, (n, part) => n + part.length);
-    while (count > _maxLinePoints && out.isNotEmpty) {
+    while (count > _maxTailPoints && out.isNotEmpty) {
       count -= out.first.length;
       out.removeAt(0);
     }
     return out;
+  }
+
+  static void _trim(MemberTrack track) {
+    final pieces = track.inOrder;
+    var count = pieces.fold(0, (n, p) => n + p.points.length);
+    for (final p in pieces) {
+      if (count <= _maxTrackPoints) break;
+      track.pieces.remove(p.minute);
+      count -= p.points.length;
+    }
+  }
+
+  /// Each piece goes as long after its last point as its member keeps it,
+  /// and the positions since with it once they were heard that long ago.
+  void _expire({bool notify = true}) {
+    final now = _clock();
+    var changed = false;
+    for (final MapEntry(:key, :value) in _byPrefix.entries.toList()) {
+      changed |= value.track.expire(now);
+      final keep = Duration(hours: value.track.keepHours);
+      if (value.tail.isNotEmpty && now.difference(value.heardAt) > keep) {
+        _byPrefix[key] = TripPosition(
+          prefix: value.prefix,
+          lat: value.lat,
+          lon: value.lon,
+          sentAt: value.sentAt,
+          heardAt: value.heardAt,
+          altitude: value.altitude,
+          battery: value.battery,
+          heading: value.heading,
+          speed: value.speed,
+          stillSince: value.stillSince,
+          mayBeOld: value.mayBeOld,
+          name: value.name,
+          icon: value.icon,
+          track: value.track,
+        );
+        changed = true;
+      }
+    }
+    if (changed && notify) _changed();
   }
 
   static double _metres(TrailPoint a, TrailPoint b) {
@@ -321,6 +496,7 @@ class TripPositions extends ChangeNotifier {
   void dispose() {
     if (_saveTimer?.isActive ?? false) unawaited(_save());
     _saveTimer?.cancel();
+    _expiry.cancel();
     unawaited(_datagrams.cancel());
     _connector.removeListener(_onConnector);
     super.dispose();

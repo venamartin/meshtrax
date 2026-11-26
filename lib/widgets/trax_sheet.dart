@@ -4,10 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:traxshare/traxshare.dart' show TraxMapIcon;
 
 import '../connector/meshcore_connector.dart';
 import '../helpers/date_time_helper.dart';
 import '../helpers/geo_format.dart';
+import '../helpers/trax_icons.dart';
 import '../l10n/l10n.dart';
 import '../models/map_focus.dart';
 import '../models/trax.dart';
@@ -378,6 +380,7 @@ class _TraxSheetState extends State<TraxSheet> {
       place: at == null ? null : place,
       old: old,
       trail: report?.prefix ?? contact?.publicKeyHex.substring(0, 8),
+      icon: report?.icon,
     );
   }
 
@@ -393,7 +396,7 @@ class _TraxSheetState extends State<TraxSheet> {
       return ListTile(
         contentPadding: EdgeInsets.zero,
         visualDensity: const VisualDensity(vertical: -4),
-        leading: _avatar(context, old: m.old),
+        leading: _avatar(context, old: m.old, icon: m.icon),
         title: Text(name),
         subtitle: Text.rich(
           TextSpan(
@@ -433,9 +436,9 @@ class _TraxSheetState extends State<TraxSheet> {
     );
   }
 
-  /// The walker on a disc: orange with a location, grey when it may be
+  /// Their icon on a disc: orange with a location, grey when it may be
   /// old, plain without one.
-  Widget _avatar(BuildContext context, {bool? old}) {
+  Widget _avatar(BuildContext context, {bool? old, TraxMapIcon? icon}) {
     final scheme = Theme.of(context).colorScheme;
     return CircleAvatar(
       radius: 16,
@@ -445,7 +448,7 @@ class _TraxSheetState extends State<TraxSheet> {
         false => const Color(Trax.orange),
       },
       child: Icon(
-        Icons.hiking,
+        traxIconData(icon),
         size: 18,
         color: old == null ? scheme.onSurfaceVariant : Colors.white,
       ),
@@ -561,4 +564,5 @@ typedef _Member = ({
   LatLng? place,
   bool old,
   String? trail,
+  TraxMapIcon? icon,
 });
