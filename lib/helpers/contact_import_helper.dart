@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -14,30 +14,6 @@ import 'meshcore_qr.dart';
 import 'snack_bar_builder.dart';
 
 class ContactImportHelper {
-  static Future<void> importFromClipboard(BuildContext context) async {
-    final clipboardData = await Clipboard.getData('text/plain');
-    if (clipboardData == null || clipboardData.text == null) {
-      if (context.mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-      }
-      return;
-    }
-    final text = clipboardData.text!.trim();
-    if (text.isEmpty) {
-      if (context.mounted) {
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_invalidAdvertFormat),
-        );
-      }
-      return;
-    }
-    if (context.mounted) importFromScannedData(context, text);
-  }
-
   static void importFromScannedData(BuildContext context, String data) {
     final link = MeshCoreQr.parseContactParams(data) ??
         MeshCoreQr.parseAdvertCard(data) ??
@@ -62,9 +38,30 @@ class ContactImportHelper {
     );
   }
 
-  /// A room, new or already saved, then opens through its password prompt.
-  static Future<void> _importFromPublicKeyHex(BuildContext context, String pubKeyHex,
-      {String name = '', int type = advTypeChat, double? latitude, double? longitude}) async {
+  /// [data] from the Add page, imported as [importFromScannedData] does but
+  /// leaving where to go next to the page: the saved contact, or null.
+  static Future<Contact?> importContact(
+    BuildContext context,
+    ContactQrData data,
+  ) =>
+      _importFromPublicKeyHex(
+        context,
+        data.pubKeyHex,
+        name: data.name,
+        type: data.type,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        openRoom: false,
+      );
+
+  /// A room, new or already saved, then opens through its password prompt
+  /// when [openRoom]. The saved contact, or null.
+  static Future<Contact?> _importFromPublicKeyHex(BuildContext context, String pubKeyHex,
+      {String name = '',
+      int type = advTypeChat,
+      double? latitude,
+      double? longitude,
+      bool openRoom = true}) async {
     final connector = context.read<MeshCoreConnector>();
     try {
       final pubKey = hex2Uint8List(pubKeyHex);
@@ -73,7 +70,7 @@ class ContactImportHelper {
           context,
           content: Text(context.l10n.contacts_invalidAdvertFormat),
         );
-        return;
+        return null;
       }
       // The radio applies an import in place: a blank record built from a
       // scanned key would wipe a saved contact's route, flags, location,
@@ -88,8 +85,10 @@ class ContactImportHelper {
           context,
           content: Text(context.l10n.contacts_alreadyInContacts(saved.name)),
         );
-        if (saved.type == advTypeRoom) ChatScreen.open(context, saved);
-        return;
+        if (openRoom && saved.type == advTypeRoom) {
+          ChatScreen.open(context, saved);
+        }
+        return saved;
       }
       // Already heard on air: its own advert's name, type and position
       // beat what the link says. Added now, though: the radio keeps this as
@@ -116,28 +115,30 @@ class ContactImportHelper {
         contact,
         lastAdvertEpochSeconds: 0,
       );
-      if (!context.mounted) return;
+      if (!context.mounted) return null;
       if (!ok) {
         showDismissibleSnackBar(
           context,
           content: Text(context.l10n.contacts_contactImportFailed),
         );
-        return;
+        return null;
       }
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.contacts_contactImported),
       );
       final added = savedWithKey();
-      if (added != null && added.type == advTypeRoom) {
+      if (openRoom && added != null && added.type == advTypeRoom) {
         ChatScreen.open(context, added);
       }
+      return added ?? contact;
     } catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) return null;
       showDismissibleSnackBar(
         context,
         content: Text(context.l10n.contacts_invalidAdvertFormat),
       );
+      return null;
     }
   }
 }

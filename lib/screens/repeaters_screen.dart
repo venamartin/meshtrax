@@ -1,5 +1,4 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../connector/meshcore_connector.dart';
@@ -7,11 +6,11 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../models/contact.dart';
 import '../services/ui_view_state_service.dart';
+import '../widgets/contact_copy_tiles.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
 import '../widgets/repeater_login_dialog.dart';
-import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../utils/contact_search.dart';
 import 'path_trace_map.dart';
@@ -175,22 +174,12 @@ class _RepeatersScreenState extends State<RepeatersScreen> {
                   _confirmDelete(context, connector, contact);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(context.l10n.contacts_ShareContact),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                final data = MeshCoreQr.encodeContact(
-                  contact.name,
-                  pubKeyToHex(contact.publicKey),
-                  contact.type,
-                );
-                Clipboard.setData(ClipboardData(text: data));
-                showDismissibleSnackBar(
-                  context,
-                  content: Text(context.l10n.common_copiedToClipboard),
-                );
-              },
+            ...contactCopyTiles(
+              context,
+              name: contact.name,
+              keyHex: contact.publicKeyHex,
+              type: contact.type,
+              close: () => Navigator.pop(sheetContext),
             ),
             // The radio only keeps adverts of contacts it has saved.
             if (contact.isActive)
