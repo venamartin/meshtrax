@@ -1555,7 +1555,8 @@ void main() {
         startServices();
         radio
           ..lat = _here.lat
-          ..lon = _here.lon;
+          ..lon = _here.lon
+          ..read(_here.lat, _here.lon);
         await pumpApp(tester, const MapScreen());
         double creditsLeft() =>
             tester.widget<AppMap>(find.byType(AppMap)).leftControlsWidth;
@@ -1568,6 +1569,11 @@ void main() {
         expect(radio.speedViewers, 1);
         expect(creditsLeft(), MapControls.speedWidth);
         final card = find.byType(SpeedCard);
+        // Not moving yet: just the altitude.
+        expect(
+          find.descendant(of: card, matching: find.text('-86 m')),
+          findsOneWidget,
+        );
         final group = find.byTooltip('TRAX group');
         expect(
           tester.getBottomLeft(card).dy,

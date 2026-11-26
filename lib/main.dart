@@ -52,7 +52,7 @@ import 'services/water_routing_service.dart';
 import 'storage/app_debug_log_store.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
-import 'utils/route_transitions.dart';
+import 'utils/app_theme.dart';
 import 'utils/scroll_jank_reporter.dart';
 import 'widgets/legacy_material_bridge.dart';
 import 'widgets/trax_dialogs.dart';
@@ -495,29 +495,8 @@ class _MeshTraxAppState extends State<MeshTraxApp> {
             locale: _localeFromSetting(
               settingsService.settings.languageOverride,
             ),
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-              useMaterial3: true,
-              fontFamily: 'Liberation Sans',
-              fontFamilyFallback: const ['Noto Color Emoji', 'DejaVu Sans'],
-              snackBarTheme: const SnackBarThemeData(
-                behavior: SnackBarBehavior.floating,
-              ),
-              pageTransitionsTheme: appPageTransitions,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              fontFamily: 'Liberation Sans',
-              fontFamilyFallback: const ['Noto Color Emoji', 'DejaVu Sans'],
-              snackBarTheme: const SnackBarThemeData(
-                behavior: SnackBarBehavior.floating,
-              ),
-              pageTransitionsTheme: appPageTransitions,
-            ),
+            theme: appTheme(Brightness.light),
+            darkTheme: appTheme(Brightness.dark),
             themeMode: _themeModeFromSetting(
               settingsService.settings.themeMode,
             ),
