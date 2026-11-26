@@ -70,9 +70,13 @@ sealed class StructuredMessage {
 
   static final _leadingMention = RegExp(r'^@\[[^\]]+\][ \n]?');
 
-  /// Another app's `loc: lat,lon`: read like bare coordinates, never sent.
-  static final _locLine = RegExp(
-    r'^loc:\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$',
+  /// Position lines other apps send, read and never written: a live
+  /// share's `[LOC]lat,lon` (a DM adds the sender's name) and a quick
+  /// message's `loc: lat,lon` are where the sender is; a waypoint's
+  /// `[WAY]lat,lon label` is a place.
+  static final _taggedLine = RegExp(
+    r'^(loc:|\[loc\]|\[way\])\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*'
+    r'(-?\d{1,3}(?:\.\d+)?)(?:\s+(.*))?$',
     caseSensitive: false,
   );
 
@@ -82,10 +86,22 @@ sealed class StructuredMessage {
     return _bounded(double.tryParse(m.group(1)!), double.tryParse(m.group(2)!));
   }
 
-  static LatLng? _locCoordinates(String line) {
-    final m = _locLine.firstMatch(line);
+  /// A tagged line's position, whether it is the sender's own, and a
+  /// waypoint's label.
+  static ({LatLng position, bool own, String? label})? _tagged(String line) {
+    final m = _taggedLine.firstMatch(line);
     if (m == null) return null;
-    return _bounded(double.tryParse(m.group(1)!), double.tryParse(m.group(2)!));
+    final tag = m.group(1)!.toLowerCase();
+    final rest = m.group(4)?.trim() ?? '';
+    if (tag == 'loc:' && rest.isNotEmpty) return null;
+    final position =
+        _bounded(double.tryParse(m.group(2)!), double.tryParse(m.group(3)!));
+    if (position == null) return null;
+    return (
+      position: position,
+      own: tag != '[way]',
+      label: tag == '[way]' && rest.isNotEmpty ? rest : null,
+    );
   }
 
   static LatLng? _bounded(double? lat, double? lon) {
@@ -269,9 +285,17 @@ sealed class StructuredMessage {
 
     LatLng? position;
     String? name;
+    var own = false;
     final free = <String>[];
     for (final line in lines) {
-      final coords = parseCoordinates(line) ?? _locCoordinates(line);
+      final tagged = position == null ? _tagged(line) : null;
+      if (tagged != null) {
+        position = tagged.position;
+        own = tagged.own;
+        if (tagged.label case final label?) free.insert(0, label);
+        continue;
+      }
+      final coords = parseCoordinates(line);
       if (coords != null && position == null) {
         position = coords;
         continue;
@@ -288,6 +312,14 @@ sealed class StructuredMessage {
       free.add(line);
     }
     if (position == null) return null;
+    if (own) {
+      return LocationMessage(
+        position: position,
+        label: LocationMessage.myLocationLabel,
+        note: free.isNotEmpty ? free[0] : null,
+        extraText: free.skip(1).toList(),
+      );
+    }
     final label = free.isNotEmpty ? free[0] : name;
     return LocationMessage(
       position: position,

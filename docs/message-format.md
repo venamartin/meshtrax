@@ -19,7 +19,7 @@ formats from other apps that it reads but never sends.
 | Reaction | MeshCore One reaction | meshcore-open `r:HASH:INDEX`, older MeshCore One emoji-first order |
 | GIF | Giphy link (default) or `g:ID` | `media.giphy.com` links |
 | Markdown | whatever the user types | |
-| Cards | `Location:`, `SOS:` and its repeats, Got it and `SOS cancelled`, `Event:`, `Notice:` | `m:` marker, `loc:` lines, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
+| Cards | `Location:`, `SOS:` and its repeats, Got it and `SOS cancelled`, `Event:`, `Notice:` | `m:` marker, `loc:`, `[LOC]` and `[WAY]` lines, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
 | Drawings | `SVG:` and path data | |
 | Compression | `s:` SMAZ, only when switched on | `s:` SMAZ, always |
 
@@ -563,10 +563,14 @@ repeaters fit one channel message.
 
 - `m:LAT,LON|LABEL|FLAGS`, the marker line of meshcore-open, Offband and
   older MeshTrax, as a Location.
-- A `loc: LAT,LON` line, in any case and with any number of decimals, as
-  a Location: a place, not the sender's own position. Up to two lines of
-  text around it are its title and note, as with bare coordinates.
-  MeshTrax reads it and never sends it.
+- The position lines of MeshCore Solo firmware, as a Location. A live
+  share `[LOC]LAT,LON` and a quick message's `loc: LAT,LON` are where the
+  sender is, shown like My location; in a direct message a live share
+  ends with the sender's name, which is left out. A waypoint
+  `[WAY]LAT,LON LABEL` is a place titled with its label. The tag starts
+  its line, in any case, and up to two lines of text around it come
+  along. An `[SOS]` line stays text. MeshTrax reads these and never sends
+  them.
 - A message that is just coordinates, a `geo:` URI or a maps link, with up
   to two lines of text around it, as a Location. This is what the stock
   companion app, MeshCore One and the Google and Apple Maps share sheets
