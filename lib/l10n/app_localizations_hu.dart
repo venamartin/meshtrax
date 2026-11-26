@@ -7243,6 +7243,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get chats_draft => 'Piszkozat';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'A rádiója letiltja';
 
   @override

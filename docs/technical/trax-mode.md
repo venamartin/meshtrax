@@ -223,13 +223,17 @@ The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again*
 
   It keeps up as reports come in, and its "ago" counts on every 30 s. Their track shows in orange while it is open, over your own track in blue.
 - **A person's info** (a node's dialog): last heard, location, distance from you, heading, speed or "not moving since", elevation, radio battery and path. Each comes from the newest of the TRAX report, the radio's answer and the advert. People get no line of sight or radio reach; repeaters, rooms and sensors keep both.
-- **The TRAX group button,** at the bottom left in TRAX mode (the boot print between two people), opens the group's list.
+- **The TRAX group button,** at the bottom left in TRAX mode (three people), opens the group's list.
   - Rows are sorted by name and show distance, direction and when last heard. They are grey when the reading may be old, and members with no location come last.
   - A pick opens the card with the map on them. A contact with no location yet has their radio asked, and in TRAX mode their phone for their track.
   - The map's credits and offline card sit to the right of the button.
 - **Following:** My location keeps you in the middle as the radio's position moves, until the map is dragged; a zoom doesn't stop it, and the button is filled meanwhile.
   - A tapped member, or one picked from a list, is followed the same way, with the card open or closed. Their trail stays until another member is tapped.
   - A sheet about something else pauses following while it is open. When it closes, the map goes back to whom it follows.
+
+## In Chats
+
+While TRAX mode is on, the trip channel is first in Chats, whatever came in since. Its row has the boot print in place of the lock, a TRAX label after the name and an orange outline. Out of TRAX mode it goes back to its place by its latest message.
 
 ## My location
 

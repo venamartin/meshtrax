@@ -7247,6 +7247,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chats_draft => 'Черновик';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Заблокировано вашим радио';
 
   @override

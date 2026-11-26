@@ -7260,6 +7260,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chats_draft => 'Szkic';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Zablokowane przez Twoje radio';
 
   @override

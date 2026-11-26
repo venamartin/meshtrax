@@ -12184,6 +12184,12 @@ abstract class AppLocalizations {
   /// **'Draft'**
   String get chats_draft;
 
+  /// After the trip channel's name in Chats while TRAX mode is on: the active TRAX channel.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX'**
+  String get chats_traxLabel;
+
   /// No description provided for @contact_teleBlockedTitle.
   ///
   /// In en, this message translates to:

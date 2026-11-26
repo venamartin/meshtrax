@@ -7235,6 +7235,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chats_draft => 'Borrador';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Bloqueado por tu radio';
 
   @override

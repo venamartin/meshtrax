@@ -7220,6 +7220,9 @@ class AppLocalizationsSl extends AppLocalizations {
   String get chats_draft => 'Osnutek';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Blokira vaš radio';
 
   @override

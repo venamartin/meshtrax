@@ -7178,6 +7178,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get chats_draft => 'Utkast';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Blockerat av din radio';
 
   @override

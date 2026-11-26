@@ -6937,6 +6937,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chats_draft => '임시 저장';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => '무전기 설정에서 차단됨';
 
   @override

@@ -3528,6 +3528,10 @@
   "chats_markRead": "Mark read",
   "chats_nothingUnread": "No unread messages",
   "chats_draft": "Draft",
+  "chats_traxLabel": "TRAX",
+  "@chats_traxLabel": {
+    "description": "After the trip channel's name in Chats while TRAX mode is on: the active TRAX channel."
+  },
   "contact_teleBlockedTitle": "Blocked by your radio",
   "contact_teleBlockedBody": "Your radio's privacy settings share this with nobody, so {name} won't get it. Change them so the contacts you allow get it?",
   "@contact_teleBlockedBody": {

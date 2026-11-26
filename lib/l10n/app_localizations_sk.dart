@@ -7218,6 +7218,9 @@ class AppLocalizationsSk extends AppLocalizations {
   String get chats_draft => 'Koncept';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Zablokované vaším rádiom';
 
   @override

@@ -7252,6 +7252,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chats_draft => 'Entwurf';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Von Ihrem Funkgerät gesperrt';
 
   @override
