@@ -279,7 +279,6 @@
   },
   "trip_advertsHint": "在 TRAX 模式下。范围内任何人都能读取。",
   "trip_sosTitle": "让 SOS 在勿扰模式下也响铃？",
-  "trip_sosBody": "打开设置，然后允许“覆盖勿扰模式”。",
   "trip_onTrax": "TRAX 上 {on}/{total}",
   "@trip_onTrax": {
     "placeholders": {
@@ -2543,7 +2542,6 @@
   "appSettings_sosAlerts": "SOS 警报",
   "appSettings_sosAlways": "即使聊天已静音或消息通知已关闭，SOS 也总会提醒。",
   "appSettings_sosThroughDnd": "在勿扰模式下也会响铃。",
-  "appSettings_sosSilencedByDnd": "勿扰模式会让它静音。点按并允许“覆盖勿扰模式”。",
   "appSettings_sosBlocked": "手机已关闭 SOS 警报。点按以开启。",
   "appSettings_sosApple": "在此设备上，专注模式和静音模式仍可能让它静音。",
   "appSettings_sosOff": "通知已关闭，因此 SOS 警报也已关闭。",

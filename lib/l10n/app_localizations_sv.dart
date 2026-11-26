@@ -1280,10 +1280,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trip_sosTitle => 'Ska ett SOS höras även i Stör ej?';
 
   @override
-  String get trip_sosBody =>
-      'Öppna inställningarna och tillåt Åsidosätt Stör ej.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on av $total på TRAX';
   }
@@ -6258,6 +6254,48 @@ class AppLocalizationsSv extends AppLocalizations {
   String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
 
   @override
+  String get add_title => 'Add contact or channel';
+
+  @override
+  String get add_box => 'Paste or type';
+
+  @override
+  String get add_boxHint =>
+      'A meshcore:// link, <key:type:name>, #hashtag or a key';
+
+  @override
+  String get add_paste => 'Paste';
+
+  @override
+  String get add_clipboardEmpty => 'There\'s nothing to paste.';
+
+  @override
+  String get add_unreadableTitle => 'Nothing to add yet';
+
+  @override
+  String get add_unreadable =>
+      'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.';
+
+  @override
+  String get add_contactName => 'Name (optional)';
+
+  @override
+  String get add_scanInstructions => 'Scan a contact or channel QR code';
+
+  @override
+  String get add_scanUnreadable =>
+      'That QR code isn\'t a contact or a channel.';
+
+  @override
+  String get copy_link => 'Copy link';
+
+  @override
+  String get copy_asText => 'Copy as text';
+
+  @override
+  String get share_asText => 'As text';
+
+  @override
   String get dialog_insert => 'Infoga';
 
   @override
@@ -6403,6 +6441,14 @@ class AppLocalizationsSv extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS avbrutet · väntar på radion';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS-larm';
 
   @override
@@ -6437,8 +6483,8 @@ class AppLocalizationsSv extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'Det hörs även i Stör ej.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Stör ej tystar det. Tryck och tillåt Åsidosätt Stör ej.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

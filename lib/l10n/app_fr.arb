@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "En mode TRAX. Quiconque à portée peut la lire.",
   "trip_sosTitle": "Faire sonner un SOS même en mode Ne pas déranger ?",
-  "trip_sosBody": "Ouvrez les paramètres, puis autorisez Ignorer Ne pas déranger.",
   "trip_onTrax": "{on} sur {total} sur TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "Alertes SOS",
   "appSettings_sosAlways": "Un SOS alerte toujours, même dans une discussion en sourdine ou avec les notifications de messages désactivées.",
   "appSettings_sosThroughDnd": "Il sonne même en mode Ne pas déranger.",
-  "appSettings_sosSilencedByDnd": "Ne pas déranger le rend muet. Touchez et autorisez Ignorer Ne pas déranger.",
   "appSettings_sosBlocked": "Le téléphone a désactivé les alertes SOS. Touchez pour les activer.",
   "appSettings_sosApple": "Les modes de concentration et le mode silencieux peuvent encore le rendre muet sur cet appareil.",
   "appSettings_sosOff": "Les notifications sont désactivées, les alertes SOS aussi.",

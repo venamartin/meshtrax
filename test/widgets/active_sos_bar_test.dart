@@ -165,8 +165,7 @@ void main() {
       await row(tester, SosAlertState.silencedByDnd);
       expect(
         find.text(
-          '$always Do Not Disturb silences it. Tap and allow '
-          'Override Do Not Disturb.',
+          '$always Do Not Disturb silences it. Tap to let it through.',
         ),
         findsOneWidget,
       );

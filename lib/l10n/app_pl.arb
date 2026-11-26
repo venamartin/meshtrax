@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "W trybie TRAX. Każdy w zasięgu może ją odczytać.",
   "trip_sosTitle": "Czy SOS ma dzwonić mimo trybu Nie przeszkadzać?",
-  "trip_sosBody": "Otwórz ustawienia i zezwól na zastępowanie trybu Nie przeszkadzać.",
   "trip_onTrax": "{on} z {total} na TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2576,7 +2575,6 @@
   "appSettings_sosAlerts": "Alarmy SOS",
   "appSettings_sosAlways": "SOS zawsze alarmuje, nawet na wyciszonym czacie lub przy wyłączonych powiadomieniach o wiadomościach.",
   "appSettings_sosThroughDnd": "Dzwoni też w trybie Nie przeszkadzać.",
-  "appSettings_sosSilencedByDnd": "Tryb Nie przeszkadzać go wycisza. Dotknij i zezwól na zastępowanie trybu Nie przeszkadzać.",
   "appSettings_sosBlocked": "Telefon ma wyłączone alarmy SOS. Dotknij, aby je włączyć.",
   "appSettings_sosApple": "Tryby skupienia i tryb cichy nadal mogą go wyciszyć na tym urządzeniu.",
   "appSettings_sosOff": "Powiadomienia są wyłączone, więc alarmy SOS też.",

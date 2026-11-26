@@ -2231,12 +2231,6 @@ abstract class AppLocalizations {
   /// **'Let an SOS ring through Do Not Disturb?'**
   String get trip_sosTitle;
 
-  /// No description provided for @trip_sosBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Open settings, then allow Override Do Not Disturb.'**
-  String get trip_sosBody;
-
   /// No description provided for @trip_onTrax.
   ///
   /// In en, this message translates to:
@@ -10534,6 +10528,84 @@ abstract class AppLocalizations {
   /// **'Heading and speed aren\'t known yet'**
   String get location_motionNotKnown;
 
+  /// No description provided for @add_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact or channel'**
+  String get add_title;
+
+  /// No description provided for @add_box.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or type'**
+  String get add_box;
+
+  /// No description provided for @add_boxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A meshcore:// link, <key:type:name>, #hashtag or a key'**
+  String get add_boxHint;
+
+  /// No description provided for @add_paste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get add_paste;
+
+  /// No description provided for @add_clipboardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s nothing to paste.'**
+  String get add_clipboardEmpty;
+
+  /// No description provided for @add_unreadableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to add yet'**
+  String get add_unreadableTitle;
+
+  /// No description provided for @add_unreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.'**
+  String get add_unreadable;
+
+  /// No description provided for @add_contactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get add_contactName;
+
+  /// No description provided for @add_scanInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a contact or channel QR code'**
+  String get add_scanInstructions;
+
+  /// No description provided for @add_scanUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'That QR code isn\'t a contact or a channel.'**
+  String get add_scanUnreadable;
+
+  /// No description provided for @copy_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copy_link;
+
+  /// No description provided for @copy_asText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as text'**
+  String get copy_asText;
+
+  /// No description provided for @share_asText.
+  ///
+  /// In en, this message translates to:
+  /// **'As text'**
+  String get share_asText;
+
   /// No description provided for @dialog_insert.
   ///
   /// In en, this message translates to:
@@ -10774,6 +10846,18 @@ abstract class AppLocalizations {
   /// **'SOS cancelled · waiting for the radio'**
   String get sos_cancelledWaiting;
 
+  /// No description provided for @sos_dndStepsSamsung.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.'**
+  String get sos_dndStepsSamsung;
+
+  /// No description provided for @sos_dndStepsOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.'**
+  String get sos_dndStepsOther;
+
   /// No description provided for @notification_sosChannel.
   ///
   /// In en, this message translates to:
@@ -10828,11 +10912,11 @@ abstract class AppLocalizations {
   /// **'It sounds through Do Not Disturb.'**
   String get appSettings_sosThroughDnd;
 
-  /// No description provided for @appSettings_sosSilencedByDnd.
+  /// No description provided for @appSettings_sosLetThroughDnd.
   ///
   /// In en, this message translates to:
-  /// **'Do Not Disturb silences it. Tap and allow Override Do Not Disturb.'**
-  String get appSettings_sosSilencedByDnd;
+  /// **'Do Not Disturb silences it. Tap to let it through.'**
+  String get appSettings_sosLetThroughDnd;
 
   /// No description provided for @appSettings_sosBlocked.
   ///

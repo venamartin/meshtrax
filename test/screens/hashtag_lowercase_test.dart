@@ -10,7 +10,6 @@ import 'package:meshtrax/helpers/link_handler.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/contact.dart';
-import 'package:meshtrax/screens/new_chat_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/chat_text_scale_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
@@ -21,8 +20,9 @@ import 'package:meshtrax/storage/prefs_manager.dart';
 
 // A hashtag channel's key comes from its name as written, so #Test and
 // #test are two channels, and people kept ending up alone in the wrong one.
-// The Create box and a tapped #tag now join the lowercase one; "Keep
-// capitals" shows only once a capital is typed (owner, 2026-11-18).
+// A tapped #tag now joins the lowercase one; "Keep capitals" shows only
+// once a capital is typed (owner, 2026-11-18). The Add page's box does the
+// same: test/screens/add_screen_test.dart.
 class _Radio extends MeshCoreConnector {
   List<Channel> channelList = const [];
 
@@ -103,76 +103,6 @@ void main() {
     await tester.pumpAndSettle();
     return radio;
   }
-
-  group('the Create a Hashtag Channel box', () {
-    final box = find.widgetWithText(TextField, 'Enter hashtag');
-
-    Future<_Radio> openBox(WidgetTester tester) async {
-      final radio = await pump(tester, const NewChatScreen());
-      await tester.tap(find.text('New Channel'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Create a Hashtag Channel'));
-      await tester.pumpAndSettle();
-      return radio;
-    }
-
-    String shown(WidgetTester tester) =>
-        tester.widget<TextField>(box).controller!.text;
-
-    testWidgets('shows a capital in lowercase and adds the lowercase channel', (
-      tester,
-    ) async {
-      final radio = await openBox(tester);
-      expect(find.text('Keep capitals'), findsNothing);
-      await tester.enterText(box, '#BayArea');
-      await tester.pumpAndSettle();
-      expect(shown(tester), '#bayarea');
-      expect(find.text('Keep capitals'), findsOneWidget);
-      await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
-      expect(radio.added, [('#bayarea', _key('#bayarea'))]);
-    });
-
-    testWidgets('no capital typed: no Keep capitals', (tester) async {
-      await openBox(tester);
-      await tester.enterText(box, 'bayarea');
-      await tester.pumpAndSettle();
-      expect(find.text('Keep capitals'), findsNothing);
-    });
-
-    testWidgets('Keep capitals puts them back and adds that channel', (
-      tester,
-    ) async {
-      final radio = await openBox(tester);
-      await tester.enterText(box, '#BayArea');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Keep capitals'));
-      await tester.pumpAndSettle();
-      expect(shown(tester), '#BayArea');
-      await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
-      expect(radio.added, [('#BayArea', _key('#BayArea'))]);
-    });
-
-    // On the owner's phone the keyboard left room for little more than the
-    // box, and the switch appeared out of sight under it (2026-11-18).
-    testWidgets('with the keyboard up, the switch scrolls into view', (
-      tester,
-    ) async {
-      await openBox(tester);
-      tester.view.viewInsets = const FakeViewPadding(bottom: 1000);
-      addTearDown(tester.view.resetViewInsets);
-      await tester.tap(box);
-      await tester.pumpAndSettle();
-      await tester.enterText(box, 'ThBi');
-      await tester.pumpAndSettle();
-      expect(shown(tester), 'thbi');
-      expect(find.text('Keep capitals').hitTestable(), findsOneWidget);
-      await tester.tap(find.text('Keep capitals'));
-      await tester.pumpAndSettle();
-      expect(shown(tester), 'ThBi');
-    });
-  });
 
   group('a tapped #tag', () {
     Future<_Radio> tap(WidgetTester tester, String tag) async {

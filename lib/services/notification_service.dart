@@ -445,7 +445,7 @@ class NotificationService {
   );
 
   /// Android lets a category through Do Not Disturb only when the user says
-  /// so in its settings ([openSosSettings]); asking for it here takes
+  /// so in its settings ([openSosDndSettings]); asking for it here takes
   /// effect only for an app holding notification policy access.
   static AndroidNotificationChannel sosChannel(AppLocalizations l10n) =>
       AndroidNotificationChannel(
@@ -517,9 +517,38 @@ class NotificationService {
         : SosAlertState.silencedByDnd;
   }
 
+  /// Samsung lets the SOS category through Do Not Disturb from the Do not
+  /// disturb page (App notifications → Add apps); its category page has no
+  /// switch for it. Other Android phones keep "Override Do Not Disturb" on
+  /// the category page.
+  Future<bool> sosSwitchInDndPage() async {
+    if (!Platform.isAndroid) return false;
+    final maker = await const MethodChannel(
+      'meshtrax/system',
+    ).invokeMethod<String>('manufacturer');
+    return maker == 'samsung';
+  }
+
+  /// Where the user lets SOS alerts through Do Not Disturb: the Do not
+  /// disturb page on Samsung ([sosSwitchInDndPage]), the category page
+  /// elsewhere.
+  Future<void> openSosDndSettings() async {
+    if (!await sosSwitchInDndPage()) return openSosSettings();
+    await _ensureInitialized();
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(sosChannel(_l10n));
+    await const MethodChannel('meshtrax/system').invokeMethod<void>(
+      'openDndSettings',
+      {'channelId': sosChannelId},
+    );
+  }
+
   /// The SOS category's own settings page (Android), made first so the
-  /// page exists, where "Override Do Not Disturb" is switched on; the app's
-  /// settings elsewhere.
+  /// page exists, where it is turned on and, except on Samsung, "Override
+  /// Do Not Disturb" is switched on; the app's settings elsewhere.
   Future<void> openSosSettings() async {
     if (Platform.isAndroid) {
       await _ensureInitialized();

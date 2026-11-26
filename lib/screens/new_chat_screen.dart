@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -7,25 +6,18 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
-import '../models/channel.dart';
 import '../models/contact.dart';
 import '../widgets/contact_info_dialog.dart';
 import '../widgets/contact_tile.dart';
 import '../widgets/list_filter_widget.dart';
 import '../utils/contact_search.dart';
-import '../helpers/channel_join_helper.dart';
-import '../helpers/contact_import_helper.dart';
-import '../helpers/hashtag_case_formatter.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../utils/telemetry_dialog.dart';
-import 'channel_chat_screen.dart';
-import 'channel_qr_scanner_screen.dart';
+import 'add_screen.dart';
 import 'chat_screen.dart';
-import 'contact_qr_scanner_screen.dart';
 import 'contact_share_screen.dart';
+import '../widgets/contact_copy_tiles.dart';
 import '../widgets/room_login_dialog.dart';
-import '../helpers/meshcore_qr.dart';
-import 'package:flutter/services.dart';
 import '../services/app_settings_service.dart';
 
 class NewChatScreen extends StatefulWidget {
@@ -48,97 +40,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _showAddContactDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.contacts_addContact),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.qr_code_scanner),
-              ),
-              title: Text(context.l10n.contacts_scanQrCode),
-              subtitle: Text(context.l10n.contacts_scanQrCodeDesc),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(dialogContext);
-                _navigateToQrScanner(context);
-              },
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.tag),
-              ),
-              title: Text(context.l10n.contacts_enterIdHash),
-              subtitle: Text(context.l10n.contacts_enterIdHashDesc),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(dialogContext);
-                _showEnterAdvertDialog(context);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.common_cancel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _navigateToQrScanner(BuildContext context) async {
-    final scannedData = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ContactQrScannerScreen(),
-      ),
-    );
-    if (scannedData != null && context.mounted) {
-      ContactImportHelper.importFromScannedData(context, scannedData);
-    }
-  }
-
-  void _showEnterAdvertDialog(BuildContext context) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.contacts_enterIdHash),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: context.l10n.contacts_advertHint,
-            border: const OutlineInputBorder(),
-          ),
-          maxLines: 4,
-          minLines: 2,
-          keyboardType: TextInputType.multiline,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.common_cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              Navigator.pop(dialogContext);
-              ContactImportHelper.importFromScannedData(context, text);
-            },
-            child: Text(context.l10n.contacts_import),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showContactOptions(BuildContext context, Contact contact) {
@@ -201,22 +102,12 @@ class _NewChatScreenState extends State<NewChatScreen> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(context.l10n.contacts_ShareContact),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                final data = MeshCoreQr.encodeContact(
-                  contact.name,
-                  pubKeyToHex(contact.publicKey),
-                  contact.type,
-                );
-                Clipboard.setData(ClipboardData(text: data));
-                showDismissibleSnackBar(
-                  context,
-                  content: Text(context.l10n.common_copiedToClipboard),
-                );
-              },
+            ...contactCopyTiles(
+              context,
+              name: contact.name,
+              keyHex: contact.publicKeyHex,
+              type: contact.type,
+              close: () => Navigator.pop(sheetContext),
             ),
             ListTile(
               leading: const Icon(Icons.connect_without_contact),
@@ -288,435 +179,11 @@ class _NewChatScreenState extends State<NewChatScreen> {
     );
   }
 
-  /// Lands the user in the channel they just added, ready to type. Replaces
-  /// this screen so the back arrow returns to the chats list rather than the
-  /// add screen they are done with.
-  ///
-  /// The channel is resolved by PSK against the radio's own slot map — never
-  /// by the slot index we asked for, which the radio owns. The resolve waits
-  /// out the slot resync; a miss means the radio never took the channel, so
-  /// we stay put.
-  Future<void> _openChannel(Uint8List psk) async {
-    final connector = context.read<MeshCoreConnector>();
-    final channel = await connector.awaitChannelByPsk(psk);
-    if (channel == null || !mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChannelChatScreen(channel: channel),
-      ),
-    );
-  }
-
-  int _findNextAvailableIndex(List<Channel> channels, int maxChannels) {
-    final usedIndices = channels.map((c) => c.index).toSet();
-    for (int i = 0; i < maxChannels; i++) {
-      if (!usedIndices.contains(i)) return i;
-    }
-    return 0;
-  }
-
-  void _showAddChannelDialog(BuildContext context) {
-    final connector = context.read<MeshCoreConnector>();
-    final nextIndex = _findNextAvailableIndex(
-      connector.channels,
-      connector.maxChannels,
-    );
-    final hasPublicChannel = connector.channels.any((c) => c.isPublicChannel);
-    int? selectedOption;
-    final nameController = TextEditingController();
-    final pskController = TextEditingController();
-    final hashtagController = TextEditingController();
-    final hashtagCase = HashtagCaseFormatter();
-    final keepCapitals = GlobalKey();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          hashtagCase.onCapital = () {
-            setDialogState(() {});
-            // With the keyboard up the dialog shows little more than the
-            // box: scroll the switch that just appeared under it into view.
-            // At once: the box's own scroll to its cursor, right after,
-            // would stop an animated one.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final shown = keepCapitals.currentContext;
-              if (shown == null) return;
-              Scrollable.ensureVisible(
-                shown,
-                alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-              );
-            });
-          };
-          Widget buildOptionTile({
-            required int optionIndex,
-            required IconData icon,
-            required String title,
-            required String subtitle,
-            bool enabled = true,
-            VoidCallback? onTapOverride,
-          }) {
-            final isSelected = selectedOption == optionIndex;
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: enabled
-                    ? (isSelected
-                          ? Theme.of(dialogContext).colorScheme.primaryContainer
-                          : null)
-                    : Colors.grey.withValues(alpha: 0.2),
-                child: Icon(
-                  icon,
-                  color: enabled
-                      ? (isSelected
-                            ? Theme.of(dialogContext).colorScheme.primary
-                            : null)
-                      : Colors.grey,
-                ),
-              ),
-              title: Text(
-                title,
-                style: TextStyle(color: enabled ? null : Colors.grey),
-              ),
-              subtitle: Text(
-                subtitle,
-                style: TextStyle(color: enabled ? null : Colors.grey),
-              ),
-              trailing: enabled ? const Icon(Icons.chevron_right) : null,
-              selected: isSelected,
-              onTap: enabled
-                  ? (onTapOverride ??
-                      () {
-                        setDialogState(() {
-                          selectedOption = optionIndex;
-                          nameController.clear();
-                          pskController.clear();
-                          hashtagController.clear();
-                          hashtagCase
-                            ..keepCapitals = false
-                            ..sawCapital = false;
-                        });
-                      })
-                  : null,
-            );
-          }
-
-          Future<void> createPrivateChannel() async {
-            final name = nameController.text.trim();
-            if (name.isEmpty) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(dialogContext.l10n.channels_enterChannelName),
-              );
-              return;
-            }
-            final random = Random.secure();
-            final psk = Uint8List(16);
-            for (int i = 0; i < 16; i++) {
-              psk[i] = random.nextInt(256);
-            }
-            Navigator.pop(dialogContext);
-            await connector.setChannel(nextIndex, name, psk);
-            if (!context.mounted) return;
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.channels_channelAdded(name)),
-            );
-            await _openChannel(psk);
-          }
-
-          Future<void> addHashtagChannel() async {
-            var hashtag = hashtagController.text.trim();
-            if (!hashtagCase.keepCapitals) hashtag = hashtag.toLowerCase();
-            if (hashtag.isEmpty) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(dialogContext.l10n.channels_enterChannelName),
-              );
-              return;
-            }
-            if (hashtag.startsWith('#')) {
-              hashtag = hashtag.substring(1);
-            }
-            final channelName = '#$hashtag';
-            final psk = Channel.derivePskFromHashtag(hashtag);
-
-            Navigator.pop(dialogContext);
-            await connector.setChannel(nextIndex, channelName, psk);
-            if (!context.mounted) return;
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.channels_channelAdded(channelName)),
-            );
-            await _openChannel(psk);
-          }
-
-          Future<void> joinPrivateChannel() async {
-            final name = nameController.text.trim();
-            final pskHex = pskController.text.trim();
-            if (name.isEmpty) {
-              showDismissibleSnackBar(
-                context,
-                content: Text(dialogContext.l10n.channels_enterChannelName),
-              );
-              return;
-            }
-            Uint8List psk;
-            try {
-              psk = Channel.parsePskHex(pskHex);
-            } on FormatException {
-              showDismissibleSnackBar(
-                context,
-                content: Text(dialogContext.l10n.channels_pskMustBe32Hex),
-              );
-              return;
-            }
-            Navigator.pop(dialogContext);
-            await connector.setChannel(nextIndex, name, psk);
-            if (!context.mounted) return;
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.channels_channelAdded(name)),
-            );
-            await _openChannel(psk);
-          }
-
-          Future<void> joinPublicChannel() async {
-            Navigator.pop(dialogContext);
-            final psk = Channel.parsePskHex(Channel.publicChannelPsk);
-            await connector.setChannel(nextIndex, 'Public', psk);
-            if (!context.mounted) return;
-            showDismissibleSnackBar(
-              context,
-              content: Text(context.l10n.channels_publicChannelAdded),
-            );
-            await _openChannel(psk);
-          }
-
-          // The confirm button lives in the dialog's pinned actions row —
-          // inside the scrollable body the keyboard covered it. Options with
-          // no form (join public) confirm through the same pinned button.
-          String? confirmLabel;
-          VoidCallback? onConfirm;
-          switch (selectedOption) {
-            case 0:
-              confirmLabel = dialogContext.l10n.common_create;
-              onConfirm = createPrivateChannel;
-            case 1:
-              confirmLabel = dialogContext.l10n.common_add;
-              onConfirm = addHashtagChannel;
-            case 3:
-              confirmLabel = dialogContext.l10n.common_add;
-              onConfirm = joinPrivateChannel;
-            case 4:
-              confirmLabel = dialogContext.l10n.common_add;
-              onConfirm = joinPublicChannel;
-          }
-
-          Widget? buildExpandedContent() {
-            switch (selectedOption) {
-              case 0:
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: dialogContext.l10n.channels_channelName,
-                      border: const OutlineInputBorder(),
-                    ),
-                    maxLength: 31,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => createPrivateChannel(),
-                  ),
-                );
-              case 1:
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: TextField(
-                        controller: hashtagController,
-                        decoration: InputDecoration(
-                          labelText: dialogContext.l10n.channels_enterHashtag,
-                          hintText: dialogContext.l10n.channels_hashtagHint,
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.tag),
-                        ),
-                        maxLength: 31,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        // The limit first, so the case formatter sees only
-                        // what the box keeps.
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(31),
-                          hashtagCase,
-                        ],
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => addHashtagChannel(),
-                      ),
-                    ),
-                    if (hashtagCase.sawCapital)
-                      SwitchListTile(
-                        key: keepCapitals,
-                        title: Text(dialogContext.l10n.channels_keepCapitals),
-                        value: hashtagCase.keepCapitals,
-                        onChanged: (keep) => setDialogState(() {
-                          hashtagCase.keepCapitals = keep;
-                          final text = keep
-                              ? hashtagCase.typed
-                              : hashtagController.text.toLowerCase();
-                          hashtagController.value = TextEditingValue(
-                            text: text,
-                            selection: TextSelection.collapsed(
-                              offset: text.length,
-                            ),
-                          );
-                        }),
-                      ),
-                  ],
-                );
-              case 3:
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: dialogContext.l10n.channels_channelName,
-                          border: const OutlineInputBorder(),
-                        ),
-                        maxLength: 31,
-                        textInputAction: TextInputAction.next,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: TextField(
-                        controller: pskController,
-                        decoration: InputDecoration(
-                          labelText: dialogContext.l10n.channels_pskHex,
-                          border: const OutlineInputBorder(),
-                        ),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => joinPrivateChannel(),
-                      ),
-                    ),
-                  ],
-                );
-              default:
-                return null;
-            }
-          }
-
-          return AlertDialog(
-            title: Text(dialogContext.l10n.channels_addChannel),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!hasPublicChannel) ...[
-                      buildOptionTile(
-                        optionIndex: 4,
-                        icon: Icons.public,
-                        title: dialogContext.l10n.channels_joinPublicChannel,
-                        subtitle: dialogContext.l10n.channels_joinPublicChannelDesc,
-                      ),
-                      const Divider(height: 1),
-                    ],
-                    buildOptionTile(
-                      optionIndex: 0,
-                      icon: Icons.lock,
-                      title: dialogContext.l10n.channels_createPrivateChannel,
-                      subtitle: dialogContext.l10n.channels_createPrivateChannelDesc,
-                    ),
-                    if (selectedOption == 0) buildExpandedContent()!,
-                    const Divider(height: 1),
-                    buildOptionTile(
-                      optionIndex: 1,
-                      icon: Icons.tag,
-                      title: dialogContext.l10n.channels_joinHashtagChannel,
-                      subtitle: dialogContext.l10n.channels_joinHashtagChannelDesc,
-                    ),
-                    if (selectedOption == 1) buildExpandedContent()!,
-                    const Divider(height: 1),
-                    buildOptionTile(
-                      optionIndex: 2,
-                      icon: Icons.qr_code_scanner,
-                      title: dialogContext.l10n.channels_shareChannelQr,
-                      subtitle: dialogContext.l10n.channels_scanQrCode,
-                      onTapOverride: () async {
-                        Navigator.pop(dialogContext);
-                        if (context.mounted) {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ChannelQrScannerScreen(),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    const Divider(height: 1),
-                    buildOptionTile(
-                      optionIndex: 4,
-                      icon: Icons.content_paste,
-                      title: dialogContext.l10n.channels_pasteLink,
-                      subtitle: dialogContext.l10n.channels_pasteLinkDesc,
-                      onTapOverride: () async {
-                        final clip = await Clipboard.getData('text/plain');
-                        final link = clip?.text?.trim() ?? '';
-                        if (!dialogContext.mounted) return;
-                        if (MeshCoreQr.parseChannelQr(link) == null) {
-                          showDismissibleSnackBar(
-                            dialogContext,
-                            content: Text(
-                              dialogContext.l10n.channels_pasteLinkNone,
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.pop(dialogContext);
-                        if (context.mounted) {
-                          await ChannelJoinHelper.joinFromLink(context, link);
-                        }
-                      },
-                    ),
-                    const Divider(height: 1),
-                    buildOptionTile(
-                      optionIndex: 3,
-                      icon: Icons.add,
-                      title: dialogContext.l10n.channels_joinPrivateChannel,
-                      subtitle: dialogContext.l10n.channels_joinPrivateChannelDesc,
-                    ),
-                    if (selectedOption == 3) buildExpandedContent()!,
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(dialogContext.l10n.common_close),
-              ),
-              if (onConfirm != null)
-                FilledButton(
-                  onPressed: onConfirm,
-                  child: Text(confirmLabel!),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+  /// Either row: one page adds a contact or a channel from any format.
+  void _openAdd({bool scanFirst = false}) => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AddScreen(scanFirst: scanFirst)),
+      );
 
   void _openChat(Contact contact) {
     final connector = context.read<MeshCoreConnector>();
@@ -855,10 +322,12 @@ class _NewChatScreenState extends State<NewChatScreen> {
                 title: Text(l10n.discoveredContacts_addContact),
                 onTap: () => Navigator.of(sheetContext).pop('import_contact'),
               ),
-              ListTile(
-                leading: const Icon(Icons.copy),
-                title: Text(l10n.discoveredContacts_copyContact),
-                onTap: () => Navigator.of(sheetContext).pop('copy_contact'),
+              ...contactCopyTiles(
+                context,
+                name: contact.name,
+                keyHex: contact.publicKeyHex,
+                type: contact.type,
+                close: () => Navigator.of(sheetContext).pop(),
               ),
               ListTile(
                 leading: const Icon(Icons.delete),
@@ -879,19 +348,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
         break;
       case 'import_contact':
         connector.importDiscoveredContact(contact);
-        break;
-      case 'copy_contact':
-        final qrData = MeshCoreQr.encodeContact(
-          contact.name,
-          contact.publicKeyHex,
-          contact.type,
-        );
-        Clipboard.setData(ClipboardData(text: qrData));
-        if (!mounted) return;
-        showDismissibleSnackBar(
-          context,
-          content: Text(context.l10n.contacts_contactAdvertCopied),
-        );
         break;
       case 'delete_contact':
         connector.removeDiscoveredContact(contact);
@@ -998,9 +454,10 @@ class _NewChatScreenState extends State<NewChatScreen> {
                 title: Text(context.l10n.newChat_newContact, style: const TextStyle(fontWeight: FontWeight.bold)),
                 trailing: IconButton(
                   icon: const Icon(Icons.qr_code_scanner),
-                  onPressed: () => _navigateToQrScanner(context),
+                  tooltip: context.l10n.channels_scanQrCode,
+                  onPressed: () => _openAdd(scanFirst: true),
                 ),
-                onTap: () => _showAddContactDialog(context),
+                onTap: _openAdd,
               ),
               ListTile(
                 leading: const CircleAvatar(
@@ -1010,16 +467,10 @@ class _NewChatScreenState extends State<NewChatScreen> {
                 title: Text(context.l10n.newChat_newChannel, style: const TextStyle(fontWeight: FontWeight.bold)),
                 trailing: IconButton(
                   icon: const Icon(Icons.qr_code_scanner),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChannelQrScannerScreen(),
-                      ),
-                    );
-                  },
+                  tooltip: context.l10n.channels_scanQrCode,
+                  onPressed: () => _openAdd(scanFirst: true),
                 ),
-                onTap: () => _showAddChannelDialog(context),
+                onTap: _openAdd,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
