@@ -33,6 +33,7 @@ class AddScreen extends StatefulWidget {
 
 class _AddScreenState extends State<AddScreen> {
   final _box = TextEditingController();
+  final _boxFocus = FocusNode();
   final _name = TextEditingController();
   final _keepCapitalsKey = GlobalKey();
   AddFound? _found;
@@ -52,6 +53,7 @@ class _AddScreenState extends State<AddScreen> {
   @override
   void dispose() {
     _box.dispose();
+    _boxFocus.dispose();
     _name.dispose();
     super.dispose();
   }
@@ -160,6 +162,35 @@ class _AddScreenState extends State<AddScreen> {
     if (mounted) setState(() => _busy = false);
   }
 
+  /// Shows how a hashtag channel is added: # in the box, ready for its name.
+  void _startHashtag() {
+    _box.value = const TextEditingValue(
+      text: '#',
+      selection: TextSelection.collapsed(offset: 1),
+    );
+    _boxFocus.requestFocus();
+  }
+
+  /// A channel's name and secret key, or a contact's name, public key and
+  /// type, typed in two boxes.
+  Future<void> _enterNameAndKey() async {
+    final entered = await showDialog<_NameAndKey>(
+      context: context,
+      builder: (_) => const _NameKeyDialog(),
+    );
+    if (entered == null || !mounted) return;
+    final type = entered.contactType;
+    if (type == null) {
+      await _joinChannel(entered.name, entered.keyHex, null);
+    } else {
+      await _addContact(ContactQrData(
+        name: entered.name,
+        pubKeyHex: entered.keyHex,
+        type: type,
+      ));
+    }
+  }
+
   Future<void> _createPrivateChannel() async {
     final name = await showDialog<String>(
       context: context,
@@ -187,6 +218,7 @@ class _AddScreenState extends State<AddScreen> {
         children: [
           TextField(
             controller: _box,
+            focusNode: _boxFocus,
             minLines: 2,
             maxLines: 5,
             autocorrect: false,
@@ -226,16 +258,31 @@ class _AddScreenState extends State<AddScreen> {
               ),
             ],
           ),
-          if (_box.text.trim().isNotEmpty) ...[
+          // A lone # is the hashtag row's start: the name comes next.
+          if (_box.text.trim().isNotEmpty && _box.text.trim() != '#') ...[
             const SizedBox(height: 16),
             _foundCard(context, connector),
           ],
           const SizedBox(height: 24),
           Text(
-            l10n.newChat_newChannel,
+            l10n.add_or,
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.primary,
             ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const CircleAvatar(child: Icon(Icons.tag)),
+            title: Text(l10n.add_hashtagRow),
+            subtitle: Text(l10n.add_hashtagRowHelp),
+            onTap: _busy ? null : _startHashtag,
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const CircleAvatar(child: Icon(Icons.key)),
+            title: Text(l10n.add_keyRow),
+            subtitle: Text(l10n.add_keyRowHelp),
+            onTap: _busy ? null : _enterNameAndKey,
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -481,6 +528,141 @@ class _ChannelNameDialogState extends State<_ChannelNameDialog> {
         FilledButton(
           onPressed: () => Navigator.pop(context, _controller.text),
           child: Text(l10n.common_create),
+        ),
+      ],
+    );
+  }
+}
+
+/// What the Name + Key dialog adds: [contactType] null for a channel.
+typedef _NameAndKey = ({String name, String keyHex, int? contactType});
+
+/// A name and a key typed by hand (owner, 2026-11-26: "How would you
+/// manually enter a channel by name a PK (same as a person)"): 32
+/// characters is a channel's secret key, 64 a contact's public key, whose
+/// type is picked here.
+class _NameKeyDialog extends StatefulWidget {
+  const _NameKeyDialog();
+
+  @override
+  State<_NameKeyDialog> createState() => _NameKeyDialogState();
+}
+
+class _NameKeyDialogState extends State<_NameKeyDialog> {
+  final _name = TextEditingController();
+  final _key = TextEditingController();
+  int _type = advTypeChat;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _key.dispose();
+    super.dispose();
+  }
+
+  /// The key without the spaces and colons people copy with it.
+  String get _hex => _key.text.replaceAll(RegExp(r'[\s:]'), '').toLowerCase();
+
+  bool get _isHex => RegExp(r'^[0-9a-f]+$').hasMatch(_hex);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final hex = _hex;
+    final channel = _isHex && hex.length == 32;
+    final contact = _isHex && hex.length == 64;
+    final name = _name.text.trim();
+    final public = channel && hex == Channel.publicChannelPsk;
+    final (IconData? icon, String? kind) = channel
+        ? (public ? Icons.public : Icons.lock,
+            public ? l10n.channels_publicChannel : l10n.channels_privateChannel)
+        : contact
+            ? (Icons.person, l10n.structured_contact)
+            : (null, null);
+    final canAdd = channel ? name.isNotEmpty : contact;
+    return AlertDialog(
+      title: Text(l10n.add_keyRow),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _name,
+              autofocus: true,
+              maxLength: AddInput.maxChannelName,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: l10n.add_name,
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _key,
+              autocorrect: false,
+              enableSuggestions: false,
+              minLines: 1,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l10n.add_key,
+                border: const OutlineInputBorder(),
+                errorText: hex.isNotEmpty && kind == null
+                    ? l10n.add_keyInvalid
+                    : null,
+                errorMaxLines: 2,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            if (kind != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(kind, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ],
+            if (contact) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (final (type, label) in [
+                    (advTypeChat, l10n.add_typePerson),
+                    (advTypeRepeater, l10n.structured_repeater),
+                    (advTypeRoom, l10n.structured_room),
+                    (advTypeSensor, l10n.structured_sensor),
+                  ])
+                    ChoiceChip(
+                      label: Text(label),
+                      selected: _type == type,
+                      onSelected: (_) => setState(() => _type = type),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.common_cancel),
+        ),
+        FilledButton(
+          onPressed: canAdd
+              ? () => Navigator.pop<_NameAndKey>(context, (
+                    name: name,
+                    keyHex: hex,
+                    contactType: contact ? _type : null,
+                  ))
+              : null,
+          child: Text(l10n.common_add),
         ),
       ],
     );

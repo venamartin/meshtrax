@@ -179,7 +179,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
     );
   }
 
-  /// Either row: one page adds a contact or a channel from any format.
+  /// One page adds a contact or a channel from any format.
   void _openAdd({bool scanFirst = false}) => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => AddScreen(scanFirst: scanFirst)),
@@ -449,22 +449,9 @@ class _NewChatScreenState extends State<NewChatScreen> {
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Colors.green,
-                  child: Icon(Icons.person_add, color: Colors.white),
+                  child: Icon(Icons.add, color: Colors.white),
                 ),
-                title: Text(context.l10n.newChat_newContact, style: const TextStyle(fontWeight: FontWeight.bold)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner),
-                  tooltip: context.l10n.channels_scanQrCode,
-                  onPressed: () => _openAdd(scanFirst: true),
-                ),
-                onTap: _openAdd,
-              ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.tag, color: Colors.white),
-                ),
-                title: Text(context.l10n.newChat_newChannel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(context.l10n.add_title, style: const TextStyle(fontWeight: FontWeight.bold)),
                 trailing: IconButton(
                   icon: const Icon(Icons.qr_code_scanner),
                   tooltip: context.l10n.channels_scanQrCode,
