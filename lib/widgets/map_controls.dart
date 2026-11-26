@@ -5,11 +5,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:traxmap/traxmap.dart';
 
 import '../l10n/l10n.dart';
+import 'speed_card.dart';
 
 /// The map's buttons, bottom right: search, full screen, zoom (desktop only;
 /// phones pinch), My location, and the layers button; bottom left, the TRAX
-/// group. Search, full screen, My location and the TRAX group show only when
-/// the screen handles them.
+/// group, with the speed card above it. Search, full screen, My location,
+/// the TRAX group and the speed card show only when the screen handles them.
 class MapControls extends StatelessWidget {
   final OfflineMapController controller;
   final VoidCallback onLayers;
@@ -40,6 +41,10 @@ class MapControls extends StatelessWidget {
   /// The TRAX group's list, from a button at the map's bottom left.
   final VoidCallback? onTraxGroup;
 
+  /// Your speed while the map follows you ([SpeedCard]), at the bottom left
+  /// above the TRAX group. It doesn't fade: it is no button.
+  final Widget? speedCard;
+
   /// Where the map starts, from the screen's left edge: a sheet at the side
   /// takes the room before it.
   final double mapLeft;
@@ -48,6 +53,9 @@ class MapControls extends StatelessWidget {
   /// ([AppMap.controlsWidth]), and the TRAX group's at its left
   /// ([AppMap.leftControlsWidth]).
   static const width = 80.0;
+
+  /// The room the speed card takes at the map's left edge.
+  static const speedWidth = kFloatingActionButtonMargin + SpeedCard.width + 8;
 
   /// How close My location zooms in, unless already closer.
   static const locateZoom = 14.0;
@@ -69,6 +77,7 @@ class MapControls extends StatelessWidget {
     this.gpsOff = false,
     this.following = false,
     this.onTraxGroup,
+    this.speedCard,
     this.mapLeft = 0,
   });
 
@@ -167,10 +176,12 @@ class MapControls extends StatelessWidget {
         ),
       ],
     );
-    // One row across the map's bottom, so the group button rises above a
-    // sheet with the others. Its empty middle lets taps through to the map.
+    // One row across the map's bottom, so the group button and the speed
+    // card rise above a sheet with the others. Its empty middle lets taps
+    // through to the map.
     final group = onTraxGroup;
-    final all = group == null
+    final speed = speedCard;
+    final all = group == null && speed == null
         ? buttons
         : LayoutBuilder(
             builder: (context, constraints) {
@@ -189,13 +200,22 @@ class MapControls extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    fade(
-                      FloatingActionButton(
-                        heroTag: null,
-                        tooltip: l10n.trax_group,
-                        onPressed: group,
-                        child: const Icon(Icons.groups, size: 32),
-                      ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 12,
+                      children: [
+                        ?speed,
+                        if (group != null)
+                          fade(
+                            FloatingActionButton(
+                              heroTag: null,
+                              tooltip: l10n.trax_group,
+                              onPressed: group,
+                              child: const Icon(Icons.groups, size: 32),
+                            ),
+                          ),
+                      ],
                     ),
                     const Spacer(),
                     buttons,

@@ -69,6 +69,7 @@ import '../widgets/place_marker.dart';
 import '../widgets/place_sheet.dart';
 import '../widgets/radio_ask_sheet.dart';
 import '../widgets/route_sheet.dart';
+import '../widgets/speed_card.dart';
 import '../widgets/water_boat_dialog.dart';
 import '../widgets/water_route_parts.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -988,6 +989,7 @@ class _MapScreenState extends State<MapScreen> {
         }
         // The map keeps whom it follows in the middle. A sheet about
         // something else holds it; once that closes, the map goes back.
+        final held = _los != null || (_sheetPoint != null && _cardOf == null);
         final followAt = _followMe
             ? selfPosition
             : switch (_followOf) {
@@ -995,7 +997,7 @@ class _MapScreenState extends State<MapScreen> {
                 null => null,
               };
         if (followAt != null) {
-          if (_los != null || (_sheetPoint != null && _cardOf == null)) {
+          if (held) {
             _followedAt = null;
           } else if (followAt != _followedAt) {
             _followedAt = followAt;
@@ -1075,6 +1077,9 @@ class _MapScreenState extends State<MapScreen> {
             _los == null &&
             !_isBuildingPathTrace &&
             !widget.pickPosition;
+        // Your speed, heading and altitude while the map keeps you in the
+        // middle.
+        final showSpeed = _followMe && connector.gpsOn && !held;
 
         return PopScope(
           // Back leaves full screen and line of sight first. On the Map tab
@@ -1253,7 +1258,11 @@ class _MapScreenState extends State<MapScreen> {
                         controller: _mapController,
                         initialCamera: startCamera,
                         controlsWidth: MapControls.width,
-                        leftControlsWidth: groupButton ? MapControls.width : 0,
+                        leftControlsWidth: showSpeed
+                            ? MapControls.speedWidth
+                            : groupButton
+                            ? MapControls.width
+                            : 0,
                         coveredBottom: _losCovered,
                         onTap: widget.pickPosition
                             ? (position) =>
@@ -1470,6 +1479,13 @@ class _MapScreenState extends State<MapScreen> {
               following: _followMe,
               onTraxGroup: groupButton
                   ? () => unawaited(_showGroupSheet())
+                  : null,
+              speedCard: showSpeed
+                  ? SpeedCard(
+                      connector: connector,
+                      units: settings.unitSystem,
+                      nautical: onWater,
+                    )
                   : null,
               mapLeft: sideSheet ? RouteSheet.sideWidth + 1 : 0,
               onSearch: !_isBuildingPathTrace && !widget.pickPosition

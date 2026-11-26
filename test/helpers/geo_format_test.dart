@@ -10,6 +10,16 @@ void main() {
     expect(GeoFormat.headingText(44), 'NE 44°');
   });
 
+  test('a speed, and its number and unit apart, in knots on the water', () {
+    expect(GeoFormat.speedText(12, UnitSystem.imperial), '27 mph');
+    expect(GeoFormat.speedText(12, UnitSystem.metric), '43 km/h');
+    expect(GeoFormat.speedParts(12, UnitSystem.metric), ('43', 'km/h'));
+    expect(GeoFormat.speedParts(12, UnitSystem.imperial, knots: true), (
+      '23',
+      'kn',
+    ));
+  });
+
   test('compass points, including the edges', () {
     expect(GeoFormat.compass8(0), 'N');
     expect(GeoFormat.compass8(22.4), 'N');

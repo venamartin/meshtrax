@@ -226,8 +226,9 @@ The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again*
 - **The TRAX group button,** at the bottom left in TRAX mode (three people), opens the group's list.
   - Rows are sorted by name and show distance, direction and when last heard. They are grey when the reading may be old, and members with no location come last.
   - A pick opens the card with the map on them. A contact with no location yet has their radio asked, and in TRAX mode their phone for their track.
-  - The map's credits and offline card sit to the right of the button.
+  - The map's credits and offline card sit to the right of the button, or of your speed card above it.
 - **Following:** My location keeps you in the middle as the radio's position moves, until the map is dragged; a zoom doesn't stop it, and the button is filled meanwhile.
+  - Meanwhile your speed, heading and altitude show on a card above the group button (out of TRAX mode, at the bottom left). See the offline maps notes, 2026-11-26.
   - A tapped member, or one picked from a list, is followed the same way, with the card open or closed. Their trail stays until another member is tapped.
   - A sheet about something else pauses following while it is open. When it closes, the map goes back to whom it follows.
 

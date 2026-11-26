@@ -107,4 +107,84 @@ void main() {
     await reading(lat0 + north, lon0, after: minute);
     expect(motion.motion(), isNull);
   });
+
+  // Martin, 2026-11-26: the map shows your speed, heading and altitude in
+  // its lower left while it keeps you in the middle; the radio is read
+  // every 3 s meanwhile.
+  group('as it goes, for the speed card', () {
+    const every = Duration(seconds: 3);
+
+    /// 72 km/h north: 60 m between readings 3 s apart.
+    const step = 60 / 111320;
+
+    Future<void> drive() async {
+      for (var i = 0; i < 6; i++) {
+        await reading(lat0 + i * step, lon0, after: every);
+      }
+    }
+
+    test('driving: steady, from readings in 11 m steps', () async {
+      // The radio's 0.0001°.
+      double cell(double v) => (v * 1e4).round() / 1e4;
+      for (var i = 0; i < 20; i++) {
+        await reading(cell(lat0 + i * step), lon0, after: every);
+        if (i < 4) continue;
+        final m = motion.motionNow()!;
+        expect(m.speed, closeTo(20, 1), reason: 'reading $i');
+        expect(offNorth(m.heading!), lessThan(1));
+      }
+    });
+
+    test('stopping: not moving after 10 s', () async {
+      await drive();
+      final stop = lat0 + 5 * step;
+      for (var i = 0; i < 3; i++) {
+        await reading(stop, lon0, after: every);
+        expect(motion.motionNow()!.speed, closeTo(20, 0.1));
+      }
+      await reading(stop, lon0, after: every);
+      final m = motion.motionNow()!;
+      expect(m.stillFor, const Duration(seconds: 12));
+      expect((m.heading, m.speed), (null, null));
+      expect(
+        motion.motion()!.speed,
+        closeTo(20, 0.1),
+        reason: "a shared location keeps TRAX's 2 minutes",
+      );
+    });
+
+    test('setting off again: measured from where it set off', () async {
+      await drive();
+      final stop = lat0 + 5 * step;
+      await reading(stop, lon0, after: minute);
+      expect(motion.motionNow()!.stillFor, isNotNull);
+      // 36 km/h: 30 m between readings.
+      const slow = 30 / 111320;
+      await reading(stop + slow, lon0, after: every);
+      expect(motion.motionNow(), isNull, reason: '30 m is too short to tell');
+      await reading(stop + 2 * slow, lon0, after: every);
+      expect(motion.motionNow(), isNull);
+      await reading(stop + 3 * slow, lon0, after: every);
+      expect(motion.motionNow()!.speed, closeTo(10, 0.1));
+    });
+
+    test('walking at 1.4 m/s: not moving only after 54 s', () async {
+      // West; three times as long as 25 m takes.
+      final pace = 4.2 / (111320 * cos(lat0 * pi / 180));
+      for (var i = 0; i <= 36; i++) {
+        await reading(lat0, lon0 - i * pace, after: every);
+      }
+      final stop = lon0 - 36 * pace;
+      for (var i = 0; i < 16; i++) {
+        await reading(lat0, stop, after: every);
+      }
+      final m = motion.motionNow()!;
+      expect(m.speed, closeTo(1.4, 0.02), reason: '48 s');
+      expect(m.heading, closeTo(270, 1));
+      await reading(lat0, stop, after: every);
+      await reading(lat0, stop, after: every);
+      await reading(lat0, stop, after: every);
+      expect(motion.motionNow()!.stillFor, const Duration(seconds: 57));
+    });
+  });
 }

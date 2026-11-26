@@ -36,6 +36,7 @@ import 'package:meshtrax/services/ui_view_state_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/map_controls.dart';
+import 'package:meshtrax/widgets/speed_card.dart';
 import 'package:meshtrax/widgets/trax_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,6 +59,7 @@ class _Radio extends MeshCoreConnector {
   final datagrams = StreamController<ChannelDatagram>.broadcast(sync: true);
   final sends = <(Channel, int, Uint8List)>[];
   int viewers = 0;
+  int speedViewers = 0;
   double? lat;
   double? lon;
 
@@ -127,6 +129,10 @@ class _Radio extends MeshCoreConnector {
   void addSelfPositionViewer() => viewers++;
   @override
   void removeSelfPositionViewer() => viewers--;
+  @override
+  void addSpeedViewer() => speedViewers++;
+  @override
+  void removeSpeedViewer() => speedViewers--;
   @override
   Future<void> setContactFlags(
     Contact contact, {
@@ -1538,6 +1544,54 @@ void main() {
         final left = map(tester).camera!.center;
         await move(_north(1000));
         expect(map(tester).camera!.center, left);
+        await stopServices(tester);
+      });
+
+      // Martin, 2026-11-26: speed, altitude and heading in the lower left
+      // while the map keeps you in the middle, gone once it is dragged.
+      testWidgets('your speed while it follows you: above the group button, '
+          'alone out of TRAX mode, gone after a drag', (tester) async {
+        startServices();
+        radio
+          ..lat = _here.lat
+          ..lon = _here.lon;
+        await pumpApp(tester, const MapScreen());
+        double creditsLeft() =>
+            tester.widget<AppMap>(find.byType(AppMap)).leftControlsWidth;
+        expect(find.byType(SpeedCard), findsNothing);
+        expect(creditsLeft(), MapControls.width);
+
+        await tester.tap(find.byTooltip('My location'));
+        await settle(tester);
+        expect(find.byType(SpeedCard), findsOneWidget);
+        expect(radio.speedViewers, 1);
+        expect(creditsLeft(), MapControls.speedWidth);
+        final card = find.byType(SpeedCard);
+        final group = find.byTooltip('TRAX group');
+        expect(
+          tester.getBottomLeft(card).dy,
+          lessThan(tester.getTopLeft(group).dy),
+        );
+        expect(
+          tester.getTopLeft(card).dx,
+          closeTo(tester.getTopLeft(group).dx, 0.5),
+        );
+
+        trax
+          ..on = false
+          ..changed();
+        await settle(tester);
+        expect(group, findsNothing);
+        expect(
+          tester.getBottomLeft(card).dy,
+          closeTo(tester.getBottomLeft(find.byTooltip('Map layers')).dy, 0.5),
+        );
+        expect(creditsLeft(), MapControls.speedWidth);
+
+        await drag(tester);
+        expect(find.byType(SpeedCard), findsNothing);
+        expect(radio.speedViewers, 0);
+        expect(creditsLeft(), 0);
         await stopServices(tester);
       });
 
