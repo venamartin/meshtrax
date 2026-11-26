@@ -705,6 +705,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   final ValueNotifier<CompanionRadioStats?> radioStatsNotifier =
       ValueNotifier<CompanionRadioStats?>(null);
   int _selfPositionViewers = 0;
+  int _speedViewers = 0;
 
   /// The radio's latest GPS reading ([requestSelfPosition]), for the GPS
   /// dialog. A notifier, so a reading that changes nothing rebuilds only it.
@@ -4892,13 +4893,21 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// A radio with its GPS on can move: ask for its position every 60 s, or
   /// every 10 s while a screen shows it ([addSelfPositionViewer]). The
   /// position comes in 0.0001° steps (about 11 m), and walking crosses one
-  /// in about 8 s, so asking faster adds little. The radio refreshes it from
-  /// the GPS every `gps_interval` seconds (1 s unless set).
+  /// in about 8 s, so asking faster adds little; a car crosses one in under
+  /// a second, so every 3 s while its speed shows ([addSpeedViewer]). The
+  /// radio refreshes it from the GPS every `gps_interval` seconds (1 s
+  /// unless set).
   void _updateGpsPolling() {
     _gpsPollTimer?.cancel();
     _gpsPollTimer = null;
     if (!isConnected || !gpsOn) return;
-    final every = Duration(seconds: _selfPositionViewers > 0 ? 10 : 60);
+    final every = Duration(
+      seconds: _speedViewers > 0
+          ? 3
+          : _selfPositionViewers > 0
+          ? 10
+          : 60,
+    );
     _gpsPollTimer = Timer.periodic(every, (timer) {
       if (!isConnected) {
         timer.cancel();
@@ -4919,6 +4928,20 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   void removeSelfPositionViewer() {
     if (_selfPositionViewers == 0) return;
     _selfPositionViewers--;
+    _updateGpsPolling();
+  }
+
+  /// A screen showing how fast the radio goes opened (the map's speed
+  /// card): ask now, then every 3 s until the last one closes.
+  void addSpeedViewer() {
+    _speedViewers++;
+    unawaited(requestSelfPosition());
+    _updateGpsPolling();
+  }
+
+  void removeSpeedViewer() {
+    if (_speedViewers == 0) return;
+    _speedViewers--;
     _updateGpsPolling();
   }
 

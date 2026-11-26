@@ -48,10 +48,21 @@ class GeoFormat {
       : '${meters.round()} m';
 
   /// "3 mph"; "5 km/h" in metric.
-  static String speedText(double metresPerSecond, UnitSystem units) =>
-      units == UnitSystem.imperial
-      ? '${(metresPerSecond * 2.23694).round()} mph'
-      : '${(metresPerSecond * 3.6).round()} km/h';
+  static String speedText(double metresPerSecond, UnitSystem units) {
+    final (number, unit) = speedParts(metresPerSecond, units);
+    return '$number $unit';
+  }
+
+  /// [speedText]'s number and unit apart, or in knots: ("12", "kn").
+  static (String, String) speedParts(
+    double metresPerSecond,
+    UnitSystem units, {
+    bool knots = false,
+  }) => knots
+      ? ('${(metresPerSecond * 1.943844).round()}', 'kn')
+      : units == UnitSystem.imperial
+      ? ('${(metresPerSecond * 2.23694).round()}', 'mph')
+      : ('${(metresPerSecond * 3.6).round()}', 'km/h');
 
   /// How far [to] is from [from], and which way.
   static GeoOffset offset(LatLng from, LatLng to, UnitSystem units) {

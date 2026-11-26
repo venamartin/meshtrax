@@ -122,6 +122,25 @@ void main() {
     });
   });
 
+  test('every 3 s while the speed shows, then back to 10 s', () {
+    fakeAsync((async) {
+      radio(verCode: 9, gps: '1');
+      c.addSelfPositionViewer();
+      final asked = c.sentOf(cmdSendTelemetryReq);
+      c.addSpeedViewer();
+      expect(c.sentOf(cmdSendTelemetryReq), asked + 1, reason: 'asks at once');
+      async.elapse(const Duration(seconds: 10));
+      expect(c.sentOf(cmdSendTelemetryReq), asked + 4);
+
+      c.removeSpeedViewer();
+      async.elapse(const Duration(seconds: 9));
+      expect(c.sentOf(cmdSendTelemetryReq), asked + 4, reason: 'back to 10 s');
+      async.elapse(const Duration(seconds: 1));
+      expect(c.sentOf(cmdSendTelemetryReq), asked + 5);
+      c.removeSelfPositionViewer();
+    });
+  });
+
   test("GPS on from the app sets the radio's default refresh", () {
     fakeAsync((async) {
       expect(c.hasGps, isFalse, reason: 'no gps setting: no module');

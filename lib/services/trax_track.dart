@@ -16,10 +16,11 @@ typedef TrackMotion = ({double? heading, double? speed, Duration? stillFor});
 
 /// This radio's own way while TRAX mode is on, in pieces ([TrackPiece]):
 /// the line behind its dot and what its reports carry, for [keepHours]. The
-/// radio is read every 10 s and a point is kept every 25 m, never before its
-/// reading changes. A piece closes once its points don't fit one report, or
-/// at a break: where live readings stopped for 2 minutes or the position
-/// jumped. Nothing is drawn or sent across a break.
+/// radio is read every 10 s (3 s while the map shows your speed) and a point
+/// is kept every 25 m, never before its reading changes. A piece closes once
+/// its points don't fit one report, or at a break: where live readings
+/// stopped for 2 minutes or the position jumped. Nothing is drawn or sent
+/// across a break.
 class TraxTrack extends ChangeNotifier {
   TraxTrack(this._connector, {DateTime Function()? clock, Random? random})
     : _clock = clock ?? DateTime.now,
