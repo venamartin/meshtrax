@@ -6323,6 +6323,15 @@ class AppLocalizationsPl extends AppLocalizations {
       'Twoje radio nie ma jeszcze pozycji. Wybierz ją na mapie.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Wstaw';
 
   @override

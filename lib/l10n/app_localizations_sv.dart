@@ -6249,6 +6249,15 @@ class AppLocalizationsSv extends AppLocalizations {
       'Din radio har ingen position än. Välj en på kartan.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Infoga';
 
   @override

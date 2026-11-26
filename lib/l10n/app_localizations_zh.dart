@@ -5929,6 +5929,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tray_noRadioPosition => '您的电台还没有位置。请在地图上选择一个。';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => '插入';
 
   @override

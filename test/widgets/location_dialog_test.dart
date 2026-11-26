@@ -10,8 +10,10 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/helpers/date_time_helper.dart';
 import 'package:meshtrax/helpers/structured_message.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
+import 'package:meshtrax/models/app_settings.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
+import 'package:meshtrax/services/self_motion.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/structured_message_card.dart';
@@ -372,6 +374,125 @@ void main() {
       await done(tester);
       expect(wire, 'SOS: Broken leg\n$_here');
     });
+
+    // Martin, 2026-11-26: My location can also send heading, speed and
+    // altitude. The choice starts on Only the position and keeps the last
+    // pick.
+    group('heading, speed and altitude', () {
+      const onlyPosition = 'Only the position';
+      const withMotion = 'Position, heading, speed and altitude';
+      late DateTime now;
+
+      _Radio gpsRadio() => _Radio(lat: 36.97, lon: -121.9, gps: true, fresh: true);
+
+      /// The radio's readings a minute apart, the last one at its position.
+      Future<void> readings(
+        WidgetTester tester,
+        _Radio radio,
+        List<double> lats,
+      ) async {
+        now = DateTime(2026, 11, 26, 9);
+        SelfMotion.instance.attach(radio, clock: () => now);
+        for (final (i, lat) in lats.indexed) {
+          if (i > 0) now = now.add(const Duration(minutes: 1));
+          radio.selfGps.value =
+              (latitude: lat, longitude: -121.9, altitude: 35, at: now);
+          await tester.pump();
+        }
+      }
+
+      /// Opens My location again, for what it shows.
+      Future<void> reopen(WidgetTester tester, _Radio radio) => host(
+            tester,
+            radio,
+            (context) => StructuredMessageDialogs.myLocation(context, radio),
+          );
+
+      bool? picked(WidgetTester tester) =>
+          tester.widget<RadioGroup<bool>>(find.byType(RadioGroup<bool>))
+              .groupValue;
+
+      testWidgets('first Only the position, and nothing more goes',
+          (tester) async {
+        final radio = gpsRadio();
+        await readings(tester, radio, [36.96, 36.97]);
+        String? wire;
+        await host(tester, radio, (context) async {
+          wire = await StructuredMessageDialogs.myLocation(context, radio);
+        });
+        expect(find.text(onlyPosition), findsOneWidget);
+        expect(find.text(withMotion), findsOneWidget);
+        expect(picked(tester), isFalse);
+        await done(tester);
+        expect(wire, 'Location: My location\n$_here');
+      });
+
+      testWidgets('moving: what the radio knows goes, and the pick is kept',
+          (tester) async {
+        final radio = gpsRadio();
+        // 1.1 km north in a minute.
+        await readings(tester, radio, [36.96, 36.97]);
+        String? wire;
+        await host(tester, radio, (context) async {
+          wire = await StructuredMessageDialogs.myLocation(context, radio);
+        });
+        expect(find.text('N 0° · 67 km/h · 35 m'), findsOneWidget);
+        await tester.tap(find.text(withMotion));
+        await tester.pump();
+        await done(tester);
+        expect(wire, 'Location: My location\n$_here\nalt=35m\nhdg=0\nspd=67km/h');
+        expect(PrefsManager.instance.getBool('location_send_motion'), isTrue);
+
+        await reopen(tester, radio);
+        expect(picked(tester), isTrue, reason: 'the last pick');
+      });
+
+      testWidgets('standing still: not moving, a speed of 0', (tester) async {
+        final radio = gpsRadio();
+        await readings(tester, radio, [36.97, 36.97, 36.97, 36.97]);
+        await PrefsManager.instance.setBool('location_send_motion', true);
+        String? wire;
+        await host(tester, radio, (context) async {
+          wire = await StructuredMessageDialogs.myLocation(context, radio);
+        });
+        expect(find.text('Not moving · 35 m'), findsOneWidget);
+        await done(tester);
+        expect(wire, 'Location: My location\n$_here\nalt=35m\nspd=0km/h');
+      });
+
+      testWidgets('not known yet: the altitude goes alone', (tester) async {
+        final radio = gpsRadio();
+        await readings(tester, radio, [36.97]);
+        await PrefsManager.instance.setBool('location_send_motion', true);
+        String? wire;
+        await host(tester, radio, (context) async {
+          wire = await StructuredMessageDialogs.myLocation(context, radio);
+        });
+        expect(find.text("Heading and speed aren't known yet · 35 m"),
+            findsOneWidget);
+        await done(tester);
+        expect(wire, 'Location: My location\n$_here\nalt=35m');
+      });
+
+      testWidgets("a position typed over the radio's, or GPS off: no choice",
+          (tester) async {
+        final radio = gpsRadio();
+        await readings(tester, radio, [36.96, 36.97]);
+        await PrefsManager.instance.setBool('location_send_motion', true);
+        String? wire;
+        await host(tester, radio, (context) async {
+          wire = await StructuredMessageDialogs.myLocation(context, radio);
+        });
+        await tester.enterText(field('Location'), '36.5, -121.5');
+        await tester.pump();
+        expect(find.text(withMotion), findsNothing);
+        await done(tester);
+        expect(wire, 'Location: My location\n36.500000, -121.500000');
+
+        await reopen(tester, _Radio(lat: 36.97, lon: -121.9));
+        expect(find.text(onlyPosition), findsNothing);
+      });
+    });
   });
 
   group('the distance on a card', () {
@@ -379,15 +500,23 @@ void main() {
     setUp(() async => tmp = await Directory.systemTemp.createTemp('card'));
     tearDown(() => tmp.delete(recursive: true));
 
-    // An SOS 2.2 km north of a radio at 36.97, -121.9.
-    Future<void> card(WidgetTester tester, MeshCoreConnector radio) async {
+    // An SOS 2.2 km north of a radio at 36.97, -121.9, unless [wire] says.
+    Future<void> card(
+      WidgetTester tester,
+      MeshCoreConnector radio, {
+      String wire = 'SOS: Broken leg\n36.990000, -121.900000',
+      AppSettingsService? settings,
+      String? senderName,
+    }) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(MultiProvider(
         providers: [
           ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
-          ChangeNotifierProvider(create: (_) => AppSettingsService()),
+          ChangeNotifierProvider(
+            create: (_) => settings ?? AppSettingsService(),
+          ),
           ChangeNotifierProvider(
             create: (_) => MapPacksService(
               manager: PackManager(Directory('${tmp.path}/packs')),
@@ -406,10 +535,9 @@ void main() {
               child: SizedBox(
                 width: 322,
                 child: StructuredMessageCard(
-                  message: StructuredMessage.parse(
-                    'SOS: Broken leg\n36.990000, -121.900000',
-                  )!,
+                  message: StructuredMessage.parse(wire)!,
                   textScale: 1,
+                  senderName: senderName,
                 ),
               ),
             ),
@@ -451,6 +579,37 @@ void main() {
         expect(find.textContaining('Last known'), findsNothing);
         expect(find.byIcon(Icons.navigation), findsOneWidget);
       }
+    });
+
+    // Martin, 2026-11-26: heading, speed and altitude on a shared My
+    // location, as the map shows them for TRAX, in the reader's units.
+    testWidgets('heading, speed and altitude in my units', (tester) async {
+      final settings = AppSettingsService();
+      await settings.setUnitSystem(UnitSystem.imperial);
+      await card(
+        tester,
+        _Radio(lat: 36.97, lon: -121.9),
+        wire: 'Location: My location\n36.990000, -121.900000\nalt=35m\n'
+            'hdg=270\nspd=15km/h',
+        settings: settings,
+        senderName: 'GWQ',
+      );
+      expect(find.text("GWQ's location"), findsOneWidget);
+      expect(find.text('W 270°'), findsOneWidget);
+      expect(find.text('9 mph'), findsOneWidget);
+      expect(find.text('115 ft'), findsOneWidget);
+      expect(find.byIcon(Icons.north), findsOneWidget);
+      expect(find.text('alt: 35m'), findsNothing, reason: 'read, not raw');
+    });
+
+    testWidgets('standing still: Not moving', (tester) async {
+      await card(
+        tester,
+        _Radio(lat: 36.97, lon: -121.9),
+        wire: 'Location: My location\n36.990000, -121.900000\nspd=0km/h',
+      );
+      expect(find.text('Not moving'), findsOneWidget);
+      expect(find.text('0 km/h'), findsNothing);
     });
   });
 }

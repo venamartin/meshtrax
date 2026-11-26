@@ -10516,6 +10516,24 @@ abstract class AppLocalizations {
   /// **'Your radio has no location yet. Pick one on the map.'**
   String get tray_noRadioPosition;
 
+  /// No description provided for @location_sendPositionOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the position'**
+  String get location_sendPositionOnly;
+
+  /// No description provided for @location_sendWithMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Position, heading, speed and altitude'**
+  String get location_sendWithMotion;
+
+  /// No description provided for @location_motionNotKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading and speed aren\'t known yet'**
+  String get location_motionNotKnown;
+
   /// No description provided for @dialog_insert.
   ///
   /// In en, this message translates to:

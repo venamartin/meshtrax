@@ -37,6 +37,10 @@ class GeoFormat {
     return km < 10 ? '${km.toStringAsFixed(1)} km' : '${km.round()} km';
   }
 
+  /// "W 270°": the compass point and the degrees.
+  static String headingText(double degrees) =>
+      '${compass8(degrees)} ${degrees.round() % 360}°';
+
   /// "34 m"; "112 ft" in imperial.
   static String heightText(double meters, UnitSystem units) =>
       units == UnitSystem.imperial

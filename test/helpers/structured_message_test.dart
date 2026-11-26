@@ -188,6 +188,80 @@ void main() {
     });
   });
 
+  // Martin, 2026-11-26: My location can also send heading, speed and
+  // altitude, as short key=value lines, metric on the air.
+  group('Location: heading, speed and altitude', () {
+    LocationMessage parse(String wire) =>
+        StructuredMessage.parse(wire)! as LocationMessage;
+
+    test('go out after the note as alt=, hdg= and spd=, metric', () {
+      const loc = LocationMessage(
+        position: LatLng(47.070123, 15.440123),
+        label: LocationMessage.myLocationLabel,
+        note: 'at the trailhead',
+        altitude: 35.4,
+        heading: 269.6,
+        speed: 15 / 3.6,
+      );
+      expect(
+        loc.toWire(),
+        'Location: My location\n$graz\nat the trailhead\n'
+        'alt=35m\nhdg=270\nspd=15km/h',
+      );
+    });
+
+    test('read back, and nothing is left over', () {
+      final loc = parse('Location: My location\n$graz\nalt=35m\nhdg=270\n'
+          'spd=15km/h');
+      expect(loc.isSendersOwn, isTrue);
+      expect(loc.altitude, 35);
+      expect(loc.heading, 270);
+      expect(loc.speed, closeTo(15 / 3.6, 1e-9));
+      expect(loc.isStill, isFalse);
+      expect(loc.extensions, isEmpty);
+    });
+
+    test('standing still: a speed of 0 and no heading', () {
+      final loc = parse('Location: My location\n$graz\nspd=0km/h');
+      expect(loc.speed, 0);
+      expect(loc.isStill, isTrue);
+      expect(loc.toWire(), 'Location: My location\n$graz\nspd=0km/h');
+    });
+
+    test('other units, any case, spaces and no unit read too', () {
+      LocationMessage read(String fields) => parse('Location: $graz\n$fields');
+      expect(read('alt=115ft').altitude, closeTo(35.05, 0.01));
+      expect(read('alt=-86').altitude, -86);
+      expect(read('alt=35 M').altitude, 35);
+      expect(read('spd=9mph').speed, closeTo(4.023, 0.001));
+      expect(read('spd=8kn').speed, closeTo(4.116, 0.001));
+      expect(read('spd=4.2m/s').speed, 4.2);
+      expect(read('spd=15').speed, closeTo(15 / 3.6, 1e-9));
+      expect(read('hdg=90°').heading, 90);
+      expect(read('hdg=360').heading, 0);
+    });
+
+    test("a value it can't read stays, shown as sent", () {
+      final loc = parse('Location: $graz\nalt=high\nhdg=400\nspd=-3km/h\n'
+          'spd2=fast');
+      expect(loc.altitude, isNull);
+      expect(loc.heading, isNull);
+      expect(loc.speed, isNull);
+      expect(loc.extensions, {
+        'alt': 'high',
+        'hdg': '400',
+        'spd': '-3km/h',
+        'spd2': 'fast',
+      });
+    });
+
+    test('an SOS keeps them as it always did (not now, 2026-11-26)', () {
+      final sos = StructuredMessage.parse('SOS: Help\n$graz\nalt=35m')!
+          as SosMessage;
+      expect(sos.extensions, {'alt': '35m'});
+    });
+  });
+
   group('SOS', () {
     test('round trip', () {
       const sos = SosMessage(
@@ -687,6 +761,93 @@ void main() {
       expect(StructuredMessage.parse('<$key:1:>'), isNull);
       // Two of them.
       expect(StructuredMessage.parse('$line\n$line'), isNull);
+    });
+  });
+
+  // Martin, 2026-11-26: another firmware's position lines make cards.
+  // "loc: lat,lon" is a quick message filled with the sender's GPS position
+  // and "[LOC]lat,lon" a live share: both are where the sender is.
+  // "[WAY]lat,lon label" is a waypoint: a place. MeshTrax never sends them.
+  group('loc:, [LOC] and [WAY] from other apps', () {
+    const here = LatLng(36.67759, -121.785);
+
+    LocationMessage? read(String text) =>
+        StructuredMessage.parse(text) as LocationMessage?;
+
+    test('loc: is where the sender is', () {
+      final loc = read('loc: 36.67759,-121.78500')!;
+      expect(loc.position, here);
+      expect(loc.isSendersOwn, isTrue);
+      expect(loc.note, isNull);
+    });
+
+    test('any case, spaces and decimals', () {
+      expect(read('LOC:36.67759, -121.785')?.position, here);
+      expect(read('Loc:  36.67759 ,-121.785 ')?.position, here);
+      expect(read('loc: 36,-121')?.position, const LatLng(36, -121));
+      expect(read('[loc]36.67759 , -121.78500')?.position, here);
+    });
+
+    test('lines around it are its note', () {
+      final loc = read('loc: 36.67759,-121.78500\nTrailhead\nby the gate')!;
+      expect(loc.isSendersOwn, isTrue);
+      expect(loc.note, 'Trailhead');
+      expect(loc.extraText, ['by the gate']);
+      expect(read('Trailhead\nloc: 36.67759,-121.78500')!.note, 'Trailhead');
+    });
+
+    test("[LOC] is where the sender is; a DM's name after it is left out",
+        () {
+      for (final text in [
+        '[LOC]36.67759,-121.78500',
+        '[LOC]36.67759,-121.78500 Anna',
+      ]) {
+        final loc = read(text)!;
+        expect(loc.position, here, reason: text);
+        expect(loc.isSendersOwn, isTrue, reason: text);
+        expect(loc.note, isNull, reason: text);
+      }
+    });
+
+    test('[WAY] is a place with its label', () {
+      final hut = read('[WAY]36.67759,-121.78500 Hut')!;
+      expect(hut.position, here);
+      expect(hut.label, 'Hut');
+      expect(hut.isSendersOwn, isFalse);
+      expect(read('[WAY]36.67759,-121.78500')!.label, isNull);
+      final noted = read('[WAY]36.67759,-121.78500 Hut\nby the gate')!;
+      expect(noted.label, 'Hut');
+      expect(noted.note, 'by the gate');
+    });
+
+    test('after a mention', () {
+      expect(read('@[Ann] loc: 36.67759,-121.78500')?.position, here);
+      expect(read('@[Ann] [WAY]36.67759,-121.78500 Hut')?.label, 'Hut');
+    });
+
+    test('out of range, in a sentence, too long, or an SOS: plain text', () {
+      expect(read('loc: 91.0,0.0'), isNull);
+      expect(read('loc: 36.6,-181.0'), isNull);
+      expect(read('[WAY]91.0,0.0 Hut'), isNull);
+      expect(read('I am at loc: 36.67759,-121.78500'), isNull);
+      expect(read('here [LOC]36.67759,-121.78500'), isNull);
+      expect(read('loc: 36.67759,-121.78500 now'), isNull);
+      expect(read('loc: 36.67759,-121.78500\na\nb\nc'), isNull);
+      expect(read('[SOS] 36.67759,-121.78500 212m 14:32'), isNull);
+    });
+
+    test('never written: MeshTrax writes its own format', () {
+      expect(
+        read('loc: 36.67759,-121.78500')!.toWire(),
+        'Location: My location\n36.677590, -121.785000',
+      );
+      expect(
+        read('[WAY]36.67759,-121.78500 Hut')!.toWire(),
+        'Location: Hut\n36.677590, -121.785000',
+      );
+      for (final text in ['loc: 36.67759,-121.78500', '[LOC]36.6,-121.7']) {
+        expect(StructuredMessage.hasPrefix(text), isFalse, reason: text);
+      }
     });
   });
 }

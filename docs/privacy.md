@@ -93,7 +93,7 @@ You can also **block** a sender from any message; blocked senders and their mess
 - No analytics, advertising identifiers, crash reporting, or behavioral tracking.
 - No Google Sign-In, Google Drive, or other cloud-sync services (unused Google API libraries may appear as transitive build dependencies but are not invoked by the App). Your operating system's own device backup is separate; see "Device backups" above.
 - The App does not read your calendar or your contacts list.
-- The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it.
+- The App does **not** read your phone's GPS/location sensor. It contains no location-provider code. **My location** on the map shows your companion device's own position, as the device reports it. When you share My location in a chat, you can choose to send that device's heading, speed and altitude with it. The App works the heading and speed out from the device's last few positions, which it keeps in memory only.
 - Trail routing, place search, line of sight and radio reach run entirely on your device. The points you plan a route between, the words you search for and the places you check line of sight between are never sent anywhere. Line of sight reads the heights from the contours you downloaded.
 - No data is sold or shared for advertising.
 

@@ -19,7 +19,7 @@ formats from other apps that it reads but never sends.
 | Reaction | MeshCore One reaction | meshcore-open `r:HASH:INDEX`, older MeshCore One emoji-first order |
 | GIF | Giphy link (default) or `g:ID` | `media.giphy.com` links |
 | Markdown | whatever the user types | |
-| Cards | `Location:`, `SOS:` and its repeats, Got it and `SOS cancelled`, `Event:`, `Notice:` | `m:` marker, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
+| Cards | `Location:`, `SOS:` and its repeats, Got it and `SOS cancelled`, `Event:`, `Notice:` | `m:` marker, `loc:`, `[LOC]` and `[WAY]` lines, bare coordinates and maps links, Google Calendar shares, `meshcore://` links |
 | Drawings | `SVG:` and path data | |
 | Compression | `s:` SMAZ, only when switched on | `s:` SMAZ, always |
 
@@ -332,6 +332,16 @@ field
      - `expires=` on a `Notice`: when it stops applying, in the when shape
        without an end (`YYYY-MM-DD` means the end of that day). MeshTrax
        pins a room's notice until then and greys it out afterwards.
+     - `alt=`, `hdg=` and `spd=` on a `Location`: the sender's altitude,
+       heading and speed. MeshTrax sends them with My location when the
+       sender picks "Position, heading, speed and altitude". `alt=35m` is
+       metres above sea level. `hdg=270` is degrees clockwise from north,
+       0 to 359, sent only while moving. `spd=15km/h` is the speed, and
+       standing still is `spd=0km/h` with no `hdg=`. Each one is sent only
+       when the sender's radio knows it. MeshTrax writes metric and shows
+       each reader's own units. It also reads `ft` for altitude, and
+       `mph`, `kn` or `m/s` for speed; a number with no unit is metres or
+       km/h. A value it can't read is shown as sent.
    - **Free text**: anything else. The first free-text field is the title or
      label, the second the detail (the place of an event, a note on a
      location), the rest are extra lines.
@@ -356,6 +366,12 @@ Location: 47.070123, 15.440123
 Location: My location
 47.070123, 15.440123
 at the trailhead
+
+Location: My location
+47.070123, 15.440123
+alt=35m
+hdg=270
+spd=15km/h
 
 Location: SCCARC Picnic
 47.070123, 15.440123
@@ -547,6 +563,14 @@ repeaters fit one channel message.
 
 - `m:LAT,LON|LABEL|FLAGS`, the marker line of meshcore-open, Offband and
   older MeshTrax, as a Location.
+- The position lines of MeshCore Solo firmware, as a Location. A live
+  share `[LOC]LAT,LON` and a quick message's `loc: LAT,LON` are where the
+  sender is, shown like My location; in a direct message a live share
+  ends with the sender's name, which is left out. A waypoint
+  `[WAY]LAT,LON LABEL` is a place titled with its label. The tag starts
+  its line, in any case, and up to two lines of text around it come
+  along. An `[SOS]` line stays text. MeshTrax reads these and never sends
+  them.
 - A message that is just coordinates, a `geo:` URI or a maps link, with up
   to two lines of text around it, as a Location. This is what the stock
   companion app, MeshCore One and the Google and Apple Maps share sheets
@@ -572,7 +596,7 @@ A channel message has roughly 125 to 140 bytes for text, a direct message
 command) 147. The type header costs 5 to 9 bytes, a position 22 plus a
 1-byte separator, a when 10 to 30, an `expires=` 19 to 25. An event with
 title, time, place and position needs about 60 bytes plus the title and the
-place.
+place. Heading, speed and altitude on a My location add about 27 bytes.
 
 ---
 

@@ -6300,6 +6300,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'Seu rádio ainda não tem posição. Escolha uma no mapa.';
 
   @override
+  String get location_sendPositionOnly => 'Only the position';
+
+  @override
+  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+
+  @override
+  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+
+  @override
   String get dialog_insert => 'Inserir';
 
   @override
