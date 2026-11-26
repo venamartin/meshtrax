@@ -945,8 +945,8 @@ final List<HealthRule> healthRules = [
     severity: HealthSeverity.suggestion,
     title: 'App debug log is on',
     why:
-        'The debug log keeps up to 20,000 lines in memory. Turn it off unless '
-        'you are chasing a problem.',
+        'The debug log keeps up to 20,000 lines, in memory and in a file. '
+        'Turn it off unless you are chasing a problem.',
     check: (ctx) async => ctx.app.appDebugLogEnabled,
     fix: HealthFix.apply,
     fixDescription: 'Turn the debug log off.',

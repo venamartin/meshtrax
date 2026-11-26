@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../storage/app_debug_log_store.dart';
+
 enum AppDebugLogLevel { info, warning, error }
 
 class AppDebugLogEntry {
@@ -49,9 +51,15 @@ class AppDebugLogEntry {
 }
 
 class AppDebugLogService extends ChangeNotifier {
+  AppDebugLogService({this._store});
+
   // A day of field logging: a 2-hour hike filled 673 lines (2026-10-16).
   static const int maxEntries = 20000;
   final List<AppDebugLogEntry> _entries = [];
+
+  /// Keeps the lines between runs; null where there are no files (the web).
+  final AppDebugLogStore? _store;
+  int _clears = 0;
   bool _enabled = false;
 
   List<AppDebugLogEntry> get entries => List.unmodifiable(_entries);
@@ -72,16 +80,35 @@ class AppDebugLogService extends ChangeNotifier {
 
   /// [buildExportText] under a line naming the build the log came from.
   static Future<String> buildExport(Iterable<AppDebugLogEntry> entries) async {
-    var build = 'unknown build';
+    return 'MeshTrax ${await _build()} ${defaultTargetPlatform.name} debug '
+        'log, exported ${DateTime.now()}\n${buildExportText(entries)}';
+  }
+
+  static Future<String> _build() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      build = '${info.version}+${info.buildNumber}';
+      return '${info.version}+${info.buildNumber}';
     } catch (_) {
-      // No package info here (tests, a bare desktop binary): the header
-      // still names the platform and the time.
+      // No package info here (tests, a bare desktop binary).
+      return 'unknown build';
     }
-    return 'MeshTrax $build ${defaultTargetPlatform.name} debug log, '
-        'exported ${DateTime.now()}\n${buildExportText(entries)}';
+  }
+
+  /// Puts the lines kept from earlier runs ahead of this run's, which get a
+  /// line naming their build: one log can hold the lines of several builds.
+  /// Call it once, as logging starts.
+  Future<void> restore() async {
+    final store = _store;
+    if (store == null) return;
+    final clears = _clears;
+    final loading = store.load();
+    info('MeshTrax ${await _build()} started');
+    final earlier = await loading;
+    // Cleared while the files were read: those lines are gone as well.
+    if (clears != _clears || earlier.isEmpty) return;
+    _entries.insertAll(0, earlier);
+    _trim();
+    notifyListeners();
   }
 
   void setEnabled(bool value) {
@@ -102,18 +129,15 @@ class AppDebugLogService extends ChangeNotifier {
       return;
     }
 
-    _entries.add(
-      AppDebugLogEntry(
-        timestamp: DateTime.now(),
-        level: level,
-        tag: tag,
-        message: message,
-      ),
+    final entry = AppDebugLogEntry(
+      timestamp: DateTime.now(),
+      level: level,
+      tag: tag,
+      message: message,
     );
-
-    if (_entries.length > maxEntries) {
-      _entries.removeRange(0, _entries.length - maxEntries);
-    }
+    _entries.add(entry);
+    _store?.add(entry);
+    _trim();
 
     if (!noNotify) {
       notifyListeners();
@@ -137,6 +161,14 @@ class AppDebugLogService extends ChangeNotifier {
 
   void clear() {
     _entries.clear();
+    _clears++;
+    _store?.clear();
     notifyListeners();
+  }
+
+  void _trim() {
+    if (_entries.length > maxEntries) {
+      _entries.removeRange(0, _entries.length - maxEntries);
+    }
   }
 }
