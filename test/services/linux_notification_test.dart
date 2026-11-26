@@ -60,7 +60,7 @@ void main() {
       '${second.path}/paplay',
       reason: 'paplay works on PulseAudio and PipeWire alike',
     );
-  });
+  }, skip: Platform.isWindows ? 'PATH is split on ":", as on Linux' : false);
 
   test('pop-ups are quiet: the app sounds the tone', () {
     final details = NotificationService.linuxDetails(l10n);
