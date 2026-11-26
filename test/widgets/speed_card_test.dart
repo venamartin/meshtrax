@@ -89,7 +89,7 @@ void main() {
     expect(radio.speedViewers, 1);
     await drive(tester);
     expect(find.text('45'), findsOneWidget);
-    expect(find.text('mph'), findsOneWidget);
+    expect(find.text('MPH'), findsOneWidget);
     expect(find.text('N 0°'), findsOneWidget);
     expect(find.text('200 ft'), findsOneWidget);
     expect(
@@ -105,7 +105,7 @@ void main() {
     await pumpCard(tester, units: UnitSystem.metric);
     await drive(tester);
     expect(find.text('72'), findsOneWidget);
-    expect(find.text('km/h'), findsOneWidget);
+    expect(find.text('KM/H'), findsOneWidget);
     for (var i = 0; i < 4; i++) {
       await reading(tester, lat0 + 5 * step);
     }
@@ -119,7 +119,7 @@ void main() {
     await pumpCard(tester);
     await reading(tester, lat0, altitude: 0);
     expect(find.text('—'), findsOneWidget);
-    expect(find.text('mph'), findsOneWidget);
+    expect(find.text('MPH'), findsOneWidget);
     expect(find.textContaining('ft'), findsNothing);
     expect(find.text('Not moving'), findsNothing);
   });
@@ -128,7 +128,7 @@ void main() {
     await pumpCard(tester, nautical: true);
     await drive(tester);
     expect(find.text('39'), findsOneWidget);
-    expect(find.text('kn'), findsOneWidget);
+    expect(find.text('KN'), findsOneWidget);
     final variation = magneticDeclination(
       lat0 + 5 * step,
       lon0,

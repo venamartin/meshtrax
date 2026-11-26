@@ -11,7 +11,9 @@ import '../services/self_motion.dart';
 
 /// How fast and which way the radio's GPS is going, and how high it is,
 /// at the map's bottom left while the map keeps you in the middle and the
-/// reading is fresh. The radio is read every 3 s while it shows.
+/// reading is fresh: one bold number, its unit under it, then heading and
+/// altitude, on a flat card with a thin outline (Martin chose this look).
+/// The radio is read every 3 s while it shows.
 class SpeedCard extends StatefulWidget {
   final MeshCoreConnector connector;
   final UnitSystem units;
@@ -19,7 +21,7 @@ class SpeedCard extends StatefulWidget {
   /// Knots and degrees magnetic, as water routes give them: the charts.
   final bool nautical;
 
-  static const width = 132.0;
+  static const width = 116.0;
 
   const SpeedCard({
     super.key,
@@ -63,7 +65,12 @@ class _SpeedCardState extends State<SpeedCard> {
     final speed = still ? 0.0 : motion?.speed;
     final altitude = gps == null || gps.altitude == 0 ? null : gps.altitude;
     final quiet = scheme.onSurfaceVariant;
-    final text = theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface);
+    // Digits of one width, so the figures hold still as they change.
+    const tabular = [FontFeature.tabularFigures()];
+    final text = theme.textTheme.titleSmall?.copyWith(
+      color: scheme.onSurface,
+      fontFeatures: tabular,
+    );
 
     final (figure, unit) = GeoFormat.speedParts(
       speed ?? 0,
@@ -82,7 +89,6 @@ class _SpeedCardState extends State<SpeedCard> {
 
     Widget line(Widget icon, String value) => FittedBox(
       fit: BoxFit.scaleDown,
-      alignment: AlignmentDirectional.centerStart,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -92,6 +98,23 @@ class _SpeedCardState extends State<SpeedCard> {
         ],
       ),
     );
+    final lines = [
+      if (still)
+        line(
+          Icon(Icons.pause_circle_outline, size: 18, color: quiet),
+          l10n.map_notMoving,
+        )
+      else if (headingText != null)
+        line(
+          Transform.rotate(
+            angle: heading! * math.pi / 180,
+            child: Icon(Icons.navigation, size: 20, color: scheme.primary),
+          ),
+          headingText,
+        ),
+      if (altitudeText != null)
+        line(Icon(Icons.terrain, size: 18, color: quiet), altitudeText),
+    ];
 
     return Semantics(
       container: true,
@@ -104,71 +127,46 @@ class _SpeedCardState extends State<SpeedCard> {
       ].join(', '),
       child: SizedBox(
         width: SpeedCard.width,
-        child: Card(
-          margin: EdgeInsets.zero,
-          elevation: 3,
-          color: scheme.surfaceContainerLow,
+        child: Material(
+          color: scheme.surfaceContainerHigh,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(22),
+            side: BorderSide(color: scheme.outlineVariant),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 16, 12),
+            padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 4,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          number,
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          unit,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: quiet,
-                          ),
-                        ),
-                      ],
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    number,
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      letterSpacing: -1,
+                      color: scheme.onSurface,
+                      fontFeatures: tabular,
                     ),
                   ),
                 ),
-                if (still)
-                  line(
-                    Icon(Icons.pause_circle_outline, size: 16, color: quiet),
-                    l10n.map_notMoving,
-                  )
-                else if (headingText != null)
-                  line(
-                    Transform.rotate(
-                      angle: heading! * math.pi / 180,
-                      child: Icon(
-                        Icons.navigation,
-                        size: 16,
-                        color: scheme.primary,
-                      ),
-                    ),
-                    headingText,
+                const SizedBox(height: 2),
+                Text(
+                  unit.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: quiet,
+                    letterSpacing: 1.4,
                   ),
-                if (altitudeText != null)
-                  line(
-                    Icon(Icons.terrain, size: 16, color: quiet),
-                    altitudeText,
+                ),
+                if (lines.isNotEmpty) ...[
+                  Divider(height: 18, color: scheme.outlineVariant),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 4,
+                    children: lines,
                   ),
+                ],
               ],
             ),
           ),
