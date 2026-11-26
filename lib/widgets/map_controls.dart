@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:traxmap/traxmap.dart';
 
 import '../l10n/l10n.dart';
-import 'trax_dialogs.dart';
 
 /// The map's buttons, bottom right: search, full screen, zoom (desktop only;
 /// phones pinch), My location, and the layers button; bottom left, the TRAX
@@ -195,7 +194,7 @@ class MapControls extends StatelessWidget {
                         heroTag: null,
                         tooltip: l10n.trax_group,
                         onPressed: group,
-                        child: const TraxGroupIcon(),
+                        child: const Icon(Icons.groups, size: 32),
                       ),
                     ),
                     const Spacer(),

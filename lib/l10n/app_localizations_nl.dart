@@ -7153,6 +7153,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get chats_draft => 'Concept';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Geblokkeerd door je radio';
 
   @override

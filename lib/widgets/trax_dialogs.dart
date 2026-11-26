@@ -387,38 +387,3 @@ class TraxIcon extends StatelessWidget {
   Widget build(BuildContext context) =>
       ImageIcon(ResizeImage(_asset, height: 128), size: size, color: color);
 }
-
-/// The TRAX group: the boot print between two people, clear of them.
-class TraxGroupIcon extends StatelessWidget {
-  const TraxGroupIcon({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color;
-    // Tall enough that the heel ends level with their feet.
-    return SizedBox(
-      width: 48,
-      height: 33,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            bottom: 0,
-            child: Icon(Icons.person, size: 19, color: color),
-          ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Icon(Icons.person, size: 19, color: color),
-          ),
-          // The heel, at the print's bottom left, keeps off the left person.
-          const Positioned(
-            left: 11,
-            top: 0,
-            child: TraxIcon(size: 30, color: Color(Trax.orange)),
-          ),
-        ],
-      ),
-    );
-  }
-}
