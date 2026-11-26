@@ -4,10 +4,6 @@ import 'dart:typed_data';
 /// A point on a trail, in degrees.
 typedef TrailPoint = ({double lat, double lon});
 
-/// The trail a report carries: points newest first, without the report's
-/// own position, on a grid of [gridM] metres.
-typedef Trail = ({int gridM, List<TrailPoint> points});
-
 const _metresPerDegree = 111320.0;
 
 /// A report's position as the wire carries it, in 0.00001° steps. A trail
@@ -19,14 +15,15 @@ int latUnits(double lat) => ((lat.clamp(-90.0, 90.0) + 90) * 100000).round();
 
 int lonUnits(double lon) => ((lon + 180) * 100000).round() % 36000000;
 
-/// The trail's bits, MSB first: for each point, newest first, its step east
-/// then north from the point before it (the first from [anchor]), in grid
-/// units, zigzag then exp-Golomb order 3. Zero bits pad the last byte.
-Uint8List encodeTrail(TrailPoint anchor, Trail trail) {
+/// The bits of [points], MSB first: for each point in turn, its step east
+/// then north from the point before it (the first from [anchor]), in units
+/// of [gridM] metres, zigzag then exp-Golomb order 3. Zero bits pad the
+/// last byte.
+Uint8List encodeTrail(TrailPoint anchor, int gridM, List<TrailPoint> points) {
   final w = _BitWriter();
-  final frame = _Frame(anchor, trail.gridM);
+  final frame = _Frame(anchor, gridM);
   var px = 0, py = 0;
-  for (final p in trail.points) {
+  for (final p in points) {
     final (x, y) = frame.units(p);
     w.expGolomb(_zigzag(x - px), 3);
     w.expGolomb(_zigzag(y - py), 3);
@@ -61,53 +58,6 @@ Uint8List encodeTrail(TrailPoint anchor, Trail trail) {
   return (points: points, bytes: (r.read + 7) >> 3);
 }
 
-/// The finest trail of [points] (newest first, without [anchor]) in
-/// [maxBytes] and 255 points: Douglas–Peucker from 15 m, doubled until it
-/// fits, then bisected to within 1 m, on a grid of max(8, ⌈ε/2⌉) m. A trail
-/// too long for even the coarsest grid loses its oldest points.
-Trail? fitTrail(TrailPoint anchor, List<TrailPoint> points, int maxBytes) {
-  var rest = points;
-  while (rest.isNotEmpty && maxBytes > 0) {
-    final fit = _fit(anchor, rest, maxBytes);
-    if (fit != null) return fit;
-    rest = rest.sublist(0, rest.length * 3 ~/ 4);
-  }
-  return null;
-}
-
-Trail? _fit(TrailPoint anchor, List<TrailPoint> points, int maxBytes) {
-  Trail? attempt(double epsilon) {
-    final grid = max(8, (epsilon / 2).ceil());
-    if (grid > 255) return null;
-    final kept = simplify([anchor, ...points], epsilon).sublist(1);
-    if (kept.length > 255) return null;
-    final trail = (gridM: grid, points: kept);
-    return encodeTrail(anchor, trail).length <= maxBytes ? trail : null;
-  }
-
-  var epsilon = 15.0;
-  var fit = attempt(epsilon);
-  if (fit != null) return fit;
-  var failed = epsilon;
-  while (fit == null) {
-    epsilon *= 2;
-    if (epsilon > 510) return null;
-    fit = attempt(epsilon);
-    if (fit == null) failed = epsilon;
-  }
-  while (epsilon - failed > 1) {
-    final mid = (failed + epsilon) / 2;
-    final finer = attempt(mid);
-    if (finer == null) {
-      failed = mid;
-    } else {
-      epsilon = mid;
-      fit = finer;
-    }
-  }
-  return fit;
-}
-
 /// Douglas–Peucker in 2D: the points of [line] that keep it within
 /// [epsilonM] metres, always the first and the last.
 List<TrailPoint> simplify(List<TrailPoint> line, double epsilonM) {
@@ -140,6 +90,21 @@ List<TrailPoint> simplify(List<TrailPoint> line, double epsilonM) {
     for (var i = 0; i < line.length; i++)
       if (keep[i]) line[i],
   ];
+}
+
+/// Metres between [a] and [b], on a plane through [a].
+double metresBetween(TrailPoint a, TrailPoint b) {
+  final (x, y) = _Frame(a, 1).metres(b);
+  return sqrt(x * x + y * y);
+}
+
+/// Metres along [line].
+double pathMetres(List<TrailPoint> line) {
+  var m = 0.0;
+  for (var i = 1; i < line.length; i++) {
+    m += metresBetween(line[i - 1], line[i]);
+  }
+  return m;
 }
 
 double _distanceToSegment(

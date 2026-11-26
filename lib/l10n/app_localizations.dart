@@ -1979,6 +1979,30 @@ abstract class AppLocalizations {
   /// **'Posts on the trip channel; others follow with one tap.'**
   String get trax_tellGroupHint;
 
+  /// No description provided for @trax_keepTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my track'**
+  String get trax_keepTrack;
+
+  /// No description provided for @trax_keepTrackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How far back your line goes, for you and the trip. Older parts are deleted on every phone.'**
+  String get trax_keepTrackHint;
+
+  /// No description provided for @trax_keepTrackHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours'**
+  String trax_keepTrackHours(int hours);
+
+  /// No description provided for @trax_keepTrackWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'1 week'**
+  String get trax_keepTrackWeek;
+
   /// No description provided for @trax_followBody.
   ///
   /// In en, this message translates to:
@@ -2212,6 +2236,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'may be old'**
   String get trax_mayBeOld;
+
+  /// Asks a trip member's phone, on the trip channel, for the pieces of their track this phone lacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for track'**
+  String get trax_askTrack;
+
+  /// No description provided for @trax_trackAsked.
+  ///
+  /// In en, this message translates to:
+  /// **'Track asked {time}'**
+  String trax_trackAsked(String time);
 
   /// No description provided for @trax_group.
   ///
@@ -3718,6 +3754,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask again'**
   String get radioAsk_askAgain;
+
+  /// No description provided for @radioAsk_trackAsked.
+  ///
+  /// In en, this message translates to:
+  /// **'Also asked their phone for their track; it shows on the map.'**
+  String get radioAsk_trackAsked;
 
   /// No description provided for @radioAsk_mapLabel.
   ///

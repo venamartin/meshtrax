@@ -1,3 +1,5 @@
+import 'package:traxshare/traxshare.dart' show MemberTrack;
+
 import 'radio_settings.dart';
 
 /// Which settings TRAX mode moves the radio to.
@@ -36,6 +38,13 @@ class TraxSetup {
   /// Posters on the trip channel who aren't members, by contact key.
   final Set<String> removed;
 
+  /// How far back my track goes, on my map and to the trip, and how long
+  /// every phone keeps each piece of it ("Keep my track").
+  final int keepTrackHours;
+
+  /// The choices for [keepTrackHours]: 6 hours to a week.
+  static const keepTrackChoices = [6, 12, 24, 48, 72, 168];
+
   const TraxSetup({
     this.preset = TraxPresetKind.mesh,
     this.channelKey,
@@ -45,6 +54,7 @@ class TraxSetup {
     this.advertPosition = false,
     this.added = const {},
     this.removed = const {},
+    this.keepTrackHours = MemberTrack.defaultKeepHours,
   });
 
   TraxSetup copyWith({
@@ -56,6 +66,7 @@ class TraxSetup {
     bool? advertPosition,
     Set<String>? added,
     Set<String>? removed,
+    int? keepTrackHours,
   }) => TraxSetup(
     preset: preset ?? this.preset,
     channelKey: channelKey == null ? this.channelKey : channelKey(),
@@ -65,6 +76,7 @@ class TraxSetup {
     advertPosition: advertPosition ?? this.advertPosition,
     added: added ?? this.added,
     removed: removed ?? this.removed,
+    keepTrackHours: keepTrackHours ?? this.keepTrackHours,
   );
 
   Map<String, dynamic> toJson() => {
@@ -76,6 +88,7 @@ class TraxSetup {
     'advert': advertPosition,
     if (added.isNotEmpty) 'added': added.toList(),
     if (removed.isNotEmpty) 'removed': removed.toList(),
+    'keep_track_hours': keepTrackHours,
   };
 
   static TraxSetup fromJson(Map<String, dynamic> json) => TraxSetup(
@@ -94,6 +107,10 @@ class TraxSetup {
     advertPosition: json['advert'] as bool? ?? false,
     added: _keys(json['added']),
     removed: _keys(json['removed']),
+    keepTrackHours: switch (json['keep_track_hours']) {
+      final int h when keepTrackChoices.contains(h) => h,
+      _ => MemberTrack.defaultKeepHours,
+    },
   );
 
   static Set<String> _keys(Object? json) =>

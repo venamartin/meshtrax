@@ -14,26 +14,26 @@ typedef TrackPoint = ({double lat, double lon, DateTime at});
 /// while not. All null right after a break, before a second point.
 typedef TrackMotion = ({double? heading, double? speed, Duration? stillFor});
 
-/// This radio's own way while TRAX mode is on: the trail its reports carry
-/// and the line behind its dot. The radio is read every 10 s and a point is
-/// kept every 25 m, never before its reading changes. A line breaks where
-/// live readings stopped for 2 minutes or the position jumped, and nothing
-/// is drawn or sent across a break.
+/// This radio's own way while TRAX mode is on, in pieces ([TrackPiece]):
+/// the line behind its dot and what its reports carry, for [keepHours]. The
+/// radio is read every 10 s and a point is kept every 25 m, never before its
+/// reading changes. A piece closes once its points don't fit one report, or
+/// at a break: where live readings stopped for 2 minutes or the position
+/// jumped. Nothing is drawn or sent across a break.
 class TraxTrack extends ChangeNotifier {
-  TraxTrack(this._connector, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now;
+  TraxTrack(this._connector, {DateTime Function()? clock, Random? random})
+    : _clock = clock ?? DateTime.now,
+      _rounds = PieceRounds(random);
 
   final MeshCoreConnector _connector;
   final DateTime Function() _clock;
+  final PieceRounds _rounds;
 
   static const gateM = 25.0;
   static const gap = Duration(minutes: 2);
 
   /// Faster than this is a jump, not a drive.
   static const maxSpeed = 60.0;
-
-  /// 10 miles: the trail a report carries, and the line behind the dot.
-  static const windowM = 16093.44;
 
   /// Moving while a point was kept this recently.
   static const movingFor = Duration(minutes: 2);
@@ -42,19 +42,44 @@ class TraxTrack extends ChangeNotifier {
   /// positions come in steps of about 11 m.
   static const motionM = 50.0;
 
-  static const _maxPoints = 3000;
+  /// However straight the way, a piece closes at this many points.
+  static const _maxOpenPoints = 500;
+
+  /// The closed pieces' points, the oldest pieces going first.
+  static const _maxPoints = 10000;
   static const _saveEvery = Duration(minutes: 1);
 
   static String keyFor(String radioKey) => 'trax_track_$radioKey';
 
-  /// Oldest first, each oldest point first.
-  final _segments = <List<TrackPoint>>[];
+  /// Closed, oldest first, thinned to [TrackPiece.epsilonM].
+  final _pieces = <TrackPiece>[];
+
+  /// The open piece's points as kept, oldest first.
+  final _open = <TrackPoint>[];
+  int _openMinute = 0;
+
+  /// The points kept since the last break, the last [movingFor] of them.
+  final _live = <TrackPoint>[];
+
+  /// The pieces the latest trail carried at their finest.
+  var _trailFine = <int>{};
+
   String _radioKey = '';
   bool _recording = false;
   DateTime? _liveAt;
   Timer? _saveTimer;
+  int _keepHours = MemberTrack.defaultKeepHours;
 
   bool get recording => _recording;
+
+  /// How long each piece is kept after its last point: TRAX settings' "Keep
+  /// my track".
+  int get keepHours => _keepHours;
+  set keepHours(int hours) {
+    if (hours == _keepHours) return;
+    _keepHours = hours;
+    if (_expire()) _changed();
+  }
 
   /// Starts reading the radio every 10 s and keeping points.
   void start() {
@@ -63,6 +88,8 @@ class TraxTrack extends ChangeNotifier {
     _load();
     // A new start is a break: the time between wasn't recorded.
     _liveAt = null;
+    _live.clear();
+    if (_expire()) _changed();
     _connector.selfGps.addListener(_onReading);
     _connector.addSelfPositionViewer();
   }
@@ -77,30 +104,46 @@ class TraxTrack extends ChangeNotifier {
     unawaited(_save());
   }
 
-  /// The way back from the newest point, newest first, up to [windowM]
-  /// along it; empty when live readings stopped since.
-  List<TrailPoint> trail() {
-    final live = _liveAt;
-    if (_segments.isEmpty || live == null || _clock().difference(live) > gap) {
-      return const [];
-    }
-    final out = <TrailPoint>[];
-    var walked = 0.0;
-    final segment = _segments.last;
-    for (var i = segment.length - 1; i >= 0; i--) {
-      final p = (lat: segment[i].lat, lon: segment[i].lon);
-      if (out.isNotEmpty) walked += _metres(out.last, p);
-      if (walked > windowM) break;
-      out.add(p);
-    }
-    return out;
+  /// The trail a report from [anchor] carries: the open piece, then the
+  /// newest closed ones within 10 miles, as fine as fits [room].
+  TrackBlock? trail(TrailPoint anchor, int room) {
+    if (_expire()) _changed();
+    final block = fitTrack(anchor, _newestFirst, room, keepHours: _keepHours);
+    _trailFine = {
+      if (block != null && block.gridM == TrackPiece.fineGridM)
+        for (final p in block.pieces) p.minute,
+    };
+    return block;
   }
 
-  /// [trail] without the points next to where the radio is now: they add
-  /// nothing to the report's own position.
-  List<TrailPoint> trailFrom(double lat, double lon) {
-    final here = (lat: lat, lon: lon);
-    return trail().skipWhile((p) => _metres(here, p) < gateM).toList();
+  /// The next piece of the rounds, alone, as fine as fits [room]: each piece
+  /// once a round, but for those the latest trail carried at their finest.
+  TrackBlock? nextOlder(TrailPoint anchor, int room) {
+    if (_expire()) _changed();
+    final minute = _rounds.next([
+      for (final p in _newestFirst)
+        if (!_trailFine.contains(p.minute)) p.minute,
+    ]);
+    return minute == null ? null : piece(minute, anchor, room);
+  }
+
+  /// The piece of [minute], alone, as fine as fits [room]; null once gone.
+  TrackBlock? piece(int minute, TrailPoint anchor, int room) {
+    final p = _newestFirst.where((p) => p.minute == minute).firstOrNull;
+    return p == null
+        ? null
+        : fitTrack(anchor, [p], room, keepHours: _keepHours);
+  }
+
+  /// The minutes of the pieces not in [have], newest first; matched by their
+  /// low 16 bits, as an ask carries them.
+  List<int> missing(Iterable<int> have) {
+    if (_expire()) _changed();
+    final held = {for (final m in have) m & 0xFFFF};
+    return [
+      for (final p in _newestFirst)
+        if (!held.contains(p.minute & 0xFFFF)) p.minute,
+    ];
   }
 
   /// How the radio is moving, from the points kept; null without a live
@@ -108,51 +151,44 @@ class TraxTrack extends ChangeNotifier {
   TrackMotion? motion() {
     final live = _liveAt;
     final now = _clock();
-    if (_segments.isEmpty || live == null || now.difference(live) > gap) {
+    if (_live.isEmpty || live == null || now.difference(live) > gap) {
       return null;
     }
-    final segment = _segments.last;
-    final newest = segment.last;
+    final newest = _live.last;
     final since = now.difference(newest.at);
     if (since > movingFor) return (heading: null, speed: null, stillFor: since);
-    final to = (lat: newest.lat, lon: newest.lon);
-    TrailPoint? from;
+    TrackPoint? from;
     var seconds = 0.0;
-    for (var i = segment.length - 2; i >= 0; i--) {
-      final p = segment[i];
+    for (var i = _live.length - 2; i >= 0; i--) {
+      final p = _live[i];
       if (from != null && newest.at.difference(p.at) > movingFor) break;
-      from = (lat: p.lat, lon: p.lon);
+      from = p;
       seconds = newest.at.difference(p.at).inMilliseconds / 1000;
-      if (_metres(from, to) >= motionM) break;
+      if (_metres(from, newest) >= motionM) break;
     }
     if (from == null || seconds <= 0) {
       return (heading: null, speed: null, stillFor: null);
     }
     return (
-      heading: _bearing(from, to),
-      speed: _metres(from, to) / seconds,
+      heading: _bearing(from, newest),
+      speed: _metres(from, newest) / seconds,
       stillFor: null,
     );
   }
 
-  /// The lines to draw behind the dot: [windowM] back along the way, each
-  /// oldest first.
-  List<List<TrailPoint>> get recent {
-    final out = <List<TrailPoint>>[];
-    var walked = 0.0;
-    for (var s = _segments.length - 1; s >= 0 && walked <= windowM; s--) {
-      final line = <TrailPoint>[];
-      final segment = _segments[s];
-      for (var i = segment.length - 1; i >= 0; i--) {
-        final p = (lat: segment[i].lat, lon: segment[i].lon);
-        if (line.isNotEmpty) walked += _metres(line.last, p);
-        if (walked > windowM) break;
-        line.add(p);
-      }
-      if (line.length >= 2) out.add(line.reversed.toList());
-    }
-    return out.reversed.toList();
-  }
+  /// The lines to draw behind the dot, each oldest first: all of the track
+  /// kept.
+  List<List<TrailPoint>> get recent => trackLines([..._pieces, ?_openPiece]);
+
+  TrackPiece? get _openPiece => _open.length < 2
+      ? null
+      : TrackPiece(
+          minute: _openMinute,
+          endMinute: max(_openMinute, TrackPiece.minuteOf(_open.last.at)),
+          points: [for (final p in _open) (lat: p.lat, lon: p.lon)],
+        );
+
+  List<TrackPiece> get _newestFirst => [?_openPiece, ..._pieces.reversed];
 
   // The connector notes whether the reading changed after it sets it.
   void _onReading() => scheduleMicrotask(_keep);
@@ -166,66 +202,159 @@ class TraxTrack extends ChangeNotifier {
         !c.hasValidLocation(gps.latitude, gps.longitude)) {
       return;
     }
+    final expired = _expire();
     final now = _clock();
     final p = (lat: gps.latitude, lon: gps.longitude, at: now);
     final live = _liveAt;
     _liveAt = now;
-    final last = _segments.lastOrNull?.lastOrNull;
+    final last = _live.lastOrNull;
     if (last == null || live == null || now.difference(live) > gap) {
-      _segments.add([p]);
+      _restart(p);
     } else {
-      final d = _metres(
-        (lat: last.lat, lon: last.lon),
-        (lat: p.lat, lon: p.lon),
-      );
-      if (d < gateM) return;
+      final d = _metres(last, p);
+      if (d < gateM) {
+        if (expired) _changed();
+        return;
+      }
       final seconds = now.difference(last.at).inMilliseconds / 1000;
       if (seconds <= 0 || d / seconds > maxSpeed) {
-        _segments.add([p]);
+        _restart(p);
       } else {
-        _segments.last.add(p);
+        _extend(p);
       }
     }
-    _trim();
-    _saveTimer ??= Timer(_saveEvery, () {
-      _saveTimer = null;
-      unawaited(_save());
-    });
-    notifyListeners();
+    _changed();
   }
 
-  void _trim() {
-    var count = _segments.fold(0, (n, s) => n + s.length);
-    while (count > _maxPoints && _segments.isNotEmpty) {
-      final first = _segments.first;
-      first.removeAt(0);
-      count--;
-      if (first.isEmpty) _segments.removeAt(0);
+  /// After a break: the open piece closes and [p] starts the next.
+  void _restart(TrackPoint p) {
+    _close();
+    _open.add(p);
+    _openMinute = _minuteFor(p);
+    _live
+      ..clear()
+      ..add(p);
+  }
+
+  void _extend(TrackPoint p) {
+    _live.add(p);
+    while (_live.length > 2 && p.at.difference(_live[1].at) > movingFor) {
+      _live.removeAt(0);
     }
+    if (_open.isEmpty) {
+      _open.add(p);
+      _openMinute = _minuteFor(p);
+      return;
+    }
+    final fits =
+        _open.length < _maxOpenPoints &&
+        pieceFits([
+          for (final q in [..._open, p]) (lat: q.lat, lon: q.lon),
+        ]);
+    if (fits) {
+      _open.add(p);
+      return;
+    }
+    // The next piece starts where this one ends.
+    final end = _open.last;
+    _close();
+    _open.addAll([end, p]);
+    _openMinute = _minuteFor(end);
+  }
+
+  /// No two pieces share a minute.
+  int _minuteFor(TrackPoint first) => max(
+    TrackPiece.minuteOf(first.at),
+    (_pieces.lastOrNull?.minute ?? -1) + 1,
+  );
+
+  void _close() {
+    if (_open.length >= 2) {
+      _pieces.add(
+        TrackPiece(
+          minute: _openMinute,
+          endMinute: max(_openMinute, TrackPiece.minuteOf(_open.last.at)),
+          points: simplify([
+            for (final p in _open) (lat: p.lat, lon: p.lon),
+          ], TrackPiece.epsilonM),
+        ),
+      );
+      var count = _pieces.fold(0, (n, p) => n + p.points.length);
+      while (count > _maxPoints && _pieces.length > 1) {
+        count -= _pieces.removeAt(0).points.length;
+      }
+    }
+    _open.clear();
+  }
+
+  /// Drops what ended more than [keepHours] ago; true when anything went.
+  bool _expire() {
+    final oldest = TrackPiece.minuteOf(_clock()) - _keepHours * 60;
+    final before = _pieces.length;
+    _pieces.removeWhere((p) => p.endMinute < oldest);
+    var changed = _pieces.length != before;
+    if (_open.isNotEmpty && TrackPiece.minuteOf(_open.last.at) < oldest) {
+      _open.clear();
+      changed = true;
+    }
+    return changed;
+  }
+
+  void _changed() {
+    if (_recording) {
+      _saveTimer ??= Timer(_saveEvery, () {
+        _saveTimer = null;
+        unawaited(_save());
+      });
+    }
+    notifyListeners();
   }
 
   void _load() {
     final key = _connector.selfPublicKeyHex;
     if (key.isEmpty || key == _radioKey) return;
     _radioKey = key;
-    _segments.clear();
+    _pieces.clear();
+    _open.clear();
     final raw = PrefsManager.instance.getString(keyFor(key));
     if (raw == null) return;
     try {
-      for (final s in jsonDecode(raw) as List) {
-        final segment = <TrackPoint>[
-          for (final p in s as List)
-            if (p case [final num lat, final num lon, final int at])
-              (
-                lat: lat.toDouble(),
-                lon: lon.toDouble(),
-                at: DateTime.fromMillisecondsSinceEpoch(at),
-              ),
-        ];
-        if (segment.isNotEmpty) _segments.add(segment);
+      // An older app kept the raw points: it starts over.
+      final json = jsonDecode(raw);
+      if (json is! Map) return;
+      for (final p in json['pieces'] as List) {
+        if (p case [final int minute, final int end, final List points]) {
+          _pieces.add(
+            TrackPiece(
+              minute: minute,
+              endMinute: end,
+              points: [
+                for (final q in points)
+                  if (q case [final num lat, final num lon])
+                    (lat: lat.toDouble(), lon: lon.toDouble()),
+              ],
+            ),
+          );
+        }
+      }
+      if (json['open'] case {
+        'minute': final int minute,
+        'points': final List points,
+      }) {
+        _openMinute = minute;
+        for (final q in points) {
+          if (q case [final num lat, final num lon, final int at]) {
+            _open.add((
+              lat: lat.toDouble(),
+              lon: lon.toDouble(),
+              at: DateTime.fromMillisecondsSinceEpoch(at),
+            ));
+          }
+        }
       }
     } catch (_) {
-      _segments.clear();
+      _pieces.clear();
+      _open.clear();
     }
   }
 
@@ -233,25 +362,38 @@ class TraxTrack extends ChangeNotifier {
     if (_radioKey.isEmpty) return;
     await PrefsManager.instance.setString(
       keyFor(_radioKey),
-      jsonEncode([
-        for (final s in _segments)
-          [
-            for (final p in s)
-              [_round(p.lat), _round(p.lon), p.at.millisecondsSinceEpoch],
-          ],
-      ]),
+      jsonEncode({
+        'pieces': [
+          for (final p in _pieces)
+            [
+              p.minute,
+              p.endMinute,
+              [
+                for (final q in p.points) [_round(q.lat), _round(q.lon)],
+              ],
+            ],
+        ],
+        if (_open.isNotEmpty)
+          'open': {
+            'minute': _openMinute,
+            'points': [
+              for (final q in _open)
+                [_round(q.lat), _round(q.lon), q.at.millisecondsSinceEpoch],
+            ],
+          },
+      }),
     );
   }
 
   static double _round(double v) => (v * 1e5).round() / 1e5;
 
-  static double _bearing(TrailPoint a, TrailPoint b) {
+  static double _bearing(TrackPoint a, TrackPoint b) {
     final dy = b.lat - a.lat;
     final dx = (b.lon - a.lon) * cos(a.lat * pi / 180);
     return (atan2(dx, dy) * 180 / pi + 360) % 360;
   }
 
-  static double _metres(TrailPoint a, TrailPoint b) {
+  static double _metres(TrackPoint a, TrackPoint b) {
     const m = 111320.0;
     final dy = (a.lat - b.lat) * m;
     final dx = (a.lon - b.lon) * m * cos(a.lat * pi / 180);

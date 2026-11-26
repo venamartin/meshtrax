@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'track.dart';
 import 'trail.dart';
 
 /// The channel datagram type, in MeshTrax's block 0170–017F of the
@@ -16,8 +17,8 @@ const traxshareDataType = 0x0171;
 /// 29 bytes: a 12-byte header (version and subtype, seq, sender prefix,
 /// session, sent at), then the field mask, the position, the fix age,
 /// heading, speed, altitude, battery and status. Multi-byte numbers are
-/// little-endian. A trail may follow (grid, count, points), then the
-/// sender's name, all within [maxSize].
+/// little-endian. The sender's name may follow, then pieces of their track
+/// ([TrackBlock]), all within [maxSize].
 class TraxReport {
   const TraxReport({
     required this.seq,
@@ -35,7 +36,7 @@ class TraxReport {
     this.mayBeOld = false,
     this.requester = false,
     this.name,
-    this.trail,
+    this.track,
   });
 
   static const version = 1;
@@ -44,7 +45,7 @@ class TraxReport {
   /// The size without a trail or a name: the largest at its airtime cost.
   static const size = 29;
 
-  /// The most a report may take, a trail and a name included.
+  /// The most a report may take, a track and a name included.
   static const maxSize = 157;
 
   /// The longest name carried, in UTF-8 bytes.
@@ -57,9 +58,13 @@ class TraxReport {
   static const _movingBit = 1 << 4;
   static const _requesterBit = 1 << 5;
   static const _batteryBit = 1 << 6;
+
+  /// A trail, as builds before test build 243 sent it, where the name is
+  /// now: such a report's name isn't read.
   static const _trailBit = 1 << 10;
   static const _mayBeOldBit = 1 << 11;
   static const _stillBit = 1 << 12;
+  static const _trackBit = 1 << 13;
   static const _extensionBit = 1 << 15;
   static const _nameTag = 1;
 
@@ -108,14 +113,14 @@ class TraxReport {
   /// The sender's radio name, for members who aren't a contact.
   final String? name;
 
-  /// The way the sender came, newest first, without [lat] and [lon], in no
-  /// more than [trailRoom] ([fitTrail]).
-  final Trail? trail;
+  /// The way the sender came: their trail ([fitTrack]) or one older piece
+  /// of their track, in no more than [trackRoom].
+  final TrackBlock? track;
 
-  /// The bytes a trail's points may take beside [name].
-  static int trailRoom({String? name}) {
+  /// The bytes a track may take beside [name].
+  static int trackRoom({String? name}) {
     final cut = name == null ? 0 : _cut(name).length;
-    return maxSize - size - 2 - (cut == 0 ? 0 : 3 + cut);
+    return maxSize - size - (cut == 0 ? 0 : 3 + cut);
   }
 
   /// The report as sent. [random] fills a saturated fix age, so a parked
@@ -123,12 +128,12 @@ class TraxReport {
   Uint8List encode({Random? random}) {
     final cut = name == null ? null : _cut(name!);
     final nameBytes = cut == null || cut.isEmpty ? null : cut;
-    final trail = this.trail;
-    final points = trail == null || trail.points.isEmpty
+    final track = this.track;
+    final trackBytes = track == null || track.pieces.isEmpty
         ? null
-        : encodeTrail(wirePosition(lat, lon), trail);
-    final at = points == null ? size : size + 2 + points.length;
-    final out = Uint8List(at + (nameBytes == null ? 0 : 3 + nameBytes.length));
+        : track.encode(wirePosition(lat, lon));
+    final at = size + (nameBytes == null ? 0 : 3 + nameBytes.length);
+    final out = Uint8List(at + (trackBytes?.length ?? 0));
     final data = ByteData.sublistView(out);
     var mask = 0;
     if (altitude != null) mask |= _altitudeBit;
@@ -140,7 +145,7 @@ class TraxReport {
     if (requester) mask |= _requesterBit;
     if (battery != null) mask |= _batteryBit;
     if (mayBeOld) mask |= _mayBeOldBit;
-    if (points != null) mask |= _trailBit;
+    if (trackBytes != null) mask |= _trackBit;
     if (nameBytes != null) mask |= _extensionBit;
     final ageSeconds = fixAge?.inSeconds;
     if (ageSeconds != null && ageSeconds >= 0xFFFF) {
@@ -169,17 +174,13 @@ class TraxReport {
       data.setInt16(25, altitude!.clamp(-32768, 32767), Endian.little);
     }
     if (battery != null) out[27] = battery!.clamp(0, 100);
-    if (points != null) {
-      out[29] = trail!.gridM;
-      out[30] = trail.points.length;
-      out.setRange(31, 31 + points.length, points);
-    }
     if (nameBytes != null) {
-      out[at] = 2 + nameBytes.length;
-      out[at + 1] = _nameTag;
-      out[at + 2] = nameBytes.length;
-      out.setRange(at + 3, at + 3 + nameBytes.length, nameBytes);
+      out[size] = 2 + nameBytes.length;
+      out[size + 1] = _nameTag;
+      out[size + 2] = nameBytes.length;
+      out.setRange(size + 3, at, nameBytes);
     }
+    if (trackBytes != null) out.setRange(at, out.length, trackBytes);
     return out;
   }
 
@@ -193,30 +194,28 @@ class TraxReport {
     final lonU = _getBits(data, 14, 5, 26);
     if (latU > 18000000 || lonU >= 36000000) return null;
     final lat = latU / 100000 - 90, lon = lonU / 100000 - 180;
-    Trail? trail;
+    final sentAt = DateTime.fromMillisecondsSinceEpoch(
+      d.getUint32(8, Endian.little) * 1000,
+      isUtc: true,
+    );
+    String? name;
     var at = size;
-    if (mask & _trailBit != 0) {
-      if (data.length < size + 2 || data[29] == 0) return null;
-      final read = decodeTrail(
-        (lat: lat, lon: lon),
-        data[29],
-        data[30],
-        data,
-        size + 2,
-      );
+    if (mask & _extensionBit != 0 && mask & _trailBit == 0) {
+      name = _readName(data, at);
+      if (data.length > at) at += 1 + data[at];
+    }
+    TrackBlock? track;
+    if (mask & _trackBit != 0) {
+      final read = TrackBlock.decode((lat: lat, lon: lon), sentAt, data, at);
       if (read == null) return null;
-      trail = (gridM: data[29], points: read.points);
-      at = size + 2 + read.bytes;
+      track = read.block;
     }
     final battery = data[27];
     return TraxReport(
       seq: data[1],
       senderPrefix: Uint8List.fromList(data.sublist(2, 6)),
       session: d.getUint16(6, Endian.little),
-      sentAt: DateTime.fromMillisecondsSinceEpoch(
-        d.getUint32(8, Endian.little) * 1000,
-        isUtc: true,
-      ),
+      sentAt: sentAt,
       lat: lat,
       lon: lon,
       altitude: mask & _altitudeBit != 0 ? d.getInt16(25, Endian.little) : null,
@@ -231,8 +230,8 @@ class TraxReport {
       battery: mask & _batteryBit != 0 && battery <= 100 ? battery : null,
       mayBeOld: mask & _mayBeOldBit != 0,
       requester: mask & _requesterBit != 0,
-      name: mask & _extensionBit != 0 ? _readName(data, at) : null,
-      trail: trail,
+      name: name,
+      track: track,
     );
   }
 

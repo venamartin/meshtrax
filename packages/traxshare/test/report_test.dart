@@ -179,6 +179,54 @@ void main() {
     expect(_report(name: '').encode().length, TraxReport.size);
   });
 
+  test('with a track, the name stays where a build before 243 reads it, '
+      'and their trail is passed over', () {
+    final track = TrackBlock(
+      gridM: 8,
+      keepHours: 48,
+      pieces: [
+        TrackPiece(
+          minute: TrackPiece.minuteOf(DateTime.utc(2026, 11, 21, 18)),
+          endMinute: TrackPiece.minuteOf(DateTime.utc(2026, 11, 21, 18, 20)),
+          points: const [
+            (lat: 36.4500, lon: -116.8600),
+            (lat: 36.4550, lon: -116.8640),
+          ],
+        ),
+      ],
+    );
+    final bytes = TraxReport(
+      seq: 1,
+      senderPrefix: Uint8List.fromList([0xB4, 0xE1, 0x02, 0x9C]),
+      session: 0xA1B2,
+      sentAt: DateTime.utc(2026, 11, 21, 18, 30, 5),
+      lat: 36.4570,
+      lon: -116.8660,
+      name: 'Cy',
+      track: track,
+    ).encode();
+    expect(bytes.sublist(29, 34), [4, 1, 2, 0x43, 0x79], reason: 'the name');
+    expect(bytes[13] & 0x04, 0, reason: 'not their trail\'s bit');
+    final read = TraxReport.decode(bytes)!;
+    expect(read.name, 'Cy');
+    expect(read.track!.pieces.single.points, hasLength(2));
+
+    // Theirs: bit 10, a grid, a count and the points, then the name.
+    final trail = encodeTrail(wirePosition(36.4570, -116.8660), 8, const [
+      (lat: 36.4550, lon: -116.8640),
+      (lat: 36.4500, lon: -116.8600),
+    ]);
+    final old = Uint8List.fromList([
+      ..._report().encode(),
+      8, 2, ...trail,
+      4, 1, 2, 0x43, 0x79, //
+    ]);
+    old[13] |= 0x84;
+    final theirs = TraxReport.decode(old)!;
+    expect(theirs.lat, closeTo(36.4570, 1e-5));
+    expect((theirs.name, theirs.track), (null, null));
+  });
+
   test('unknown extension tags are skipped', () {
     final bytes = Uint8List.fromList([
       ..._report().encode(),

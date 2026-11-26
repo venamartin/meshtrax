@@ -2703,7 +2703,8 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Who, when heard and how far, then one line of small figures (which
   /// way, how fast or how long stopped, how high, their battery; each
-  /// names itself on a long-press), then Chat and Ask for a contact.
+  /// names itself on a long-press), then Chat and Ask for a contact, or Ask
+  /// for track for a member who isn't one.
   Widget _memberCard(
     BuildContext context,
     BuildContext sheetContext,
@@ -2715,13 +2716,14 @@ class _MapScreenState extends State<MapScreen> {
     final settings = context.read<AppSettingsService>().settings;
     final units = settings.unitSystem;
     final contact = member.contact;
+    final positions = context.watch<TripPositions?>();
     final report =
-        context
-            .watch<TripPositions?>()
-            ?.all
-            .where((q) => q.prefix == member.prefix)
-            .firstOrNull ??
+        positions?.all.where((q) => q.prefix == member.prefix).firstOrNull ??
         member.report;
+    final connected = context.read<MeshCoreConnector>().isConnected;
+    final asksTrack =
+        contact == null && connected && (positions?.canAskTrack ?? false);
+    final trackAsked = positions?.askedAt(member.prefix);
     final p = _person(context, contact, report);
     final place = p.place;
 
@@ -2855,6 +2857,20 @@ class _MapScreenState extends State<MapScreen> {
               child: Wrap(spacing: 8, runSpacing: 8, children: figures),
             ),
           ],
+          if (asksTrack) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => unawaited(positions!.askTrack(member.prefix)),
+              icon: const Icon(Icons.route, size: 18),
+              label: Text(
+                trackAsked == null
+                    ? l10n.trax_askTrack
+                    : l10n.trax_trackAsked(
+                        DateTimeHelper.time(context, trackAsked),
+                      ),
+              ),
+            ),
+          ],
           if (contact != null) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -2886,7 +2902,7 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Icon(Icons.chat_bubble_outline, size: 18),
                   label: Text(l10n.map_chat),
                 ),
-                if (context.read<MeshCoreConnector>().isConnected)
+                if (connected)
                   OutlinedButton.icon(
                     onPressed: () {
                       Navigator.pop(sheetContext);
@@ -2927,7 +2943,21 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
     );
-    if (picked != null && mounted) await _showMemberCard(picked);
+    if (picked == null || !mounted) return;
+    final contact = picked.contact;
+    // Nowhere to show yet: their radio is asked, and their phone for their
+    // track in TRAX mode.
+    if (contact != null &&
+        _person(context, contact, picked.report).place == null) {
+      await RadioAskSheet.show(
+        context,
+        contact,
+        onShowOnMap: (point) =>
+            _moveTo(point, max(_mapController.camera?.zoom ?? 14, 14)),
+      );
+      return;
+    }
+    await _showMemberCard(picked);
   }
 
   Widget _groupList(BuildContext context, BuildContext sheetContext) {
@@ -2942,13 +2972,13 @@ class _MapScreenState extends State<MapScreen> {
       context.watch<MeshCoreConnector>(),
     );
     final located = <(_Member, LatLng, DateTime, bool)>[];
-    final unlocated = <String>[];
+    final unlocated = <(String, _Member?)>[];
     for (final m in members) {
       final p = _person(context, m.contact, m.report);
       if (p.place case final place?) {
         located.add((m, place, p.heard, p.old));
       } else {
-        unlocated.add(m.name);
+        unlocated.add((m.name, m));
       }
     }
     // The trip channel's posters no single contact has.
@@ -2960,11 +2990,12 @@ class _MapScreenState extends State<MapScreen> {
     };
     for (final t in group?.members ?? const <TripMember>[]) {
       if (t.contact == null && !listed.contains(t.name.toLowerCase())) {
-        unlocated.add(t.name);
+        unlocated.add((t.name, null));
       }
     }
     located.sort((a, b) => _byName(a.$1.name, b.$1.name));
-    unlocated.sort(_byName);
+    unlocated.sort((a, b) => _byName(a.$1, b.$1));
+    final connected = context.read<MeshCoreConnector>().isConnected;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -2998,7 +3029,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             onTap: () => Navigator.pop(sheetContext, member),
           ),
-        for (final name in unlocated)
+        for (final (name, member) in unlocated)
           ListTile(
             leading: CircleAvatar(
               backgroundColor: scheme.surfaceContainerHighest,
@@ -3013,6 +3044,15 @@ class _MapScreenState extends State<MapScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            trailing: member?.contact != null && connected
+                ? Icon(
+                    Icons.settings_input_antenna,
+                    semanticLabel: l10n.radioAsk_title(name),
+                  )
+                : null,
+            onTap: member?.contact != null && connected
+                ? () => Navigator.pop(sheetContext, member)
+                : null,
           ),
       ],
     );

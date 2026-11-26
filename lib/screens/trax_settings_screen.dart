@@ -18,9 +18,9 @@ import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/trax_dialogs.dart';
 import 'app_settings_screen.dart';
 
-/// TRAX settings: the preset, the trip channel, the trip's end, Tell the
-/// group, and Trip setup: the trip members and what they may do. One set
-/// per phone.
+/// TRAX settings: the preset, the trip channel, the trip's end, how long
+/// my track is kept, Tell the group, and Trip setup: the trip members and
+/// what they may do. One set per phone.
 class TraxSettingsScreen extends StatelessWidget {
   const TraxSettingsScreen({super.key});
 
@@ -109,6 +109,15 @@ class TraxSettingsScreen extends StatelessWidget {
                     : null,
               ),
               onTap: () => _pickEnd(context, trax),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(l10n.trax_keepTrack),
+              subtitle: Text(
+                '${_keepText(context, setup.keepTrackHours)} · '
+                '${l10n.trax_keepTrackHint}',
+              ),
+              onTap: () => _pickKeep(context, trax),
             ),
             SwitchListTile(
               secondary: const Icon(Icons.campaign_outlined),
@@ -301,6 +310,37 @@ class TraxSettingsScreen extends StatelessWidget {
     if (picked.$1 != null && context.mounted) {
       await offerSosThroughDnd(context);
     }
+  }
+
+  static String _keepText(BuildContext context, int hours) => hours == 168
+      ? context.l10n.trax_keepTrackWeek
+      : context.l10n.trax_keepTrackHours(hours);
+
+  Future<void> _pickKeep(BuildContext context, TraxService trax) async {
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(context.l10n.trax_keepTrack),
+        children: [
+          RadioGroup<int>(
+            groupValue: trax.setup.keepTrackHours,
+            onChanged: (hours) => Navigator.pop(context, hours),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final hours in TraxSetup.keepTrackChoices)
+                  RadioListTile<int>(
+                    value: hours,
+                    title: Text(_keepText(context, hours)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await trax.updateSetup(trax.setup.copyWith(keepTrackHours: picked));
   }
 
   Future<void> _pickEnd(BuildContext context, TraxService trax) async {

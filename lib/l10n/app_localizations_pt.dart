@@ -1141,6 +1141,21 @@ class AppLocalizationsPt extends AppLocalizations {
       'Publica no canal da viagem; os outros acompanham com um toque.';
 
   @override
+  String get trax_keepTrack => 'Keep my track';
+
+  @override
+  String get trax_keepTrackHint =>
+      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+
+  @override
+  String trax_keepTrackHours(int hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String get trax_keepTrackWeek => '1 week';
+
+  @override
   String trax_followBody(String name, String time) {
     return '$name mudou para o modo TRAX até $time. Mudar também?';
   }
@@ -1289,6 +1304,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trax_mayBeOld => 'pode estar desatualizada';
+
+  @override
+  String get trax_askTrack => 'Ask for track';
+
+  @override
+  String trax_trackAsked(String time) {
+    return 'Track asked $time';
+  }
 
   @override
   String get trax_group => 'TRAX group';
@@ -2172,6 +2195,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get radioAsk_askAgain => 'Perguntar de novo';
+
+  @override
+  String get radioAsk_trackAsked =>
+      'Also asked their phone for their track; it shows on the map.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {

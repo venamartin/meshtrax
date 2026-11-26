@@ -457,6 +457,11 @@
   "trax_notSet": "Not set",
   "trax_tellGroup": "Tell the group",
   "trax_tellGroupHint": "Posts on the trip channel; others follow with one tap.",
+  "trax_keepTrack": "Keep my track",
+  "trax_keepTrackHint": "How far back your line goes, for you and the trip. Older parts are deleted on every phone.",
+  "trax_keepTrackHours": "{hours} hours",
+  "@trax_keepTrackHours": {"placeholders": {"hours": {"type": "int"}}},
+  "trax_keepTrackWeek": "1 week",
   "trax_followBody": "{name} switched to TRAX mode until {time}. Switch too?",
   "@trax_followBody": {
     "placeholders": {
@@ -586,6 +591,10 @@
     }
   },
   "trax_mayBeOld": "may be old",
+  "trax_askTrack": "Ask for track",
+  "@trax_askTrack": {"description": "Asks a trip member's phone, on the trip channel, for the pieces of their track this phone lacks."},
+  "trax_trackAsked": "Track asked {time}",
+  "@trax_trackAsked": {"placeholders": {"time": {"type": "String"}}},
   "trax_group": "TRAX group",
   "trax_tripChannelLocation": "In TRAX mode your location goes to this channel.",
   "map_lastHeard": "Last heard",
@@ -1029,6 +1038,7 @@
   "radioAsk_noAnswer": "No answer",
   "radioAsk_showOnMap": "Show on map",
   "radioAsk_askAgain": "Ask again",
+  "radioAsk_trackAsked": "Also asked their phone for their track; it shows on the map.",
   "radioAsk_mapLabel": "{name}'s radio · {time}",
   "@radioAsk_mapLabel": {"placeholders": {"name": {"type": "String"}, "time": {"type": "String"}}},
   "radioAsk_rowLabel": "Radio answer",

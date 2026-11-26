@@ -1137,6 +1137,21 @@ class AppLocalizationsSk extends AppLocalizations {
       'Uverejní správu v kanáli výletu; ostatní sa pridajú jedným ťuknutím.';
 
   @override
+  String get trax_keepTrack => 'Keep my track';
+
+  @override
+  String get trax_keepTrackHint =>
+      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+
+  @override
+  String trax_keepTrackHours(int hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String get trax_keepTrackWeek => '1 week';
+
+  @override
   String trax_followBody(String name, String time) {
     return '$name prepol do režimu TRAX do $time. Prepnúť aj vás?';
   }
@@ -1284,6 +1299,14 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get trax_mayBeOld => 'môže byť stará';
+
+  @override
+  String get trax_askTrack => 'Ask for track';
+
+  @override
+  String trax_trackAsked(String time) {
+    return 'Track asked $time';
+  }
 
   @override
   String get trax_group => 'TRAX group';
@@ -2160,6 +2183,10 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get radioAsk_askAgain => 'Opýtať sa znova';
+
+  @override
+  String get radioAsk_trackAsked =>
+      'Also asked their phone for their track; it shows on the map.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {

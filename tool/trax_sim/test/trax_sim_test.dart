@@ -338,8 +338,16 @@ void main() {
     final start = DateTime.utc(2026, 11, 21, 9);
     const interval = Duration(minutes: 1);
 
-    /// Its reports over [seconds], each with the second it went.
-    List<(int, TraxReport)> run(Mover mover, int seconds) {
+    /// What each report of the latest [run] carried.
+    final carried = <SimCarry>[];
+
+    /// Its reports over [seconds], each with the second it went; [asks]
+    /// come at their second.
+    List<(int, TraxReport)> run(
+      Mover mover,
+      int seconds, {
+      Map<int, TraxAsk> asks = const {},
+    }) {
       final p = SimPerson(
         name: 'Ana',
         prefix: Uint8List.fromList([0xA1, 0xA2, 0xA3, 0xA4]),
@@ -347,12 +355,18 @@ void main() {
         start: start,
         random: Random(3),
       );
-      return [
-        for (var s = 1; s <= seconds; s++)
-          if ((p..step(s)).due(start.add(Duration(seconds: s)), interval)
-              case final r?)
-            (s, r),
-      ];
+      carried.clear();
+      final out = <(int, TraxReport)>[];
+      for (var s = 1; s <= seconds; s++) {
+        final now = start.add(Duration(seconds: s));
+        p.step(s);
+        if (asks[s] case final ask?) p.ask(ask, now);
+        if (p.due(now, interval) case final r?) {
+          out.add((s, r));
+          carried.add(p.carried);
+        }
+      }
+      return out;
     }
 
     test('reports on the app\'s schedule, names and trails', () {
@@ -377,7 +391,7 @@ void main() {
 
       final trails = [
         for (final (i, (s, r)) in reports.indexed)
-          if (r.trail != null) (i, s, r),
+          if (carried[i] == SimCarry.trail) (i, s, r),
       ];
       expect(trails.first.$1, lessThan(2));
       for (var i = 1; i < trails.length; i++) {
@@ -386,7 +400,71 @@ void main() {
       }
       expect(trails.length, greaterThanOrEqualTo(5));
       final last = TraxReport.decode(trails.last.$3.encode())!;
-      expect(last.trail!.points.length, greaterThan(10));
+      final points = last.track!.pieces.fold(0, (n, p) => n + p.points.length);
+      expect(points, greaterThan(10));
+    });
+
+    test('a drive: one older piece halfway between trails, alone and '
+        'without the name', () {
+      final reports = run(Driver(36.457, -116.866, 300, Random(5)), 2 * 3600);
+      var trailAt = 0;
+      var olderSince = false;
+      final older = <int>[];
+      for (final (i, (s, r)) in reports.indexed) {
+        if (carried[i] == SimCarry.trail) {
+          trailAt = s;
+          olderSince = false;
+        } else if (carried[i] == SimCarry.older) {
+          expect(r.track!.pieces, hasLength(1));
+          expect(r.name, isNull);
+          expect(s - trailAt, inInclusiveRange(300, 373), reason: 'halfway');
+          expect(olderSince, isFalse, reason: 'one between trails');
+          olderSince = true;
+          older.add(r.track!.pieces.single.minute);
+        }
+      }
+      expect(older.length, greaterThanOrEqualTo(8));
+      expect(older.toSet().length, greaterThanOrEqualTo(3));
+    });
+
+    test('an ask brings the trail, then each piece the asker lacks', () {
+      const at = 3600;
+      final all = run(Driver(36.457, -116.866, 300, Random(5)), at);
+      final pieces = <int>{
+        for (final (_, r) in all) ...?r.track?.pieces.map((p) => p.minute),
+      };
+      expect(pieces.length, greaterThanOrEqualTo(3));
+      final have = (pieces.toList()..sort()).sublist(0, 1);
+      final reports = run(
+        Driver(36.457, -116.866, 300, Random(5)),
+        at + 600,
+        asks: {
+          at: TraxAsk(
+            seq: 0,
+            senderPrefix: Uint8List.fromList([1, 2, 3, 4]),
+            session: 9,
+            sentAt: start.add(const Duration(seconds: at)),
+            target: Uint8List.fromList([0xA1, 0xA2, 0xA3, 0xA4]),
+            have: have,
+          ),
+        },
+      );
+      final after = [
+        for (final (i, (s, r)) in reports.indexed)
+          if (s > at) (s, r, carried[i]),
+      ];
+      expect(after.first.$3, SimCarry.trail);
+      expect(after.first.$1 - at, lessThanOrEqualTo(3));
+      final asked = [
+        for (final (s, r, c) in after)
+          if (c == SimCarry.asked) (s, r.track!.pieces.single),
+      ];
+      expect(asked, isNotEmpty);
+      for (var i = 1; i < asked.length; i++) {
+        expect(asked[i].$1 - asked[i - 1].$1, greaterThanOrEqualTo(6));
+        expect(asked[i].$2.minute, lessThan(asked[i - 1].$2.minute));
+      }
+      expect(asked.map((a) => a.$2.minute), isNot(contains(have.single)));
     });
 
     test('stopped for 2 minutes: not moving, and for how long', () {
