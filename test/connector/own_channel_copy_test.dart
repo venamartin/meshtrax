@@ -185,4 +185,74 @@ void main() {
     expect(rows, hasLength(2));
     expect(await unread(), 1);
   });
+
+  // Martin sent a message nobody repeated, then sent the same text again
+  // (2026-11-25). The second send counted as a repeat of the first: the
+  // first showed ✓✓ with no path, and the second had no message of its own.
+  test('the same text sent twice is two messages, neither heard', () async {
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    expect(rows, hasLength(2));
+    for (final row in rows) {
+      expect(row.isOutgoing, isTrue);
+      expect(row.repeatCount, 0);
+      expect(row.status, isNot(ChannelMessageStatus.delivered));
+    }
+  });
+
+  test('a copy of my second send lands on the second message', () async {
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    final secondId = await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    final second = (await c.loadChannelMessagesFor(channel))
+        .singleWhere((m) => m.messageId == secondId);
+    c.handleFrameForTest(
+      _heardCopy(second.sentWireSecs.last, 'GWQ', 'Good morning.'),
+    );
+    await pumpEventQueue(times: 200);
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    final heard = rows.singleWhere((m) => m.messageId == secondId);
+    expect(heard.repeatCount, 1);
+    expect(heard.status, ChannelMessageStatus.delivered);
+    expect(heard.pathBytes.toList(), [0xAB]);
+    expect(rows.singleWhere((m) => m.messageId != secondId).repeatCount, 0);
+  });
+
+  // An SOS repeats from the message its first send filed. A second SOS
+  // with the same text within 5 minutes had no message, so it never
+  // repeated.
+  test('a second send of the same text can be repeated', () async {
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    final secondId = await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+
+    expect(
+      await c.repeatChannelMessage(channel, secondId!, 'Good morning.'),
+      isTrue,
+    );
+  });
+
+  test('someone else\'s same text is theirs, not a copy of mine', () async {
+    await c.sendChannelMessage(channel, 'Good morning.');
+    await pumpEventQueue(times: 200);
+    final sent = (await c.loadChannelMessagesFor(channel)).single;
+    c.handleFrameForTest(
+      _heardCopy(sent.sentWireSecs.last + 60, 'Ann', 'Good morning.'),
+    );
+    await pumpEventQueue(times: 200);
+
+    final rows = await c.loadChannelMessagesFor(channel);
+    expect(rows, hasLength(2));
+    final mine = rows.singleWhere((m) => m.isOutgoing);
+    expect(mine.repeatCount, 0);
+    expect(mine.status, isNot(ChannelMessageStatus.delivered));
+    expect(await unread(), 1);
+  });
 }

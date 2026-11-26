@@ -12641,7 +12641,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // Heuristic echo match (no packet hash on our original, second-truncated
     // ids on the wire): compare against the newest rows exactly like the old
     // in-memory pass did — else our own send comes back as a new message.
-    if (!sosTraffic || processedMessage.senderName == _selfName) {
+    // A send of mine is never a copy: the same text sent again is a new
+    // message with its own ticks and retries. Counted as a repeat, it showed
+    // the first send ✓✓ with no repeater heard (Martin, 2026-11-25).
+    if (!processedMessage.isOutgoing &&
+        (!sosTraffic || processedMessage.senderName == _selfName)) {
       final recent = await _channelMessageStore
           .watchChannelMessages(idKey, limit: 80)
           .first;
@@ -13157,9 +13161,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       return true;
     }
 
+    // A copy under my name of a send stored under another. Someone else's
+    // same text is their own message: matched here, it vanished into mine
+    // as a repeat and showed mine ✓✓.
     if (existing.isOutgoing && !incoming.isOutgoing) {
       final selfName = _selfName ?? 'Me';
-      if (incoming.senderName == selfName || existing.senderName == selfName) {
+      if (incoming.senderName == selfName) {
         appLogger.info('Repeat matched on selfName: $selfName', tag: 'Connector');
         return true;
       }
