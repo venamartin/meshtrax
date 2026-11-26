@@ -1489,6 +1489,7 @@ class _MapScreenState extends State<MapScreen> {
                       connector: connector,
                       units: settings.unitSystem,
                       nautical: onWater,
+                      dark: mapDark,
                     )
                   : null,
               mapLeft: sideSheet ? RouteSheet.sideWidth + 1 : 0,

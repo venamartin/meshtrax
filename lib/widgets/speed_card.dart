@@ -8,18 +8,24 @@ import '../helpers/geo_format.dart';
 import '../l10n/l10n.dart';
 import '../models/app_settings.dart';
 import '../services/self_motion.dart';
+import '../utils/app_theme.dart';
 
 /// How fast and which way the radio's GPS is going, and how high it is,
 /// at the map's bottom left while the map keeps you in the middle and the
 /// reading is fresh: one bold number, its unit under it, then heading and
 /// altitude, on a flat card with a thin outline (Martin chose this look).
-/// The radio is read every 3 s while it shows.
+/// Just the altitude while the speed and heading aren't known, as when
+/// stopped. Light or dark as the map is, which it sits on. The radio is
+/// read every 3 s while it shows.
 class SpeedCard extends StatefulWidget {
   final MeshCoreConnector connector;
   final UnitSystem units;
 
   /// Knots and degrees magnetic, as water routes give them: the charts.
   final bool nautical;
+
+  /// The map is dark.
+  final bool dark;
 
   static const width = 116.0;
 
@@ -28,6 +34,7 @@ class SpeedCard extends StatefulWidget {
     required this.connector,
     required this.units,
     this.nautical = false,
+    this.dark = false,
   });
 
   @override
@@ -50,9 +57,12 @@ class _SpeedCardState extends State<SpeedCard> {
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: _connector.selfGps,
-    builder: (context, gps, _) => _card(context, gps),
+  Widget build(BuildContext context) => Theme(
+    data: appTheme(widget.dark ? Brightness.dark : Brightness.light),
+    child: ValueListenableBuilder(
+      valueListenable: _connector.selfGps,
+      builder: (context, gps, _) => _card(context, gps),
+    ),
   );
 
   Widget _card(BuildContext context, SelfGpsReading? gps) {
@@ -60,10 +70,11 @@ class _SpeedCardState extends State<SpeedCard> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final motion = SelfMotion.instance.motionNow();
-    final still = motion?.stillFor != null;
     final heading = motion?.heading;
-    final speed = still ? 0.0 : motion?.speed;
+    final speed = motion?.speed;
+    final moving = heading != null && speed != null;
     final altitude = gps == null || gps.altitude == 0 ? null : gps.altitude;
+    if (!moving && altitude == null) return const SizedBox.shrink();
     final quiet = scheme.onSurfaceVariant;
     // Digits of one width, so the figures hold still as they change.
     const tabular = [FontFeature.tabularFigures()];
@@ -72,12 +83,11 @@ class _SpeedCardState extends State<SpeedCard> {
       fontFeatures: tabular,
     );
 
-    final (figure, unit) = GeoFormat.speedParts(
+    final (number, unit) = GeoFormat.speedParts(
       speed ?? 0,
       widget.units,
       knots: widget.nautical,
     );
-    final number = speed == null ? '—' : figure;
     final headingText = heading == null
         ? null
         : widget.nautical && gps != null
@@ -99,18 +109,13 @@ class _SpeedCardState extends State<SpeedCard> {
       ),
     );
     final lines = [
-      if (still)
-        line(
-          Icon(Icons.pause_circle_outline, size: 18, color: quiet),
-          l10n.map_notMoving,
-        )
-      else if (headingText != null)
+      if (moving)
         line(
           Transform.rotate(
-            angle: heading! * math.pi / 180,
+            angle: heading * math.pi / 180,
             child: Icon(Icons.navigation, size: 20, color: scheme.primary),
           ),
-          headingText,
+          headingText!,
         ),
       if (altitudeText != null)
         line(Icon(Icons.terrain, size: 18, color: quiet), altitudeText),
@@ -120,9 +125,10 @@ class _SpeedCardState extends State<SpeedCard> {
       container: true,
       excludeSemantics: true,
       label: [
-        '${l10n.map_speed} $number $unit',
-        if (still) l10n.map_notMoving,
-        if (headingText != null) '${l10n.map_heading} $headingText',
+        if (moving) ...[
+          '${l10n.map_speed} $number $unit',
+          '${l10n.map_heading} $headingText',
+        ],
         if (altitudeText != null) '${l10n.map_elevation} $altitudeText',
       ].join(', '),
       child: SizedBox(
@@ -133,41 +139,46 @@ class _SpeedCardState extends State<SpeedCard> {
             borderRadius: BorderRadius.circular(22),
             side: BorderSide(color: scheme.outlineVariant),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    number,
-                    style: theme.textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1,
-                      letterSpacing: -1,
-                      color: scheme.onSurface,
-                      fontFeatures: tabular,
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (moving) ...[
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        number,
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                          letterSpacing: -1,
+                          color: scheme.onSurface,
+                          fontFeatures: tabular,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  unit.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: quiet,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                if (lines.isNotEmpty) ...[
-                  Divider(height: 18, color: scheme.outlineVariant),
+                    const SizedBox(height: 2),
+                    Text(
+                      unit.toUpperCase(),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: quiet,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    Divider(height: 18, color: scheme.outlineVariant),
+                  ],
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     spacing: 4,
                     children: lines,
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         ),
