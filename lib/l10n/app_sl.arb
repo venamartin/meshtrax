@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "V načinu TRAX. Prebere jo lahko vsakdo v dosegu.",
   "trip_sosTitle": "Naj SOS zazvoni tudi v načinu Ne moti?",
-  "trip_sosBody": "Odprite nastavitve in dovolite preglasitev načina Ne moti.",
   "trip_onTrax": "{on} od {total} na TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "Opozorila SOS",
   "appSettings_sosAlways": "SOS vedno opozori, tudi v utišanem klepetu ali z izklopljenimi obvestili o sporočilih.",
   "appSettings_sosThroughDnd": "Zazvoni tudi v načinu Ne moti.",
-  "appSettings_sosSilencedByDnd": "Način Ne moti ga utiša. Tapnite in dovolite preglasitev načina Ne moti.",
   "appSettings_sosBlocked": "Telefon ima opozorila SOS izklopljena. Tapnite, da jih vklopite.",
   "appSettings_sosApple": "Načini zbranosti in tihi način ga na tej napravi še vedno lahko utišajo.",
   "appSettings_sosOff": "Obvestila so izklopljena, zato tudi opozorila SOS.",

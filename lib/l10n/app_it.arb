@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "In modalità TRAX. Chiunque sia a portata può leggerla.",
   "trip_sosTitle": "Far suonare un SOS anche con Non disturbare?",
-  "trip_sosBody": "Apri le impostazioni, poi consenti Ignora Non disturbare.",
   "trip_onTrax": "{on} su {total} su TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "Avvisi SOS",
   "appSettings_sosAlways": "Un SOS avvisa sempre, anche in una chat silenziata o con le notifiche dei messaggi disattivate.",
   "appSettings_sosThroughDnd": "Suona anche con Non disturbare.",
-  "appSettings_sosSilencedByDnd": "Non disturbare lo silenzia. Tocca e consenti Ignora Non disturbare.",
   "appSettings_sosBlocked": "Il telefono ha disattivato gli avvisi SOS. Tocca per attivarli.",
   "appSettings_sosApple": "Full immersion e la modalità silenziosa possono ancora silenziarlo su questo dispositivo.",
   "appSettings_sosOff": "Le notifiche sono disattivate, quindi anche gli avvisi SOS.",

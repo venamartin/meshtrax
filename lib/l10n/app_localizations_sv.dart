@@ -1280,10 +1280,6 @@ class AppLocalizationsSv extends AppLocalizations {
   String get trip_sosTitle => 'Ska ett SOS höras även i Stör ej?';
 
   @override
-  String get trip_sosBody =>
-      'Öppna inställningarna och tillåt Åsidosätt Stör ej.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on av $total på TRAX';
   }
@@ -6403,6 +6399,14 @@ class AppLocalizationsSv extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS avbrutet · väntar på radion';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS-larm';
 
   @override
@@ -6437,8 +6441,8 @@ class AppLocalizationsSv extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'Det hörs även i Stör ej.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Stör ej tystar det. Tryck och tillåt Åsidosätt Stör ej.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "I TRAX-läge. Alla inom räckhåll kan läsa den.",
   "trip_sosTitle": "Ska ett SOS höras även i Stör ej?",
-  "trip_sosBody": "Öppna inställningarna och tillåt Åsidosätt Stör ej.",
   "trip_onTrax": "{on} av {total} på TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "SOS-larm",
   "appSettings_sosAlways": "Ett SOS larmar alltid, även i en tystad chatt eller med meddelandeaviseringar avstängda.",
   "appSettings_sosThroughDnd": "Det hörs även i Stör ej.",
-  "appSettings_sosSilencedByDnd": "Stör ej tystar det. Tryck och tillåt Åsidosätt Stör ej.",
   "appSettings_sosBlocked": "Telefonen har stängt av SOS-larm. Tryck för att slå på dem.",
   "appSettings_sosApple": "Fokus och ljudlöst läge kan fortfarande tysta det på den här enheten.",
   "appSettings_sosOff": "Aviseringar är avstängda, så SOS-larm är det också.",

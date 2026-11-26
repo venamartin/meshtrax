@@ -1285,10 +1285,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trip_sosTitle => 'Een SOS laten klinken ondanks Niet storen?';
 
   @override
-  String get trip_sosBody =>
-      'Open de instellingen en sta Niet storen negeren toe.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on van $total op TRAX';
   }
@@ -6430,6 +6426,14 @@ class AppLocalizationsNl extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS geannuleerd · wacht op de radio';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS-meldingen';
 
   @override
@@ -6464,8 +6468,8 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'Hij klinkt ook bij Niet storen.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Niet storen maakt hem stil. Tik en sta Niet storen negeren toe.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

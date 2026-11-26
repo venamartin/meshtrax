@@ -335,7 +335,6 @@
   },
   "trip_advertsHint": "TRAX módban. Bárki a hatótávon belül elolvashatja.",
   "trip_sosTitle": "Szóljon az SOS Ne zavarjanak módban is?",
-  "trip_sosBody": "Nyissa meg a beállításokat, és engedélyezze a Ne zavarjanak felülbírálását.",
   "trip_onTrax": "{on}/{total} a TRAX-on",
   "@trip_onTrax": {
     "placeholders": {
@@ -2576,7 +2575,6 @@
   "appSettings_sosAlerts": "SOS-riasztások",
   "appSettings_sosAlways": "Az SOS mindig riaszt, némított csevegésben és kikapcsolt üzenetértesítéseknél is.",
   "appSettings_sosThroughDnd": "A Ne zavarjanak módban is megszólal.",
-  "appSettings_sosSilencedByDnd": "A Ne zavarjanak mód elnémítja. Koppintson, és engedélyezze a Ne zavarjanak felülbírálását.",
   "appSettings_sosBlocked": "A telefonon ki vannak kapcsolva az SOS-riasztások. Koppintson a bekapcsoláshoz.",
   "appSettings_sosApple": "A Fókusz és a néma mód ezen az eszközön továbbra is elnémíthatja.",
   "appSettings_sosOff": "Az értesítések ki vannak kapcsolva, így az SOS-riasztások is.",

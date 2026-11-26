@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "No modo TRAX. Qualquer pessoa no alcance pode lê-la.",
   "trip_sosTitle": "Fazer um SOS tocar mesmo no Não perturbe?",
-  "trip_sosBody": "Abra as configurações e permita Substituir Não perturbe.",
   "trip_onTrax": "{on} de {total} no TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "Alertas SOS",
   "appSettings_sosAlways": "Um SOS sempre alerta, mesmo num chat silenciado ou com as notificações de mensagens desligadas.",
   "appSettings_sosThroughDnd": "Ele toca mesmo com Não perturbe.",
-  "appSettings_sosSilencedByDnd": "O Não perturbe o silencia. Toque e permita Substituir Não perturbe.",
   "appSettings_sosBlocked": "O telefone desativou os alertas SOS. Toque para ativá-los.",
   "appSettings_sosApple": "Foco e o modo silencioso ainda podem silenciá-lo neste dispositivo.",
   "appSettings_sosOff": "As notificações estão desligadas, então os alertas SOS também.",

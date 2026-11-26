@@ -1283,10 +1283,6 @@ class AppLocalizationsSk extends AppLocalizations {
   String get trip_sosTitle => 'Má SOS zvoniť aj v režime Nerušiť?';
 
   @override
-  String get trip_sosBody =>
-      'Otvorte nastavenia a povoľte prepísanie režimu Nerušiť.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on z $total na TRAX';
   }
@@ -6442,6 +6438,14 @@ class AppLocalizationsSk extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS zrušené · čaká sa na rádio';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'Upozornenia SOS';
 
   @override
@@ -6476,8 +6480,8 @@ class AppLocalizationsSk extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'Zaznie aj v režime Nerušiť.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Režim Nerušiť ho stlmí. Ťuknite a povoľte prepísanie režimu Nerušiť.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

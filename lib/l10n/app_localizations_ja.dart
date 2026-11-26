@@ -1244,9 +1244,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trip_sosTitle => 'サイレントモードでもSOSを鳴らしますか？';
 
   @override
-  String get trip_sosBody => '設定を開き、「サイレントモードを無視」を許可してください。';
-
-  @override
   String trip_onTrax(int on, int total) {
     return 'TRAX上 $on/$total';
   }
@@ -6187,6 +6184,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOSを取り消しました · 無線機を待っています';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOSアラート';
 
   @override
@@ -6218,8 +6223,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'サイレントモード中も鳴ります。';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'サイレントモードで消音されます。タップして「サイレントモードを無視」を許可してください。';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked => '電話でSOSアラートがオフになっています。タップしてオンにしてください。';

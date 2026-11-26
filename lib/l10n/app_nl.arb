@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "In TRAX-modus. Iedereen binnen bereik kan hem lezen.",
   "trip_sosTitle": "Een SOS laten klinken ondanks Niet storen?",
-  "trip_sosBody": "Open de instellingen en sta Niet storen negeren toe.",
   "trip_onTrax": "{on} van {total} op TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "SOS-meldingen",
   "appSettings_sosAlways": "Een SOS meldt zich altijd, ook in een gedempte chat of met berichtmeldingen uit.",
   "appSettings_sosThroughDnd": "Hij klinkt ook bij Niet storen.",
-  "appSettings_sosSilencedByDnd": "Niet storen maakt hem stil. Tik en sta Niet storen negeren toe.",
   "appSettings_sosBlocked": "De telefoon heeft SOS-meldingen uitgezet. Tik om ze aan te zetten.",
   "appSettings_sosApple": "Focus en de stille modus kunnen hem op dit apparaat nog steeds stil maken.",
   "appSettings_sosOff": "Meldingen staan uit, dus SOS-meldingen ook.",

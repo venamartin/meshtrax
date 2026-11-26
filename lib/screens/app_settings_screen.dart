@@ -22,6 +22,7 @@ import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/heard_check_settings.dart';
 import '../utils/format_bytes.dart';
 import '../widgets/routing_dialog.dart';
+import '../widgets/sos_dnd_dialog.dart';
 import '../helpers/snack_bar_builder.dart';
 import 'drawing_settings_screen.dart';
 import 'offline_maps_screen.dart';
@@ -1320,7 +1321,7 @@ class _SosAlertsTileState extends State<SosAlertsTile> {
     final enabled = widget.enabled;
     final phone = switch (_state) {
       SosAlertState.blocked => l10n.appSettings_sosBlocked,
-      SosAlertState.silencedByDnd => l10n.appSettings_sosSilencedByDnd,
+      SosAlertState.silencedByDnd => l10n.appSettings_sosLetThroughDnd,
       SosAlertState.throughDnd => l10n.appSettings_sosThroughDnd,
       SosAlertState.unknown =>
         PlatformInfo.isAndroid ? null : l10n.appSettings_sosApple,
@@ -1340,7 +1341,7 @@ class _SosAlertsTileState extends State<SosAlertsTile> {
       subtitle: Text(lines.join(' ')),
       trailing: const Icon(Icons.open_in_new),
       onTap: () async {
-        await NotificationService().openSosSettings();
+        await fixSosAlerts(context);
         await _load();
       },
     );
