@@ -16,6 +16,7 @@ import 'package:meshtrax/services/notification_service.dart';
 import 'package:meshtrax/services/trax_service.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:meshtrax/widgets/trax_dialogs.dart';
+import 'package:meshtrax/widgets/trax_guide.dart';
 
 // TRAX mode's questions come over whatever screen is open, and again from a
 // TRAX notification's tap while they still fit, never stacked on an open
@@ -72,6 +73,37 @@ class _Radio extends MeshCoreConnector {
     ),
     fromBacklog: false,
   ));
+}
+
+/// A radio that takes the TRAX settings when asked, as companion 1.18 does.
+class _SwitchingRadio extends _Radio {
+  @override
+  Future<bool> waitUntilSynced({
+    Duration timeout = const Duration(seconds: 90),
+  }) async => true;
+  @override
+  Future<List<({int lowerKhz, int upperKhz})>?>
+  getAllowedRepeatFrequencies() async => [(lowerKhz: 918000, upperKhz: 918000)];
+  @override
+  Future<bool> setRadioParams(
+    int freqKhz,
+    int bwHz,
+    int sf,
+    int cr, {
+    bool? clientRepeat,
+  }) async {
+    repeat = clientRepeat ?? repeat;
+    return true;
+  }
+
+  @override
+  Future<bool> waitForRadio({
+    Duration timeout = const Duration(seconds: 3),
+  }) async => true;
+  @override
+  Future<void> sendSelfAdvert({bool flood = true}) async {}
+  @override
+  Future<void> refreshRadioSettings() async {}
 }
 
 final _trip = Channel(
@@ -190,6 +222,26 @@ void main() {
     expect(questions.onTap('traxfollow:channel:1'), 'channel:1');
     await tester.pumpAndSettle();
     expect(switchToo, findsNothing);
+    trax.dispose();
+  });
+
+  // Martin, 2026-11-26: "How TRAX works" after switching on, until "Don't
+  // show this again": a friend who switches from a message learns it too.
+  testWidgets('after Switch too, How TRAX works until "Don\'t show this '
+      'again"', (tester) async {
+    final radio = _SwitchingRadio();
+    final (trax, _) = await pump(tester, radio);
+    radio.hear('Ana', on);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Switch too'));
+    await tester.pumpAndSettle();
+    expect(trax.isOn, isTrue);
+    expect(find.text('How TRAX works'), findsOneWidget);
+    final dontShow = find.text("Don't show this again");
+    await tester.scrollUntilVisible(dontShow, 200);
+    await tester.tap(dontShow);
+    await tester.pump();
+    expect(PrefsManager.instance.getBool(TraxGuide.prefKey), isTrue);
     trax.dispose();
   });
 

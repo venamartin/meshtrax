@@ -14,6 +14,7 @@ import '../services/notification_service.dart';
 import '../services/trax_service.dart';
 import '../storage/prefs_manager.dart';
 import 'sos_dnd_dialog.dart';
+import 'trax_guide.dart';
 
 /// "Sunday 18:00": a trip's end in this phone's time zone.
 String traxTimeText(BuildContext context, DateTime t) =>
@@ -171,6 +172,7 @@ Future<void> showTraxFollowDialog(
     },
   );
   if (context.mounted && trax.isOn) await offerSosThroughDnd(context);
+  if (context.mounted && trax.isOn) await TraxGuide.showIfNotSeen(context);
 }
 
 /// What TRAX mode asks when it happens: a member switched or is leaving,

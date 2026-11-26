@@ -24,6 +24,7 @@ import '../services/trip_service.dart';
 import 'experimental_title.dart';
 import 'line_of_sight_sheet.dart';
 import 'trax_dialogs.dart';
+import 'trax_guide.dart';
 
 Future<void> showTraxSheet(BuildContext context) => showModalBottomSheet<void>(
   context: context,
@@ -70,6 +71,7 @@ class _TraxSheetState extends State<TraxSheet> {
     if (!mounted) return;
     setState(() => _error = traxOutcomeText(l10n, outcome, preset: preset));
     if (trax.isOn) await offerSosThroughDnd(context);
+    if (mounted && trax.isOn) await TraxGuide.showIfNotSeen(context);
   }
 
   Future<void> _leave(TraxService trax) async {

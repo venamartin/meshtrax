@@ -30,7 +30,7 @@ TRAX is for a group on a remote trip: no cell service, no repeaters, radios that
 - `TraxMessage` in `lib/helpers/structured_message.dart`.
 - Screens and widgets:
   - `lib/screens/trax_settings_screen.dart`;
-  - `lib/widgets/trax_button.dart`, `trax_sheet.dart` and `trax_dialogs.dart`;
+  - `lib/widgets/trax_button.dart`, `trax_sheet.dart`, `trax_dialogs.dart` and `trax_guide.dart`;
   - `lib/widgets/radio_ask_sheet.dart` and `my_location_button.dart`;
   - in `lib/screens/map_screen.dart`, the member pins, the card and the group list.
 
@@ -235,6 +235,14 @@ The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again*
 ## In Chats
 
 While TRAX mode is on, the trip channel is first in Chats, whatever came in since. Its row has the boot print in place of the lock, a TRAX label after the name and an orange outline. Out of TRAX mode it goes back to its place by its latest message.
+
+## How TRAX works
+
+A short guide in the app, told as a hike with friends behind you and more joining the next day (Martin). It shows the icons it talks about.
+- **Eight steps** of a line or two: before you go, at the trailhead, on the trail, friends behind you, someone quiet, joining the next day, SOS, and the trip's end.
+- **Then the icons:** the boot print off and on, a member's pin and a grey one, your blue dot, the two tracks and the trip channel's row.
+- **By itself** after TRAX mode goes on, from the TRAX sheet or **Switch too**, until **Don't show this again** (`trax_guide_seen`).
+- **Any time** from the info button in TRAX settings' top bar (Martin chose there only).
 
 ## My location
 

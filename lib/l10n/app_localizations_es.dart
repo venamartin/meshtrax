@@ -9103,4 +9103,97 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get locationNote_body =>
       'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
+
+  @override
+  String get traxGuide_title => 'How TRAX works';
+
+  @override
+  String get traxGuide_lead =>
+      'TRAX shares where everyone is over your radios alone: no cell service, no repeaters. Say you\'re out front, friends are behind you, and more join tomorrow.';
+
+  @override
+  String get traxGuide_beforeTitle => 'Before you go';
+
+  @override
+  String get traxGuide_before =>
+      'Make a private channel for the trip. Everyone joins it, adds each other as contacts and posts on it once.';
+
+  @override
+  String get traxGuide_trailheadTitle => 'At the trailhead';
+
+  @override
+  String get traxGuide_trailhead =>
+      'Once your radio has a GPS fix, tap the boot print and Switch to TRAX. Your radio moves to the group\'s frequency, and the others get “Switch too?”.';
+
+  @override
+  String get traxGuide_trailTitle => 'On the trail';
+
+  @override
+  String get traxGuide_trail =>
+      'Each phone sends its radio\'s location to the trip channel every minute or two, and its track now and then. The three people button on the map lists everyone: how far, which way, when heard.';
+
+  @override
+  String get traxGuide_behindTitle => 'Friends behind you';
+
+  @override
+  String get traxGuide_behind =>
+      'Every radio passes the others\' messages on, so theirs reach the front through you. They see you as your icon on the map; a tap shows your track to follow.';
+
+  @override
+  String get traxGuide_quietTitle => 'Someone quiet?';
+
+  @override
+  String get traxGuide_quiet =>
+      'Their card says when they were last heard. Ask their radio: it answers by itself, even with their phone off.';
+
+  @override
+  String get traxGuide_joinTitle => 'Joining the next day';
+
+  @override
+  String get traxGuide_join =>
+      'Add the trip channel. In TRAX settings pick it and the trip\'s end, and Long range if the group uses it. Then switch. Everyone\'s track from the last 2 days arrives bit by bit.';
+
+  @override
+  String get traxGuide_sosTitle => 'SOS';
+
+  @override
+  String get traxGuide_sos =>
+      'In the trip chat, tap + then SOS. The group gets your location every 2 minutes until you cancel.';
+
+  @override
+  String get traxGuide_endTitle => 'When the trip ends';
+
+  @override
+  String get traxGuide_end =>
+      'MeshTrax asks you to leave. Until you do, the regular mesh can\'t hear you.';
+
+  @override
+  String get traxGuide_iconsTitle => 'The icons';
+
+  @override
+  String get traxGuide_member => 'A member, as the icon they picked';
+
+  @override
+  String get traxGuide_memberText => 'Yours is in TRAX settings.';
+
+  @override
+  String get traxGuide_old => 'Grey: their GPS position may be old';
+
+  @override
+  String get traxGuide_you => 'You';
+
+  @override
+  String get traxGuide_yourTrack => 'Your track';
+
+  @override
+  String get traxGuide_theirTrack => 'Their track, while their card is open';
+
+  @override
+  String get traxGuide_tripChannel => 'The trip channel';
+
+  @override
+  String get traxGuide_tripChannelText => 'First in Chats while TRAX is on.';
+
+  @override
+  String get traxGuide_dontShowAgain => 'Don\'t show this again';
 }

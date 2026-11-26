@@ -18,6 +18,7 @@ import '../services/trip_service.dart';
 import '../utils/platform_info.dart';
 import '../widgets/adaptive_app_bar_title.dart';
 import '../widgets/trax_dialogs.dart';
+import '../widgets/trax_guide.dart';
 import 'app_settings_screen.dart';
 
 /// TRAX settings: the preset, the trip channel, the trip's end, how long
@@ -47,6 +48,13 @@ class TraxSettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: AdaptiveAppBarTitle(l10n.trax_settings),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: l10n.traxGuide_title,
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showTraxGuide(context),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
