@@ -19,7 +19,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String photo_enableHint(String size) {
-    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+    return 'Отправка и просмотр фото по радио. Нужна модель для фото ($size) на этом телефоне.';
   }
 
   @override
@@ -29,7 +29,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get photo_squareIntro =>
-      'Pick a photo, then choose the square to send.';
+      'Выберите фото, затем — квадрат для отправки.';
 
   @override
   String get photo_takePhoto => 'Сделать фото';
@@ -48,14 +48,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get photo_preview => 'Предпросмотр';
 
   @override
-  String get photo_changeCrop => 'Change crop';
+  String get photo_changeCrop => 'Изменить обрезку';
 
   @override
   String get photo_checkingAndCoding => 'Проверка и кодирование фото…';
 
   @override
   String get photo_modelMissing =>
-      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+      'Модели для фото нет на этом устройстве. Чтобы скачать её, включите «Фото» в разделе «Настройки приложения» → «Обмен сообщениями».';
 
   @override
   String get photo_previewNoMemory =>
@@ -78,15 +78,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get photo_tagTitle => 'Тег (необязательно)';
 
   @override
-  String get photo_blurFaces => 'Blur faces';
+  String get photo_blurFaces => 'Размыть лица';
 
   @override
   String photo_facesBlurred(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count faces blurred',
-      one: '1 face blurred',
+      other: '$count лица размыто',
+      many: '$count лиц размыто',
+      few: '$count лица размыты',
+      one: '$count лицо размыто',
     );
     return '$_temp0';
   }
@@ -97,22 +99,22 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count faces covered in grey: blurred, the photo didn\'t pass the safety check',
-      one: '1 face covered in grey: blurred, the photo didn\'t pass the safety check',
+          '$count лица закрыто серым: с размытием фото не прошло проверку безопасности',
+      many:
+          '$count лиц закрыто серым: с размытием фото не прошло проверку безопасности',
+      few:
+          '$count лица закрыты серым: с размытием фото не прошло проверку безопасности',
+      one:
+          '$count лицо закрыто серым: с размытием фото не прошло проверку безопасности',
     );
     return '$_temp0';
   }
 
   @override
-  String get photo_includePosition => 'Include location';
+  String get photo_includePosition => 'Добавить местоположение';
 
   @override
-  String photo_positionFromRadio(String distance) {
-    return 'Your radio\'s location now, to about $distance';
-  }
-
-  @override
-  String get photo_noPosition => 'Your radio has no location';
+  String get photo_noPosition => 'У вашего радио нет местоположения';
 
   @override
   String get photo_distance10km => '10 km';
@@ -128,47 +130,50 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String photo_positionAt(String position, String distance) {
-    return '$position, to about $distance';
+    return '$position, точность около $distance';
   }
 
   @override
-  String get photo_zeroHop => 'Zero hop';
+  String get photo_zeroHop => 'Нулевой хоп';
 
   @override
-  String get photo_subjectOnly => 'Subject only';
+  String get photo_subjectOnly => 'Только объект';
 
   @override
-  String get photo_autoCrop => 'Auto crop';
+  String get photo_autoCrop => 'Автообрезка';
 
   @override
   String get photo_tapWhatMatters =>
-      'Tap what matters. Tap more things to add them.';
+      'Нажмите на главное. Нажимайте на другие предметы, чтобы добавить их.';
 
   @override
-  String get photo_outlining => 'Outlining…';
+  String get photo_outlining => 'Выделение контура…';
 
   @override
-  String get photo_clearTaps => 'Clear';
+  String get photo_clearTaps => 'Очистить';
 
   @override
   String get photo_nothingThere =>
-      'Nothing to outline there. Tap the middle of it.';
+      'Там нечего выделить. Нажмите на середину предмета.';
 
   @override
-  String get photo_zeroHopNearbyOnly => 'This channel is Nearby only';
+  String get photo_zeroHopNearbyOnly =>
+      'Для этого канала выбрано «Только рядом»';
 
   @override
-  String get photo_repairPacket => 'Repair packet';
+  String get photo_repairPacket => 'Пакет для восстановления';
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
     String _temp0 = intl.Intl.pluralLogic(
       packets,
       locale: localeName,
-      other: '$packets packets',
-      one: '1 packet',
+      other: '$packets пакета',
+      many: '$packets пакетов',
+      few: '$packets пакета',
+      one: '$packets пакет',
     );
-    return '$_temp0 · about $sendTime to send';
+    return '$_temp0 · отправка займёт около $sendTime';
   }
 
   @override
@@ -199,12 +204,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String photo_sendingPacketAgain(int sent, int total) {
-    return 'Packet $sent of $total again';
+    return 'Пакет $sent из $total повторно';
   }
 
   @override
   String photo_passedOnSome(int heard, int total) {
-    return 'Sent · repeaters passed on $heard of its $total packets';
+    return 'Отправлено · репитеры передали дальше пакетов: $heard из $total';
   }
 
   @override
@@ -224,74 +229,98 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get photo_confirmTitle => 'Send photo';
+  String get photo_confirmTitle => 'Отправить фото';
 
   @override
   String photo_openChannelTitle(String channel) {
-    return 'Photos on $channel';
+    return 'Фото в $channel';
   }
 
   @override
   String get photo_openChannelNotEveryone =>
-      'Most people here won\'t see it: only MeshTrax shows photos.';
+      'Большинство здесь его не увидит: фото показывает только MeshTrax.';
 
   @override
   String photo_openChannelAirtime(String airtime, int messages) {
-    return 'This photo takes $airtime on air, as much as $messages text messages.';
+    String _temp0 = intl.Intl.pluralLogic(
+      messages,
+      locale: localeName,
+      other: '$messages текстового сообщения',
+      many: '$messages текстовых сообщений',
+      few: '$messages текстовых сообщения',
+      one: '$messages текстовое сообщение',
+    );
+    return 'Это фото занимает в эфире $airtime — столько же, сколько $_temp0.';
   }
 
   @override
   String get photo_openChannelRepeaters =>
-      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+      'Каждый репитер, который передаёт его дальше, снова отправляет его целиком — на частоте, общей для всех вокруг вас.';
 
   @override
   String get photo_openChannelBetter =>
-      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+      'Лучше: нулевой хоп, когда люди рядом, или приватный канал с теми, кто хочет получать фото. Обрезайте плотнее: чем проще картинка, тем меньше пакетов.';
 
   @override
-  String get photo_dontShowAgain => 'Don\'t show this again';
+  String get photo_dontShowAgain => 'Больше не показывать';
 
   @override
   String photo_confirmAirtime(int packets, String airtime, int messages) {
-    return '$packets packets, $airtime on air: as much as $messages text messages.';
+    String _temp0 = intl.Intl.pluralLogic(
+      packets,
+      locale: localeName,
+      other: '$packets пакета',
+      many: '$packets пакетов',
+      few: '$packets пакета',
+      one: '$packets пакет',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      messages,
+      locale: localeName,
+      other: '$messages текстового сообщения',
+      many: '$messages текстовых сообщений',
+      few: '$messages текстовых сообщения',
+      one: '$messages текстовое сообщение',
+    );
+    return '$_temp0, $airtime в эфире: столько же, сколько $_temp1.';
   }
 
   @override
   String photo_confirmOpenChannel(String channel) {
-    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+    return 'Его увидит любой в $channel, кто пользуется MeshTrax. Другие приложения фото не показывают.';
   }
 
   @override
   String get photo_confirmFlood =>
-      'Each repeater that hears it sends it again.';
+      'Каждый репитер, который его услышит, отправит его снова.';
 
   @override
   String get photo_confirmZeroHop =>
-      'Zero hop: only radios in direct range get it.';
+      'Нулевой хоп: его получат только радио в прямой досягаемости.';
 
   @override
-  String get photo_label => 'AI reconstructed';
+  String get photo_label => 'Воссоздано ИИ';
 
   @override
-  String get photo_tapToView => 'Tap to view';
+  String get photo_tapToView => 'Нажмите, чтобы посмотреть';
 
   @override
-  String get photo_enhance => 'Enhance 4×';
+  String get photo_enhance => 'Улучшить 4×';
 
   @override
-  String get photo_enhancing => 'Enhancing…';
+  String get photo_enhancing => 'Улучшение…';
 
   @override
-  String get photo_save => 'Save';
+  String get photo_save => 'Сохранить';
 
   @override
-  String get photo_saved => 'Saved to your photos';
+  String get photo_saved => 'Сохранено в ваших фото';
 
   @override
-  String get photo_saveFailed => 'Couldn\'t save the photo.';
+  String get photo_saveFailed => 'Не удалось сохранить фото.';
 
   @override
-  String get photo_details => 'About this photo';
+  String get photo_details => 'Об этом фото';
 
   @override
   String photo_caption(int bytes) {
@@ -300,32 +329,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get photo_enlargedNote =>
-      'Enhanced 4× on this phone: fine detail may be made up.';
+      'Улучшено 4× на этом телефоне: мелкие детали могут быть додуманы.';
 
   @override
   String get photo_enlargeNoMemory =>
-      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+      'Сейчас не хватает свободной памяти, чтобы увеличить фото. Закройте другие приложения и попробуйте снова.';
 
   @override
   String get photo_enlargeFlagged =>
-      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+      'Увеличенное изображение не прошло проверку безопасности, поэтому не показано.';
 
   @override
-  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+  String get photo_enlargeFailed => 'Не удалось увеличить фото.';
 
   @override
-  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+  String get photo_enlargeAutomatically => 'Автоматически увеличивать фото';
 
   @override
   String get photo_enlargeAutomaticallyHint =>
-      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+      'Выкл.: чтобы увеличить фото 4×, нажмите на него в полноэкранном режиме. Вкл.: оно увеличивается при открытии.';
 
   @override
-  String get photo_ignoreTimeLimits => 'Ignore the photo time limits';
+  String get photo_ignoreTimeLimits =>
+      'Игнорировать ограничения времени для фото';
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos through repeaters without waiting between them.';
+      'Для тестирования: отправлять фото через репитеры без пауз между ними.';
 
   @override
   String get photo_rebuilding => 'Воссоздание… около 20 с';
@@ -362,7 +392,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get photo_reportBody =>
-      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+      'Фото сразу и навсегда скрывается на этом телефоне, а жалоба уходит разработчику MeshTrax из приложения — сейчас или когда появится интернет. Больше ничего с вашего телефона не отправляется.';
 
   @override
   String get photo_reportInclude => 'Приложить фото';
@@ -372,15 +402,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Его код — несколько сотен байт, из которых фото можно воссоздать. Не само изображение.';
 
   @override
-  String get photo_reportReason => 'What\'s wrong? (optional)';
+  String get photo_reportReason => 'Что не так? (необязательно)';
 
   @override
-  String get photo_reportedSent =>
-      'Photo hidden, and the report is sent. Thank you.';
+  String get photo_reportedSent => 'Фото скрыто, жалоба отправлена. Спасибо.';
 
   @override
   String get photo_reportedQueued =>
-      'Photo hidden. The report will be sent when there\'s internet.';
+      'Фото скрыто. Жалоба будет отправлена, когда появится интернет.';
 
   @override
   String photo_reportPending(String name) {
@@ -388,11 +417,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get photo_reportPendingHint => 'Waiting for internet to send';
+  String get photo_reportPendingHint => 'Ждёт интернета для отправки';
 
   @override
   String get photo_reportStillWaiting =>
-      'Still no internet. It will be sent later.';
+      'Интернета всё ещё нет. Жалоба будет отправлена позже.';
 
   @override
   String get photo_autoRebuild => 'Автоматически воссоздавать полученные фото';
@@ -525,7 +554,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String photo_needsNewer(String id) {
-    return '📷 Photo $id needs a newer MeshTrax';
+    return '📷 Для фото $id нужна более новая версия MeshTrax';
   }
 
   @override
@@ -561,12 +590,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String newChat_contactCount(int count) {
     return 'Контактов: $count';
   }
-
-  @override
-  String get newChat_newContact => 'Новый контакт';
-
-  @override
-  String get newChat_newChannel => 'Новый канал';
 
   @override
   String get newChat_myContacts => 'Мои контакты';
@@ -605,7 +628,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
-  String get common_experimental => 'EXPERIMENTAL';
+  String get common_experimental => 'ЭКСПЕРИМЕНТ';
 
   @override
   String get common_connect => 'Коннект';
@@ -1136,46 +1159,46 @@ class AppLocalizationsRu extends AppLocalizations {
       'Публикует в канале поездки; остальные присоединяются одним касанием.';
 
   @override
-  String get trax_keepTrack => 'Keep my track';
+  String get trax_keepTrack => 'Хранить мой трек';
 
   @override
   String get trax_keepTrackHint =>
-      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+      'Насколько далеко в прошлое тянется ваша линия — для вас и участников поездки. Более старые части удаляются на всех телефонах.';
 
   @override
   String trax_keepTrackHours(int hours) {
-    return '$hours hours';
+    return '$hours ч';
   }
 
   @override
-  String get trax_keepTrackWeek => '1 week';
+  String get trax_keepTrackWeek => '1 неделя';
 
   @override
-  String get trax_icon => 'Your icon';
+  String get trax_icon => 'Ваш значок';
 
   @override
-  String get trax_iconHint => 'How the trip sees you on the map.';
+  String get trax_iconHint => 'Как вас видят на карте участники поездки.';
 
   @override
-  String get trax_iconHike => 'Hike';
+  String get trax_iconHike => 'Пешком';
 
   @override
-  String get trax_iconVehicle => 'Vehicle';
+  String get trax_iconVehicle => 'Автомобиль';
 
   @override
-  String get trax_iconBoat => 'Boat';
+  String get trax_iconBoat => 'Лодка';
 
   @override
-  String get trax_iconMotorcycle => 'Motorcycle';
+  String get trax_iconMotorcycle => 'Мотоцикл';
 
   @override
-  String get trax_iconBicycle => 'Bicycle';
+  String get trax_iconBicycle => 'Велосипед';
 
   @override
-  String get trax_iconAircraft => 'Aircraft';
+  String get trax_iconAircraft => 'Самолёт';
 
   @override
-  String get trax_iconCamp => 'Camp';
+  String get trax_iconCamp => 'Лагерь';
 
   @override
   String trax_followBody(String name, String time) {
@@ -1324,15 +1347,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trax_mayBeOld => 'может быть устаревшим';
 
   @override
-  String get trax_askTrack => 'Ask for track';
+  String get trax_askTrack => 'Запросить трек';
 
   @override
   String trax_trackAsked(String time) {
-    return 'Track asked $time';
+    return 'Трек запрошен в $time';
   }
 
   @override
-  String get trax_group => 'TRAX group';
+  String get trax_group => 'Группа TRAX';
 
   @override
   String get trax_tripChannelLocation =>
@@ -1799,11 +1822,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appSettings_messaging => 'Обмен сообщениями';
 
   @override
-  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
+  String get appSettings_maxDirectMessageTries =>
+      'Макс. попыток для личных сообщений';
 
   @override
   String get appSettings_maxDirectMessageTriesSubtitle =>
-      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
+      'Сколько раз пытаться отправить, прежде чем личное сообщение или публикация в комнате будут отмечены как недоставленные. Первые попытки идут известными маршрутами, остальные — рассылкой.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>
@@ -2217,15 +2241,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get radioAsk_trackAsked =>
-      'Also asked their phone for their track; it shows on the map.';
+      'Также запрошен трек с их телефона; он появится на карте.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {
     return 'Радио $name · $time';
   }
-
-  @override
-  String get radioAsk_rowLabel => 'Ответ радио';
 
   @override
   String get contact_nickname => 'Прозвище';
@@ -2313,16 +2334,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get channels_shareChannelInstructions =>
-      'Отсканируйте QR-код, чтобы добавить канал.\nМеню → Добавить канал → Сканировать QR-код';
+      'Отсканируйте QR-код, чтобы добавить канал.';
 
   @override
   String get channels_secretKey => 'Секретный ключ';
 
   @override
   String get channels_meshcoreUri => 'URI MeshCore';
-
-  @override
-  String get channels_shareChannelQr => 'Сканировать QR-код канала';
 
   @override
   String get channels_shareChannelWarning =>
@@ -2368,23 +2386,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get channels_standardPublicPsk => 'Стандартный публичный PSK';
 
   @override
-  String get channels_pskHex => 'PSK (Hex)';
-
-  @override
   String get channels_generateRandomPsk => 'Сгенерировать случайный PSK';
 
   @override
-  String get channels_enterChannelName => 'Введите имя канала';
-
-  @override
-  String get channels_pskMustBe32Hex =>
-      'PSK должен содержать 32 шестнадцатеричных символа';
-
-  @override
   String get channels_addChannelConfirmation => 'Добавить этот канал?';
-
-  @override
-  String get channels_channelAddedSuccess => 'Канал добавлен.';
 
   @override
   String get channels_noAvailableChannelSlots =>
@@ -2421,9 +2426,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get channels_publicChannelAdded => 'Публичный канал добавлен';
-
-  @override
   String get channels_sortBy => 'Сортировка';
 
   @override
@@ -2445,14 +2447,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get channels_createPrivateChannelDesc => 'Защищён секретным ключом.';
 
   @override
-  String get channels_joinPrivateChannel =>
-      'Присоединиться к приватному каналу';
-
-  @override
-  String get channels_joinPrivateChannelDesc =>
-      'Введите секретный ключ вручную.';
-
-  @override
   String get channels_joinPublicChannel => 'Присоединиться к публичному каналу';
 
   @override
@@ -2460,23 +2454,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'К этому каналу может присоединиться любой.';
 
   @override
-  String get channels_joinHashtagChannel => 'Присоединиться к хэштег-каналу';
-
-  @override
-  String get channels_joinHashtagChannelDesc =>
-      'К хэштег-каналам может присоединиться любой.';
-
-  @override
   String get channels_scanQrCode => 'Сканировать QR-код';
 
   @override
   String get channels_scanQrCodeComingSoon => 'Скоро будет';
-
-  @override
-  String get channels_enterHashtag => 'Введите хэштег';
-
-  @override
-  String get channels_hashtagHint => 'например, #команда';
 
   @override
   String get channels_keepCapitals => 'Сохранить заглавные буквы';
@@ -2516,10 +2497,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get common_copyToClipboard => 'Копировать в буфер обмена';
-
-  @override
-  String get contacts_copyContactToClipboard =>
-      'Копировать мой контакт в буфер обмена';
 
   @override
   String get chat_typeMessage => 'Напишите сообщение...';
@@ -3641,10 +3618,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get repeater_cliQuickDiscovery => 'Обнаружить Соседей';
 
   @override
-  String get repeater_cliQuickRepeatOn => 'Repeat On';
+  String get repeater_cliQuickRepeatOn => 'Включить повтор';
 
   @override
-  String get repeater_cliQuickRepeatOff => 'Repeat Off';
+  String get repeater_cliQuickRepeatOff => 'Выключить повтор';
 
   @override
   String get repeater_cliHelpAdvert => 'Отправляет пакет анонсирования';
@@ -3852,180 +3829,183 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get repeater_cliHelpIntro =>
-      'Tap a command to put it in the box, then replace the parts in curly brackets. Tap a get button to read that setting. These are the commands of firmware 1.18; older firmware may not have them all.';
+      'Нажмите на команду, чтобы вставить её в поле, затем замените части в фигурных скобках. Нажмите кнопку get, чтобы прочитать эту настройку. Это команды прошивки 1.18; в более старой прошивке некоторых из них может не быть.';
 
   @override
-  String get repeater_cliSectionRadio => 'Radio';
+  String get repeater_cliSectionRadio => 'Радио';
 
   @override
-  String get repeater_cliSectionPower => 'Power';
+  String get repeater_cliSectionPower => 'Питание';
 
   @override
-  String get repeater_cliSectionRegions => 'Regions';
+  String get repeater_cliSectionRegions => 'Регионы';
 
   @override
-  String get repeater_cliSectionSensors => 'Sensors';
+  String get repeater_cliSectionSensors => 'Датчики';
 
   @override
-  String get repeater_cliSectionRoom => 'Room Server';
+  String get repeater_cliSectionRoom => 'Сервер комнат';
 
   @override
   String get repeater_cliHelpAdvertZeroHop =>
-      'Sends an advert that only radios in direct range hear. Repeaters don\'t pass it on.';
+      'Отправляет анонс, который слышат только радио в прямой досягаемости. Репитеры его дальше не передают.';
 
   @override
   String get repeater_cliHelpClockSync =>
-      'Sets the device\'s clock to your phone\'s time. The clock can only move forward.';
+      'Ставит часы устройства по времени вашего телефона. Часы можно перевести только вперёд.';
 
   @override
   String get repeater_cliHelpTime =>
-      'Sets the clock to a Unix time in seconds. The clock can only move forward.';
+      'Ставит часы на время Unix в секундах. Часы можно перевести только вперёд.';
 
   @override
-  String get repeater_cliHelpBoard => 'Shows the board\'s maker and model.';
+  String get repeater_cliHelpBoard =>
+      'Показывает производителя и модель платы.';
 
   @override
   String get repeater_cliHelpGetRole =>
-      'Shows the firmware\'s role, such as repeater or room server.';
+      'Показывает роль прошивки, например репитер или сервер комнат.';
 
   @override
-  String get repeater_cliHelpGetPublicKey => 'Shows the device\'s public key.';
+  String get repeater_cliHelpGetPublicKey =>
+      'Показывает публичный ключ устройства.';
 
   @override
   String get repeater_cliHelpClkReboot =>
-      'Sets the clock back to May 2024 and reboots. Use it when the clock is ahead, then run clock sync.';
+      'Переводит часы назад на май 2024 года и перезагружает устройство. Используйте, когда часы спешат, а затем выполните clock sync.';
 
   @override
   String get repeater_cliHelpPowerOff =>
-      'Turns the device off until its button is pressed or its power is cycled. shutdown does the same.';
+      'Выключает устройство до нажатия его кнопки или повторной подачи питания. shutdown делает то же самое.';
 
   @override
   String get repeater_cliHelpStartOta =>
-      'Starts a firmware update over the air, on boards that support it. The reply says how to connect.';
+      'Запускает обновление прошивки по воздуху на платах, которые это поддерживают. В ответе сказано, как подключиться.';
 
   @override
   String get repeater_cliHelpRoomPost =>
-      'Posts a message in the room from the room server itself.';
+      'Публикует сообщение в комнате от имени самого сервера комнат.';
 
   @override
-  String get repeater_cliHelpGetFreq => 'Shows the radio frequency in MHz.';
+  String get repeater_cliHelpGetFreq => 'Показывает частоту радио в МГц.';
 
   @override
   String get repeater_cliHelpSetTxPower =>
-      'Sets the LoRa transmit power in dBm. It takes effect at once.';
+      'Задаёт мощность передачи LoRa в дБм. Применяется сразу.';
 
   @override
   String get repeater_cliHelpSetDutyCycle =>
-      'Sets the share of time the radio may spend sending, in percent. It\'s the air-time factor in other units.';
+      'Задаёт долю времени, которую радио может тратить на передачу, в процентах. Это тот же коэффициент времени в эфире, только в других единицах.';
 
   @override
   String get repeater_cliHelpSetCad =>
-      'Turns channel activity detection on or off: the radio listens for other LoRa signals before it sends.';
+      'Включает или выключает обнаружение активности в канале: перед передачей радио слушает другие сигналы LoRa.';
 
   @override
   String get repeater_cliHelpSetRxGain =>
-      'Turns boosted receive gain on or off, on radios that have it.';
+      'Включает или выключает повышенное усиление приёма на радио, где оно есть.';
 
   @override
   String get repeater_cliHelpSetExtraSf =>
-      'LR2021 radios only: also listens for up to three more spreading factors.';
+      'Только для радио LR2021: дополнительно слушает ещё до трёх коэффициентов расширения.';
 
   @override
   String get repeater_cliHelpSetOwnerInfo =>
-      'Sets the owner details the device gives with its name and version when asked. Use | for a new line.';
+      'Задаёт сведения о владельце, которые устройство по запросу сообщает вместе с именем и версией. Используйте | для новой строки.';
 
   @override
   String get repeater_cliHelpSetFloodMaxUnscoped =>
-      'Like flood.max, but for flood packets sent without a region.';
+      'Как flood.max, но для пакетов рассылки, отправленных без региона.';
 
   @override
   String get repeater_cliHelpSetFloodMaxAdvert =>
-      'Like flood.max, but for adverts. The default is 8.';
+      'Как flood.max, но для анонсов. По умолчанию 8.';
 
   @override
   String get repeater_cliHelpSetLoopDetect =>
-      'Sets how strictly the repeater drops flood packets that go round in a loop. The default is minimal.';
+      'Задаёт, насколько строго репитер отбрасывает пакеты рассылки, которые ходят по кругу. По умолчанию minimal.';
 
   @override
   String get repeater_cliHelpSetPathHashMode =>
-      'Sets how many bytes each hop adds to a packet\'s path: 0 for 1 byte, 1 for 2 bytes, 2 for 3 bytes.';
+      'Задаёт, сколько байт каждый хоп добавляет к пути пакета: 0 — 1 байт, 1 — 2 байта, 2 — 3 байта.';
 
   @override
   String get repeater_cliHelpSetPrvKey =>
-      'Replaces the device\'s identity with this private key. Reboot to apply. The old identity is lost unless you saved its key.';
+      'Заменяет идентичность устройства этим приватным ключом. Чтобы применить, перезагрузите. Старая идентичность будет потеряна, если вы не сохранили её ключ.';
 
   @override
   String get repeater_cliHelpPower =>
-      'Shows the battery voltage, and whether USB, solar or other external power is connected.';
+      'Показывает напряжение батареи и подключено ли питание от USB, солнечной панели или другого внешнего источника.';
 
   @override
-  String get repeater_cliHelpPowerSaving => 'Shows whether power saving is on.';
+  String get repeater_cliHelpPowerSaving =>
+      'Показывает, включено ли энергосбережение.';
 
   @override
   String get repeater_cliHelpPowerSavingSet =>
-      'Turns power saving on or off. nRF52 boards start saving at once, ESP32 boards after 2 minutes.';
+      'Включает или выключает энергосбережение. Платы nRF52 начинают экономить сразу, платы ESP32 — через 2 минуты.';
 
   @override
   String get repeater_cliHelpGetPwrmgtSupport =>
-      'Shows whether the board has power management.';
+      'Показывает, есть ли у платы управление питанием.';
 
   @override
   String get repeater_cliHelpGetPwrmgtSource =>
-      'Shows whether the device runs on external power or on its battery.';
+      'Показывает, работает ли устройство от внешнего питания или от своей батареи.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootReason =>
-      'Shows why the device last started and why it last shut down.';
+      'Показывает, почему устройство в последний раз запустилось и почему в последний раз выключилось.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootMv =>
-      'Shows the battery voltage when the device last started.';
+      'Показывает напряжение батареи при последнем запуске устройства.';
 
   @override
   String get repeater_cliHelpGetBootloaderVer =>
-      'Shows the bootloader version, on nRF52 boards.';
+      'Показывает версию загрузчика на платах nRF52.';
 
   @override
   String get repeater_cliHelpDiscoverNeighbors =>
-      'Asks nearby repeaters to answer, to fill the neighbors list.';
+      'Просит репитеры поблизости ответить, чтобы заполнить список соседей.';
 
   @override
   String get repeater_cliHelpRegions =>
-      'Lists the regions and which ones may flood (F).';
+      'Показывает список регионов и в каких из них разрешена рассылка (F).';
 
   @override
   String get repeater_cliHelpRegionDef =>
-      'Adds regions in one command: each name goes under the one before it. Write name|parent to put the next name under that parent instead.';
+      'Добавляет регионы одной командой: каждое имя встаёт под предыдущее. Напишите name|parent, чтобы поставить следующее имя под этого родителя.';
 
   @override
   String get repeater_cliHelpRegionList =>
-      'Lists the regions that may flood (allowed) or may not (denied).';
+      'Показывает регионы, в которых рассылка разрешена (allowed) или запрещена (denied).';
 
   @override
   String get repeater_cliHelpRegionDefault =>
-      'Shows the default region: the one this device\'s own flood packets go out in.';
+      'Показывает регион по умолчанию — тот, в котором уходят собственные пакеты рассылки этого устройства.';
 
   @override
   String get repeater_cliHelpRegionDefaultSet =>
-      'Sets the default region, or <null> for none. A new name is added as a region. Saved at once.';
+      'Задаёт регион по умолчанию или <null>, чтобы его не было. Новое имя добавляется как регион. Сохраняется сразу.';
 
   @override
   String get repeater_cliHelpGpsDiag =>
-      'Shows GPS details for finding problems.';
+      'Показывает подробности GPS для поиска проблем.';
 
   @override
   String get repeater_cliHelpSensorList =>
-      'Lists the board\'s sensor settings. Add a number to start further down the list.';
+      'Показывает настройки датчиков платы. Добавьте число, чтобы начать дальше по списку.';
 
   @override
-  String get repeater_cliHelpSensorGet => 'Shows one sensor setting.';
+  String get repeater_cliHelpSensorGet => 'Показывает одну настройку датчика.';
 
   @override
-  String get repeater_cliHelpSensorSet => 'Changes one sensor setting.';
+  String get repeater_cliHelpSensorSet => 'Изменяет одну настройку датчика.';
 
   @override
   String get repeater_cliHelpSetBridgeChannel =>
-      'Sets the Wi-Fi channel for ESP-NOW bridges.';
+      'Задаёт канал Wi-Fi для мостов ESP-NOW.';
 
   @override
   String get repeater_commandsListTitle => 'Список команд';
@@ -4543,9 +4523,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Добавить контакт из буфера обмена';
 
   @override
-  String get contacts_ShareContact => 'Копировать контакт в буфер обмена';
-
-  @override
   String get contacts_ShareContactZeroHop =>
       'Поделиться контактом по объявлению';
 
@@ -4562,39 +4539,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось отправить контакт.';
 
   @override
-  String get contacts_contactAdvertCopied =>
-      'Реклама скопирована в буфер обмена.';
-
-  @override
   String get contacts_contactAdvertCopyFailed =>
       'Копирование рекламы в буфер обмена не удалось.';
 
   @override
   String get contacts_addContact => 'Добавить контакт';
-
-  @override
-  String get contacts_scanQrCode => 'Сканировать QR контакта';
-
-  @override
-  String get contacts_scanQrCodeDesc =>
-      'Отсканируйте QR-код контакта из приложения MeshCore';
-
-  @override
-  String get contacts_enterIdHash => 'Ввести контакт вручную';
-
-  @override
-  String get contacts_enterIdHashDesc =>
-      'Вставьте анонс контакта или ссылку meshcore://';
-
-  @override
-  String get contacts_advertHint => 'meshcore://... или публичный ключ в hex';
-
-  @override
-  String get contacts_import => 'Импорт';
-
-  @override
-  String get contacts_scanContactInstructions =>
-      'Отсканируйте QR-код контакта MeshCore';
 
   @override
   String get notification_activityTitle => 'Активность MeshCore';
@@ -4772,10 +4721,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get discoveredContacts_addContact => 'Добавить контакт';
-
-  @override
-  String get discoveredContacts_copyContact =>
-      'Копировать контакт в буфер обмена';
 
   @override
   String get discoveredContacts_deleteContact => 'Удалить контакт';
@@ -5925,23 +5870,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get map_zoomOut => 'Уменьшить';
 
   @override
-  String get gps_title => 'GPS';
-
-  @override
   String get gps_on => 'GPS вкл.';
 
   @override
   String get gps_off => 'GPS выкл.';
-
-  @override
-  String get gps_onHint => 'Радио обновляет своё местоположение по GPS.';
-
-  @override
-  String get gps_offHint =>
-      'Выключение экономит батарею. Определение позиции может занять несколько минут.';
-
-  @override
-  String get gps_asking => 'Запрос к радио...';
 
   @override
   String get gps_noPosition =>
@@ -5952,11 +5884,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gps_altitude => 'Высота';
-
-  @override
-  String gps_readAgo(String ago) {
-    return 'Прочитано с радио $ago назад';
-  }
 
   @override
   String get gps_turnOnTitle => 'Включить GPS?';
@@ -6306,84 +6233,82 @@ class AppLocalizationsRu extends AppLocalizations {
       'У вашего радио пока нет местоположения. Выберите его на карте.';
 
   @override
-  String get location_sendPositionOnly => 'Only the position';
+  String get location_sendPositionOnly => 'Только позиция';
 
   @override
-  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+  String get location_sendWithMotion => 'Позиция, курс, скорость и высота';
 
   @override
-  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+  String get location_motionNotKnown => 'Курс и скорость пока неизвестны';
 
   @override
-  String get add_title => 'New Channel or Contact';
+  String get add_title => 'Новый канал или контакт';
 
   @override
-  String get add_or => 'Or';
+  String get add_or => 'Или';
 
   @override
-  String get add_hashtagRow => 'Join a hashtag channel';
+  String get add_hashtagRow => 'Присоединиться к хэштег-каналу';
 
   @override
-  String get add_hashtagRowHelp => 'Type its name after the #';
+  String get add_hashtagRowHelp => 'Введите его название после #';
 
   @override
-  String get add_keyRow => 'Enter a name and a key';
+  String get add_keyRow => 'Ввести имя и ключ';
 
   @override
   String get add_keyRowHelp =>
-      'A channel\'s secret key, or a contact\'s public key';
+      'Секретный ключ канала или публичный ключ контакта';
 
   @override
-  String get add_name => 'Name';
+  String get add_name => 'Имя';
 
   @override
-  String get add_key => 'Key';
+  String get add_key => 'Ключ';
 
   @override
-  String get add_keyInvalid =>
-      'A channel\'s key is 32 characters, a contact\'s 64.';
+  String get add_keyInvalid => 'Ключ канала — 32 символа, контакта — 64.';
 
   @override
-  String get add_typePerson => 'Person';
+  String get add_typePerson => 'Человек';
 
   @override
-  String get add_box => 'Paste or type';
+  String get add_box => 'Вставьте или введите';
 
   @override
   String get add_boxHint =>
-      'A meshcore:// link, <key:type:name>, #hashtag or a key';
+      'Ссылка meshcore://, <key:type:name>, #хэштег или ключ';
 
   @override
-  String get add_paste => 'Paste';
+  String get add_paste => 'Вставить';
 
   @override
-  String get add_clipboardEmpty => 'There\'s nothing to paste.';
+  String get add_clipboardEmpty => 'Нечего вставить.';
 
   @override
-  String get add_unreadableTitle => 'Nothing to add yet';
+  String get add_unreadableTitle => 'Пока нечего добавить';
 
   @override
   String get add_unreadable =>
-      'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.';
+      'Для контакта: ссылка meshcore://, <key:type:name>, карточка контакта или ключ из 64 символов. Для канала: ссылка meshcore://, #хэштег или секретный ключ из 32 символов с его названием.';
 
   @override
-  String get add_contactName => 'Name (optional)';
+  String get add_contactName => 'Имя (необязательно)';
 
   @override
-  String get add_scanInstructions => 'Scan a contact or channel QR code';
+  String get add_scanInstructions => 'Отсканируйте QR-код контакта или канала';
 
   @override
-  String get add_scanUnreadable =>
-      'That QR code isn\'t a contact or a channel.';
+  String get add_scanUnreadable => 'Этот QR-код — не контакт и не канал.';
 
   @override
-  String get copy_link => 'Copy link';
+  String get copy_link => 'Копировать ссылку';
 
   @override
-  String get copy_asText => 'Copy as text';
+  String get copy_asText => 'Копировать как текст';
 
   @override
-  String get share_asText => 'As text';
+  String get share_asText => 'В виде текста';
 
   @override
   String get dialog_insert => 'Вставить';
@@ -6534,11 +6459,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sos_dndStepsSamsung =>
-      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+      'Откроются настройки на странице «Не беспокоить». Нажмите «Уведомления приложений», затем «Добавить приложения», выберите MeshTrax и включите только «SOS-оповещения».';
 
   @override
   String get sos_dndStepsOther =>
-      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+      'Откроются настройки на странице «SOS-оповещения»: включите «Игнорировать режим „Не беспокоить“». Если на вашем телефоне там нет такого переключателя, откройте «Не беспокоить», найдите приложения, которым разрешено прерывать, добавьте MeshTrax и включите «SOS-оповещения».';
 
   @override
   String get notification_sosChannel => 'SOS-оповещения';
@@ -6577,7 +6502,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appSettings_sosLetThroughDnd =>
-      'Do Not Disturb silences it. Tap to let it through.';
+      'Режим «Не беспокоить» заглушает его. Нажмите, чтобы он звучал.';
 
   @override
   String get appSettings_sosBlocked =>
@@ -7866,22 +7791,22 @@ class AppLocalizationsRu extends AppLocalizations {
       'Данные маршрутов на накопителе охватывают не все регионы этого устройства.';
 
   @override
-  String get offlineMaps_kindWaterRouting => 'Water routing';
+  String get offlineMaps_kindWaterRouting => 'Построение маршрутов по воде';
 
   @override
-  String get offlineMaps_kindWaterRoutingDetail => 'Routes on the water';
+  String get offlineMaps_kindWaterRoutingDetail => 'Маршруты по воде';
 
   @override
   String get offlineMaps_waterRoutingWithChart =>
-      'Routes on the water. Its chart comes too.';
+      'Маршруты по воде. Морская карта скачается вместе с ними.';
 
   @override
   String get offlineMaps_waterRoutingUpdatesChart =>
-      'Routes on the water. Its chart updates too.';
+      'Маршруты по воде. Морская карта тоже обновится.';
 
   @override
   String get offlineMaps_waterRoutingRebuilding =>
-      'Being rebuilt for new charts';
+      'Перестраивается под новые карты';
 
   @override
   String get map_search => 'Поиск';
@@ -7923,96 +7848,96 @@ class AppLocalizationsRu extends AppLocalizations {
   String get route_pin => 'Точка на карте';
 
   @override
-  String get water_yourBoat => 'Your boat';
+  String get water_yourBoat => 'Ваша лодка';
 
   @override
   String get water_yourBoatIntro =>
-      'Every trip on the water keeps to these. Change them later in Route options.';
+      'Каждый маршрут по воде учитывает эти параметры. Позже их можно изменить в разделе «Параметры маршрута».';
 
   @override
   String water_boatDraft(String draft, String keel) {
-    return '$draft draft + $keel';
+    return 'осадка $draft + $keel';
   }
 
   @override
   String water_boatOffLand(String distance) {
-    return '$distance off land';
+    return '$distance от берега';
   }
 
   @override
   String water_boatMast(String height) {
-    return '$height mast';
+    return 'мачта $height';
   }
 
   @override
-  String get water_classRestricted => 'Restricted area';
+  String get water_classRestricted => 'Район с ограничениями';
 
   @override
-  String get water_classCaution => 'Caution area';
+  String get water_classCaution => 'Район предостережения';
 
   @override
-  String get water_classMilitary => 'Military area';
+  String get water_classMilitary => 'Военный район';
 
   @override
-  String get water_classAnchorage => 'Anchorage';
+  String get water_classAnchorage => 'Якорная стоянка';
 
   @override
-  String get water_classDumping => 'Dumping ground';
+  String get water_classDumping => 'Район свалки грунта';
 
   @override
-  String get water_classTrafficLane => 'Traffic lane';
+  String get water_classTrafficLane => 'Полоса движения';
 
   @override
-  String get water_classSeparation => 'Separation zone';
+  String get water_classSeparation => 'Зона разделения';
 
   @override
-  String get water_classPrecautionary => 'Precautionary area';
+  String get water_classPrecautionary => 'Район, где нужна осторожность';
 
   @override
-  String get water_classInshoreTraffic => 'Inshore traffic zone';
+  String get water_classInshoreTraffic => 'Зона прибрежного плавания';
 
   @override
-  String get water_classMarineFarm => 'Marine farm';
+  String get water_classMarineFarm => 'Морская ферма';
 
   @override
-  String get water_classBridge => 'Bridge';
+  String get water_classBridge => 'Мост';
 
   @override
-  String get water_classCable => 'Overhead cable';
+  String get water_classCable => 'Воздушный кабель';
 
   @override
-  String get water_classPipe => 'Overhead pipe';
+  String get water_classPipe => 'Воздушный трубопровод';
 
   @override
-  String get water_classConveyor => 'Conveyor';
+  String get water_classConveyor => 'Конвейер';
 
   @override
-  String get water_classGate => 'Gate';
+  String get water_classGate => 'Ворота';
 
   @override
-  String get water_movedLand => 'that point is on land or off the charts';
+  String get water_movedLand => 'эта точка на суше или за пределами карт';
 
   @override
-  String get water_movedShallow => 'it\'s too shallow there';
+  String get water_movedShallow => 'там слишком мелко';
 
   @override
   String get water_movedHazard =>
-      'it\'s near a hazard too shallow for the boat';
+      'рядом опасность на глубине, слишком малой для лодки';
 
   @override
-  String get water_movedNoEntry => 'entry is prohibited there';
+  String get water_movedNoEntry => 'туда вход запрещён';
 
   @override
-  String get water_movedMast => 'something there is lower than the mast';
+  String get water_movedMast => 'там что-то ниже мачты';
 
   @override
   String water_startMoved(String distance, String why) {
-    return 'Starts $distance from the point picked: $why.';
+    return 'Начинается в $distance от выбранной точки: $why.';
   }
 
   @override
   String water_endMoved(String distance, String why) {
-    return 'Ends $distance from the point picked: $why.';
+    return 'Заканчивается в $distance от выбранной точки: $why.';
   }
 
   @override
@@ -8022,7 +7947,7 @@ class AppLocalizationsRu extends AppLocalizations {
     String band,
     String draft,
   ) {
-    return 'Ends $distance before $destination: charted $band. Drafts to $draft get through.';
+    return 'Маршрут обрывается за $distance до цели ($destination): по карте глубина $band. Пройдут суда с осадкой до $draft.';
   }
 
   @override
@@ -8031,7 +7956,7 @@ class AppLocalizationsRu extends AppLocalizations {
     String destination,
     String band,
   ) {
-    return 'Ends $distance before $destination: charted $band, too shallow to get through.';
+    return 'Маршрут обрывается за $distance до цели ($destination): по карте глубина $band, слишком мелко, чтобы пройти.';
   }
 
   @override
@@ -8040,127 +7965,129 @@ class AppLocalizationsRu extends AppLocalizations {
     String destination,
     String objects,
   ) {
-    return 'Ends $distance before $destination: $objects too low for the mast.';
+    return 'Маршрут обрывается за $distance до цели ($destination): $objects — слишком низко для мачты.';
   }
 
   @override
   String water_endsShortNoWater(String distance, String destination) {
-    return 'Ends $distance before $destination: no charted water joins them.';
+    return 'Маршрут обрывается за $distance до цели ($destination): на картах нет воды, которая бы их соединяла.';
   }
 
   @override
   String water_endsShortTooLong(String distance, String destination) {
-    return 'Ends $distance before $destination: too long for one route. Plan it in parts.';
+    return 'Маршрут обрывается за $distance до цели ($destination): слишком далеко для одного маршрута. Постройте его по частям.';
   }
 
   @override
   String water_leastDepth(String depth) {
-    return 'Least depth: charted $depth';
+    return 'Наименьшая глубина: по карте $depth';
   }
 
   @override
   String water_lowestClearance(String height) {
-    return 'Lowest clearance $height';
+    return 'Наименьшая высота прохода $height';
   }
 
   @override
   String water_lowestClearanceUnder(String height, String name) {
-    return 'Lowest clearance $height, $name';
+    return 'Наименьшая высота прохода $height, $name';
   }
 
   @override
   String water_shallower(String depth) {
-    return 'Shallower than $depth';
+    return 'Мельче $depth';
   }
 
   @override
-  String get water_poorSurvey => 'Poorly surveyed';
+  String get water_poorSurvey => 'Плохо обследовано';
 
   @override
-  String get water_needsOpening => 'needs opening';
+  String get water_needsOpening => 'нужно развести';
 
   @override
   String get water_magneticModelOld =>
-      'Bearings from a magnetic model valid to 2030';
+      'Пеленги по магнитной модели, действительной до 2030 года';
 
   @override
   String water_couldntKeep(String distance) {
-    return 'Closer than $distance to land';
+    return 'Ближе $distance к берегу';
   }
 
   @override
-  String get water_onTheWay => 'On the way';
+  String get water_onTheWay => 'По пути';
 
   @override
   String water_stretch(String length, String from) {
-    return '$length, from $from along';
+    return '$length, начиная с $from пути';
   }
 
   @override
-  String get water_speed => 'Speed';
+  String get water_speed => 'Скорость';
 
   @override
-  String get water_draft => 'Draft';
+  String get water_draft => 'Осадка';
 
   @override
-  String get water_underKeel => 'Room under the keel';
+  String get water_underKeel => 'Запас под килем';
 
   @override
-  String get water_preferDepth => 'Preferred depth';
+  String get water_preferDepth => 'Желаемая глубина';
 
   @override
-  String get water_none => 'None';
+  String get water_none => 'Нет';
 
   @override
-  String get water_mastHeight => 'Mast height';
+  String get water_mastHeight => 'Высота мачты';
 
   @override
-  String get water_offLand => 'Distance off land';
+  String get water_offLand => 'Расстояние от берега';
 
   @override
-  String get water_avoidLanes => 'Traffic lanes';
+  String get water_avoidLanes => 'Полосы движения';
 
   @override
-  String get water_avoidSecurity => 'Security zones';
+  String get water_avoidSecurity => 'Зоны безопасности';
 
   @override
-  String get water_avoidOpening => 'Bridges that open';
+  String get water_avoidOpening => 'Разводные мосты';
 
   @override
-  String get water_notForNavigation => 'Not for navigation';
+  String get water_notForNavigation => 'Не для навигации';
 
   @override
   String get water_noData =>
-      'Download Water routing for this chart area in Offline maps.';
+      'Скачайте «Построение маршрутов по воде» для этого района морских карт в разделе «Офлайн-карты».';
 
   @override
   String water_routingMissing(String area) {
-    return 'Water routing for $area isn\'t on this phone.';
+    return 'Маршрутов по воде для $area нет на этом телефоне.';
   }
 
   @override
-  String get route_onLand => 'Route on land';
+  String get route_onLand => 'Маршрут по суше';
 
   @override
-  String get route_onWater => 'Route on the water';
+  String get route_onWater => 'Маршрут по воде';
 
   @override
-  String get water_noTiles => 'No water routing here';
+  String get water_noTiles => 'Здесь нет маршрутов по воде';
 
   @override
   String get water_mixedBuilds =>
-      'Update water routing in Offline maps: its areas are of different builds.';
+      'Обновите маршруты по воде в разделе «Офлайн-карты»: их районы из разных сборок.';
 
   @override
-  String get water_noWater => 'No water here the boat can use';
+  String get water_noWater => 'Здесь нет воды, по которой может пройти лодка';
 
   @override
   String water_unchartedSpans(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Under $count spans with no charted clearance',
-      one: 'Under 1 span with no charted clearance',
+      other: 'Под $count пролётами без высоты прохода на карте',
+      many: 'Под $count пролётами без высоты прохода на карте',
+      few: 'Под $count пролётами без высоты прохода на карте',
+      one: 'Под $count пролётом без высоты прохода на карте',
     );
     return '$_temp0';
   }
@@ -8184,62 +8111,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get common_less => 'Свернуть';
 
   @override
-  String get locationSharing_title => 'Кто видит моё местоположение';
-
-  @override
-  String get locationSharing_someone =>
-      'Кто-то может видеть ваше местоположение';
-
-  @override
-  String get locationSharing_nobody => 'Никто не видит ваше местоположение';
-
-  @override
   String get locationSharing_noPosition =>
       'У вашего радио ещё нет местоположения, поэтому его никто не видит';
 
   @override
-  String get locationSharing_everyone =>
-      'Любой, кто слышит ваше радио, видит ваше местоположение';
-
-  @override
-  String get locationSharing_allContacts =>
-      'Все ваши контакты видят ваше местоположение';
-
-  @override
-  String get locationSharing_someContacts =>
-      'Контакты, которым вы разрешили, видят ваше местоположение';
-
-  @override
   String get locationSharing_adverts => 'Местоположение в анонсах';
-
-  @override
-  String get locationSharing_advertsHint =>
-      'Ваши анонсы содержат ваше местоположение, поэтому его видит любой, кто слышит ваше радио.';
-
-  @override
-  String get locationSharing_contactsHeader =>
-      'Контакты, которые могут запрашивать ваше радио';
-
-  @override
-  String get locationSharing_noTelemetry =>
-      'Никто. Ваше радио не отвечает на запросы телеметрии.';
-
-  @override
-  String get locationSharing_noContacts => 'Ни одному контакту не разрешено.';
-
-  @override
-  String locationSharing_allContactsRow(int count) {
-    return 'Все ваши контакты ($count)';
-  }
-
-  @override
-  String get locationSharing_partLocation => 'Местоположение';
-
-  @override
-  String get locationSharing_partBattery => 'Батарея';
-
-  @override
-  String get locationSharing_partSensors => 'Датчики';
 
   @override
   String get dialog_positionHint => 'Вставьте координаты или ссылку на карту';
@@ -8249,14 +8125,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get locationSharing_share => 'Делиться моим местоположением';
-
-  @override
-  String get locationSharing_shareOnHint =>
-      'Выключите, чтобы скрыть его от всех';
-
-  @override
-  String get locationSharing_shareOffHint =>
-      'Включите, чтобы его видели контакты с разрешением';
 
   @override
   String get chats_advertise => 'Анонсировать';
@@ -8448,16 +8316,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Коснитесь карты, чтобы задать позицию, или введите числа.';
-
-  @override
-  String get channels_pasteLink => 'Вставить ссылку';
-
-  @override
-  String get channels_pasteLinkDesc =>
-      'Скопированная ссылка meshcore:// на канал.';
-
-  @override
-  String get channels_pasteLinkNone => 'В буфере обмена нет ссылки на канал.';
 
   @override
   String get settings_locationGpsNote =>
@@ -8881,7 +8739,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get repeaterRegions_hasChildren =>
-      'The repeater still has regions under this one. Remove those first.';
+      'У ретранслятора ещё есть регионы под этим. Сначала удалите их.';
 
   @override
   String repeaterRegions_refused(String reply) {
@@ -8911,7 +8769,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get channelRegion_nearbyTrip =>
-      'TRAX reports on this channel won\'t be passed on by other radios.';
+      'Отчёты TRAX в этом канале другие радио дальше не передадут.';
 
   @override
   String nearbyRegions_withPlain(String names) {
@@ -8970,249 +8828,251 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get myLocation_title => 'My location';
+  String get myLocation_title => 'Моё местоположение';
 
   @override
-  String get myLocation_onlyYou => 'Only you';
+  String get myLocation_onlyYou => 'Только вы';
 
   @override
-  String get myLocation_people => 'People you picked can ask';
+  String get myLocation_people => 'Выбранные вами люди могут запрашивать';
 
   @override
-  String get myLocation_everyone => 'Everyone saved on your radio can ask';
+  String get myLocation_everyone =>
+      'Все сохранённые в вашем радио могут запрашивать';
 
   @override
-  String get myLocation_adverts => 'In your adverts';
+  String get myLocation_adverts => 'В ваших анонсах';
 
   @override
-  String get myLocation_gpsNoFix => 'GPS on, no fix yet';
+  String get myLocation_gpsNoFix => 'GPS вкл., позиции пока нет';
 
   @override
-  String get myLocation_radioGps => 'Radio GPS';
+  String get myLocation_radioGps => 'GPS радио';
 
   @override
   String myLocation_fix(String ago, String position) {
-    return 'Fix $ago ago · $position';
+    return 'Позиция $ago назад · $position';
   }
 
   @override
-  String get myLocation_noFix => 'No fix yet.';
+  String get myLocation_noFix => 'Позиции пока нет.';
 
   @override
-  String get myLocation_offSaves => 'Off saves battery.';
+  String get myLocation_offSaves => 'Выключение экономит батарею.';
 
   @override
   String myLocation_lastFix(String time) {
-    return 'Last fix $time.';
+    return 'Последняя позиция в $time.';
   }
 
   @override
-  String get myLocation_inAdverts => 'In my adverts';
+  String get myLocation_inAdverts => 'В моих анонсах';
 
   @override
-  String get myLocation_advertsHint => 'Anyone who hears your radio';
+  String get myLocation_advertsHint => 'Любой, кто слышит ваше радио';
 
   @override
   String get myLocation_advertsInfo =>
-      'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.';
+      'Ваши анонсы передают ваше местоположение всем, кто их слышит: позицию GPS, а при выключенном GPS — последнюю позицию или введённое вручную местоположение. Они уходят, только когда вы отправляете анонс сами или это делает TRAX.';
 
   @override
-  String get myLocation_peopleWho => 'People who can ask';
+  String get myLocation_peopleWho => 'Кто может запрашивать';
 
   @override
-  String get myLocation_nobody => 'Nobody';
+  String get myLocation_nobody => 'Никто';
 
   @override
   String myLocation_allSaved(int count) {
-    return 'Everyone saved on your radio ($count)';
+    return 'Все сохранённые в вашем радио ($count)';
   }
 
   @override
-  String get myLocation_pickPeople => 'Pick people instead';
+  String get myLocation_pickPeople => 'Выбрать отдельных людей';
 
   @override
-  String get myLocation_batterySensors => 'Battery and sensors';
+  String get myLocation_batterySensors => 'Батарея и датчики';
 
   @override
   String get myLocation_peopleHint =>
-      'They can ask your radio where it is, and its battery.';
+      'Они могут запросить у вашего радио, где оно и какой у него заряд батареи.';
 
   @override
-  String get myLocation_addSomeone => 'Add someone';
+  String get myLocation_addSomeone => 'Добавить человека';
 
   @override
   String myLocation_search(int count) {
-    return 'Search $count contacts';
+    return 'Поиск по контактам ($count)';
   }
 
   @override
-  String get myLocation_recent => 'Recent messages';
+  String get myLocation_recent => 'Последние сообщения';
 
   @override
-  String get myLocation_canAsk => 'Can ask';
+  String get myLocation_canAsk => 'Может запрашивать';
 
   @override
-  String get iconHelp_title => 'What the icons mean';
+  String get iconHelp_title => 'Что означают значки';
 
   @override
-  String get iconHelp_tap => 'Tap an icon in the bar to open it.';
+  String get iconHelp_tap => 'Нажмите на значок на панели, чтобы открыть его.';
 
   @override
-  String get iconHelp_radio => 'Radio';
+  String get iconHelp_radio => 'Радио';
 
   @override
-  String get iconHelp_battery => 'Radio battery';
+  String get iconHelp_battery => 'Батарея радио';
 
   @override
-  String get iconHelp_batteryText => 'Tap for volts.';
+  String get iconHelp_batteryText => 'Нажмите, чтобы увидеть напряжение.';
 
   @override
-  String get iconHelp_signal => 'Signal';
+  String get iconHelp_signal => 'Сигнал';
 
   @override
   String get iconHelp_signalText =>
-      'How well your radio hears the best repeater near you. Tap for the list.';
+      'Насколько хорошо ваше радио слышит лучший репитер рядом с вами. Нажмите, чтобы открыть список.';
 
   @override
-  String get iconHelp_repeaters => 'Repeaters heard';
+  String get iconHelp_repeaters => 'Слышимые репитеры';
 
   @override
-  String get iconHelp_repeatersText =>
-      'How many · the best one\'s code · how long ago';
+  String get iconHelp_repeatersText => 'Сколько · код лучшего · как давно';
 
   @override
-  String get iconHelp_traxOff => 'TRAX mode off';
+  String get iconHelp_traxOff => 'Режим TRAX выключен';
 
   @override
-  String get iconHelp_traxOn => 'TRAX mode on';
+  String get iconHelp_traxOn => 'Режим TRAX включён';
 
   @override
-  String get iconHelp_traxOnText => 'Your radio is on the group\'s frequency.';
+  String get iconHelp_traxOnText => 'Ваше радио на частоте группы.';
 
   @override
-  String get iconHelp_who => 'My location: who can see it';
+  String get iconHelp_who => 'Моё местоположение: кто его видит';
 
   @override
-  String get iconHelp_people => 'People you picked';
+  String get iconHelp_people => 'Выбранные вами люди';
 
   @override
-  String get iconHelp_peopleText => 'They can ask your radio where it is.';
+  String get iconHelp_peopleText =>
+      'Они могут запросить у вашего радио, где оно.';
 
   @override
-  String get iconHelp_advertsText => 'Anyone who hears your radio.';
+  String get iconHelp_advertsText => 'Любой, кто слышит ваше радио.';
 
   @override
-  String get iconHelp_gps => 'My location: radio GPS';
+  String get iconHelp_gps => 'Моё местоположение: GPS радио';
 
   @override
-  String get iconHelp_filled => 'Filled: GPS on';
+  String get iconHelp_filled => 'Закрашенный: GPS вкл.';
 
   @override
-  String get iconHelp_outline => 'Outline: GPS off';
+  String get iconHelp_outline => 'Контур: GPS выкл.';
 
   @override
-  String get iconHelp_dashed => 'Dashed: no GPS fix yet';
+  String get iconHelp_dashed => 'Пунктир: GPS-позиции пока нет';
 
   @override
-  String get iconHelp_red => 'Red: no fix, and someone can see it';
+  String get iconHelp_red => 'Красный: позиции нет, а кто-то может его видеть';
 
   @override
-  String get locationNote_title => 'One location button';
+  String get locationNote_title => 'Одна кнопка местоположения';
 
   @override
   String get locationNote_body =>
-      'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
+      '«GPS» и «Кто видит моё местоположение» теперь одна кнопка. Её форма показывает, кто видит ваше местоположение. Закрашенная — значит, GPS включён.';
 
   @override
-  String get traxGuide_title => 'How TRAX works';
+  String get traxGuide_title => 'Как работает TRAX';
 
   @override
   String get traxGuide_lead =>
-      'TRAX shares where everyone is over your radios alone: no cell service, no repeaters. Say you\'re out front, friends are behind you, and more join tomorrow.';
+      'TRAX показывает, где все находятся, только через ваши радио: без сотовой связи, без репитеров. Допустим, вы идёте впереди, друзья — позади, а завтра присоединятся ещё люди.';
 
   @override
-  String get traxGuide_beforeTitle => 'Before you go';
+  String get traxGuide_beforeTitle => 'Перед выходом';
 
   @override
   String get traxGuide_before =>
-      'Make a private channel for the trip. Everyone joins it, adds each other as contacts and posts on it once.';
+      'Создайте приватный канал для поездки. Все присоединяются к нему, добавляют друг друга в контакты и один раз пишут в нём.';
 
   @override
-  String get traxGuide_trailheadTitle => 'At the trailhead';
+  String get traxGuide_trailheadTitle => 'В начале маршрута';
 
   @override
   String get traxGuide_trailhead =>
-      'Once your radio has a GPS fix, tap the boot print and Switch to TRAX. Your radio moves to the group\'s frequency, and the others get “Switch too?”.';
+      'Когда у радио появится GPS-позиция, нажмите на след ботинка, затем «Перейти в TRAX». Радио перейдёт на частоту группы, а остальные получат «Тоже перейти?».';
 
   @override
-  String get traxGuide_trailTitle => 'On the trail';
+  String get traxGuide_trailTitle => 'На маршруте';
 
   @override
   String get traxGuide_trail =>
-      'Each phone sends its radio\'s location to the trip channel every minute or two, and its track now and then. The three people button on the map lists everyone: how far, which way, when heard.';
+      'Каждый телефон раз в минуту-две отправляет местоположение своего радио в канал поездки, а время от времени — и свой трек. Кнопка с тремя людьми на карте показывает всех: как далеко, в какой стороне, когда их слышали.';
 
   @override
-  String get traxGuide_behindTitle => 'Friends behind you';
+  String get traxGuide_behindTitle => 'Друзья позади';
 
   @override
   String get traxGuide_behind =>
-      'Every radio passes the others\' messages on, so theirs reach the front through you. They see you as your icon on the map; a tap shows your track to follow.';
+      'Каждое радио передаёт сообщения остальных дальше, поэтому их сообщения доходят до тех, кто впереди, через вас. Они видят вас на карте в виде вашего значка; нажатие показывает ваш трек, по которому можно идти.';
 
   @override
-  String get traxGuide_quietTitle => 'Someone quiet?';
+  String get traxGuide_quietTitle => 'Кто-то молчит?';
 
   @override
   String get traxGuide_quiet =>
-      'Their card says when they were last heard. Ask their radio: it answers by itself, even with their phone off.';
+      'В их карточке видно, когда их слышали в последний раз. Спросите их радио: оно ответит само, даже если телефон выключен.';
 
   @override
-  String get traxGuide_joinTitle => 'Joining the next day';
+  String get traxGuide_joinTitle => 'Присоединиться на следующий день';
 
   @override
   String get traxGuide_join =>
-      'Add the trip channel. In TRAX settings pick it and the trip\'s end, and Long range if the group uses it. Then switch. Everyone\'s track from the last 2 days arrives bit by bit.';
+      'Добавьте канал поездки. В настройках TRAX выберите его и конец поездки, а также «Дальний», если группа его использует. Затем переключитесь. Треки всех за последние 2 дня придут постепенно.';
 
   @override
   String get traxGuide_sosTitle => 'SOS';
 
   @override
   String get traxGuide_sos =>
-      'In the trip chat, tap + then SOS. The group gets your location every 2 minutes until you cancel.';
+      'В чате поездки нажмите +, затем SOS. Группа будет получать ваше местоположение каждые 2 минуты, пока вы не отмените.';
 
   @override
-  String get traxGuide_endTitle => 'When the trip ends';
+  String get traxGuide_endTitle => 'Когда поездка закончится';
 
   @override
   String get traxGuide_end =>
-      'MeshTrax asks you to leave. Until you do, the regular mesh can\'t hear you.';
+      'MeshTrax предложит выйти. Пока вы не выйдете, обычная сеть mesh вас не слышит.';
 
   @override
-  String get traxGuide_iconsTitle => 'The icons';
+  String get traxGuide_iconsTitle => 'Значки';
 
   @override
-  String get traxGuide_member => 'A member, as the icon they picked';
+  String get traxGuide_member => 'Участник — в виде выбранного им значка';
 
   @override
-  String get traxGuide_memberText => 'Yours is in TRAX settings.';
+  String get traxGuide_memberText => 'Ваш — в настройках TRAX.';
 
   @override
-  String get traxGuide_old => 'Grey: their GPS position may be old';
+  String get traxGuide_old => 'Серый: их GPS-позиция может быть устаревшей';
 
   @override
-  String get traxGuide_you => 'You';
+  String get traxGuide_you => 'Вы';
 
   @override
-  String get traxGuide_yourTrack => 'Your track';
+  String get traxGuide_yourTrack => 'Ваш трек';
 
   @override
-  String get traxGuide_theirTrack => 'Their track, while their card is open';
+  String get traxGuide_theirTrack => 'Их трек, пока открыта их карточка';
 
   @override
-  String get traxGuide_tripChannel => 'The trip channel';
+  String get traxGuide_tripChannel => 'Канал поездки';
 
   @override
-  String get traxGuide_tripChannelText => 'First in Chats while TRAX is on.';
+  String get traxGuide_tripChannelText =>
+      'Первый в списке «Чаты», пока TRAX включён.';
 
   @override
-  String get traxGuide_dontShowAgain => 'Don\'t show this again';
+  String get traxGuide_dontShowAgain => 'Больше не показывать';
 }
