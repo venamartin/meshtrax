@@ -83,6 +83,7 @@ import '../widgets/structured_message_dialogs.dart';
 import 'path_graph_screen.dart';
 import '../helpers/snack_bar_builder.dart';
 import '../helpers/structured_message.dart';
+import '../helpers/trax_icons.dart';
 import 'repeater_hub_screen.dart';
 import 'settings_screen.dart';
 import 'map_search_screen.dart';
@@ -1731,7 +1732,7 @@ class _MapScreenState extends State<MapScreen> {
           },
           child: _nodeDot(
             p.old ? Colors.grey : const Color(Trax.orange),
-            Icons.hiking,
+            traxIconData(m.report?.icon),
           ),
         ),
   ];
@@ -2803,7 +2804,11 @@ class _MapScreenState extends State<MapScreen> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: p.old ? Colors.grey : const Color(Trax.orange),
-                child: const Icon(Icons.hiking, color: Colors.white, size: 22),
+                child: Icon(
+                  traxIconData(report?.icon),
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -3017,7 +3022,11 @@ class _MapScreenState extends State<MapScreen> {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: old ? Colors.grey : const Color(Trax.orange),
-              child: const Icon(Icons.hiking, color: Colors.white, size: 22),
+              child: Icon(
+                traxIconData(member.report?.icon),
+                color: Colors.white,
+                size: 22,
+              ),
             ),
             title: Text(
               member.name,

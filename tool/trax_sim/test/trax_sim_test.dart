@@ -404,9 +404,13 @@ void main() {
       expect(points, greaterThan(10));
     });
 
-    test('a drive: one older piece halfway between trails, alone and '
-        'without the name', () {
+    test('a drive, as a car: one older piece halfway between trails, alone '
+        'and without the name', () {
       final reports = run(Driver(36.457, -116.866, 300, Random(5)), 2 * 3600);
+      expect(
+        TraxReport.decode(reports.first.$2.encode())!.icon,
+        TraxMapIcon.vehicle,
+      );
       var trailAt = 0;
       var olderSince = false;
       final older = <int>[];

@@ -1148,6 +1148,33 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trax_keepTrackWeek => '1 week';
 
   @override
+  String get trax_icon => 'Your icon';
+
+  @override
+  String get trax_iconHint => 'How the trip sees you on the map.';
+
+  @override
+  String get trax_iconHike => 'Hike';
+
+  @override
+  String get trax_iconVehicle => 'Vehicle';
+
+  @override
+  String get trax_iconBoat => 'Boat';
+
+  @override
+  String get trax_iconMotorcycle => 'Motorcycle';
+
+  @override
+  String get trax_iconBicycle => 'Bicycle';
+
+  @override
+  String get trax_iconAircraft => 'Aircraft';
+
+  @override
+  String get trax_iconCamp => 'Camp';
+
+  @override
   String trax_followBody(String name, String time) {
     return '$name je preklopil v način TRAX do $time. Preklopite tudi vi?';
   }

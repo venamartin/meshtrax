@@ -1,4 +1,4 @@
-import 'package:traxshare/traxshare.dart' show MemberTrack;
+import 'package:traxshare/traxshare.dart' show MemberTrack, TraxMapIcon;
 
 import 'radio_settings.dart';
 
@@ -45,6 +45,9 @@ class TraxSetup {
   /// The choices for [keepTrackHours]: 6 hours to a week.
   static const keepTrackChoices = [6, 12, 24, 48, 72, 168];
 
+  /// How the trip sees this radio on their maps ("Your icon").
+  final TraxMapIcon icon;
+
   const TraxSetup({
     this.preset = TraxPresetKind.mesh,
     this.channelKey,
@@ -55,6 +58,7 @@ class TraxSetup {
     this.added = const {},
     this.removed = const {},
     this.keepTrackHours = MemberTrack.defaultKeepHours,
+    this.icon = TraxMapIcon.hike,
   });
 
   TraxSetup copyWith({
@@ -67,6 +71,7 @@ class TraxSetup {
     Set<String>? added,
     Set<String>? removed,
     int? keepTrackHours,
+    TraxMapIcon? icon,
   }) => TraxSetup(
     preset: preset ?? this.preset,
     channelKey: channelKey == null ? this.channelKey : channelKey(),
@@ -77,6 +82,7 @@ class TraxSetup {
     added: added ?? this.added,
     removed: removed ?? this.removed,
     keepTrackHours: keepTrackHours ?? this.keepTrackHours,
+    icon: icon ?? this.icon,
   );
 
   Map<String, dynamic> toJson() => {
@@ -89,6 +95,7 @@ class TraxSetup {
     if (added.isNotEmpty) 'added': added.toList(),
     if (removed.isNotEmpty) 'removed': removed.toList(),
     'keep_track_hours': keepTrackHours,
+    'icon': icon.name,
   };
 
   static TraxSetup fromJson(Map<String, dynamic> json) => TraxSetup(
@@ -111,6 +118,9 @@ class TraxSetup {
       final int h when keepTrackChoices.contains(h) => h,
       _ => MemberTrack.defaultKeepHours,
     },
+    icon:
+        TraxMapIcon.values.where((i) => i.name == json['icon']).firstOrNull ??
+        TraxMapIcon.hike,
   );
 
   static Set<String> _keys(Object? json) =>

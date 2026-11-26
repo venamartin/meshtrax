@@ -2003,6 +2003,60 @@ abstract class AppLocalizations {
   /// **'1 week'**
   String get trax_keepTrackWeek;
 
+  /// TRAX settings: the icon the other trip members see for you on their maps.
+  ///
+  /// In en, this message translates to:
+  /// **'Your icon'**
+  String get trax_icon;
+
+  /// No description provided for @trax_iconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the trip sees you on the map.'**
+  String get trax_iconHint;
+
+  /// No description provided for @trax_iconHike.
+  ///
+  /// In en, this message translates to:
+  /// **'Hike'**
+  String get trax_iconHike;
+
+  /// No description provided for @trax_iconVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get trax_iconVehicle;
+
+  /// No description provided for @trax_iconBoat.
+  ///
+  /// In en, this message translates to:
+  /// **'Boat'**
+  String get trax_iconBoat;
+
+  /// No description provided for @trax_iconMotorcycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Motorcycle'**
+  String get trax_iconMotorcycle;
+
+  /// No description provided for @trax_iconBicycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bicycle'**
+  String get trax_iconBicycle;
+
+  /// No description provided for @trax_iconAircraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get trax_iconAircraft;
+
+  /// The TRAX icon for a radio left at camp.
+  ///
+  /// In en, this message translates to:
+  /// **'Camp'**
+  String get trax_iconCamp;
+
   /// No description provided for @trax_followBody.
   ///
   /// In en, this message translates to:

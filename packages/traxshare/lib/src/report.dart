@@ -9,6 +9,12 @@ import 'trail.dart';
 /// firmware's docs/number_allocations.md (meshcore-dev/MeshCore#3925).
 const traxshareDataType = 0x0171;
 
+/// What a member goes by, as the trip sees them on the map. A report
+/// carries it in the low 4 bits of byte 28: 0 is [hike], as builds before
+/// test build 243 send, and one this build doesn't know is [hike] too.
+/// New ones go at the end.
+enum TraxMapIcon { hike, vehicle, boat, motorcycle, bicycle, aircraft, camp }
+
 /// A member's location, as version 1's REPORT (subtype 2) carries it. The
 /// layout is version 1 of the closed location-sharing plan (#240); later
 /// fields add to it rather than replace it. How TRAX uses it:
@@ -16,8 +22,8 @@ const traxshareDataType = 0x0171;
 ///
 /// 29 bytes: a 12-byte header (version and subtype, seq, sender prefix,
 /// session, sent at), then the field mask, the position, the fix age,
-/// heading, speed, altitude, battery and status. Multi-byte numbers are
-/// little-endian. The sender's name may follow, then pieces of their track
+/// heading, speed, altitude, battery, and the icon in the low 4 bits of the
+/// last byte (the high 4 are free). Multi-byte numbers are little-endian. The sender's name may follow, then pieces of their track
 /// ([TrackBlock]), all within [maxSize].
 class TraxReport {
   const TraxReport({
@@ -35,6 +41,7 @@ class TraxReport {
     this.battery,
     this.mayBeOld = false,
     this.requester = false,
+    this.icon = TraxMapIcon.hike,
     this.name,
     this.track,
   });
@@ -110,6 +117,8 @@ class TraxReport {
   /// Sent by the session's requester; a TRAX beacon is its own session.
   final bool requester;
 
+  final TraxMapIcon icon;
+
   /// The sender's radio name, for members who aren't a contact.
   final String? name;
 
@@ -174,6 +183,7 @@ class TraxReport {
       data.setInt16(25, altitude!.clamp(-32768, 32767), Endian.little);
     }
     if (battery != null) out[27] = battery!.clamp(0, 100);
+    out[28] = icon.index;
     if (nameBytes != null) {
       out[size] = 2 + nameBytes.length;
       out[size + 1] = _nameTag;
@@ -230,6 +240,9 @@ class TraxReport {
       battery: mask & _batteryBit != 0 && battery <= 100 ? battery : null,
       mayBeOld: mask & _mayBeOldBit != 0,
       requester: mask & _requesterBit != 0,
+      icon:
+          TraxMapIcon.values.elementAtOrNull(data[28] & 0x0F) ??
+          TraxMapIcon.hike,
       name: name,
       track: track,
     );

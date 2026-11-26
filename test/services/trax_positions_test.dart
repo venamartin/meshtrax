@@ -22,6 +22,7 @@ import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/models/radio_settings.dart';
 import 'package:meshtrax/models/trax.dart';
 import 'package:meshtrax/screens/map_screen.dart';
+import 'package:meshtrax/screens/trax_settings_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/map_packs_service.dart';
 import 'package:meshtrax/services/path_graph/path_graph_service.dart';
@@ -267,6 +268,7 @@ TraxReport _report(
   double? heading,
   double? speed,
   Duration? stillFor,
+  TraxMapIcon icon = TraxMapIcon.hike,
 }) => TraxReport(
   seq: 0,
   senderPrefix: _key(b).sublist(0, 4),
@@ -283,6 +285,7 @@ TraxReport _report(
   stillFor: stillFor,
   altitude: altitude,
   battery: battery,
+  icon: icon,
 );
 
 ChannelDatagram _datagram(
@@ -473,6 +476,17 @@ void main() {
       final still = positions.all.single;
       expect(still.stillSince, later.subtract(const Duration(minutes: 80)));
       expect((still.heading, still.speed), (null, null));
+    });
+
+    test('their icon is their latest report\'s, kept across restarts; the '
+        'hiker from a build before 243', () async {
+      radio.datagrams.add(_datagram(_report(0x11, icon: TraxMapIcon.boat)));
+      expect(positions.of(bo)!.icon, TraxMapIcon.boat);
+      positions.dispose();
+      positions = TripPositions(radio, trax, clock: clock);
+      expect(positions.of(bo)!.icon, TraxMapIcon.boat, reason: 'restart');
+      radio.datagrams.add(_datagram(_report(0x11)));
+      expect(positions.of(bo)!.icon, TraxMapIcon.hike);
     });
 
     test('kept per radio across restarts, for 30 days', () async {
@@ -1005,6 +1019,38 @@ void main() {
         trip.dispose();
       },
     );
+
+    test('Your icon comes from TRAX settings, the hiker unless set, and goes '
+        'in every report', () async {
+      expect(const TraxSetup().icon, TraxMapIcon.hike);
+      TraxSetup back(Map<String, dynamic> json) =>
+          TraxSetup.fromJson(jsonDecode(jsonEncode(json)));
+      expect(
+        back(const TraxSetup(icon: TraxMapIcon.boat).toJson()).icon,
+        TraxMapIcon.boat,
+      );
+      expect(back({'icon': 'sled'}).icon, TraxMapIcon.hike);
+      await trax.updateSetup(trax.setup.copyWith(icon: TraxMapIcon.vehicle));
+      fakeAsync((async) {
+        DateTime fake() => _t0.add(async.elapsed);
+        final trip = TripService(radio, trax, _Asks(radio), clock: fake);
+        radio.read(36.4570, -116.8660);
+        final beacon = TraxBeaconService(
+          radio,
+          trax,
+          trip,
+          random: Random(1),
+          clock: fake,
+        );
+        async.elapse(const Duration(minutes: 3));
+        expect(radio.sends.length, greaterThanOrEqualTo(2));
+        for (final (_, _, payload) in radio.sends) {
+          expect(TraxReport.decode(payload)!.icon, TraxMapIcon.vehicle);
+        }
+        beacon.dispose();
+        trip.dispose();
+      });
+    });
   });
 
   group('the track', () {
@@ -1770,6 +1816,73 @@ void main() {
       );
       await tester.tap(find.text('Close'));
       await settle();
+      await stopServices(tester);
+    });
+
+    testWidgets('a member shows as the icon they picked: their pin, their '
+        'card and the TRAX group', (tester) async {
+      startServices();
+      radio.datagrams.add(
+        _datagram(
+          _report(0x55, name: 'Dee', lat: 36.46, icon: TraxMapIcon.boat),
+          receivedAt: now,
+        ),
+      );
+      await pumpApp(tester, const MapScreen());
+      Future<void> settle() async {
+        for (var i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      final pin = marker(tester, 'trip:55555555');
+      expect(
+        ((pin.child! as Container).child! as Icon).icon,
+        Icons.directions_boat,
+      );
+      final avatar = find.descendant(
+        of: find.byType(CircleAvatar),
+        matching: find.byIcon(Icons.directions_boat),
+      );
+      pin.onTap!();
+      await settle();
+      expect(avatar, findsOneWidget, reason: 'card');
+      await tester.tapAt(const Offset(10, 10));
+      await settle();
+      await tester.tap(find.byTooltip('TRAX group'));
+      await settle();
+      expect(avatar, findsOneWidget, reason: 'list');
+      await stopServices(tester);
+    });
+
+    testWidgets('Your icon in TRAX settings: the hiker unless picked, from '
+        'seven', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      startServices();
+      await pumpApp(tester, const TraxSettingsScreen());
+      const hint = 'How the trip sees you on the map.';
+      expect(find.text('Hike · $hint'), findsOneWidget);
+      await tester.tap(find.text('Your icon'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      for (final name in [
+        'Hike',
+        'Vehicle',
+        'Boat',
+        'Motorcycle',
+        'Bicycle',
+        'Aircraft',
+        'Camp',
+      ]) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      await tester.tap(find.text('Boat'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(trax.setup.icon, TraxMapIcon.boat);
+      expect(find.text('Boat · $hint'), findsOneWidget);
       await stopServices(tester);
     });
 

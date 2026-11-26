@@ -14,6 +14,7 @@ TraxReport _report({
   int? battery = 81,
   bool mayBeOld = false,
   bool requester = true,
+  TraxMapIcon icon = TraxMapIcon.hike,
   String? name,
   double? heading,
   double? speed,
@@ -30,6 +31,7 @@ TraxReport _report({
   battery: battery,
   mayBeOld: mayBeOld,
   requester: requester,
+  icon: icon,
   name: name,
   heading: heading,
   speed: speed,
@@ -157,6 +159,26 @@ void main() {
       TraxReport.decode(_report(mayBeOld: true).encode())!.mayBeOld,
       isTrue,
     );
+  });
+
+  test('the icon goes in the low 4 bits of the last byte; one this build '
+      'doesn\'t know, or none as before 243, is the hiker', () {
+    for (final icon in TraxMapIcon.values) {
+      final bytes = _report(icon: icon).encode();
+      expect(bytes.length, TraxReport.size);
+      expect(bytes[28], icon.index);
+      expect(TraxReport.decode(bytes)!.icon, icon);
+    }
+    final bytes = _report(icon: TraxMapIcon.boat).encode();
+    bytes[28] |= 0xF0;
+    expect(
+      TraxReport.decode(bytes)!.icon,
+      TraxMapIcon.boat,
+      reason: 'free bits',
+    );
+    bytes[28] = 0x0F;
+    expect(TraxReport.decode(bytes)!.icon, TraxMapIcon.hike);
+    expect(TraxReport.decode(_report().encode())!.icon, TraxMapIcon.hike);
   });
 
   test('the name goes in an extension block', () {

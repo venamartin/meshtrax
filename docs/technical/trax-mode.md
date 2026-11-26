@@ -46,6 +46,7 @@ One set per phone, in the preferences store under `trax_setup`:
   - not a hashtag channel, whose key `sha256('#' + name)` anyone can work out. A `#` name cut at the radio's 31-byte limit can't be checked, so it counts as a hashtag channel.
 - **Trip ends:** a date and time. Switching needs one in the future.
 - **Keep my track:** 48 hours by default (`keepTrackHours`: 6, 12, 24, 48 or 72 hours, or a week). It is how far back your own line goes, what the group gets of it, and when every phone deletes each piece of it.
+- **Your icon:** how the trip sees you on their maps, cards and TRAX group list (`icon`): Hike (default), Vehicle, Boat, Motorcycle, Bicycle, Aircraft or Camp. Your own position stays the blue GPS dot.
 - **Tell the group:** on by default.
 - **Trip members:** everyone who posted on the trip channel in the last 30 days and is the one contact of that name on this radio, matched by name as the @ list does. New posters are added as they post. Members can be added or removed by hand (`added`, `removed`). A poster who isn't a contact shows "Not a contact on this radio".
 - **Members can ask my radio:** on by default (`askMyRadio`). See [Trip setup](#trip-setup-members-can-ask-my-radio).
@@ -171,7 +172,8 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
   - the position to 1e-5°, the fix age and the altitude;
   - the radio's battery, and a "may be old" flag;
   - how the person is moving. While moving, that is heading (1.4° steps) and speed (0.5 m/s steps), worked out over the last 50 m or more of the track, because the radio reports positions in 11 m steps. From 2 minutes after the last move, it is "not moving" (bit 12) and for how many minutes, held in the speed byte.
-  - the sender's name every 30 minutes.
+  - the sender's name every 30 minutes;
+  - their icon (`TraxMapIcon`) in the low 4 bits of the last byte, in every report: 0 is Hike, as builds before test build 243 send, and one a build doesn't know shows as Hike. The high 4 bits are free.
 - **The data type** is `0x0171` (`71 01` on air), in MeshTrax's block `0x0170` to `0x017F`, requested in meshcore-dev/MeshCore#3925. Channel datagrams need companion firmware 1.15 (version code 11). On older firmware the sheet says "This radio's firmware can't send your location to the trip. Update it."
 - **Your track** (`TraxTrack`): while TRAX mode is on, the radio is read every 10 s, and a point is kept every 25 m. It is kept in pieces (`TrackPiece`), for your own line on the map and for the reports; there is no list of saved tracks.
   - A piece closes once its points, thinned to 15 m on an 8 m grid, would take more than 108 bytes, or at 500 points. The next starts at its last point.
@@ -290,7 +292,7 @@ These are ideas from the closed plans, kept for later. None of them is decided.
   - Route here to a member, carrying the time of their position;
   - "Details for a search" and "Send to this channel" on their card.
 - **In reports:**
-  - a one-tap status (OK, need help, heading back) and an optional "back by" time;
+  - a one-tap status (OK, need help, heading back) and an optional "back by" time. The status could take the high 4 bits of the last byte;
   - a setting to turn the trail off;
   - an early report on a sharp turn;
   - a "drawn to within N m" note on a trail.

@@ -462,6 +462,17 @@
   "trax_keepTrackHours": "{hours} hours",
   "@trax_keepTrackHours": {"placeholders": {"hours": {"type": "int"}}},
   "trax_keepTrackWeek": "1 week",
+  "trax_icon": "Your icon",
+  "@trax_icon": {"description": "TRAX settings: the icon the other trip members see for you on their maps."},
+  "trax_iconHint": "How the trip sees you on the map.",
+  "trax_iconHike": "Hike",
+  "trax_iconVehicle": "Vehicle",
+  "trax_iconBoat": "Boat",
+  "trax_iconMotorcycle": "Motorcycle",
+  "trax_iconBicycle": "Bicycle",
+  "trax_iconAircraft": "Aircraft",
+  "trax_iconCamp": "Camp",
+  "@trax_iconCamp": {"description": "The TRAX icon for a radio left at camp."},
   "trax_followBody": "{name} switched to TRAX mode until {time}. Switch too?",
   "@trax_followBody": {
     "placeholders": {

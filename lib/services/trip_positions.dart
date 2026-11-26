@@ -28,6 +28,7 @@ class TripPosition {
     this.stillSince,
     this.mayBeOld = false,
     this.name,
+    this.icon = TraxMapIcon.hike,
     required this.track,
     this.tail = const [],
   });
@@ -58,6 +59,9 @@ class TripPosition {
 
   /// The sender's radio name, from the reports that carry it.
   final String? name;
+
+  /// How they show on the map, as they picked it.
+  final TraxMapIcon icon;
 
   /// The pieces of their track this phone has.
   final MemberTrack track;
@@ -99,6 +103,7 @@ class TripPosition {
     'still': ?stillSince?.millisecondsSinceEpoch,
     if (mayBeOld) 'old': true,
     'name': ?name,
+    if (icon != TraxMapIcon.hike) 'icon': icon.name,
     if (!track.isEmpty)
       'track': {
         'keep': track.keepHours,
@@ -147,6 +152,9 @@ class TripPosition {
           : null,
       mayBeOld: json['old'] == true,
       name: name is String ? name : null,
+      icon:
+          TraxMapIcon.values.where((i) => i.name == json['icon']).firstOrNull ??
+          TraxMapIcon.hike,
       track: switch (json['track']) {
         {'keep': final int keep, 'pieces': final List pieces} => MemberTrack(
           keepHours: keep,
@@ -362,6 +370,7 @@ class TripPositions extends ChangeNotifier {
       },
       mayBeOld: report.mayBeOld,
       name: report.name ?? before?.name,
+      icon: report.icon,
     );
     _prune();
     _changed();
@@ -451,6 +460,7 @@ class TripPositions extends ChangeNotifier {
           stillSince: value.stillSince,
           mayBeOld: value.mayBeOld,
           name: value.name,
+          icon: value.icon,
           track: value.track,
         );
         changed = true;

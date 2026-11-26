@@ -240,6 +240,7 @@ class TraxBeaconService extends ChangeNotifier {
       battery: c.batteryPercent,
       mayBeOld: !c.selfGpsIsFresh,
       requester: true,
+      icon: _trax.setup.icon,
       name: name,
       track: block,
     );

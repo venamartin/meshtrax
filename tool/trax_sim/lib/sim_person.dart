@@ -163,6 +163,7 @@ class SimPerson {
       fixAge: Duration(seconds: _random.nextInt(10)),
       battery: battery,
       requester: true,
+      icon: mover is Driver ? TraxMapIcon.vehicle : TraxMapIcon.hike,
       name: sendName,
       track: block,
     );
