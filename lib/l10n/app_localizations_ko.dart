@@ -1249,9 +1249,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trip_sosTitle => '방해 금지 모드에서도 SOS가 울리게 할까요?';
 
   @override
-  String get trip_sosBody => '설정을 열고 방해 금지 무시를 허용하세요.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return 'TRAX에 $on/$total';
   }
@@ -6200,6 +6197,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS가 취소되었습니다 · 무전기를 기다리는 중';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS 알림';
 
   @override
@@ -6231,8 +6236,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_sosThroughDnd => '방해 금지 모드에서도 울립니다.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      '방해 금지 모드에서는 무음이 됩니다. 탭하여 방해 금지 무시를 허용하세요.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked => '휴대폰에서 SOS 알림이 꺼져 있습니다. 탭하여 켜세요.';

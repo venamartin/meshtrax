@@ -1235,9 +1235,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trip_sosTitle => '让 SOS 在勿扰模式下也响铃？';
 
   @override
-  String get trip_sosBody => '打开设置，然后允许“覆盖勿扰模式”。';
-
-  @override
   String trip_onTrax(int on, int total) {
     return 'TRAX 上 $on/$total';
   }
@@ -6080,6 +6077,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS 已取消 · 正在等待电台';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS 警报';
 
   @override
@@ -6111,7 +6116,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appSettings_sosThroughDnd => '在勿扰模式下也会响铃。';
 
   @override
-  String get appSettings_sosSilencedByDnd => '勿扰模式会让它静音。点按并允许“覆盖勿扰模式”。';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked => '手机已关闭 SOS 警报。点按以开启。';

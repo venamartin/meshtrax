@@ -660,9 +660,12 @@ final List<HealthRule> healthRules = [
     dialog: HealthDialog.sosSettings,
     notes:
         'Android only: elsewhere the state is unknown and the rule passes. '
-        'Fix opens the SOS alerts category, made first so its page exists, '
-        'where the user switches on Override Do Not Disturb. Also flags SOS '
-        'alerts turned off on the phone. With notifications off in the app, '
+        'Fix (fixSosAlerts) first says where the switch is, then opens it: '
+        'on Samsung the Do not disturb page (App notifications → Add apps; '
+        'its category page has no such switch), elsewhere the SOS alerts '
+        'category, made first so its page exists, with Override Do Not '
+        'Disturb. Also flags SOS alerts turned off on the phone; Fix then '
+        'opens the category page. With notifications off in the app, '
         'app_notifications_off speaks instead (owner, 2026-11-18).',
   ),
   HealthRule(

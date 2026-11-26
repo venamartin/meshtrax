@@ -1282,10 +1282,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get trip_sosTitle => 'Щоб SOS звучав навіть у режимі «Не турбувати»?';
 
   @override
-  String get trip_sosBody =>
-      'Відкрийте налаштування й дозвольте ігнорувати «Не турбувати».';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on з $total на TRAX';
   }
@@ -6472,6 +6468,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS скасовано · чекаємо на рацію';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS-сповіщення';
 
   @override
@@ -6507,8 +6511,8 @@ class AppLocalizationsUk extends AppLocalizations {
       'Звучить навіть у режимі «Не турбувати».';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Режим «Не турбувати» глушить його. Натисніть і дозвольте ігнорувати «Не турбувати».';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

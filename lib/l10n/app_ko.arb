@@ -335,7 +335,6 @@
   },
   "trip_advertsHint": "TRAX 모드에서. 범위 안의 누구나 읽을 수 있습니다.",
   "trip_sosTitle": "방해 금지 모드에서도 SOS가 울리게 할까요?",
-  "trip_sosBody": "설정을 열고 방해 금지 무시를 허용하세요.",
   "trip_onTrax": "TRAX에 {on}/{total}",
   "@trip_onTrax": {
     "placeholders": {
@@ -2576,7 +2575,6 @@
   "appSettings_sosAlerts": "SOS 알림",
   "appSettings_sosAlways": "SOS는 음소거한 채팅이나 메시지 알림이 꺼져 있어도 항상 알립니다.",
   "appSettings_sosThroughDnd": "방해 금지 모드에서도 울립니다.",
-  "appSettings_sosSilencedByDnd": "방해 금지 모드에서는 무음이 됩니다. 탭하여 방해 금지 무시를 허용하세요.",
   "appSettings_sosBlocked": "휴대폰에서 SOS 알림이 꺼져 있습니다. 탭하여 켜세요.",
   "appSettings_sosApple": "이 기기에서는 집중 모드와 무음 모드가 여전히 무음으로 만들 수 있습니다.",
   "appSettings_sosOff": "알림이 꺼져 있어 SOS 알림도 꺼져 있습니다.",

@@ -2231,12 +2231,6 @@ abstract class AppLocalizations {
   /// **'Let an SOS ring through Do Not Disturb?'**
   String get trip_sosTitle;
 
-  /// No description provided for @trip_sosBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Open settings, then allow Override Do Not Disturb.'**
-  String get trip_sosBody;
-
   /// No description provided for @trip_onTrax.
   ///
   /// In en, this message translates to:
@@ -10774,6 +10768,18 @@ abstract class AppLocalizations {
   /// **'SOS cancelled · waiting for the radio'**
   String get sos_cancelledWaiting;
 
+  /// No description provided for @sos_dndStepsSamsung.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.'**
+  String get sos_dndStepsSamsung;
+
+  /// No description provided for @sos_dndStepsOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.'**
+  String get sos_dndStepsOther;
+
   /// No description provided for @notification_sosChannel.
   ///
   /// In en, this message translates to:
@@ -10828,11 +10834,11 @@ abstract class AppLocalizations {
   /// **'It sounds through Do Not Disturb.'**
   String get appSettings_sosThroughDnd;
 
-  /// No description provided for @appSettings_sosSilencedByDnd.
+  /// No description provided for @appSettings_sosLetThroughDnd.
   ///
   /// In en, this message translates to:
-  /// **'Do Not Disturb silences it. Tap and allow Override Do Not Disturb.'**
-  String get appSettings_sosSilencedByDnd;
+  /// **'Do Not Disturb silences it. Tap to let it through.'**
+  String get appSettings_sosLetThroughDnd;
 
   /// No description provided for @appSettings_sosBlocked.
   ///

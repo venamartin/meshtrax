@@ -335,7 +335,6 @@
   },
   "trip_advertsHint": "TRAXモード中。範囲内の誰でも読めます。",
   "trip_sosTitle": "サイレントモードでもSOSを鳴らしますか？",
-  "trip_sosBody": "設定を開き、「サイレントモードを無視」を許可してください。",
   "trip_onTrax": "TRAX上 {on}/{total}",
   "@trip_onTrax": {
     "placeholders": {
@@ -2576,7 +2575,6 @@
   "appSettings_sosAlerts": "SOSアラート",
   "appSettings_sosAlways": "SOSは、ミュートしたチャットやメッセージ通知がオフでも必ず通知します。",
   "appSettings_sosThroughDnd": "サイレントモード中も鳴ります。",
-  "appSettings_sosSilencedByDnd": "サイレントモードで消音されます。タップして「サイレントモードを無視」を許可してください。",
   "appSettings_sosBlocked": "電話でSOSアラートがオフになっています。タップしてオンにしてください。",
   "appSettings_sosApple": "このデバイスでは集中モードと消音モードでまだ消音される場合があります。",
   "appSettings_sosOff": "通知がオフのため、SOSアラートもオフです。",

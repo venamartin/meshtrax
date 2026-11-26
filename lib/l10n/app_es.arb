@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "En modo TRAX. Cualquiera a su alcance puede leerla.",
   "trip_sosTitle": "¿Que un SOS suene aunque esté No molestar?",
-  "trip_sosBody": "Abre los ajustes y permite Ignorar No molestar.",
   "trip_onTrax": "{on} de {total} en TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2566,7 +2565,6 @@
   "appSettings_sosAlerts": "Alertas SOS",
   "appSettings_sosAlways": "Un SOS siempre avisa, incluso en un chat silenciado o con las notificaciones de mensajes desactivadas.",
   "appSettings_sosThroughDnd": "Suena aunque esté activado No molestar.",
-  "appSettings_sosSilencedByDnd": "No molestar lo silencia. Toca y permite Ignorar No molestar.",
   "appSettings_sosBlocked": "El teléfono tiene las alertas SOS desactivadas. Toca para activarlas.",
   "appSettings_sosApple": "Los modos de concentración y el modo silencio aún pueden silenciarlo en este dispositivo.",
   "appSettings_sosOff": "Las notificaciones están desactivadas, así que las alertas SOS también.",

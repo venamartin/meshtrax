@@ -547,7 +547,6 @@
   },
   "trip_advertsHint": "In TRAX mode. Anyone in range can read it.",
   "trip_sosTitle": "Let an SOS ring through Do Not Disturb?",
-  "trip_sosBody": "Open settings, then allow Override Do Not Disturb.",
   "trip_onTrax": "{on} of {total} on TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -3247,6 +3246,8 @@
   "sos_activeWaiting": "Your SOS is active · waiting for the radio",
   "sos_stoppedSendAgain": "Your SOS stopped · Send again",
   "sos_cancelledWaiting": "SOS cancelled · waiting for the radio",
+  "sos_dndStepsSamsung": "Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.",
+  "sos_dndStepsOther": "Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.",
   "notification_sosChannel": "SOS alerts",
   "notification_sosChannelDescription": "An SOS sent to you or to a chat you are in",
   "notification_sosFrom": "SOS from {name}",
@@ -3258,7 +3259,7 @@
   "appSettings_sosAlerts": "SOS alerts",
   "appSettings_sosAlways": "An SOS always alerts, even in a muted chat or with message notifications off.",
   "appSettings_sosThroughDnd": "It sounds through Do Not Disturb.",
-  "appSettings_sosSilencedByDnd": "Do Not Disturb silences it. Tap and allow Override Do Not Disturb.",
+  "appSettings_sosLetThroughDnd": "Do Not Disturb silences it. Tap to let it through.",
   "appSettings_sosBlocked": "The phone has SOS alerts turned off. Tap to turn them on.",
   "appSettings_sosApple": "Focus and silent mode can still silence it on this device.",
   "appSettings_sosOff": "Notifications are off, so SOS alerts are off too.",

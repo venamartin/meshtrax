@@ -40,6 +40,7 @@ import '../services/region_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../widgets/position_picker_map.dart';
 import '../widgets/radio_stats_entry.dart';
+import '../widgets/sos_dnd_dialog.dart';
 import '../widgets/trax_dialogs.dart';
 import '../utils/platform_info.dart';
 import 'package:traxmap/traxmap.dart' show LatLng;
@@ -367,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       HealthDialog.location => _editLocation(context, connector),
       HealthDialog.batterySettings => BatterySleepService.openSettings(),
       HealthDialog.notificationSettings => NotificationService().askToAllow(),
-      HealthDialog.sosSettings => NotificationService().openSosSettings(),
+      HealthDialog.sosSettings => fixSosAlerts(context),
       HealthDialog.soundSettings => NotificationService().openSoundSettings(),
     };
   }

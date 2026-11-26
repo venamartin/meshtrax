@@ -278,7 +278,6 @@
   },
   "trip_advertsHint": "V režime TRAX. Môže ju prečítať ktokoľvek v dosahu.",
   "trip_sosTitle": "Má SOS zvoniť aj v režime Nerušiť?",
-  "trip_sosBody": "Otvorte nastavenia a povoľte prepísanie režimu Nerušiť.",
   "trip_onTrax": "{on} z {total} na TRAX",
   "@trip_onTrax": {
     "placeholders": {
@@ -2538,7 +2537,6 @@
   "appSettings_sosAlerts": "Upozornenia SOS",
   "appSettings_sosAlways": "SOS vždy upozorní, aj v stlmenom chate alebo pri vypnutých upozorneniach na správy.",
   "appSettings_sosThroughDnd": "Zaznie aj v režime Nerušiť.",
-  "appSettings_sosSilencedByDnd": "Režim Nerušiť ho stlmí. Ťuknite a povoľte prepísanie režimu Nerušiť.",
   "appSettings_sosBlocked": "Telefón má upozornenia SOS vypnuté. Ťuknutím ich zapnete.",
   "appSettings_sosApple": "Režimy sústredenia a tichý režim ho na tomto zariadení stále môžu stlmiť.",
   "appSettings_sosOff": "Upozornenia sú vypnuté, takže aj upozornenia SOS.",

@@ -1293,10 +1293,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Faire sonner un SOS même en mode Ne pas déranger ?';
 
   @override
-  String get trip_sosBody =>
-      'Ouvrez les paramètres, puis autorisez Ignorer Ne pas déranger.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on sur $total sur TRAX';
   }
@@ -6489,6 +6485,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS annulé · en attente de la radio';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'Alertes SOS';
 
   @override
@@ -6524,8 +6528,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Il sonne même en mode Ne pas déranger.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Ne pas déranger le rend muet. Touchez et autorisez Ignorer Ne pas déranger.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

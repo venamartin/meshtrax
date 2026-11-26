@@ -13,6 +13,7 @@ import '../models/trax.dart';
 import '../services/notification_service.dart';
 import '../services/trax_service.dart';
 import '../storage/prefs_manager.dart';
+import 'sos_dnd_dialog.dart';
 
 /// "Sunday 18:00": a trip's end in this phone's time zone.
 String traxTimeText(BuildContext context, DateTime t) =>
@@ -52,26 +53,7 @@ Future<void> offerSosThroughDnd(BuildContext context) async {
   final state = await NotificationService().sosAlertState();
   if (state != SosAlertState.silencedByDnd || !context.mounted) return;
   await prefs.setBool(_sosOfferedKey, true);
-  if (!context.mounted) return;
-  final l10n = context.l10n;
-  final open = await showDialog<bool>(
-    context: context,
-    builder: (dialog) => AlertDialog(
-      title: Text(l10n.trip_sosTitle),
-      content: Text(l10n.trip_sosBody),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialog, false),
-          child: Text(l10n.trax_notNow),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialog, true),
-          child: Text(l10n.batterySleep_openSettings),
-        ),
-      ],
-    ),
-  );
-  if (open == true) await NotificationService().openSosSettings();
+  if (context.mounted) await askSosThroughDnd(context);
 }
 
 void _report(BuildContext context, String? text) {

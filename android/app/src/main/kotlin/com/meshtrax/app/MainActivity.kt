@@ -49,6 +49,10 @@ class MainActivity : FlutterActivity() {
                         openNotificationChannelSettings(call.argument<String>("channelId"))
                         result.success(null)
                     }
+                    "openDndSettings" -> {
+                        openDndSettings(call.argument<String>("channelId"))
+                        result.success(null)
+                    }
                     "getAlarmVolume" -> result.success(alarmVolume())
                     "openSoundSettings" -> {
                         openSoundSettings()
@@ -140,9 +144,9 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    // One category's page, where its sound and "Override Do Not Disturb"
-    // are set. The category must exist already; without the page, the
-    // app's notification settings.
+    // One category's page, where its sound and, except on Samsung,
+    // "Override Do Not Disturb" are set. The category must exist already;
+    // without the page, the app's notification settings.
     private fun openNotificationChannelSettings(channelId: String?) {
         if (channelId == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             openNotificationSettings()
@@ -157,6 +161,23 @@ class MainActivity : FlutterActivity() {
         } catch (e: ActivityNotFoundException) {
             openNotificationSettings()
         }
+    }
+
+    // The Do Not Disturb page. Samsung lets a category through from there
+    // (App notifications → Add apps), not from the category's own page.
+    // ZEN_MODE_SETTINGS is hidden in the SDK, but its page is exported.
+    private fun openDndSettings(channelId: String?) {
+        for (action in listOf(
+            "android.settings.ZEN_MODE_SETTINGS",
+            Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS,
+        )) {
+            try {
+                startActivity(Intent(action))
+                return
+            } catch (e: ActivityNotFoundException) {
+            }
+        }
+        openNotificationChannelSettings(channelId)
     }
 
     // The SOS alert sounds at the alarm volume: what it is and its most.

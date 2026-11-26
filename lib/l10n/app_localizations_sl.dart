@@ -1280,10 +1280,6 @@ class AppLocalizationsSl extends AppLocalizations {
   String get trip_sosTitle => 'Naj SOS zazvoni tudi v načinu Ne moti?';
 
   @override
-  String get trip_sosBody =>
-      'Odprite nastavitve in dovolite preglasitev načina Ne moti.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on od $total na TRAX';
   }
@@ -6443,6 +6439,14 @@ class AppLocalizationsSl extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS preklican · čaka na radio';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'Opozorila SOS';
 
   @override
@@ -6477,8 +6481,8 @@ class AppLocalizationsSl extends AppLocalizations {
   String get appSettings_sosThroughDnd => 'Zazvoni tudi v načinu Ne moti.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'Način Ne moti ga utiša. Tapnite in dovolite preglasitev načina Ne moti.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>

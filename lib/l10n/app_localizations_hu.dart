@@ -1284,10 +1284,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trip_sosTitle => 'Szóljon az SOS Ne zavarjanak módban is?';
 
   @override
-  String get trip_sosBody =>
-      'Nyissa meg a beállításokat, és engedélyezze a Ne zavarjanak felülbírálását.';
-
-  @override
   String trip_onTrax(int on, int total) {
     return '$on/$total a TRAX-on';
   }
@@ -6462,6 +6458,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get sos_cancelledWaiting => 'SOS visszavonva · várakozás a rádióra';
 
   @override
+  String get sos_dndStepsSamsung =>
+      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+
+  @override
+  String get sos_dndStepsOther =>
+      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+
+  @override
   String get notification_sosChannel => 'SOS-riasztások';
 
   @override
@@ -6497,8 +6501,8 @@ class AppLocalizationsHu extends AppLocalizations {
       'A Ne zavarjanak módban is megszólal.';
 
   @override
-  String get appSettings_sosSilencedByDnd =>
-      'A Ne zavarjanak mód elnémítja. Koppintson, és engedélyezze a Ne zavarjanak felülbírálását.';
+  String get appSettings_sosLetThroughDnd =>
+      'Do Not Disturb silences it. Tap to let it through.';
 
   @override
   String get appSettings_sosBlocked =>
