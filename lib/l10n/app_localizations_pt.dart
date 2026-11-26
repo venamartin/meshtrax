@@ -7180,6 +7180,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chats_draft => 'Rascunho';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Bloqueado pelo seu rádio';
 
   @override

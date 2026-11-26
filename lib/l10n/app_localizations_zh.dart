@@ -6757,6 +6757,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chats_draft => '草稿';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => '已被您的电台阻止';
 
   @override

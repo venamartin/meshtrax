@@ -7172,6 +7172,9 @@ class AppLocalizationsBg extends AppLocalizations {
   String get chats_draft => 'Чернова';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Блокирано от радиото ви';
 
   @override

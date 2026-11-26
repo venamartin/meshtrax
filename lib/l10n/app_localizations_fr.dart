@@ -7221,6 +7221,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chats_draft => 'Brouillon';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Bloqué par votre radio';
 
   @override

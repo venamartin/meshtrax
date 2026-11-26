@@ -10,9 +10,11 @@ import '../models/channel.dart';
 import '../models/channel_message.dart';
 import '../models/contact.dart';
 import '../models/message.dart';
+import '../models/trax.dart';
 import '../services/app_settings_service.dart';
 import '../services/notification_service.dart';
 import '../services/region_service.dart';
+import '../services/trax_service.dart';
 import '../services/ui_view_state_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/disconnect_navigation_mixin.dart';
@@ -30,6 +32,7 @@ import '../widgets/connection_status_banner.dart';
 import '../widgets/contact_name.dart';
 import '../widgets/contact_info_dialog.dart';
 import '../widgets/trax_button.dart';
+import '../widgets/trax_dialogs.dart';
 import '../widgets/icon_help.dart';
 import '../widgets/my_location_button.dart';
 import '../widgets/nickname_pill.dart';
@@ -741,6 +744,7 @@ class _ChatsScreenState extends State<ChatsScreen>
   @override
   Widget build(BuildContext context) {
     final regions = context.watch<RegionService?>();
+    final trax = context.watch<TraxService?>();
     return Consumer<MeshCoreConnector>(
       builder: (context, connector, child) {
         final List<_ChatListItem> chatItems = [];
@@ -864,6 +868,15 @@ class _ChatsScreenState extends State<ChatsScreen>
         // Sort by most recent ARRIVAL, not the claimed send time — the whole
         // point of arrival ordering (v6).
         chatItems.sort((a, b) => b.sortKeyUs.compareTo(a.sortKeyUs));
+
+        // In TRAX mode the trip channel leads the list (Martin, 2026-11-26).
+        final tripKey = trax != null && trax.isOn
+            ? trax.tripChannel?.idKey
+            : null;
+        final trip = chatItems.indexWhere(
+          (i) => tripKey != null && i.channel?.idKey == tripKey,
+        );
+        if (trip > 0) chatItems.insert(0, chatItems.removeAt(trip));
 
         Widget? syncBanner;
         final syncStatus = connector.currentSyncStatus;
@@ -1073,7 +1086,12 @@ class _ChatsScreenState extends State<ChatsScreen>
                               final item = chatItems[index];
                               final isChannel = item.channel != null;
                               final isRoom = item.contact?.type == advTypeRoom;
-                              final iconColor = isChannel
+                              final isTrip =
+                                  tripKey != null &&
+                                  item.channel?.idKey == tripKey;
+                              final iconColor = isTrip
+                                  ? const Color(Trax.orange)
+                                  : isChannel
                                   ? Colors.blue
                                   : isRoom
                                   ? Colors.purple
@@ -1107,10 +1125,16 @@ class _ChatsScreenState extends State<ChatsScreen>
                                     horizontal: 8,
                                     vertical: 4,
                                   ),
+                                  shape: isTrip ? _tripOutline : null,
                                   child: ListTile(
                                     leading: CircleAvatar(
                                       backgroundColor: bgColor,
-                                      child: emojiIcon != null
+                                      child: isTrip
+                                          ? const TraxIcon(
+                                              size: 24,
+                                              color: Color(Trax.orange),
+                                            )
+                                          : emojiIcon != null
                                           ? Text(
                                               emojiIcon,
                                               style: const TextStyle(
@@ -1143,6 +1167,10 @@ class _ChatsScreenState extends State<ChatsScreen>
                                                   const SizedBox(width: 6),
                                                   NicknamePill(pill),
                                                 ],
+                                              if (isTrip) ...[
+                                                const SizedBox(width: 6),
+                                                const _TraxLabel(),
+                                              ],
                                               if (item.channel?.idKey
                                                   case final idKey?)
                                                 if (regions?.regionOf(idKey)
@@ -1358,4 +1386,45 @@ void _showAdvertiseDialog(BuildContext context, MeshCoreConnector connector) {
       ],
     ),
   );
+}
+
+/// The trip channel's row in TRAX mode: outlined in the TRAX orange.
+const _tripOutline = RoundedRectangleBorder(
+  borderRadius: BorderRadius.all(Radius.circular(12)),
+  side: BorderSide(color: Color(Trax.orange), width: 1.5),
+);
+
+/// "TRAX" after the trip channel's name while TRAX mode is on.
+class _TraxLabel extends StatelessWidget {
+  const _TraxLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    const orange = Color(Trax.orange);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      decoration: BoxDecoration(
+        color: orange.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: orange.withValues(alpha: 0.55), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const TraxIcon(size: 11, color: orange),
+          const SizedBox(width: 3),
+          Text(
+            context.l10n.chats_traxLabel,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              // The logo's orange is too dark to read on a dark row.
+              color: dark ? const Color(0xFFFF8A5C) : orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

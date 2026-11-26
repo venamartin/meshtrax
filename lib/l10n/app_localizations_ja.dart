@@ -6868,6 +6868,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chats_draft => '下書き';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => '無線機の設定でブロックされています';
 
   @override

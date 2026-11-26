@@ -7201,6 +7201,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chats_draft => 'Чернетка';
 
   @override
+  String get chats_traxLabel => 'TRAX';
+
+  @override
   String get contact_teleBlockedTitle => 'Заблоковано вашим радіо';
 
   @override
