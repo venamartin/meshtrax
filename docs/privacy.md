@@ -32,7 +32,7 @@ All of the following is stored locally in the App's private storage on your devi
 | Message routing data | Path history and routing weights, kept in one graph per mesh, with the names you give the graphs and the public keys of the repeaters each graph has heard | Improve mesh message delivery, and tell one mesh from another |
 | Where repeaters heard you (GPS radio only) | With a radio that has its GPS on, which repeaters heard it in each area of about 500 m over the last 30 days, with no finer position than that; carried in a Pathfinder backup only when you choose "Include" | Pick routes that work where you are |
 | Offline maps | Map packs, trail routing data, points of interest and addresses you choose to download or install from a drive, and the list of what's available | Show maps, plan routes and search for places without a connection |
-| Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings | Troubleshooting; can be disabled and cleared |
+| Debug logs (optional) | BLE and app diagnostic logs, **only if you enable them** in Settings. The app log keeps its newest 20,000 lines in a file, so they are still there after the App restarts, until you clear the log | Troubleshooting; can be disabled and cleared |
 | Message drafts | Text you typed but have not sent yet | Keep your place in a conversation |
 | Observer sightings (optional) | Only while **Check sends with observers** is on: the observer server you chose, and which observers heard your recent channel messages and photos (name, signal, how many repeaters), for the last 300 | Show the ear on a message and list the observers in its packet path |
 | Photos | For each photo sent or received in a chat: its code (the few hundred bytes that crossed the radio), its tag, its location if the sender included one, for a Subject only photo where its subject is in the picture, and, once it has been rebuilt and passed the safety check, the rebuilt picture. A picture the safety check flags is never kept. Rebuilt pictures are kept in a cache of at most 100 MB, oldest dropped first | Show photos in the chat without rebuilding them each time |
@@ -47,7 +47,7 @@ All of the following is stored locally in the App's private storage on your devi
 
 **Maps from a drive:** When you choose **Use a drive** in Offline maps, the App reads the folder you pick (on a USB drive, an SD card or your device) and copies the map files you choose into its own storage. It reads nothing else there, and sends nothing anywhere.
 
-**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest, addresses, the photo model and rebuilt pictures are kept out of these backups; a photo's code is in them, like your messages.
+**Device backups:** The App itself does not back up or sync your data anywhere. Your device's own backup (Android backup to your Google account, an iCloud or computer backup on iOS, or Time Machine on macOS) can include the App's data, under your account and your backup settings. Downloaded offline maps, trail routing data, points of interest, addresses, the photo model, rebuilt pictures and the app debug log are kept out of these backups; a photo's code is in them, like your messages.
 
 ## Data shared with third parties
 

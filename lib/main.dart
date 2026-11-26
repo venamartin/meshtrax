@@ -48,6 +48,7 @@ import 'services/sos_service.dart';
 import 'services/chat_text_scale_service.dart';
 import 'services/ui_view_state_service.dart';
 import 'services/water_routing_service.dart';
+import 'storage/app_debug_log_store.dart';
 import 'storage/prefs_manager.dart';
 import 'utils/app_logger.dart';
 import 'utils/route_transitions.dart';
@@ -75,7 +76,9 @@ void main() async {
   final retryService = MessageRetryService();
   final appSettingsService = AppSettingsService();
   final bleDebugLogService = BleDebugLogService();
-  final appDebugLogService = AppDebugLogService();
+  final appDebugLogService = AppDebugLogService(
+    store: await AppDebugLogStore.open(),
+  );
   final backgroundService = BackgroundService();
   final chatTextScaleService = ChatTextScaleService();
   final uiViewStateService = UiViewStateService();
@@ -88,6 +91,8 @@ void main() async {
     appDebugLogService,
     enabled: appSettingsService.settings.appDebugLogEnabled,
   );
+  // The lines of earlier runs come back while the app starts.
+  unawaited(appDebugLogService.restore());
 
   // UI stall reporter: a debug-log line for every frame that took 50 ms or
   // longer (three dropped frames), at most two a second so one long stall
