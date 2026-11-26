@@ -15322,6 +15322,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.'**
   String get locationNote_body;
+
+  /// No description provided for @traxGuide_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How TRAX works'**
+  String get traxGuide_title;
+
+  /// No description provided for @traxGuide_lead.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAX shares where everyone is over your radios alone: no cell service, no repeaters. Say you\'re out front, friends are behind you, and more join tomorrow.'**
+  String get traxGuide_lead;
+
+  /// No description provided for @traxGuide_beforeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you go'**
+  String get traxGuide_beforeTitle;
+
+  /// No description provided for @traxGuide_before.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a private channel for the trip. Everyone joins it, adds each other as contacts and posts on it once.'**
+  String get traxGuide_before;
+
+  /// No description provided for @traxGuide_trailheadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'At the trailhead'**
+  String get traxGuide_trailheadTitle;
+
+  /// No description provided for @traxGuide_trailhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Once your radio has a GPS fix, tap the boot print and Switch to TRAX. Your radio moves to the group\'s frequency, and the others get “Switch too?”.'**
+  String get traxGuide_trailhead;
+
+  /// No description provided for @traxGuide_trailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On the trail'**
+  String get traxGuide_trailTitle;
+
+  /// No description provided for @traxGuide_trail.
+  ///
+  /// In en, this message translates to:
+  /// **'Each phone sends its radio\'s location to the trip channel every minute or two, and its track now and then. The three people button on the map lists everyone: how far, which way, when heard.'**
+  String get traxGuide_trail;
+
+  /// No description provided for @traxGuide_behindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends behind you'**
+  String get traxGuide_behindTitle;
+
+  /// No description provided for @traxGuide_behind.
+  ///
+  /// In en, this message translates to:
+  /// **'Every radio passes the others\' messages on, so theirs reach the front through you. They see you as your icon on the map; a tap shows your track to follow.'**
+  String get traxGuide_behind;
+
+  /// No description provided for @traxGuide_quietTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone quiet?'**
+  String get traxGuide_quietTitle;
+
+  /// No description provided for @traxGuide_quiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Their card says when they were last heard. Ask their radio: it answers by itself, even with their phone off.'**
+  String get traxGuide_quiet;
+
+  /// No description provided for @traxGuide_joinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining the next day'**
+  String get traxGuide_joinTitle;
+
+  /// No description provided for @traxGuide_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the trip channel. In TRAX settings pick it and the trip\'s end, and Long range if the group uses it. Then switch. Everyone\'s track from the last 2 days arrives bit by bit.'**
+  String get traxGuide_join;
+
+  /// No description provided for @traxGuide_sosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS'**
+  String get traxGuide_sosTitle;
+
+  /// No description provided for @traxGuide_sos.
+  ///
+  /// In en, this message translates to:
+  /// **'In the trip chat, tap + then SOS. The group gets your location every 2 minutes until you cancel.'**
+  String get traxGuide_sos;
+
+  /// No description provided for @traxGuide_endTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When the trip ends'**
+  String get traxGuide_endTitle;
+
+  /// No description provided for @traxGuide_end.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax asks you to leave. Until you do, the regular mesh can\'t hear you.'**
+  String get traxGuide_end;
+
+  /// No description provided for @traxGuide_iconsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The icons'**
+  String get traxGuide_iconsTitle;
+
+  /// No description provided for @traxGuide_member.
+  ///
+  /// In en, this message translates to:
+  /// **'A member, as the icon they picked'**
+  String get traxGuide_member;
+
+  /// No description provided for @traxGuide_memberText.
+  ///
+  /// In en, this message translates to:
+  /// **'Yours is in TRAX settings.'**
+  String get traxGuide_memberText;
+
+  /// No description provided for @traxGuide_old.
+  ///
+  /// In en, this message translates to:
+  /// **'Grey: their GPS position may be old'**
+  String get traxGuide_old;
+
+  /// No description provided for @traxGuide_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get traxGuide_you;
+
+  /// No description provided for @traxGuide_yourTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Your track'**
+  String get traxGuide_yourTrack;
+
+  /// No description provided for @traxGuide_theirTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Their track, while their card is open'**
+  String get traxGuide_theirTrack;
+
+  /// No description provided for @traxGuide_tripChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip channel'**
+  String get traxGuide_tripChannel;
+
+  /// No description provided for @traxGuide_tripChannelText.
+  ///
+  /// In en, this message translates to:
+  /// **'First in Chats while TRAX is on.'**
+  String get traxGuide_tripChannelText;
+
+  /// No description provided for @traxGuide_dontShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get traxGuide_dontShowAgain;
 }
 
 class _AppLocalizationsDelegate
