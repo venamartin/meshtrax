@@ -10534,6 +10534,84 @@ abstract class AppLocalizations {
   /// **'Heading and speed aren\'t known yet'**
   String get location_motionNotKnown;
 
+  /// No description provided for @add_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact or channel'**
+  String get add_title;
+
+  /// No description provided for @add_box.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or type'**
+  String get add_box;
+
+  /// No description provided for @add_boxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A meshcore:// link, <key:type:name>, #hashtag or a key'**
+  String get add_boxHint;
+
+  /// No description provided for @add_paste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get add_paste;
+
+  /// No description provided for @add_clipboardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s nothing to paste.'**
+  String get add_clipboardEmpty;
+
+  /// No description provided for @add_unreadableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to add yet'**
+  String get add_unreadableTitle;
+
+  /// No description provided for @add_unreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.'**
+  String get add_unreadable;
+
+  /// No description provided for @add_contactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get add_contactName;
+
+  /// No description provided for @add_scanInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a contact or channel QR code'**
+  String get add_scanInstructions;
+
+  /// No description provided for @add_scanUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'That QR code isn\'t a contact or a channel.'**
+  String get add_scanUnreadable;
+
+  /// No description provided for @copy_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copy_link;
+
+  /// No description provided for @copy_asText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as text'**
+  String get copy_asText;
+
+  /// No description provided for @share_asText.
+  ///
+  /// In en, this message translates to:
+  /// **'As text'**
+  String get share_asText;
+
   /// No description provided for @dialog_insert.
   ///
   /// In en, this message translates to:

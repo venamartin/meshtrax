@@ -23,8 +23,8 @@ import '../utils/route_transitions.dart';
 import '../utils/telemetry_dialog.dart';
 import '../helpers/date_time_helper.dart';
 import '../helpers/gif_helper.dart';
-import '../helpers/meshcore_qr.dart';
 import '../helpers/snack_bar_builder.dart';
+import '../widgets/contact_copy_tiles.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/battery_sleep_dialog.dart';
 import '../widgets/clear_chat_dialog.dart';
@@ -43,7 +43,6 @@ import '../widgets/shares_position_icon.dart';
 import '../widgets/routing_dialog.dart';
 import '../widgets/unread_badge.dart';
 
-import 'package:flutter/services.dart';
 
 import 'channel_chat_screen.dart';
 import 'channel_share_screen.dart';
@@ -586,22 +585,12 @@ class _ChatsScreenState extends State<ChatsScreen>
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.copy),
-                title: Text(context.l10n.contacts_ShareContact),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  final data = MeshCoreQr.encodeContact(
-                    contact.name,
-                    pubKeyToHex(contact.publicKey),
-                    contact.type,
-                  );
-                  Clipboard.setData(ClipboardData(text: data));
-                  showDismissibleSnackBar(
-                    context,
-                    content: Text(context.l10n.common_copiedToClipboard),
-                  );
-                },
+              ...contactCopyTiles(
+                context,
+                name: contact.name,
+                keyHex: contact.publicKeyHex,
+                type: contact.type,
+                close: () => Navigator.pop(sheetContext),
               ),
               ListTile(
                 leading: const Icon(Icons.connect_without_contact),
@@ -1363,25 +1352,12 @@ void _showAdvertiseDialog(BuildContext context, MeshCoreConnector connector) {
             );
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.copy),
-          title: Text(l10n.contacts_copyContactToClipboard),
-          onTap: () {
-            Navigator.pop(dialog);
-            Clipboard.setData(
-              ClipboardData(
-                text: MeshCoreQr.encodeContact(
-                  selfName(),
-                  connector.selfPublicKeyHex,
-                  advTypeChat,
-                ),
-              ),
-            );
-            showDismissibleSnackBar(
-              context,
-              content: Text(l10n.common_copiedToClipboard),
-            );
-          },
+        ...contactCopyTiles(
+          context,
+          name: selfName(),
+          keyHex: connector.selfPublicKeyHex,
+          type: advTypeChat,
+          close: () => Navigator.pop(dialog),
         ),
       ],
     ),

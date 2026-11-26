@@ -67,6 +67,12 @@ class ContactShareScreen extends StatelessWidget {
               _copyCard(context, l10n.contacts_publicKey, pubKeyHex),
               const SizedBox(height: 16),
               _copyCard(context, l10n.channels_meshcoreUri, qrData),
+              const SizedBox(height: 16),
+              _copyCard(
+                context,
+                l10n.share_asText,
+                MeshCoreQr.encodeContactText(name, pubKeyHex, type),
+              ),
             ],
           ),
         ),

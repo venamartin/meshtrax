@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../connector/meshcore_connector.dart';
 import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
+import '../models/channel.dart';
 import '../screens/channel_chat_screen.dart';
 import '../services/region_service.dart';
 import 'meshcore_qr.dart';
@@ -41,12 +42,16 @@ class ChannelJoinHelper {
   }
 
   /// [region] comes from the link; it is used only while the regions
-  /// setting lets channel QR codes carry one.
+  /// setting lets channel QR codes carry one. [confirm]: ask first; the Add
+  /// page already showed the channel. [replace]: the chat takes the place
+  /// of the screen it was added from.
   static Future<void> joinChannel(
     BuildContext context, {
     required String name,
     required String pskHex,
     String? region,
+    bool confirm = true,
+    bool replace = false,
   }) async {
     final connector = context.read<MeshCoreConnector>();
     final regions = context.read<RegionService?>();
@@ -64,16 +69,11 @@ class ChannelJoinHelper {
       // Tapped inside that very chat: stay put, don't stack a second copy.
       final here = context.findAncestorWidgetOfExactType<ChannelChatScreen>();
       if (here != null && here.channel.idKey.toLowerCase() == wanted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChannelChatScreen(channel: existing.first),
-        ),
-      );
+      _open(context, existing.first, replace: replace);
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = !confirm || await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.channels_addChannel),
@@ -104,8 +104,8 @@ class ChannelJoinHelper {
           ),
         ],
       ),
-    );
-    if (confirmed != true || !context.mounted) return;
+    ) == true;
+    if (!confirmed || !context.mounted) return;
 
     final slot = nextFreeSlot(connector);
     if (slot == null) {
@@ -127,11 +127,17 @@ class ChannelJoinHelper {
       content: Text(l10n.link_channelJoined(name)),
       backgroundColor: Colors.green,
     );
-    if (channel != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ChannelChatScreen(channel: channel)),
-      );
+    if (channel != null) _open(context, channel, replace: replace);
+  }
+
+  static void _open(BuildContext context, Channel channel, {bool replace = false}) {
+    final route = MaterialPageRoute<void>(
+      builder: (_) => ChannelChatScreen(channel: channel),
+    );
+    if (replace) {
+      Navigator.pushReplacement(context, route);
+    } else {
+      Navigator.push(context, route);
     }
   }
 }
