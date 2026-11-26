@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshtrax/connector/meshcore_connector.dart';
+import 'package:meshtrax/helpers/meshcore_qr.dart';
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/contact.dart';
@@ -185,6 +186,22 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
       expect(radio.added, [('Hiking', _secret)]);
+    });
+
+    testWidgets("a hashtag channel's QR code says Hashtag channel", (
+      tester,
+    ) async {
+      final radio = await open(tester);
+      await type(
+        tester,
+        MeshCoreQr.encodeChannel('#offroad', _hashtagKey('#offroad')),
+      );
+      expect(find.text('Hashtag channel'), findsOneWidget);
+      expect(find.text('Private channel'), findsNothing);
+      expect(find.text('Keep capitals'), findsNothing);
+      await tester.tap(addChannel);
+      await tester.pumpAndSettle();
+      expect(radio.added, [('#offroad', _hashtagKey('#offroad'))]);
     });
 
     testWidgets('a key alone: Add waits for its name', (tester) async {

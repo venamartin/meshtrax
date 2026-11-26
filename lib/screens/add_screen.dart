@@ -80,9 +80,7 @@ class _AddScreenState extends State<AddScreen> {
         null => '',
       };
     });
-    if (found is ChannelFound &&
-        found.isHashtag &&
-        found.typedHashtag != found.name) {
+    if (found is ChannelFound && found.hasCapitals) {
       // With the keyboard up the page shows little more than the box:
       // bring the switch that just appeared into view.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -214,7 +212,13 @@ class _AddScreenState extends State<AddScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.add_title), centerTitle: true),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // Clear of the phone's navigation bar, drawn over the app.
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           TextField(
             controller: _box,
@@ -239,14 +243,14 @@ class _AddScreenState extends State<AddScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          // Paste as wide as its word, the rest for Scan a QR Code: in two
+          // halves it wrapped on a 360 dp phone (the S20).
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _paste,
-                  icon: const Icon(Icons.content_paste),
-                  label: Text(l10n.add_paste),
-                ),
+              OutlinedButton.icon(
+                onPressed: _paste,
+                icon: const Icon(Icons.content_paste),
+                label: Text(l10n.add_paste),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -279,17 +283,17 @@ class _AddScreenState extends State<AddScreen> {
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const CircleAvatar(child: Icon(Icons.key)),
-            title: Text(l10n.add_keyRow),
-            subtitle: Text(l10n.add_keyRowHelp),
-            onTap: _busy ? null : _enterNameAndKey,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
             leading: const CircleAvatar(child: Icon(Icons.lock)),
             title: Text(l10n.channels_createPrivateChannel),
             subtitle: Text(l10n.channels_createPrivateChannelDesc),
             onTap: _busy ? null : _createPrivateChannel,
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const CircleAvatar(child: Icon(Icons.key)),
+            title: Text(l10n.add_keyRow),
+            subtitle: Text(l10n.add_keyRowHelp),
+            onTap: _busy ? null : _enterNameAndKey,
           ),
           if (!hasPublic)
             ListTile(
@@ -404,7 +408,7 @@ class _AddScreenState extends State<AddScreen> {
               ),
             )
           : null,
-      extra: found.isHashtag && found.typedHashtag != found.name
+      extra: found.hasCapitals
           ? SwitchListTile(
               key: _keepCapitalsKey,
               contentPadding: EdgeInsets.zero,

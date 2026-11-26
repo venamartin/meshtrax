@@ -42,7 +42,23 @@ class ChannelFound extends AddFound {
     this.keyOnly = false,
   });
 
-  bool get isHashtag => typedHashtag != null;
+  /// Typed as one, or a '#' name whose key is worked out from that name, as
+  /// written or lowercase, the way [Channel.isPrivate] tells: a scanned
+  /// #offroad is a hashtag channel, not a private one.
+  bool get isHashtag {
+    if (typedHashtag != null) return true;
+    final n = name;
+    if (n == null || !n.startsWith('#')) return false;
+    return {n, n.toLowerCase()}.any(
+      (candidate) =>
+          Channel.formatPskHex(Channel.derivePskFromHashtag(candidate)) ==
+          pskHex,
+    );
+  }
+
+  /// Keep capitals applies: typed with capitals, so the lowercase channel
+  /// is offered first.
+  bool get hasCapitals => typedHashtag != null && typedHashtag != name;
 
   bool get isPublic => pskHex == Channel.publicChannelPsk;
 
