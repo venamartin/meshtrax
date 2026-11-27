@@ -77,7 +77,10 @@ void main() {
 
   test('a button keeps its own id, so the chat after it leaves it there', () {
     final others = {
-      for (var i = 0; i < 64; i++) ...[i ^ 0x0C, i ^ 0x0E],
+      for (var i = 0; i < 64; i++) ...[
+        NotificationService.channelNotificationId(i, '', mention: false),
+        NotificationService.channelNotificationId(i, '', mention: true),
+      ],
       0x4D54,
       NotificationService.traxEndedId,
     };

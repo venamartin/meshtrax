@@ -644,6 +644,24 @@ class NotificationService {
   @visibleForTesting
   static int traxNotificationId(int channelIndex) => 0x5500 + channelIndex;
 
+  /// A channel message, one per channel, and a mention, one per channel
+  /// too: no mention shares an id with a message of any channel, so a
+  /// plain message never takes a mention's place. Clear of the other ids.
+  /// A channel without a slot goes by its name.
+  @visibleForTesting
+  static int channelNotificationId(
+    int? channelIndex,
+    String channelName, {
+    required bool mention,
+  }) {
+    if (channelIndex == null) {
+      return 0x20000000 |
+          ((channelName.hashCode & 0x0FFFFFFF) << 1) |
+          (mention ? 1 : 0);
+    }
+    return (mention ? 0x20000 : 0x10000) + channelIndex;
+  }
+
   /// The alarm volume an SOS alert sounds at, and its most (Android); null
   /// elsewhere, or when the phone doesn't say.
   Future<({int volume, int max})?> alarmVolume() async {
@@ -1009,8 +1027,7 @@ class NotificationService {
     final isMention = mentionMessageId != null;
     final id = traxAction != null && channelIndex != null
         ? traxNotificationId(channelIndex)
-        : (channelIndex ?? channelName.hashCode.abs()) ^
-              (isMention ? 0x0E : 0x0C);
+        : channelNotificationId(channelIndex, channelName, mention: isMention);
 
     await _notifications.show(
       id: id,
