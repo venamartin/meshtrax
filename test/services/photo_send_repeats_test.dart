@@ -1024,6 +1024,31 @@ void main() {
       expect(photoPackets(r), hasLength(6));
     });
 
+    // Martin, 2026-11-27: packets already sent to one asker don't go again
+    // for another, unless asked again after a reasonable wait (askRest).
+    test('two people asking for the same packets get one answer; a third '
+        'asking for them within the rest gets none, and after it, again',
+        () async {
+      PhotoMesh.askRest = const Duration(seconds: 3);
+      final r = await radio((n, index) => true);
+      await send(r, bytes: 600);
+      final imgId = photoPackets(r)[0][2];
+
+      ask(r, imgId, 0x06, asker: 0xBEEF);
+      ask(r, imgId, 0x06, asker: 0xCAFE);
+      await taken(r, 6);
+      expect(_indexes(photoPackets(r).sublist(4)), [1, 2]);
+
+      ask(r, imgId, 0x02, asker: 0xD00D);
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      expect(photoPackets(r), hasLength(6), reason: 'just sent to the others');
+
+      await Future<void>.delayed(const Duration(seconds: 3));
+      ask(r, imgId, 0x02, asker: 0xD00D);
+      await taken(r, 7);
+      expect(_indexes(photoPackets(r).sublist(6)), [1]);
+    });
+
     test('a photo goes again as asked at most 3 times, each copy one more '
         'in its retry byte', () async {
       PhotoMesh.askRest = Duration.zero;
