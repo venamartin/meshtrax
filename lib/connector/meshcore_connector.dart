@@ -4787,7 +4787,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     );
     final channel = _findChannelByIndex(channelIndex);
     if (channel == null) return null;
-    final isNew = await _ingestChannelMessage(channelIndex, message);
+    final isNew = (await _ingestChannelMessage(channelIndex, message)).isNew;
     if (isNew && !isOutgoing && notify) {
       _maybeNotifyChannelMessage(message, channelName: channel.displayName);
     }
@@ -9284,10 +9284,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return true;
   }
 
+  /// [repliesToMine]: the message replies to a message of mine, which makes
+  /// it a mention whatever name it gives me.
   void _maybeNotifyChannelMessage(
     ChannelMessage message, {
     String? channelName,
     bool fromBacklog = false,
+    bool repliesToMine = false,
   }) {
     if (message.isOutgoing || _isFromSelf(message)) return;
     final channelIndex = message.channelIndex;
@@ -9323,11 +9326,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // One notification per message: when both would apply, mention wins.
     // Mentioning MYSELF is not a mention (nor is a same-named sender —
     // names aren't unique on the mesh, and the two are indistinguishable).
+    // A reply to a message of mine is one (Martin, 2026-11-27: "A reply is
+    // also a mention"), even when it names me otherwise, as after a rename.
     // An SOS outranks both: it always alerts, on its own category.
     final isSos = structured is SosMessage;
     final isMention = settings.notifyOnMention &&
         message.senderName != _selfName &&
-        ChannelMessage.mentionsUser(message.text, _selfName);
+        (repliesToMine || ChannelMessage.mentionsUser(message.text, _selfName));
     if (!isSos && !isMention && !settings.notifyOnNewChannelMessage) return;
 
     // Blocked senders previously only had their rows hidden in the open
@@ -9510,14 +9515,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       }
 
       unawaited(() async {
-        final isNew = await _ingestChannelMessage(
+        final ingested = await _ingestChannelMessage(
           channelIndex,
           message,
           fromBacklog: fromBacklog,
           leftover: leftover,
         );
-        if (isNew) {
-          _maybeNotifyChannelMessage(message, fromBacklog: fromBacklog);
+        if (ingested.isNew) {
+          _maybeNotifyChannelMessage(
+            message,
+            fromBacklog: fromBacklog,
+            repliesToMine: ingested.repliesToMine,
+          );
         }
         _handleQueuedMessageReceived();
       }());
@@ -10371,9 +10380,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           }
           final label = channel.displayName;
           unawaited(() async {
-            final isNew = await _ingestChannelMessage(channel.index, message);
-            if (isNew) {
-              _maybeNotifyChannelMessage(message, channelName: label);
+            final ingested =
+                await _ingestChannelMessage(channel.index, message);
+            if (ingested.isNew) {
+              _maybeNotifyChannelMessage(
+                message,
+                channelName: label,
+                repliesToMine: ingested.repliesToMine,
+              );
             }
           }());
           return;
@@ -10959,19 +10973,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     unawaited(() async {
       for (final entry in pending) {
         final message = entry.message;
-        final isNew = await _ingestChannelMessage(
+        final ingested = await _ingestChannelMessage(
           channel.index,
           message,
           fromBacklog: entry.fromBacklog,
           leftover: entry.leftover,
           receivedAt: entry.receivedAt,
         );
-        if (isNew) {
+        if (ingested.isNew) {
           // Parity with the live path — buffered messages were silent.
           _maybeNotifyChannelMessage(
             message,
             channelName: channel.displayName,
             fromBacklog: entry.fromBacklog,
+            repliesToMine: ingested.repliesToMine,
           );
         }
       }
@@ -12286,7 +12301,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return _ParsedText(senderName: 'Unknown', text: text);
   }
 
-  Future<bool> _ingestChannelMessage(
+  Future<_Ingested> _ingestChannelMessage(
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
@@ -12296,7 +12311,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     DateTime? receivedAt,
   }) async {
     final sw = Stopwatch()..start();
-    final isNew = await _ingestChannelMessageInner(
+    final ingested = await _ingestChannelMessageInner(
       channelIndex,
       message,
       replyTarget: replyTarget,
@@ -12310,13 +12325,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       sw,
       detail: fromBacklog ? 'backlog' : 'live',
     );
-    return isNew;
+    return ingested;
   }
 
   /// Phase 3d ingest — the database is the only message state. Inserts or
-  /// merges a row; watched queries notify every consumer. Returns true when
-  /// the message was NEW (drives notifications; unread is a watched COUNT).
-  Future<bool> _ingestChannelMessageInner(
+  /// merges a row; watched queries notify every consumer. Says whether the
+  /// message was NEW (drives notifications; unread is a watched COUNT), and
+  /// whether it replies to a message of mine.
+  Future<_Ingested> _ingestChannelMessageInner(
     int channelIndex,
     ChannelMessage message, {
     ChannelMessage? replyTarget,
@@ -12334,7 +12350,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         'Dropping message for unknown slot $channelIndex',
         tag: 'Connector',
       );
-      return false;
+      return _notNew;
     }
     final idKey = channel.idKey;
 
@@ -12383,7 +12399,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final reactionIdentifier =
           '${reactionInfo.targetHash}_${reactionInfo.emoji}_$reactorName';
       if (_processedChannelReactions[idKey]!.contains(reactionIdentifier)) {
-        return false;
+        return _notNew;
       }
       final sw = Stopwatch()..start();
       final rows = await _channelMessageStore.loadChannelMessagesArrivedSince(
@@ -12422,7 +12438,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         // could be a genuine two-line message, so fall through and show it.
         _processedChannelReactions[idKey]!.add(reactionIdentifier);
         notifyListeners();
-        return false;
+        return _notNew;
       }
       if (!sanitizedMessage.isOutgoing) {
         unawaited(_logParkedChannelReaction(
@@ -12451,7 +12467,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (own != null) {
           await _mergeChannelRepeat(idKey, own, sanitizedMessage);
         }
-        return false;
+        return _notNew;
       }
     }
 
@@ -12464,7 +12480,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       );
       if (existing != null) {
         await _mergeChannelRepeat(idKey, existing, sanitizedMessage);
-        return false;
+        return _notNew;
       }
     }
 
@@ -12473,6 +12489,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     // also reads the older "re:" dialect) — human-readable on other apps.
     final replyInfo = ChannelMessage.parseReply(sanitizedMessage.text);
     ChannelMessage processedMessage = sanitizedMessage;
+    var repliesToMine = false;
 
     if (replyTarget != null) {
       // Our own outgoing reply — we know the exact message being replied to,
@@ -12508,6 +12525,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           ) ??
           (await _channelMessageStore.findReplyTarget(idKey, unlinked))
               ?.message;
+      // Mine even when it names me otherwise, as after a rename.
+      repliesToMine = originalMessage != null &&
+          (originalMessage.isOutgoing || _isFromSelf(originalMessage));
       processedMessage = originalMessage == null
           ? unlinked
           : _withReplyMetadata(
@@ -12533,7 +12553,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final incomingSos = !processedMessage.isOutgoing &&
         StructuredMessage.parse(processedMessage.text) is SosMessage;
     if (incomingSos && await _mergeSosRepeat(channel, processedMessage)) {
-      return false;
+      return _notNew;
     }
     final sosTraffic = incomingSos ||
         (!processedMessage.isOutgoing &&
@@ -12553,7 +12573,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       for (final existing in recent.reversed) {
         if (_isChannelRepeat(existing, processedMessage)) {
           await _mergeChannelRepeat(idKey, existing, processedMessage);
-          return false;
+          return _notNew;
         }
       }
     }
@@ -12576,7 +12596,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (existing != null) {
         await _mergeChannelRepeat(idKey, existing, processedMessage);
       }
-      return false;
+      return _notNew;
     }
     // Viewing this channel: the read watermark rides along so the message
     // never accrues as unread (parity with the old active-channel rule).
@@ -12600,7 +12620,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       await _closeSosCards(channel, processedMessage);
     }
     notifyListeners();
-    return true;
+    return (isNew: true, repliesToMine: repliesToMine);
   }
 
   /// How long an SOS card waits for its sender's next repeat (every 2 or 5
@@ -14756,6 +14776,12 @@ class _FloodedText {
     required this.payload,
   });
 }
+
+/// What the connector made of a channel message it took in: whether it was
+/// new, and whether it replies to a message of mine.
+typedef _Ingested = ({bool isNew, bool repliesToMine});
+
+const _Ingested _notNew = (isNew: false, repliesToMine: false);
 
 class _ParsedText {
   final String senderName;

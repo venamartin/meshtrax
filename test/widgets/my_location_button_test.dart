@@ -479,7 +479,7 @@ void main() {
     expect(find.text('One location button'), findsOneWidget);
     await tester.tap(find.text('What the icons mean'));
     await tester.pumpAndSettle();
-    expect(find.byType(IconHelpSheet), findsOneWidget);
+    expect(find.byType(IconHelp), findsOneWidget);
     for (final text in [
       'Radio battery',
       'Repeaters heard',
@@ -492,7 +492,12 @@ void main() {
       await tester.ensureVisible(find.text(text));
       expect(find.text(text), findsOneWidget);
     }
-    Navigator.pop(tester.element(find.byType(IconHelpSheet)));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(IconHelp),
+        matching: find.byTooltip('Close'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     LocationButtonNote.showOnce(context);
