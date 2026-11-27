@@ -386,7 +386,7 @@ void main() {
     test('a request names the photo, its data packets and the ones lacked',
         () {
       final body = photoPacketsRequest(imgId: 0x3a, total: 4, missing: 0x06);
-      expect(body, [0x3a, 4, 0x00, 0x06]);
+      expect(body, [0x3a, 4, 0x06, 0x00]);
       expect(readPhotoPacketsRequest(body), (
         imgId: 0x3a,
         total: 4,
@@ -396,7 +396,7 @@ void main() {
 
     test('bytes past the 4 it knows are left for later kinds of the body',
         () {
-      final body = Uint8List.fromList([0x3a, 4, 0x00, 0x06, 0xEE, 0xFF]);
+      final body = Uint8List.fromList([0x3a, 4, 0x06, 0x00, 0xEE, 0xFF]);
       expect(readPhotoPacketsRequest(body)?.missing, 0x06);
     });
 

@@ -104,7 +104,7 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0172`, one
 
 ## Asking for lost packets
 
-A receiver can ask a photo's sender for the packets that didn't reach it, with one tap; nothing asks by itself. Only photos of `0x0172` can be asked for: 1.12.0 doesn't answer.
+A receiver can ask a photo's sender for the packets that didn't reach it, with one tap; nothing asks by itself.
 
 **The receiver.**
 

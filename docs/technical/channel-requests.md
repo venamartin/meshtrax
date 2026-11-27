@@ -17,7 +17,7 @@ A request is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0173`, one o
   0    1     kind: what is asked; 0 reserved, 1 the packets of a photo
   1    1     version (high 4 bits, 0) and flags (low 4 bits, 0 so far)
   2    2     build: the asker's MeshTrax build, the number after the + in
-             its version (252 in 1.12.1+252), big-endian; 0 unknown
+             its version (252 in 1.12.1+252), low byte first; 0 unknown
   4    1     id: the asker's own number for this request, so an answer can
              name it
   5    2     asker: the first 2 bytes of the asker's public key
@@ -73,4 +73,4 @@ A kind's body can grow up to 4 bytes before its request takes a second block; ki
 
 | Kind | Asks | Body | Answered |
 |---|---|---|---|
-| 1 | The packets of a photo the asker is missing | image id (1), data packets (1), the packets missing (2, big-endian: packet i at bit i, the repair packet at bit "data packets") | By the photo's sender only, with the packets again: [Photos: asking for lost packets](photos.md#asking-for-lost-packets) |
+| 1 | The packets of a photo the asker is missing | image id (1), data packets (1), the packets missing (2, low byte first: packet i at bit i, the repair packet at bit "data packets") | By the photo's sender only, with the packets again: [Photos: asking for lost packets](photos.md#asking-for-lost-packets) |

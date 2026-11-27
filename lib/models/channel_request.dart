@@ -23,7 +23,8 @@ abstract final class ChannelRequestKind {
 ///   1    1     version (high 4 bits, 0) and flags (low 4 bits, 0 so far;
 ///              a receiver ignores flags it doesn't know)
 ///   2    2     build: the asker's MeshTrax build, the number after the +
-///              in its version (252 in 1.12.1+252), big-endian; 0 unknown
+///              in its version (252 in 1.12.1+252), low byte first; 0
+///              unknown
 ///   4    1     id: the asker's own number for this request, so an answer
 ///              can name it
 ///   5    2     asker: the first 2 bytes of the asker's public key
@@ -68,8 +69,8 @@ class ChannelRequest {
   Uint8List encode() => Uint8List.fromList([
     kind & 0xFF,
     (version << 4) | (flags & 0x0F),
-    (build >> 8) & 0xFF,
     build & 0xFF,
+    (build >> 8) & 0xFF,
     id & 0xFF,
     (asker >> 8) & 0xFF,
     asker & 0xFF,
@@ -86,7 +87,7 @@ class ChannelRequest {
     return ChannelRequest(
       kind: bytes[0],
       flags: bytes[1] & 0x0F,
-      build: (bytes[2] << 8) | bytes[3],
+      build: bytes[2] | (bytes[3] << 8),
       id: bytes[4],
       asker: (bytes[5] << 8) | bytes[6],
       asked: (bytes[7] << 8) | bytes[8],

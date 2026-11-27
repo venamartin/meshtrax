@@ -10,14 +10,14 @@ void main() {
     asker: 0xBEEF,
     asked: 0x7777,
     build: 252,
-    body: Uint8List.fromList([0x3a, 4, 0x00, 0x06]),
+    body: Uint8List.fromList([0x3a, 4, 0x06, 0x00]),
   );
 
   test('a request is its kind, version and flags, build, id, asker, asked '
       'and body', () {
     expect(asking.encode(), [
-      1, 0x00, 0x00, 0xFC, 9, 0xBE, 0xEF, 0x77, 0x77, //
-      0x3a, 4, 0x00, 0x06,
+      1, 0x00, 0xFC, 0x00, 9, 0xBE, 0xEF, 0x77, 0x77, //
+      0x3a, 4, 0x06, 0x00,
     ]);
   });
 
@@ -34,7 +34,7 @@ void main() {
     expect(read.id, 9);
     expect(read.asker, 0xBEEF);
     expect(read.asked, 0x7777);
-    expect(read.body, [0x3a, 4, 0x00, 0x06]);
+    expect(read.body, [0x3a, 4, 0x06, 0x00]);
   });
 
   test('too short, kind 0, or a version this build does not know: no '

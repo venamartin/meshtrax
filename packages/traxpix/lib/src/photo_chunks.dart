@@ -715,7 +715,7 @@ int missingPacketBits(ImagePackets packets) {
 ///   off  size  field
 ///   0    1     photo id
 ///   1    1     data packets
-///   2    2     missing, big-endian
+///   2    2     missing, low byte first
 /// ```
 ///
 /// The app sends it as a channel request; the photo's sender answers with
@@ -728,8 +728,8 @@ Uint8List photoPacketsRequest({
 }) => Uint8List.fromList([
   imgId & 0xFF,
   total & 0xFF,
-  (missing >> 8) & 0xFF,
   missing & 0xFF,
+  (missing >> 8) & 0xFF,
 ]);
 
 /// What a [photoPacketsRequest] body asks for, or null when it can't be one.
@@ -739,6 +739,6 @@ Uint8List photoPacketsRequest({
   if (body.length < 4) return null;
   final total = body[1];
   if (total == 0 || total > kImageMaxDataChunks) return null;
-  final missing = ((body[2] << 8) | body[3]) & ((1 << (total + 1)) - 1);
+  final missing = (body[2] | (body[3] << 8)) & ((1 << (total + 1)) - 1);
   return (imgId: body[0], total: total, missing: missing);
 }
