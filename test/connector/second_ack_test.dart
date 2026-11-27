@@ -244,6 +244,24 @@ void main() {
     expect(sent.single.sublist(0, 14), secondAck(elsewhere.pathBytes));
   });
 
+  // #407 took out the app's own path packet after a flood (it told the
+  // sender a later copy's path whenever the first copy's last repeater was
+  // not one that hears this radio). Two copies of one flooded DM, by two
+  // last repeaters, were what set it off.
+  test('two flood copies of one DM, by two last repeaters: the app sends no '
+      'path packet of its own', () async {
+    await connect(routes: [pf1, pf2]);
+    c.handleFrameForTest(_rxLog(dmFlood)); // by A277, AD77
+    c.handleFrameForTest(_rxLog(Uint8List.fromList(
+        [0x09, 0x42, 0xBE, 0xEF, 0x10, 0x00, ...payload]))); // by BEEF, 1000
+    await Future<void>.delayed(const Duration(seconds: 4));
+    expect(c.acks, isNotEmpty, reason: 'the second ACK went out');
+    expect([
+      for (final f in c.acks)
+        if (f.length > 2 && (f[2] >> 2) & 0x0F == payloadTypePATH) f,
+    ], isEmpty);
+  });
+
   test('a DM that came by flood: the second ACK on Pathfinder\'s best route',
       () async {
     await connect(routes: [pf1, pf2]);

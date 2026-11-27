@@ -317,43 +317,6 @@ class PassingCopyOpener {
     return null;
   }
 
-  /// A path packet for [contactKey], the firmware's own kind
-  /// (Mesh::createPathReturn with nothing extra): it hands their radio
-  /// [wayBack] ([wayBackLen] is its path length byte) as the way to reach
-  /// this one, and their radio stores it in place of the route it holds
-  /// (BaseChatMesh::onContactPathRecv). Sent direct on [routePath]
-  /// ([routePathLen]), so it asks for no path in return. Null without a
-  /// secret for them, or without a route for either.
-  Uint8List? wayBackPacket({
-    required Uint8List contactKey,
-    required int wayBackLen,
-    required List<int> wayBack,
-    required int routePathLen,
-    required List<int> routePath,
-  }) {
-    if (PathHelper.pathLenHops(wayBackLen) < 0 ||
-        PathHelper.pathLenHops(routePathLen) < 0) {
-      return null;
-    }
-    final secret = sharedSecret(contactKey);
-    if (secret == null) return null;
-    return Uint8List.fromList([
-      (payloadTypePATH << 2) | _routeDirect,
-      routePathLen & 0xFF,
-      ...routePath.sublist(0, PathHelper.pathLenBytes(routePathLen)),
-      contactKey[0],
-      _selfKey[0],
-      ...encryptThenMac(secret, [
-        wayBackLen & 0xFF,
-        ...wayBack.sublist(0, PathHelper.pathLenBytes(wayBackLen)),
-        // No extra: a dummy type and four random bytes keep the packet
-        // from repeating an earlier one, as the firmware does.
-        0xFF,
-        for (var i = 0; i < 4; i++) _random.nextInt(256),
-      ]),
-    ]);
-  }
-
   /// The ACK a plain or MULTIPART ACK packet carries, else null.
   static HeardAck? heardAck(int payloadType, List<int> payload) {
     final at = switch (payloadType) {

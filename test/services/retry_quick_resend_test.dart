@@ -117,6 +117,29 @@ void main() {
     });
   });
 
+  // The field's own path: a repeater was heard within the minute, so a
+  // flood nobody passed on goes out again at once, and the copy waits for
+  // quiet air like any send (#384's park tests moved to "heard two minutes
+  // ago", off this path: regression audit, 2026-11-27).
+  test('a quick resend whose ACK comes while it waits for quiet air is not '
+      'sent', () {
+    fakeAsync((async) {
+      final r = _Rig(async,
+          budget: 3,
+          holdFor: (n) => n == 1 ? const Duration(seconds: 5) : Duration.zero);
+      r.svc.noteRepeaterHeard();
+      r.svc.sendMessageWithRetry(contact: _bob, text: 'hi');
+      async.flushMicrotasks();
+      r.sentLast();
+      async.elapse(echoWait); // the quick resend, waiting for quiet air
+      r.svc.handleAckReceived(r._ackFor(r.sends[0]), 3000); // Bob's ACK
+      async.elapse(const Duration(seconds: 6));
+      expect(r.sends, hasLength(1));
+      expect(r.dropped, [1]);
+      expect(r.updates.last.message.status, MessageStatus.delivered);
+    });
+  });
+
   test('on the last try the copy holds the DM open: it fails once, after the '
       "copy's ACK wait, and never comes back", () {
     fakeAsync((async) {
