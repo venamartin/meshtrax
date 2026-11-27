@@ -655,7 +655,7 @@ void main() {
       expect(button('TRAX: off', _trip), NotificationService.traxLeaveAction);
       receive('TRAX: off', _trip);
       await _settle();
-      expect(trax.askedOn(_trip.index), const TraxLeavePrompt('Bo'));
+      expect(trax.askedOn(_trip.index), TraxLeavePrompt('Bo', _trip));
     });
   });
 

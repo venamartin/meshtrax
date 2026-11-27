@@ -25,6 +25,7 @@ class _Radio extends MeshCoreConnector {
   _Radio({this.repeat = false});
 
   bool repeat;
+  bool connected = true;
   final sent = <Uint8List>[];
   final incoming =
       StreamController<
@@ -43,7 +44,7 @@ class _Radio extends MeshCoreConnector {
     bool expectsGenericAck = false,
   }) async => sent.add(data);
   @override
-  bool get isConnected => true;
+  bool get isConnected => connected;
   @override
   bool? get clientRepeat => repeat;
   @override
@@ -61,6 +62,17 @@ class _Radio extends MeshCoreConnector {
   @override
   Future<List<({int lowerKhz, int upperKhz})>?>
   getAllowedRepeatFrequencies() async => null;
+
+  /// A Bluetooth blip: the radio away, then back.
+  void drop() {
+    connected = false;
+    notifyListeners();
+  }
+
+  void back() {
+    connected = true;
+    notifyListeners();
+  }
 
   void hear(String sender, String text) => incoming.add((
     message: ChannelMessage(
@@ -271,6 +283,77 @@ void main() {
     expect(questions.onTap('traxleave:channel:1'), 'channel:1');
     await tester.pumpAndSettle();
     expect(leaveToo, findsNothing);
+    trax.dispose();
+  });
+
+  // Martin, 2026-11-27: someone who hadn't switched when asked then heard
+  // the group leaving. The questions stacked, and Switch too joined a group
+  // that had left. A question left open goes once it no longer fits.
+  testWidgets('a Switch too still up goes once they leave, and nothing '
+      'comes instead', (tester) async {
+    final radio = _Radio();
+    final (trax, _) = await pump(tester, radio);
+    radio.hear('Ana', on);
+    await tester.pumpAndSettle();
+    expect(switchToo, findsOneWidget);
+
+    radio.hear('Ana', 'TRAX: off');
+    await tester.pumpAndSettle();
+    expect(switchToo, findsNothing, reason: 'nobody left to join');
+    expect(find.byType(AlertDialog), findsNothing, reason: 'nor Leave too');
+    expect(radio.sent, isEmpty);
+    trax.dispose();
+  });
+
+  testWidgets('a newer question on the trip channel takes the older one\'s '
+      'place', (tester) async {
+    final radio = _Radio();
+    final (trax, _) = await pump(tester, radio);
+    radio.hear('Ana', on);
+    await tester.pumpAndSettle();
+    radio.hear('Cy', on);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ana switched'), findsNothing);
+    expect(find.textContaining('Cy switched'), findsOneWidget);
+
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing, reason: 'none under it');
+    trax.dispose();
+  });
+
+  testWidgets('a Leave too still up goes when they switch back on', (
+    tester,
+  ) async {
+    final radio = _Radio(repeat: true);
+    final (trax, _) = await pump(tester, radio);
+    final leaveToo = find.textContaining('Leave too?');
+    radio.hear('Bo', 'TRAX: off');
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsOneWidget);
+
+    radio.hear('Bo', on);
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsNothing);
+    trax.dispose();
+  });
+
+  testWidgets('with the radio away, a question waits for it', (tester) async {
+    final radio = _Radio(repeat: true);
+    final (trax, _) = await pump(tester, radio);
+    final leaveToo = find.textContaining('Leave too?');
+    radio.hear('Bo', 'TRAX: off');
+    await tester.pumpAndSettle();
+
+    radio.drop();
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsOneWidget, reason: 'a blip takes nothing away');
+    radio.back();
+    await tester.pumpAndSettle();
+    expect(leaveToo, findsOneWidget);
+
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
     trax.dispose();
   });
 }

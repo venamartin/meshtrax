@@ -1717,7 +1717,8 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                           isOutgoing: isOutgoing,
                           senderName: message.senderName,
                           traxChannel: structured is TraxMessage &&
-                                  widget.channel.isPrivate
+                                  widget.channel.isPrivate &&
+                                  message.messageId == _newestTrax(_messages)
                               ? widget.channel
                               : null,
                           sos: structured is SosMessage
@@ -2445,6 +2446,27 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
 
   List<ChannelMessage>? _repliesFor;
   Map<String, List<String>> _replies = const {};
+
+  /// The newest TRAX message from the others, worked out once per list:
+  /// only its card offers to switch or leave too, so an older Switch too
+  /// can't join a group that has left since (Martin, 2026-11-27).
+  String? _newestTrax(List<ChannelMessage> messages) {
+    if (!identical(messages, _newestTraxIn)) {
+      _newestTraxIn = messages;
+      _newestTraxId = null;
+      for (final m in messages.reversed) {
+        if (!m.isOutgoing &&
+            MessageFacts.of(m.text).structured is TraxMessage) {
+          _newestTraxId = m.messageId;
+          break;
+        }
+      }
+    }
+    return _newestTraxId;
+  }
+
+  List<ChannelMessage>? _newestTraxIn;
+  String? _newestTraxId;
 
   SosCardState _sosState(ChannelMessage message) {
     final cancelled = message.sosCancelledAt;

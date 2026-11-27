@@ -163,6 +163,7 @@ Future<void> showTraxFollowDialog(
   await _showActionDialog(
     context,
     trax,
+    prompt: TraxFollowPrompt(sender, message, channel),
     body: l10n.trax_followBody(sender, traxTimeText(context, message.until!)),
     detail: l10n.trax_followDetail(message.preset!.label),
     action: l10n.trax_switchToo,
@@ -195,6 +196,7 @@ Future<void> showTraxPrompt(
     TraxLeavePrompt(:final sender) => _showActionDialog(
       context,
       trax,
+      prompt: prompt,
       body: l10n.trax_leaveBody(sender),
       action: l10n.trax_leaveToo,
       run: () => _leaveText(context, trax, tellGroup: false),
@@ -202,6 +204,7 @@ Future<void> showTraxPrompt(
     TraxStillOnPrompt() => _showActionDialog(
       context,
       trax,
+      prompt: prompt,
       body: l10n.trax_stillOn,
       action: l10n.trax_leave,
       run: () => _leaveText(context, trax),
@@ -267,6 +270,7 @@ Future<String?> _leaveText(
 Future<void> _showActionDialog(
   BuildContext context,
   TraxService trax, {
+  required TraxPrompt prompt,
   required String body,
   String? detail,
   required String action,
@@ -276,6 +280,7 @@ Future<void> _showActionDialog(
     context: context,
     builder: (_) => _TraxActionDialog(
       trax: trax,
+      prompt: prompt,
       body: body,
       detail: detail,
       action: action,
@@ -287,6 +292,7 @@ Future<void> _showActionDialog(
 
 class _TraxActionDialog extends StatefulWidget {
   final TraxService trax;
+  final TraxPrompt prompt;
   final String body;
   final String? detail;
   final String action;
@@ -294,6 +300,7 @@ class _TraxActionDialog extends StatefulWidget {
 
   const _TraxActionDialog({
     required this.trax,
+    required this.prompt,
     required this.body,
     this.detail,
     required this.action,
@@ -306,6 +313,31 @@ class _TraxActionDialog extends StatefulWidget {
 
 class _TraxActionDialogState extends State<_TraxActionDialog> {
   bool _running = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.trax.addListener(_check);
+  }
+
+  @override
+  void dispose() {
+    widget.trax.removeListener(_check);
+    super.dispose();
+  }
+
+  /// A question that no longer fits goes by itself: a newer one on its
+  /// channel takes its place, or the radio has switched already.
+  void _check() {
+    if (_running || widget.trax.stillAsks(widget.prompt)) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isActive) return;
+    if (route.isCurrent) {
+      Navigator.pop(context);
+    } else {
+      Navigator.removeRoute(context, route);
+    }
+  }
 
   Future<void> _go() async {
     setState(() => _running = true);
