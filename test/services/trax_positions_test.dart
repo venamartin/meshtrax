@@ -308,6 +308,30 @@ ChannelDatagram _datagram(
   fromBacklog: fromBacklog,
 );
 
+/// A packet of a later TRAX version from [b]: the 9-byte header every
+/// later version starts with, then [rest].
+Uint8List _later(int b, {DateTime? sentAt, List<int> rest = const []}) {
+  final out = Uint8List(TraxHeader.size + rest.length)
+    ..[0] = 0x21
+    ..setRange(1, 5, _key(b))
+    ..setRange(TraxHeader.size, TraxHeader.size + rest.length, rest);
+  final seconds = (sentAt ?? _t0).millisecondsSinceEpoch ~/ 1000;
+  ByteData.sublistView(out).setUint32(5, seconds, Endian.little);
+  return out;
+}
+
+ChannelDatagram _bytes(
+  Uint8List payload, {
+  Channel? channel,
+  DateTime? receivedAt,
+}) => ChannelDatagram(
+  channel: channel ?? _trip,
+  dataType: traxshareDataType,
+  payload: payload,
+  receivedAt: receivedAt ?? _t0,
+  fromBacklog: false,
+);
+
 /// [metres] north of [_here].
 TrailPoint _north(double metres) =>
     (lat: _here.lat + metres / 111320, lon: _here.lon);
@@ -396,6 +420,41 @@ void main() {
         ..add(_datagram(_report(0xAB)));
 
       expect(positions.all, isEmpty);
+    });
+
+    test('a later TRAX version says only who sent it and when: no location, '
+        'and not from this radio or another channel', () {
+      radio.datagrams
+        ..add(_bytes(_later(0x22, rest: List.filled(30, 0xFF))))
+        ..add(_bytes(_later(0x11), channel: _other))
+        ..add(_bytes(_later(0xAB)));
+
+      expect(positions.all, isEmpty);
+      expect(positions.newer, {'22222222': _t0});
+    });
+
+    test('a report this app reads ends it, and it goes a day after they '
+        'were last heard', () {
+      fakeAsync((async) {
+        final positions = TripPositions(
+          radio,
+          trax,
+          clock: () => _t0.add(async.elapsed),
+        );
+        final minute = _t0.add(const Duration(minutes: 1));
+        radio.datagrams
+          ..add(_bytes(_later(0x11)))
+          ..add(_bytes(_later(0x22)))
+          ..add(_datagram(_report(0x11, sentAt: minute), receivedAt: minute));
+        expect(positions.newer.keys, ['22222222']);
+        expect(positions.of(bo), isNotNull);
+
+        async.elapse(const Duration(hours: 23, minutes: 50));
+        expect(positions.newer.keys, ['22222222']);
+        async.elapse(const Duration(minutes: 15));
+        expect(positions.newer, isEmpty);
+        positions.dispose();
+      });
     });
 
     test('an older report never replaces a newer one', () {
@@ -1813,6 +1872,38 @@ void main() {
         );
         await stopServices(tester);
       });
+
+      testWidgets('the TRAX group says whom a later TRAX version keeps off '
+          'the map: Update MeshTrax to see them', (tester) async {
+        now = DateTime.now();
+        DateTime ago(int minutes) => now.subtract(Duration(minutes: minutes));
+        await tester.runAsync(
+          () => trax.updateSetup(
+            TraxSetup(
+              channelKey: _trip.idKey,
+              until: now.add(const Duration(days: 2)),
+              added: {cy.publicKeyHex},
+            ),
+          ),
+        );
+        startServices();
+        radio.datagrams
+          ..add(_bytes(_later(0x22, sentAt: ago(2)), receivedAt: ago(2)))
+          ..add(_bytes(_later(0x77, sentAt: ago(1)), receivedAt: ago(1)));
+        await pumpApp(tester, const MapScreen());
+
+        await tester.tap(find.byTooltip('TRAX group'));
+        await settle(tester);
+        expect(find.text('Update MeshTrax to see Cy'), findsOneWidget);
+        expect(find.text('Cy: no location yet'), findsNothing);
+        expect(find.text('2m ago'), findsOneWidget);
+        expect(
+          find.text('Update MeshTrax to see someone on this trip'),
+          findsOneWidget,
+        );
+        expect(find.text('1m ago'), findsOneWidget);
+        await stopServices(tester);
+      });
     });
 
     testWidgets('a member\'s card: who and when heard, then which way, how '
@@ -2151,6 +2242,48 @@ void main() {
       expect(focus.prefix, bo.publicKeyHex.substring(0, 8));
       expect(focus.place.latitude, closeTo(36.4650, 1e-4));
       expect(find.byType(TraxSheet), findsNothing);
+      await stopServices(tester);
+    });
+
+    testWidgets('the TRAX sheet says whom a later TRAX version keeps off the '
+        'map', (tester) async {
+      now = DateTime.now();
+      DateTime ago(int minutes) => now.subtract(Duration(minutes: minutes));
+      await tester.runAsync(
+        () => trax.updateSetup(
+          TraxSetup(
+            channelKey: _trip.idKey,
+            until: now.add(const Duration(days: 2)),
+            added: {cy.publicKeyHex},
+          ),
+        ),
+      );
+      startServices();
+      radio.datagrams
+        ..add(_bytes(_later(0x22, sentAt: ago(2)), receivedAt: ago(2)))
+        ..add(_bytes(_later(0x77, sentAt: ago(1)), receivedAt: ago(1)));
+      await pumpApp(
+        tester,
+        Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showTraxSheet(context),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Update MeshTrax to see Cy'), findsOneWidget);
+      expect(find.textContaining(RegExp(r' · 2m ago$')), findsOneWidget);
+      expect(
+        find.text('Update MeshTrax to see someone on this trip'),
+        findsOneWidget,
+      );
+      expect(find.textContaining(RegExp(r' · 1m ago$')), findsOneWidget);
       await stopServices(tester);
     });
 

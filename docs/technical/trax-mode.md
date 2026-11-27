@@ -203,6 +203,20 @@ A member's MeshTrax asks another's for their track with a `TraxAsk`: version 1, 
 - To get a member's track the next day: open the TRAX group and tap them. Their card has Ask; a contact with no location yet is asked straight away.
 - Each piece costs about 0.6 s of airtime at the mesh's own preset, before relays.
 
+### A later version
+
+Every TRAX packet from version 2 on starts with the same 9 bytes, in every later version too (`TraxHeader`, `packages/traxshare`):
+- byte 0: the version × 16 + the kind (kind 0 is never sent);
+- bytes 1 to 4: the first 4 bytes of the sender's key;
+- bytes 5 to 8: when it was sent, in seconds since 1970 (UTC), little-endian.
+
+This app reads version 1, which has its own layout and keeps its own reader. From a later version it reads only these 9 bytes, never the rest:
+- That member's row in the TRAX group and the TRAX sheet says "Update MeshTrax to see Ana", with when they were heard.
+- A sender with no contact or name here shows as "Update MeshTrax to see someone on this trip".
+- The notice goes once a report this app reads comes from that radio, or a day after the last later-version packet.
+
+1.12.0 and earlier drop later versions without a word.
+
 ### The group check
 
 The TRAX sheet shows the trip as one list: "3 of 4 on TRAX", with **Check again**.
@@ -291,6 +305,7 @@ From the 2026-11-15/16 safety review of the closed plans. They are preliminary, 
 - Tell people plainly when their own sharing has stopped or reached nobody, and why.
 - There is a way to find a member that needs neither their phone nor a tap: their radio's own answer (Ask their radio), set up before the trip.
 - Nothing waits forever for a repeater or an answer that may never come.
+- A member is never dropped from view without a word: a TRAX version this app can't read says "Update MeshTrax to see" them.
 - A route never looks more certain than it is. It shows what MeshTrax can't know (closures, washouts, 4x4), the map data's date and where it really starts.
 - Nothing is relied on before its field test, with real radios and both phone types. MeshCore can't call outside help, so carry a PLB or satellite messenger.
 
