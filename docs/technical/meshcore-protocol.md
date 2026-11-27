@@ -679,7 +679,7 @@ The connector keeps what it saw of each ACK in the RX log (`HeardAck`) for the g
 can't tell (the ACK wasn't seen), no route is credited or failed for those attempts, and no
 flood is counted delivered; the DM is still delivered.
 
-### The way back a flood teaches, and the correction MeshTrax sends
+### The way back a flood teaches
 A radio answers the **first** copy of a flood it hears, and the answer hands the sender
 that copy's path as their route to it: a flooded DM gets a path return carrying
 `packet->path` (`BaseChatMesh::onPeerDataRecv`), a flooded path reply gets a reciprocal
@@ -693,19 +693,23 @@ path carrying `pkt->path` (`Mesh::onRecvPacket`), and the sender stores it whate
   radio heard one such repeater directly 1,098 times against 5,027 packets heard passing it
   and then his own repeater, and one of a contact's last five flooded DMs came from it
   first. The sender's missed ACKs then look like failed sends.
-- **The correction** (`MeshCoreConnector._repairWayBack`, owner 2026-11-24). The app sees
-  every copy in the RX log. When the first copy's last repeater is not one Pathfinder would
-  start this radio's routes at (`isOwnDoorstep`, `PathGraph.startsRoutesNow`) and a later
-  copy of the same packet, within 8 s, came through one that is, the app sends the sender
-  a path packet of the firmware's own kind with the later copy's path
-  (`PassingCopyOpener.wayBackPacket`: `createPathReturn` with nothing extra, 0xFF and four
-  random bytes). It goes direct on Pathfinder's best route to them, else the stored one,
-  after `TimeoutHelper.wayBackRepairDelayMs`, so the radio's own answer arrives first and
-  the correction replaces it.
-- **What it never does:** touch a route that already ends at such a repeater; send a path
-  no copy travelled; act on a routed copy the app merely picked up on its way; go out as a
-  flood (no route to them, nothing is sent); or run with Pathfinder off, without the
-  radio's key, or on firmware without `CMD_SEND_RAW_PACKET`.
+- **No correction is sent.** 1.12.0 had one (`MeshCoreConnector._repairWayBack`): when the
+  first copy's last repeater was not one Pathfinder would start this radio's routes at and
+  a later copy of the same packet came through one that is, the app sent the sender the
+  later copy's path, direct, as a path packet of the firmware's own kind. It was taken out
+  after the first field run (2026-11-26), for three reasons:
+  - It sent a path, not a ranked route. A later copy of a flood is by nature a slower,
+    longer path than the first, and there was no limit: a contact five repeaters away was
+    sent routes of 9 and 14 repeaters, nine packets in twenty minutes. Pathfinder was never
+    asked.
+  - It judged the far repeater by whether it hears this radio. For a packet coming this
+    way what counts is whether this radio hears the repeater. Of the packets the owner's
+    own repeater passed on from the one in question, his radio had also heard that
+    repeater's own copy for 26 to 79% a day (channel messages, 2026-11-19 to 26).
+  - The app opens a routed DM from any repeater's copy the radio hears, and the firmware
+    checks plain ACKs at every repeater. So a way back is as good as the chance of hearing
+    the packet from at least one repeater on it, not as good as its last repeater alone.
+  `PassingCopyOpener.wayBackPacket` still builds the packet; nothing calls it.
 - **How much it matters** depends on how often the far repeater is heard directly. At the
   owner's one copy in five, the simulator put it at 1 to 7 lost ACKs in about 80 routed
   tries; at 65% it dominated. It also depends on how often the sender floods: every
