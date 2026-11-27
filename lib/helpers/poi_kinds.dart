@@ -230,5 +230,10 @@ const _kindWords = <String, List<String>>{
   'highway=rest_area': ['rest stop'],
   'highway=services': ['truck stop'],
   'tourism=museum': [],
-  'boundary=protected_area': [],
+  'boundary=protected_area': [
+    'park',
+    'national park',
+    'state park',
+    'wilderness',
+  ],
 };
