@@ -279,6 +279,12 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String get photo_asking => 'Asking…';
+
+  @override
+  String get photo_othersAsked => 'Someone asked; waiting';
+
+  @override
   String get photo_askFailed => 'Couldn\'t ask for the rest';
 
   @override

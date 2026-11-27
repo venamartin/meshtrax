@@ -14,8 +14,9 @@ import '../utils/platform_info.dart';
 
 /// Requests MeshTrax nodes make of each other on a channel
 /// ([dataTypeChannelRequest]): sends them through the chat, and hands each
-/// one asked of this radio to whoever registered for its kind. It knows no
-/// kind itself. One per app run.
+/// one asked of this radio to whoever registered for its kind, and each one
+/// asked of another node to whoever overhears it. It knows no kind itself.
+/// One per app run.
 class ChannelRequests {
   static ChannelRequests? _instance;
 
@@ -33,6 +34,8 @@ class ChannelRequests {
   late final StreamSubscription<ChannelDatagram> _datagrams;
   final Map<int, void Function(Channel channel, ChannelRequest request)>
   _handlers = {};
+  final Map<int, void Function(Channel channel, ChannelRequest request)>
+  _overhearers = {};
   int _nextId = math.Random().nextInt(256);
 
   /// This app's build, which every request carries
@@ -63,6 +66,14 @@ class ChannelRequests {
     int kind,
     void Function(Channel channel, ChannelRequest request) handler,
   ) => _handlers[kind] = handler;
+
+  /// [handler] takes the requests of [kind] that others asked of another
+  /// node, with the channel they came on: what someone else already asked
+  /// for needn't be asked for again.
+  void overhear(
+    int kind,
+    void Function(Channel channel, ChannelRequest request) handler,
+  ) => _overhearers[kind] = handler;
 
   /// The first 2 bytes of this radio's public key, which requests name it
   /// by; null while it isn't known.
@@ -111,11 +122,14 @@ class ChannelRequests {
     if (d.dataType != dataTypeChannelRequest) return;
     final request = ChannelRequest.decode(d.payload);
     final self = selfPrefix;
-    if (request == null || self == null) return;
-    if (request.asker == self || !request.isFor(self)) return;
-    final handler = _handlers[request.kind];
+    if (request == null || self == null || request.asker == self) return;
+    final mine = request.isFor(self);
+    final handler = (mine ? _handlers : _overhearers)[request.kind];
     if (handler == null) return;
-    appLogger.info('Asked: $request', tag: 'Requests');
+    appLogger.info(
+      '${mine ? 'Asked' : 'Overheard'}: $request',
+      tag: 'Requests',
+    );
     handler(d.channel, request);
   }
 }

@@ -70,11 +70,15 @@ class PhotoReceivingStrip extends StatelessWidget {
               onPressed: () => _ask(context, r),
               child: Text(l10n.photo_askForRest),
             )
-          else if (r.asked > 0)
+          else if (r.asking || r.othersAsked || r.asked > 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                l10n.photo_askedFor(r.asked),
+                r.asking
+                    ? l10n.photo_asking
+                    : r.othersAsked
+                    ? l10n.photo_othersAsked
+                    : l10n.photo_askedFor(r.asked),
                 style: theme.textTheme.labelSmall,
               ),
             ),
