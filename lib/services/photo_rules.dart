@@ -4,6 +4,7 @@ import 'package:traxpix/traxpix.dart';
 import '../models/channel.dart';
 import '../models/radio_settings.dart';
 import '../storage/prefs_manager.dart';
+import 'photo_reassembler.dart';
 
 /// The frequencies of MeshTrax's MeshCore presets, in kHz: every preset in
 /// the list but the three Off-Grid ones.
@@ -17,11 +18,11 @@ final Set<int> meshCoreFrequenciesKhz = {
 bool photoRulesApply(int? freqKhz) =>
     freqKhz != null && meshCoreFrequenciesKhz.contains(freqKhz);
 
-/// On a MeshCore frequency, how long after this radio's last photo through
-/// repeaters a photo of [packets] packets (the repair packet included) can
-/// go through repeaters: none for one packet, no more on the air than a long
-/// message, then 5, 10 and 20 minutes for 2, 3, and 4 or more. Zero hop has
-/// no limit: it reaches only the radio's neighbours.
+/// On a MeshCore frequency, how long after a photo of [packets] packets (the
+/// repair packet included) through repeaters the next photo can go through
+/// repeaters: none after one packet, no more on the air than a long message,
+/// then 5, 10 and 20 minutes after 2, 3, and 4 or more. Zero hop has no
+/// limit: it reaches only the radio's neighbours.
 Duration photoGapRepeaters(int packets) => switch (packets) {
   <= 1 => Duration.zero,
   2 => const Duration(minutes: 5),
@@ -52,12 +53,55 @@ const int photoTextMessageAirBytes = 69;
 int photoTextMessages(Duration onAir, int Function(int bytes) airtimeMs) =>
     (onAir.inMilliseconds / airtimeMs(photoTextMessageAirBytes)).round();
 
-/// The pause after each packet of a photo whose payload is [payloadBytes]
-/// long, with the repair packet if [repairPacket]: zero hop, or as a flood
-/// through repeaters; [airtimeMs] is the radio's airtime for a packet of so
-/// many bytes. On a frequency [shared] with other MeshCore users, at least
-/// [photoMinGapAirtimes] airtimes, as long as every packet still goes out
-/// within three quarters of the receiver's reassembly window.
+/// The least pause after each photo packet before the next one goes to the
+/// radio: the packet's own time on air, then half a second.
+///
+/// Zero-hop packets have MeshCore's top send priority (0, `Mesh::sendDirect`)
+/// and channel messages the next (1, `Mesh::sendFlood`). The radio always
+/// sends the highest priority waiting (`PacketQueue::get`), back to back while
+/// its airtime budget lasts, and nothing can be cancelled once handed over. So
+/// photo packets handed over together would all go before an SOS sent
+/// meanwhile. Handed over one at a time, each once the last is off the air,
+/// anything sent in between goes first: an SOS waits for one photo packet at
+/// most. Checked against meshcore-dev/MeshCore 75b04ef.
+Duration photoPacketGap(Duration packetAirtime) =>
+    packetAirtime + const Duration(milliseconds: 500);
+
+/// A repeater's longest wait before passing a flood on, in airtimes of the
+/// packet: 5 × `tx_delay_factor`, 0.5 by default
+/// (`MyMesh::getRetransmitDelay`, MeshCore 75b04ef).
+const double _floodWaitMaxAirtimes = 2.5;
+
+/// The least pause after each photo packet sent as a flood, through
+/// repeaters.
+///
+/// Each repeater that hears a packet passes it on once, after a random wait
+/// of up to [_floodWaitMaxAirtimes] airtimes. The sender's next packet could
+/// reach a nearby repeater while one further out is passing the previous one
+/// on, out of the sender's hearing: the nearby repeater hears both and loses
+/// one. So the next packet waits until the previous one has, at worst,
+/// cleared two hops: its own airtime, then two hops of wait and airtime, then
+/// the half second.
+///
+/// Capped so that all [packets] still go out within three quarters of the
+/// receiver's [photoReceiveWindow]; never shorter than [photoPacketGap].
+Duration photoPacketGapFlood(Duration packetAirtime, {required int packets}) {
+  final gap = photoPacketGap(packetAirtime);
+  final clear =
+      packetAirtime * (1 + 2 * (1 + _floodWaitMaxAirtimes)) +
+      const Duration(milliseconds: 500);
+  if (packets < 2) return clear;
+  final cap = photoReceiveWindow * 0.75 ~/ (packets - 1);
+  final spaced = clear < cap ? clear : cap;
+  return spaced > gap ? spaced : gap;
+}
+
+/// The least pause after each packet of a photo whose payload is
+/// [payloadBytes] long, with the repair packet if [repairPacket]: zero hop,
+/// or as a flood through repeaters; [airtimeMs] is the radio's airtime for a
+/// packet of so many bytes. On a frequency [shared] with other MeshCore
+/// users, at least [photoMinGapAirtimes] airtimes, as long as every packet
+/// still goes out within three quarters of the receiver's window.
 Duration photoGapFor(
   int payloadBytes, {
   required bool zeroHop,
@@ -72,7 +116,7 @@ Duration photoGapFor(
       : photoPacketGapFlood(airtime, packets: packets);
   if (!shared || packets < 2) return gap;
   final least = airtime * photoMinGapAirtimes;
-  final cap = kImageReassemblyTtl * 0.75 ~/ (packets - 1);
+  final cap = photoReceiveWindow * 0.75 ~/ (packets - 1);
   final floor = least < cap ? least : cap;
   return gap > floor ? gap : floor;
 }
@@ -103,26 +147,30 @@ PhotoWarning photoWarningFor(Channel channel, int? freqKhz) {
       : PhotoWarning.airtime;
 }
 
-/// The wait for a photo's size ([photoGapRepeaters]) and the minutes of it
-/// left, both whole minutes.
-typedef PhotoBlock = ({int gap, int minutes});
+/// The last photo's packets, the wait after it ([photoGapRepeaters]) and the
+/// minutes of it left, both whole minutes.
+typedef PhotoBlock = ({int packets, int gap, int minutes});
 
-/// What a photo of [packets] packets still waits before it can go through
-/// repeaters, or null when it can go. The rules hold only on a MeshCore
-/// preset's frequency, on every channel; off-grid and custom frequencies
-/// have none, and zero hop has none anywhere. [lastSentViaRepeaters] is
-/// when this radio last sent a photo through repeaters where they apply.
+/// This radio's last photo through repeaters where the rules apply: when it
+/// went, and its packets.
+typedef PhotoSentLast = ({DateTime at, int packets});
+
+/// What the next photo through repeaters still waits after [last], this
+/// radio's last one, by that photo's size; null when it can go. Asked as
+/// the sender starts a photo, before its own size is known. The rules hold
+/// only on a MeshCore preset's frequency, on every channel; off-grid and
+/// custom frequencies have none, and zero hop has none anywhere.
 PhotoBlock? photoSendBlocked({
   required int? freqKhz,
-  required DateTime? lastSentViaRepeaters,
-  required bool viaRepeaters,
-  required int packets,
+  required PhotoSentLast? last,
   required DateTime now,
 }) {
-  if (!photoRulesApply(freqKhz) || !viaRepeaters) return null;
-  final gap = photoGapRepeaters(packets);
-  final left = _minutesLeft(lastSentViaRepeaters, gap, now);
-  return left == null ? null : (gap: gap.inMinutes, minutes: left);
+  if (!photoRulesApply(freqKhz) || last == null) return null;
+  final gap = photoGapRepeaters(last.packets);
+  final left = _minutesLeft(last.at, gap, now);
+  return left == null
+      ? null
+      : (packets: last.packets, gap: gap.inMinutes, minutes: left);
 }
 
 int? _minutesLeft(DateTime? since, Duration gap, DateTime now) {
@@ -134,22 +182,36 @@ int? _minutesLeft(DateTime? since, Duration gap, DateTime now) {
 String _lastSentKey(String radioKeyHex) =>
     'photo_last_sent_via_${radioKeyHex.substring(0, 16)}';
 
-/// When the radio with public key [radioKeyHex] last sent a photo through
+String _lastPacketsKey(String radioKeyHex) =>
+    'photo_last_sent_packets_${radioKeyHex.substring(0, 16)}';
+
+/// The last photo the radio with public key [radioKeyHex] sent through
 /// repeaters where the rules apply.
-DateTime? photoLastSentViaRepeaters(String radioKeyHex) {
+PhotoSentLast? photoLastSentViaRepeaters(String radioKeyHex) {
   if (radioKeyHex.length < 16) return null;
   final ms = PrefsManager.instance.getInt(_lastSentKey(radioKeyHex));
-  return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  if (ms == null) return null;
+  return (
+    at: DateTime.fromMillisecondsSinceEpoch(ms),
+    // MeshTrax 1.12.0 kept only the time: the longest wait.
+    packets: PrefsManager.instance.getInt(_lastPacketsKey(radioKeyHex)) ?? 4,
+  );
 }
 
-/// The radio sent a photo through repeaters [at] that counts against the
-/// rules: one of more than one packet ([photoGapRepeaters]).
-Future<void> notePhotoSent(String radioKeyHex, DateTime at) async {
+/// The radio sent a photo of [packets] packets through repeaters [at] that
+/// counts against the rules: one of more than one packet
+/// ([photoGapRepeaters]).
+Future<void> notePhotoSent(
+  String radioKeyHex,
+  DateTime at, {
+  required int packets,
+}) async {
   if (radioKeyHex.length < 16) return;
   await PrefsManager.instance.setInt(
     _lastSentKey(radioKeyHex),
     at.millisecondsSinceEpoch,
   );
+  await PrefsManager.instance.setInt(_lastPacketsKey(radioKeyHex), packets);
 }
 
 /// Gives back the time of the photo through repeaters sent [at], which no
@@ -161,4 +223,5 @@ Future<void> notePhotoNotCarried(String radioKeyHex, DateTime at) async {
   final key = _lastSentKey(radioKeyHex);
   if (PrefsManager.instance.getInt(key) != at.millisecondsSinceEpoch) return;
   await PrefsManager.instance.remove(key);
+  await PrefsManager.instance.remove(_lastPacketsKey(radioKeyHex));
 }

@@ -167,12 +167,12 @@ void main() {
         senderPrefix: 0x1234,
         imgId: 3,
       );
-      ImageReassemblyResult? got;
-      final r = ImageReassembler(selfPrefix: 0xBEEF);
+      final packets = ImagePackets(total: set.dataChunkCount);
       for (final b in set.blobs) {
-        final o = r.addChunk(b);
-        if (o.isComplete) got = o.result;
+        final header = parseImageChunkHeader(b)!;
+        packets.add(header, Uint8List.sublistView(b, header.bodyOffset));
       }
+      final got = packets.rebuild();
       expect(got!.metadata!.hasExtras, isTrue);
       final parts = photoPayloadParts(got.data, hasExtras: true)!;
       expect(parts.extras.tag, 'Road washed out');

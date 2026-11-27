@@ -23,6 +23,7 @@ import '../helpers/path_helper.dart';
 import '../services/photo_mesh.dart';
 import '../services/photo_store.dart';
 import '../widgets/photo_message_card.dart';
+import '../widgets/photo_receiving_strip.dart';
 import '../widgets/photo_report_dialog.dart';
 import 'photo_send_screen.dart';
 import '../widgets/share_contact_dialog.dart';
@@ -1315,6 +1316,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
                 },
               ),
             ),
+            PhotoReceivingStrip(channel: widget.channel),
             if (_showMentions)
               Consumer<MeshCoreConnector>(
                 builder: (context, connector, _) => MentionsOverlay(
@@ -2567,12 +2569,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             label: l10n.tray_photo,
             onTap: () {
               setState(() => _trayOpen = false);
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  fullscreenDialog: true,
-                  builder: (_) => PhotoSendScreen(channel: widget.channel),
-                ),
-              );
+              unawaited(PhotoSendScreen.open(context, widget.channel));
             },
           ),
       ],

@@ -401,6 +401,108 @@ abstract class AppLocalizations {
   /// **'Packet {sent} of {total} again'**
   String photo_sendingPacketAgain(int sent, int total);
 
+  /// Under a photo of mine in the chat: only one repeater was heard passing this packet on, so MeshTrax asks the observers whether they heard it before the next packet goes.
+  ///
+  /// In en, this message translates to:
+  /// **'Packet {sent} of {total}: asking observers'**
+  String photo_askingObservers(int sent, int total);
+
+  /// Shown as soon as the user taps Photo, on MeshCore frequencies, while the wait after their last photo through repeaters isn't over.
+  ///
+  /// In en, this message translates to:
+  /// **'Next photo through repeaters in {minutes} min'**
+  String photo_waitTitle(int minutes);
+
+  /// No description provided for @photo_waitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On MeshCore frequencies, photos share the air with everyone: after a photo of {packets} packets through repeaters, the next waits {gap} minutes. A zero hop photo reaches only the radios near you, and can go now.'**
+  String photo_waitBody(int packets, int gap);
+
+  /// Under the Zero hop switch, locked on, when the user chose zero hop because their next photo through repeaters must still wait.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos through repeaters wait after your last one'**
+  String get photo_zeroHopWaiting;
+
+  /// On a received photo that can't be shown: photos are off, or the photo model isn't on the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'To see it, this phone needs the photo model: {size}.'**
+  String photo_getPhotosHint(String size);
+
+  /// No description provided for @photo_photosOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos are off on this phone.'**
+  String get photo_photosOffHint;
+
+  /// Button on a received photo that can't be shown yet: turns photos on and downloads the photo model.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on photos'**
+  String get photo_getPhotos;
+
+  /// No description provided for @photo_getPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on photos?'**
+  String get photo_getPhotosTitle;
+
+  /// No description provided for @photo_getPhotosBody.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshTrax downloads the photo model, {size}, so it can show the photos you receive. Keep MeshTrax open until it finishes; it also shows in App settings, Messaging, Photos.'**
+  String photo_getPhotosBody(String size);
+
+  /// Added to the photo model download question when downloads are set to Wi-Fi only.
+  ///
+  /// In en, this message translates to:
+  /// **'It waits for Wi‑Fi.'**
+  String get photo_getPhotosWifi;
+
+  /// Above the message box while a photo comes in, packet by packet.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} from {name}: {got} of {total} packets so far'**
+  String photo_receiving(String id, String name, int got, int total);
+
+  /// Above the message box while a photo comes in and some of its packets are lost: a later packet came, or nothing came for 3 minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} from {name}: {got} of {total} packets, {lost} lost'**
+  String photo_receivingLost(
+    String id,
+    String name,
+    int got,
+    int total,
+    int lost,
+  );
+
+  /// Button beside a photo coming in with lost packets: asks its sender, once, to send those packets again.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for the rest'**
+  String get photo_askForRest;
+
+  /// Beside a photo coming in, after the user asked its sender for its lost packets.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Asked for 1 packet} other{Asked for {count} packets}}'**
+  String photo_askedFor(int count);
+
+  /// Snack bar when the radio didn't take the request for a photo's lost packets.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t ask for the rest'**
+  String get photo_askFailed;
+
+  /// Under a photo of mine in the chat: it goes once the photo sent before it is done.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send'**
+  String get photo_waitingToSend;
+
   /// Long-press text of the amber check on a sent photo: repeaters were heard passing on only some of its packets.
   ///
   /// In en, this message translates to:

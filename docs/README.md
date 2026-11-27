@@ -40,6 +40,7 @@ MeshTrax is an app for MeshCore LoRa radios: long-range radios that pass message
 | [Database plan](technical/phase3d-cut-plan.md) | How the message database became the one source of messages (finished) |
 | [Bluetooth auto-connect findings](technical/ble-autoconnect-findings.md) | Three auto-connect bugs and their fixes (finished) |
 | [Photos](technical/photos.md) | How photos work: the packet format, the photo model and its runtime, memory, safety and the rules on MeshCore frequencies |
+| [Channel requests](technical/channel-requests.md) | The packet MeshTrax nodes ask each other for something with, such as a photo's lost packets |
 
 To build the app or send a change, start with [CONTRIBUTING.md](../CONTRIBUTING.md).
 

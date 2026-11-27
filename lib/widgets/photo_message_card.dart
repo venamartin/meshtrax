@@ -16,8 +16,10 @@ import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../services/app_settings_service.dart';
 import '../services/photo_mesh.dart';
+import '../services/photo_model_downloads.dart';
 import '../services/photo_save.dart';
 import '../services/photo_store.dart';
+import '../utils/format_bytes.dart';
 import 'photo_ai_mark.dart';
 import 'photo_footprint_mark.dart';
 import 'photo_report_dialog.dart';
@@ -211,6 +213,22 @@ class PhotoMessageCard extends StatelessWidget {
       );
     }
     final image = store.imageFor(messageId);
+    final models = PhotoModelDownloads.instance;
+    if (image == null &&
+        !record.outgoing &&
+        models != null &&
+        (!store.photosEnabled || !models.installed)) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox.square(
+          dimension: size,
+          child: ColoredBox(
+            color: scheme.surfaceContainerHigh,
+            child: Center(child: _getPhotos(context, models)),
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -293,18 +311,178 @@ class PhotoMessageCard extends StatelessWidget {
     );
   }
 
+  /// A received photo this phone can't show yet, as photos are off or the
+  /// photo model isn't on it: one button turns photos on and downloads the
+  /// model, after saying how big it is; then the photo shows its progress,
+  /// and once the model is in, the photo can be rebuilt.
+  Widget _getPhotos(BuildContext context, PhotoModelDownloads models) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final quiet = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final total = PhotoModelDownloads.totalBytes;
+    final downloading = models.active.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.photo_outlined,
+            size: 40,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            downloading
+                ? l10n.photo_modelTitle
+                : models.installed
+                ? l10n.photo_photosOffHint
+                : l10n.photo_getPhotosHint(formatBytes(total)),
+            style: quiet,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          if (downloading) ...[
+            LinearProgressIndicator(value: models.bytesDone / total),
+            const SizedBox(height: 4),
+            Text(
+              l10n.photo_modelProgress(
+                formatBytes(models.bytesDone),
+                formatBytes(total),
+              ),
+              style: quiet,
+            ),
+          ] else
+            FilledButton.tonal(
+              onPressed: () => _turnOnPhotos(context, models),
+              child: Text(l10n.photo_getPhotos),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Turns photos on, and downloads the photo model once the user said yes
+  /// to its size, as App settings, Messaging, Photos does.
+  Future<void> _turnOnPhotos(
+    BuildContext context,
+    PhotoModelDownloads models,
+  ) async {
+    final store = PhotoStore.instance;
+    if (models.installed) {
+      store.photosEnabled = true;
+      return;
+    }
+    final l10n = context.l10n;
+    final size = formatBytes(PhotoModelDownloads.totalBytes);
+    final wifiOnly = context
+        .read<AppSettingsService>()
+        .settings
+        .mapDownloadsWifiOnly;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.photo_getPhotosTitle),
+        content: Text(
+          wifiOnly
+              ? '${l10n.photo_getPhotosBody(size)} ${l10n.photo_getPhotosWifi}'
+              : l10n.photo_getPhotosBody(size),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.common_cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.photo_downloadModel),
+          ),
+        ],
+      ),
+    );
+    if (yes != true || !context.mounted) return;
+    store.photosEnabled = true;
+    final short = await models.download(l10n);
+    if (short != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.photo_notEnoughSpace(
+              formatBytes(short.needed),
+              formatBytes(short.free),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// What a photo of mine is doing while its packets go.
+  Widget _sendingLine(BuildContext context, PhotoSendState going) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final failed = going.step == PhotoSendStep.failed;
+    final color = failed
+        ? theme.colorScheme.error
+        : theme.colorScheme.onSurfaceVariant;
+    final error = going.error;
+    final text = switch (going.step) {
+      PhotoSendStep.waiting => l10n.photo_waitingToSend,
+      PhotoSendStep.sending => going.repair
+          ? l10n.photo_sendingRepairPacket(going.packet, going.packets)
+          : l10n.photo_sendingPacket(going.packet, going.packets),
+      PhotoSendStep.again =>
+        l10n.photo_sendingPacketAgain(going.packet, going.packets),
+      PhotoSendStep.observers =>
+        l10n.photo_askingObservers(going.packet, going.packets),
+      PhotoSendStep.failed => l10n.photo_notSent(
+        error is PhotoSendException ? error.text(l10n) : '$error',
+      ),
+    };
+    return SizedBox(
+      width: size,
+      child: Row(
+        children: [
+          if (failed)
+            Icon(Icons.error_outline, size: 14, color: color)
+          else
+            SizedBox.square(
+              dimension: 12,
+              child: CircularProgressIndicator(strokeWidth: 1.5, color: color),
+            ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = PhotoStore.instance;
     return ListenableBuilder(
-      listenable: store,
+      listenable: Listenable.merge([
+        store,
+        PhotoMesh.sending,
+        ?PhotoModelDownloads.instance,
+      ]),
       builder: (context, _) {
         final record = store.recordFor(messageId);
         if (record == null) return Text(context.l10n.photo_chatPhoto);
         final body = _body(context, record);
         final tag = record.tag;
         final position = record.position;
-        if (tag == null && position == null) return body;
+        final going = record.outgoing
+            ? PhotoMesh.sending.value[messageId]
+            : null;
+        if (tag == null && position == null && going == null) return body;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,6 +492,10 @@ class PhotoMessageCard extends StatelessWidget {
             if (position != null) ...[
               const SizedBox(height: 4),
               PhotoPositionRow(position, label: tag ?? senderName),
+            ],
+            if (going != null) ...[
+              const SizedBox(height: 6),
+              _sendingLine(context, going),
             ],
           ],
         );

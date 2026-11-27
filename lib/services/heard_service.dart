@@ -144,6 +144,7 @@ class HeardService extends ChangeNotifier {
       appLogger.warn('Unreadable region observer state: $e', tag: 'Heard');
     }
     connector.onChannelSendStamped = _onSendStamped;
+    connector.onChannelPacketSent = _onPacketSent;
     connector.onOwnChannelEcho = _onOwnEcho;
     connector.mayResendAfterOneRepeater = _mayResendAfterOneRepeater;
     connector.onResentAfterOneRepeater = _onResentAfterOneRepeater;
@@ -221,20 +222,40 @@ class HeardService extends ChangeNotifier {
     );
   }
 
-  /// A photo of mine went out on the channel with secret [channelKey] as
-  /// [packets] of channel data type [dataType], in [region] if any: from
-  /// now, asks about each packet on its own, as about a channel text, and
-  /// the photo's row gets the ear when an observer heard any of them. A
-  /// packet sent again is the same bytes, with the same hash. False when
-  /// the check is off, or the region has no observer.
-  bool trackPhoto(
-    String messageId,
-    Uint8List channelKey,
-    int dataType,
-    List<Uint8List> packets, {
-    String? region,
-  }) {
-    if (!_enabled || _observerServer == null || packets.isEmpty) return false;
+  /// A packet of a group of mine went out as a flood, first or again
+  /// ([MeshCoreConnector.sendChannelPackets]): a photo's, asked about as a
+  /// channel text is after each send, its group being the photo's row.
+  void _onPacketSent(
+    ({
+      String id,
+      String groupId,
+      int index,
+      Uint8List channelKey,
+      int dataType,
+      Uint8List blob,
+      String? region,
+    }) packet,
+  ) {
+    if (!_photoPackets.containsKey(packet.groupId) &&
+        !startPhoto(packet.groupId, region: packet.region)) {
+      return;
+    }
+    trackPhotoPacket(
+      packet.groupId,
+      packet.index,
+      packet.channelKey,
+      packet.dataType,
+      packet.blob,
+    );
+  }
+
+  /// A photo of mine, filed as [messageId], starts to go out in [region] if
+  /// any: each packet is asked about on its own as it goes
+  /// ([trackPhotoPacket]), as a channel text is after each send, and the
+  /// photo's row gets the ear when an observer heard any of them. False
+  /// when the check is off, or the region has no observer.
+  bool startPhoto(String messageId, {String? region}) {
+    if (!_enabled || _observerServer == null) return false;
     if (region != null) {
       if (_regionQuiet(region)) return false;
       _sendRegion.remove(messageId);
@@ -243,32 +264,43 @@ class HeardService extends ChangeNotifier {
         _sendRegion.remove(_sendRegion.keys.first);
       }
     }
-    final ids = <String>[];
-    final hashes = <String>[];
-    for (final (i, p) in packets.indexed) {
-      final id = photoPacketId(messageId, i);
-      final hash = channelDataPacketHash(
-        channelKey: channelKey,
-        dataType: dataType,
-        data: p,
-      );
-      _checker.track(id, hash);
-      _photoPacket[id] = (messageId, i);
-      ids.add(id);
-      hashes.add(hash);
-    }
-    _photoPackets[messageId] = ids;
+    _photoPackets[messageId] = [];
     _photoPacketsHeard[messageId] = {};
     while (_photoPackets.length > _keptMessages) {
       final old = _photoPackets.keys.first;
       _photoPackets.remove(old)?.forEach(_photoPacket.remove);
       _photoPacketsHeard.remove(old);
     }
+    return true;
+  }
+
+  /// Packet [index] of photo [messageId] ([startPhoto]) went out, first or
+  /// again, as [blob] of channel data type [dataType] on the channel with
+  /// secret [channelKey]: it is asked about from now, as a channel text is
+  /// after each send. Sent again under another type, it has another hash,
+  /// asked about with the first.
+  void trackPhotoPacket(
+    String messageId,
+    int index,
+    Uint8List channelKey,
+    int dataType,
+    Uint8List blob,
+  ) {
+    final ids = _photoPackets[messageId];
+    if (ids == null) return;
+    final id = photoPacketId(messageId, index);
+    final hash = channelDataPacketHash(
+      channelKey: channelKey,
+      dataType: dataType,
+      data: blob,
+    );
+    _checker.track(id, hash);
+    _photoPacket[id] = (messageId, index);
+    if (!ids.contains(id)) ids.add(id);
     appLogger.info(
-      'Observer check for photo $messageId: ${hashes.join(', ')}',
+      'Observer check for packet ${index + 1} of photo $messageId: $hash',
       tag: 'Heard',
     );
-    return true;
   }
 
   /// The id packet [index] of photo [messageId] is asked about by.
@@ -279,16 +311,8 @@ class HeardService extends ChangeNotifier {
   Set<int> photoPacketsHeard(String messageId) =>
       _photoPacketsHeard[messageId] ?? const {};
 
-  /// Whether the packets of photo [messageId] that neither a repeater nor
-  /// an observer was heard to carry may go once more: on the terms of a
-  /// channel text only one repeater carried.
-  bool mayResendPhoto(String messageId) =>
-      _mayResendAfterOneRepeater(messageId);
-
-  /// Packets of photo [messageId] went out once more: a miss unless an
-  /// observer hears the photo by the last ask.
-  void notePhotoResent(String messageId) =>
-      _onResentAfterOneRepeater(messageId);
+  /// Whether the observers are asked about the packets of photo [messageId].
+  bool asksAboutPhoto(String messageId) => _photoPackets.containsKey(messageId);
 
   /// How long after a send its first and last asks come.
   Duration get firstAsk => _checker.askAfter.first;
@@ -466,6 +490,8 @@ class HeardService extends ChangeNotifier {
       _heard.remove(_heard.keys.first);
     }
     _connector?.confirmChannelSendHeard(messageId);
+    // The packet itself is on air: it doesn't go again.
+    if (packet != null) _connector?.confirmChannelSendHeard(id);
     notifyListeners();
     unawaited(
       PrefsManager.instance.setString(

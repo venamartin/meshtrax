@@ -341,6 +341,7 @@ typedef _HeldDatagram = ({
   Uint8List payload,
   DateTime receivedAt,
   bool fromBacklog,
+  int pathLen,
 });
 
 typedef SelfGpsReading = ({
@@ -847,7 +848,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   DateTime _lastRadioRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastContactMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
-  static const int _radioQuietMs = 3000;
+  /// The radio silence a send waits for after the radio last heard anything;
+  /// tests shorten it.
+  @visibleForTesting
+  static int radioQuietMs = 3000;
   static const int _radioQuietMaxWaitMs = TimeoutHelper.radioQuietMaxWaitMs;
   // Channel sends fire right after the inbound burst the user was reading, so
   // they need a longer window to find a quiet gap before transmitting into the
@@ -1515,6 +1519,18 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     if (changed) notifyListeners();
   }
 
+  /// Marks my channel row [messageId] failed: a photo whose packets the
+  /// radio stopped taking.
+  Future<void> failOwnSend(String messageId) async {
+    final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
+      messageId,
+      (m) => m.isOutgoing
+          ? m.copyWith(status: ChannelMessageStatus.failed)
+          : m,
+    );
+    if (updated) notifyListeners();
+  }
+
   /// Writes on my channel row [messageId] what was heard of it, for a send
   /// that hears its own copies (a photo's packets): the [copies] heard, the
   /// [paths] they came through in [pathHashSize]-byte codes, and delivered
@@ -2172,14 +2188,14 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     final msSinceRx = DateTime.now()
         .difference(_lastRadioRxTime)
         .inMilliseconds;
-    if (msSinceRx >= _radioQuietMs) return;
+    if (msSinceRx >= radioQuietMs) return;
 
     final deadline = DateTime.now().add(
       Duration(milliseconds: maxQuietWaitMs),
     );
     while (DateTime.now().isBefore(deadline)) {
       final quiet = DateTime.now().difference(_lastRadioRxTime).inMilliseconds;
-      if (quiet >= _radioQuietMs) {
+      if (quiet >= radioQuietMs) {
         debugPrint('Radio quiet for ${quiet}ms, proceeding with send');
         return;
       }
@@ -2390,6 +2406,22 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// carried it.
   void Function(String messageId)? onResentAfterOneRepeater;
 
+  /// A packet of a group of channel datagrams of mine ([sendChannelPackets])
+  /// went out as a flood, first or again, as [blob]: [id] is its send id,
+  /// `groupId/n`, and [region] its channel's region if any (the
+  /// observer-server hook asks about it, as about a text).
+  void Function(
+    ({
+      String id,
+      String groupId,
+      int index,
+      Uint8List channelKey,
+      int dataType,
+      Uint8List blob,
+      String? region,
+    }) packet,
+  )? onChannelPacketSent;
+
   /// Someone else heard this channel message of mine (an observer server
   /// said so). It is on air, so it isn't sent again. Only a repeat my own
   /// radio hears marks it delivered.
@@ -2398,6 +2430,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _channelRepeatTimers.remove(messageId)?.cancel();
     _repeatersHeard.remove(messageId);
     _channelMessageTimers.remove(messageId)?.cancel();
+    _channelPackets[messageId]?.settle();
     unawaited(() async {
       final (updated, _) = await _channelMessageStore.updateAnyByMessageId(
         messageId,
@@ -4827,7 +4860,8 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// slot is unknown. [notify] false files it quietly, with no notification.
   /// [hops], of a received photo: the fewest repeaters any of its packets
   /// came through, 0 when this radio heard the sender's own (Direct, as for
-  /// a message); null when unknown.
+  /// a message); null when unknown. [messageId], of a photo of mine: the id
+  /// made before its packets went, which observers were asked under.
   Future<String?> ingestPhotoMessage({
     required int channelIndex,
     required String senderName,
@@ -4836,8 +4870,10 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     required String packetHash,
     int? hops,
     bool notify = true,
+    String? messageId,
   }) async {
     final message = ChannelMessage(
+      messageId: messageId,
       senderName: senderName,
       text: text,
       timestamp: DateTime.now(),
@@ -7357,11 +7393,51 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final idKey = _findChannelByIndex(channelIndex)?.idKey;
     if (retries < maxRetries && (idKey == null || !_isNearbyOnly(idKey))) {
       _channelMessageRetries[messageId] = retries + 1;
-      unawaited(resendChannelMessageById(channelIndex, messageId));
+      _resendChannelSend(channelIndex, messageId);
       return;
     }
 
+    final packet = _channelPackets[messageId];
+    if (packet != null) {
+      _failChannelPacket(packet, ChannelPacketsFailed(connected: isConnected));
+      return;
+    }
     markChannelMessageFailed(channelIndex, messageId);
+  }
+
+  /// Sends my channel send [messageId] again: a text stamped anew, a packet
+  /// of a [sendChannelPackets] group as its group makes it again. With
+  /// [keepStatus] it is the one more send after only one repeater carried
+  /// it. A packet doesn't go again past its group's time.
+  void _resendChannelSend(
+    int channelIndex,
+    String messageId, {
+    bool keepStatus = false,
+  }) {
+    final packet = _channelPackets[messageId];
+    if (packet == null) {
+      unawaited(
+        resendChannelMessageById(
+          channelIndex,
+          messageId,
+          keepStatus: keepStatus,
+        ),
+      );
+      return;
+    }
+    final within = packet.group.againWithin;
+    final started = packet.group.startedAt;
+    if (within != null &&
+        started != null &&
+        DateTime.now().isAfter(started.add(within))) {
+      appLogger.info(
+        '$messageId would reach its receivers too late: not sent again',
+        tag: 'Connector',
+      );
+      packet.settle();
+      return;
+    }
+    unawaited(_sendChannelPacket(packet, oneMore: keepStatus));
   }
 
   void markChannelMessageFailed(int channelIndex, String messageId) {
@@ -7420,31 +7496,37 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (retries < maxRetries) {
         appLogger.info('No repeat heard for $messageId, retrying (attempt ${retries + 1})', tag: 'Connector');
         _channelMessageRetries[messageId] = retries + 1;
-        unawaited(resendChannelMessageById(channelIndex, messageId));
+        _resendChannelSend(channelIndex, messageId);
       } else {
+        _channelPackets[messageId]?.settle();
         notifyListeners();
       }
     });
   }
+
+  /// What the observer server knows channel send [messageId] by: a packet
+  /// of a [sendChannelPackets] group by its group, a text by itself.
+  String _observedAs(String messageId) =>
+      _channelPackets[messageId]?.group.id ?? messageId;
 
   /// One more send for a channel message only one repeater carried: never
   /// with channel retries set to 0, and only while observers hear this
   /// radio (traxheard's README).
   bool _oneRepeaterResendAllowed(String messageId) =>
       (_appSettingsService?.settings.maxChannelMessageRetries ?? 1) > 0 &&
-      mayResendAfterOneRepeater?.call(messageId) == true;
+      mayResendAfterOneRepeater?.call(_observedAs(messageId)) == true;
 
-  /// Whether my channel message [messageId], just heard back as [copy],
-  /// keeps waiting for a second repeater. Repeaters count by their codes
-  /// over all the copies, and a car repeater doesn't count.
-  bool _waitForSecondRepeater(String messageId, ChannelMessage copy) {
+  /// Whether my channel send [messageId], just heard back through [path]
+  /// in [width]-byte codes, keeps waiting for a second repeater. Repeaters
+  /// count by their codes over all the copies, and a car repeater doesn't
+  /// count.
+  bool _waitForSecondRepeater(String messageId, Uint8List path, int width) {
     if (!_channelRepeatTimers.containsKey(messageId) ||
         !_oneRepeaterResendAllowed(messageId)) {
       return false;
     }
     final heard = _repeatersHeard.putIfAbsent(messageId, () => <String>{});
-    final width = copy.pathHashSize;
-    for (final hop in PathHelper.getHops(copy.pathBytes, stride: width)) {
+    for (final hop in PathHelper.getHops(path, stride: width)) {
       if (isCarRepeater?.call(hop, width) != true) {
         heard.add(PathHelper.hopHex(hop));
       }
@@ -7452,24 +7534,25 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     return heard.length < 2;
   }
 
-  /// Only [repeaters] (one at most) carried my channel message [messageId],
-  /// and no observer heard it: it goes out once more, still delivered.
+  /// Only [repeaters] (one at most) carried my channel send [messageId], and
+  /// no observer heard it: it goes out once more, still delivered.
   void _resendAfterOneRepeater(
     int channelIndex,
     String messageId,
     Set<String> repeaters,
   ) {
-    if (!_oneRepeaterResendAllowed(messageId)) return;
+    if (!_oneRepeaterResendAllowed(messageId)) {
+      _channelPackets[messageId]?.settle();
+      return;
+    }
     final by = repeaters.isEmpty ? 'car repeaters' : repeaters.join(', ');
     appLogger.info(
       'Only $by carried $messageId and no observer heard it: sending it '
       'once more',
       tag: 'Connector',
     );
-    onResentAfterOneRepeater?.call(messageId);
-    unawaited(
-      resendChannelMessageById(channelIndex, messageId, keepStatus: true),
-    );
+    onResentAfterOneRepeater?.call(_observedAs(messageId));
+    _resendChannelSend(channelIndex, messageId, keepStatus: true);
   }
 
   void _cleanupChannelSync({required bool completed}) {
@@ -7988,6 +8071,13 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final failedAck = _pendingGenericAckQueue.removeAt(0);
     failedAck.complete(frame);
+    final packet = failedAck.commandCode == cmdSendChannelData
+        ? _channelPackets[failedAck.channelSendQueueId]
+        : null;
+    if (packet != null) {
+      _failChannelPacket(packet, ChannelPacketsFailed(errorCode: errCode));
+      return;
+    }
     if (failedAck.commandCode != cmdSendChannelTxtMsg ||
         failedAck.channelSendQueueId == null) {
       return;
@@ -8309,6 +8399,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       payload: Uint8List.fromList(frame.sublist(9, 9 + frame[8])),
       receivedAt: DateTime.now(),
       fromBacklog: _isSyncingQueuedMessages && !_completedFirstQueueDrain,
+      pathLen: frame[5],
     );
     if (_channelsVerified) {
       _emitDatagram(datagram);
@@ -8329,6 +8420,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           payload: d.payload,
           receivedAt: d.receivedAt,
           fromBacklog: d.fromBacklog,
+          pathLen: d.pathLen,
         ),
       );
       return;
@@ -8351,6 +8443,211 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       buildSendChannelDataFrame(live.index, dataType, payload),
       expectsGenericAck: true,
     );
+  }
+
+  /// Groups of [sendChannelPackets] go one after the other.
+  Future<void> _packetGroups = Future<void>.value();
+
+  /// The packets of [sendChannelPackets] groups going or listened for, by
+  /// their send id.
+  final Map<String, _ChannelPacket> _channelPackets = {};
+
+  /// Sends [packets], datagrams of [dataType] on [channel], one at a time, in
+  /// their turn after any group still going. Each follows a channel text's
+  /// rules before the next goes: it waits [channelRepeatWait] for a repeat.
+  /// No repeater passed it on and no observer heard it: again, within the
+  /// channel retries. Only one repeater (or car repeaters): once more, where
+  /// observers hear this radio lately. Two or more, or an observer heard it:
+  /// done. Texts sent meanwhile go between them.
+  ///
+  /// Each packet goes as [again] of it and how many times it went before, 0
+  /// the first time, made just before it goes: the receivers' format makes a
+  /// packet sent again a new packet on the air. A packet goes again only
+  /// within [againWithin] of the group's first packet, while the receivers
+  /// still keep the rest. A copy a repeater passes on is one [same] as the
+  /// packet sent. [gap]: the least time from one packet to the next.
+  /// [zeroHop]: to the radios in range only; nothing waits or goes again.
+  /// [groupId] names the group, and packet n's send id is `groupId/n`, n
+  /// from 1, as the observer server is asked about it.
+  ///
+  /// [onPacket] says what each packet does; [onCopy] hands over every copy a
+  /// repeater passed on, with its path, until a message's repeat wait after
+  /// the last packet is done with, when the returned future completes. It
+  /// throws [ChannelPacketsFailed] when the radio didn't take a packet: the
+  /// rest don't go.
+  ///
+  /// With [once], each packet goes once and is done with when the radio has
+  /// it: no wait for a repeat, nothing sent again, observers not asked. With
+  /// [ahead], the group goes at once, as a text does, not after the groups
+  /// still going.
+  Future<void> sendChannelPackets({
+    required Channel channel,
+    required String groupId,
+    required int dataType,
+    required List<Uint8List> packets,
+    Uint8List Function(Uint8List packet, int sendsBefore)? again,
+    bool Function(Uint8List copy, Uint8List sent)? same,
+    Duration gap = Duration.zero,
+    bool zeroHop = false,
+    bool once = false,
+    bool ahead = false,
+    Duration? againWithin,
+    void Function(int index, ChannelPacketStep step)? onPacket,
+    void Function(int index, Uint8List path, int pathHashSize)? onCopy,
+  }) {
+    final group = _ChannelPacketGroup(
+      id: groupId,
+      idKey: channel.idKey,
+      dataType: dataType,
+      again: again ?? (packet, _) => packet,
+      same: same ?? listEquals,
+      zeroHop: zeroHop,
+      once: once,
+      againWithin: againWithin,
+      onPacket: onPacket,
+      onCopy: onCopy,
+    );
+    if (ahead) return _sendPacketGroup(group, packets, gap);
+    final job = _packetGroups.then((_) => _sendPacketGroup(group, packets, gap));
+    _packetGroups = job.then((_) {}, onError: (Object _) {});
+    return job;
+  }
+
+  Future<void> _sendPacketGroup(
+    _ChannelPacketGroup group,
+    List<Uint8List> blobs,
+    Duration gap,
+  ) async {
+    final packets = <_ChannelPacket>[];
+    try {
+      DateTime? last;
+      for (var i = 0; i < blobs.length; i++) {
+        final wait = last?.add(gap).difference(DateTime.now());
+        if (wait != null && wait > Duration.zero) {
+          await Future<void>.delayed(wait);
+        }
+        final packet = _ChannelPacket(group, i, blobs[i]);
+        _channelPackets[packet.id] = packet;
+        _channelMessageRetries[packet.id] = 0;
+        packets.add(packet);
+        await _sendChannelPacket(packet);
+        await packet.done.future;
+        final failure = packet.failure;
+        if (failure != null) throw failure;
+        last = packet.lastHandedOver;
+        group.onPacket?.call(i, ChannelPacketStep.done);
+      }
+      // Copies can still come back, as a text's echo can.
+      if (!group.zeroHop && !group.once) {
+        await Future<void>.delayed(channelRepeatWait);
+      }
+    } finally {
+      for (final packet in packets) {
+        _channelPackets.remove(packet.id);
+        _channelMessageRetries.remove(packet.id);
+        _channelMessageTimers.remove(packet.id)?.cancel();
+        _channelRepeatTimers.remove(packet.id)?.cancel();
+        _repeatersHeard.remove(packet.id);
+      }
+    }
+  }
+
+  /// Hands [packet] to the radio, first or again, as a text is: it waits
+  /// for the radio to go quiet, and for the radio's OK
+  /// ([_handleChannelMessageTimeout]). With [oneMore] it is the one more send
+  /// after one repeater, done with once the radio has it.
+  Future<void> _sendChannelPacket(
+    _ChannelPacket packet, {
+    bool oneMore = false,
+  }) async {
+    final group = packet.group;
+    final live = _liveChannelByIdKey(group.idKey);
+    if (!isConnected ||
+        live == null ||
+        !_channelsVerified ||
+        _isSyncingChannels) {
+      _failChannelPacket(packet, ChannelPacketsFailed(connected: isConnected));
+      return;
+    }
+    packet.oneMore = oneMore;
+    if (!oneMore) {
+      _channelMessageTimers[packet.id]?.cancel();
+      _channelMessageTimers[packet.id] = Timer(
+        const Duration(seconds: 30),
+        () => _handleChannelMessageTimeout(live.index, packet.id),
+      );
+    }
+    await _waitForRadioQuiet(
+      lastInboundRxTime: _lastChannelMsgRxTime,
+      maxQuietWaitMs: _channelRadioQuietMaxWaitMs,
+    );
+    // Heard, or the link dropped, during the wait: it doesn't go again.
+    if (packet.done.isCompleted ||
+        (!oneMore && !_channelMessageTimers.containsKey(packet.id))) {
+      return;
+    }
+    final sendsBefore = packet.sends;
+    final blob = group.again(packet.blob, sendsBefore);
+    packet.sends++;
+    packet.lastHandedOver = DateTime.now();
+    group.startedAt ??= packet.lastHandedOver;
+    group.onPacket?.call(
+      packet.index,
+      sendsBefore == 0 ? ChannelPacketStep.sending : ChannelPacketStep.again,
+    );
+    if (!group.zeroHop && !group.once && !_isNearbyOnly(live.idKey)) {
+      final region = regionService?.regionOf(live.idKey);
+      onChannelPacketSent?.call((
+        id: packet.id,
+        groupId: group.id,
+        index: packet.index,
+        channelKey: live.psk,
+        dataType: group.dataType,
+        blob: blob,
+        region: RegionHelper.isRegionName(region) ? region : null,
+      ));
+    }
+    try {
+      await sendFrame(
+        buildSendChannelDataFrame(
+          live.index,
+          group.dataType,
+          blob,
+          zeroHop: group.zeroHop,
+        ),
+        channelSendQueueId: packet.id,
+        expectsGenericAck: true,
+      );
+    } catch (_) {
+      _failChannelPacket(packet, ChannelPacketsFailed(connected: isConnected));
+    }
+  }
+
+  /// The radio took packet [id] of a [sendChannelPackets] group: it waits
+  /// for a repeat, as a text does once the radio has it. Zero hop, or the
+  /// one more send after one repeater, it is done with.
+  void _channelPacketTaken(String id) {
+    final packet = _channelPackets[id];
+    if (packet == null) return;
+    _channelMessageTimers.remove(id)?.cancel();
+    final live = _liveChannelByIdKey(packet.group.idKey);
+    if (packet.oneMore ||
+        packet.group.zeroHop ||
+        packet.group.once ||
+        live == null ||
+        _isNearbyOnly(live.idKey)) {
+      packet.settle();
+      return;
+    }
+    _startWaitForRepeatTimer(live.index, id);
+  }
+
+  void _failChannelPacket(_ChannelPacket packet, ChannelPacketsFailed why) {
+    _channelMessageTimers.remove(packet.id)?.cancel();
+    _channelRepeatTimers.remove(packet.id)?.cancel();
+    _repeatersHeard.remove(packet.id);
+    packet.failure ??= why;
+    packet.settle();
   }
 
   void _handleQueuedMessageReceived() {
@@ -10521,8 +10818,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   )? onRawChannelData;
 
   void _handleRawGroupData(_RawPacket packet) {
+    if (packet.payload.length < 4) return;
     final hook = onRawChannelData;
-    if (hook == null || packet.payload.length < 4) return;
+    if (hook == null && _channelPackets.isEmpty) return;
     final channelHash = packet.payload[0];
     final encrypted = Uint8List.fromList(packet.payload.sublist(1));
     for (final channel in _channels) {
@@ -10533,15 +10831,54 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (plain == null || plain.length < 3) continue;
       final length = plain[2];
       if (3 + length > plain.length) continue;
-      hook(
-        channel.index,
-        plain[0] | (plain[1] << 8),
-        Uint8List.sublistView(plain, 3, 3 + length),
-        packet.isFlood ? packet.pathBytes : Uint8List(0),
-        packet.hashSize,
-      );
+      final dataType = plain[0] | (plain[1] << 8);
+      final blob = Uint8List.sublistView(plain, 3, 3 + length);
+      final path = packet.isFlood ? packet.pathBytes : Uint8List(0);
+      if (path.isNotEmpty &&
+          _ownChannelPacketCopy(channel, dataType, blob, path, packet.hashSize)) {
+        return;
+      }
+      hook?.call(channel.index, dataType, blob, path, packet.hashSize);
       return;
     }
+  }
+
+  /// Whether [blob] of [dataType] on [channel], heard back through [path],
+  /// is a copy of a packet of a [sendChannelPackets] group of mine: a
+  /// repeater passed it on. The group hears of every copy; the packet's
+  /// wait for a repeat takes it as a text's wait takes its echo.
+  bool _ownChannelPacketCopy(
+    Channel channel,
+    int dataType,
+    Uint8List blob,
+    Uint8List path,
+    int width,
+  ) {
+    for (final packet in _channelPackets.values) {
+      final group = packet.group;
+      if (group.idKey != channel.idKey ||
+          group.dataType != dataType ||
+          !group.same(blob, packet.blob)) {
+        continue;
+      }
+      group.onCopy?.call(packet.index, path, width);
+      if (packet.done.isCompleted) return true;
+      if (_waitForSecondRepeater(packet.id, path, width)) {
+        appLogger.info(
+          'Heard ${packet.id} passed on, waiting for a second repeater',
+          tag: 'Connector',
+        );
+        group.onPacket?.call(packet.index, ChannelPacketStep.waiting);
+      } else {
+        appLogger.info('Heard ${packet.id} passed on', tag: 'Connector');
+        _channelRepeatTimers.remove(packet.id)?.cancel();
+        _repeatersHeard.remove(packet.id);
+        _channelMessageTimers.remove(packet.id)?.cancel();
+        packet.settle();
+      }
+      return true;
+    }
+    return false;
   }
 
   void _handleControlData(Uint8List frame) {
@@ -10815,6 +11152,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
     final pendingAck = _pendingGenericAckQueue.removeAt(0);
     pendingAck.complete(frame);
+    if (pendingAck.commandCode == cmdSendChannelData &&
+        pendingAck.channelSendQueueId != null) {
+      _channelPacketTaken(pendingAck.channelSendQueueId!);
+      return;
+    }
     if (pendingAck.commandCode != cmdSendChannelTxtMsg ||
         pendingAck.channelSendQueueId == null) {
       return;
@@ -12919,7 +13261,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       onOwnChannelEcho?.call(existing.messageId, incoming.packetHash!);
     }
     if (existing.isOutgoing &&
-        _waitForSecondRepeater(existing.messageId, incoming)) {
+        _waitForSecondRepeater(
+          existing.messageId,
+          incoming.pathBytes,
+          incoming.pathHashSize,
+        )) {
       appLogger.info(
         'Matched repeat for ${existing.messageId}, waiting for a second '
         'repeater',
@@ -13402,6 +13748,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _pendingGenericAckQueue.clear();
     _reactionSendQueueSequence = 0;
 
+    for (final packet in _channelPackets.values.toList()) {
+      _failChannelPacket(packet, const ChannelPacketsFailed(connected: false));
+    }
     // These timers were the only thing that would ever settle their rows.
     _failPendingChannelSends(_channelMessageTimers.keys.toList());
     for (final timer in _channelMessageTimers.values) {
@@ -14953,4 +15302,72 @@ enum SosCopy {
 
   /// Not this card's: a new SOS, after a cancel or a long silence.
   apart,
+}
+
+/// A group of [MeshCoreConnector.sendChannelPackets].
+class _ChannelPacketGroup {
+  _ChannelPacketGroup({
+    required this.id,
+    required this.idKey,
+    required this.dataType,
+    required this.again,
+    required this.same,
+    required this.zeroHop,
+    this.once = false,
+    this.againWithin,
+    this.onPacket,
+    this.onCopy,
+  });
+
+  final String id;
+
+  /// Each packet goes once, done with when the radio has it.
+  final bool once;
+
+  /// The channel's identity: its slot can move on a resync.
+  final String idKey;
+  final int dataType;
+  final Uint8List Function(Uint8List packet, int sendsBefore) again;
+  final bool Function(Uint8List copy, Uint8List sent) same;
+  final bool zeroHop;
+  final Duration? againWithin;
+
+  /// When its first packet went to the radio.
+  DateTime? startedAt;
+  final void Function(int index, ChannelPacketStep step)? onPacket;
+  final void Function(int index, Uint8List path, int pathHashSize)? onCopy;
+}
+
+/// One packet of a [_ChannelPacketGroup], while it goes and is listened for.
+class _ChannelPacket {
+  _ChannelPacket(this.group, this.index, this.blob);
+
+  final _ChannelPacketGroup group;
+  final int index;
+
+  /// As handed over: each send goes as the group's again of it.
+  final Uint8List blob;
+
+  /// How many times it went to the radio.
+  int sends = 0;
+
+  /// When it last went to the radio.
+  DateTime? lastHandedOver;
+
+  /// The one more send after only one repeater carried it.
+  bool oneMore = false;
+
+  /// Completes when it is done with: heard, out of retries, sent once more,
+  /// or failed.
+  final Completer<void> done = Completer<void>();
+
+  /// Why it failed, when it did.
+  ChannelPacketsFailed? failure;
+
+  /// Its send id, as the observer server is asked about it.
+  String get id => '${group.id}/${index + 1}';
+
+  void settle() {
+    if (!done.isCompleted) done.complete();
+  }
 }
