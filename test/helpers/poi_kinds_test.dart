@@ -13,6 +13,18 @@ void main() {
     expect(poiKindsNamed(en, 'campground').keys, ['tourism=camp_site']);
   });
 
+  test('"park" also names national and state parks', () {
+    expect(poiKindsNamed(en, 'national park').keys, [
+      'boundary=protected_area',
+    ]);
+    expect(poiKindsNamed(en, 'State Parks').keys, ['boundary=protected_area']);
+    expect(poiKindsNamed(en, 'park').keys, contains('boundary=protected_area'));
+    expect(
+      poiKindsNamed(en, 'wilderness').keys,
+      contains('boundary=protected_area'),
+    );
+  });
+
   test('a label in the app\'s language names its kind', () {
     final de = lookupAppLocalizations(const Locale('de'));
     expect(poiKindsNamed(de, 'Tankstelle').keys, ['amenity=fuel']);
@@ -21,5 +33,6 @@ void main() {
   test('a place\'s own name names no kind', () {
     expect(poiKindsNamed(en, 'Mount Sneffels'), isEmpty);
     expect(poiKindsNamed(en, 'Camp Bird Mine'), isEmpty);
+    expect(poiKindsNamed(en, 'Yosemite National Park'), isEmpty);
   });
 }
