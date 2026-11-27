@@ -1760,6 +1760,16 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Your own TRAX track behind your dot, 10 miles of it, and the tapped
   /// trip member's trail over it.
+  /// The blue dot's place while its reading is live.
+  TrailPoint? _liveDot() {
+    final c = _connector;
+    return c.gpsOn &&
+            !c.selfPositionMayBeOld &&
+            c.hasValidLocation(c.selfLatitude, c.selfLongitude)
+        ? (lat: c.selfLatitude!, lon: c.selfLongitude!)
+        : null;
+  }
+
   List<MapLine> _trailLines(TripPositions? trip, TraxBeaconService? beacon) {
     final of = _trailOf;
     List<MapLine> lines(String id, List<List<TrailPoint>> parts, Color color) =>
@@ -1775,7 +1785,11 @@ class _MapScreenState extends State<MapScreen> {
         ];
     return [
       if (beacon != null && beacon.track.recording)
-        ...lines('self', beacon.track.recent, Colors.blue[600]!),
+        ...lines(
+          'self',
+          beacon.track.lines(dot: _liveDot()),
+          Colors.blue[600]!,
+        ),
       if (of != null)
         ...lines('of', [
           for (final p in trip?.all ?? const <TripPosition>[])

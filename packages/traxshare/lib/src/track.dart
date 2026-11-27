@@ -31,7 +31,7 @@ class TrackPiece {
 
   /// The finest a piece goes on the air: thinned to [epsilonM] on a grid of
   /// [fineGridM].
-  static const epsilonM = 15.0;
+  static const epsilonM = 10.0;
   static const fineGridM = 8;
 
   /// The most a piece's points take at their finest, measured from its own
@@ -160,7 +160,7 @@ class TrackBlock {
 /// The track a report carries back from [anchor]: the first of [pieces]
 /// (newest first, the open one first), then as many more as lie within
 /// [reachM] along the way and fit [maxBytes], whole and thinned alike:
-/// Douglas–Peucker from 15 m, doubled until they fit, then bisected to
+/// Douglas–Peucker from 10 m, doubled until they fit, then bisected to
 /// within 1 m, on a grid of max(8, ⌈ε/2⌉) m. Each piece keeps its ends.
 TrackBlock? fitTrack(
   TrailPoint anchor,

@@ -1074,8 +1074,8 @@ void main() {
         walk(10);
         walk(30);
         walk(60);
-        expect(track.recent.single, hasLength(3), reason: '0, 30, 60');
-        expect(track.recent.single.last.lat, closeTo(_north(60).lat, 1e-9));
+        expect(track.lines().single, hasLength(3), reason: '0, 30, 60');
+        expect(track.lines().single.last.lat, closeTo(_north(60).lat, 1e-9));
 
         radio.fresh = false;
         for (var i = 0; i < 13; i++) {
@@ -1084,11 +1084,52 @@ void main() {
         radio.fresh = true;
         walk(500);
         walk(530);
-        expect(track.recent, hasLength(2), reason: 'no live reading for 2 min');
+        expect(
+          track.lines(),
+          hasLength(2),
+          reason: 'no live reading for 2 min',
+        );
         walk(5530);
         walk(5560);
-        expect(track.recent, hasLength(3), reason: '500 m/s is a jump');
+        expect(track.lines(), hasLength(3), reason: '500 m/s is a jump');
         expect(track.missing(const []), hasLength(3), reason: 'three pieces');
+        track.dispose();
+      });
+    });
+
+    test('the line shows the points as kept, not thinned as reports carry '
+        'them, and runs on to the dot while the reading is live', () {
+      fakeAsync((async) {
+        final track = TraxTrack(radio, clock: () => _t0.add(async.elapsed))
+          ..start();
+        void read(double north, {double east = 0}) {
+          radio.read(_north(north).lat, _here.lon + east / 89550);
+          async.elapse(const Duration(seconds: 10));
+        }
+
+        // 6 m either side of a straight way: thinned to 10 m, it's straight.
+        read(0);
+        read(30, east: 6);
+        read(60, east: -6);
+        read(90, east: 6);
+        read(120);
+        radio.fresh = false;
+        for (var i = 0; i < 13; i++) {
+          read(120);
+        }
+        radio.fresh = true;
+        read(1000);
+
+        expect(track.lines().single, hasLength(5), reason: 'as kept');
+        final older = track.missing(const []).last;
+        final sent = track.piece(older, _north(1000), 200)!;
+        expect(sent.pieces.single.points, hasLength(2), reason: 'thinned');
+
+        const dot = (lat: 36.4660, lon: -116.8660);
+        expect(track.lines(dot: dot).last, [_north(1000), dot]);
+        radio.fresh = false;
+        async.elapse(const Duration(minutes: 3));
+        expect(track.lines(dot: dot), hasLength(1), reason: 'not live');
         track.dispose();
       });
     });
@@ -1119,7 +1160,7 @@ void main() {
             expect(alone.gridM, TrackPiece.fineGridM, reason: 'at its finest');
             expect(alone.encode(anchor).length, lessThanOrEqualTo(room));
           }
-          expect(track.recent, hasLength(1), reason: 'one line');
+          expect(track.lines(), hasLength(1), reason: 'one line');
           final trail = track.trail(
             anchor,
             TraxReport.trackRoom(name: 'Trail Radio'),
@@ -1156,7 +1197,7 @@ void main() {
         expect(track.missing(const []), hasLength(1), reason: 'the first');
         async.elapse(const Duration(minutes: 5));
         expect(track.missing(const []), isEmpty);
-        expect(track.recent, isEmpty);
+        expect(track.lines(), isEmpty);
         track.dispose();
       });
     });
@@ -1168,14 +1209,14 @@ void main() {
         var track = TraxTrack(radio, clock: fake)..start();
         zigzag(async, 200);
         final pieces = track.missing(const []);
-        final line = track.recent.single;
+        final line = track.lines().single;
         track.dispose();
         async.flushMicrotasks();
 
         track = TraxTrack(radio, clock: fake)..start();
         expect(track.missing(const []), pieces);
-        expect(track.recent.single, hasLength(line.length));
-        expect(track.recent.single.last.lat, closeTo(line.last.lat, 1e-5));
+        expect(track.lines().single, hasLength(line.length));
+        expect(track.lines().single.last.lat, closeTo(line.last.lat, 1e-5));
         track.dispose();
         async.flushMicrotasks();
 
@@ -1192,7 +1233,7 @@ void main() {
         );
         async.flushMicrotasks();
         track = TraxTrack(radio, clock: fake)..start();
-        expect(track.recent, isEmpty);
+        expect(track.lines(), isEmpty);
         track.dispose();
       });
     });
@@ -1235,7 +1276,7 @@ void main() {
           ..start();
         radio.read(_here.lat, _here.lon);
         async.elapse(const Duration(seconds: 10));
-        expect(track.recent, isEmpty);
+        expect(track.lines(), isEmpty);
         expect(track.missing(const []), isEmpty);
         track.dispose();
       });
