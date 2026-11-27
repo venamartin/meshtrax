@@ -11,17 +11,14 @@ import 'trax_dialogs.dart';
 /// Every top-bar icon with a few words (Martin, 2026-11-21: "We are going
 /// to have to have a help somewhere so people know what all these
 /// different icons mean"). In the ⋮ menu, at the foot of the My location
-/// sheet, and once after the update.
-Future<void> showIconHelp(BuildContext context) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
-  showDragHandle: true,
-  builder: (_) => const IconHelpSheet(),
-);
+/// sheet, and once after the update. A dialog with an X, as How TRAX works
+/// is (Martin, 2026-11-27): as a sheet its last row sat behind the
+/// navigation bar.
+Future<void> showIconHelp(BuildContext context) =>
+    showDialog<void>(context: context, builder: (_) => const IconHelp());
 
-class IconHelpSheet extends StatelessWidget {
-  const IconHelpSheet({super.key});
+class IconHelp extends StatelessWidget {
+  const IconHelp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +30,11 @@ class IconHelpSheet extends StatelessWidget {
     Widget pin(LocationAudience audience, LocationGps gps, Color color) =>
         LocationIcon(audience: audience, gps: gps, color: color);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+    final help = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.iconHelp_title, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 4),
           Text(
             l10n.iconHelp_tap,
             style: theme.textTheme.bodyMedium?.copyWith(color: quiet),
@@ -111,6 +106,44 @@ class IconHelpSheet extends StatelessWidget {
             l10n.iconHelp_red,
           ),
         ],
+      ),
+    );
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      namesRoute: true,
+                      header: true,
+                      child: Text(
+                        l10n.iconHelp_title,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.common_close,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(child: help),
+          ],
+        ),
       ),
     );
   }

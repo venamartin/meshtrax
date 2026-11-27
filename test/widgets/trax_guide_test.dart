@@ -50,6 +50,7 @@ void main() {
 
   final title = find.text('How TRAX works');
   final dontShow = find.text("Don't show this again");
+  final close = find.byTooltip('Close');
 
   Future<void> pumpHome(WidgetTester tester, void Function(BuildContext) tap) =>
       tester.pumpWidget(
@@ -93,6 +94,39 @@ void main() {
       expect(find.text(step), findsOneWidget, reason: step);
     }
     expect(dontShow, findsNothing, reason: 'opened by hand');
+    await tester.tap(close);
+    await tester.pumpAndSettle();
+    expect(title, findsNothing);
+  });
+
+  // Martin, 2026-11-27: as a sheet its foot hid behind the navigation bar
+  // (||| O <), and few would know to slide it down. Now a dialog with an X.
+  testWidgets('a dialog clear of the navigation bar, closed by its X', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
+    const bars = FakeViewPadding(top: 63, bottom: 126);
+    tester.view.padding = bars;
+    tester.view.viewPadding = bars;
+    addTearDown(tester.view.reset);
+    const navigationBarTop = (2340 - 126) / 2.625;
+
+    await pumpHome(tester, TraxGuide.showIfNotSeen);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byType(CheckboxListTile)).bottom,
+      lessThan(navigationBarTop),
+      reason: 'in sight as it opens',
+    );
+    final last = find.text('The trip channel');
+    await tester.scrollUntilVisible(last, 200);
+    expect(tester.getRect(last).bottom, lessThan(navigationBarTop));
+
+    await tester.tap(close);
+    await tester.pumpAndSettle();
+    expect(title, findsNothing);
   });
 
   testWidgets('by itself until "Don\'t show this again"', (tester) async {
@@ -100,18 +134,16 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(title, findsOneWidget);
-    await tester.scrollUntilVisible(dontShow, 200);
-    Navigator.pop(tester.element(title));
+    await tester.tap(close);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(title, findsOneWidget, reason: 'not ticked: again');
-    await tester.scrollUntilVisible(dontShow, 200);
     await tester.tap(dontShow);
     await tester.pump();
     expect(PrefsManager.instance.getBool(TraxGuide.prefKey), isTrue);
-    Navigator.pop(tester.element(title));
+    await tester.tap(close);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Open'));

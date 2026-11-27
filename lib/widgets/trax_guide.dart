@@ -10,15 +10,14 @@ import 'trax_dialogs.dart';
 /// How TRAX works, told as a hike with friends behind you and more joining
 /// the next day (Martin, 2026-11-26), then the icons it shows. After TRAX
 /// mode goes on until "Don't show this again", and from the info button in
-/// TRAX settings any time.
+/// TRAX settings any time. A dialog with an X (Martin, 2026-11-27): as a
+/// sheet its foot sat behind the navigation bar, and few would know to slide
+/// it down.
 Future<void> showTraxGuide(
   BuildContext context, {
   bool offerDontShowAgain = false,
-}) => showModalBottomSheet<void>(
+}) => showDialog<void>(
   context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
-  showDragHandle: true,
   builder: (_) => TraxGuide(offerDontShowAgain: offerDontShowAgain),
 );
 
@@ -51,13 +50,11 @@ class _TraxGuideState extends State<TraxGuide> {
     final quiet = scheme.onSurfaceVariant;
     const orange = Color(Trax.orange);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+    final guide = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.traxGuide_title, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 4),
           Text(
             l10n.traxGuide_lead,
             style: theme.textTheme.bodyMedium?.copyWith(color: quiet),
@@ -146,23 +143,63 @@ class _TraxGuideState extends State<TraxGuide> {
             l10n.traxGuide_tripChannel,
             l10n.traxGuide_tripChannelText,
           ),
-          if (widget.offerDontShowAgain)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text(l10n.traxGuide_dontShowAgain),
-              value: _dontShowAgain,
-              onChanged: (v) {
-                setState(() => _dontShowAgain = v ?? false);
-                unawaited(
-                  PrefsManager.instance.setBool(
-                    TraxGuide.prefKey,
-                    _dontShowAgain,
-                  ),
-                );
-              },
-            ),
         ],
+      ),
+    );
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      namesRoute: true,
+                      header: true,
+                      child: Text(
+                        l10n.traxGuide_title,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.common_close,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(child: guide),
+            if (widget.offerDontShowAgain) ...[
+              const Divider(height: 1),
+              CheckboxListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(l10n.traxGuide_dontShowAgain),
+                value: _dontShowAgain,
+                onChanged: (v) {
+                  setState(() => _dontShowAgain = v ?? false);
+                  unawaited(
+                    PrefsManager.instance.setBool(
+                      TraxGuide.prefKey,
+                      _dontShowAgain,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -2114,7 +2114,7 @@ void main() {
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.byType(IconHelpSheet), findsOneWidget);
+    expect(find.byType(IconHelp), findsOneWidget);
   });
 
   testWidgets('the layers button: map types, details and node types', (
