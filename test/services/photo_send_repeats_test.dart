@@ -757,6 +757,26 @@ void main() {
       );
     });
 
+    // A copy sent again has its own hash; HeardChecker files every hash
+    // under the packet (heard_checker_test: a resend is asked about with
+    // the first send), so a sighting of any copy is the packet heard.
+    test('a packet heard only as its copy sent again goes no more', () async {
+      final r = await radio((n, index) => false, retries: 3);
+      await observe(r);
+      r.onPacket = (n, index) {
+        if (r.blobs[n][kImageRetryByteOffset] != 1) return;
+        Timer(const Duration(milliseconds: 15), () {
+          HeardService.instance.heardForTest(
+            HeardService.photoPacketId(PhotoMesh.sending.value.keys.single, 0),
+            const [Sighting(observer: 'Ridge')],
+          );
+        });
+      };
+      final (row, _) = await send(r, bytes: 100);
+      expect(_retries(r.blobs), [0, 1], reason: 'not the 4 copies of 3 retries');
+      expect(HeardService.instance.photoPacketsHeard(row.messageId), {0});
+    });
+
     test('a packet only one repeater carried goes no more where no observer '
         'heard this radio lately', () async {
       final r = await radio((n, index) => true);
