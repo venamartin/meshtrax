@@ -311,6 +311,15 @@ class _TraxSheetState extends State<TraxSheet> {
         ],
       ),
       for (final m in members) _memberTile(context, m, asks),
+      for (final MapEntry(:key, :value) in positions.newer.entries)
+        if (!members.any((m) => m.trail == key))
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            visualDensity: const VisualDensity(vertical: -4),
+            leading: _avatar(context),
+            title: Text(l10n.trax_updateToSeeSomeone),
+            subtitle: Text(_heard(context, value)),
+          ),
     ];
   }
 
@@ -375,14 +384,16 @@ class _TraxSheetState extends State<TraxSheet> {
     final on = contact != null
         ? trip.onTrax(contact)
         : report != null && since != null && !report.heardAt.isBefore(since);
+    final trail = report?.prefix ?? contact?.publicKeyHex.substring(0, 8);
     return (
       member: member,
       on: on,
       at: at,
       place: at == null ? null : place,
       old: old,
-      trail: report?.prefix ?? contact?.publicKeyHex.substring(0, 8),
+      trail: trail,
       icon: report?.icon,
+      newer: positions.newer[trail],
     );
   }
 
@@ -399,7 +410,7 @@ class _TraxSheetState extends State<TraxSheet> {
         contentPadding: EdgeInsets.zero,
         visualDensity: const VisualDensity(vertical: -4),
         leading: _avatar(context, old: m.old, icon: m.icon),
-        title: Text(name),
+        title: Text(m.newer == null ? name : l10n.trax_updateToSee(name)),
         subtitle: Text.rich(
           TextSpan(
             children: [
@@ -422,7 +433,9 @@ class _TraxSheetState extends State<TraxSheet> {
         onTap: () => MapScreen.show(context, MapFocusMember(trail, place)),
       );
     }
-    final (text, color) = contact != null && !m.on
+    final (text, color) = m.newer != null
+        ? (l10n.trax_updateToSee(name), null)
+        : contact != null && !m.on
         ? switch (asks.askFor(contact)?.phase) {
             RadioAskPhase.waiting ||
             RadioAskPhase.asking => (l10n.trip_asking(name), null),
@@ -435,8 +448,18 @@ class _TraxSheetState extends State<TraxSheet> {
       visualDensity: const VisualDensity(vertical: -4),
       leading: _avatar(context),
       title: Text(text, style: TextStyle(color: color)),
+      subtitle: switch (m.newer) {
+        final at? => Text(_heard(context, at)),
+        null => null,
+      },
     );
   }
+
+  /// When heard, and how long ago.
+  String _heard(BuildContext context, DateTime at) => [
+    DateTimeHelper.timeWithDay(context, at),
+    losAge(context.l10n, at, DateTime.now()),
+  ].join(' · ');
 
   /// Their icon on a disc: orange with a location, grey when it may be
   /// old, plain without one.
@@ -567,4 +590,5 @@ typedef _Member = ({
   bool old,
   String? trail,
   TraxMapIcon? icon,
+  DateTime? newer,
 });

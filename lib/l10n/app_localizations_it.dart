@@ -1318,6 +1318,15 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String trax_updateToSee(String name) {
+    return 'Update MeshTrax to see $name';
+  }
+
+  @override
+  String get trax_updateToSeeSomeone =>
+      'Update MeshTrax to see someone on this trip';
+
+  @override
   String get trax_mayBeOld => 'potrebbe essere vecchia';
 
   @override

@@ -2261,6 +2261,18 @@ abstract class AppLocalizations {
   /// **'{name}: no location yet'**
   String trax_memberNoLocation(String name);
 
+  /// Their MeshTrax sends a newer TRAX than this app reads, so their location can't be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Update MeshTrax to see {name}'**
+  String trax_updateToSee(String name);
+
+  /// As trax_updateToSee, from someone this phone has no name for.
+  ///
+  /// In en, this message translates to:
+  /// **'Update MeshTrax to see someone on this trip'**
+  String get trax_updateToSeeSomeone;
+
   /// No description provided for @trax_mayBeOld.
   ///
   /// In en, this message translates to:
