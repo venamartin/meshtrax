@@ -392,7 +392,7 @@ void main() {
       expect(first(), 100 * ft);
       if (Platform.isLinux) {
         final open = Directory('/proc/self/fd')
-            .listSync()
+            .listSync(followLinks: false)
             .whereType<Link>()
             .map((l) {
               try {
