@@ -2287,6 +2287,20 @@ void main() {
       await stopServices(tester);
     });
 
+    testWidgets('TRAX mode is in the map\'s menu too, and opens the TRAX '
+        'sheet', (tester) async {
+      startServices();
+      await pumpApp(tester, const MapScreen());
+      await tester.tap(find.byIcon(Icons.adaptive.more));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.widgetWithText(PopupMenuItem, 'TRAX mode'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(TraxSheet), findsOneWidget);
+      await stopServices(tester);
+    });
+
     // The sheet's member opened a second map over the map (Martin,
     // 2026-11-24): now their card, on the map the sheet was opened from.
     testWidgets('a member in the TRAX sheet over the map: their card on that '

@@ -33,6 +33,7 @@ import '../widgets/contact_name.dart';
 import '../widgets/contact_info_dialog.dart';
 import '../widgets/trax_button.dart';
 import '../widgets/trax_dialogs.dart';
+import '../widgets/trax_sheet.dart';
 import '../widgets/icon_help.dart';
 import '../widgets/my_location_button.dart';
 import '../widgets/nickname_pill.dart';
@@ -939,6 +940,23 @@ class _ChatsScreenState extends State<ChatsScreen>
                   style: topBarIconStyle,
                   iconSize: topBarIconSize,
                   itemBuilder: (context) => <PopupMenuEntry<void>>[
+                    if (context.read<TraxService?>() case final mode?
+                        when connector.isConnected)
+                      PopupMenuItem(
+                        child: Row(
+                          children: [
+                            TraxIcon(
+                              size: 24,
+                              color: mode.isOn
+                                  ? const Color(Trax.orange)
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(child: Text(context.l10n.trax_title)),
+                          ],
+                        ),
+                        onTap: () => showTraxSheet(context),
+                      ),
                     PopupMenuItem(
                       child: Row(
                         children: [
@@ -966,7 +984,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                         children: [
                           const Icon(Icons.done_all),
                           const SizedBox(width: 8),
-                          Text(context.l10n.chats_markAllRead),
+                          Flexible(child: Text(context.l10n.chats_markAllRead)),
                         ],
                       ),
                       onTap: () => _confirmMarkAllRead(connector),
@@ -976,7 +994,7 @@ class _ChatsScreenState extends State<ChatsScreen>
                         children: [
                           const Icon(Icons.cell_tower),
                           const SizedBox(width: 8),
-                          Text(context.l10n.repeaters_title),
+                          Flexible(child: Text(context.l10n.repeaters_title)),
                         ],
                       ),
                       onTap: () => Navigator.push(
