@@ -459,6 +459,25 @@ bool isContactEchoObservable(String outboundText, int pathHashByteWidth,
   return repeatedRaw + 3 <= maxFrameSize;
 }
 
+/// Whether a repeater's copy of a routed DM of mine, sent on with
+/// [hopsLeftBytes] path bytes still to go, can EVER reach the app through
+/// the raw RX-log push (`logRxRaw`: raw + 3 <= [maxFrameSize]). A routed
+/// packet carries no transport codes: header(1) + path_len(1) + the path
+/// still to go + dest(1) + src(1) + MAC(2) + zero-padded AES blocks of
+/// timestamp(4) + flags(1) + text, and from [attempt] 4 on the two bytes
+/// the firmware hides the attempt number in. A 150-byte text on five
+/// 2-byte repeaters makes a 174-byte first copy, never seen, so its silence
+/// means nothing.
+bool isRoutedCopyObservable(String outboundText, int hopsLeftBytes,
+    {int attempt = 0}) {
+  final plaintext =
+      5 + utf8.encode(outboundText).length + (attempt > 3 ? 2 : 0);
+  final ciphertext = ((plaintext + 15) ~/ 16) * 16;
+  final payload = 1 + 1 + 2 + ciphertext;
+  final repeatedRaw = 1 + 1 + hopsLeftBytes + payload;
+  return repeatedRaw + 3 <= maxFrameSize;
+}
+
 int _senderNameBytes(String? senderName) {
   if (senderName == null || senderName.isEmpty) return maxNameSize - 1;
   final bytes = utf8.encode(senderName);

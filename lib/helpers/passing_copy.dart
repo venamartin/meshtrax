@@ -301,7 +301,11 @@ class PassingCopyOpener {
     Iterable<Uint8List> contactKeys,
   ) {
     if (payload.length < 2 + _macSize + _blockSize) return null;
-    if (payload[0] != _selfKey[0]) return null;
+    // A path packet from a contact who shares this radio's first key byte
+    // reads the same as this radio's own path packet to them, heard as a
+    // repeater passes it on: both bytes are mine, and one secret opens
+    // both. Left to the radio, which knows its own (as #365 has it for DMs).
+    if (payload[0] != _selfKey[0] || payload[1] == _selfKey[0]) return null;
     final macAndData = Uint8List.fromList(payload.sublist(2));
     for (final key in contactKeys) {
       if (key.length != pubKeySize || key[0] != payload[1]) continue;

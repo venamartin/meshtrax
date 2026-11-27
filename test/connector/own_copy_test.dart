@@ -244,4 +244,20 @@ void main() {
     c.handleFrameForTest(copy);
     expect(proved, isEmpty);
   });
+
+  // Another radio's channel flood with 1-byte path codes, last passed on
+  // by some repeater whose code starts with BE. That is not BEEF: BEEF has
+  // not been heard at all, so its silence says nothing (regression audit,
+  // 2026-11-27).
+  test('a 1-byte flood ending at BE is not a sighting of BEEF', () async {
+    c.handleFrameForTest(
+        _rxLog([0x15, 0x01, 0xBE, ...List.filled(24, 0x5A)]));
+    unawaited(c.sendMessage(a, 'hello A'));
+    await until(() => c.dms.isNotEmpty);
+    radioTook(c.dms.single);
+
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
+    expect(c.dms, hasLength(1),
+        reason: 'the DM is not sent again for a repeater never heard');
+  });
 }

@@ -1009,8 +1009,22 @@ class MessageRetryService extends ChangeNotifier {
     // heard lately.
     if (selection.hashSize < 2) return;
     if ((_passedOn[messageId]?[rung] ?? 0) > 0) return;
-    final firstHop = selection.pathBytes.sublist(0, selection.hashSize);
-    if (!(config.hearsPassOnBy?.call(firstHop, selection.hashSize) ?? false)) {
+    final firstHop = PathHelper.getHops(selection.pathBytes,
+            stride: selection.hashSize)
+        .firstOrNull;
+    if (firstHop == null ||
+        !(config.hearsPassOnBy?.call(firstHop, selection.hashSize) ?? false)) {
+      return;
+    }
+    // The first repeater's copy must fit the radio's RX log to be seen at
+    // all: a silence that could not be heard says nothing (as #117 has it
+    // for flood echoes).
+    final outboundText =
+        config.prepareContactOutboundText?.call(contact, message.text) ??
+            message.text;
+    if (!isRoutedCopyObservable(
+        outboundText, selection.pathBytes.length - firstHop.length,
+        attempt: _wireAttempts[messageId] ?? rung)) {
       return;
     }
     (_passedOn[messageId] ??= {})[rung] = 0;
@@ -1114,13 +1128,11 @@ class MessageRetryService extends ChangeNotifier {
         continue;
       }
       final route = selection.pathBytes;
-      final done = route.length - hopsLeft.length;
-      if (done <= 0 ||
-          done % hopWidth != 0 ||
-          !listEquals<int>(route.sublist(done), hopsLeft)) {
-        return;
-      }
-      final hops = done ~/ hopWidth;
+      // The hops in front of the ones still to go carried it.
+      final carried =
+          PathHelper.hopsBefore(route, hopsLeft, stride: hopWidth);
+      if (carried == null || carried.isEmpty) return;
+      final hops = carried.length ~/ hopWidth;
       final heard = _passedOn[id] ??= {};
       final before = heard[rung] ?? 0;
       if (before >= hops) return;
@@ -1136,7 +1148,7 @@ class MessageRetryService extends ChangeNotifier {
           : ', ${DateTime.now().difference(sentAt).inMilliseconds} ms '
               'after the radio took it';
       config.debugLogService?.info(
-        '${PathHelper.formatPathHex(route.sublist(done - hopWidth, done), stride: hopWidth)} '
+        '${PathHelper.lastHopHex(carried, stride: hopWidth)} '
         'passed "${_short(message.text)}" to ${contact.name} on '
         '(attempt ${rung + 1}, hop $hops of ${selection.hopCount}$after)',
         tag: 'AckHash',

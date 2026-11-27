@@ -681,6 +681,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
   Timer? _notifyListenersTimer;
+  bool _disposed = false;
   Timer? _selfInfoRetryTimer;
   Timer? _reconnectTimer;
   Timer? _batteryPollTimer;
@@ -10102,8 +10103,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final code = _hexOf(Uint8List.fromList(hop));
     final now = DateTime.now();
+    // A sighting names at least the hop's bytes: a 1-byte flood hop "BE"
+    // could be any of many repeaters, not the BEEF on my route.
     return _heardFrom.entries.any((e) =>
-        (e.key.startsWith(code) || code.startsWith(e.key)) &&
+        e.key.startsWith(code) &&
         now.difference(e.value) <= MessageRetryService.repeaterHeardWindow);
   }
 
@@ -10234,7 +10237,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           (packet.payload[100] & 0x0F) == advTypeRepeater &&
           !_isSharedAdvertRoute(packet.routeType, packet.pathBytes.length)) {
         _retryService?.noteRepeaterHeard();
-        _noteHeardFrom(packet.payload.sublist(0, 3));
+        _noteHeardFrom(PathHelper.pubKeyPrefix(packet.payload, stride: 3));
       }
       // Message liveness, any hash width (the raw copy of my own flooded
       // DM carries [their byte][my byte]; a flood with hops passed through
@@ -10243,8 +10246,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (packet.isFlood) {
         if (packet.hopCount > 0) {
           _retryService?.noteRepeaterHeard();
-          _noteHeardFrom(packet.pathBytes
-              .sublist(packet.pathBytes.length - packet.hashSize));
+          final lastHop =
+              PathHelper.lastHop(packet.pathBytes, stride: packet.hashSize);
+          if (lastHop != null) _noteHeardFrom(lastHop);
         }
         final me = _selfPublicKey;
         if (packet.payloadType == _payloadTypeTxtMsg &&
@@ -13419,6 +13423,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   }
 
   void markNotifyDirty() {
+    // A step that outlived dispose(), such as a message store write, has
+    // nobody left to tell; its timer would notify a disposed connector.
+    if (_disposed) return;
     if (_notifyListenersDirty && _notifyListenersTimer != null) {
       return;
     }
@@ -13488,6 +13495,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   @override
   void dispose() {
+    _disposed = true;
     if (_lifecycleObserved) WidgetsBinding.instance.removeObserver(this);
     _appSettingsService?.removeListener(_onAppSettingsChanged);
     _contactNotesSub?.cancel();

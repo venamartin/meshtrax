@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../helpers/path_helper.dart';
 import 'contact.dart';
 
 const int recentAttemptDiversityWindow = 2;
@@ -211,12 +212,9 @@ List<PathSelection> planAttempts(
       routes.add(g);
     }
   } else {
-    String lastHop(PathSelection s) {
-      final from = s.pathBytes.length - s.hashSize;
-      return s.hopCount == 0
-          ? 'direct'
-          : s.pathBytes.sublist(from < 0 ? 0 : from).join(',');
-    }
+    String lastHop(PathSelection s) => s.hopCount == 0
+        ? 'direct'
+        : PathHelper.lastHopHex(s.pathBytes, stride: s.hashSize) ?? 'direct';
     final timesTried = <String, int>{};
     for (final t in tried) {
       if (!t.useFlood) timesTried[key(t)] = (timesTried[key(t)] ?? 0) + 1;
