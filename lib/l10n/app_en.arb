@@ -596,6 +596,19 @@
       }
     }
   },
+  "trax_updateToSee": "Update MeshTrax to see {name}",
+  "@trax_updateToSee": {
+    "description": "Their MeshTrax sends a newer TRAX than this app reads, so their location can't be shown.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trax_updateToSeeSomeone": "Update MeshTrax to see someone on this trip",
+  "@trax_updateToSeeSomeone": {
+    "description": "As trax_updateToSee, from someone this phone has no name for."
+  },
   "trax_mayBeOld": "may be old",
   "trax_askTrack": "Ask for track",
   "@trax_askTrack": {"description": "Asks a trip member's phone, on the trip channel, for the pieces of their track this phone lacks."},

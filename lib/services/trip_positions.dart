@@ -233,6 +233,7 @@ class TripPositions extends ChangeNotifier {
 
   final _byPrefix = <String, TripPosition>{};
   final _askedAt = <String, DateTime>{};
+  final _newer = <String, DateTime>{};
   String _radioKey = '';
   Timer? _saveTimer;
   int _seq = 0;
@@ -245,6 +246,11 @@ class TripPositions extends ChangeNotifier {
     final since = _clock().subtract(showFor);
     return all.where((p) => p.heardAt.isAfter(since));
   }
+
+  /// Who sends a newer TRAX than this app reads, by the first 4 bytes of
+  /// their key, with when they were last heard: their location can't be
+  /// shown until this app is updated.
+  Map<String, DateTime> get newer => Map.unmodifiable(_newer);
 
   TripPosition? of(Contact contact) => contact.publicKey.length < 4
       ? null
@@ -304,6 +310,7 @@ class TripPositions extends ChangeNotifier {
     _radioKey = key;
     _byPrefix.clear();
     _askedAt.clear();
+    _newer.clear();
     final raw = PrefsManager.instance.getString(keyFor(key));
     if (raw != null) {
       try {
@@ -327,13 +334,8 @@ class TripPositions extends ChangeNotifier {
     final trip = _trax.tripChannel;
     if (trip == null || d.channel.idKey != trip.idKey) return;
     final report = TraxReport.decode(d.payload);
-    if (report == null) return;
-    final self = _connector.selfPublicKey;
-    if (self != null &&
-        self.length >= 4 &&
-        listEquals(self.sublist(0, 4), report.senderPrefix)) {
-      return;
-    }
+    if (report == null) return _heardNewer(d);
+    if (_isMine(report.senderPrefix)) return;
     final prefix = pubKeyToHex(report.senderPrefix);
     final before = _byPrefix[prefix];
     final now = _clock();
@@ -352,6 +354,9 @@ class TripPositions extends ChangeNotifier {
     final heardAt = d.fromBacklog && report.sentAt.isBefore(d.receivedAt)
         ? report.sentAt.toLocal()
         : d.receivedAt;
+    if (_newer[prefix] case final at? when !at.isAfter(heardAt)) {
+      _newer.remove(prefix);
+    }
     _byPrefix[prefix] = TripPosition(
       track: track,
       tail: _tail(before, report, track, heardAt),
@@ -374,6 +379,27 @@ class TripPositions extends ChangeNotifier {
     );
     _prune();
     _changed();
+  }
+
+  /// A TRAX version this app doesn't read: only who sent it and when, from
+  /// the header every later version starts with.
+  void _heardNewer(ChannelDatagram d) {
+    final header = TraxHeader.decode(d.payload);
+    if (header == null || _isMine(header.senderPrefix)) return;
+    final heardAt = d.fromBacklog && header.sentAt.isBefore(d.receivedAt)
+        ? header.sentAt.toLocal()
+        : d.receivedAt;
+    final prefix = pubKeyToHex(header.senderPrefix);
+    if (_newer[prefix]?.isAfter(heardAt) ?? false) return;
+    _newer[prefix] = heardAt;
+    notifyListeners();
+  }
+
+  bool _isMine(Uint8List prefix) {
+    final self = _connector.selfPublicKey;
+    return self != null &&
+        self.length >= 4 &&
+        listEquals(self.sublist(0, 4), prefix);
   }
 
   void _changed() {
@@ -442,7 +468,9 @@ class TripPositions extends ChangeNotifier {
   /// and the positions since with it once they were heard that long ago.
   void _expire({bool notify = true}) {
     final now = _clock();
-    var changed = false;
+    final heardNewer = _newer.length;
+    _newer.removeWhere((_, at) => now.difference(at) > showFor);
+    var changed = _newer.length != heardNewer;
     for (final MapEntry(:key, :value) in _byPrefix.entries.toList()) {
       changed |= value.track.expire(now);
       final keep = Duration(hours: value.track.keepHours);

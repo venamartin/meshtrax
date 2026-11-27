@@ -2991,12 +2991,19 @@ class _MapScreenState extends State<MapScreen> {
     final scheme = Theme.of(context).colorScheme;
     final group = context.watch<TripService?>();
     context.watch<RadioAskService?>();
+    final positions = context.watch<TripPositions?>();
     final members = _members(
-      context.watch<TripPositions?>(),
+      positions,
       group,
       context.watch<TraxService?>()?.isOn ?? false,
       context.watch<MeshCoreConnector>(),
     );
+    final newer = positions?.newer ?? const <String, DateTime>{};
+    // Senders of a newer TRAX with no name here.
+    final someone = [
+      for (final MapEntry(:key, :value) in newer.entries)
+        if (!members.any((m) => m.prefix == key)) value,
+    ];
     final located = <(_Member, LatLng, DateTime, bool)>[];
     final unlocated = <(String, _Member?)>[];
     for (final m in members) {
@@ -3034,7 +3041,7 @@ class _MapScreenState extends State<MapScreen> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        if (located.isEmpty && unlocated.isEmpty)
+        if (located.isEmpty && unlocated.isEmpty && someone.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: Text(l10n.trax_heard(0, '')),
@@ -3050,8 +3057,10 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
             title: Text(
-              member.name,
-              maxLines: 1,
+              newer.containsKey(member.prefix)
+                  ? l10n.trax_updateToSee(member.name)
+                  : member.name,
+              maxLines: newer.containsKey(member.prefix) ? 2 : 1,
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
@@ -3070,10 +3079,16 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
             title: Text(
-              l10n.trax_memberNoLocation(name),
-              maxLines: 1,
+              newer[member?.prefix] == null
+                  ? l10n.trax_memberNoLocation(name)
+                  : l10n.trax_updateToSee(name),
+              maxLines: newer[member?.prefix] == null ? 1 : 2,
               overflow: TextOverflow.ellipsis,
             ),
+            subtitle: switch (newer[member?.prefix]) {
+              final at? => Text(_formatLastSeen(at)),
+              null => null,
+            },
             trailing: member?.contact != null && connected
                 ? Icon(
                     Icons.settings_input_antenna,
@@ -3083,6 +3098,19 @@ class _MapScreenState extends State<MapScreen> {
             onTap: member?.contact != null && connected
                 ? () => Navigator.pop(sheetContext, member)
                 : null,
+          ),
+        for (final at in someone)
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: scheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.hiking,
+                color: scheme.onSurfaceVariant,
+                size: 22,
+              ),
+            ),
+            title: Text(l10n.trax_updateToSeeSomeone, maxLines: 2),
+            subtitle: Text(_formatLastSeen(at)),
           ),
       ],
     );
