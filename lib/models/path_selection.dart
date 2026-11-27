@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../helpers/path_helper.dart';
 import 'contact.dart';
 
 const int recentAttemptDiversityWindow = 2;
@@ -36,6 +37,10 @@ class PathSelection {
   // a link heard on the contact's inbound path) rather than an observed
   // link. Empty when nothing was guessed.
   final List<bool> guessedLinks;
+  // How long ago a flood of mine took this route to them, when it is the
+  // route their path reply named; null for a route the graph ranked. For
+  // the log: who chose a try's route.
+  final int? liveAgeMillis;
 
   const PathSelection({
     required this.pathBytes,
@@ -45,6 +50,7 @@ class PathSelection {
     this.source,
     this.estDelivery,
     this.guessedLinks = const [],
+    this.liveAgeMillis,
   });
 
   /// A flood. With [RouteSource.firmware] as [source] it is the radio's
@@ -57,7 +63,8 @@ class PathSelection {
         hashSize = radioWidth,
         useFlood = true,
         estDelivery = null,
-        guessedLinks = const [];
+        guessedLinks = const [],
+        liveAgeMillis = null;
 
   /// How many of the route's links are splice guesses.
   int get guessedHops => guessedLinks.where((g) => g).length;
@@ -211,12 +218,9 @@ List<PathSelection> planAttempts(
       routes.add(g);
     }
   } else {
-    String lastHop(PathSelection s) {
-      final from = s.pathBytes.length - s.hashSize;
-      return s.hopCount == 0
-          ? 'direct'
-          : s.pathBytes.sublist(from < 0 ? 0 : from).join(',');
-    }
+    String lastHop(PathSelection s) => s.hopCount == 0
+        ? 'direct'
+        : PathHelper.lastHopHex(s.pathBytes, stride: s.hashSize) ?? 'direct';
     final timesTried = <String, int>{};
     for (final t in tried) {
       if (!t.useFlood) timesTried[key(t)] = (timesTried[key(t)] ?? 0) + 1;

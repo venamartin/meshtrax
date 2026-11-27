@@ -36,7 +36,9 @@ class _AppDebugLogScreenState extends State<AppDebugLogScreen> {
                 icon: const Icon(Icons.save_alt),
                 onPressed: hasEntries
                     ? () async {
-                        final path = await DebugLogExport.saveToFile(filtered);
+                        final path = await DebugLogExport.saveToFile(
+                            logService,
+                            minLevel: _minLevel);
                         if (!context.mounted) return;
                         showDismissibleSnackBar(
                           context,

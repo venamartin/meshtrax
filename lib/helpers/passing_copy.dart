@@ -301,7 +301,11 @@ class PassingCopyOpener {
     Iterable<Uint8List> contactKeys,
   ) {
     if (payload.length < 2 + _macSize + _blockSize) return null;
-    if (payload[0] != _selfKey[0]) return null;
+    // A path packet from a contact who shares this radio's first key byte
+    // reads the same as this radio's own path packet to them, heard as a
+    // repeater passes it on: both bytes are mine, and one secret opens
+    // both. Left to the radio, which knows its own (as #365 has it for DMs).
+    if (payload[0] != _selfKey[0] || payload[1] == _selfKey[0]) return null;
     final macAndData = Uint8List.fromList(payload.sublist(2));
     for (final key in contactKeys) {
       if (key.length != pubKeySize || key[0] != payload[1]) continue;
@@ -311,43 +315,6 @@ class PassingCopyOpener {
       if (plain != null) return (key: key, plain: plain);
     }
     return null;
-  }
-
-  /// A path packet for [contactKey], the firmware's own kind
-  /// (Mesh::createPathReturn with nothing extra): it hands their radio
-  /// [wayBack] ([wayBackLen] is its path length byte) as the way to reach
-  /// this one, and their radio stores it in place of the route it holds
-  /// (BaseChatMesh::onContactPathRecv). Sent direct on [routePath]
-  /// ([routePathLen]), so it asks for no path in return. Null without a
-  /// secret for them, or without a route for either.
-  Uint8List? wayBackPacket({
-    required Uint8List contactKey,
-    required int wayBackLen,
-    required List<int> wayBack,
-    required int routePathLen,
-    required List<int> routePath,
-  }) {
-    if (PathHelper.pathLenHops(wayBackLen) < 0 ||
-        PathHelper.pathLenHops(routePathLen) < 0) {
-      return null;
-    }
-    final secret = sharedSecret(contactKey);
-    if (secret == null) return null;
-    return Uint8List.fromList([
-      (payloadTypePATH << 2) | _routeDirect,
-      routePathLen & 0xFF,
-      ...routePath.sublist(0, PathHelper.pathLenBytes(routePathLen)),
-      contactKey[0],
-      _selfKey[0],
-      ...encryptThenMac(secret, [
-        wayBackLen & 0xFF,
-        ...wayBack.sublist(0, PathHelper.pathLenBytes(wayBackLen)),
-        // No extra: a dummy type and four random bytes keep the packet
-        // from repeating an earlier one, as the firmware does.
-        0xFF,
-        for (var i = 0; i < 4; i++) _random.nextInt(256),
-      ]),
-    ]);
   }
 
   /// The ACK a plain or MULTIPART ACK packet carries, else null.

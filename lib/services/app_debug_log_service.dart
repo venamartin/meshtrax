@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -53,7 +55,9 @@ class AppDebugLogEntry {
 class AppDebugLogService extends ChangeNotifier {
   AppDebugLogService({this._store});
 
-  // A day of field logging: a 2-hour hike filled 673 lines (2026-10-16).
+  // The lines kept in memory and shown on screen: a day of field logging (a
+  // 2-hour hike filled 673 lines, 2026-10-16). The files keep weeks of
+  // them ([AppDebugLogStore.fileLines]).
   static const int maxEntries = 20000;
   final List<AppDebugLogEntry> _entries = [];
 
@@ -80,8 +84,37 @@ class AppDebugLogService extends ChangeNotifier {
 
   /// [buildExportText] under a line naming the build the log came from.
   static Future<String> buildExport(Iterable<AppDebugLogEntry> entries) async {
-    return 'MeshTrax ${await _build()} ${defaultTargetPlatform.name} debug '
-        'log, exported ${DateTime.now()}\n${buildExportText(entries)}';
+    return '${await exportHeader()}\n${buildExportText(entries)}';
+  }
+
+  /// The line an export starts with: the build the log came from.
+  static Future<String> exportHeader() async =>
+      'MeshTrax ${await _build()} ${defaultTargetPlatform.name} debug '
+      'log, exported ${DateTime.now()}';
+
+  /// Writes the log at [minLevel] or more severe to the file at [path]:
+  /// with files, every line they keep (weeks of them), read from the files
+  /// and never all in memory; without, the lines in memory. False when it
+  /// could not be written.
+  Future<bool> exportToFile(
+    String path, {
+    AppDebugLogLevel minLevel = AppDebugLogLevel.info,
+  }) async {
+    final header = await exportHeader();
+    final store = _store;
+    if (store != null) {
+      return store.exportTo(path, header: header, minLevel: minLevel);
+    }
+    try {
+      final sink = File(path).openWrite()..writeln(header);
+      for (final e in entriesAtOrAbove(minLevel)) {
+        sink.writeln(e.formattedLine);
+      }
+      await sink.close();
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   static Future<String> _build() async {

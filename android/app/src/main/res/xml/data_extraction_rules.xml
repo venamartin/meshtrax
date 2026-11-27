@@ -2,14 +2,18 @@
 <!-- Android 12+. Offline map packs (files/maps/) and the photo model
      (app_flutter/ft8/) are large and can be downloaded again, so they stay out
      of cloud backups and device transfers; otherwise they would push Auto
-     Backup past its 25 MB quota. -->
+     Backup past its 25 MB quota. The debug log (files/debug_log/) is up to
+     40 MB and holds contact names and the start of messages: it stays out
+     too. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="maps/" />
         <exclude domain="root" path="app_flutter/ft8/" />
+        <exclude domain="file" path="debug_log/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="maps/" />
         <exclude domain="root" path="app_flutter/ft8/" />
+        <exclude domain="file" path="debug_log/" />
     </device-transfer>
 </data-extraction-rules>

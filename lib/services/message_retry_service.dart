@@ -12,6 +12,7 @@ import '../models/path_selection.dart';
 import '../connector/meshcore_protocol.dart';
 import 'app_settings_service.dart';
 import 'app_debug_log_service.dart';
+import 'dm_measure_log.dart';
 
 class _AckHistoryEntry {
   final String messageId;
@@ -100,6 +101,8 @@ class RetryServiceConfig {
   final int maxSendHoldMs;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
+  // The measurement lines: each try, its end, every ACK, every pass-on.
+  final MeasureLog? measureLog;
 
   const RetryServiceConfig({
     required this.sendMessage,
@@ -127,6 +130,7 @@ class RetryServiceConfig {
     this.maxSendHoldMs = 0,
     this.appSettingsService,
     this.debugLogService,
+    this.measureLog,
   });
 }
 
@@ -223,6 +227,10 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _resendAttempts = {};
   final Map<String, int> _wireAttempts = {};
   final Map<String, int> _wireRungs = {};
+  // For each message, the try every attempt number it went out with
+  // belongs to: a resend's number is above the ladder's, and a copy heard
+  // later is filed under its try by it, not under the number itself.
+  final Map<String, Map<int, int>> _rungOfWire = {};
   // Every send the radio took for each ACK code: the firmware hashes only
   // an attempt's low two bits into its ACK (composeMsgPacket), so attempts
   // 0 and 4 of one DM share a code, as a rung and its resends do.
@@ -457,6 +465,110 @@ class MessageRetryService extends ChangeNotifier {
   static String _short(String text) =>
       text.length > 20 ? '${text.substring(0, 20)}...' : text;
 
+  /// A try's route for the log: the repeaters, or a flood.
+  static String _routeText(PathSelection s) => s.useFlood
+      ? 'flood'
+      : s.hopCount == 0
+          ? 'direct, no repeater'
+          : PathHelper.formatPathHex(s.pathBytes, stride: s.hashSize);
+
+  /// Who chose the route of try [attempt] of [messageId]: `flood`, `you`
+  /// (a route you set), `radio` (its stored route), `again` (the same
+  /// route as the try before), `live` (the route their last path reply
+  /// named), `next` or `best` (Pathfinder's). Null when it is not known.
+  String? _who(String messageId, int attempt) {
+    final routes = _attemptRoutes[messageId] ?? const <int, PathSelection>{};
+    final s = routes[attempt];
+    if (s == null) return null;
+    if (s.useFlood) return 'flood';
+    bool same(PathSelection? other) =>
+        other != null &&
+        !other.useFlood &&
+        listEquals(other.pathBytes, s.pathBytes);
+    if (s.source == RouteSource.custom) return 'you';
+    if (s.source != RouteSource.graph) return 'radio';
+    if (same(routes[attempt - 1])) return 'again';
+    if (s.liveAgeMillis != null) return 'live';
+    if (routes.entries
+        .any((e) => e.key < attempt && e.value.source == RouteSource.graph)) {
+      return 'next';
+    }
+    return 'best';
+  }
+
+  /// What try [attempt] of [messageId] goes out on and who chose it, for
+  /// the log: a field log is judged by which routes were tried and why.
+  String _describeTry(String messageId, int attempt) {
+    final s = _attemptRoutes[messageId]?[attempt];
+    final who = _who(messageId, attempt);
+    if (s == null || who == null) return 'not known';
+    if (who == 'flood') return 'flood';
+    final text = switch (who) {
+      'you' => 'the route you set',
+      'radio' => "the radio's stored route",
+      'again' => 'the same route again',
+      'live' => 'the route their last path reply named, '
+          '${((s.liveAgeMillis ?? 0) / 60000).round()} min ago',
+      'next' => "Pathfinder's next",
+      _ => "Pathfinder's best",
+    };
+    final est = s.estDelivery;
+    return '${_routeText(s)}, $text'
+        '${est == null ? '' : ' (${(est * 100).round()}%)'}';
+  }
+
+  /// A route as the measurement lines write it.
+  static String _routeCode(PathSelection s) => s.useFlood
+      ? 'flood'
+      : s.hopCount == 0
+          ? 'direct'
+          : PathHelper.formatPathHex(s.pathBytes, stride: s.hashSize);
+
+  /// One line when a DM's ladder ends, delivered on try [deliveredOn] or
+  /// given up: every try in order, and how long it took from the send. It
+  /// names the contact, never the text: a contact's DMs go one at a time,
+  /// so it follows that DM's own "Try" lines.
+  void _logSummary(String messageId, Message message, Contact contact,
+      {int? deliveredOn}) {
+    final log = _config?.debugLogService;
+    final measure = _config?.measureLog;
+    final routes = _attemptRoutes[messageId];
+    if ((log == null && measure == null) || routes == null) return;
+    final onAir = _onAir[messageId] ?? const <int>{};
+    final tries = [
+      for (final MapEntry(key: i, value: s)
+          in routes.entries.toList()..sort((a, b) => a.key.compareTo(b.key)))
+        if (deliveredOn == null || i <= deliveredOn)
+          '${_routeText(s)}${onAir.contains(i) ? '' : ' (not sent)'}',
+    ];
+    final seconds = _now().difference(message.timestamp).inSeconds;
+    final String ended;
+    if (deliveredOn == null) {
+      ended = 'failed after ${tries.length} tries in';
+    } else {
+      final late = message.status == MessageStatus.failed;
+      ended = 'delivered on try ${deliveredOn + 1} of '
+          '${_attemptBudget(messageId)}'
+          '${late ? ', after it was given up,' : ''} after';
+    }
+    log?.info(
+      'DM to ${contact.name} $ended $seconds s. Tries: ${tries.join('; ')}',
+      tag: 'AckHash',
+    );
+    measure?.line('end', {
+      'c': MeasureLog.contact(contact.publicKeyHex),
+      'ts': message.timestamp.millisecondsSinceEpoch ~/ 1000,
+      'ok': deliveredOn == null ? 0 : 1,
+      'on': deliveredOn == null ? null : deliveredOn + 1,
+      'of': _attemptBudget(messageId),
+      'sent': onAir.length,
+      'late': deliveredOn != null && message.status == MessageStatus.failed
+          ? 1
+          : null,
+      's': seconds,
+    });
+  }
+
   /// Plans Pathfinder's ladder for [messageId] when it applies to
   /// [contact]: no override, no manual resend, and Pathfinder can route.
   /// The first [keep] attempts already went out and stay as they were.
@@ -567,9 +679,11 @@ class MessageRetryService extends ChangeNotifier {
   /// next attempt with this one's bytes (simulator, 2026-11-24).
   bool awaitsAck(
           String contactKey, int timestampSeconds, String text, int attempt) =>
-      // Any message it could be: two with one text in one second read the
-      // same here, and the one that failed first still waits for a late ACK.
+      // Any message still on its ladder that it could be: two with one text
+      // in one second read the same here. One that failed or was delivered
+      // sends nothing more: its late ACK needs no new copy.
       _pendingMessages.entries.any((e) =>
+          _onLadder(e.key, e.value) &&
           e.value.text == text &&
           e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
               timestampSeconds &&
@@ -577,10 +691,19 @@ class MessageRetryService extends ChangeNotifier {
           _wireAttempts[e.key] == attempt &&
           _wireRungs[e.key] == e.value.retryCount);
 
+  /// Whether [message] is still on its ladder: not failed, not delivered.
+  bool _onLadder(String messageId, Message message) =>
+      message.status != MessageStatus.failed &&
+      !_resolvedMessages.contains(messageId);
+
+  /// The message still on its ladder that a copy of [text] to [contactKey]
+  /// stamped [timestampSeconds] belongs to. A failed one is left alone: its
+  /// late-ACK grace runs on (audit 2026-11-27: a late copy cancelled it).
   String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
       _pendingMessages.entries
           .where(
             (e) =>
+                _onLadder(e.key, e.value) &&
                 e.value.text == text &&
                 e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
                     timestampSeconds &&
@@ -620,6 +743,17 @@ class MessageRetryService extends ChangeNotifier {
     // A flood's echoes are told apart by attempt from its start.
     if (selection.useFlood && !(before?.useFlood ?? false)) {
       _config?.onAttemptStarted?.call(contact, selection, attempt);
+    }
+    if (before == null || _routeCode(before) != _routeCode(selection)) {
+      _config?.measureLog?.line('route', {
+        'c': MeasureLog.contact(contact.publicKeyHex),
+        'ts': timestampSeconds,
+        'n': attempt + 1,
+        'r': _routeCode(selection),
+        'w': selection.hashSize,
+        'by': _who(messageId, attempt),
+        'est': selection.estDelivery,
+      });
     }
     return selection;
   }
@@ -690,9 +824,31 @@ class MessageRetryService extends ChangeNotifier {
       }
       _wireAttempts[messageId] = wireAttempt;
       _wireRungs[messageId] = attempt;
-      _registerExpectedAck(
+      (_rungOfWire[messageId] ??= {})[wireAttempt] = attempt;
+      final ackHex = _registerExpectedAck(
           messageId, message, contact, wireAttempt, timestampSeconds);
       if (!same) {
+        config.debugLogService?.info(
+          'Try ${attempt + 1} of ${_attemptBudget(messageId)} to '
+          '${contact.name}: ${_describeTry(messageId, attempt)}',
+          tag: 'AckHash',
+        );
+        final s = _attemptRoutes[messageId]?[attempt];
+        final live = s?.liveAgeMillis;
+        config.measureLog?.line('try', {
+          'c': MeasureLog.contact(contact.publicKeyHex),
+          'ts': timestampSeconds,
+          'n': attempt + 1,
+          'of': _attemptBudget(messageId),
+          'wire': wireAttempt == attempt ? null : wireAttempt,
+          'r': s == null ? null : _routeCode(s),
+          'w': s?.hashSize,
+          'by': _who(messageId, attempt),
+          'est': s?.estDelivery,
+          'live': live == null ? null : (live / 60000).round(),
+          'h': ackHex,
+          'a': config.measureLog?.area(),
+        });
         config.onAttemptStarted?.call(contact, selection, attempt);
         // Before the send, as always: its RESP_CODE_SENT replaces this
         // timer with the real one, and can arrive while the send is
@@ -721,15 +877,18 @@ class MessageRetryService extends ChangeNotifier {
     }
   }
 
-  void _registerExpectedAck(String messageId, Message message, Contact contact,
-      int attempt, int timestampSeconds) {
+  /// Returns the ACK code expected, as 8 hex digits, or null when this
+  /// radio's key is not known yet.
+  String? _registerExpectedAck(String messageId, Message message,
+      Contact contact, int attempt, int timestampSeconds) {
     final config = _config;
-    if (config == null) return;
+    if (config == null) return null;
     // Compute expected ACK hash that device will return in RESP_CODE_SENT
     // IMPORTANT: Use the transformed text (with SMAZ encoding if enabled) to match device's hash
     final selfPubKey = config.getSelfPublicKey?.call();
     if (selfPubKey == null) {
       _sentWithoutHash.add(messageId);
+      return null;
     } else {
       _sentWithoutHash.remove(messageId);
       final outboundText =
@@ -751,6 +910,7 @@ class MessageRetryService extends ChangeNotifier {
         'Sent "$shortText" to ${contact.name} → expect ACK hash $expectedHashHex (attempt $attempt)',
         tag: 'AckHash',
       );
+      return expectedHashHex;
     }
   }
 
@@ -777,7 +937,7 @@ class MessageRetryService extends ChangeNotifier {
     // busy, etc.) the message would stay at 'pending' forever.  Start a fallback
     // timer here that triggers _handleTimeout if updateMessageFromSent() hasn't
     // already started a real timer.
-    final preSentTimeoutMs = 15000 + holdMs;
+    final preSentTimeoutMs = TimeoutHelper.preSentTimeoutMs(holdMs);
     _timeoutTimers[messageId]?.cancel();
     _timeoutTimers[messageId] = Timer(
       Duration(milliseconds: preSentTimeoutMs),
@@ -993,8 +1153,22 @@ class MessageRetryService extends ChangeNotifier {
     // heard lately.
     if (selection.hashSize < 2) return;
     if ((_passedOn[messageId]?[rung] ?? 0) > 0) return;
-    final firstHop = selection.pathBytes.sublist(0, selection.hashSize);
-    if (!(config.hearsPassOnBy?.call(firstHop, selection.hashSize) ?? false)) {
+    final firstHop = PathHelper.getHops(selection.pathBytes,
+            stride: selection.hashSize)
+        .firstOrNull;
+    if (firstHop == null ||
+        !(config.hearsPassOnBy?.call(firstHop, selection.hashSize) ?? false)) {
+      return;
+    }
+    // The first repeater's copy must fit the radio's RX log to be seen at
+    // all: a silence that could not be heard says nothing (as #117 has it
+    // for flood echoes).
+    final outboundText =
+        config.prepareContactOutboundText?.call(contact, message.text) ??
+            message.text;
+    if (!isRoutedCopyObservable(
+        outboundText, selection.pathBytes.length - firstHop.length,
+        attempt: _wireAttempts[messageId] ?? rung)) {
       return;
     }
     (_passedOn[messageId] ??= {})[rung] = 0;
@@ -1082,9 +1256,12 @@ class MessageRetryService extends ChangeNotifier {
     for (final MapEntry(key: id, value: message)
         in _pendingMessages.entries) {
       final contact = _pendingContacts[id];
-      // A routed attempt goes out under its own number.
-      final selection = _attemptRoutes[id]?[wireAttempt];
-      if (contact == null ||
+      // The try that went out under this number: a resend's number is not
+      // its try's.
+      final rung = _rungOfWire[id]?[wireAttempt];
+      final selection = rung == null ? null : _attemptRoutes[id]?[rung];
+      if (rung == null ||
+          contact == null ||
           contact.publicKeyHex != contactKey ||
           message.timestamp.millisecondsSinceEpoch ~/ 1000 !=
               timestampSeconds ||
@@ -1095,33 +1272,41 @@ class MessageRetryService extends ChangeNotifier {
         continue;
       }
       final route = selection.pathBytes;
-      final done = route.length - hopsLeft.length;
-      if (done <= 0 ||
-          done % hopWidth != 0 ||
-          !listEquals<int>(route.sublist(done), hopsLeft)) {
-        return;
-      }
-      final hops = done ~/ hopWidth;
+      // The hops in front of the ones still to go carried it.
+      final carried =
+          PathHelper.hopsBefore(route, hopsLeft, stride: hopWidth);
+      if (carried == null || carried.isEmpty) return;
+      final hops = carried.length ~/ hopWidth;
       final heard = _passedOn[id] ??= {};
-      final before = heard[wireAttempt] ?? 0;
+      final before = heard[rung] ?? 0;
       if (before >= hops) return;
-      heard[wireAttempt] = hops;
-      if (message.retryCount == wireAttempt) {
+      heard[rung] = hops;
+      if (message.retryCount == rung) {
         _passOnTimers.remove(id)?.cancel();
       }
       // How long it took is logged: the wait is sized from firmware
       // defaults, and a repeater's owner can set its delay longer.
       final sentAt = message.sentAt;
-      final after = sentAt == null || message.retryCount != wireAttempt
+      final after = sentAt == null || message.retryCount != rung
           ? ''
           : ', ${DateTime.now().difference(sentAt).inMilliseconds} ms '
               'after the radio took it';
       config.debugLogService?.info(
-        '${PathHelper.formatPathHex(route.sublist(done - hopWidth, done), stride: hopWidth)} '
+        '${PathHelper.lastHopHex(carried, stride: hopWidth)} '
         'passed "${_short(message.text)}" to ${contact.name} on '
-        '(attempt ${wireAttempt + 1}, hop $hops of ${selection.hopCount}$after)',
+        '(attempt ${rung + 1}, hop $hops of ${selection.hopCount}$after)',
         tag: 'AckHash',
       );
+      config.measureLog?.line('out', {
+        'c': MeasureLog.contact(contactKey),
+        'ts': timestampSeconds,
+        'n': rung + 1,
+        'r': PathHelper.lastHopHex(carried, stride: hopWidth),
+        'w': hopWidth,
+        'hops': hops,
+        'of': selection.hopCount,
+        'a': config.measureLog?.area(),
+      });
       if (before == 0) config.onPassedOn?.call(contact, selection);
       return;
     }
@@ -1215,6 +1400,9 @@ class MessageRetryService extends ChangeNotifier {
         'sending the same packet again (${quick + 1}/$maxQuickResends)',
         tag: 'AckHash',
       );
+      // The copy may wait for quiet air: the attempt waits for it, as a
+      // routed attempt's second copy does ([_notPassedOn]).
+      _startPreSentTimer(messageId, copy: true, holdMs: config.maxSendHoldMs);
       _send(messageId, same: true);
       return;
     }
@@ -1447,6 +1635,7 @@ class MessageRetryService extends ChangeNotifier {
     _resendAttempts.remove(messageId);
     _wireAttempts.remove(messageId);
     _wireRungs.remove(messageId);
+    _rungOfWire.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }
@@ -1521,6 +1710,7 @@ class MessageRetryService extends ChangeNotifier {
   void _fail(String messageId, Message message, Contact contact,
       {bool clearRoute = true}) {
     final config = _config;
+    _logSummary(messageId, message, contact);
     final failedMessage = message.copyWith(
         status: MessageStatus.failed, waitingForRepeater: false);
     _pendingMessages[messageId] = failedMessage;
@@ -1569,6 +1759,11 @@ class MessageRetryService extends ChangeNotifier {
     }
     return false;
   }
+
+  /// Whether [ackHash] is the ACK code of a DM of mine that waits for it or
+  /// was settled lately: a copy of it heard on the air belongs to my DM.
+  bool isOurAck(int ackHash) =>
+      waitingForAck(ackHash) != null || _checkAckHistory(ackHash);
 
   /// How long ago the attempt [ackHash] belongs to went out, while its DM
   /// still waits for an ACK; null when nothing waits for that hash.
@@ -1676,6 +1871,28 @@ class MessageRetryService extends ChangeNotifier {
       }
     }
 
+    final ackMessage =
+        matchedMessageId == null ? null : _pendingMessages[matchedMessageId];
+    final ackContact =
+        matchedMessageId == null ? null : _pendingContacts[matchedMessageId];
+    final ackRung = ackMessage == null
+        ? null
+        : (matchedAttemptIndex ?? ackMessage.retryCount) + 1;
+    config?.measureLog?.line('ack', {
+      'h': ackHashHex,
+      'c': ackContact == null
+          ? null
+          : MeasureLog.contact(ackContact.publicKeyHex),
+      'ts': ackMessage == null
+          ? null
+          : ackMessage.timestamp.millisecondsSinceEpoch ~/ 1000,
+      'n': unjudged.isEmpty ? ackRung : null,
+      // Heard on the air before the radio counted it: a path reply, or a
+      // plain or MULTIPART ACK.
+      'heard': viaPathReply == null ? null : (viaPathReply ? 'path' : 'ack'),
+      'ms': tripTimeMs,
+    });
+
     if (matchedMessageId != null) {
       final message = _pendingMessages[matchedMessageId];
       if (message == null) {
@@ -1727,6 +1944,10 @@ class MessageRetryService extends ChangeNotifier {
           ackedAttempt: unjudged.isEmpty ? ackedAttempt : null,
           tripTimeMs: tripTimeMs,
           unjudged: unjudged);
+      if (contact != null) {
+        _logSummary(matchedMessageId, message, contact,
+            deliveredOn: ackedAttempt);
+      }
       _cleanupMessage(matchedMessageId);
 
       config?.updateMessage(deliveredMessage);

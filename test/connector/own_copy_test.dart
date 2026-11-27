@@ -8,6 +8,7 @@ import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/passing_copy.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/path_selection.dart';
+import 'package:meshtrax/services/app_debug_log_service.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
@@ -120,6 +121,7 @@ void main() {
   late _Connector c;
   late Contact a;
   late List<String> proved;
+  late AppDebugLogService log;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -128,10 +130,12 @@ void main() {
     AppDatabase.useInMemoryForTesting();
     final settings = AppSettingsService();
     await settings.setPathGraphEnabled(true);
+    log = AppDebugLogService()..setEnabled(true);
     c = _Connector()
       ..initialize(
         retryService: MessageRetryService(),
         appSettingsService: settings,
+        appDebugLogService: log,
       );
     c.graphRouteCandidates = (_) => [toA];
     c.handleFrameForTest(_deviceInfo());
@@ -243,5 +247,38 @@ void main() {
     copy[copy.length - 1] ^= 1;
     c.handleFrameForTest(copy);
     expect(proved, isEmpty);
+  });
+
+  test('the measurement lines name A by key and never quote the DM', () async {
+    c.handleFrameForTest(heardBeef);
+    unawaited(c.sendMessage(a, 'hello A'));
+    await until(() => c.dms.isNotEmpty);
+    radioTook(c.dms.single);
+    c.handleFrameForTest(passedOn(c.dms.single, _hex('AD77A277')));
+
+    final lines = [
+      for (final e in log.entries)
+        if (e.tag == 'Measure') e.message,
+    ];
+    expect(lines, contains(startsWith('M1 try c=C36D ')));
+    expect(lines,
+        contains(startsWith('M1 out c=C36D ')), reason: 'BEEF passed it on');
+    expect(lines.any((l) => l.contains('hello')), isFalse);
+  });
+
+  // Another radio's channel flood with 1-byte path codes, last passed on
+  // by some repeater whose code starts with BE. That is not BEEF: BEEF has
+  // not been heard at all, so its silence says nothing (regression audit,
+  // 2026-11-27).
+  test('a 1-byte flood ending at BE is not a sighting of BEEF', () async {
+    c.handleFrameForTest(
+        _rxLog([0x15, 0x01, 0xBE, ...List.filled(24, 0x5A)]));
+    unawaited(c.sendMessage(a, 'hello A'));
+    await until(() => c.dms.isNotEmpty);
+    radioTook(c.dms.single);
+
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
+    expect(c.dms, hasLength(1),
+        reason: 'the DM is not sent again for a repeater never heard');
   });
 }
