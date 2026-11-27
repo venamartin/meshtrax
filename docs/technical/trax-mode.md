@@ -243,6 +243,7 @@ A short guide in the app, told as a hike with friends behind you and more joinin
 - **Then the icons:** the boot print off and on, a member's pin and a grey one, your blue dot, the two tracks and the trip channel's row.
 - **By itself** after TRAX mode goes on, from the TRAX sheet or **Switch too**, until **Don't show this again** (`trax_guide_seen`).
 - **Any time** from the info button in TRAX settings' top bar (Martin chose there only).
+- **A dialog** with an X to close, as **What the icons mean** is too. Only the steps and icons scroll; **Don't show this again** stays at its foot. Both were sheets at first: their foot hid behind the navigation bar, and few would know to slide them down (Martin, 2026-11-27).
 
 ## My location
 

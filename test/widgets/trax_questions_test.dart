@@ -237,9 +237,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(trax.isOn, isTrue);
     expect(find.text('How TRAX works'), findsOneWidget);
-    final dontShow = find.text("Don't show this again");
-    await tester.scrollUntilVisible(dontShow, 200);
-    await tester.tap(dontShow);
+    await tester.tap(find.text("Don't show this again"));
     await tester.pump();
     expect(PrefsManager.instance.getBool(TraxGuide.prefKey), isTrue);
     trax.dispose();
