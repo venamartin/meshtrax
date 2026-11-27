@@ -76,15 +76,18 @@ class TraxFollowPrompt extends TraxPrompt {
 /// A member is leaving TRAX mode: leave too?
 class TraxLeavePrompt extends TraxPrompt {
   final String sender;
+  final Channel channel;
 
-  const TraxLeavePrompt(this.sender);
+  const TraxLeavePrompt(this.sender, this.channel);
 
   @override
   bool operator ==(Object other) =>
-      other is TraxLeavePrompt && other.sender == sender;
+      other is TraxLeavePrompt &&
+      other.sender == sender &&
+      other.channel.idKey == channel.idKey;
 
   @override
-  int get hashCode => sender.hashCode;
+  int get hashCode => Object.hash(sender, channel.idKey);
 }
 
 /// The trip has ended with the radio still in TRAX mode: at the end itself
@@ -604,7 +607,7 @@ class TraxService extends ChangeNotifier {
       if (isOn || end == null || !end.isAfter(_clock())) return null;
       return TraxFollowPrompt(message.senderName, parsed, channel);
     }
-    return isOn ? TraxLeavePrompt(message.senderName) : null;
+    return isOn ? TraxLeavePrompt(message.senderName, channel) : null;
   }
 
   /// Switch too or Leave too on [message]'s notification, where TRAX mode
@@ -628,12 +631,34 @@ class TraxService extends ChangeNotifier {
     return message == null ? null : _promptFor(message);
   }
 
+  /// Whether a question left open still fits: nothing newer heard on its
+  /// channel since, and the radio still off TRAX mode for Switch too, on it
+  /// for Leave too (Martin, 2026-11-27: a Switch too still up after the
+  /// group had left joined nobody). With the radio away or busy switching,
+  /// it waits.
+  bool stillAsks(TraxPrompt prompt) {
+    if (_radioKey == null || busy) return true;
+    return switch (prompt) {
+      TraxFollowPrompt(:final channel) =>
+        _latest.containsKey(channel.index)
+            ? askedOn(channel.index) == prompt
+            : !isOn,
+      TraxLeavePrompt(:final channel) =>
+        _latest.containsKey(channel.index)
+            ? askedOn(channel.index) == prompt
+            : isOn,
+      TraxStillOnPrompt() => tripEndedPrompt != null,
+    };
+  }
+
   void _onChannelMessage(({ChannelMessage message, bool fromBacklog}) e) {
     final m = e.message;
     if (e.fromBacklog || StructuredMessage.parse(m.text) is! TraxMessage) {
       return;
     }
     if (m.channelIndex case final index?) _latest[index] = m;
+    // A question left open checks itself against it ([stillAsks]).
+    notifyListeners();
     final prompt = _promptFor(m);
     if (prompt is TraxFollowPrompt) {
       _ask(prompt, 'on ${prompt.sender} ${prompt.message.toWire()}');

@@ -205,8 +205,8 @@ class StructuredMessageCard extends StatelessWidget {
   final bool isOutgoing;
   final String? senderName;
 
-  /// The private channel a TRAX message came on: only there does its card
-  /// offer to switch or leave too.
+  /// The private channel a TRAX message came on, for the newest one from
+  /// the others only: that card alone offers to switch or leave too.
   final Channel? traxChannel;
 
   /// An SOS card's repeats, cancel and answers.
@@ -599,7 +599,8 @@ class StructuredMessageCard extends StatelessWidget {
             _Action(
               Icons.logout,
               l10n.trax_leaveToo,
-              () => showTraxPrompt(context, trax, TraxLeavePrompt(name)),
+              () =>
+                  showTraxPrompt(context, trax, TraxLeavePrompt(name, channel)),
             ),
       ],
     );

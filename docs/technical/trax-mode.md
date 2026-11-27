@@ -125,8 +125,11 @@ TRAX: off
 **Receiving:**
 - **When a phone asks:** for a message on a private channel, heard live (not from the radio's backlog). It asks "Ana switched to TRAX mode until Sunday 18:00. Switch too?" or "Ana is leaving TRAX mode. Leave too?", the same question at most once in 10 minutes.
 - **Only when it fits:** switching only when this radio is off TRAX and the end is still ahead; leaving only when it is on.
+- **Only the newest asks:** the newest TRAX message from the others on the channel decides (Martin, 2026-11-27: someone who hadn't switched heard the group leaving later, and the old Switch too still joined).
+  - An older card in the chat has no button.
+  - A question still up goes by itself once a newer one comes on its channel or the radio has switched (or left) already. With the radio away, it waits.
 - **It never switches by itself:** one tap each, so a forged message can't take radios off the mesh.
-- **Other places to answer:** the message's card in the chat offers the same button while it applies. So does its Android notification, for a phone in a pocket: **Switch too** or **Leave too** opens the app and asks the same question there; it never switches from the notification.
+- **Other places to answer:** the message's card in the chat offers the same button while it applies and is the newest. So does its Android notification, for a phone in a pocket: **Switch too** or **Leave too** opens the app and asks the same question there; it never switches from the notification.
   - That notification has an id of its own per channel, so the chat after it doesn't take the button away.
   - A button that no longer fits opens the chat instead.
   - iOS shows the notification without a button.
