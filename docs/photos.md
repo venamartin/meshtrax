@@ -22,13 +22,15 @@ The phones that receive it rebuild a picture from that code with the same model.
 4. Tap **Preview**. The photo is checked and coded, then rebuilt exactly as the others will see it. Tap the picture to see it full screen: zoom in, or tap **Enhance 4×** as the others can.
 5. Type a tag if it helps, up to 24 characters, such as "Spring flowing". It travels as text, exactly as you type it, so the rebuild can't change it.
 6. To show where you are, turn on **Include location** and pick how exact: about 10 km, 600 m, 40 m or 2 m. It's your radio's location now, from its GPS or the one you set. The finer it is, the more of a packet it takes, and it's off again for the next photo.
-7. Tap **Send**. MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first.
+7. Tap **Send**. The photo goes into the chat straight away and you're back in the chat. Its packets go from there, one at a time, and a line under the photo says how it's going: "Packet 2 of 4", "Packet 2 of 4 again", "Packet 2 of 4: asking observers". MeshTrax pauses after each packet, so an SOS or a message sent meanwhile goes first. If your radio stops taking the packets, the photo turns red and the line says why.
 
 A photo goes the way the channel's messages go: through the repeaters, within the channel's region if it has one. **Zero hop** sends it only to the radios in direct range; repeaters don't pass it on. On a Nearby only channel every photo goes zero hop. **Repair packet** sends one more packet, so the photo still arrives if any one packet is lost. It's off until you turn it on, and stays the way you left it for your next photo. A photo the safety check flags can't be sent.
 
 Through repeaters, your radio listens for each packet being passed on:
-- A packet no repeater was heard passing on goes once more ("Packet 2 of 4 again"), while the others can still put the photo together. It doesn't when **Max Channel Message Retries** is 0, or when no repeater has been heard for 10 minutes. After a packet sent again, no more go until a repeater is heard passing some packet of the photo on. A repeater you marked in Pathfinder as moving with you doesn't count.
-- With **Check sends with observers** on, the observers' first answer comes about 10 seconds after the photo is sent. A packet that neither a repeater nor an observer was heard to carry then goes once more, if the others can still put the photo together and your retries allow. A packet an observer heard doesn't go again. Like the extra send for a message only one repeater carried, this happens only while observers have heard your radio lately.
+- Each packet follows a message's rules before the next one goes. It waits up to 30 seconds to be passed on, and if no repeater was heard passing it on, it goes again, as many times as **Max Channel Message Retries** allows, and not at all at 0. Two or more repeaters passing it on is enough. A repeater you marked in Pathfinder as moving with you doesn't count.
+- With **Check sends with observers** on, a packet an observer heard doesn't go again. A packet only one repeater passed on waits for the observers, while they have heard your radio lately, and if none of them heard it, it goes once more, as a message does.
+- A packet sent again goes out as a new packet, so repeaters pass it on again, as they do a message sent again.
+- A photo with lost packets can take a few minutes this way. Receiving phones wait up to 20 minutes for its packets.
 - Your photo then shows the checks a message does: one grey check while your radio listens, two green checks once repeaters passed on every packet the others need, and the amber check when some weren't heard. Hold the amber check to see how many were. With **Check sends with observers** on, the ear appears when an observer heard any of its packets, as on a message, and **Packet Path** lists the observers.
 - Zero hop, no repeater passes it on, so it keeps its one check.
 
@@ -37,13 +39,13 @@ Through repeaters, your radio listens for each packet being passed on:
 On the frequencies of MeshCore's standard presets, photos share the air with everyone, so MeshTrax holds them back:
 - Before each photo it asks you to confirm, with how much airtime the photo takes, measured in text messages (a photo is usually as much as 8), and whether repeaters pass it on.
 - On Public and hashtag channels it first explains that most people there won't see the photo, since only MeshTrax shows photos, and what's better: zero hop, a private channel, a tighter crop, one photo rather than a series. **Don't show this again** skips that explanation, not the question.
-- Through repeaters, a photo waits after your last one by its size:
-  - 1 packet: no wait, and it doesn't count toward the next;
+- Through repeaters, the next photo waits after your last one, by the size of that last one:
+  - 1 packet: no wait;
   - 2 packets: 5 minutes;
   - 3 packets: 10 minutes;
   - 4 to 6 packets: 20 minutes.
 
-  Zero hop never waits: it reaches only the radios near you. A photo no repeater was heard carrying doesn't count, as long as your radio heard a repeater in the last minute (then none carried it) and, with **Check sends with observers** on, no observer heard it.
+  MeshTrax tells you as soon as you tap **Photo**, before you pick one, and offers zero hop: it reaches only the radios near you, and never waits. A photo no repeater was heard carrying doesn't count, as long as your radio heard a repeater in the last minute (then none carried it) and, with **Check sends with observers** on, no observer heard it.
 - At least four packets' airtime between packets, so a photo takes no more than about a quarter of the air around you. Through repeaters, MeshTrax waits longer, until each packet has cleared the repeaters near you.
 
 The Off-Grid presets, TRAX included, and custom frequencies have none of these limits.
@@ -51,10 +53,14 @@ The Off-Grid presets, TRAX included, and custom frequencies have none of these l
 ## Receiving a photo
 
 - A photo shows in the chat under the sender's name, with its tag and location, if any, under it. **Map** and **Navigate** work as on a shared location. Tap it to see it full screen: it's rebuilt there first, in about 20 seconds on an older phone and a few seconds on a recent one. Pinch or double-tap to zoom. A Subject only photo shows its subject framed, in the chat and full screen.
+- If photos are off on your phone, or the photo model isn't on it yet, a photo you receive shows **Turn on photos**. It turns photos on and, once you say yes to its size, downloads the model; the photo shows how far it got, and once it's in, tap the photo to see it.
 - **Enhance 4×**, at the bottom, enlarges it to 2048 × 2048. An AI model on your phone sharpens it, so fine detail may be made up. It takes about 4 seconds on an older phone, 1 on a recent one, and needs about 1 GB of free memory. MeshTrax keeps only the rebuilt photo, not the enhanced one.
 - **Save**, at the top, saves what's on screen to your photos (on a Mac, where you choose), with "AI reconstructed" and the footprint in its corners. The ⋮ menu has **About this photo** and, for a photo you received, **Report** and **Block**.
 - To skip the taps, turn on **Rebuild received photos automatically** in App settings, Messaging, Photos: each photo then rebuilds as it arrives, while MeshTrax is open and the phone has the memory. On phones with 8 GB of memory or more, **Enlarge photos automatically** enlarges a photo as it opens full screen.
-- A photo that didn't arrive whole says so, for example "📷 Photo #3a incomplete: 3 of 5 packets". It isn't sent again.
+- MeshTrax 1.12.0 and later versions can't show each other's photos. Update both phones.
+- While a photo comes in, a line above the message box says how far it got, for example "📷 Photo #3a from Bob: 4 of 10 packets so far".
+- When packets were lost on the way (a later one came, or nothing came for 3 minutes), the line says how many and offers **Ask for the rest**. The sender's phone then sends just those packets again, once. You can ask again after 2 minutes, until 15 minutes after the photo's first packet. Only the sender answers, and photos from MeshTrax 1.12.0 can't be asked for.
+- A photo that didn't arrive whole says so, 20 minutes after its first packet, for example "📷 Photo #3a incomplete: 3 of 5 packets".
 
 ## Safety
 

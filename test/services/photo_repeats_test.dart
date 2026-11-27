@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/services/photo_repeats.dart';
 
 void main() {
@@ -8,16 +9,23 @@ void main() {
   final viaAB = Uint8List.fromList([0xA2, 0x77, 0xBE, 0xEF]);
   final viaB = Uint8List.fromList([0xBE, 0xEF]);
 
-  /// [n] packets of 4 bytes each, packet i all i.
-  List<Uint8List> blobs(int n) =>
-      [for (var i = 0; i < n; i++) Uint8List.fromList(List.filled(4, i))];
-
   PhotoRepeats photo(int n, {bool hasRepair = false}) =>
-      PhotoRepeats(blobs: blobs(n), hasRepair: hasRepair);
+      PhotoRepeats(packets: n, hasRepair: hasRepair, messageId: 'row');
 
-  /// A repeater's exact copy of packet [i] of [r] through [path].
-  bool heard(PhotoRepeats r, int i, Uint8List path, {bool carOnly = false}) =>
-      r.note(i, r.blobs[i], path, 2, carOnly: carOnly);
+  /// A repeater's copy of packet [i] of [r] through [path]; with [carOnly],
+  /// every repeater in it moves with the user.
+  void heard(PhotoRepeats r, int i, Uint8List path, {bool carOnly = false}) =>
+      r.note(
+        i,
+        path,
+        2,
+        repeaters: carOnly
+            ? const {}
+            : {
+                for (var at = 0; at < path.length; at += 2)
+                  PathHelper.hopHex(path.sublist(at, at + 2)),
+              },
+      );
 
   group('a photo is complete', () {
     test('once every data packet was passed on', () {
@@ -58,25 +66,13 @@ void main() {
     expect(r.passedOnCount, 2);
   });
 
-  test('only a copy of the packet as sent counts: not another sender\'s '
-      'with the same prefix and image id, nor one with no repeater', () {
-    final r = photo(2);
-    expect(r.note(0, Uint8List.fromList([9, 9, 9, 9]), viaA, 2), isFalse);
-    expect(r.note(0, r.blobs[0], Uint8List(0), 2), isFalse);
-    expect(r.note(5, r.blobs[1], viaA, 2), isFalse);
-    expect(r.copies, 0);
-    expect(r.passedOnCount, 0);
-    expect(r.paths, isEmpty);
-  });
-
   test('a copy only car repeaters carried is shown but says nothing of the '
       'mesh', () {
     final r = photo(2);
-    expect(heard(r, 0, viaA, carOnly: true), isTrue);
+    heard(r, 0, viaA, carOnly: true);
     expect(r.copies, 1);
     expect(r.paths, [viaA]);
     expect(r.passedOn(0), isFalse);
-    expect(r.sendAgain(0), isTrue);
   });
 
   test('Pathfinder hears of each first repeater once per photo', () {
@@ -85,69 +81,5 @@ void main() {
     expect(r.firstThrough(viaAB, 2), isFalse);
     expect(r.firstThrough(viaB, 2), isTrue);
     expect(r.firstThrough(Uint8List.fromList(viaB), 2), isFalse);
-  });
-
-  group('a packet goes once more', () {
-    test('when no repeater was heard passing it on', () {
-      final r = photo(3);
-      heard(r, 0, viaA);
-      expect(r.sendAgain(0), isFalse);
-      expect(r.sendAgain(1), isTrue);
-    });
-
-    test('and keeps going while copies are heard', () {
-      final r = photo(3);
-      expect(r.sendAgain(0), isTrue);
-      heard(r, 0, viaA);
-      expect(r.sendAgain(1), isTrue);
-    });
-
-    test('but waits after one sent again while nothing is heard', () {
-      final r = photo(4);
-      expect(r.sendAgain(0), isTrue);
-      expect(r.sendAgain(1), isFalse);
-      expect(r.sendAgain(2), isFalse);
-      // Any copy heard again, even of another packet, ends the wait: a
-      // repeater hears this radio.
-      heard(r, 2, viaA);
-      expect(r.sendAgain(3), isTrue);
-    });
-
-    test('and a car repeater\'s copy doesn\'t end the wait', () {
-      final r = photo(3);
-      expect(r.sendAgain(0), isTrue);
-      heard(r, 0, viaA, carOnly: true);
-      expect(r.sendAgain(1), isFalse);
-    });
-
-    test('and counts each time it does', () {
-      final r = photo(2);
-      expect(r.sendAgain(0), isTrue);
-      r.sentAgain(0);
-      expect(r.timesAgain(0), 2);
-      expect(r.timesAgain(1), 0);
-    });
-  });
-
-  group('after observers answer, unconfirmed are', () {
-    test('the data packets neither passed on nor heard by an observer', () {
-      final r = photo(4);
-      heard(r, 0, viaA);
-      expect(r.unconfirmed({2}), [1, 3]);
-    });
-
-    test('none once all are confirmed, one way or the other', () {
-      final r = photo(3);
-      heard(r, 1, viaA);
-      expect(r.unconfirmed({0, 2}), isEmpty);
-    });
-
-    test('none when the repair packet can stand in for the one missing', () {
-      final r = photo(4, hasRepair: true);
-      heard(r, 0, viaA);
-      expect(r.unconfirmed({1, 3}), isEmpty);
-      expect(r.unconfirmed({1}), [2]);
-      expect(r.unconfirmed({3}), [1, 2]);
-    });
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshtrax/services/photo_reassembler.dart';
 import 'package:meshtrax/services/photo_rules.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
@@ -60,55 +61,29 @@ void main() {
   group('on a MeshCore frequency, through repeaters', () {
     final threeMinutesAgo = now.subtract(const Duration(minutes: 3));
 
-    PhotoBlock? blocked(
-      int packets, {
-      DateTime? lastSentViaRepeaters,
-      bool viaRepeaters = true,
-    }) => photoSendBlocked(
+    /// What the next photo still waits after a photo of [packets] packets
+    /// sent [at].
+    PhotoBlock? blocked(int packets, DateTime at) => photoSendBlocked(
       freqKhz: usa,
-      lastSentViaRepeaters: lastSentViaRepeaters,
-      viaRepeaters: viaRepeaters,
-      packets: packets,
+      last: (at: at, packets: packets),
       now: now,
     );
 
-    test('every channel may take a photo, Public too', () {
-      expect(blocked(6), isNull);
+    test('with no photo before, nothing waits', () {
+      expect(photoSendBlocked(freqKhz: usa, last: null, now: now), isNull);
     });
 
-    test('a photo waits by its size after the last one', () {
+    test('the next photo waits by the size of the last one', () {
       expect(photoGapRepeaters(1), Duration.zero);
       expect(photoGapRepeaters(2), const Duration(minutes: 5));
       expect(photoGapRepeaters(3), const Duration(minutes: 10));
       expect(photoGapRepeaters(4), const Duration(minutes: 20));
       expect(photoGapRepeaters(6), const Duration(minutes: 20));
-      expect(blocked(1, lastSentViaRepeaters: threeMinutesAgo), isNull);
-      expect(blocked(2, lastSentViaRepeaters: threeMinutesAgo), (
-        gap: 5,
-        minutes: 2,
-      ));
-      expect(blocked(3, lastSentViaRepeaters: threeMinutesAgo), (
-        gap: 10,
-        minutes: 7,
-      ));
-      expect(blocked(5, lastSentViaRepeaters: threeMinutesAgo), (
-        gap: 20,
-        minutes: 17,
-      ));
-      expect(
-        blocked(
-          5,
-          lastSentViaRepeaters: now.subtract(const Duration(minutes: 20)),
-        ),
-        isNull,
-      );
-    });
-
-    test('zero hop never waits', () {
-      expect(
-        blocked(6, lastSentViaRepeaters: now, viaRepeaters: false),
-        isNull,
-      );
+      expect(blocked(1, threeMinutesAgo), isNull, reason: 'one packet');
+      expect(blocked(2, threeMinutesAgo), (packets: 2, gap: 5, minutes: 2));
+      expect(blocked(3, threeMinutesAgo), (packets: 3, gap: 10, minutes: 7));
+      expect(blocked(5, threeMinutesAgo), (packets: 5, gap: 20, minutes: 17));
+      expect(blocked(5, now.subtract(const Duration(minutes: 20))), isNull);
     });
   });
 
@@ -116,9 +91,7 @@ void main() {
     expect(
       photoSendBlocked(
         freqKhz: 920000,
-        lastSentViaRepeaters: now,
-        viaRepeaters: true,
-        packets: 6,
+        last: (at: now, packets: 6),
         now: now,
       ),
       isNull,
@@ -160,19 +133,61 @@ void main() {
         gap(500, zeroHop: false, shared: true),
         const Duration(milliseconds: 5700),
       );
-      // 3.1 s packets (USA Arizona): 4 airtimes would miss the window, so a
-      // 6-packet photo spreads 45 s over its 5 gaps.
+      // 3.1 s packets (USA Arizona): 4 airtimes fit the receivers' window.
       int slow(int bytes) => 3120;
       expect(
         gap(700, zeroHop: true, airtimeMs: slow, shared: true),
-        const Duration(seconds: 9),
+        const Duration(milliseconds: 12480),
       );
-      // Without the repair packet it is 5 packets, 45 s over 4 gaps.
+      // 60 s packets would miss it: a 6-packet photo spreads three quarters
+      // of the receivers' 20 minutes over its 5 gaps.
+      int crawl(int bytes) => 60000;
       expect(
-        gap(700, zeroHop: true, repairPacket: false, airtimeMs: slow,
-            shared: true),
-        const Duration(milliseconds: 11250),
+        gap(700, zeroHop: true, airtimeMs: crawl, shared: true),
+        const Duration(seconds: 180),
       );
+      // Without the repair packet it is 5 packets, over 4 gaps.
+      expect(
+        gap(700, zeroHop: true, repairPacket: false, airtimeMs: crawl,
+            shared: true),
+        const Duration(seconds: 225),
+      );
+    });
+  });
+
+  group('the least gap after a photo packet', () {
+    const airtime = Duration(milliseconds: 650);
+    const slow = Duration(seconds: 2);
+    const crawl = Duration(seconds: 30);
+
+    test('zero hop: its airtime and half a second', () {
+      expect(photoPacketGap(airtime), const Duration(milliseconds: 1150));
+    });
+
+    test('a flood: until it has cleared two hops of repeaters', () {
+      // 650 ms on air, then two hops of up to 1625 ms wait and 650 ms on
+      // air, then half a second.
+      expect(
+        photoPacketGapFlood(airtime, packets: 6),
+        const Duration(milliseconds: 5700),
+      );
+      expect(
+        photoPacketGapFlood(slow, packets: 6),
+        const Duration(milliseconds: 16500),
+      );
+      expect(
+        photoPacketGapFlood(airtime, packets: 1),
+        const Duration(milliseconds: 5700),
+        reason: 'a photo of one packet waits as long',
+      );
+    });
+
+    test('capped so the photo goes out within the receivers\' window, never '
+        'below the zero-hop gap', () {
+      final gap = photoPacketGapFlood(crawl, packets: 6);
+      expect(gap, const Duration(seconds: 180));
+      expect(gap * 5, lessThanOrEqualTo(photoReceiveWindow * 0.75));
+      expect(photoPacketGapFlood(crawl, packets: 40), photoPacketGap(crawl));
     });
   });
 
@@ -182,14 +197,25 @@ void main() {
     await PrefsManager.initialize();
     const a = 'aabbccddeeff00112233445566778899';
     const b = '99887766554433221100ffeeddccbbaa';
-    await notePhotoSent(a, now);
-    expect(photoLastSentViaRepeaters(a), now);
+    await notePhotoSent(a, now, packets: 3);
+    expect(photoLastSentViaRepeaters(a), (at: now, packets: 3));
     expect(photoLastSentViaRepeaters(b), isNull);
     expect(photoLastSentViaRepeaters(''), isNull);
 
     final later = now.add(const Duration(hours: 1));
-    await notePhotoSent(a, later);
-    expect(photoLastSentViaRepeaters(a), later);
+    await notePhotoSent(a, later, packets: 2);
+    expect(photoLastSentViaRepeaters(a), (at: later, packets: 2));
+  });
+
+  test('a photo noted by MeshTrax 1.12.0, its time only, waits the longest',
+      () async {
+    const a = 'aabbccddeeff00112233445566778899';
+    SharedPreferences.setMockInitialValues({
+      'photo_last_sent_via_aabbccddeeff0011': now.millisecondsSinceEpoch,
+    });
+    PrefsManager.reset();
+    await PrefsManager.initialize();
+    expect(photoLastSentViaRepeaters(a), (at: now, packets: 4));
   });
 
   test('a photo no repeater carried gives back its time, and leaves a later '
@@ -198,23 +224,21 @@ void main() {
     PrefsManager.reset();
     await PrefsManager.initialize();
     const a = 'aabbccddeeff00112233445566778899';
-    await notePhotoSent(a, now);
+    await notePhotoSent(a, now, packets: 6);
     await notePhotoNotCarried(a, now);
     expect(photoLastSentViaRepeaters(a), isNull);
     expect(
       photoSendBlocked(
         freqKhz: meshCoreFrequenciesKhz.first,
-        lastSentViaRepeaters: photoLastSentViaRepeaters(a),
-        viaRepeaters: true,
-        packets: 6,
+        last: photoLastSentViaRepeaters(a),
         now: now.add(const Duration(minutes: 1)),
       ),
       isNull,
     );
 
     final later = now.add(const Duration(minutes: 40));
-    await notePhotoSent(a, later);
+    await notePhotoSent(a, later, packets: 6);
     await notePhotoNotCarried(a, now);
-    expect(photoLastSentViaRepeaters(a), later);
+    expect(photoLastSentViaRepeaters(a), (at: later, packets: 6));
   });
 }
