@@ -1,26 +1,26 @@
 # traxpix
 
 Photos over the mesh. traxpix splits a coded photo into MeshCore channel-data
-packets, adds a repair packet that rebuilds any one lost packet, and puts the
-packets back together on the other side. It also holds the entropy coder for
-the photo model's bitstream. The package is pure Dart and has no screens; the
-model itself runs in `traxpix_litert`.
+packets, adds a repair packet that rebuilds any one lost packet, and makes the
+photo again from a group of packets. It also holds the entropy coder for the
+photo model's bitstream. It sends, receives and times nothing: that is the
+app's. The package is pure Dart and has no screens; the model itself runs in
+`traxpix_litert`.
 
 ## What MeshTrax does with it
 
 - **Sending.** The sender crops a photo square. The AEIC-SE `ft8` model codes
-  it to about 400 bytes, which is 3 to 7 packets with the repair packet. Each
-  packet is channel data of type `0x0170` on the chosen channel.
-- **Routes.** A photo goes as a flood, the way the radio sends the channel's
-  messages, or zero hop (`sendImage(zeroHop: true)`): only radios in direct
-  range hear it.
-- **Pacing.** The app hands the radio one packet at a time and waits after
-  each (`photoPacketGap`), so an SOS or a message sent meanwhile goes first.
-  A flood waits longer (`photoPacketGapFlood`), so that one packet doesn't run
-  into the one before it while repeaters pass that one on.
-- **Receiving.** `ImageReassembler` collects a photo's packets for 60
-  seconds. With one packet lost, the repair packet rebuilds it; with more
-  lost, the app shows the photo as incomplete.
+  it to about 400 bytes, which is 3 to 7 packets with the repair packet
+  (`buildImageChunks`). Each packet is channel data of type `0x0172` with a
+  retry byte: a packet sent again carries how many times it went before
+  (`photoPacketAgain`), so it is a new packet that repeaters pass on again,
+  and a receiver takes it as the same packet (`samePhotoPacket`). MeshTrax
+  1.12.0 sent `0x0170` packets without the byte; they are still read.
+- **The app sends them.** It hands a photo's packets to its chat, which sends
+  them one at a time under a channel text's rules, as a flood or zero hop.
+- **Receiving.** The app collects received packets for a while, and
+  `ImagePackets` makes the photo from them. With one packet lost, the repair
+  packet rebuilds it; with more lost, the app shows the photo as incomplete.
 - **Tags.** The sender can type a short tag (`photoPayloadWithTag`, 24
   characters). It travels as exact text ahead of the bitstream, so the rebuilt
   picture can never change it.

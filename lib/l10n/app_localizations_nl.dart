@@ -198,6 +198,50 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String photo_askingObservers(int sent, int total) {
+    return 'Packet $sent of $total: asking observers';
+  }
+
+  @override
+  String photo_waitTitle(int minutes) {
+    return 'Next photo through repeaters in $minutes min';
+  }
+
+  @override
+  String photo_waitBody(int packets, int gap) {
+    return 'On MeshCore frequencies, photos share the air with everyone: after a photo of $packets packets through repeaters, the next waits $gap minutes. A zero hop photo reaches only the radios near you, and can go now.';
+  }
+
+  @override
+  String get photo_zeroHopWaiting =>
+      'Photos through repeaters wait after your last one';
+
+  @override
+  String photo_getPhotosHint(String size) {
+    return 'To see it, this phone needs the photo model: $size.';
+  }
+
+  @override
+  String get photo_photosOffHint => 'Photos are off on this phone.';
+
+  @override
+  String get photo_getPhotos => 'Turn on photos';
+
+  @override
+  String get photo_getPhotosTitle => 'Turn on photos?';
+
+  @override
+  String photo_getPhotosBody(String size) {
+    return 'MeshTrax downloads the photo model, $size, so it can show the photos you receive. Keep MeshTrax open until it finishes; it also shows in App settings, Messaging, Photos.';
+  }
+
+  @override
+  String get photo_getPhotosWifi => 'It waits for Wi‑Fi.';
+
+  @override
+  String get photo_waitingToSend => 'Waiting to send';
+
+  @override
   String photo_passedOnSome(int heard, int total) {
     return 'Verstuurd · repeaters gaven $heard van de $total pakketten door';
   }

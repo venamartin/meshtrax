@@ -2567,12 +2567,7 @@ class _ChannelChatScreenState extends State<ChannelChatScreen> with RouteAware {
             label: l10n.tray_photo,
             onTap: () {
               setState(() => _trayOpen = false);
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  fullscreenDialog: true,
-                  builder: (_) => PhotoSendScreen(channel: widget.channel),
-                ),
-              );
+              unawaited(PhotoSendScreen.open(context, widget.channel));
             },
           ),
       ],

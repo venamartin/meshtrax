@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart' show Locale;
 import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
+import 'package:meshtrax/services/photo_reassembler.dart';
 import 'package:meshtrax/services/photo_store.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';

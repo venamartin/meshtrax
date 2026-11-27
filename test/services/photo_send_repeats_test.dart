@@ -10,7 +10,9 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/heard_service.dart';
+import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
 import 'package:meshtrax/services/photo_rules.dart';
 import 'package:meshtrax/services/photo_store.dart';
@@ -26,49 +28,61 @@ import 'package:traxpix/traxpix.dart'
         ImageStreamMetadata,
         PhotoExtras,
         buildImageChunks,
+        dataTypeMeshTraxPhotoV1,
+        kImageRetryByteOffset,
         kPhotoItemSubjectOnly,
-        photoPayload;
+        photoPacketAgain,
+        photoPayload,
+        samePhotoPacket;
 
-// A photo sent through repeaters: the radio hears its packets again only as
-// repeaters pass them on, in its raw log. A packet nobody passed on goes once
-// more, and the chat row shows what was heard. A received photo's row says
-// how far it came.
+// A photo goes into the chat at once; the chat then sends its packets one
+// at a time, each on a channel text's terms before the next goes. The radio
+// hears its own packets again only as repeaters pass them on, in its raw log;
+// a packet sent again has its retry byte bumped, so repeaters pass it on
+// again. The chat row shows what was heard. A received photo's row says how
+// far it came.
 
 final _psk = Uint8List.fromList(List.generate(16, (i) => 0x40 + i));
 
 /// The repeater that passes packets on: A277, in 2-byte codes.
 const _repeater = [0xA2, 0x77];
 
-/// A radio, on 920 MHz unless a test says, whose photo packets come back from
-/// repeater A277 as
-/// [echo] says, for the [n]th packet handed over (0 first), packet [index]
-/// of the photo.
+/// A radio, on 920 MHz unless a test says, that takes every photo packet the
+/// chat hands it (OK), and whose repeaters pass on the [n]th packet handed
+/// over (0 first), packet [index] of the photo, as [echo] says, through
+/// [path].
 class _Radio extends MeshCoreConnector {
   _Radio(this.echo);
 
   final bool Function(int n, int index) echo;
 
-  /// The photo packets handed to the radio, in order, with each one's path
-  /// length (0xFF: a flood, 0: zero hop) and when it was handed over.
+  List<int> path = _repeater;
+
+  /// The photo packets the radio took, in order, with each one's path
+  /// length (0xFF: a flood, 0: zero hop), data type and when it went.
   final List<Uint8List> blobs = [];
   final List<int> paths = [];
+  final List<int> types = [];
   final List<DateTime> handedOver = [];
 
-  int airtimeMs = 20;
+  /// Told of each packet as the radio takes it.
+  void Function(int n, int index)? onPacket;
 
-  bool heardLately = true;
+  /// The radio refuses the [refuseAt]th packet handed to it (0 first), with
+  /// error 3.
+  int? refuseAt;
+  int _handed = 0;
+
+  int airtimeMs = 20;
 
   /// The copies come back with their last byte changed, as another
   /// sender's packet with the same prefix and image id would.
   bool lookalike = false;
 
+  bool heardThisMinute = true;
+
   @override
   bool get isConnected => true;
-
-  @override
-  bool get repeaterHeardRecently => heardLately;
-
-  bool heardThisMinute = true;
 
   @override
   bool repeaterHeardWithin(Duration window) => heardThisMinute;
@@ -77,33 +91,35 @@ class _Radio extends MeshCoreConnector {
   int estimatePacketAirtimeMs(int bytes) => airtimeMs;
 
   @override
-  Future<void> sendFrame(
-    Uint8List data, {
-    String? channelSendQueueId,
-    bool expectsGenericAck = false,
-  }) async {}
-
-  @override
-  Future<Uint8List?> sendAndAwaitReply(
-    Uint8List data, {
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
-    if (data[0] == cmdSendChannelData) {
-      final blob = Uint8List.sublistView(data, 5);
-      final n = blobs.length;
-      blobs.add(blob);
-      paths.add(data[2]);
-      handedOver.add(DateTime.now());
-      if (echo(n, (blob[3] >> 4) & 0x0F)) {
-        final copy = Uint8List.fromList(blob);
-        if (lookalike) copy[copy.length - 1] ^= 0xFF;
-        Timer(
-          const Duration(milliseconds: 30),
-          () => handleFrameForTest(_repeated(copy)),
-        );
-      }
+  Future<void> writeToTransport(Uint8List data) async {
+    void answer(List<int> reply) =>
+        Timer.run(() => handleFrameForTest(Uint8List.fromList(reply)));
+    if (data[0] != cmdSendChannelData) {
+      answer([respCodeOk]);
+      return;
     }
-    return Uint8List.fromList([respCodeOk]);
+    if (_handed++ == refuseAt) {
+      answer([respCodeErr, 3]);
+      return;
+    }
+    final blob = Uint8List.fromList(data.sublist(5));
+    final type = data[3] | data[4] << 8;
+    final n = blobs.length;
+    final index = (blob[3] >> 4) & 0x0F;
+    blobs.add(blob);
+    paths.add(data[2]);
+    types.add(type);
+    handedOver.add(DateTime.now());
+    onPacket?.call(n, index);
+    answer([respCodeOk]);
+    if (data[2] == 0xFF && echo(n, index)) {
+      final copy = Uint8List.fromList(blob);
+      if (lookalike) copy[copy.length - 1] ^= 0xFF;
+      Timer(
+        const Duration(milliseconds: 30),
+        () => handleFrameForTest(_repeated(copy, path: path, dataType: type)),
+      );
+    }
   }
 }
 
@@ -131,10 +147,14 @@ Uint8List _channelInfo() => Uint8List.fromList([
 ]);
 
 /// [blob] as the radio logs a repeater's copy of it: a flooded channel
-/// datagram on Trip, sealed as the firmware seals one, through [path] (no
-/// repeater: heard from the sender's own radio).
-Uint8List _repeated(List<int> blob, {List<int> path = _repeater}) {
-  final plain = [0x70, 0x01, blob.length, ...blob];
+/// datagram on Trip of [dataType], sealed as the firmware seals one, through
+/// [path] (no repeater: heard from the sender's own radio).
+Uint8List _repeated(
+  List<int> blob, {
+  List<int> path = _repeater,
+  int dataType = 0x0172,
+}) {
+  final plain = [dataType & 0xFF, dataType >> 8, blob.length, ...blob];
   final padded = Uint8List((plain.length + 15) ~/ 16 * 16)
     ..setRange(0, plain.length, plain);
   final cipher = ECBBlockCipher(AESEngine())..init(true, KeyParameter(_psk));
@@ -156,22 +176,30 @@ Uint8List _repeated(List<int> blob, {List<int> path = _repeater}) {
   ]);
 }
 
-/// [blob] as the radio hands over a channel datagram it received on Trip:
-/// frame 27, with the path length the radio reports (0xFF: it came direct).
-Uint8List _received(List<int> blob, int pathLen) => Uint8List.fromList([
-  respCodeChannelDataRecv, 0x14, 0, 0, 1, pathLen, 0x70, 0x01, blob.length,
-  ...blob,
-]);
+/// [blob] as the radio hands over a channel datagram of [dataType] it
+/// received on Trip: frame 27, with the path length the radio reports
+/// (0xFF: it came direct).
+Uint8List _received(List<int> blob, int pathLen, {int dataType = 0x0172}) =>
+    Uint8List.fromList([
+      respCodeChannelDataRecv, 0x14, 0, 0, 1, pathLen, //
+      dataType & 0xFF, dataType >> 8, blob.length, ...blob,
+    ]);
 
-/// The chunk index of each packet handed over.
+/// The packet index of each packet handed over.
 List<int> _indexes(List<Uint8List> blobs) =>
     [for (final b in blobs) (b[3] >> 4) & 0x0F];
+
+/// How many times each packet handed over went before.
+List<int> _retries(List<Uint8List> blobs) =>
+    [for (final b in blobs) b[kImageRetryByteOffset]];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tmp;
   final repeatWait = MeshCoreConnector.channelRepeatWait;
+  final radioQuiet = MeshCoreConnector.radioQuietMs;
+  late AppSettingsService settings;
 
   setUpAll(() {
     tmp = Directory.systemTemp.createTempSync('photo-repeats');
@@ -189,20 +217,41 @@ void main() {
     PrefsManager.reset();
     await PrefsManager.initialize();
     AppDatabase.useInMemoryForTesting();
+    settings = AppSettingsService();
+    await settings.loadSettings();
     MeshCoreConnector.channelRepeatWait = const Duration(milliseconds: 300);
+    MeshCoreConnector.radioQuietMs = 50;
     PhotoMesh.resetForTest();
   });
 
   tearDown(() {
     PhotoMesh.resetForTest();
     MeshCoreConnector.channelRepeatWait = repeatWait;
+    MeshCoreConnector.radioQuietMs = radioQuiet;
   });
+
+  /// Waits until [r]'s photos are done with: every packet went, the chat no
+  /// longer listens for copies, and what was heard is written.
+  Future<void> settled(_Radio r) async {
+    for (var i = 0; i < 600 && PhotoMesh.of(r).busy; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    expect(PhotoMesh.of(r).busy, isFalse, reason: 'still going');
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await pumpEventQueue(times: 200);
+  }
 
   Future<_Radio> radio(
     bool Function(int n, int index) echo, {
     int freqKhz = 920000,
+    int retries = 1,
   }) async {
-    final r = _Radio(echo);
+    await settings.setMaxChannelMessageRetries(retries);
+    final r = _Radio(echo)
+      ..initialize(
+        retryService: MessageRetryService(),
+        appSettingsService: settings,
+      );
     r.handleFrameForTest(_selfInfo(freqKhz: freqKhz));
     await pumpEventQueue(times: 200);
     r.handleFrameForTest(_channelInfo());
@@ -211,9 +260,15 @@ void main() {
     return r;
   }
 
-  /// Sends a photo of [bytes] (450: 3 packets, 600: 4) on Trip, then waits
-  /// out the check after the last packet (one flood gap, 660 ms here) and
-  /// the wait for its copies.
+  Future<ChannelMessage> photoRow(_Radio r) async {
+    final rows = await r.loadChannelMessagesFor(
+      r.channels.firstWhere((c) => c.index == 1),
+    );
+    return rows.singleWhere(PhotoMesh.isPhotoMessage);
+  }
+
+  /// Sends a photo of [bytes] (450: 3 packets, 600: 4, 100: 1) on Trip, and
+  /// waits until it is done with ([settled]).
   Future<(ChannelMessage, PhotoRecord)> send(
     _Radio r, {
     bool zeroHop = false,
@@ -226,22 +281,36 @@ void main() {
       zeroHop: zeroHop,
       repairPacket: false,
     );
-    await Future<void>.delayed(const Duration(milliseconds: 2000));
-    await pumpEventQueue(times: 200);
-    final rows = await r.loadChannelMessagesFor(
-      r.channels.firstWhere((c) => c.index == 1),
-    );
-    final row = rows.singleWhere(PhotoMesh.isPhotoMessage);
+    await settled(r);
+    final row = await photoRow(r);
     return (row, PhotoStore.instance.recordFor(row.messageId)!);
   }
 
-  test('a packet no repeater passed on goes once more, and the photo shows '
-      'delivered once every packet was', () async {
+  /// What the chat row of the photo going says it does, each change once.
+  List<(PhotoSendStep, int)> watchSteps() {
+    final steps = <(PhotoSendStep, int)>[];
+    void listen() {
+      for (final state in PhotoMesh.sending.value.values) {
+        final step = (state.step, state.packet);
+        if (steps.isEmpty || steps.last != step) steps.add(step);
+      }
+    }
+
+    PhotoMesh.sending.addListener(listen);
+    addTearDown(() => PhotoMesh.sending.removeListener(listen));
+    return steps;
+  }
+
+  test('a packet no repeater passed on goes again before the next, its '
+      'retry byte bumped, and the photo shows delivered once every packet '
+      'was', () async {
     // Packet 1 is lost the first time; the copy sent again gets through.
     final r = await radio((n, index) => index != 1 || n == 2);
     final (row, record) = await send(r);
     expect(_indexes(r.blobs), [0, 1, 1, 2]);
-    expect(r.blobs[2], r.blobs[1]);
+    expect(_retries(r.blobs), [0, 0, 1, 0]);
+    expect(samePhotoPacket(r.blobs[2], r.blobs[1]), isTrue);
+    expect(r.types, everyElement(0x0172));
     expect(row.status, ChannelMessageStatus.delivered);
     expect(row.repeatCount, 3);
     expect(row.pathVariants.single, _repeater);
@@ -250,11 +319,23 @@ void main() {
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
   });
 
-  test('a photo of one packet no repeater passed on goes once more', () async {
+  test('the next packet waits at least a flood gap', () async {
+    final r = await radio((n, index) => true);
+    await send(r);
+    for (var i = 1; i < r.handedOver.length; i++) {
+      expect(
+        r.handedOver[i].difference(r.handedOver[i - 1]),
+        greaterThanOrEqualTo(const Duration(milliseconds: 640)),
+      );
+    }
+  });
+
+  test('a photo of one packet no repeater passed on goes once more',
+      () async {
     final r = await radio((n, index) => n == 1);
     final (row, record) = await send(r, bytes: 100);
     expect(_indexes(r.blobs), [0, 0]);
-    expect(r.blobs[1], r.blobs[0]);
+    expect(_retries(r.blobs), [0, 1]);
     expect(row.status, ChannelMessageStatus.delivered);
     expect(record.packetsPassedOn, 1);
   });
@@ -266,11 +347,12 @@ void main() {
     expect(row.status, ChannelMessageStatus.delivered);
   });
 
-  test('after a packet sent again goes unheard, no more go while nothing is '
-      'heard, and the photo stays sent', () async {
+  test('each packet no repeater passed on goes again within the channel '
+      'retries, and the photo stays sent', () async {
     final r = await radio((n, index) => index == 0);
     final (row, record) = await send(r);
-    expect(_indexes(r.blobs), [0, 1, 1, 2]);
+    expect(_indexes(r.blobs), [0, 1, 1, 2, 2]);
+    expect(_retries(r.blobs), [0, 0, 1, 0, 1]);
     expect(row.status, ChannelMessageStatus.sent);
     expect(row.repeatCount, 1);
     expect(record.packetsPassedOn, 1);
@@ -278,24 +360,29 @@ void main() {
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
   });
 
-  test('a copy heard after that lets a later packet go again', () async {
-    // Packets 1 and 3 never come back; packet 2's copy shows a repeater
-    // still hears this radio.
-    final r = await radio((n, index) => index == 0 || index == 2);
-    final (row, record) = await send(r, bytes: 600);
-    expect(_indexes(r.blobs), [0, 1, 1, 2, 3, 3]);
-    expect(row.status, ChannelMessageStatus.sent);
-    expect(record.packetsPassedOn, 2);
+  test('with three channel retries, a packet no repeater passes on goes '
+      'three times more, counting 1, 2 and 3', () async {
+    final r = await radio((n, index) => false, retries: 3);
+    await send(r, bytes: 100);
+    expect(_indexes(r.blobs), [0, 0, 0, 0]);
+    expect(_retries(r.blobs), [0, 1, 2, 3]);
   });
 
-  test('copies only a car repeater carried are shown, but count for nothing',
-      () async {
+  test('with channel retries off, nothing goes again', () async {
+    final r = await radio((n, index) => false, retries: 0);
+    final (row, _) = await send(r);
+    expect(_indexes(r.blobs), [0, 1, 2]);
+    expect(row.status, ChannelMessageStatus.sent);
+  });
+
+  test('copies only a car repeater carried are shown, but count for nothing; '
+      'without observers, one repeat is enough, as for a text', () async {
     final r = await radio((n, index) => true)
       ..isCarRepeater = (hop, width) => true;
     final (row, record) = await send(r);
-    expect(_indexes(r.blobs), [0, 0, 1, 2]);
+    expect(_indexes(r.blobs), [0, 1, 2]);
     expect(row.status, ChannelMessageStatus.sent);
-    expect(row.repeatCount, 4);
+    expect(row.repeatCount, 3);
     expect(record.packetsPassedOn, 0);
   });
 
@@ -317,19 +404,10 @@ void main() {
       ..lookalike = true
       ..onOwnEchoHeard = (path, width) => told.add((List.of(path), width));
     final (row, record) = await send(r);
-    expect(_indexes(r.blobs), [0, 0, 1, 2]);
+    expect(_indexes(r.blobs), [0, 0, 1, 1, 2, 2]);
     expect(row.repeatCount, 0);
     expect(record.packetsPassedOn, 0);
     expect(told, isEmpty);
-  });
-
-  test('with no repeater heard lately nothing goes again, but what is heard '
-      'still counts', () async {
-    final r = await radio((n, index) => index != 1)..heardLately = false;
-    final (row, record) = await send(r);
-    expect(_indexes(r.blobs), [0, 1, 2]);
-    expect(row.status, ChannelMessageStatus.sent);
-    expect(record.packetsPassedOn, 2);
   });
 
   test('zero hop: no repeater carries it, so nothing waits or goes again',
@@ -337,22 +415,69 @@ void main() {
     final r = await radio((n, index) => false);
     final (row, record) = await send(r, zeroHop: true);
     expect(_indexes(r.blobs), [0, 1, 2]);
+    expect(r.paths, [0, 0, 0], reason: 'path length 0: zero hop');
     expect(row.status, ChannelMessageStatus.sent);
     expect(record.packetsPassedOn, isNull);
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
   });
 
-  test('the photo waits for its copies while they can still come', () async {
+  test('the photo is in the chat before its packets go, and shows as going '
+      'until it is done with', () async {
     final r = await radio((n, index) => true);
     final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
     await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
-    final rows = await r.loadChannelMessagesFor(
-      r.channels.firstWhere((c) => c.index == 1),
-    );
-    final row = rows.singleWhere(PhotoMesh.isPhotoMessage);
+    final row = await photoRow(r);
+    expect(r.blobs.length, lessThan(3), reason: 'still going');
+    expect(PhotoStore.instance.recordFor(row.messageId)!.outgoing, isTrue);
+    expect(PhotoMesh.sending.value, contains(row.messageId));
     expect(r.isChannelMessageRetrying(row.messageId), isTrue);
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    await settled(r);
+    expect(PhotoMesh.sending.value, isEmpty);
     expect(r.isChannelMessageRetrying(row.messageId), isFalse);
+  });
+
+  test('the chat row says what the photo does as its packets go', () async {
+    final steps = watchSteps();
+    final r = await radio((n, index) => index != 1 || n == 2);
+    await send(r);
+    expect(steps, [
+      (PhotoSendStep.waiting, 0),
+      (PhotoSendStep.sending, 1),
+      (PhotoSendStep.sending, 2),
+      (PhotoSendStep.again, 2),
+      (PhotoSendStep.sending, 3),
+    ]);
+  });
+
+  test('a packet the radio refuses fails the photo, and its row says why',
+      () async {
+    final r = await radio((n, index) => true)..refuseAt = 1;
+    final (row, _) = await send(r);
+    expect(_indexes(r.blobs), [0], reason: 'nothing after the refused one');
+    expect(row.status, ChannelMessageStatus.failed);
+    final state = PhotoMesh.sending.value[row.messageId]!;
+    expect(state.step, PhotoSendStep.failed);
+    final error = state.error! as PhotoSendException;
+    expect(error.failure, PhotoSendFailure.refused);
+    expect(error.code, 3);
+    expect(r.isChannelMessageRetrying(row.messageId), isFalse);
+  });
+
+  test('a second photo waits for the first to be done', () async {
+    final r = await radio((n, index) => true);
+    final first = Uint8List.fromList(List.generate(450, (i) => i * 7));
+    final second = Uint8List.fromList(List.generate(300, (i) => i * 5));
+    await PhotoMesh.of(r).sendPhoto(first, 1, repairPacket: false);
+    await PhotoMesh.of(r).sendPhoto(second, 1, repairPacket: false);
+    expect(
+      PhotoMesh.sending.value.values.map((s) => s.step),
+      contains(PhotoSendStep.waiting),
+    );
+    await settled(r);
+    final ids = [for (final b in r.blobs) b[2]];
+    expect(ids, hasLength(5));
+    expect(ids.toSet(), hasLength(2));
+    expect(ids.sublist(0, 3).toSet(), hasLength(1), reason: 'first all first');
   });
 
   test('a Nearby only channel sends its photo zero hop, with the zero-hop '
@@ -382,7 +507,7 @@ void main() {
   group('a received photo says how far it came', () {
     /// A 3-packet photo from radio BEEF.
     List<Uint8List> theirs(int imgId) => buildImageChunks(
-      payload: Uint8List.fromList(List.generate(450, (i) => i * 3)),
+      payload: Uint8List.fromList(List.generate(440, (i) => i * 3)),
       metadata: const ImageStreamMetadata(rate: ImageCodecRatePoint.ft8),
       senderPrefix: 0xBEEF,
       imgId: imgId,
@@ -391,10 +516,7 @@ void main() {
 
     Future<ChannelMessage> row(_Radio r) async {
       await pumpEventQueue(times: 200);
-      final rows = await r.loadChannelMessagesFor(
-        r.channels.firstWhere((c) => c.index == 1),
-      );
-      return rows.singleWhere((m) => PhotoMesh.isPhotoMessage(m));
+      return photoRow(r);
     }
 
     test('through repeaters: the fewest any packet came through, and not '
@@ -437,6 +559,38 @@ void main() {
       expect(photo.heardDirect, isTrue);
       expect(photo.pathLength, 0);
     });
+
+    test('a packet sent again fills the one that was lost, and one heard '
+        'twice counts once', () async {
+      final r = await radio((n, index) => false);
+      PhotoMesh.of(r);
+      final blobs = theirs(0x24);
+      r.handleFrameForTest(_received(blobs[0], 0x42));
+      r.handleFrameForTest(_received(blobs[2], 0x42));
+      r.handleFrameForTest(_received(photoPacketAgain(blobs[0], 1), 0x42));
+      r.handleFrameForTest(_repeated(photoPacketAgain(blobs[1], 2)));
+      final photo = await row(r);
+      expect(photo.text, contains('#24'));
+      expect(photo.text, isNot(contains('incomplete')));
+    });
+
+    test('a photo from MeshTrax 1.12.0, as 0170, still arrives', () async {
+      final r = await radio((n, index) => false);
+      PhotoMesh.of(r);
+      final meta = const ImageStreamMetadata(
+        rate: ImageCodecRatePoint.ft8,
+      ).encode();
+      r.handleFrameForTest(
+        _received(
+          [0xBE, 0xEF, 0x25, 0x01, meta, ...List.filled(120, 7)],
+          0x41,
+          dataType: dataTypeMeshTraxPhotoV1,
+        ),
+      );
+      final photo = await row(r);
+      expect(photo.text, contains('#25'));
+      expect(photo.isOutgoing, isFalse);
+    });
   });
 
   group('on a MeshCore frequency, a photo through repeaters', () {
@@ -447,13 +601,16 @@ void main() {
       final r = await radio((n, index) => false, freqKhz: preset);
       final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
       await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
+      for (var i = 0; i < 40 && r.blobs.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      await pumpEventQueue(times: 200);
       expect(
         photoLastSentViaRepeaters(r.selfPublicKeyHex),
         isNotNull,
-        reason: 'counted once its packets were handed over',
+        reason: 'counted once its first packet went',
       );
-      await Future<void>.delayed(const Duration(milliseconds: 2000));
-      await pumpEventQueue(times: 200);
+      await settled(r);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
 
@@ -497,18 +654,15 @@ void main() {
         subjectBox: [0.2, 0.3, 0.7, 0.8],
         repairPacket: false,
       );
+      await settled(r);
       final first = r.blobs.first;
-      expect(first[4] & 0x80, isNot(0), reason: 'the photo byte has extras');
-      expect(first.sublist(5, 7), [kPhotoItemSubjectOnly, 0]);
-      final rows = await r.loadChannelMessagesFor(
-        r.channels.firstWhere((c) => c.index == 1),
-      );
+      expect(first[5] & 0x80, isNot(0), reason: 'the photo byte has extras');
+      expect(first.sublist(6, 8), [kPhotoItemSubjectOnly, 0]);
       final record = PhotoStore.instance.recordFor(
-        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+        (await photoRow(r)).messageId,
       )!;
       expect(record.subjectOnly, isTrue);
       expect(record.subjectBox, [0.2, 0.3, 0.7, 0.8]);
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
     });
 
     test('a photo received so is marked so', () async {
@@ -531,11 +685,8 @@ void main() {
         r.handleFrameForTest(_received(blob, 0x41));
       }
       await pumpEventQueue(times: 200);
-      final rows = await r.loadChannelMessagesFor(
-        r.channels.firstWhere((c) => c.index == 1),
-      );
       final record = PhotoStore.instance.recordFor(
-        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+        (await photoRow(r)).messageId,
       )!;
       expect(record.subjectOnly, isTrue);
     });
@@ -554,65 +705,97 @@ void main() {
       HeardService.resetForTesting();
       HeardService.instance.attach(r);
       PhotoMesh.observerWaitOverride = const Duration(milliseconds: 300);
-      PhotoMesh.observerAnswerOverride = const Duration(milliseconds: 500);
+    }
+
+    /// An observer heard this radio a moment ago, as it last sent.
+    void earLately() => HeardService.instance.heardForTest(
+      'earlier',
+      const [Sighting(observer: 'Ridge')],
+    );
+
+    /// Observers hear packets [heard] (by index) of the photo going, a
+    /// moment after each goes.
+    void hearing(_Radio r, Set<int> heard) {
+      r.onPacket = (n, index) {
+        if (!heard.contains(index)) return;
+        Timer(const Duration(milliseconds: 15), () {
+          final id = PhotoMesh.sending.value.keys.single;
+          HeardService.instance.heardForTest(
+            HeardService.photoPacketId(id, index),
+            [Sighting(observer: 'Ridge $index')],
+          );
+        });
+      };
     }
 
     tearDown(() {
       HeardService.resetForTesting();
       PhotoMesh.observerWaitOverride = null;
-      PhotoMesh.observerAnswerOverride = null;
     });
 
-    /// Sends a 3-packet photo on Trip that no repeater passes on; once it
-    /// is filed, the observers heard packets [heard] (by index).
-    Future<String> sendHeard(_Radio r, Set<int> heard) async {
-      final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
-      await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
-      final rows = await r.loadChannelMessagesFor(
-        r.channels.firstWhere((c) => c.index == 1),
-      );
-      final id = rows.singleWhere(PhotoMesh.isPhotoMessage).messageId;
-      for (final i in heard) {
-        HeardService.instance.heardForTest(
-          HeardService.photoPacketId(id, i),
-          [Sighting(observer: 'Ridge $i')],
-        );
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 2500));
-      await pumpEventQueue(times: 200);
-      return id;
-    }
-
-    test('a packet an observer heard puts the ear on the photo, and isn\'t '
-        'sent again; one nobody confirmed goes once more at their first '
-        'answer', () async {
+    test('a packet no repeater passed on that an observer heard doesn\'t go '
+        'again, as a text doesn\'t; it puts the ear on the photo', () async {
       final r = await radio((n, index) => false);
       await observe(r);
-      final id = await sendHeard(r, {1});
-      // Packet 1 (index 0) went once more already, before the answer.
+      hearing(r, {1});
+      final (row, _) = await send(r);
       expect(_indexes(r.blobs), [0, 0, 1, 2, 2]);
-      expect(r.blobs[4], r.blobs[3]);
-      expect(HeardService.instance.photoPacketsHeard(id), {1});
+      expect(HeardService.instance.photoPacketsHeard(row.messageId), {1});
       expect(
-        HeardService.instance.heardBy(id)!.map((s) => s.observer),
+        HeardService.instance.heardBy(row.messageId)!.map((s) => s.observer),
         ['Ridge 1'],
       );
     });
 
-    test('nothing goes again on their answer where no observer has heard '
-        'this radio', () async {
-      final r = await radio((n, index) => false);
+    test('a packet only one repeater carried goes no more where no observer '
+        'heard this radio lately', () async {
+      final r = await radio((n, index) => true);
       await observe(r);
-      await sendHeard(r, {});
-      expect(_indexes(r.blobs), [0, 0, 1, 2]);
+      final steps = watchSteps();
+      await send(r);
+      expect(_indexes(r.blobs), [0, 1, 2]);
+      expect(steps.map((s) => s.$1), isNot(contains(PhotoSendStep.observers)));
     });
 
-    test('a photo the observers heard whole goes no more', () async {
-      final r = await radio((n, index) => false);
+    test('a packet only one repeater carried waits for the observers, then '
+        'goes once more before the next, where none heard it and one heard '
+        'this radio lately', () async {
+      final r = await radio((n, index) => true);
       await observe(r);
-      final id = await sendHeard(r, {0, 1, 2});
-      expect(_indexes(r.blobs), [0, 0, 1, 2]);
-      expect(HeardService.instance.heardBy(id), hasLength(3));
+      earLately();
+      final steps = watchSteps();
+      await send(r);
+      expect(_indexes(r.blobs), [0, 0, 1, 1, 2, 2]);
+      expect(_retries(r.blobs), [0, 1, 0, 1, 0, 1]);
+      expect(steps.sublist(0, 4), [
+        (PhotoSendStep.waiting, 0),
+        (PhotoSendStep.sending, 1),
+        (PhotoSendStep.observers, 1),
+        (PhotoSendStep.again, 1),
+      ]);
+    });
+
+    test('a packet an observer heard goes no more, though only one repeater '
+        'carried it', () async {
+      final r = await radio((n, index) => true);
+      await observe(r);
+      earLately();
+      hearing(r, {0, 1, 2});
+      await send(r);
+      expect(_indexes(r.blobs), [0, 1, 2]);
+    });
+
+    test('two repeaters passed it on: the next goes without asking them',
+        () async {
+      final r = await radio((n, index) => true)
+        ..path = const [0xA2, 0x77, 0xBE, 0xEF];
+      await observe(r);
+      earLately();
+      final steps = watchSteps();
+      final (row, _) = await send(r);
+      expect(_indexes(r.blobs), [0, 1, 2]);
+      expect(steps.map((s) => s.$1), isNot(contains(PhotoSendStep.observers)));
+      expect(row.status, ChannelMessageStatus.delivered);
     });
 
     test('a photo is asked about by all its packets, as the server files them',
@@ -622,8 +805,21 @@ void main() {
       final (row, _) = await send(r);
       expect(HeardService.instance.hashesForTest(row.messageId), {
         for (final blob in r.blobs)
-          channelDataPacketHash(channelKey: _psk, dataType: 0x0170, data: blob),
+          channelDataPacketHash(channelKey: _psk, dataType: 0x0172, data: blob),
       });
+    });
+
+    test('a packet sent again is asked about under its own hash too',
+        () async {
+      final r = await radio((n, index) => false);
+      await observe(r);
+      final (row, _) = await send(r, bytes: 100);
+      expect(_retries(r.blobs), [0, 1]);
+      expect(HeardService.instance.hashesForTest(row.messageId), {
+        for (final blob in r.blobs)
+          channelDataPacketHash(channelKey: _psk, dataType: 0x0172, data: blob),
+      });
+      expect(HeardService.instance.hashesForTest(row.messageId), hasLength(2));
     });
 
     test('an observer that heard a photo no repeater carried keeps its 20 '
@@ -632,15 +828,11 @@ void main() {
       await observe(r);
       final bitstream = Uint8List.fromList(List.generate(450, (i) => i * 7));
       await PhotoMesh.of(r).sendPhoto(bitstream, 1, repairPacket: false);
-      final rows = await r.loadChannelMessagesFor(
-        r.channels.firstWhere((c) => c.index == 1),
-      );
       HeardService.instance.heardForTest(
-        rows.singleWhere(PhotoMesh.isPhotoMessage).messageId,
+        (await photoRow(r)).messageId,
         const [Sighting(observer: 'Ridge')],
       );
-      await Future<void>.delayed(const Duration(milliseconds: 2000));
-      await pumpEventQueue(times: 200);
+      await settled(r);
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNotNull);
     });
 
@@ -649,6 +841,7 @@ void main() {
       final r = await radio((n, index) => false, freqKhz: preset);
       await observe(r);
       await send(r);
+      await Future<void>.delayed(const Duration(milliseconds: 400));
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
     });
   });

@@ -1,74 +1,82 @@
 // Adapted from meshcore-open lib/services/image_chunk_transport.dart (MIT,
 // see the repository's LICENSE), commit 3944c4f. The framing is theirs;
-// MeshTrax uses its own data type, quality and chunk size.
+// MeshTrax uses its own data type, quality, chunk size and retry byte.
 
-/// Chunked image transport over MeshCore `PAYLOAD_TYPE_GRP_DATA` (0x06),
-/// carried by the companion command `CMD_SEND_CHANNEL_DATA` (62) and received
-/// as `RESP_CODE_CHANNEL_DATA_RECV` (27).
+/// A photo as MeshCore channel datagrams (`PAYLOAD_TYPE_GRP_DATA`): the group
+/// of packets a photo goes out as, and the photo a group of packets makes.
 ///
-/// This file is the single source of truth for the on-air chunk framing: the
-/// blob size, header layout, per-chunk capacities and the XOR parity scheme.
-/// Anything else that needs chunk geometry uses the constants below.
+/// Nothing here sends, receives or keeps time. The app hands the packets to
+/// the radio, collects the ones it receives, and asks [ImagePackets] for the
+/// photo (lib/services/photo_mesh.dart, photo_reassembler.dart).
 ///
-/// Everything above the "protocol glue" section is pure Dart: no Flutter, no
-/// BLE, no connector. It is directly unit-testable.
+/// This file is the single source of truth for the packet format: the blob
+/// size, the header, per-packet capacities and the XOR repair packet.
 ///
 /// ## Wire format
 ///
-/// One MeshCore GRP_DATA blob per chunk, at most [kImageChunkBlobBytes] bytes:
+/// Photos travel as data type [dataTypeMeshTraxPhoto] (0x0172), one blob of
+/// at most [kImageChunkBlobBytes] bytes per packet:
 ///
 /// ```
 ///   off  size  field
-///   0    2     sender_prefix  selfPublicKey[0..1] — the firmware supplies no
-///                             sender identity on RESP_CODE_CHANNEL_DATA_RECV,
-///                             so it must be in-band in EVERY chunk (chunk 0
-///                             may be the one that is lost).
-///   2    1     img_id         uint8, random-ish per image
+///   0    2     sender_prefix  selfPublicKey[0..1]: the firmware gives no
+///                             sender identity with channel data, so it is
+///                             in EVERY packet (packet 0 may be lost).
+///   2    1     img_id         uint8, per photo
 ///   3    1     idx<<4 | total idx 0..15, total 1..15.
-///                             idx == total  =>  XOR parity chunk.
-///   4    ..    body           see below
+///                             idx == total  =>  the repair packet.
+///   4    1     retry          low 4 bits: how many times the packet went
+///                             before this copy, 0 the first time. High 4
+///                             bits: flags, 0 so far; a receiver ignores
+///                             flags it doesn't know.
+///   5    ..    body           see below
 /// ```
 ///
-/// Data chunk body:
-///   * chunk 0: `[meta]` + payload. `meta` is [ImageStreamMetadata] packed
-///     as `extras(1) | version(3) | resolution(2) | rate(2)`. With the extras
-///     bit set, the payload opens with the photo's extras ([photoPayload]),
-///     then the image bytes.
-///   * others : image bytes
-///   * at most [kImageChunkBodyBytes] bytes.
+/// The retry byte makes a packet sent again a new packet on the air: the
+/// ciphertext differs, so every repeater passes it on, as it does a channel
+/// text sent again with a new timestamp. A receiver takes it as the packet it
+/// repeats: copies match without it ([samePhotoPacket]), and only the body
+/// goes into the photo.
 ///
-/// Parity chunk body:
-///   * `[len_xor]` + XOR of every data chunk body, each zero-padded to
-///     [kImageChunkBodyBytes].
-///   * `len_xor` is the XOR of every data chunk's body LENGTH. It is what makes
-///     recovery self-describing: a lost chunk's length is recovered as
-///     `len_xor ^ XOR(lengths of the bodies that did arrive)`, so the last
-///     (short) chunk can be rebuilt without transmitting a total length.
+/// MeshTrax 1.12.0 sent [dataTypeMeshTraxPhotoV1] (0x0170): the same packets
+/// without the retry byte. They are still read, never sent.
 ///
-/// Body capacity is [kImageChunkBodyBytes] = blob(157) - header(4) - the
-/// parity chunk's 1 length byte, so that the parity chunk itself still fits in
-/// a single blob. The cost is exactly one wasted byte in each data chunk; that
-/// is the price of self-describing single-loss recovery.
+/// Data packet body:
+///   * packet 0: `[meta]` + payload. `meta` is [ImageStreamMetadata] packed as
+///     `extras(1) | version(3) | resolution(2) | rate(2)`. A change a receiver
+///     must understand bumps its version; with the extras bit set, the
+///     payload opens with the photo's extras ([photoPayload]), then the image
+///     bytes.
+///   * others: image bytes
+///   * at most [imageChunkBodyBytes] bytes.
+///
+/// Repair packet body:
+///   * `[len_xor]` + XOR of every data packet's body, each zero-padded to
+///     [imageChunkBodyBytes].
+///   * `len_xor` is the XOR of the data bodies' LENGTHS, so a lost packet's
+///     length is `len_xor ^ XOR(lengths of the bodies that came)`, and the
+///     last (short) packet can be rebuilt without sending a total length.
+///
+/// Body capacity is the blob (157) less the header less the repair packet's
+/// length byte, so that the repair packet still fits in one blob.
 ///
 /// ## Integrity
 ///
-/// There is deliberately NO app-level checksum. Two layers below already cover
-/// corruption of a delivered chunk: the LoRa PHY CRCs every packet (`setCRC(1)`
-/// in each radio driver, and a failing packet is dropped by the modem), and
-/// MeshCore verifies a 2-byte HMAC-SHA256 per packet and rejects on mismatch
+/// There is deliberately NO app-level checksum. The LoRa PHY CRCs every
+/// packet (`setCRC(1)` in each radio driver; a failing packet is dropped by
+/// the modem), and MeshCore checks a 2-byte HMAC-SHA256 per packet
 /// (`Utils::MACThenDecrypt` returns 0 for a bad tag). What no lower layer can
-/// see is a cross-image MERGE — two senders colliding on senderPrefix + imgId +
-/// channel inside one TTL, ~1/65536 per concurrent pair — which produces a
-/// corrupt image rather than a clean failure. That residual risk is accepted:
-/// 2 more bytes in every chunk would cost a packet on many photos.
+/// see is a MERGE of two photos: two senders on the same sender prefix, img_id
+/// and channel at once, about 1 in 65536 per pair, which makes a corrupt
+/// picture rather than a clean failure. That risk is accepted: 2 more bytes in
+/// every packet would cost a packet on many photos.
 ///
 /// ## Capacity against measured `ft8` output
-///   chunk 0: 151 data bytes (152 body - 1 meta), other chunks: 152.
-///   Real photos are 208-796 bytes, mean about 410: 2 to 6 data chunks, so 3
-///   to 7 packets with the repair packet, most often 4.
+///   packet 0: 150 image bytes (151 body - 1 meta), later packets: 151.
+///   Real photos are 208-796 bytes, mean about 410: 2 to 6 data packets, so 3
+///   to 7 with the repair packet.
 library;
 
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -76,32 +84,21 @@ import 'photo_extras.dart';
 import 'rate_point.dart';
 
 // ---------------------------------------------------------------------------
-// Protocol constants (firmware-derived; see the transport investigation)
+// Data types and geometry
 // ---------------------------------------------------------------------------
 
-/// `CMD_SEND_CHANNEL_DATA` — companion command that emits a GRP_DATA packet.
-const int cmdSendChannelData = 62;
+/// The data type MeshTrax photos travel as: one of the block 0170–017F that
+/// MeshTrax asked for in MeshCore's `docs/number_allocations.md`
+/// (meshcore-dev/MeshCore#3925). Its packets carry the retry byte.
+const int dataTypeMeshTraxPhoto = 0x0172;
 
-/// `RESP_CODE_CHANNEL_DATA_RECV` — inbound frame carrying a GRP_DATA blob.
-const int respCodeChannelDataRecv = 27;
+/// The data type MeshTrax 1.12.0 sent photos as: packets without the retry
+/// byte. Read still, never sent. 0171 is TRAX's.
+const int dataTypeMeshTraxPhotoV1 = 0x0170;
 
-/// `OUT_PATH_UNKNOWN` — request flood routing: every repeater passes it on.
-const int outPathUnknown = 0xFF;
-
-/// A path length of zero: the radio sends the packet DIRECT with an empty
-/// path, which MeshCore calls zero hop (`Mesh::sendZeroHop`: "path_len of zero
-/// means Zero Hop"). Only radios in direct range hear it; repeaters forward
-/// flood packets only (`Mesh::routeRecvPacket`), so none pass it on. The
-/// receiving radio still decrypts it and hands it to the app
-/// (`onGroupDataRecv` runs whatever the route). Checked against
-/// meshcore-dev/MeshCore 75b04ef, 2026-11-18.
-const int pathLenZeroHop = 0;
-
-/// The data type MeshTrax photos travel as: the first of the block
-/// 0170–017F that MeshTrax asked for in MeshCore's
-/// `docs/number_allocations.md` (meshcore-dev/MeshCore#3925). `0x0000` is
-/// rejected by the firmware.
-const int dataTypeMeshTraxPhoto = 0x0170;
+/// Whether [dataType] carries photo packets.
+bool isMeshTraxPhotoDataType(int dataType) =>
+    dataType == dataTypeMeshTraxPhoto || dataType == dataTypeMeshTraxPhotoV1;
 
 /// Maximum blob we will ever put in one GRP_DATA packet.
 ///
@@ -122,49 +119,55 @@ const int dataTypeMeshTraxPhoto = 0x0170;
 ///   * serial `MAX_CHANNEL_DATA_LENGTH` 176 - 9     = 167
 const int kImageChunkBlobBytes = 157;
 
-/// Per-chunk header: sender_prefix(2) + img_id(1) + idx/total(1).
-const int kImageChunkHeaderBytes = 4;
+/// The header of a packet sent as [dataTypeMeshTraxPhoto]: sender_prefix(2)
+/// + img_id(1) + idx/total(1) + retry(1).
+const int kImageChunkHeaderBytes = 5;
 
-/// The parity chunk spends one body byte on the XOR of the data body lengths.
+/// Where the retry byte is in a packet.
+const int kImageRetryByteOffset = 4;
+
+/// The retry byte's bits that count the sends before this one.
+const int kImageRetryCountMask = 0x0F;
+
+/// The header of a packet of [dataType]: 1.12.0's had no retry byte.
+int imageChunkHeaderBytes(int dataType) =>
+    dataType == dataTypeMeshTraxPhotoV1 ? 4 : kImageChunkHeaderBytes;
+
+/// The repair packet spends one body byte on the XOR of the data body
+/// lengths.
 const int kImageParityLengthBytes = 1;
 
-/// Maximum body bytes in any chunk (data or parity payload region).
+/// Maximum body bytes in any packet of [dataType], data or repair.
+int imageChunkBodyBytes(int dataType) =>
+    kImageChunkBlobBytes - imageChunkHeaderBytes(dataType) -
+    kImageParityLengthBytes;
+
+/// Maximum body bytes in a packet as MeshTrax sends it.
 const int kImageChunkBodyBytes =
     kImageChunkBlobBytes - kImageChunkHeaderBytes - kImageParityLengthBytes;
 
-/// The single [ImageStreamMetadata] byte carried by chunk 0.
+/// The single [ImageStreamMetadata] byte carried by packet 0.
 const int kImageChunkMetadataBytes = 1;
 
-/// Body bytes of chunk 0 that are NOT image data: just the metadata byte.
-///
-/// No app-level CRC: the LoRa PHY already CRCs every packet (`setCRC(1)` in
-/// every radio driver) and MeshCore verifies a 2-byte HMAC per packet
-/// (`Utils::MACThenDecrypt`, which returns 0 on mismatch), so a corrupted chunk
-/// never reaches this layer. A CRC would only catch a cross-image merge (two
-/// senders colliding on senderPrefix + imgId + channel inside one TTL,
-/// ~1/65536), and its 2 bytes in chunk 0 would push many photos into one more
-/// packet.
+/// Body bytes of packet 0 that are NOT image data: just the metadata byte.
 const int kImageChunkZeroMetadataBytes = kImageChunkMetadataBytes;
 
-/// Image bytes carried by chunk 0.
+/// Image bytes carried by packet 0.
 const int kImageChunkFirstCapacity =
     kImageChunkBodyBytes - kImageChunkZeroMetadataBytes;
 
-/// Image bytes carried by every chunk after chunk 0.
+/// Image bytes carried by every packet after packet 0.
 const int kImageChunkCapacity = kImageChunkBodyBytes;
 
-/// `total` is 4 bits and must be >= 1, so at most 15 data chunks.
+/// `total` is 4 bits and must be >= 1, so at most 15 data packets.
 const int kImageMaxDataChunks = 15;
 
 /// Largest image bitstream this framing can carry.
 const int kImageMaxPayloadBytes =
     kImageChunkFirstCapacity + (kImageMaxDataChunks - 1) * kImageChunkCapacity;
 
-/// Bytes of the sender public key repeated in every chunk.
+/// Bytes of the sender public key repeated in every packet.
 const int kImageSenderPrefixBytes = 2;
-
-/// How long a partially received image is kept before it is abandoned.
-const Duration kImageReassemblyTtl = Duration(seconds: 60);
 
 /// Bytes a full photo packet puts on the air with no path: header and path
 /// length (2), channel hash and MAC (3), then the encrypted data type, length
@@ -172,66 +175,11 @@ const Duration kImageReassemblyTtl = Duration(seconds: 60);
 const int kPhotoPacketAirBytes =
     2 + 3 + (3 + kImageChunkBlobBytes + 15) ~/ 16 * 16;
 
-/// The pause after each photo packet before the next one goes to the radio:
-/// the packet's own time on air, then half a second.
-///
-/// Zero-hop packets have MeshCore's top send priority (0, `Mesh::sendDirect`)
-/// and channel messages the next (1, `Mesh::sendFlood`). The radio always
-/// sends the highest priority waiting (`PacketQueue::get`), back to back while
-/// its airtime budget lasts, and nothing can be cancelled once handed over. So
-/// photo packets handed over together would all go before an SOS sent
-/// meanwhile. Handed over one at a time, each once the last is off the air,
-/// anything sent in between goes first: an SOS waits for one photo packet at
-/// most. Checked against meshcore-dev/MeshCore 75b04ef.
-Duration photoPacketGap(Duration packetAirtime) =>
-    packetAirtime + const Duration(milliseconds: 500);
-
-/// A repeater's longest wait before passing a flood on, in airtimes of the
-/// packet: 5 × `tx_delay_factor`, 0.5 by default
-/// (`MyMesh::getRetransmitDelay`, MeshCore 75b04ef).
-const double _floodWaitMaxAirtimes = 2.5;
-
-/// The pause after each photo packet sent as a flood, through repeaters.
-///
-/// Each repeater that hears a packet passes it on once, after a random wait
-/// of up to [_floodWaitMaxAirtimes] airtimes. The sender's next packet could
-/// reach a nearby repeater while one further out is passing the previous one
-/// on, out of the sender's hearing: the nearby repeater hears both and loses
-/// one. So the next packet waits until the previous one has, at worst,
-/// cleared two hops: its own airtime, then two hops of wait and airtime, then
-/// the half second.
-///
-/// Capped so that all [packets] still go out within three quarters of the
-/// receiver's [kImageReassemblyTtl]; never shorter than [photoPacketGap].
-/// A photo of one packet waits as long after it, so a repeater's copy can be
-/// heard before it would go once more.
-Duration photoPacketGapFlood(Duration packetAirtime, {required int packets}) {
-  final gap = photoPacketGap(packetAirtime);
-  final clear =
-      packetAirtime * (1 + 2 * (1 + _floodWaitMaxAirtimes)) +
-      const Duration(milliseconds: 500);
-  if (packets < 2) return clear;
-  final cap = kImageReassemblyTtl * 0.75 ~/ (packets - 1);
-  final spaced = clear < cap ? clear : cap;
-  return spaced > gap ? spaced : gap;
-}
-
-/// How soon after a photo packet goes out as a flood the first repeater's
-/// copy of it has come back, at worst: the packet's airtime, the repeater's
-/// longest wait ([_floodWaitMaxAirtimes]; repeaters' receive delay is off by
-/// default, `rx_delay_base` 0), the copy's airtime, then the half second. A
-/// gap at least this long knows, when the next packet is due, whether a
-/// repeater passed the last one on. A repeater that has to wait for a busy
-/// channel can come later than this.
-Duration photoRepeatHeardWithin(Duration packetAirtime) =>
-    packetAirtime * (2 + _floodWaitMaxAirtimes) +
-    const Duration(milliseconds: 500);
-
 // ---------------------------------------------------------------------------
 // Rate point <-> wire code
 // ---------------------------------------------------------------------------
 
-/// Wire code for `ft8` in the low bits of the chunk-0 metadata byte.
+/// Wire code for `ft8` in the low bits of the packet-0 metadata byte.
 ///
 /// Codes 0, 1 and 3 aren't used: a photo carrying one is refused, never
 /// guessed at. The switch is exhaustive on purpose: adding a quality is a
@@ -257,7 +205,7 @@ ImageCodecRatePoint? imageRatePointFromWireCode(int code) {
 }
 
 // ---------------------------------------------------------------------------
-// Stream metadata (the single byte carried by chunk 0)
+// Stream metadata (the single byte carried by packet 0)
 // ---------------------------------------------------------------------------
 
 /// Square sizes addressable by the 2-bit resolution code in the metadata byte.
@@ -267,7 +215,7 @@ ImageCodecRatePoint? imageRatePointFromWireCode(int code) {
 /// a format change.
 const List<int> kImageResolutionCodes = <int>[512, 256, 768, 1024];
 
-/// Contents of the chunk-0 metadata byte:
+/// Contents of the packet-0 metadata byte:
 /// `extras(1) | version(3) | resolution(2) | rate(2)`. The format version is
 /// 0. A receiver refuses any other, which leaves it to signal a change no
 /// earlier release could skip; anything that can be skipped is an extra.
@@ -312,9 +260,8 @@ class ImageStreamMetadata {
   /// rate point or resolution this build does not know.
   ///
   /// Deliberately never falls back to a default rate: an unknown code means the
-  /// sender is running a format we cannot decode, and guessing `standard` would
-  /// hand the wrong model a bitstream it will happily turn into garbage. The
-  /// caller surfaces null as [ImageChunkStatus.unsupportedFormat].
+  /// sender is running a format we cannot decode, and guessing would hand the
+  /// wrong model a bitstream it will happily turn into garbage.
   static ImageStreamMetadata? decode(int byte) {
     final rate = imageRatePointFromWireCode(byte & 0x03);
     final code = (byte >> 2) & 0x03;
@@ -345,46 +292,49 @@ class ImageStreamMetadata {
 }
 
 // ---------------------------------------------------------------------------
-// Chunk header
+// Packet header
 // ---------------------------------------------------------------------------
 
-/// Parsed 4-byte chunk header.
+/// A packet's header, as [parseImageChunkHeader] reads it.
 class ImageChunkHeader {
   /// First [kImageSenderPrefixBytes] bytes of the sender's public key.
   final int senderPrefix;
 
   final int imgId;
 
-  /// 0-based chunk index. Equals [total] for the parity chunk.
+  /// 0-based packet index. Equals [total] for the repair packet.
   final int index;
 
-  /// Number of DATA chunks in this image (parity not counted). 1..15.
+  /// Number of DATA packets in this photo (the repair packet not counted).
+  /// 1..15.
   final int total;
+
+  /// How many times the packet went before this copy: 0 the first time, and
+  /// always 0 in a packet of [dataTypeMeshTraxPhotoV1].
+  final int retry;
+
+  /// [dataTypeMeshTraxPhoto], or [dataTypeMeshTraxPhotoV1].
+  final int dataType;
 
   const ImageChunkHeader({
     required this.senderPrefix,
     required this.imgId,
     required this.index,
     required this.total,
+    this.retry = 0,
+    this.dataType = dataTypeMeshTraxPhoto,
   });
 
   bool get isParity => index == total;
+
+  /// Where the packet's body starts.
+  int get bodyOffset => imageChunkHeaderBytes(dataType);
 
   @override
   String toString() =>
       'ImageChunkHeader(sender: 0x'
       '${senderPrefix.toRadixString(16).padLeft(4, '0')}, img: $imgId, '
-      'idx: $index/$total${isParity ? ' parity' : ''})';
-}
-
-/// Packs [senderPrefix] (2 bytes, big-endian as an int) into a header.
-Uint8List _writeHeader(int senderPrefix, int imgId, int index, int total) {
-  return Uint8List.fromList(<int>[
-    (senderPrefix >> 8) & 0xFF,
-    senderPrefix & 0xFF,
-    imgId & 0xFF,
-    ((index & 0x0F) << 4) | (total & 0x0F),
-  ]);
+      'idx: $index/$total${isParity ? ' parity' : ''}, retry: $retry)';
 }
 
 /// Reads the first two bytes of a public key as the sender prefix integer.
@@ -397,31 +347,40 @@ int? senderPrefixFromKey(List<int>? publicKey) {
   return ((publicKey[0] & 0xFF) << 8) | (publicKey[1] & 0xFF);
 }
 
-/// Parses the header of a received blob, or null if it cannot be a chunk.
-ImageChunkHeader? parseImageChunkHeader(Uint8List blob) {
-  if (blob.length < kImageChunkHeaderBytes) return null;
+/// Reads the header of [blob], a packet of [dataType], or null if it cannot
+/// be one.
+ImageChunkHeader? parseImageChunkHeader(
+  Uint8List blob, {
+  int dataType = dataTypeMeshTraxPhoto,
+}) {
+  if (!isMeshTraxPhotoDataType(dataType)) return null;
+  if (blob.length < imageChunkHeaderBytes(dataType)) return null;
   if (blob.length > kImageChunkBlobBytes) return null;
   final total = blob[3] & 0x0F;
   if (total == 0) return null;
   final index = (blob[3] >> 4) & 0x0F;
-  if (index > total) return null; // index == total is the parity chunk
+  if (index > total) return null; // index == total is the repair packet
   return ImageChunkHeader(
     senderPrefix: ((blob[0] & 0xFF) << 8) | (blob[1] & 0xFF),
     imgId: blob[2] & 0xFF,
     index: index,
     total: total,
+    retry: dataType == dataTypeMeshTraxPhotoV1
+        ? 0
+        : blob[kImageRetryByteOffset] & kImageRetryCountMask,
+    dataType: dataType,
   );
 }
 
 // ---------------------------------------------------------------------------
-// Chunking (send side)
+// A photo into packets
 // ---------------------------------------------------------------------------
 
-/// Number of DATA chunks needed for a [payloadBytes]-long bitstream.
+/// Number of DATA packets needed for a [payloadBytes]-long bitstream.
 ///
-/// A zero-length payload still needs one chunk: chunk 0 carries the metadata
-/// byte, and a receiver must be able to observe an empty image rather than
-/// nothing at all.
+/// A zero-length payload still needs one packet: packet 0 carries the
+/// metadata byte, and a receiver must be able to observe an empty image rather
+/// than nothing at all.
 int imageDataChunkCount(int payloadBytes) {
   final n = math.max(payloadBytes, 0);
   if (n <= kImageChunkFirstCapacity) return 1;
@@ -429,12 +388,12 @@ int imageDataChunkCount(int payloadBytes) {
   return 1 + (remaining / kImageChunkCapacity).ceil();
 }
 
-/// The blobs of one image, ready to hand to `CMD_SEND_CHANNEL_DATA`.
+/// The packets of one photo, each first time it goes.
 class ImageChunkSet {
-  /// Every blob in send order; the parity blob, if any, is last.
+  /// Every blob in send order; the repair blob, if any, is last.
   final List<Uint8List> blobs;
 
-  /// Number of data chunks (excludes parity).
+  /// Number of data packets (excludes the repair packet).
   final int dataChunkCount;
 
   final bool hasParity;
@@ -454,16 +413,17 @@ class ImageChunkSet {
   int get totalBytes => blobs.fold<int>(0, (a, b) => a + b.length);
 }
 
-/// Splits an encoded image bitstream into chunk blobs.
+/// Splits an encoded image bitstream into the packets of
+/// [dataTypeMeshTraxPhoto], each with its retry byte at 0.
 ///
-/// Chunk 0's body opens with the metadata byte; the rest is image bytes.
+/// Packet 0's body opens with the metadata byte; the rest is image bytes.
 ///
 /// [senderPrefix] must come from the local node's public key (see
-/// [senderPrefixFromKey]); receivers key reassembly on it and drop chunks whose
+/// [senderPrefixFromKey]); receivers key a photo on it and drop packets whose
 /// prefix equals their own.
 ///
-/// [parity] appends one XOR parity chunk (GRP_DATA is unacknowledged, so this
-/// buys recovery of exactly one lost chunk).
+/// [parity] appends the XOR repair packet, which rebuilds any one lost data
+/// packet.
 ///
 /// Throws [ArgumentError] when [payload] exceeds [kImageMaxPayloadBytes].
 ImageChunkSet buildImageChunks({
@@ -482,7 +442,7 @@ ImageChunkSet buildImageChunks({
   }
   final total = imageDataChunkCount(payload.length);
 
-  // Build the bodies first; parity is a pure function of them.
+  // Build the bodies first; the repair packet is a pure function of them.
   final bodies = <Uint8List>[];
   var offset = 0;
   for (var i = 0; i < total; i++) {
@@ -495,28 +455,28 @@ ImageChunkSet buildImageChunks({
     bodies.add(body.toBytes());
   }
 
-  final blobs = <Uint8List>[];
-  for (var i = 0; i < total; i++) {
-    final blob = BytesBuilder()
-      ..add(_writeHeader(senderPrefix, imgId, i, total))
-      ..add(bodies[i]);
-    blobs.add(blob.toBytes());
-  }
+  Uint8List header(int index) => Uint8List.fromList(<int>[
+    (senderPrefix >> 8) & 0xFF,
+    senderPrefix & 0xFF,
+    imgId & 0xFF,
+    ((index & 0x0F) << 4) | (total & 0x0F),
+    0, // retry byte: the first send, no flags
+  ]);
 
+  final blobs = <Uint8List>[
+    for (var i = 0; i < total; i++)
+      (BytesBuilder()
+            ..add(header(i))
+            ..add(bodies[i]))
+          .toBytes(),
+  ];
   if (parity) {
-    final xor = Uint8List(kImageChunkBodyBytes);
-    var lenXor = 0;
-    for (final body in bodies) {
-      lenXor ^= body.length;
-      for (var j = 0; j < body.length; j++) {
-        xor[j] ^= body[j];
-      }
-    }
-    final blob = BytesBuilder()
-      ..add(_writeHeader(senderPrefix, imgId, total, total))
-      ..addByte(lenXor & 0xFF)
-      ..add(xor);
-    blobs.add(blob.toBytes());
+    blobs.add(
+      (BytesBuilder()
+            ..add(header(total))
+            ..add(_parityBody(bodies, kImageChunkBodyBytes)))
+          .toBytes(),
+    );
   }
 
   return ImageChunkSet(
@@ -528,11 +488,48 @@ ImageChunkSet buildImageChunks({
   );
 }
 
-/// Hands out per-image ids, avoiding immediate reuse.
+/// `[len_xor] + XOR(bodies zero-padded to [bodyBytes])`.
+Uint8List _parityBody(Iterable<Uint8List> bodies, int bodyBytes) {
+  final xor = Uint8List(bodyBytes);
+  var lenXor = 0;
+  for (final body in bodies) {
+    lenXor ^= body.length;
+    for (var j = 0; j < body.length; j++) {
+      xor[j] ^= body[j];
+    }
+  }
+  return Uint8List.fromList(<int>[lenXor & 0xFF, ...xor]);
+}
+
+/// Packet [blob] as it goes the [retry]th time after its first (1 the first
+/// time again, up to 15): its retry count set, its flags kept. A new packet
+/// to every repeater, the same packet to a receiver ([samePhotoPacket]).
+Uint8List photoPacketAgain(Uint8List blob, int retry) {
+  final again = Uint8List.fromList(blob);
+  again[kImageRetryByteOffset] =
+      (blob[kImageRetryByteOffset] & ~kImageRetryCountMask & 0xFF) |
+      (retry.clamp(0, kImageRetryCountMask));
+  return again;
+}
+
+/// Whether [a] and [b], packets of [dataTypeMeshTraxPhoto], are copies of one
+/// packet: the same bytes but for how many times it went before.
+bool samePhotoPacket(Uint8List a, Uint8List b) {
+  if (a.length != b.length || a.length <= kImageRetryByteOffset) return false;
+  for (var i = 0; i < a.length; i++) {
+    final differ = i == kImageRetryByteOffset
+        ? (a[i] ^ b[i]) & ~kImageRetryCountMask & 0xFF
+        : a[i] ^ b[i];
+    if (differ != 0) return false;
+  }
+  return true;
+}
+
+/// Hands out per-photo ids, avoiding immediate reuse.
 ///
-/// The id is only 8 bits, so it wraps; the reassembly key also includes the
-/// sender prefix and channel, and entries expire after
-/// [kImageReassemblyTtl], which bounds the damage of a wrap.
+/// The id is only 8 bits, so it wraps; a receiver keys a photo on the sender
+/// prefix and channel too, and gives a photo up after a while, which bounds
+/// the damage of a wrap.
 class ImageIdAllocator {
   int _next;
 
@@ -547,674 +544,180 @@ class ImageIdAllocator {
 }
 
 // ---------------------------------------------------------------------------
-// Reassembly (receive side)
+// Packets into a photo
 // ---------------------------------------------------------------------------
 
-/// Identity of one in-flight image.
-class ImageStreamKey {
-  final int senderPrefix;
-  final int imgId;
-  final int channelIndex;
-
-  const ImageStreamKey({
-    required this.senderPrefix,
-    required this.imgId,
-    required this.channelIndex,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is ImageStreamKey &&
-      other.senderPrefix == senderPrefix &&
-      other.imgId == imgId &&
-      other.channelIndex == channelIndex;
-
-  @override
-  int get hashCode => Object.hash(senderPrefix, imgId, channelIndex);
-
-  @override
-  String toString() =>
-      'ImageStreamKey(0x'
-      '${senderPrefix.toRadixString(16).padLeft(4, '0')}/$imgId@$channelIndex)';
-}
-
-/// What happened to a single received blob.
-enum ImageChunkStatus {
-  /// Not a well-formed chunk of ours; ignored.
-  malformed,
-
-  /// Chunk claims our own sender prefix — a loopback of something we sent.
-  fromSelf,
-
-  /// Stored; the image is still incomplete.
+/// What [ImagePackets.add] made of a packet.
+enum ImagePacketAdded {
+  /// A packet it didn't have yet.
   accepted,
 
-  /// Already had this chunk; ignored.
+  /// A copy of a packet it has.
   duplicate,
 
-  /// Conflicted with what we already held for this key (different `total`, or
-  /// a different body for the same index). The stream was reset and restarted
-  /// from this chunk.
+  /// A different packet under a number it has: not added.
   conflicting,
-
-  /// Reassembled, but chunk 0's metadata byte names a rate point or resolution
-  /// this build cannot decode. Also discarded — see
-  /// [ImageStreamMetadata.decode].
-  unsupportedFormat,
-
-  /// This chunk completed the image; [ImageChunkOutcome.result] is set.
-  completed,
 }
 
-/// Why an image was given up on.
-enum ImageReassemblyFailureReason {
-  /// TTL elapsed with chunks still missing.
-  expired,
-
-  /// Evicted to keep the pending map inside its size cap.
-  overflow,
-
-  /// Reassembled but the metadata byte was undecodable
-  /// ([ImageChunkStatus.unsupportedFormat]).
-  unsupportedFormat,
-
-  /// Dropped by [ImageReassembler.clear] (disconnect / new session).
-  disconnected,
-
-  /// Dropped by [ImageReassembler.clearChannel] because the radio slot it
-  /// arrived on now holds a different channel.
-  channelChanged,
-}
-
-/// A fully reassembled image.
-class ImageReassemblyResult {
-  final ImageStreamKey key;
-
-  /// Null when chunk 0 was recovered but carried an unknown metadata byte.
+/// A photo rebuilt from its packets.
+class ImageRebuilt {
+  /// Null when packet 0's metadata byte names a format version, rate point or
+  /// resolution this build cannot read.
   final ImageStreamMetadata? metadata;
 
-  /// The encoded image bitstream, exactly as the sender produced it.
+  /// The encoded image bitstream, exactly as the sender produced it; empty
+  /// when [metadata] is null.
   final Uint8List data;
 
-  /// True when one chunk was rebuilt from the XOR parity chunk.
+  /// True when one data packet was rebuilt from the repair packet.
   final bool recoveredWithParity;
 
-  /// Number of data chunks in the image.
+  /// Number of data packets in the photo.
   final int chunkCount;
 
-  /// The fewest repeaters any copy of its chunks came through: 0 when this
-  /// radio heard the sender's own. Null when no copy said.
-  final int? fewestHops;
-
-  const ImageReassemblyResult({
-    required this.key,
+  const ImageRebuilt({
     required this.metadata,
     required this.data,
     required this.recoveredWithParity,
     required this.chunkCount,
-    this.fewestHops,
   });
 }
 
-/// A stream that was given up on: expired, evicted, corrupt or undecodable.
-class ImageReassemblyFailure {
-  final ImageStreamKey key;
+/// The packets of one photo collected so far, and the photo they make once
+/// every data packet is in, or all but one and the repair packet.
+///
+/// Out-of-order and duplicate tolerant. Every packet must be of one
+/// [dataType] and say the same [total].
+class ImagePackets {
+  /// Number of data packets the photo has.
   final int total;
-  final int receivedDataChunks;
-  final bool hadParity;
-  final DateTime firstSeen;
-  final DateTime expiredAt;
 
-  /// As [ImageReassemblyResult.fewestHops], of the chunks that came.
-  final int? fewestHops;
+  /// The data type its packets came as.
+  final int dataType;
 
-  /// Why it was given up on. Defaults to [ImageReassemblyFailureReason.expired]
-  /// so existing call sites keep compiling.
-  final ImageReassemblyFailureReason reason;
-
-  const ImageReassemblyFailure({
-    required this.key,
-    required this.total,
-    required this.receivedDataChunks,
-    required this.hadParity,
-    required this.firstSeen,
-    required this.expiredAt,
-    this.fewestHops,
-    this.reason = ImageReassemblyFailureReason.expired,
-  });
-
-  int get missingChunks => total - receivedDataChunks;
-
-  /// True when every chunk arrived but the bytes were unusable — the UI should
-  /// say "corrupt", not "incomplete".
-  bool get isCorrupt =>
-      reason == ImageReassemblyFailureReason.unsupportedFormat;
-
-  @override
-  String toString() =>
-      'ImageReassemblyFailure($key, '
-      '$receivedDataChunks/$total, parity: $hadParity, ${reason.name})';
-}
-
-/// Result of feeding one blob to [ImageReassembler.addChunk].
-class ImageChunkOutcome {
-  final ImageChunkStatus status;
-  final ImageChunkHeader? header;
-  final ImageReassemblyResult? result;
-
-  const ImageChunkOutcome(this.status, {this.header, this.result});
-
-  bool get isComplete => status == ImageChunkStatus.completed;
-}
-
-/// A recently-delivered image, kept for [kImageReassemblyTtl] so late chunks can
-/// be distinguished from a new image that reuses the same img_id.
-class _CompletedImage {
-  final DateTime at;
-  final int total;
-  final Map<int, Uint8List> bodies;
-  final Uint8List? parityBody;
-
-  _CompletedImage({
-    required this.at,
-    required this.total,
-    required this.bodies,
-    required this.parityBody,
-  });
-
-  /// True when [header]/[body] is a re-send of something already delivered.
-  ///
-  /// Conservative by design: anything that does not byte-match what we
-  /// delivered is treated as new, because dropping a real image is far worse
-  /// than re-opening a stream for a straggler.
-  bool matches(ImageChunkHeader header, List<int> body) {
-    if (header.total != total) return false;
-    // In the loss-free case the image completes on its last DATA chunk, so the
-    // parity chunk arrives afterwards and we never stored one. Parity is a pure
-    // function of the delivered bodies, so recompute it rather than guessing:
-    // that keeps the trailing parity a duplicate while still letting a genuinely
-    // different image through.
-    final known = header.isParity
-        ? (parityBody ?? _expectedParityBody())
-        : bodies[header.index];
-    if (known == null) return false;
-    if (known.length != body.length) return false;
-    for (var i = 0; i < known.length; i++) {
-      if (known[i] != body[i]) return false;
-    }
-    return true;
-  }
-
-  /// The parity body this image would have produced, mirroring
-  /// [buildImageChunks]: `[len_xor] + XOR(bodies zero-padded)`.
-  Uint8List? _expectedParityBody() {
-    if (bodies.length != total) return null;
-    final xor = Uint8List(kImageChunkBodyBytes);
-    var lenXor = 0;
-    for (var i = 0; i < total; i++) {
-      final b = bodies[i];
-      if (b == null) return null;
-      lenXor ^= b.length;
-      for (var j = 0; j < b.length; j++) {
-        xor[j] ^= b[j];
-      }
-    }
-    return Uint8List.fromList(<int>[lenXor & 0xFF, ...xor]);
-  }
-}
-
-class _PendingImage {
-  final ImageStreamKey key;
-  final int total;
-  final DateTime firstSeen;
+  /// Data packet bodies by index.
   final Map<int, Uint8List> bodies = <int, Uint8List>{};
+
+  /// The repair packet's body, once it came.
   Uint8List? parityBody;
-  DateTime lastSeen;
 
-  /// The fewest repeaters any copy of a chunk came through; null when none
-  /// said.
-  int? fewestHops;
+  ImagePackets({required this.total, this.dataType = dataTypeMeshTraxPhoto});
 
-  _PendingImage({
-    required this.key,
-    required this.total,
-    required this.firstSeen,
-  }) : lastSeen = firstSeen;
+  int get _bodyBytes => imageChunkBodyBytes(dataType);
 
   bool get hasParity => parityBody != null;
 
-  bool get isComplete => bodies.length == total;
+  /// Data packets in.
+  int get received => bodies.length;
 
-  bool get isRecoverable => bodies.length == total - 1 && hasParity;
+  /// Whether [header], with [body] after it, is a packet this set can hold:
+  /// a repair packet with its length byte, and no data body longer than the
+  /// repair packet could cover.
+  bool fits(ImageChunkHeader header, Uint8List body) => header.isParity
+      ? body.isNotEmpty && body.length <= _bodyBytes + kImageParityLengthBytes
+      : body.length <= _bodyBytes;
 
-  void heard(int? hops) {
-    if (hops != null && (fewestHops == null || hops < fewestHops!)) {
-      fewestHops = hops;
-    }
-  }
-}
-
-/// Collects chunks into whole images. Pure Dart, no IO, injectable clock.
-///
-/// Out-of-order and duplicate tolerant. Entries older than [ttl] (measured
-/// from the first chunk seen for that image) are evicted and reported through
-/// [onFailed].
-class ImageReassembler {
-  /// Prefix of the local node's own public key; chunks bearing it are dropped
-  /// as loopback. Null disables the check.
-  final int? selfPrefix;
-
-  final Duration ttl;
-
-  /// Hard cap on concurrently tracked images; the oldest is evicted (and
-  /// reported as failed) when exceeded.
-  final int maxConcurrentStreams;
-
-  /// Hard cap on remembered COMPLETED images; the oldest is dropped when
-  /// exceeded.
-  ///
-  /// Without this the map was bounded only by [ttl] times the packet rate. A
-  /// lone parity chunk with `total == 1, idx == 1` completes a whole image by
-  /// itself, so every single received packet — noise, a fuzzer, a hostile
-  /// neighbour — could mint one entry, each retaining up to
-  /// [kImageMaxDataChunks] * [kImageChunkBodyBytes] of bodies. [_pending] was
-  /// already capped; this is the same cap on the other map.
-  final int maxCompletedStreams;
-
-  final void Function(ImageReassemblyResult result)? onImage;
-  final void Function(ImageReassemblyFailure failure)? onFailed;
-
-  final DateTime Function() _clock;
-
-  final Map<ImageStreamKey, _PendingImage> _pending =
-      <ImageStreamKey, _PendingImage>{};
-
-  /// Keys completed within the last [ttl]. Needed because in the loss-free
-  /// case the parity chunk arrives AFTER the image is already complete; without
-  /// this it would open a fresh stream that could never finish and would later
-  /// be reported as a failure.
-  ///
-  /// The delivered bodies are retained (a completed image is at most
-  /// [kImageMaxDataChunks] * [kImageChunkBodyBytes], a couple of KiB) so a late
-  /// chunk can be told apart from a genuinely NEW image that happens to reuse
-  /// the same img_id. Keying on time alone silently swallowed the latter:
-  /// [ImageIdAllocator] seeds from `Random().nextInt(256)`, so a restart can
-  /// re-roll onto an id used seconds earlier.
-  final Map<ImageStreamKey, _CompletedImage> _recentlyCompleted =
-      <ImageStreamKey, _CompletedImage>{};
-
-  ImageReassembler({
-    this.selfPrefix,
-    this.ttl = kImageReassemblyTtl,
-    this.maxConcurrentStreams = 8,
-    this.maxCompletedStreams = 8,
-    this.onImage,
-    this.onFailed,
-    DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now;
-
-  /// Number of images currently being reassembled.
-  int get pendingCount => _pending.length;
-
-  /// Keys of the images currently being reassembled (test/debug aid).
-  Iterable<ImageStreamKey> get pendingKeys => _pending.keys;
-
-  /// Number of recently-completed images remembered for straggler detection.
-  int get completedCount => _recentlyCompleted.length;
-
-  /// Keys of the remembered completed images (test/debug aid).
-  Iterable<ImageStreamKey> get completedKeys => _recentlyCompleted.keys;
-
-  /// Drops everything (e.g. on disconnect). In-progress streams are reported
-  /// through [onFailed] right away, so their bubbles stop showing "receiving";
-  /// nothing is left behind for [evictExpired] to report later.
-  void clear({DateTime? now}) {
-    final at = now ?? _clock();
-    final dropped = _pending.values.toList();
-    _pending.clear();
-    _recentlyCompleted.clear();
-    for (final entry in dropped) {
-      onFailed?.call(
-        ImageReassemblyFailure(
-          key: entry.key,
-          total: entry.total,
-          receivedDataChunks: entry.bodies.length,
-          hadParity: entry.hasParity,
-          firstSeen: entry.firstSeen,
-          fewestHops: entry.fewestHops,
-          expiredAt: at,
-          reason: ImageReassemblyFailureReason.disconnected,
-        ),
-      );
-    }
-  }
-
-  /// Drops every stream that arrived on [channelIndex], whose radio slot now
-  /// holds a different channel, so a new image there can never be completed
-  /// with the old channel's bytes. In-progress streams are reported through
-  /// [onFailed] so their bubbles stop showing "receiving".
-  void clearChannel(int channelIndex, {DateTime? now}) {
-    final at = now ?? _clock();
-    _recentlyCompleted.removeWhere(
-      (key, _) => key.channelIndex == channelIndex,
-    );
-    final dropped = _pending.values
-        .where((entry) => entry.key.channelIndex == channelIndex)
-        .toList();
-    for (final entry in dropped) {
-      _pending.remove(entry.key);
-      onFailed?.call(
-        ImageReassemblyFailure(
-          key: entry.key,
-          total: entry.total,
-          receivedDataChunks: entry.bodies.length,
-          hadParity: entry.hasParity,
-          firstSeen: entry.firstSeen,
-          fewestHops: entry.fewestHops,
-          expiredAt: at,
-          reason: ImageReassemblyFailureReason.channelChanged,
-        ),
-      );
-    }
-  }
-
-  /// Feeds one received GRP_DATA blob. [hops]: how many repeaters this copy
-  /// came through, 0 when heard from the sender's own radio; null when not
-  /// known. The image keeps the fewest.
-  ///
-  /// [now] overrides the clock for tests. Expired entries are swept first, so
-  /// a caller that only ever calls [addChunk] still gets TTL behaviour.
-  ImageChunkOutcome addChunk(
-    Uint8List blob, {
-    int channelIndex = 0,
-    int? hops,
-    DateTime? now,
-  }) {
-    final at = now ?? _clock();
-    evictExpired(now: at);
-
-    final header = parseImageChunkHeader(blob);
-    if (header == null) {
-      return const ImageChunkOutcome(ImageChunkStatus.malformed);
-    }
-    if (selfPrefix != null && header.senderPrefix == selfPrefix) {
-      return ImageChunkOutcome(ImageChunkStatus.fromSelf, header: header);
-    }
-
-    final body = Uint8List.sublistView(blob, kImageChunkHeaderBytes);
-    if (header.isParity && body.isEmpty) {
-      // A parity chunk must carry at least its length byte.
-      return ImageChunkOutcome(ImageChunkStatus.malformed, header: header);
-    }
-    if (!header.isParity && body.length > kImageChunkBodyBytes) {
-      // The blob cap leaves room for one byte more than the XOR buffer holds;
-      // such a body can never come from [buildImageChunks] and would overrun
-      // parity recovery.
-      return ImageChunkOutcome(ImageChunkStatus.malformed, header: header);
-    }
-
-    final key = ImageStreamKey(
-      senderPrefix: header.senderPrefix,
-      imgId: header.imgId,
-      channelIndex: channelIndex,
-    );
-
-    final completed = _recentlyCompleted[key];
-    if (completed != null) {
-      if (completed.matches(header, body)) {
-        // Trailing chunk (usually parity) for an image we already delivered.
-        return ImageChunkOutcome(ImageChunkStatus.duplicate, header: header);
-      }
-      // Same key but different content: this is a NEW image reusing the id, not
-      // a straggler. Forget the completed one and fall through so the normal
-      // pending/conflict path can start a fresh stream. Dropping this as a
-      // duplicate would lose the image with no diagnostic at all.
-      _recentlyCompleted.remove(key);
-    }
-
-    var conflicted = false;
-    var entry = _pending[key];
-    if (entry != null && entry.total != header.total) {
-      // Same key, different shape: an id wrap or a new image reusing the id.
-      _pending.remove(key);
-      entry = null;
-      conflicted = true;
-    }
-    if (entry == null) {
-      entry = _PendingImage(key: key, total: header.total, firstSeen: at);
-      _pending[key] = entry;
-      _evictOverflow(at);
-    }
-    entry.lastSeen = at;
-    entry.heard(hops);
-
+  /// Adds packet [header] with [body].
+  ImagePacketAdded add(ImageChunkHeader header, Uint8List body) {
     if (header.isParity) {
-      if (entry.parityBody != null) {
-        return ImageChunkOutcome(ImageChunkStatus.duplicate, header: header);
-      }
-      entry.parityBody = Uint8List.fromList(body);
-    } else {
-      final existing = entry.bodies[header.index];
-      if (existing != null) {
-        if (_sameBytes(existing, body)) {
-          return ImageChunkOutcome(ImageChunkStatus.duplicate, header: header);
-        }
-        // Same index, different content: treat as a new image on a reused id.
-        _pending.remove(key);
-        final fresh = _PendingImage(
-          key: key,
-          total: header.total,
-          firstSeen: at,
-        );
-        fresh.bodies[header.index] = Uint8List.fromList(body);
-        fresh.heard(hops);
-        _pending[key] = fresh;
-        return ImageChunkOutcome(ImageChunkStatus.conflicting, header: header);
-      }
-      entry.bodies[header.index] = Uint8List.fromList(body);
+      if (parityBody != null) return ImagePacketAdded.duplicate;
+      parityBody = Uint8List.fromList(body);
+      return ImagePacketAdded.accepted;
     }
+    final known = bodies[header.index];
+    if (known != null) {
+      return _sameBytes(known, body)
+          ? ImagePacketAdded.duplicate
+          : ImagePacketAdded.conflicting;
+    }
+    bodies[header.index] = Uint8List.fromList(body);
+    return ImagePacketAdded.accepted;
+  }
 
-    final finish = _tryFinish(entry);
-    if (finish != null) {
-      _pending.remove(key);
-      // Remembered even when the bytes were bad: a verbatim re-send of the same
-      // damaged chunks must not re-open the stream, while a genuine
-      // retransmission (different bytes) still fails `matches` and starts a
-      // fresh one.
-      _remember(key, at, entry);
-      final result = finish.result;
-      if (result != null) {
-        onImage?.call(result);
-      } else {
-        onFailed?.call(
-          ImageReassemblyFailure(
-            key: key,
-            total: entry.total,
-            receivedDataChunks: entry.bodies.length,
-            hadParity: entry.hasParity,
-            firstSeen: entry.firstSeen,
-            fewestHops: entry.fewestHops,
-            expiredAt: at,
-            reason: finish.reason!,
-          ),
-        );
-      }
-      return ImageChunkOutcome(finish.status, header: header, result: result);
-    }
-    return ImageChunkOutcome(
-      conflicted ? ImageChunkStatus.conflicting : ImageChunkStatus.accepted,
-      header: header,
+  /// Whether [header] with [body] repeats a packet of this set as it was
+  /// held: a late copy of a photo already rebuilt.
+  ///
+  /// Conservative by design: anything that does not byte-match is treated as
+  /// new, because dropping a real photo is far worse than starting again for
+  /// a straggler. In the loss-free case the photo completes on its last data
+  /// packet, so the repair packet comes afterwards and was never held: it is
+  /// recomputed from the bodies rather than guessed at.
+  bool repeats(ImageChunkHeader header, Uint8List body) {
+    if (header.total != total || header.dataType != dataType) return false;
+    final known = header.isParity
+        ? (parityBody ?? _expectedParityBody())
+        : bodies[header.index];
+    return known != null && _sameBytes(known, body);
+  }
+
+  Uint8List? _expectedParityBody() {
+    if (bodies.length != total) return null;
+    return _parityBody(
+      [for (var i = 0; i < total; i++) bodies[i]!],
+      _bodyBytes,
     );
   }
 
-  /// Removes streams whose first chunk is older than [ttl], reporting each
-  /// through [onFailed]. Returns the failures, oldest first.
-  List<ImageReassemblyFailure> evictExpired({DateTime? now}) {
-    final at = now ?? _clock();
-    _recentlyCompleted.removeWhere((_, c) => at.difference(c.at) >= ttl);
-    final expired = <ImageReassemblyFailure>[];
-    _pending.removeWhere((key, entry) {
-      if (at.difference(entry.firstSeen) < ttl) return false;
-      expired.add(
-        ImageReassemblyFailure(
-          key: key,
-          total: entry.total,
-          receivedDataChunks: entry.bodies.length,
-          hadParity: entry.hasParity,
-          firstSeen: entry.firstSeen,
-          fewestHops: entry.fewestHops,
-          expiredAt: at,
-        ),
-      );
-      return true;
-    });
-    expired.sort((a, b) => a.firstSeen.compareTo(b.firstSeen));
-    for (final failure in expired) {
-      onFailed?.call(failure);
-    }
-    return expired;
-  }
+  /// The photo the packets make, or null while they don't make one yet (or
+  /// the repair packet doesn't add up).
+  ImageRebuilt? rebuild() {
+    if (bodies.length == total) return _assemble(recovered: false);
+    if (bodies.length != total - 1 || parityBody == null) return null;
 
-  /// Records a finished (delivered OR rejected) image and keeps
-  /// [_recentlyCompleted] inside [maxCompletedStreams], oldest first.
-  void _remember(ImageStreamKey key, DateTime at, _PendingImage entry) {
-    _recentlyCompleted[key] = _CompletedImage(
-      at: at,
-      total: entry.total,
-      bodies: Map<int, Uint8List>.from(entry.bodies),
-      parityBody: entry.parityBody,
-    );
-    while (_recentlyCompleted.length > maxCompletedStreams) {
-      ImageStreamKey? oldestKey;
-      DateTime? oldest;
-      _recentlyCompleted.forEach((k, c) {
-        if (oldest == null || c.at.isBefore(oldest!)) {
-          oldest = c.at;
-          oldestKey = k;
-        }
-      });
-      if (oldestKey == null) return;
-      _recentlyCompleted.remove(oldestKey);
-    }
-  }
-
-  void _evictOverflow(DateTime at) {
-    while (_pending.length > maxConcurrentStreams) {
-      ImageStreamKey? oldestKey;
-      DateTime? oldest;
-      _pending.forEach((key, entry) {
-        if (oldest == null || entry.firstSeen.isBefore(oldest!)) {
-          oldest = entry.firstSeen;
-          oldestKey = key;
-        }
-      });
-      if (oldestKey == null) return;
-      final victim = _pending.remove(oldestKey)!;
-      onFailed?.call(
-        ImageReassemblyFailure(
-          key: victim.key,
-          total: victim.total,
-          receivedDataChunks: victim.bodies.length,
-          hadParity: victim.hasParity,
-          firstSeen: victim.firstSeen,
-          fewestHops: victim.fewestHops,
-          expiredAt: at,
-          reason: ImageReassemblyFailureReason.overflow,
-        ),
-      );
-    }
-  }
-
-  _FinishOutcome? _tryFinish(_PendingImage entry) {
-    if (entry.isComplete) {
-      return _assemble(entry, recovered: false);
-    }
-    if (!entry.isRecoverable) return null;
-
-    // Exactly one data chunk missing and we hold parity: rebuild it.
+    // Exactly one data packet missing and the repair packet in: rebuild it.
     final missing = List<int>.generate(
-      entry.total,
+      total,
       (i) => i,
-    ).firstWhere((i) => !entry.bodies.containsKey(i));
-    final parity = entry.parityBody!;
+    ).firstWhere((i) => !bodies.containsKey(i));
+    final parity = parityBody!;
     var lengthXor = parity[0] & 0xFF;
-    final xor = Uint8List(kImageChunkBodyBytes);
+    final xor = Uint8List(_bodyBytes);
     final parityData = parity.length - kImageParityLengthBytes;
     for (var i = 0; i < parityData && i < xor.length; i++) {
       xor[i] = parity[kImageParityLengthBytes + i];
     }
-    for (final body in entry.bodies.values) {
+    for (final body in bodies.values) {
       lengthXor ^= body.length;
       for (var i = 0; i < body.length; i++) {
         xor[i] ^= body[i];
       }
     }
-    if (lengthXor > kImageChunkBodyBytes) return null; // corrupt parity
+    if (lengthXor > _bodyBytes) return null; // corrupt repair packet
     if (missing == 0 && lengthXor < kImageChunkZeroMetadataBytes) return null;
-    // Only the LAST data chunk may be short; every earlier one is full by
-    // construction. Without this, a single flipped bit in the parity length
-    // byte silently yields a truncated image reported as `completed` (a
-    // 3-chunk image recovering as 398 bytes instead of 400), which is worse
+    // Only the LAST data packet may be short; every earlier one is full by
+    // construction. Without this, a single flipped bit in the length byte
+    // silently yields a truncated photo reported as complete, which is worse
     // than failing: the caller has no way to know the bytes are wrong.
-    if (missing < entry.total - 1 && lengthXor != kImageChunkBodyBytes) {
-      return null;
-    }
-    entry.bodies[missing] = Uint8List.sublistView(xor, 0, lengthXor);
-    return _assemble(entry, recovered: true);
+    if (missing < total - 1 && lengthXor != _bodyBytes) return null;
+    bodies[missing] = Uint8List.sublistView(xor, 0, lengthXor);
+    return _assemble(recovered: true);
   }
 
-  _FinishOutcome? _assemble(_PendingImage entry, {required bool recovered}) {
-    final first = entry.bodies[0];
-    if (first == null) return null;
-    // Chunk 0 must hold the metadata byte; anything shorter cannot be a chunk
-    // 0 from this framing. Every chunk is already here, so waiting would only
-    // leave the stream on "receiving" until the TTL reports it as incomplete.
-    if (first.length < kImageChunkZeroMetadataBytes) {
-      return const _FinishOutcome.failed(
-        ImageChunkStatus.unsupportedFormat,
-        ImageReassemblyFailureReason.unsupportedFormat,
-      );
-    }
-    final metadata = ImageStreamMetadata.decode(first[0]);
-    final out = BytesBuilder();
-    out.add(Uint8List.sublistView(first, kImageChunkZeroMetadataBytes));
-    for (var i = 1; i < entry.total; i++) {
-      final body = entry.bodies[i];
-      if (body == null) return null;
-      out.add(body);
-    }
-    final data = out.toBytes();
+  ImageRebuilt _assemble({required bool recovered}) {
+    final first = bodies[0]!;
+    final metadata = first.length < kImageChunkZeroMetadataBytes
+        ? null
+        : ImageStreamMetadata.decode(first[0]);
     if (metadata == null) {
-      return const _FinishOutcome.failed(
-        ImageChunkStatus.unsupportedFormat,
-        ImageReassemblyFailureReason.unsupportedFormat,
+      return ImageRebuilt(
+        metadata: null,
+        data: Uint8List(0),
+        recoveredWithParity: recovered,
+        chunkCount: total,
       );
     }
-    return _FinishOutcome.delivered(
-      ImageReassemblyResult(
-        key: entry.key,
-        metadata: metadata,
-        data: data,
-        recoveredWithParity: recovered,
-        chunkCount: entry.total,
-        fewestHops: entry.fewestHops,
-      ),
+    final out = BytesBuilder()
+      ..add(Uint8List.sublistView(first, kImageChunkZeroMetadataBytes));
+    for (var i = 1; i < total; i++) {
+      out.add(bodies[i]!);
+    }
+    return ImageRebuilt(
+      metadata: metadata,
+      data: out.toBytes(),
+      recoveredWithParity: recovered,
+      chunkCount: total,
     );
   }
-}
-
-/// A terminal verdict on a fully-arrived image: delivered, or rejected with a
-/// reason. `null` (never an instance of this) means "still waiting".
-class _FinishOutcome {
-  final ImageChunkStatus status;
-  final ImageReassemblyResult? result;
-  final ImageReassemblyFailureReason? reason;
-
-  const _FinishOutcome.failed(this.status, this.reason) : result = null;
-
-  const _FinishOutcome.delivered(ImageReassemblyResult this.result)
-    : status = ImageChunkStatus.completed,
-      reason = null;
 }
 
 bool _sameBytes(Uint8List a, Uint8List b) {
@@ -1223,327 +726,4 @@ bool _sameBytes(Uint8List a, Uint8List b) {
     if (a[i] != b[i]) return false;
   }
   return true;
-}
-
-// ---------------------------------------------------------------------------
-// Protocol glue — still pure Dart, but MeshCore-frame shaped
-// ---------------------------------------------------------------------------
-
-/// Builds a `CMD_SEND_CHANNEL_DATA` (62) frame.
-///
-/// Flood case (the default) emits exactly
-/// `[0x3E][channel_idx][0xFF][type_lo][type_hi][...blob...]`.
-/// When [pathLen] != [outPathUnknown] the packed path bytes are inserted
-/// before the data type, per MyMesh.cpp:1147-1186.
-///
-/// The firmware replies with `RESP_CODE_OK` (0x00) — NOT `RESP_CODE_SENT` —
-/// or `[0x01][err]`.
-Uint8List buildSendChannelDataFrame({
-  required int channelIndex,
-  required int dataType,
-  required Uint8List payload,
-  int pathLen = outPathUnknown,
-  Uint8List? path,
-}) {
-  final out = BytesBuilder()
-    ..addByte(cmdSendChannelData)
-    ..addByte(channelIndex & 0xFF)
-    ..addByte(pathLen & 0xFF);
-  if (pathLen != outPathUnknown && path != null) out.add(path);
-  out
-    ..addByte(dataType & 0xFF)
-    ..addByte((dataType >> 8) & 0xFF)
-    ..add(payload);
-  return out.toBytes();
-}
-
-/// A parsed `RESP_CODE_CHANNEL_DATA_RECV` (27) frame.
-///
-/// Fixed 9-byte header, no path bytes and no sender identity — which is why
-/// the sender prefix lives inside the chunk itself.
-class ParsedChannelData {
-  /// Signed; divide by 4.0 for dB.
-  final int snrRaw;
-  final int channelIndex;
-
-  /// 0xFF means the packet arrived via a known/direct path; anything else is
-  /// the packed flood path_len byte.
-  final int pathLenByte;
-
-  final int dataType;
-  final Uint8List payload;
-
-  const ParsedChannelData({
-    required this.snrRaw,
-    required this.channelIndex,
-    required this.pathLenByte,
-    required this.dataType,
-    required this.payload,
-  });
-
-  bool get arrivedByFlood => pathLenByte != 0xFF;
-
-  double get snrDb => snrRaw / 4.0;
-
-  int? get hopCount => arrivedByFlood ? pathLenByte & 0x3F : null;
-
-  int? get pathHashWidth =>
-      arrivedByFlood ? ((pathLenByte >> 6) & 0x03) + 1 : null;
-}
-
-/// Parses a `RESP_CODE_CHANNEL_DATA_RECV` frame, or null if it is not one.
-ParsedChannelData? parseChannelDataFrame(Uint8List frame) {
-  if (frame.length < 9) return null;
-  if (frame[0] != respCodeChannelDataRecv) return null;
-  final dataLen = frame[8];
-  if (frame.length < 9 + dataLen) return null;
-  final snr = frame[1] >= 128 ? frame[1] - 256 : frame[1];
-  return ParsedChannelData(
-    snrRaw: snr,
-    channelIndex: frame[4],
-    pathLenByte: frame[5],
-    dataType: frame[6] | (frame[7] << 8),
-    payload: Uint8List.fromList(frame.sublist(9, 9 + dataLen)),
-  );
-}
-
-/// Sends one blob on a channel and completes when the device acknowledges it.
-///
-/// Writes one complete `CMD_SEND_CHANNEL_DATA` frame to the radio and completes
-/// once the radio has answered it. Implemented by the connector-facing adapter;
-/// kept as a typedef so the transport itself never imports the connector (and
-/// stays testable). The transport builds the frame, so the adapter never needs
-/// the frame layout.
-typedef ChannelFrameSender = Future<void> Function(Uint8List frame);
-
-/// Progress report while an image is going out.
-class ImageSendProgress {
-  final int sentChunks;
-  final int totalChunks;
-  final bool isParityChunk;
-
-  /// The packet went out once more: no repeater was heard passing it on.
-  final bool again;
-
-  const ImageSendProgress({
-    required this.sentChunks,
-    required this.totalChunks,
-    required this.isParityChunk,
-    this.again = false,
-  });
-
-  double get fraction => totalChunks == 0 ? 1 : sentChunks / totalChunks;
-}
-
-/// Thin IO glue: chunk an image, send its blobs strictly one at a time, and
-/// route inbound frames into an [ImageReassembler].
-///
-/// Serialisation is not optional. `_pendingGenericAckQueue` in the connector is
-/// a strict FIFO keyed only on arrival order — there is no request id in the
-/// companion protocol — so two concurrent `CMD_SEND_CHANNEL_DATA` frames would
-/// cross their acknowledgements.
-class ImageChunkTransport {
-  final ChannelFrameSender send;
-  final ImageReassembler reassembler;
-  final ImageIdAllocator _ids;
-
-  /// Prefix of the local public key, stamped into every outgoing chunk.
-  int senderPrefix;
-
-  /// The data type outgoing chunks are sent with.
-  final int sendDataType;
-
-  ImageChunkTransport({
-    required this.send,
-    required this.reassembler,
-    required this.senderPrefix,
-    this.sendDataType = dataTypeMeshTraxPhoto,
-    ImageIdAllocator? idAllocator,
-  }) : _ids = idAllocator ?? ImageIdAllocator();
-
-  Future<void> _sendQueue = Future<void>.value();
-
-  /// The packets [payload] goes out as, under a new image id, for a caller
-  /// that needs them before they go (to know its own packets when a
-  /// repeater's copy comes back) and then hands them to [sendChunks].
-  ImageChunkSet chunk({
-    required Uint8List payload,
-    required ImageStreamMetadata metadata,
-    bool parity = true,
-  }) => buildImageChunks(
-    payload: payload,
-    metadata: metadata,
-    senderPrefix: senderPrefix,
-    imgId: _ids.next(),
-    parity: parity,
-  );
-
-  /// Chunks and transmits [payload], as [sendChunks] does.
-  Future<ImageChunkSet> sendImage({
-    required Uint8List payload,
-    required ImageStreamMetadata metadata,
-    int channelIndex = 0,
-    bool parity = true,
-    int? imgId,
-    Duration gap = Duration.zero,
-    bool zeroHop = false,
-    bool Function(int index)? resend,
-    Duration? resendWindow,
-    void Function(ImageSendProgress progress)? onProgress,
-    void Function()? onDone,
-  }) => sendChunks(
-    buildImageChunks(
-      payload: payload,
-      metadata: metadata,
-      senderPrefix: senderPrefix,
-      imgId: imgId ?? _ids.next(),
-      parity: parity,
-    ),
-    channelIndex: channelIndex,
-    gap: gap,
-    zeroHop: zeroHop,
-    resend: resend,
-    resendWindow: resendWindow,
-    onProgress: onProgress,
-    onDone: onDone,
-  );
-
-  /// Transmits [set]'s packets strictly sequentially, [gap] apart (see
-  /// [photoPacketGap] and [photoPacketGapFlood]), and concurrent calls are
-  /// serialised behind each other. They go as a flood, like a channel
-  /// message, so the radio sends them in the way it sends the channel's
-  /// messages; with [zeroHop], only to the radios in direct range, never
-  /// repeated.
-  ///
-  /// With [resend], a packet can go out once more, the same bytes again (a
-  /// channel datagram has no timestamp, so every repeater that already
-  /// passed it on drops the copy as seen). [resend] is asked about each
-  /// packet once, when the next one is due and, for the last, a gap after
-  /// it, and only while every packet, this one again included, still goes
-  /// out within [resendWindow] of the first (three quarters of the
-  /// receiver's [kImageReassemblyTtl] by default). A true answer sends it
-  /// at once; the next packet follows a gap later.
-  ///
-  /// Returns [set] once every packet has gone out the first time. The check
-  /// after the last packet runs on in the queue; [onDone] says when this
-  /// photo is done with, failed or not.
-  Future<ImageChunkSet> sendChunks(
-    ImageChunkSet set, {
-    int channelIndex = 0,
-    Duration gap = Duration.zero,
-    bool zeroHop = false,
-    bool Function(int index)? resend,
-    Duration? resendWindow,
-    void Function(ImageSendProgress progress)? onProgress,
-    void Function()? onDone,
-  }) {
-    final window = resendWindow ?? kImageReassemblyTtl * 0.75;
-    final last = set.blobs.length - 1;
-    final sentOnce = Completer<ImageChunkSet>();
-    final job = _sendQueue.then((_) async {
-      var handedOver = 0;
-      final asked = <int>{};
-      Future<void> put(int i, {bool again = false}) async {
-        await send(
-          buildSendChannelDataFrame(
-            channelIndex: channelIndex,
-            dataType: sendDataType,
-            payload: set.blobs[i],
-            pathLen: zeroHop ? pathLenZeroHop : outPathUnknown,
-          ),
-        );
-        handedOver++;
-        onProgress?.call(
-          ImageSendProgress(
-            sentChunks: i + 1,
-            totalChunks: set.blobs.length,
-            isParityChunk: set.hasParity && i == last,
-            again: again,
-          ),
-        );
-      }
-
-      // Packet [i] once more, now, with [later] packets still to go: one gap
-      // per hand-over after the first is the photo's span on air.
-      bool again(int i, int later) =>
-          resend != null &&
-          asked.add(i) &&
-          gap * (handedOver + later) <= window &&
-          resend(i);
-
-      Future<void> pause() async {
-        if (gap > Duration.zero) await Future<void>.delayed(gap);
-      }
-
-      try {
-        for (var i = 0; i <= last; i++) {
-          if (i > 0) {
-            await pause();
-            if (again(i - 1, last - i + 1)) {
-              await put(i - 1, again: true);
-              await pause();
-            }
-          }
-          await put(i);
-        }
-      } catch (e, s) {
-        sentOnce.completeError(e, s);
-        onDone?.call();
-        return;
-      }
-      sentOnce.complete(set);
-      if (resend != null) {
-        try {
-          await pause();
-          if (again(last, 0)) await put(last, again: true);
-        } catch (_) {
-          // The photo is out already; a copy the radio refused is no loss.
-        }
-      }
-      onDone?.call();
-    });
-    // Keep the queue alive even if this send fails.
-    _sendQueue = job.then((_) {}, onError: (Object _) {});
-    return sentOnce.future;
-  }
-
-  /// [blobs], packets of a photo already sent as a flood, once more, the
-  /// same bytes, each [gap] after the one before, in their turn after any
-  /// photo still going out.
-  Future<void> resendBlobs(
-    List<Uint8List> blobs, {
-    required int channelIndex,
-    Duration gap = Duration.zero,
-  }) {
-    final job = _sendQueue.then((_) async {
-      for (final blob in blobs) {
-        if (gap > Duration.zero) await Future<void>.delayed(gap);
-        await send(
-          buildSendChannelDataFrame(
-            channelIndex: channelIndex,
-            dataType: sendDataType,
-            payload: blob,
-            pathLen: outPathUnknown,
-          ),
-        );
-      }
-    });
-    _sendQueue = job.then((_) {}, onError: (Object _) {});
-    return job;
-  }
-
-  /// Feeds a raw inbound companion frame. Non-image frames are ignored.
-  ///
-  /// NOTE: the queued-message sync advance (`_handleQueuedMessageReceived`)
-  /// still has to happen inside `_handleFrame`; a `receivedFrames` listener
-  /// alone will not prevent the 5 s CMD_SYNC_NEXT_MESSAGE stall.
-  ImageChunkOutcome? handleFrame(Uint8List frame) {
-    final parsed = parseChannelDataFrame(frame);
-    if (parsed == null) return null;
-    if (parsed.dataType != dataTypeMeshTraxPhoto) return null;
-    return reassembler.addChunk(
-      parsed.payload,
-      channelIndex: parsed.channelIndex,
-    );
-  }
 }

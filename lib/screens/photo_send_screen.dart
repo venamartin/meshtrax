@@ -33,7 +33,60 @@ enum _Step { pick, crop, working, ready, flagged, sending }
 class PhotoSendScreen extends StatefulWidget {
   final Channel channel;
 
-  const PhotoSendScreen({super.key, required this.channel});
+  /// Photos through repeaters still wait after the last one: this one goes
+  /// zero hop, and the switch stays on.
+  final bool zeroHopOnly;
+
+  const PhotoSendScreen({
+    super.key,
+    required this.channel,
+    this.zeroHopOnly = false,
+  });
+
+  /// Opens the photo screen for [channel]. Where the photo rules apply, a
+  /// photo through repeaters waits after the last one by that photo's size
+  /// ([photoSendBlocked]): while it does, the sender is told at once, before
+  /// picking a photo, and can go on zero hop, which never waits.
+  static Future<void> open(BuildContext context, Channel channel) async {
+    final connector = context.read<MeshCoreConnector>();
+    final blocked =
+        PhotoStore.instance.ignoreTimeLimits ||
+            connector.isNearbyOnlyChannel(channel.index)
+        ? null
+        : photoSendBlocked(
+            freqKhz: connector.currentFreqHz,
+            last: photoLastSentViaRepeaters(connector.selfPublicKeyHex),
+            now: DateTime.now(),
+          );
+    if (blocked != null) {
+      final l10n = context.l10n;
+      final zeroHop = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.photo_waitTitle(blocked.minutes)),
+          content: Text(l10n.photo_waitBody(blocked.packets, blocked.gap)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.common_close),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.photo_zeroHop),
+            ),
+          ],
+        ),
+      );
+      if (zeroHop != true || !context.mounted) return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) =>
+            PhotoSendScreen(channel: channel, zeroHopOnly: blocked != null),
+      ),
+    );
+  }
 
   @override
   State<PhotoSendScreen> createState() => _PhotoSendScreenState();
@@ -514,7 +567,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
       connector.isNearbyOnlyChannel(widget.channel.index);
 
   bool _goesZeroHop(MeshCoreConnector connector) =>
-      _zeroHop || _nearbyOnly(connector);
+      _zeroHop || widget.zeroHopOnly || _nearbyOnly(connector);
 
   /// On a MeshCore frequency the sender confirms what the photo costs. On
   /// Public or a hashtag channel they first read why a photo there asks a lot
@@ -641,17 +694,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         zeroHop: zeroHop,
         repairPacket: _repairPacket,
         previewPng: _previewPng,
-        onProgress: (p) {
-          if (mounted) {
-            setState(
-              () => _sendStatus = p.again
-                  ? l10n.photo_sendingPacketAgain(p.sentChunks, p.totalChunks)
-                  : p.isParityChunk
-                  ? l10n.photo_sendingRepairPacket(p.sentChunks, p.totalChunks)
-                  : l10n.photo_sendingPacket(p.sentChunks, p.totalChunks),
-            );
-          }
-        },
       );
     } catch (e) {
       if (!mounted) return;
@@ -869,7 +911,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
     );
     final connector = context.watch<MeshCoreConnector>();
     final nearbyOnly = _nearbyOnly(connector);
-    final zeroHop = _zeroHop || nearbyOnly;
+    final zeroHop = _goesZeroHop(connector);
     final packets = _packets(connector);
     final airtimeMs = connector.estimatePacketAirtimeMs;
     final sendTime =
@@ -883,16 +925,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             (packets - 1) +
         Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
     final sending = _step == _Step.sending;
-    final key = connector.selfPublicKeyHex;
-    final blocked = sending || PhotoStore.instance.ignoreTimeLimits
-        ? null
-        : photoSendBlocked(
-            freqKhz: connector.currentFreqHz,
-            lastSentViaRepeaters: photoLastSentViaRepeaters(key),
-            viaRepeaters: !zeroHop,
-            packets: packets,
-            now: DateTime.now(),
-          );
     return [
       if (_previewPng != null) ...[
         Center(
@@ -972,9 +1004,13 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         dense: true,
         secondary: const Icon(Icons.near_me_outlined),
         title: Text(l10n.photo_zeroHop),
-        subtitle: nearbyOnly ? Text(l10n.photo_zeroHopNearbyOnly) : null,
+        subtitle: nearbyOnly
+            ? Text(l10n.photo_zeroHopNearbyOnly)
+            : widget.zeroHopOnly
+            ? Text(l10n.photo_zeroHopWaiting)
+            : null,
         value: zeroHop,
-        onChanged: sending || nearbyOnly
+        onChanged: sending || nearbyOnly || widget.zeroHopOnly
             ? null
             : (on) => setState(() => _zeroHop = on),
       ),
@@ -995,17 +1031,6 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
         l10n.photo_sendFigures(packets, _secs(l10n, sendTime)),
         style: quiet,
       ),
-      if (blocked != null) ...[
-        const SizedBox(height: 8),
-        Text(
-          l10n.photo_blockedWaitRepeaters(
-            packets,
-            blocked.gap,
-            blocked.minutes,
-          ),
-          style: quiet?.copyWith(color: theme.colorScheme.error),
-        ),
-      ],
       const SizedBox(height: 16),
       Row(
         children: [
@@ -1017,9 +1042,7 @@ class _PhotoSendScreenState extends State<PhotoSendScreen> {
             ),
           const Spacer(),
           FilledButton.icon(
-            onPressed: sending || blocked != null || !connector.isConnected
-                ? null
-                : _send,
+            onPressed: sending || !connector.isConnected ? null : _send,
             icon: const Icon(Icons.send),
             label: Text(sending ? _sendStatus : l10n.photo_send),
           ),

@@ -2,19 +2,21 @@ import 'dart:async';
 import 'dart:io' show File, Platform;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/foundation.dart'
+    show ValueNotifier, kIsWeb, visibleForTesting;
 import 'package:flutter/services.dart' show MethodChannel;
 import 'package:traxpix/traxpix.dart';
 
 import '../connector/meshcore_connector.dart';
-import '../connector/meshcore_protocol.dart';
 import '../helpers/path_helper.dart';
-import '../helpers/region_helper.dart';
 import '../l10n/app_localizations.dart';
+import '../models/channel.dart';
+import '../models/channel_datagram.dart';
 import '../models/channel_message.dart';
 import '../utils/app_logger.dart';
 import 'heard_service.dart';
 import 'notification_service.dart';
+import 'photo_reassembler.dart';
 import 'photo_repeats.dart';
 import 'photo_rules.dart';
 import 'photo_store.dart';
@@ -30,6 +32,16 @@ class PhotoSendException implements Exception {
 
   const PhotoSendException(this.failure, [this.code]);
 
+  /// Why the chat couldn't send a packet of the photo.
+  factory PhotoSendException.from(ChannelPacketsFailed why) =>
+      why.errorCode != null
+      ? PhotoSendException(PhotoSendFailure.refused, why.errorCode)
+      : PhotoSendException(
+          why.connected
+              ? PhotoSendFailure.noAnswer
+              : PhotoSendFailure.notConnected,
+        );
+
   String text(AppLocalizations l10n) => switch (failure) {
     PhotoSendFailure.notConnected => l10n.photo_errorNotConnected,
     PhotoSendFailure.noAnswer => l10n.photo_errorNoAnswer,
@@ -39,6 +51,35 @@ class PhotoSendException implements Exception {
   @override
   String toString() => 'PhotoSendException(${failure.name}, $code)';
 }
+
+/// What a photo of mine is doing while its packets go, for its chat row.
+enum PhotoSendStep {
+  /// It waits for the photo of mine before it to be done.
+  waiting,
+
+  /// Its packet goes, and is listened for.
+  sending,
+
+  /// Its packet goes again.
+  again,
+
+  /// One repeater passed its packet on: the observers are asked whether they
+  /// heard it.
+  observers,
+
+  /// It couldn't be sent.
+  failed,
+}
+
+/// [step] on [packet] of [packets] (from 1; the repair packet if [repair]),
+/// and for a photo that failed, why.
+typedef PhotoSendState = ({
+  PhotoSendStep step,
+  int packet,
+  int packets,
+  bool repair,
+  Object? error,
+});
 
 /// Photos run the model with LiteRT, which MeshTrax takes for iOS, macOS and
 /// 64-bit Arm Android only (packages/traxpix_litert). iPhones with less than
@@ -95,8 +136,10 @@ Future<void> checkPhotoMemory() async {
 
 String _hex4(int prefix) => prefix.toRadixString(16).padLeft(4, '0');
 
-/// Listens to the radio for photo packets, files photos in their channel's
-/// chat, and sends photos. One per app run, made at launch.
+/// Files received photos in their channel's chat, and hands the chat the
+/// photos of mine to send: traxpix makes the packets and rebuilds photos
+/// from them, the chat sends them ([MeshCoreConnector.sendChannelPackets]).
+/// One per app run, made at launch.
 class PhotoMesh {
   static PhotoMesh? _instance;
 
@@ -108,107 +151,111 @@ class PhotoMesh {
   static void resetForTest() {
     _instance?.dispose();
     _instance = null;
+    sending.value = const {};
   }
 
-  final MeshCoreConnector connector;
-  ImageChunkTransport? _transport;
-  ImageReassembler? _reassembler;
-  int? _transportPrefix;
-  late final StreamSubscription<Uint8List> _frames;
+  /// The photos of mine whose packets are still going, by chat row, with
+  /// what each is doing. One that failed stays, to say why.
+  static final ValueNotifier<Map<String, PhotoSendState>> sending =
+      ValueNotifier(const {});
 
-  /// The reassembler only gives up on a photo when the next chunk arrives,
-  /// so this asks it every few seconds: an incomplete photo then shows about
-  /// 60 s after its first chunk, even when nothing else comes in.
+  final MeshCoreConnector connector;
+  ImageReassembler? _reassembler;
+  int? _reassemblerPrefix;
+  late final StreamSubscription<ChannelDatagram> _datagrams;
+  final ImageIdAllocator _ids = ImageIdAllocator();
+
+  /// The reassembler only gives up on a photo when the next packet arrives,
+  /// so this asks it every few seconds: an incomplete photo then shows
+  /// [photoReceiveWindow] after its first packet, even when nothing else
+  /// comes in.
   late final Timer _sweep;
 
-  /// Photos of mine sent through repeaters, by channel slot and image id,
-  /// while this radio listens for repeaters passing their packets on.
-  final Map<(int, int), PhotoRepeats> _sent = {};
-
-  /// How long after observers are first asked about a photo its time through
-  /// repeaters waits for their answer before being given back; tests
-  /// shorten it.
+  /// How long after its last packet went a photo through repeaters that no
+  /// repeater carried waits for the observers' last answer before its time
+  /// is given back; tests shorten it.
   @visibleForTesting
   static Duration? observerWaitOverride;
 
-  /// How long after observers are first asked about a photo their first
-  /// answer is taken as in; tests shorten it.
+  /// Photos of mine handed to the chat and not done with yet.
+  int _going = 0;
+
+  bool _disposed = false;
+
+  /// Whether a photo of mine still goes or is listened for; tests wait it
+  /// out.
   @visibleForTesting
-  static Duration? observerAnswerOverride;
+  bool get busy => _going > 0;
 
   /// Writes of what was heard to chat rows and records, one at a time.
   Future<void> _writes = Future<void>.value();
   final Set<PhotoRepeats> _toWrite = {};
 
   PhotoMesh._(this.connector) {
-    _frames = connector.receivedFrames.listen((frame) {
-      final parsed = parseChannelDataFrame(frame);
-      if (parsed == null || parsed.dataType != dataTypeMeshTraxPhoto) return;
-      _ensureTransport();
+    _datagrams = connector.channelDatagrams.listen((d) {
+      if (!isMeshTraxPhotoDataType(d.dataType)) return;
       // Path length 0xFF: it came direct, which a photo does only zero hop.
-      final hops = PathHelper.pathLenHops(parsed.pathLenByte);
-      _reassembler?.addChunk(
-        parsed.payload,
-        channelIndex: parsed.channelIndex,
+      final hops = PathHelper.pathLenHops(d.pathLen);
+      _ensureReassembler()?.addChunk(
+        d.payload,
+        dataType: d.dataType,
+        channelIndex: d.channel.index,
         hops: hops < 0 ? 0 : hops,
       );
     });
     // The radio's raw log too: there a photo sent through repeaters reaches
-    // every radio along the way, not only the last. Chunks heard both ways
-    // arrive twice, which the reassembler ignores. A copy of a packet of my
-    // own is a repeater passing it on.
-    // A deleted photo message takes its picture and bytes with it.
-    connector.onChannelMessageDeleted = (id) =>
-        unawaited(PhotoStore.instance.forget(id));
+    // every radio along the way, not only the last. Packets heard both ways
+    // arrive twice, which the reassembler ignores. The chat takes copies of
+    // packets of mine it's still listening for before they get here.
     connector.onRawChannelData = (channelIndex, dataType, blob, path, width) {
-      if (dataType != dataTypeMeshTraxPhoto) return;
-      _ensureTransport();
-      final outcome = _reassembler?.addChunk(
+      if (!isMeshTraxPhotoDataType(dataType)) return;
+      _ensureReassembler()?.addChunk(
         blob,
+        dataType: dataType,
         channelIndex: channelIndex,
         hops: PathHelper.getHopCount(path, stride: width),
       );
-      final header = outcome?.header;
-      if (outcome?.status == ImageChunkStatus.fromSelf && header != null) {
-        _heardOwnPacket(channelIndex, header, blob, path, width);
-      }
     };
+    // A deleted photo message takes its picture and bytes with it.
+    connector.onChannelMessageDeleted = (id) =>
+        unawaited(PhotoStore.instance.forget(id));
     _sweep = Timer.periodic(
       const Duration(seconds: 5),
       (_) => _reassembler?.evictExpired(),
     );
   }
 
-  /// A repeater passed on packet [header] of a photo of mine, heard as
-  /// [blob]; [path] is the repeaters the copy came through. Its first
-  /// repeater heard this radio directly, which Pathfinder hears of as of a
-  /// channel text's echo, once per photo, and only for an exact copy: never
-  /// that a packet was not passed on.
+  /// A repeater passed on packet [index] of photo [sent] of mine, heard
+  /// through [path]. Its first repeater heard this radio directly, which
+  /// Pathfinder hears of as of a channel text's echo, once per photo per
+  /// first repeater: never that a packet was not passed on.
   void _heardOwnPacket(
-    int channelIndex,
-    ImageChunkHeader header,
-    Uint8List blob,
+    PhotoRepeats sent,
+    int index,
     Uint8List path,
     int width,
   ) {
-    final sent = _sent[(channelIndex, header.imgId)];
-    if (sent == null || path.isEmpty) return;
-    final carOnly = PathHelper.getHops(path, stride: width)
-        .every((hop) => connector.isCarRepeater?.call(hop, width) == true);
-    if (!sent.note(header.index, blob, path, width, carOnly: carOnly)) return;
+    // Repeaters count by their codes, over every repeater in the path, as
+    // for a channel text's copies; one that moves with the user doesn't.
+    final repeaters = {
+      for (final hop in PathHelper.getHops(path, stride: width))
+        if (connector.isCarRepeater?.call(hop, width) != true)
+          PathHelper.hopHex(hop),
+    };
+    sent.note(index, path, width, repeaters: repeaters);
     if (sent.firstThrough(path, width)) {
       connector.onOwnEchoHeard?.call(path, width);
     }
     _showRepeats(sent);
   }
 
-  /// Puts what was heard of [sent] on its chat row and record, once it is
-  /// filed. Writes go one at a time, each with the latest.
+  /// Puts what was heard of [sent] on its chat row and record. Writes go one
+  /// at a time, each with the latest.
   void _showRepeats(PhotoRepeats sent) {
-    if (sent.messageId == null || !_toWrite.add(sent)) return;
+    if (!_toWrite.add(sent)) return;
     _writes = _writes.then((_) async {
       _toWrite.remove(sent);
-      final id = sent.messageId!;
+      final id = sent.messageId;
       await PhotoStore.instance.notePassedOn(id, sent.passedOnCount);
       await connector.recordOwnRepeats(
         id,
@@ -220,88 +267,12 @@ class PhotoMesh {
     }).catchError((Object e) => _log('could not note the repeats: $e'));
   }
 
-  /// Whether packet [index] of photo [imgId] goes out once more: no
-  /// repeater was heard passing it on, though one was heard lately, and
-  /// channel retries aren't off (see [PhotoRepeats.sendAgain]).
-  bool _sendAgain(PhotoRepeats sent, int imgId, int index) {
-    if (connector.channelRetries == 0 ||
-        !connector.repeaterHeardRecently ||
-        !sent.sendAgain(index)) {
-      return false;
-    }
-    _log(
-      'no repeater was heard passing on packet ${index + 1} of '
-      '${sent.packets} of ${_id(imgId)}: sending it again',
-    );
-    return true;
-  }
-
-  /// Observers have answered about photo [key] once. As a channel text
-  /// neither a repeater nor an observer was heard to carry, each data packet
-  /// no repeater was heard passing on and no observer heard goes once more:
-  /// within the channel's retries, counting any sent again already, while
-  /// it still goes out within the receivers' window, and only where
-  /// observers have heard this radio lately ([HeardService.mayResendPhoto]).
-  void _resendUnconfirmed((int, int) key) {
-    final sent = _sent[key];
-    final id = sent?.messageId;
-    final transport = _transport;
-    if (sent == null || id == null || transport == null) return;
-    final retries = connector.channelRetries;
-    final again = [
-      for (final i in sent.unconfirmed(
-        HeardService.instance.photoPacketsHeard(id),
-      ))
-        if (sent.timesAgain(i) < retries) i,
-    ];
-    if (again.isEmpty || !HeardService.instance.mayResendPhoto(id)) return;
-    final end = sent.startedAt.add(kImageReassemblyTtl * 0.75);
-    final now = DateTime.now();
-    final fit = [
-      for (final (k, i) in again.indexed)
-        if (!now.add(sent.gap * (k + 1)).isAfter(end)) i,
-    ];
-    if (fit.isEmpty) return;
-    fit.forEach(sent.sentAgain);
-    _log(
-      'no repeater or observer was heard carrying packets '
-      '${fit.map((i) => i + 1).join(', ')} of ${sent.packets} of '
-      '${_id(key.$2)}: sending them once more',
-    );
-    HeardService.instance.notePhotoResent(id);
-    unawaited(
-      transport.resendBlobs(
-        [for (final i in fit) sent.blobs[i]],
-        channelIndex: key.$1,
-        gap: sent.gap,
-      ),
-    );
-  }
-
-  /// The wait after the last packet of photo [key] is over: what was heard
-  /// stays as it is, and its row stops waiting.
-  void _stopListening((int, int) key) {
-    final sent = _sent.remove(key);
-    if (sent == null) return;
-    _log(
-      'repeaters passed on ${sent.passedOnCount} of ${sent.packets} packets '
-      'of ${_id(key.$2)}; copies heard: ${sent.copies}',
-    );
-    _giveBackIfNotCarried(sent, key.$2);
-    final id = sent.messageId;
-    if (id == null) return;
-    _showRepeats(sent);
-    _writes = _writes.then(
-      (_) => connector.waitForRepeats(id, waiting: false),
-    );
-  }
-
-  /// Where the photo rules apply, a photo no repeater was heard carrying at
-  /// all, not even a car repeater or a packet sent again, gives back its
-  /// time ([photoGapRepeaters]) when a repeater was heard in the last
-  /// minute: this radio hears repeaters, so none carried it. Where observers
-  /// are asked about it, only once their last answer is in, and only if none
-  /// heard it.
+  /// Where the photo rules apply, a photo through repeaters that no repeater
+  /// was heard carrying at all, not even a car repeater or a packet sent
+  /// again, gives back its time ([photoGapRepeaters]) when a repeater was
+  /// heard in the last minute: this radio hears repeaters, so none carried
+  /// it. Where observers are asked about it, only once their last answer is
+  /// in, and only if none heard it.
   void _giveBackIfNotCarried(PhotoRepeats sent, int imgId) {
     final counted = sent.counted;
     if (counted == null ||
@@ -310,8 +281,7 @@ class PhotoMesh {
       return;
     }
     void giveBack() {
-      final id = sent.messageId;
-      if (id != null && (HeardService.instance.heardBy(id)?.isNotEmpty ?? false)) {
+      if (HeardService.instance.heardBy(sent.messageId)?.isNotEmpty ?? false) {
         _log('an observer heard ${_id(imgId)}: its time through repeaters stays');
         return;
       }
@@ -322,12 +292,12 @@ class PhotoMesh {
       unawaited(notePhotoNotCarried(counted.radio, counted.at));
     }
 
-    final asked = sent.observersAskedAt;
-    if (asked == null) {
+    final last = sent.lastSentAt;
+    if (last == null || !HeardService.instance.asksAboutPhoto(sent.messageId)) {
       giveBack();
       return;
     }
-    final wait = asked
+    final wait = last
         .add(
           observerWaitOverride ??
               HeardService.instance.lastAsk + const Duration(seconds: 5),
@@ -363,50 +333,35 @@ class PhotoMesh {
   /// Companion firmware 1.15 (version code 11) added channel datagrams.
   bool get radioSupportsPhotos => (connector.firmwareVerCode ?? 0) >= 11;
 
-  ImageChunkTransport? _ensureTransport() {
+  /// The reassembler for this radio's own sender prefix, made again when the
+  /// radio changes; null while the radio's key is unknown.
+  ImageReassembler? _ensureReassembler() {
     final prefix = senderPrefixFromKey(connector.selfPublicKey);
     if (prefix == null) return null;
-    if (_transport == null || _transportPrefix != prefix) {
-      _transportPrefix = prefix;
-      _transport = ImageChunkTransport(
-        send: _sendFrame,
-        senderPrefix: prefix,
-        reassembler: _reassembler = ImageReassembler(
-          selfPrefix: prefix,
-          onImage: (r) {
-            unawaited(_fileReceived(r));
-            _log(
-              'received from ${_hex4(r.key.senderPrefix)} on channel '
-              '${r.key.channelIndex}: ${r.data.length} bytes, '
-              '${r.chunkCount} chunks'
-              '${r.recoveredWithParity ? ', one lost chunk rebuilt from the repair chunk' : ''}',
-            );
-          },
-          onFailed: (f) {
-            unawaited(_fileIncomplete(f));
-            _log(
-              'incomplete photo from ${_hex4(f.key.senderPrefix)}: '
-              '${f.receivedDataChunks} of ${f.total} data chunks'
-              '${f.hadParity ? ' plus the repair chunk' : ''} (${f.reason.name})',
-            );
-          },
-        ),
+    if (_reassembler == null || _reassemblerPrefix != prefix) {
+      _reassemblerPrefix = prefix;
+      _reassembler = ImageReassembler(
+        selfPrefix: prefix,
+        onImage: (r) {
+          unawaited(_fileReceived(r));
+          _log(
+            'received from ${_hex4(r.key.senderPrefix)} on channel '
+            '${r.key.channelIndex}: ${r.data.length} bytes, '
+            '${r.chunkCount} packets'
+            '${r.recoveredWithParity ? ', one lost packet rebuilt from the repair packet' : ''}',
+          );
+        },
+        onFailed: (f) {
+          unawaited(_fileIncomplete(f));
+          _log(
+            'incomplete photo from ${_hex4(f.key.senderPrefix)}: '
+            '${f.receivedDataChunks} of ${f.total} data packets'
+            '${f.hadParity ? ' plus the repair packet' : ''} (${f.reason.name})',
+          );
+        },
       );
     }
-    return _transport;
-  }
-
-  Future<void> _sendFrame(Uint8List frame) async {
-    final reply = await connector.sendAndAwaitReply(frame);
-    if (reply == null) {
-      throw const PhotoSendException(PhotoSendFailure.noAnswer);
-    }
-    if (reply[0] != respCodeOk) {
-      throw PhotoSendException(
-        PhotoSendFailure.refused,
-        reply.length > 1 ? reply[1] : null,
-      );
-    }
+    return _reassembler;
   }
 
   /// The contact whose public key starts with [prefix], else "Node xxxx".
@@ -504,12 +459,14 @@ class PhotoMesh {
     );
   }
 
-  /// Sends a coded photo as the channel sends its messages, or zero hop, with
+  /// Files a coded photo in the chat as mine, with the sender's preview as
+  /// its picture (what the receivers will see), and hands its packets to the
+  /// chat to send ([MeshCoreConnector.sendChannelPackets]): as the channel
+  /// sends its messages, or zero hop (always on a Nearby only channel), with
   /// the sender's [tag] and [position] if any and a repair packet if
-  /// [repairPacket], and files it in the chat as ours, with the sender's
-  /// preview as its picture (what the receivers will see). Sent through
-  /// repeaters, its row shows Delivered once a repeater was heard passing on
-  /// every packet the receivers need.
+  /// [repairPacket]. Returns once the photo is in the chat; [sending] says
+  /// how its packets go. Sent through repeaters, its row shows Delivered
+  /// once a repeater was heard passing on every packet the receivers need.
   Future<void> sendPhoto(
     Uint8List bitstream,
     int channelIndex, {
@@ -520,181 +477,222 @@ class PhotoMesh {
     bool zeroHop = false,
     bool repairPacket = true,
     Uint8List? previewPng,
-    void Function(ImageSendProgress)? onProgress,
   }) async {
+    final prefix = senderPrefixFromKey(connector.selfPublicKey);
+    final channel = connector.channels
+        .where((c) => c.index == channelIndex)
+        .firstOrNull;
+    if (prefix == null || channel == null || !connector.isConnected) {
+      throw const PhotoSendException(PhotoSendFailure.notConnected);
+    }
     final extras = PhotoExtras(
       tag: tag,
       position: position,
       subjectOnly: subjectOnly,
     );
-    final tagged = extras.sentTag;
-    final set = await send(
-      bitstream,
-      channelIndex,
-      extras: extras,
-      zeroHop: zeroHop,
-      repairPacket: repairPacket,
-      onProgress: onProgress,
+    final goesZeroHop = zeroHop || connector.isNearbyOnlyChannel(channelIndex);
+    final payload = photoPayload(bitstream, extras);
+    final chunks = buildImageChunks(
+      payload: payload,
+      metadata: ImageStreamMetadata(
+        rate: ImageCodecRatePoint.ft8,
+        hasExtras: !extras.isEmpty,
+      ),
+      senderPrefix: prefix,
+      imgId: _ids.next(),
+      parity: repairPacket,
     );
+    final senderName = connector.selfName ?? 'Me';
     final messageId = await connector.ingestPhotoMessage(
       channelIndex: channelIndex,
-      senderName: connector.selfName ?? 'Me',
-      text: _text(set.imgId, tagged),
+      senderName: senderName,
+      text: _text(chunks.imgId, extras.sentTag),
       isOutgoing: true,
       packetHash:
-          'photo:own:${set.imgId}:${DateTime.now().millisecondsSinceEpoch}',
+          'photo:own:${chunks.imgId}:${DateTime.now().millisecondsSinceEpoch}',
+      messageId: _ownRowId(DateTime.now(), senderName, chunks.imgId),
     );
     if (messageId == null) return;
-    final key = (channelIndex, set.imgId);
-    final sent = _sent[key];
-    final channel = connector.channels
-        .where((c) => c.index == channelIndex)
-        .firstOrNull;
-    // As for a channel text: a Nearby only send reaches no observer server
-    // worth asking.
-    final region = channel == null
-        ? null
-        : connector.regionService?.regionOf(channel.idKey);
-    if (channel != null &&
-        !connector.isNearbyOnlyChannel(channelIndex) &&
-        HeardService.instance.trackPhoto(
-          messageId,
-          channel.psk,
-          dataTypeMeshTraxPhoto,
-          set.blobs,
-          region: RegionHelper.isRegionName(region) ? region : null,
-        )) {
-      sent?.observersAskedAt = DateTime.now();
-      if (sent != null) {
-        Timer(
-          observerAnswerOverride ??
-              HeardService.instance.firstAsk + const Duration(seconds: 5),
-          () => _resendUnconfirmed(key),
-        );
-      }
-    }
-    // Before the record, so the row never shows unheard while it waits.
-    if (sent != null) connector.waitForRepeats(messageId, waiting: true);
+    // Before the record, so the row never shows unheard while it goes.
+    connector.waitForRepeats(messageId, waiting: true);
+    _say(messageId, PhotoSendStep.waiting);
     await PhotoStore.instance.save(
       PhotoRecord(
         messageId: messageId,
         bytes: bitstream.length,
-        packets: set.blobs.length,
+        packets: chunks.blobs.length,
         outgoing: true,
-        tag: tagged,
+        tag: extras.sentTag,
         position: position,
-        packetsPassedOn: sent?.passedOnCount,
+        packetsPassedOn: goesZeroHop ? null : 0,
         subjectOnly: subjectOnly,
         subjectBox: subjectBox,
       ),
       bitstream,
       png: previewPng,
     );
-    if (sent != null) {
-      sent.messageId = messageId;
-      _showRepeats(sent);
-      // The wait may have run out while the record was written.
-      if (!_sent.containsKey(key)) {
-        _writes = _writes.then(
-          (_) => connector.waitForRepeats(messageId, waiting: false),
-        );
-      }
-    }
-  }
-
-  /// Sends a coded photo on [channelIndex], one chunk at a time, with its
-  /// [extras] ahead of it and the repair chunk last if [repairPacket]: as a
-  /// flood, the way the radio sends the channel's messages, or zero hop: always
-  /// on a Nearby only channel.
-  ///
-  /// Through repeaters, this radio then listens for them passing each
-  /// packet on, until [MeshCoreConnector.channelRepeatWait] after the last.
-  /// A packet no repeater was heard passing on goes once more, the same
-  /// bytes, when the gap leaves time to hear one ([photoRepeatHeardWithin]).
-  ///
-  /// Where the photo rules apply ([photoRulesApply]), a photo through
-  /// repeaters of more than one packet counts against them once its packets
-  /// are handed over ([notePhotoSent]).
-  Future<ImageChunkSet> send(
-    Uint8List bitstream,
-    int channelIndex, {
-    PhotoExtras extras = const PhotoExtras(),
-    bool zeroHop = false,
-    bool repairPacket = true,
-    void Function(ImageSendProgress)? onProgress,
-  }) async {
-    final transport = _ensureTransport();
-    if (transport == null) {
-      throw const PhotoSendException(PhotoSendFailure.notConnected);
-    }
-    // A Nearby only channel sends every photo zero hop, whatever was asked.
-    final goesZeroHop = zeroHop || connector.isNearbyOnlyChannel(channelIndex);
-    final payload = photoPayload(bitstream, extras);
-    final airtimeMs = connector.estimatePacketAirtimeMs;
     final gap = photoGapFor(
       payload.length,
       zeroHop: goesZeroHop,
       repairPacket: repairPacket,
-      airtimeMs: airtimeMs,
+      airtimeMs: connector.estimatePacketAirtimeMs,
       shared: photoRulesApply(connector.currentFreqHz),
     );
-    final chunks = transport.chunk(
-      payload: payload,
-      metadata: ImageStreamMetadata(
-        rate: ImageCodecRatePoint.ft8,
-        hasExtras: !extras.isEmpty,
+    _going++;
+    unawaited(
+      _send(channel, chunks, messageId, gap, zeroHop: goesZeroHop).whenComplete(
+        () => _going--,
       ),
-      parity: repairPacket,
     );
-    final imgId = chunks.imgId;
-    final key = (channelIndex, imgId);
-    final sent = goesZeroHop
+  }
+
+  /// The id the chat row of photo [imgId] of mine gets: unique as any row's
+  /// id is ([ChannelMessage.messageId]), from the time, the sender and the
+  /// photo. The chat sends its packets under it, and the observer server is
+  /// asked about them by it.
+  static String _ownRowId(DateTime at, String sender, int imgId) =>
+      '${at.millisecondsSinceEpoch}_${sender.hashCode}_photo'
+      '${imgId.toRadixString(16)}';
+
+  /// What photo [messageId] of mine is doing, for its chat row.
+  static void _say(
+    String messageId,
+    PhotoSendStep step, {
+    int packet = 0,
+    int packets = 0,
+    bool repair = false,
+    Object? error,
+  }) {
+    sending.value = {
+      ...sending.value,
+      messageId: (
+        step: step,
+        packet: packet,
+        packets: packets,
+        repair: repair,
+        error: error,
+      ),
+    };
+  }
+
+  /// Hands photo [chunks], filed as [messageId] on [channel], to the chat,
+  /// which sends its packets one at a time on a channel message's terms; a
+  /// packet sent again has its retry byte bumped ([photoPacketAgain]), so
+  /// every repeater passes it on, and goes only while the receivers keep the
+  /// rest ([photoReceiveWindow]). Says on the row what each packet does,
+  /// notes the copies repeaters passed on, and once the chat stops listening
+  /// for them, leaves the row as it is.
+  Future<void> _send(
+    Channel channel,
+    ImageChunkSet chunks,
+    String messageId,
+    Duration gap, {
+    required bool zeroHop,
+  }) async {
+    final packets = chunks.blobs.length;
+    final sent = zeroHop
         ? null
         : PhotoRepeats(
-            blobs: chunks.blobs,
+            packets: packets,
             hasRepair: chunks.hasParity,
-            gap: gap,
+            messageId: messageId,
           );
-    if (sent != null) _sent[key] = sent;
-    final airtime = Duration(milliseconds: airtimeMs(kPhotoPacketAirBytes));
-    final hearsInTime = gap >= photoRepeatHeardWithin(airtime);
-    final sw = Stopwatch()..start();
-    final set = await transport.sendChunks(
-      chunks,
-      channelIndex: channelIndex,
-      gap: gap,
-      zeroHop: goesZeroHop,
-      resend: sent != null && hearsInTime
-          ? (i) => _sendAgain(sent, imgId, i)
-          : null,
-      onProgress: onProgress,
-      onDone: sent == null
-          ? null
-          : () => Timer(
-              MeshCoreConnector.channelRepeatWait,
-              () => _stopListening(key),
-            ),
-    );
-    if (sent != null &&
-        photoRulesApply(connector.currentFreqHz) &&
-        photoGapRepeaters(sent.packets) > Duration.zero) {
-      final counted = (radio: connector.selfPublicKeyHex, at: DateTime.now());
-      await notePhotoSent(counted.radio, counted.at);
-      sent.counted = counted;
+    final sw = Stopwatch();
+    try {
+      await connector.sendChannelPackets(
+        channel: channel,
+        groupId: messageId,
+        dataType: dataTypeMeshTraxPhoto,
+        packets: chunks.blobs,
+        again: photoPacketAgain,
+        same: samePhotoPacket,
+        gap: gap,
+        zeroHop: zeroHop,
+        againWithin: photoReceiveWindow * 0.75,
+        onPacket: (index, step) {
+          if (_disposed) return;
+          final repair = chunks.hasParity && index == packets - 1;
+          switch (step) {
+            case ChannelPacketStep.sending || ChannelPacketStep.again:
+              if (index == 0 && step == ChannelPacketStep.sending) {
+                sw.start();
+                if (sent != null) unawaited(_count(sent));
+              }
+              sent?.lastSentAt = DateTime.now();
+              _say(
+                messageId,
+                step == ChannelPacketStep.sending
+                    ? PhotoSendStep.sending
+                    : PhotoSendStep.again,
+                packet: index + 1,
+                packets: packets,
+                repair: repair,
+              );
+            case ChannelPacketStep.waiting:
+              _say(
+                messageId,
+                PhotoSendStep.observers,
+                packet: index + 1,
+                packets: packets,
+                repair: repair,
+              );
+            case ChannelPacketStep.done:
+              if (index == packets - 1) {
+                sending.value = Map.of(sending.value)..remove(messageId);
+                _log(
+                  'sent ${_id(chunks.imgId)} on channel ${channel.index} as '
+                  '$packets packets ${zeroHop ? 'zero hop' : 'as a flood'}, '
+                  '${gap.inMilliseconds} ms apart or more, in '
+                  '${sw.elapsedMilliseconds} ms',
+                );
+              }
+          }
+        },
+        onCopy: sent == null
+            ? null
+            : (index, path, width) => _heardOwnPacket(sent, index, path, width),
+      );
+    } on ChannelPacketsFailed catch (why) {
+      _log('could not send ${_id(chunks.imgId)}: $why');
+      _say(messageId, PhotoSendStep.failed, error: PhotoSendException.from(why));
+      await connector.failOwnSend(messageId);
+      connector.waitForRepeats(messageId, waiting: false);
+      return;
+    }
+    if (_disposed) return;
+    if (sent == null) {
+      connector.waitForRepeats(messageId, waiting: false);
+      return;
     }
     _log(
-      'sent ${bitstream.length} bytes on channel $channelIndex as '
-      '${set.blobs.length} packets '
-      '${goesZeroHop ? 'zero hop' : 'as a flood'}, '
-      '${gap.inMilliseconds} ms apart, in ${sw.elapsedMilliseconds} ms',
+      'repeaters passed on ${sent.passedOnCount} of $packets packets of '
+      '${_id(chunks.imgId)}; copies heard: ${sent.copies}',
     );
-    return set;
+    _giveBackIfNotCarried(sent, chunks.imgId);
+    _showRepeats(sent);
+    _writes = _writes.then(
+      (_) => connector.waitForRepeats(messageId, waiting: false),
+    );
+  }
+
+  /// Where the photo rules apply ([photoRulesApply]), a photo through
+  /// repeaters of more than one packet counts against them from its first
+  /// packet ([notePhotoSent]).
+  Future<void> _count(PhotoRepeats sent) async {
+    if (!photoRulesApply(connector.currentFreqHz) ||
+        photoGapRepeaters(sent.packets) <= Duration.zero) {
+      return;
+    }
+    final counted = (radio: connector.selfPublicKeyHex, at: DateTime.now());
+    sent.counted = counted;
+    await notePhotoSent(counted.radio, counted.at, packets: sent.packets);
   }
 
   void _log(String line) => appLogger.info(line, tag: 'Photos');
 
   void dispose() {
-    _frames.cancel();
+    _disposed = true;
+    _datagrams.cancel();
     _sweep.cancel();
   }
 }

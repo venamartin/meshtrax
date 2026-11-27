@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -15,45 +14,48 @@ const ImageStreamMetadata ft8Meta = ImageStreamMetadata(
 );
 
 const int senderA = 0x1234;
-const int senderB = 0xBEEF;
 
-/// A copy of [blob] with the byte at [offset] flipped by [mask].
-Uint8List flipByte(Uint8List blob, int offset, {int mask = 0x01}) {
-  final copy = Uint8List.fromList(blob);
-  copy[offset] ^= mask;
-  return copy;
-}
+ImageChunkSet photo(int length, {int imgId = 11, bool parity = true}) =>
+    buildImageChunks(
+      payload: payloadOf(length),
+      metadata: ft8Meta,
+      senderPrefix: senderA,
+      imgId: imgId,
+      parity: parity,
+    );
 
-/// Feeds [blobs] to [r] in the given order and returns the completed image, if
-/// any completed.
-ImageReassemblyResult? feed(
-  ImageReassembler r,
+/// Adds [blobs], packets of [dataType], to one [ImagePackets] in the given
+/// order, and returns it with what each add made of its packet.
+(ImagePackets, List<ImagePacketAdded>) collect(
   List<Uint8List> blobs, {
-  int channelIndex = 0,
-  DateTime? now,
+  int dataType = dataTypeMeshTraxPhoto,
 }) {
-  ImageReassemblyResult? result;
+  ImagePackets? packets;
+  final added = <ImagePacketAdded>[];
   for (final blob in blobs) {
-    final outcome = r.addChunk(blob, channelIndex: channelIndex, now: now);
-    result ??= outcome.result;
+    final header = parseImageChunkHeader(blob, dataType: dataType)!;
+    packets ??= ImagePackets(total: header.total, dataType: dataType);
+    added.add(
+      packets.add(header, Uint8List.sublistView(blob, header.bodyOffset)),
+    );
   }
-  return result;
+  return (packets!, added);
 }
+
+/// The photo [blobs] make, given in this order.
+ImageRebuilt? rebuild(List<Uint8List> blobs) => collect(blobs).$1.rebuild();
 
 void main() {
   group('constants', () {
     test('every blob fits the binding transport limit', () {
       expect(kImageChunkBlobBytes, 157);
-      expect(kImageChunkHeaderBytes, 4);
-      expect(kImageChunkBodyBytes, 152);
-      // Chunk 0 spends 1 byte on metadata and nothing else: the CRC-16 that
-      // briefly lived here was removed once it turned out the LoRa PHY CRC and
-      // MeshCore's per-packet HMAC already cover a delivered chunk.
-      expect(kImageChunkMetadataBytes, 1);
-      expect(kImageChunkZeroMetadataBytes, 1);
-      expect(kImageChunkFirstCapacity, 151);
-      expect(kImageChunkCapacity, 152);
-      expect(kImageMaxPayloadBytes, 151 + 14 * 152);
+      expect(kImageChunkHeaderBytes, 5);
+      expect(kImageChunkBodyBytes, 151);
+      expect(kImageChunkFirstCapacity, 150);
+      expect(kImageChunkCapacity, 151);
+      expect(kImageMaxPayloadBytes, 150 + 14 * 151);
+      expect(imageChunkHeaderBytes(dataTypeMeshTraxPhotoV1), 4);
+      expect(imageChunkBodyBytes(dataTypeMeshTraxPhotoV1), 152);
     });
 
     test('a full photo packet fits the raw log with a 3-repeater path', () {
@@ -63,15 +65,21 @@ void main() {
       expect(kPhotoPacketAirBytes + 3 * 2, lessThanOrEqualTo(173));
     });
 
-    test('ft8 sizes land on the expected chunk counts', () {
-      // Chunk 0 carries 151 image bytes, every later chunk 152.
-      expect(imageDataChunkCount(151), 1);
-      expect(imageDataChunkCount(152), 2);
-      // ft8: the smallest measured photo takes 2 data chunks, the mean 3, the
-      // busiest 6 -- plus the repair chunk on air.
+    test('ft8 sizes land on the expected packet counts', () {
+      // Packet 0 carries 150 image bytes, every later packet 151.
+      expect(imageDataChunkCount(150), 1);
+      expect(imageDataChunkCount(151), 2);
       expect(imageDataChunkCount(ImageCodecRateStats.ft8.minBytes), 2);
       expect(imageDataChunkCount(ImageCodecRateStats.ft8.meanBytes), 3);
       expect(imageDataChunkCount(ImageCodecRateStats.ft8.maxBytes), 6);
+    });
+
+    test('photos go as 0172, and 1.12.0\'s 0170 are still photos', () {
+      expect(dataTypeMeshTraxPhoto, 0x0172);
+      expect(isMeshTraxPhotoDataType(0x0172), isTrue);
+      expect(isMeshTraxPhotoDataType(0x0170), isTrue);
+      expect(isMeshTraxPhotoDataType(0x0171), isFalse, reason: 'TRAX');
+      expect(isMeshTraxPhotoDataType(0x0173), isFalse);
     });
   });
 
@@ -94,13 +102,11 @@ void main() {
     });
 
     test('an unknown rate or format version is refused, not guessed at', () {
-      // The byte is extras(1) | version(3) | resolution(2) | rate(2).
-      // Resolution is a closed 2-bit field: all four codes are legal. Only
+      // The byte is extras(1) | version(3) | resolution(2) | rate(2). Only
       // ft8 (2) decodes; rate codes 0, 1 and 3 are refused.
       expect(ImageStreamMetadata.decode(0x00), isNull);
       expect(ImageStreamMetadata.decode(0x01), isNull);
-      expect(ImageStreamMetadata.decode(0x03), isNull); // spare
-      // Version 0 with the extras bit: a photo with extras.
+      expect(ImageStreamMetadata.decode(0x03), isNull);
       final legal = ImageStreamMetadata.decode(0x82);
       expect(legal, isNotNull);
       expect(legal!.rate, ImageCodecRatePoint.ft8);
@@ -111,8 +117,9 @@ void main() {
     });
   });
 
-  group('chunking', () {
-    test('one, two and three chunk payloads produce the right blob shapes', () {
+  group('a photo into packets', () {
+    test('one, two and three packet payloads produce the right blob shapes',
+        () {
       final cases = <int, int>{
         1: 1,
         kImageChunkFirstCapacity: 1,
@@ -121,14 +128,9 @@ void main() {
         kImageChunkFirstCapacity + kImageChunkCapacity + 1: 3,
       };
       cases.forEach((length, expectedChunks) {
-        final set = buildImageChunks(
-          payload: payloadOf(length),
-          metadata: ft8Meta,
-          senderPrefix: senderA,
-          imgId: 3,
-        );
+        final set = photo(length, imgId: 3);
         expect(set.dataChunkCount, expectedChunks, reason: 'len $length');
-        expect(set.blobs.length, expectedChunks + 1); // + parity
+        expect(set.blobs.length, expectedChunks + 1); // + repair
         for (final blob in set.blobs) {
           expect(blob.length, lessThanOrEqualTo(kImageChunkBlobBytes));
         }
@@ -150,1261 +152,229 @@ void main() {
         expect(blob[2], 0x5A);
         expect((blob[3] >> 4) & 0x0F, i);
         expect(blob[3] & 0x0F, 3);
+        expect(blob[4], 0, reason: 'the retry byte: a first send, no flags');
       }
       expect(parseImageChunkHeader(set.blobs.last)!.isParity, isTrue);
-      expect(set.blobs[4 - 1].length, greaterThan(kImageChunkHeaderBytes));
-      // Chunk 0 carries the metadata byte first.
+      // Packet 0's body opens with the metadata byte.
       expect(set.blobs[0][kImageChunkHeaderBytes], ft8Meta.encode());
     });
 
     test('rejects a payload larger than the framing can address', () {
-      expect(
-        () => buildImageChunks(
-          payload: payloadOf(kImageMaxPayloadBytes + 1),
-          metadata: ft8Meta,
-          senderPrefix: senderA,
-          imgId: 1,
-        ),
-        throwsArgumentError,
-      );
+      expect(() => photo(kImageMaxPayloadBytes + 1), throwsArgumentError);
     });
   });
 
-  group('round trip', () {
-    for (final length in <int>[
-      100, // 1 chunk
-      300, // 2 chunks
-      460, // 3 chunks
-    ]) {
-      test('$length bytes round-trips in order', () {
-        final payload = payloadOf(length);
-        final set = buildImageChunks(
-          payload: payload,
-          metadata: ft8Meta,
-          senderPrefix: senderA,
-          imgId: 11,
-        );
-        final r = ImageReassembler(selfPrefix: senderB);
-        final result = feed(r, set.blobs);
-        expect(result, isNotNull);
-        expect(result!.data, payload);
-        expect(result.metadata, ft8Meta);
-        expect(result.recoveredWithParity, isFalse);
-        expect(result.chunkCount, set.dataChunkCount);
-        expect(r.pendingCount, 0, reason: 'trailing parity must not linger');
-      });
-    }
-
-    test('completion callback fires exactly once', () {
-      final payload = payloadOf(300);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 4,
-      );
-      final results = <ImageReassemblyResult>[];
-      final r = ImageReassembler(onImage: results.add);
-      feed(r, set.blobs);
-      expect(results.length, 1);
-      expect(results.single.data, payload);
+  group('a packet sent again', () {
+    test('counts its sends before in the retry byte, its flags kept', () {
+      final blob = photo(300).blobs[1];
+      final again = photoPacketAgain(blob, 2);
+      expect(again[kImageRetryByteOffset], 2);
+      expect(parseImageChunkHeader(again)!.retry, 2);
+      expect(blob[kImageRetryByteOffset], 0, reason: 'the first is untouched');
+      final flagged = Uint8List.fromList(blob)..[kImageRetryByteOffset] = 0x50;
+      expect(photoPacketAgain(flagged, 3)[kImageRetryByteOffset], 0x53);
     });
 
-    test('out-of-order arrival still reassembles', () {
-      final payload = payloadOf(450, seed: 3);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 9,
-      );
-      // All three data chunks arrive out of order, parity last (so this
-      // exercises reordering, not parity recovery).
-      final shuffled = <Uint8List>[
-        set.blobs[2],
+    test('is the same packet to a receiver, and nothing else is', () {
+      final set = photo(300);
+      final blob = set.blobs[0];
+      expect(samePhotoPacket(photoPacketAgain(blob, 1), blob), isTrue);
+      expect(samePhotoPacket(photoPacketAgain(blob, 1), photoPacketAgain(blob, 3)),
+          isTrue);
+      expect(samePhotoPacket(set.blobs[1], blob), isFalse);
+      final changed = Uint8List.fromList(blob)..[blob.length - 1] ^= 1;
+      expect(samePhotoPacket(changed, blob), isFalse);
+      final flagged = Uint8List.fromList(blob)..[kImageRetryByteOffset] = 0x10;
+      expect(samePhotoPacket(flagged, blob), isFalse, reason: 'flags differ');
+    });
+
+    test('goes into the photo as the packet it repeats', () {
+      final set = photo(440);
+      final (packets, added) = collect([
         set.blobs[0],
-        set.blobs[1],
-        set.blobs[3], // parity
-      ];
-      final r = ImageReassembler();
-      final result = feed(r, shuffled);
-      expect(result, isNotNull);
-      expect(result!.data, payload);
-      expect(result.recoveredWithParity, isFalse);
-    });
-
-    test('duplicate chunks are ignored', () {
-      final payload = payloadOf(450); // 3 data chunks + parity
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 2,
-      );
-      final r = ImageReassembler();
-      expect(r.addChunk(set.blobs[0]).status, ImageChunkStatus.accepted);
-      expect(r.addChunk(set.blobs[0]).status, ImageChunkStatus.duplicate);
-      expect(r.addChunk(set.blobs[2]).status, ImageChunkStatus.accepted);
-      expect(r.addChunk(set.blobs[2]).status, ImageChunkStatus.duplicate);
-      final done = r.addChunk(set.blobs[1]);
-      expect(done.status, ImageChunkStatus.completed);
-      expect(done.result!.data, payload);
-      expect(done.result!.recoveredWithParity, isFalse);
-      // Trailing parity and late duplicates are ignored, not restarted.
-      expect(r.addChunk(set.blobs[3]).status, ImageChunkStatus.duplicate);
-      expect(r.addChunk(set.blobs[1]).status, ImageChunkStatus.duplicate);
-      expect(r.pendingCount, 0);
-    });
-
-    test('a duplicate parity chunk is ignored', () {
-      final set = buildImageChunks(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 15,
-      );
-      final r = ImageReassembler();
-      expect(r.addChunk(set.blobs[3]).status, ImageChunkStatus.accepted);
-      expect(r.addChunk(set.blobs[3]).status, ImageChunkStatus.duplicate);
-      expect(r.pendingCount, 1);
-    });
-
-    test('parity completes an image that is one chunk short', () {
-      final payload = payloadOf(300); // 2 data chunks
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 16,
-      );
-      final r = ImageReassembler();
-      expect(r.addChunk(set.blobs[0]).status, ImageChunkStatus.accepted);
-      final done = r.addChunk(set.blobs[2]); // parity rebuilds chunk 1
-      expect(done.status, ImageChunkStatus.completed);
-      expect(done.result!.data, payload);
-      expect(done.result!.recoveredWithParity, isTrue);
-    });
-
-    test('two senders interleaved on one channel do not mix', () {
-      final a = payloadOf(300, seed: 1);
-      final b = payloadOf(300, seed: 2);
-      final setA = buildImageChunks(
-        payload: a,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 5,
-      );
-      final setB = buildImageChunks(
-        payload: b,
-        metadata: ft8Meta,
-        senderPrefix: senderB,
-        imgId: 5, // same img_id on purpose
-      );
-      final got = <int, Uint8List>{};
-      final r = ImageReassembler(
-        onImage: (res) => got[res.key.senderPrefix] = res.data,
-      );
-      feed(r, <Uint8List>[
-        setA.blobs[0],
-        setB.blobs[1],
-        setA.blobs[1],
-        setB.blobs[0],
+        photoPacketAgain(set.blobs[0], 1),
+        photoPacketAgain(set.blobs[1], 2),
+        set.blobs[2],
       ]);
-      expect(got[senderA], a);
-      expect(got[senderB], b);
-    });
-
-    test('the same img_id on different channels stays separate', () {
-      final payload = payloadOf(300);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 8,
-      );
-      final r = ImageReassembler();
-      expect(
-        r.addChunk(set.blobs[0], channelIndex: 0).status,
-        ImageChunkStatus.accepted,
-      );
-      expect(
-        r.addChunk(set.blobs[1], channelIndex: 1).status,
-        ImageChunkStatus.accepted,
-      );
-      expect(r.pendingCount, 2);
-    });
-
-    test('clearChannel stops a reused slot finishing with old bytes', () {
-      final oldSet = buildImageChunks(
-        payload: payloadOf(300, seed: 1),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 9,
-      );
-      final newPayload = payloadOf(300, seed: 2);
-      final newSet = buildImageChunks(
-        payload: newPayload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 9,
-      );
-      expect(newSet.dataChunkCount, greaterThanOrEqualTo(2));
-      final failures = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(onFailed: failures.add);
-      r.addChunk(oldSet.blobs[0], channelIndex: 3);
-      r.addChunk(oldSet.blobs[0], channelIndex: 4);
-
-      r.clearChannel(3);
-      expect(failures.single.key.channelIndex, 3);
-      expect(
-        failures.single.reason,
-        ImageReassemblyFailureReason.channelChanged,
-      );
-      expect(r.pendingKeys.single.channelIndex, 4);
-
-      // Without the clear, these would complete with the old chunk 0.
-      final dataBlobs = newSet.blobs.sublist(0, newSet.dataChunkCount);
-      expect(feed(r, dataBlobs.sublist(1), channelIndex: 3), isNull);
-      expect(feed(r, [dataBlobs[0]], channelIndex: 3)!.data, newPayload);
+      expect(added, [
+        ImagePacketAdded.accepted,
+        ImagePacketAdded.duplicate,
+        ImagePacketAdded.accepted,
+        ImagePacketAdded.accepted,
+      ]);
+      expect(packets.rebuild()!.data, payloadOf(440));
     });
   });
 
-  group('parity recovery', () {
-    test('recovers any single lost data chunk (2 and 3 chunk images)', () {
-      for (final length in <int>[300, 460]) {
-        final payload = payloadOf(length, seed: length);
-        final set = buildImageChunks(
-          payload: payload,
-          metadata: ft8Meta,
-          senderPrefix: senderA,
-          imgId: 6,
-        );
-        for (var lost = 0; lost < set.dataChunkCount; lost++) {
-          final blobs = <Uint8List>[
-            for (var i = 0; i < set.blobs.length; i++)
-              if (i != lost) set.blobs[i],
-          ];
-          final r = ImageReassembler();
-          final result = feed(r, blobs);
-          expect(result, isNotNull, reason: 'len $length lost $lost');
-          expect(result!.data, payload, reason: 'len $length lost $lost');
-          expect(result.metadata, ft8Meta);
-          expect(result.recoveredWithParity, isTrue);
-        }
-      }
+  group('reading a packet\'s header', () {
+    test('another data type is no photo packet', () {
+      expect(parseImageChunkHeader(photo(100).blobs[0], dataType: 0x0171),
+          isNull);
     });
 
-    test('recovers the short final chunk (length is carried by parity)', () {
-      // 158 + 1 => final chunk is a single byte long.
-      final payload = payloadOf(kImageChunkFirstCapacity + 1);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 12,
-      );
-      expect(set.dataChunkCount, 2);
-      final r = ImageReassembler();
-      final result = feed(r, <Uint8List>[set.blobs[0], set.blobs[2]]);
-      expect(result, isNotNull);
-      expect(result!.data, payload);
-      expect(result.recoveredWithParity, isTrue);
+    test('malformed blobs read as null', () {
+      expect(parseImageChunkHeader(Uint8List(4)), isNull, reason: 'short');
+      expect(parseImageChunkHeader(Uint8List(kImageChunkBlobBytes + 1)),
+          isNull, reason: 'long');
+      final zeroTotal = Uint8List.fromList(photo(100).blobs[0])..[3] = 0x00;
+      expect(parseImageChunkHeader(zeroTotal), isNull);
+      final pastTotal = Uint8List.fromList(photo(100).blobs[0])..[3] = 0x31;
+      expect(parseImageChunkHeader(pastTotal), isNull);
     });
 
-    test('total=1 with parity recovers the only data chunk', () {
-      final payload = payloadOf(100);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 1,
-      );
-      expect(set.dataChunkCount, 1);
-      expect(set.blobs.length, 2);
-      final r = ImageReassembler();
-      final result = feed(r, <Uint8List>[set.blobs[1]]); // parity only
-      expect(result, isNotNull);
-      expect(result!.data, payload);
-      expect(result.metadata, ft8Meta);
-      expect(result.recoveredWithParity, isTrue);
-    });
-
-    test('losing two chunks fails and never yields a wrong image', () {
-      final payload = payloadOf(450);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 7,
-      );
-      final r = ImageReassembler();
-      // Deliver only chunk 1 and parity: two data chunks are missing.
-      final result = feed(r, <Uint8List>[set.blobs[1], set.blobs[3]]);
-      expect(result, isNull);
-      expect(r.pendingCount, 1);
-    });
-
-    test('parity is optional', () {
-      final payload = payloadOf(300);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 3,
-        parity: false,
-      );
-      expect(set.hasParity, isFalse);
-      expect(set.blobs.length, 2);
-      final r = ImageReassembler();
-      expect(feed(r, set.blobs)!.data, payload);
-    });
-  });
-
-  group('TTL and eviction', () {
-    test('a stalled image expires and is reported as failed', () {
-      final set = buildImageChunks(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 21,
-      );
-      final failures = <ImageReassemblyFailure>[];
-      final start = DateTime(2026, 1, 1, 12);
-      final r = ImageReassembler(
-        ttl: const Duration(seconds: 60),
-        onFailed: failures.add,
-      );
-      r.addChunk(set.blobs[0], now: start);
-      r.addChunk(set.blobs[1], now: start.add(const Duration(seconds: 30)));
-      expect(r.pendingCount, 1);
-
-      expect(
-        r.evictExpired(now: start.add(const Duration(seconds: 59))),
-        isEmpty,
-      );
-      expect(r.pendingCount, 1);
-
-      final expired = r.evictExpired(
-        now: start.add(const Duration(minutes: 2)),
-      );
-      expect(expired.length, 1);
-      expect(expired.single.total, 3);
-      expect(expired.single.receivedDataChunks, 2);
-      expect(expired.single.hadParity, isFalse);
-      expect(expired.single.missingChunks, 1);
-      expect(failures.length, 1);
-      expect(r.pendingCount, 0);
-    });
-
-    test('addChunk sweeps expired streams', () {
-      final setOld = buildImageChunks(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 30,
-      );
-      final setNew = buildImageChunks(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        senderPrefix: senderB,
-        imgId: 31,
-      );
-      final failures = <ImageReassemblyFailure>[];
-      final start = DateTime(2026, 1, 1);
-      final r = ImageReassembler(onFailed: failures.add);
-      r.addChunk(setOld.blobs[0], now: start);
-      r.addChunk(setNew.blobs[0], now: start.add(const Duration(minutes: 5)));
-      expect(failures.length, 1);
-      expect(failures.single.key.imgId, 30);
-      expect(r.pendingCount, 1);
-    });
-
-    test('an unrelated chunk after expiry does not resurrect the old data', () {
-      final set = buildImageChunks(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 40,
-      );
-      final start = DateTime(2026, 5, 5);
-      final r = ImageReassembler();
-      r.addChunk(set.blobs[0], now: start);
-      final late = r.addChunk(
-        set.blobs[1],
-        now: start.add(const Duration(minutes: 2)),
-      );
-      // Chunk 0 expired, so chunk 1 alone cannot complete anything.
-      expect(late.status, ImageChunkStatus.accepted);
-      expect(late.result, isNull);
-    });
-
-    test('too many concurrent streams evicts the oldest', () {
-      final start = DateTime(2026, 2, 2);
-      final failures = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(
-        maxConcurrentStreams: 2,
-        onFailed: failures.add,
-      );
-      for (var i = 0; i < 3; i++) {
-        final set = buildImageChunks(
-          payload: payloadOf(300),
-          metadata: ft8Meta,
-          senderPrefix: senderA,
-          imgId: 50 + i,
-        );
-        r.addChunk(set.blobs[0], now: start.add(Duration(seconds: i)));
-      }
-      expect(r.pendingCount, 2);
-      expect(failures.length, 1);
-      expect(failures.single.key.imgId, 50);
-    });
-  });
-
-  group('boundary cases', () {
-    test('empty payload round-trips as one chunk', () {
-      final set = buildImageChunks(
-        payload: Uint8List(0),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 0,
-      );
-      expect(set.dataChunkCount, 1);
-      expect(
-        set.blobs[0].length,
-        kImageChunkHeaderBytes + kImageChunkZeroMetadataBytes,
-      );
-      final r = ImageReassembler();
-      final result = feed(r, set.blobs);
-      expect(result, isNotNull);
-      expect(result!.data, isEmpty);
-      expect(result.metadata, ft8Meta);
-    });
-
-    test('empty payload recovers from parity alone', () {
-      final set = buildImageChunks(
-        payload: Uint8List(0),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 0,
-      );
-      final r = ImageReassembler();
-      final result = feed(r, <Uint8List>[set.blobs[1]]);
-      expect(result, isNotNull);
-      expect(result!.data, isEmpty);
-    });
-
-    test('maximum addressable payload round-trips', () {
-      final payload = payloadOf(kImageMaxPayloadBytes);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 255,
-      );
-      expect(set.dataChunkCount, kImageMaxDataChunks);
-      expect(set.blobs.length, kImageMaxDataChunks + 1);
-      for (final blob in set.blobs) {
-        expect(blob.length, lessThanOrEqualTo(kImageChunkBlobBytes));
-      }
-      final r = ImageReassembler();
-      expect(feed(r, set.blobs.reversed.toList())!.data, payload);
-    });
-
-    test('maximum payload still recovers a single loss', () {
-      final payload = payloadOf(kImageMaxPayloadBytes, seed: 5);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 254,
-      );
-      final blobs = <Uint8List>[
-        for (var i = 0; i < set.blobs.length; i++)
-          if (i != kImageMaxDataChunks - 1) set.blobs[i],
-      ];
-      final r = ImageReassembler();
-      final result = feed(r, blobs);
-      expect(result!.data, payload);
-      expect(result.recoveredWithParity, isTrue);
-    });
-
-    test('img_id wraps around 255 -> 0', () {
-      final alloc = ImageIdAllocator(seed: 254);
-      expect(alloc.next(), 254);
-      expect(alloc.next(), 255);
-      expect(alloc.next(), 0);
-      expect(alloc.next(), 1);
-    });
-
-    test('img_id wraparound reusing a key restarts the stream', () {
-      final first = buildImageChunks(
-        payload: payloadOf(450, seed: 1),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 77,
-      );
-      final second = payloadOf(300, seed: 2);
-      final secondSet = buildImageChunks(
-        payload: second,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 77, // wrapped back onto the same id
-      );
-      final r = ImageReassembler();
-      // Partially deliver the first image (3 data chunks), then the second
-      // image (2 data chunks) arrives under the same key.
-      expect(r.addChunk(first.blobs[0]).status, ImageChunkStatus.accepted);
-      expect(
-        r.addChunk(secondSet.blobs[0]).status,
-        ImageChunkStatus.conflicting,
-      );
-      final done = r.addChunk(secondSet.blobs[1]);
-      expect(done.status, ImageChunkStatus.completed);
-      expect(done.result!.data, second);
-    });
-
-    test('chunks bearing our own prefix are dropped as loopback', () {
-      final set = buildImageChunks(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 1,
-      );
-      final r = ImageReassembler(selfPrefix: senderA);
-      expect(r.addChunk(set.blobs[0]).status, ImageChunkStatus.fromSelf);
-      expect(r.pendingCount, 0);
-    });
-
-    test('malformed blobs are rejected, not stored', () {
-      final r = ImageReassembler();
-      expect(
-        r.addChunk(Uint8List.fromList(<int>[1, 2, 3])).status,
-        ImageChunkStatus.malformed,
-      );
-      // total == 0 is illegal.
-      expect(
-        r.addChunk(Uint8List.fromList(<int>[0, 1, 2, 0x00, 9])).status,
-        ImageChunkStatus.malformed,
-      );
-      // index > total is illegal.
-      expect(
-        r.addChunk(Uint8List.fromList(<int>[0, 1, 2, 0x32, 9])).status,
-        ImageChunkStatus.malformed,
-      );
-      // Over-long blob cannot have come from this framing.
-      expect(
-        r.addChunk(Uint8List(kImageChunkBlobBytes + 1)).status,
-        ImageChunkStatus.malformed,
-      );
-      expect(r.pendingCount, 0);
+    test('1.12.0\'s packets have no retry byte: the body starts at 4', () {
+      final v1 = Uint8List.fromList([0x12, 0x34, 9, 0x01, 0x82, 1, 2, 3]);
+      final header = parseImageChunkHeader(v1, dataType: dataTypeMeshTraxPhotoV1)!;
+      expect(header.retry, 0);
+      expect(header.bodyOffset, 4);
+      final (packets, _) = collect([v1], dataType: dataTypeMeshTraxPhotoV1);
+      final photo = packets.rebuild()!;
+      expect(photo.metadata, const ImageStreamMetadata(
+        rate: ImageCodecRatePoint.ft8,
+        hasExtras: true,
+      ));
+      expect(photo.data, [1, 2, 3]);
     });
 
     test('senderPrefixFromKey needs two bytes', () {
       expect(senderPrefixFromKey(null), isNull);
-      expect(senderPrefixFromKey(<int>[0x12]), isNull);
-      expect(senderPrefixFromKey(<int>[0x12, 0x34, 0x56]), 0x1234);
+      expect(senderPrefixFromKey([0x12]), isNull);
+      expect(senderPrefixFromKey([0x12, 0x34, 0x56]), 0x1234);
     });
   });
 
-  group('protocol glue', () {
-    test('CMD_SEND_CHANNEL_DATA flood frame matches the wire spec', () {
-      final frame = buildSendChannelDataFrame(
-        channelIndex: 0,
-        dataType: dataTypeMeshTraxPhoto,
-        payload: Uint8List.fromList(<int>[0xAA, 0xBB]),
-      );
-      expect(frame, <int>[0x3E, 0x00, 0xFF, 0x70, 0x01, 0xAA, 0xBB]);
-    });
+  group('packets into a photo', () {
+    for (final length in <int>[100, 300, 440]) {
+      test('$length bytes round-trip in order', () {
+        final set = photo(length);
+        final photoBack = rebuild(set.blobs.sublist(0, set.dataChunkCount));
+        expect(photoBack!.data, payloadOf(length));
+        expect(photoBack.metadata, ft8Meta);
+        expect(photoBack.recoveredWithParity, isFalse);
+        expect(photoBack.chunkCount, set.dataChunkCount);
+      });
+    }
 
-    test('a direct-path frame inserts the path bytes before the data type', () {
-      final frame = buildSendChannelDataFrame(
-        channelIndex: 2,
-        dataType: dataTypeMeshTraxPhoto,
-        payload: Uint8List.fromList(<int>[0x01]),
-        pathLen: 0x02,
-        path: Uint8List.fromList(<int>[0x11, 0x22]),
-      );
-      expect(frame, <int>[0x3E, 0x02, 0x02, 0x11, 0x22, 0x70, 0x01, 0x01]);
-    });
-
-    test('RESP_CODE_CHANNEL_DATA_RECV parses, snr is signed', () {
-      final frame = Uint8List.fromList(<int>[
-        0x1B,
-        0xF8,
-        0,
-        0,
-        3,
-        0xFF,
-        0x70,
-        0x01,
-        2,
-        0x42,
-        0x43,
-      ]);
-      final parsed = parseChannelDataFrame(frame)!;
-      expect(parsed.snrRaw, -8);
-      expect(parsed.snrDb, -2.0);
-      expect(parsed.channelIndex, 3);
-      expect(parsed.arrivedByFlood, isFalse);
-      expect(parsed.hopCount, isNull);
-      expect(parsed.dataType, dataTypeMeshTraxPhoto);
-      expect(parsed.payload, <int>[0x42, 0x43]);
-    });
-
-    test('a flooded frame exposes hop count and hash width', () {
-      final frame = Uint8List.fromList(<int>[
-        0x1B,
-        0x04,
-        0,
-        0,
-        0,
-        0x43,
-        0x1C,
-        0xAE,
-        0,
-      ]);
-      final parsed = parseChannelDataFrame(frame)!;
-      expect(parsed.arrivedByFlood, isTrue);
-      expect(parsed.hopCount, 3);
-      expect(parsed.pathHashWidth, 2);
-      expect(parsed.payload, isEmpty);
-    });
-
-    test('truncated or foreign frames parse as null', () {
-      expect(parseChannelDataFrame(Uint8List(4)), isNull);
+    test('out-of-order arrival still rebuilds', () {
+      final set = photo(450);
       expect(
-        parseChannelDataFrame(
-          Uint8List.fromList(<int>[0x1B, 0, 0, 0, 0, 0xFF, 0x1C, 0xAE, 5, 1]),
-        ),
-        isNull,
-      );
-      expect(
-        parseChannelDataFrame(
-          Uint8List.fromList(<int>[0x10, 0, 0, 0, 0, 0xFF, 0x1C, 0xAE, 0]),
-        ),
-        isNull,
+        rebuild([set.blobs[2], set.blobs[0], set.blobs[1]])!.data,
+        payloadOf(450),
       );
     });
 
-    test(
-      'transport sends chunks strictly sequentially and reassembles',
-      () async {
-        final sent = <Uint8List>[];
-        var inFlight = 0;
-        var maxInFlight = 0;
-        final received = <ImageReassemblyResult>[];
-        final rxWithCallback = ImageReassembler(
-          selfPrefix: senderB,
-          onImage: received.add,
-        );
-
-        final tx = ImageChunkTransport(
-          senderPrefix: senderA,
-          reassembler: rxWithCallback,
-          idAllocator: ImageIdAllocator(seed: 60),
-          send: (frame) async {
-            // CMD_SEND_CHANNEL_DATA, channel 1, flood (path length 0xFF, no
-            // path bytes), MeshTrax's data type, then the chunk.
-            expect(frame.sublist(0, 5), <int>[0x3E, 1, 0xFF, 0x70, 0x01]);
-            inFlight++;
-            maxInFlight = maxInFlight > inFlight ? maxInFlight : inFlight;
-            await Future<void>.delayed(const Duration(milliseconds: 1));
-            sent.add(frame.sublist(5));
-            inFlight--;
-          },
-        );
-
-        final payload = payloadOf(450, seed: 9);
-        final set = await tx.sendImage(
-          payload: payload,
-          metadata: ft8Meta,
-          channelIndex: 1,
-        );
-        expect(set.imgId, 60);
-        expect(sent.length, 4);
-        expect(maxInFlight, 1);
-
-        // Loop the blobs back through the receive path as real frames, sent
-        // with MeshTrax's photo type.
-        for (final blob in sent) {
-          final frame = BytesBuilder()
-            ..add(<int>[0x1B, 0x10, 0, 0, 1, 0xFF, 0x70, 0x01, blob.length])
-            ..add(blob);
-          tx.handleFrame(frame.toBytes());
-        }
-        expect(received.length, 1);
-        expect(received.single.data, payload);
-        expect(received.single.key.channelIndex, 1);
-      },
-    );
-
-    test('handleFrame ignores another app\'s photo data type', () {
-      final rx = ImageReassembler(selfPrefix: senderB);
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: rx,
-        send: (_) async {},
-      );
-      final set = buildImageChunks(
-        payload: payloadOf(120),
+    test('a copy is a duplicate, other bytes under its number conflict', () {
+      final set = photo(450);
+      final other = buildImageChunks(
+        payload: payloadOf(450, seed: 9),
         metadata: ft8Meta,
         senderPrefix: senderA,
-        imgId: 5,
+        imgId: 11,
       );
-      ImageReassemblyResult? received;
+      final (packets, added) = collect([
+        set.blobs[0],
+        set.blobs[0],
+        set.blobs[3],
+        set.blobs[3],
+        other.blobs[0],
+      ]);
+      expect(added, [
+        ImagePacketAdded.accepted,
+        ImagePacketAdded.duplicate,
+        ImagePacketAdded.accepted,
+        ImagePacketAdded.duplicate,
+        ImagePacketAdded.conflicting,
+      ]);
+      expect(packets.received, 1);
+    });
+
+    test('nothing while packets are missing', () {
+      final set = photo(450);
+      expect(rebuild([set.blobs[0], set.blobs[2]]), isNull);
+    });
+
+    test('a photo of unknown format rebuilds with no metadata', () {
+      final set = photo(100);
+      final odd = Uint8List.fromList(set.blobs[0])
+        ..[kImageChunkHeaderBytes] = 0x12; // version 1
+      final photoBack = rebuild([odd]);
+      expect(photoBack, isNotNull);
+      expect(photoBack!.metadata, isNull);
+    });
+  });
+
+  group('the repair packet', () {
+    test('recovers any single lost data packet', () {
+      for (final length in <int>[300, 440]) {
+        final set = photo(length);
+        for (var lost = 0; lost < set.dataChunkCount; lost++) {
+          final blobs = [...set.blobs]..removeAt(lost);
+          final photoBack = rebuild(blobs);
+          expect(photoBack, isNotNull, reason: 'len $length lost $lost');
+          expect(photoBack!.data, payloadOf(length));
+          expect(photoBack.recoveredWithParity, isTrue);
+        }
+      }
+    });
+
+    test('recovers the short final packet: its length is in the repair '
+        'packet', () {
+      final set = photo(kImageChunkFirstCapacity + 40);
+      final photoBack = rebuild([set.blobs[0], set.blobs[2]]);
+      expect(photoBack!.data, payloadOf(kImageChunkFirstCapacity + 40));
+    });
+
+    test('a photo of one packet comes back from the repair packet alone', () {
+      final set = photo(60);
+      expect(rebuild([set.blobs[1]])!.data, payloadOf(60));
+    });
+
+    test('losing two packets fails and never yields a wrong photo', () {
+      final set = photo(440);
+      expect(rebuild([set.blobs[0], set.blobs[3]]), isNull);
+    });
+
+    test('an empty payload rebuilds, and from the repair packet alone', () {
+      final set = photo(0);
+      expect(set.dataChunkCount, 1);
+      expect(rebuild([set.blobs[0]])!.data, isEmpty);
+      expect(rebuild([set.blobs[1]])!.data, isEmpty);
+    });
+
+    test('the largest payload rebuilds, and recovers a single loss', () {
+      final set = photo(kImageMaxPayloadBytes);
+      expect(set.dataChunkCount, kImageMaxDataChunks);
+      final blobs = [...set.blobs]..removeAt(7);
+      expect(rebuild(blobs)!.data, payloadOf(kImageMaxPayloadBytes));
+    });
+
+    test('a corrupt length byte fails instead of a truncated photo', () {
+      final set = photo(440);
+      final parity = Uint8List.fromList(set.blobs[3]);
+      parity[kImageChunkHeaderBytes] ^= 0x02;
+      expect(rebuild([set.blobs[0], set.blobs[2], parity]), isNull);
+    });
+  });
+
+  group('a late copy of a photo already rebuilt', () {
+    test('repeats one of its packets, even the repair packet it never had',
+        () {
+      final set = photo(450);
+      final (packets, _) = collect(set.blobs.sublist(0, 3));
+      expect(packets.rebuild(), isNotNull);
+      Uint8List body(Uint8List blob) =>
+          Uint8List.sublistView(blob, kImageChunkHeaderBytes);
       for (final blob in set.blobs) {
-        final outcome = tx.handleFrame(
-          (BytesBuilder()
-                ..add(<int>[0x1B, 0x10, 0, 0, 0, 0xFF, 0x1C, 0xAE, blob.length])
-                ..add(blob))
-              .toBytes(),
-        );
-        expect(outcome, isNull);
-        if (outcome != null && outcome.isComplete) received = outcome.result;
+        expect(packets.repeats(parseImageChunkHeader(blob)!, body(blob)),
+            isTrue);
       }
-      expect(received, isNull);
-      expect(rx.pendingCount, 0);
-    });
-
-    test('handleFrame ignores other data types and other frames', () {
-      final rx = ImageReassembler();
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: rx,
-        send: (_) async {},
-      );
-      expect(
-        tx.handleFrame(
-          Uint8List.fromList(<int>[0x1B, 0, 0, 0, 0, 0xFF, 0x01, 0x00, 0]),
-        ),
-        isNull,
-      );
-      // 0x0150, another app's in MeshCore's allocation table.
-      expect(
-        tx.handleFrame(
-          Uint8List.fromList(<int>[0x1B, 0, 0, 0, 0, 0xFF, 0x50, 0x01, 0]),
-        ),
-        isNull,
-      );
-      expect(tx.handleFrame(Uint8List.fromList(<int>[0x00])), isNull);
-      expect(rx.pendingCount, 0);
-    });
-
-    test('a photo floods by default, like a channel message', () async {
-      final frames = <Uint8List>[];
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: ImageReassembler(),
-        send: (frame) async => frames.add(frame),
-      );
-      await tx.sendImage(payload: payloadOf(120), metadata: ft8Meta);
-      expect(frames, isNotEmpty);
-      for (final f in frames) {
-        expect(f.sublist(0, 5), <int>[0x3E, 0, 0xFF, 0x70, 0x01]);
-      }
-    });
-
-    test('zeroHop sends every packet with an empty path', () async {
-      final frames = <Uint8List>[];
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: ImageReassembler(),
-        send: (frame) async => frames.add(frame),
-      );
-      await tx.sendImage(
-        payload: payloadOf(120),
-        metadata: ft8Meta,
-        channelIndex: 2,
-        zeroHop: true,
-      );
-      expect(frames, isNotEmpty);
-      for (final f in frames) {
-        expect(f.sublist(0, 5), <int>[0x3E, 2, 0x00, 0x70, 0x01]);
-      }
-    });
-
-    test('waits the gap between packets, not before the first or after the '
-        'last', () async {
-      const gap = Duration(milliseconds: 120);
-      final sw = Stopwatch()..start();
-      final at = <int>[];
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: ImageReassembler(),
-        send: (_) async => at.add(sw.elapsedMilliseconds),
-      );
-      await tx.sendImage(payload: payloadOf(300), metadata: ft8Meta, gap: gap);
-      final done = sw.elapsedMilliseconds;
-      expect(at.length, 3);
-      expect(at.first, lessThan(gap.inMilliseconds));
-      for (var i = 1; i < at.length; i++) {
-        expect(at[i] - at[i - 1], greaterThanOrEqualTo(gap.inMilliseconds - 5));
-      }
-      expect(done - at.last, lessThan(gap.inMilliseconds));
-    });
-
-    test('photoPacketGap is the airtime plus half a second', () {
-      expect(
-        photoPacketGap(const Duration(milliseconds: 650)),
-        const Duration(milliseconds: 1150),
-      );
-    });
-
-    group('photoPacketGapFlood', () {
-      const airtime = Duration(milliseconds: 650);
-      const slow = Duration(seconds: 2);
-
-      test('until the last packet has cleared two hops of repeaters', () {
-        // 650 ms on air, then two hops of up to 1625 ms wait and 650 ms on
-        // air, then half a second.
-        expect(
-          photoPacketGapFlood(airtime, packets: 6),
-          const Duration(milliseconds: 5700),
-        );
-      });
-
-      test('capped so the photo goes out within the receiver\'s minute', () {
-        final gap = photoPacketGapFlood(slow, packets: 6);
-        expect(gap, const Duration(seconds: 9));
-        expect(gap * 5, lessThanOrEqualTo(kImageReassemblyTtl * 0.75));
-      });
-
-      test('never shorter than the zero-hop gap', () {
-        expect(photoPacketGapFlood(slow, packets: 40), photoPacketGap(slow));
-      });
-
-      test('one packet alone waits as long, to hear it passed on', () {
-        final gap = photoPacketGapFlood(airtime, packets: 1);
-        expect(gap, const Duration(milliseconds: 5700));
-        expect(gap, greaterThanOrEqualTo(photoRepeatHeardWithin(airtime)));
-      });
-    });
-
-    test('concurrent sendImage calls do not interleave on the wire', () async {
-      final order = <String>[];
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: ImageReassembler(),
-        idAllocator: ImageIdAllocator(seed: 100),
-        send: (frame) async {
-          await Future<void>.delayed(const Duration(milliseconds: 1));
-          final blob = frame.sublist(5);
-          order.add('${blob[2]}:${(blob[3] >> 4) & 0x0F}');
-        },
-      );
-      final a = tx.sendImage(payload: payloadOf(300), metadata: ft8Meta);
-      final b = tx.sendImage(payload: payloadOf(300), metadata: ft8Meta);
-      await Future.wait(<Future<ImageChunkSet>>[a, b]);
-      expect(order, <String>[
-        '100:0',
-        '100:1',
-        '100:2',
-        '101:0',
-        '101:1',
-        '101:2',
-      ]);
-    });
-
-    test('photoRepeatHeardWithin: the packet, the longest repeater wait and '
-        'the copy, then half a second', () {
-      const airtime = Duration(milliseconds: 650);
-      expect(
-        photoRepeatHeardWithin(airtime),
-        const Duration(milliseconds: 3425),
-      );
-      // The flood gap leaves time to know before the next packet is due.
-      expect(
-        photoPacketGapFlood(airtime, packets: 6),
-        greaterThan(photoRepeatHeardWithin(airtime)),
-      );
-    });
-  });
-
-  group('sending a packet again', () {
-    /// The chunk index of each frame [send] got, in order.
-    List<int> indexes(List<Uint8List> frames) =>
-        [for (final f in frames) (f[5 + 3] >> 4) & 0x0F];
-
-    ImageChunkTransport transport(List<Uint8List> frames) =>
-        ImageChunkTransport(
-          senderPrefix: senderA,
-          reassembler: ImageReassembler(),
-          idAllocator: ImageIdAllocator(seed: 40),
-          send: (frame) async => frames.add(frame),
-        );
-
-    test('chunk, then sendChunks: the very packets the caller holds go out',
-        () async {
-      final frames = <Uint8List>[];
-      final tx = transport(frames);
-      final set = tx.chunk(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        parity: false,
-      );
-      expect(await tx.sendChunks(set), same(set));
-      expect([for (final f in frames) f.sublist(5)], set.blobs);
-      expect(
-        tx.chunk(payload: payloadOf(10), metadata: ft8Meta).imgId,
-        set.imgId + 1,
-      );
-    });
-
-    test('a packet no repeater passed on goes once more, the same bytes, '
-        'before the next', () async {
-      final frames = <Uint8List>[];
-      final asked = <int>[];
-      final progress = <ImageSendProgress>[];
-      final set = await transport(frames).sendImage(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        resend: (i) {
-          asked.add(i);
-          return i == 1;
-        },
-        onProgress: progress.add,
-      );
-      await pumpEventQueue();
-      expect(set.blobs, hasLength(4));
-      expect(indexes(frames), [0, 1, 1, 2, 3]);
-      expect(frames[2], frames[1]);
-      expect(asked, [0, 1, 2, 3]);
-      expect(
-        [for (final p in progress) (p.sentChunks, p.again)],
-        [(1, false), (2, false), (2, true), (3, false), (4, false)],
-      );
-    });
-
-    test('each packet is asked about once, the last a gap after it',
-        () async {
-      final frames = <Uint8List>[];
-      final asked = <int>[];
-      final set = await transport(frames).sendImage(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        resend: (i) {
-          asked.add(i);
-          return true;
-        },
-      );
-      // Handed back before the check after the last packet.
-      expect(indexes(frames), [0, 0, 1, 1, 2, 2, 3]);
-      await pumpEventQueue();
-      expect(indexes(frames), [0, 0, 1, 1, 2, 2, 3, 3]);
-      expect(asked, [0, 1, 2, 3]);
-      expect(set.blobs, hasLength(4));
-    });
-
-    test('onDone comes after the check that follows the last packet',
-        () async {
-      const gap = Duration(milliseconds: 40);
-      final frames = <Uint8List>[];
-      final done = Completer<void>();
-      final sw = Stopwatch()..start();
-      await transport(frames).sendImage(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        gap: gap,
-        resend: (_) => false,
-        onDone: done.complete,
-      );
-      final handedBack = sw.elapsedMilliseconds;
-      expect(done.isCompleted, isFalse);
-      await done.future;
-      expect(
-        sw.elapsedMilliseconds - handedBack,
-        greaterThanOrEqualTo(gap.inMilliseconds - 5),
-      );
-      expect(indexes(frames), [0, 1, 2]);
-    });
-
-    test('nothing goes again where the photo would outlast the window',
-        () async {
-      const gap = Duration(milliseconds: 10);
-      final frames = <Uint8List>[];
-      final asked = <int>[];
-      // Four packets take 3 gaps; one more fits a window of 4.
-      await transport(frames).sendImage(
-        payload: payloadOf(450),
-        metadata: ft8Meta,
-        gap: gap,
-        resendWindow: gap * 4,
-        resend: (i) {
-          asked.add(i);
-          return true;
-        },
-      );
-      await Future<void>.delayed(gap * 3);
-      expect(indexes(frames), [0, 0, 1, 2, 3]);
-      expect(asked, [0]);
-    });
-
-    test('onDone comes when a packet is refused, and the error is handed '
-        'back', () async {
-      var calls = 0;
-      var done = false;
-      final tx = ImageChunkTransport(
-        senderPrefix: senderA,
-        reassembler: ImageReassembler(),
-        send: (frame) async {
-          if (++calls == 2) throw StateError('refused');
-        },
-      );
-      await expectLater(
-        tx.sendImage(
-          payload: payloadOf(450),
-          metadata: ft8Meta,
-          resend: (_) => false,
-          onDone: () => done = true,
-        ),
-        throwsStateError,
-      );
-      expect(done, isTrue);
-      expect(calls, 2);
-    });
-  });
-
-  group('regressions confirmed by adversarial review', () {
-    // PROBE A: an image completes; a DIFFERENT image reusing the same img_id
-    // arrives within the TTL. The recently-completed shortcut used to report
-    // every chunk of it as `duplicate`, so onImage never fired, onFailed never
-    // fired, and the image was lost with no diagnostic. ImageIdAllocator seeds
-    // from Random().nextInt(256), so a restart really can re-roll a live id.
-    test('a new image reusing a just-completed img_id is not swallowed', () {
-      final delivered = <ImageReassemblyResult>[];
-      final failed = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(onImage: delivered.add, onFailed: failed.add);
-
-      final first = buildImageChunks(
-        payload: payloadOf(200, seed: 1),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 42,
-      );
-      feed(r, first.blobs);
-      expect(delivered, hasLength(1), reason: 'first image should complete');
-
-      // Same sender, same img_id, different content and a different length.
-      final second = buildImageChunks(
-        payload: payloadOf(300, seed: 99),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 42,
-      );
-      feed(r, second.blobs);
-
-      expect(delivered, hasLength(2), reason: 'second image must not be lost');
-      expect(delivered.last.data, equals(payloadOf(300, seed: 99)));
-      expect(failed, isEmpty);
-    });
-
-    test('a genuine re-send of a delivered chunk is still a duplicate', () {
-      final delivered = <ImageReassemblyResult>[];
-      final r = ImageReassembler(onImage: delivered.add);
-      final set = buildImageChunks(
-        payload: payloadOf(200, seed: 1),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 42,
-      );
-      feed(r, set.blobs);
-      expect(delivered, hasLength(1));
-
-      // Replay every blob verbatim: none may open a new stream.
-      for (final blob in set.blobs) {
-        final outcome = r.addChunk(blob, channelIndex: 0);
-        expect(outcome.status, ImageChunkStatus.duplicate);
-      }
-      expect(delivered, hasLength(1));
-      expect(r.pendingCount, 0);
-    });
-
-    // PROBE B/C: a flipped bit in the parity length byte used to yield a
-    // silently TRUNCATED image reported as `completed`. Only the last data
-    // chunk may be short.
-    test(
-      'corrupt parity length is rejected rather than silently truncating',
-      () {
-        for (final payloadLen in [300, 400]) {
-          final set = buildImageChunks(
-            payload: payloadOf(payloadLen, seed: 3),
-            metadata: ft8Meta,
-            senderPrefix: senderA,
-            imgId: 7,
-          );
-          final data = set.blobs.sublist(0, set.dataChunkCount);
-          final parity = Uint8List.fromList(set.blobs.last);
-          // Corrupt the len_xor byte (first body byte, just after the header).
-          parity[kImageChunkHeaderBytes] ^= 0x02;
-
-          final delivered = <ImageReassemblyResult>[];
-          final r = ImageReassembler(onImage: delivered.add);
-          // Drop a NON-FINAL chunk (index 1 of >=3, else index 0) and supply
-          // the corrupted parity.
-          final dropIndex = data.length >= 3 ? 1 : 0;
-          final kept = <Uint8List>[
-            for (var i = 0; i < data.length; i++)
-              if (i != dropIndex) data[i],
-            parity,
-          ];
-          feed(r, kept);
-          expect(
-            delivered,
-            isEmpty,
-            reason: 'payload $payloadLen: truncated recovery must not complete',
-          );
-        }
-      },
-    );
-
-    test('parity still recovers a genuinely lost non-final chunk', () {
-      final payload = payloadOf(400, seed: 5);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 8,
-      );
-      final data = set.blobs.sublist(0, set.dataChunkCount);
-      expect(data.length, greaterThanOrEqualTo(3));
-
-      final delivered = <ImageReassemblyResult>[];
-      final r = ImageReassembler(onImage: delivered.add);
-      feed(r, <Uint8List>[
-        for (var i = 0; i < data.length; i++)
-          if (i != 1) data[i],
-        set.blobs.last,
-      ]);
-      expect(delivered, hasLength(1));
-      expect(delivered.single.data, equals(payload));
-      expect(delivered.single.recoveredWithParity, isTrue);
-    });
-  });
-
-  group('oversized data body', () {
-    test('a 159-byte data body is rejected and parity cannot overrun', () {
-      final failed = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(onFailed: failed.add);
-      // Header: sender 0x1234, img 5, idx 0 of 2; body one byte past the cap.
-      final oversized = Uint8List.fromList(<int>[
-        0x12,
-        0x34,
-        5,
-        (0 << 4) | 2,
-        ...List<int>.filled(kImageChunkBodyBytes + 1, 0xAA),
-      ]);
-      expect(oversized.length, kImageChunkBlobBytes);
-      expect(r.addChunk(oversized).status, ImageChunkStatus.malformed);
-      expect(r.pendingCount, 0);
-
-      // A parity chunk for the same stream must not throw.
-      final parity = Uint8List.fromList(<int>[
-        0x12,
-        0x34,
-        5,
-        (2 << 4) | 2,
-        ...List<int>.filled(kImageChunkBodyBytes + 1, 0x55),
-      ]);
-      expect(() => r.addChunk(parity), returnsNormally);
-    });
-  });
-
-  group('clear()', () {
-    test('reports in-progress streams as failed (disconnected)', () {
-      final failed = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(onFailed: failed.add);
-      final set = buildImageChunks(
-        payload: payloadOf(400, seed: 3),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 8,
-      );
-      r.addChunk(set.blobs[0]);
-      expect(r.pendingCount, 1);
-      r.clear();
-      expect(r.pendingCount, 0);
-      expect(failed, hasLength(1));
-      expect(failed.single.reason, ImageReassemblyFailureReason.disconnected);
-      expect(failed.single.isCorrupt, isFalse);
-      expect(r.evictExpired(now: DateTime(2100)), isEmpty);
-    });
-  });
-
-  group('completed-image map is capped', () {
-    /// A lone parity chunk of a `total == 1` image completes that image by
-    /// itself — one packet, one remembered entry. That is the amplification the
-    /// cap exists to bound.
-    List<Uint8List> loneParity(int imgId) => buildImageChunks(
-      payload: payloadOf(20, seed: imgId),
-      metadata: ft8Meta,
-      senderPrefix: senderA,
-      imgId: imgId,
-    ).blobs;
-
-    test('one packet per img_id can complete an image (the attack)', () {
-      final r = ImageReassembler();
-      final done = r.addChunk(loneParity(1)[1]);
-      expect(done.status, ImageChunkStatus.completed);
-      expect(r.completedCount, 1);
-      expect(r.pendingCount, 0);
-    });
-
-    test(
-      'the map never exceeds maxCompletedStreams and evicts oldest first',
-      () {
-        final start = DateTime(2026, 3, 3);
-        final r = ImageReassembler(maxCompletedStreams: 3);
-        for (var i = 0; i < 20; i++) {
-          r.addChunk(
-            loneParity(100 + i)[1],
-            now: start.add(Duration(seconds: i)),
-          );
-          expect(r.completedCount, lessThanOrEqualTo(3));
-        }
-        expect(r.completedCount, 3);
-        expect(r.completedKeys.map((k) => k.imgId).toList()..sort(), <int>[
-          117,
-          118,
-          119,
-        ]);
-      },
-    );
-
-    test('default cap matches the pending cap', () {
-      final start = DateTime(2026, 3, 4);
-      final r = ImageReassembler();
-      expect(r.maxCompletedStreams, 8);
-      expect(r.maxConcurrentStreams, 8);
-      for (var i = 0; i < 30; i++) {
-        r.addChunk(loneParity(i)[1], now: start.add(Duration(seconds: i)));
-      }
-      expect(r.completedCount, 8);
-    });
-
-    test('capping does not break straggler suppression for recent images', () {
-      final start = DateTime(2026, 3, 5);
-      final r = ImageReassembler(maxCompletedStreams: 2);
-      final set = buildImageChunks(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 200,
-      );
-      feed(r, set.blobs.sublist(0, 2), now: start);
-      // Trailing parity of the newest image is still recognised as a duplicate.
-      expect(
-        r.addChunk(set.blobs[2], now: start).status,
-        ImageChunkStatus.duplicate,
-      );
-      expect(r.pendingCount, 0);
-    });
-
-    test('clear() empties the completed map too', () {
-      final r = ImageReassembler();
-      r.addChunk(loneParity(9)[1]);
-      expect(r.completedCount, 1);
-      r.clear();
-      expect(r.completedCount, 0);
+      final again = photoPacketAgain(set.blobs[1], 1);
+      expect(packets.repeats(parseImageChunkHeader(again)!, body(again)),
+          isTrue);
+      final other = photo(450, imgId: 11).blobs[1];
+      final changed = Uint8List.fromList(other)..[20] ^= 0xFF;
+      expect(packets.repeats(parseImageChunkHeader(changed)!, body(changed)),
+          isFalse);
     });
   });
 
@@ -1412,122 +382,24 @@ void main() {
     test('ft8 goes on the wire as code 2; the other codes are refused', () {
       expect(imageRateWireCode(ImageCodecRatePoint.ft8), kImageRateWireFt8);
       expect(kImageRateWireFt8, 2);
-      expect(
-        const ImageStreamMetadata(rate: ImageCodecRatePoint.ft8).encode() &
-            0x03,
-        2,
-      );
-      // Codes 0 and 1 are refused: this build has no model for them.
-      expect(imageRatePointFromWireCode(0), isNull);
-      expect(imageRatePointFromWireCode(1), isNull);
+      for (final code in [0, 1, 3]) {
+        expect(imageRatePointFromWireCode(code), isNull);
+      }
     });
 
     test('every wire code round-trips and unknown codes are null', () {
       for (final rate in ImageCodecRatePoint.values) {
         expect(imageRatePointFromWireCode(imageRateWireCode(rate)), rate);
       }
-      final known = ImageCodecRatePoint.values.map(imageRateWireCode).toSet();
-      expect(known, hasLength(ImageCodecRatePoint.values.length));
-      for (var code = 0; code < 16; code++) {
-        if (known.contains(code)) continue;
-        expect(imageRatePointFromWireCode(code), isNull, reason: 'code $code');
-      }
-    });
-
-    test('an unknown rate code fails cleanly instead of decoding wrong', () {
-      final payload = payloadOf(300);
-      final set = buildImageChunks(
-        payload: payload,
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 80,
-      );
-      // Overwrite the 2-bit rate field with 0: this build has no model for
-      // it, so it must fail rather than feed the ft8 model the wrong kind of
-      // bitstream.
-      final bad = Uint8List.fromList(set.blobs[0]);
-      bad[kImageChunkHeaderBytes] = bad[kImageChunkHeaderBytes] & 0xFC;
-
-      final delivered = <ImageReassemblyResult>[];
-      final failures = <ImageReassemblyFailure>[];
-      final r = ImageReassembler(
-        onImage: delivered.add,
-        onFailed: failures.add,
-      );
-      expect(r.addChunk(bad).status, ImageChunkStatus.accepted);
-      final done = r.addChunk(set.blobs[1]);
-      expect(done.status, ImageChunkStatus.unsupportedFormat);
-      expect(done.result, isNull);
-      expect(delivered, isEmpty);
-      expect(failures, hasLength(1));
-      expect(
-        failures.single.reason,
-        ImageReassemblyFailureReason.unsupportedFormat,
-      );
-      expect(failures.single.isCorrupt, isTrue);
-      expect(r.pendingCount, 0);
-    });
-
-    test('a reserved rate code fails the same way through reassembly', () {
-      // Resolution is a closed 2-bit field now, so it cannot carry an unknown
-      // value; the reserved RATE codes are what a future format must use to be
-      // rejected rather than misread. This asserts the rejection survives the
-      // whole reassembly path, not just ImageStreamMetadata.decode.
-      final set = buildImageChunks(
-        payload: payloadOf(300),
-        metadata: ft8Meta,
-        senderPrefix: senderA,
-        imgId: 81,
-      );
-      final bad = Uint8List.fromList(set.blobs[0]);
-      bad[kImageChunkHeaderBytes] =
-          (bad[kImageChunkHeaderBytes] & 0xFC) | 0x03; // reserved rate code 3
-      final r = ImageReassembler();
-      r.addChunk(bad);
-      expect(
-        r.addChunk(set.blobs[1]).status,
-        ImageChunkStatus.unsupportedFormat,
-      );
+      expect(imageRatePointFromWireCode(7), isNull);
     });
   });
 
-  group('how far a photo came', () {
-    ImageChunkSet photo(int imgId) => buildImageChunks(
-      payload: payloadOf(450),
-      metadata: ft8Meta,
-      senderPrefix: senderA,
-      imgId: imgId,
-    );
-
-    test('it keeps the fewest repeaters any copy came through', () {
-      final set = photo(40);
-      final r = ImageReassembler();
-      r.addChunk(set.blobs[0], hops: 2);
-      // The same chunk again, heard from the sender's own radio.
-      r.addChunk(set.blobs[0], hops: 0);
-      r.addChunk(set.blobs[1], hops: 1);
-      expect(r.addChunk(set.blobs[2], hops: 3).result!.fewestHops, 0);
-    });
-
-    test('through repeaters only, the fewest of them', () {
-      final set = photo(41);
-      final r = ImageReassembler();
-      r.addChunk(set.blobs[0], hops: 3);
-      r.addChunk(set.blobs[1], hops: 2);
-      expect(r.addChunk(set.blobs[2], hops: 2).result!.fewestHops, 2);
-    });
-
-    test('unknown when no copy said', () {
-      expect(feed(ImageReassembler(), photo(42).blobs)!.fewestHops, isNull);
-    });
-
-    test('an incomplete photo says it too', () {
-      final failures = <ImageReassemblyFailure>[];
-      final start = DateTime(2026, 1, 1, 12);
-      final r = ImageReassembler(onFailed: failures.add);
-      r.addChunk(photo(43).blobs[0], hops: 1, now: start);
-      r.evictExpired(now: start.add(const Duration(minutes: 2)));
-      expect(failures.single.fewestHops, 1);
+  group('ids', () {
+    test('wrap around 255 to 0', () {
+      final ids = ImageIdAllocator(seed: 255);
+      expect(ids.next(), 255);
+      expect(ids.next(), 0);
     });
   });
 }
