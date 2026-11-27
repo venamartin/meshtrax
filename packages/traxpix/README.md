@@ -20,7 +20,10 @@ app's. The package is pure Dart and has no screens; the model itself runs in
   them one at a time under a channel text's rules, as a flood or zero hop.
 - **Receiving.** The app collects received packets for a while, and
   `ImagePackets` makes the photo from them. With one packet lost, the repair
-  packet rebuilds it; with more lost, the app shows the photo as incomplete.
+  packet rebuilds it. With more lost, the user can ask the sender for them:
+  traxpix writes and reads the request's body (`missingPacketBits`,
+  `photoPacketsRequest`, `readPhotoPacketsRequest`), and the app sends it as
+  a channel request. Otherwise the app shows the photo as incomplete.
 - **Tags.** The sender can type a short tag (`photoPayloadWithTag`, 24
   characters). It travels as exact text ahead of the bitstream, so the rebuilt
   picture can never change it.

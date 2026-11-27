@@ -58,7 +58,9 @@ The Off-Grid presets, TRAX included, and custom frequencies have none of these l
 - **Save**, at the top, saves what's on screen to your photos (on a Mac, where you choose), with "AI reconstructed" and the footprint in its corners. The ⋮ menu has **About this photo** and, for a photo you received, **Report** and **Block**.
 - To skip the taps, turn on **Rebuild received photos automatically** in App settings, Messaging, Photos: each photo then rebuilds as it arrives, while MeshTrax is open and the phone has the memory. On phones with 8 GB of memory or more, **Enlarge photos automatically** enlarges a photo as it opens full screen.
 - Phones on MeshTrax 1.12.0 can't show photos from later versions, though later versions show theirs. Update both phones.
-- A photo that didn't arrive whole says so, 20 minutes after its first packet, for example "📷 Photo #3a incomplete: 3 of 5 packets". It isn't sent again.
+- While a photo comes in, a line above the message box says how far it got, for example "📷 Photo #3a from Bob: 4 of 10 packets so far".
+- When packets were lost on the way (a later one came, or nothing came for 3 minutes), the line says how many and offers **Ask for the rest**. The sender's phone then sends just those packets again, once. You can ask again after 2 minutes, until 15 minutes after the photo's first packet. Only the sender answers, and photos from MeshTrax 1.12.0 can't be asked for.
+- A photo that didn't arrive whole says so, 20 minutes after its first packet, for example "📷 Photo #3a incomplete: 3 of 5 packets".
 
 ## Safety
 

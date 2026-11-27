@@ -18,13 +18,13 @@ The sender's phone blurs any faces in a 512 × 512 photo, then codes it with the
 |---|---|---|
 | Packet format | `packages/traxpix` (pure Dart) | `photo_chunks.dart`: the packet format, a photo into packets and packets into a photo, the repair packet and the retry byte. Nothing in traxpix sends, receives or keeps time. `photo_extras.dart`: a photo's extras, the sender's tag and position. `subject_only.dart`: the square around a tapped subject, the black around it, and where a picture's subject is. `face_cover.dart`: finding and covering faces. `image_codec_entropy.dart`, `rans_coder.dart`, `rans_coders.dart`, `entropy_tables.dart`: the entropy coding between latents and bitstream. |
 | Model runtime | `packages/traxpix_litert` (Flutter plugin) | `litert_api.dart`: LiteRT's C API through FFI. `litert_codec_backend.dart`: runs the models. `image_codec_session.dart`: one worker isolate per job. `image_codec_bundle.dart`, `image_codec_files.dart`: the files and their hosted SHA-256 pins. `image_codec_memory.dart`: memory checks. `tap_segmenter.dart`: the tap model's input. `image_safety.dart`: the classifier and its thresholds. Platform folders: the LiteRT binaries. |
-| Radio side | `lib/services/photo_mesh.dart`, `photo_reassembler.dart`, `photo_repeats.dart`; `lib/connector/meshcore_connector.dart` (`sendChannelPackets`) | `photo_mesh.dart` hands the chat a photo's packets, files photos in their channel's chat, and decides whether the phone can do photos at all. `photo_reassembler.dart` collects received packets into photos, for 20 minutes. `photo_repeats.dart` keeps what the sender heard of each packet of its own photo, for its row. The connector sends the packets as it sends channel texts, under the same rules. |
+| Radio side | `lib/services/photo_mesh.dart`, `photo_reassembler.dart`, `photo_repeats.dart`; `lib/connector/meshcore_connector.dart` (`sendChannelPackets`) | `photo_mesh.dart` hands the chat a photo's packets, files photos in their channel's chat, and decides whether the phone can do photos at all. `photo_reassembler.dart` collects received packets into photos, for 20 minutes. `photo_repeats.dart` keeps what the sender heard of each packet of its own photo, for its row. The connector sends the packets as it sends channel texts, under the same rules. `lib/services/channel_requests.dart` and `lib/models/channel_request.dart` carry the requests for lost packets ([Channel requests](channel-requests.md)). |
 | Photos kept | `lib/services/photo_store.dart` | The records, the coded bytes, the rebuilt pictures, and the one-at-a-time queue for rebuilds and enlargements. |
 | Model download | `lib/services/photo_model_downloads.dart` | Downloads the model through the map downloader. |
 | Rules | `lib/services/photo_rules.dart` | Where the MeshCore-frequency rules apply, the time limits, the gap between packets, what the sender is asked. |
 | Saving | `lib/services/photo_save.dart` | Draws the "AI reconstructed" mark and the footprint into a copy and saves it. |
 | Reports | `lib/services/photo_reports.dart`, `lib/services/report_inbox.dart` | Photo reports, kept on the phone until the report inbox has them. |
-| Screens | `lib/screens/photo_send_screen.dart`, `lib/widgets/photo_message_card.dart` (chat bubble and full-screen viewer), `photo_settings_section.dart`, `photo_ai_mark.dart`, `photo_footprint_mark.dart`, `photo_report_dialog.dart`, `lib/screens/photo_licences_screen.dart` | The user's side. |
+| Screens | `lib/screens/photo_send_screen.dart`, `lib/widgets/photo_message_card.dart` (chat bubble and full-screen viewer), `photo_receiving_strip.dart` (photos coming in, and Ask for the rest), `photo_settings_section.dart`, `photo_ai_mark.dart`, `photo_footprint_mark.dart`, `photo_report_dialog.dart`, `lib/screens/photo_licences_screen.dart` | The user's side. |
 | Native | `ios/Runner/AppDelegate.swift`, `android/.../MainActivity.kt`, `macos/Runner/MainFlutterWindow.swift` | `meshtrax/storage`: the phone's memory (iOS), free space, saving to the photo library. |
 
 ## Sending
@@ -72,9 +72,10 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0172`, one
   2    1     image id, per photo
   3    1     idx << 4 | total: packet index 0..15, data packets 1..15;
              idx == total is the repair packet
-  4    1     retry: low 4 bits, how many times the packet went before this
-             copy (0 the first time); high 4 bits, flags, 0 so far, which a
-             receiver ignores when it doesn't know them
+  4    1     retry: low 4 bits, how many copies of the packet went before
+             this one (0 the first time), sent again by the chat or as
+             asked for; high 4 bits, flags, 0 so far, which a receiver
+             ignores when it doesn't know them
   5    ...   body
 ```
 
@@ -89,7 +90,7 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0172`, one
 ## Receiving
 
 1. **Packets in.** Channel data arrives as `RESP_CODE_CHANNEL_DATA_RECV` (27), which the connector hands out (`channelDatagrams`). `PhotoMesh` gives packets of `0x0172`, and of 1.12.0's `0x0170` (`isMeshTraxPhotoDataType`), to the `ImageReassembler` (`photo_reassembler.dart`), the raw log's copies too. It keys a photo by sender prefix, image id, channel and data type, and keeps its packets for 20 minutes from the first (`photoReceiveWindow`), since a sender waits for each packet to be heard. traxpix makes the photo from them (`ImagePackets`). A packet sent again counts as the one it repeats, its body being the same, and one that comes after the photo is whole is dropped as a late copy. MeshTrax 1.12.0 kept a photo's packets for 60 seconds. Each copy says how many repeaters it came through: a frame in its path length (`PathHelper.pathLenHops`; 0xFF means it came direct, which a photo does only zero hop), a raw copy in its path. The reassembler keeps the fewest (`fewestHops`).
-2. **Whole, or not.** With all data chunks, or all but one plus the repair chunk, the photo is complete. Otherwise, 20 minutes after its first packet, the chat says "Photo incomplete: x of y packets". An item that runs past the end makes it "unreadable"; a format version or must-understand item this release doesn't know, "needs a newer MeshTrax". Nothing is asked for again.
+2. **Whole, or not.** With all data chunks, or all but one plus the repair chunk, the photo is complete. Otherwise, 20 minutes after its first packet, the chat says "Photo incomplete: x of y packets". An item that runs past the end makes it "unreadable"; a format version or must-understand item this release doesn't know, "needs a newer MeshTrax". Until then, the user can ask the sender for the packets lost on the way ([Asking for lost packets](#asking-for-lost-packets)).
 3. **Filed.** The chat gets a line "📷 Photo #id" (with the tag if any), marked by its packet hash (`photo:…`), with the fewest hops as its hop count: **Direct** when a packet came from the sender's radio itself, as for a message heard direct. And `PhotoStore` keeps a record (bytes, packets, tag, position) and the coded bytes. A position shows under the photo in the reader's coordinate format, with **Map** and **Navigate** as on a location card. A blocked sender's photos are dropped, not kept.
 4. **Rebuilt** when the user taps the photo, or as it arrives if "Rebuild received photos automatically" is on and the phone has the memory:
    1. the hyperprior's synthesis and the four context stages turn the bitstream back into latents (`y_hat`, 256 × 16 × 16);
@@ -100,6 +101,26 @@ Each packet is one MeshCore `PAYLOAD_TYPE_GRP_DATA` with data type `0x0172`, one
 5. **Full screen.** One tap on the bubble opens the viewer, which rebuilds the photo there if it hasn't been. A Subject only photo (extras item 3) keeps where its subject is in its record (`subjectBox`: the part that isn't black, from `litBox`, worked out by the sender from its preview and by a receiver as it rebuilds), and the bubble and the viewer open framed on it. It has pinch and double-tap zoom, Save, a ⋮ menu (About this photo, and Report and Block for a received photo), and **Enhance 4×**.
 6. **Enhance 4×.** It runs in the same queue as the rebuilds, after a memory check, and with every other model released first (`ImageCodecSession.enhance`). The result is checked like a rebuilt picture. It isn't kept: closing the viewer drops it.
 7. **Save.** Save writes what's on screen to the phone's photo library: iOS through `PHPhotoLibrary` (add only), Android to Pictures/MeshTrax through MediaStore, a Mac through a Save dialog. The copy has "AI reconstructed" drawn in its bottom-left corner, at 2.4 % of its width, and the MeshTrax footprint in its bottom-right: white at 70 % with a light shadow, 7 % of the width tall. On screen the footprint is drawn over the rebuilt picture the same way, and zooms with it in the viewer.
+
+## Asking for lost packets
+
+A receiver can ask a photo's sender for the packets that didn't reach it, with one tap; nothing asks by itself. Only photos of `0x0172` can be asked for: 1.12.0 doesn't answer.
+
+**The receiver.**
+
+- `PhotoMesh.receiving` lists the photos coming in (`ImageReassembler.receiving`), and `PhotoReceivingStrip` shows those of the open channel above the message box: "📷 Photo #3a from Bob: 4 of 10 packets so far".
+- A missing packet counts as lost when a later one came, since the sender is done with each packet before the next goes. When nothing came for 3 minutes (`askSilence`), every missing packet counts. A single missing packet doesn't count while the repair packet may still come and rebuild it.
+- With packets lost, the line says how many and offers **Ask for the rest** until 15 minutes after the photo's first packet (`askWithin`), which leaves the answer time to arrive within the 20 minutes the receiver keeps the photo.
+- A tap (`PhotoMesh.askForRest`) sends one request of kind 1 ([Channel requests](channel-requests.md)) to the sender alone: the photo's image id, its data packets, and the lost ones. The button then rests for 2 minutes (`askRest`), and the line says "Asked for 2 packets".
+
+**The sender** keeps each photo of its own for 20 minutes (`_SentPhoto`). A request names its sender prefix, a photo it keeps on the same channel and with the same data packets, or it's ignored. Then:
+
+- It gathers for 10 seconds (`askGather`), so asks from several receivers go out as one.
+- Each packet goes again at most once per 2 minutes (`askRest`), and the photo goes again as asked at most 3 times (`askRounds`).
+- The packets go through the chat's queue (`sendChannelPackets` with `once`): each goes once, done with when the radio has it, in its turn after any photo still going, with the photo's gap, and zero hop if the photo went zero hop. Copies repeaters pass on count on the photo's row as its own do.
+- **The retry byte** of every copy counts the copies of that packet that went before it, the photo's own sends and the ones asked for alike (`_SentPhoto.copy`). The chat makes each copy just before it goes, so no two copies are one packet on the air, which repeaters would pass on only once.
+
+The log says what was asked and sent, under the Photos and Requests tags: "beef asked for packets 2, 3 of #3a", "sending packets 2, 3 of #3a again, as asked".
 
 ## The model
 

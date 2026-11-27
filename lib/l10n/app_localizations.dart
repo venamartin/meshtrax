@@ -461,6 +461,42 @@ abstract class AppLocalizations {
   /// **'It waits for Wi‑Fi.'**
   String get photo_getPhotosWifi;
 
+  /// Above the message box while a photo comes in, packet by packet.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} from {name}: {got} of {total} packets so far'**
+  String photo_receiving(String id, String name, int got, int total);
+
+  /// Above the message box while a photo comes in and some of its packets are lost: a later packet came, or nothing came for 3 minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo {id} from {name}: {got} of {total} packets, {lost} lost'**
+  String photo_receivingLost(
+    String id,
+    String name,
+    int got,
+    int total,
+    int lost,
+  );
+
+  /// Button beside a photo coming in with lost packets: asks its sender, once, to send those packets again.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for the rest'**
+  String get photo_askForRest;
+
+  /// Beside a photo coming in, after the user asked its sender for its lost packets.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Asked for 1 packet} other{Asked for {count} packets}}'**
+  String photo_askedFor(int count);
+
+  /// Snack bar when the radio didn't take the request for a photo's lost packets.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t ask for the rest'**
+  String get photo_askFailed;
+
   /// Under a photo of mine in the chat: it goes once the photo sent before it is done.
   ///
   /// In en, this message translates to:

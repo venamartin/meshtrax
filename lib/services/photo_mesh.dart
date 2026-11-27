@@ -13,7 +13,9 @@ import '../l10n/app_localizations.dart';
 import '../models/channel.dart';
 import '../models/channel_datagram.dart';
 import '../models/channel_message.dart';
+import '../models/channel_request.dart';
 import '../utils/app_logger.dart';
+import 'channel_requests.dart';
 import 'heard_service.dart';
 import 'notification_service.dart';
 import 'photo_reassembler.dart';
@@ -80,6 +82,77 @@ typedef PhotoSendState = ({
   bool repair,
   Object? error,
 });
+
+/// A photo being received, for the chat: [senderName]'s photo [key], with
+/// [received] of its [total] data packets in. [lost] packets are known lost:
+/// a later one came, or nothing came for [PhotoMesh.askSilence]. [canAsk]:
+/// the rest can be asked for now. [asked]: how many were asked for last.
+typedef PhotoReceiving = ({
+  ImageStreamKey key,
+  String senderName,
+  int received,
+  int total,
+  int lost,
+  bool canAsk,
+  int asked,
+});
+
+/// A photo of mine, kept for [photoReceiveWindow] so the packets a receiver
+/// asks for can go again.
+class _SentPhoto {
+  _SentPhoto({
+    required this.messageId,
+    required this.imgId,
+    required this.idKey,
+    required this.blobs,
+    required this.hasRepair,
+    required this.gap,
+    required this.zeroHop,
+    this.repeats,
+  }) : sends = List.filled(blobs.length, 0);
+
+  final String messageId;
+  final int imgId;
+  final String idKey;
+  final List<Uint8List> blobs;
+  final bool hasRepair;
+  final Duration gap;
+  final bool zeroHop;
+
+  /// What repeaters passed on; null zero hop.
+  final PhotoRepeats? repeats;
+
+  /// When its first packet went.
+  DateTime startedAt = DateTime.now();
+
+  /// How many copies of each packet went: its own sends and the ones asked
+  /// for alike.
+  final List<int> sends;
+
+  /// [packet] of this photo as it goes now: its retry byte counts every copy
+  /// of it that went before, so no two copies are one packet on the air,
+  /// which repeaters would pass on only once.
+  Uint8List copy(Uint8List packet) {
+    final index = parseImageChunkHeader(
+      packet,
+      dataType: dataTypeMeshTraxPhoto,
+    )?.index;
+    if (index == null || index >= sends.length) return packet;
+    return photoPacketAgain(packet, sends[index]);
+  }
+
+  /// When each packet last went again because it was asked for.
+  final Map<int, DateTime> answered = {};
+
+  /// Packets asked for, waiting for [PhotoMesh.askGather] to pass.
+  int asked = 0;
+  Timer? gather;
+
+  /// Times packets went again because they were asked for.
+  int rounds = 0;
+
+  int get dataPackets => hasRepair ? blobs.length - 1 : blobs.length;
+}
 
 /// Photos run the model with LiteRT, which MeshTrax takes for iOS, macOS and
 /// 64-bit Arm Android only (packages/traxpix_litert). iPhones with less than
@@ -152,12 +225,39 @@ class PhotoMesh {
     _instance?.dispose();
     _instance = null;
     sending.value = const {};
+    receiving.value = const [];
   }
 
   /// The photos of mine whose packets are still going, by chat row, with
   /// what each is doing. One that failed stays, to say why.
   static final ValueNotifier<Map<String, PhotoSendState>> sending =
       ValueNotifier(const {});
+
+  /// The photos being received, on every channel.
+  static final ValueNotifier<List<PhotoReceiving>> receiving = ValueNotifier(
+    const [],
+  );
+
+  /// How long without a packet before a photo's missing packets count as
+  /// lost: longer than a sender spends on one packet under a message's rules.
+  static Duration askSilence = const Duration(minutes: 3);
+
+  /// How long after a photo's first packet its rest can be asked for: the
+  /// answer still has to come within the receiver's window
+  /// ([photoReceiveWindow]).
+  static Duration askWithin = const Duration(minutes: 15);
+
+  /// After asking, how long before the rest can be asked for again; and the
+  /// least time between two answers of the same packet.
+  static Duration askRest = const Duration(minutes: 2);
+
+  /// How long the sender gathers what a photo's receivers ask for before
+  /// the packets go again; tests shorten it.
+  static Duration askGather = const Duration(seconds: 10);
+
+  /// At most so many times a photo's packets go again because they were
+  /// asked for.
+  static const int askRounds = 3;
 
   final MeshCoreConnector connector;
   ImageReassembler? _reassembler;
@@ -191,6 +291,13 @@ class PhotoMesh {
   Future<void> _writes = Future<void>.value();
   final Set<PhotoRepeats> _toWrite = {};
 
+  /// My photos whose packets can still be asked for, by image id.
+  final Map<int, _SentPhoto> _sentPhotos = {};
+
+  /// The photos being received whose rest I asked for: when, and how many
+  /// packets.
+  final Map<ImageStreamKey, ({DateTime at, int packets})> _asked = {};
+
   PhotoMesh._(this.connector) {
     _datagrams = connector.channelDatagrams.listen((d) {
       if (!isMeshTraxPhotoDataType(d.dataType)) return;
@@ -202,6 +309,7 @@ class PhotoMesh {
         channelIndex: d.channel.index,
         hops: hops < 0 ? 0 : hops,
       );
+      _showReceiving();
     });
     // The radio's raw log too: there a photo sent through repeaters reaches
     // every radio along the way, not only the last. Packets heard both ways
@@ -215,13 +323,194 @@ class PhotoMesh {
         channelIndex: channelIndex,
         hops: PathHelper.getHopCount(path, stride: width),
       );
+      _showReceiving();
     };
     // A deleted photo message takes its picture and bytes with it.
     connector.onChannelMessageDeleted = (id) =>
         unawaited(PhotoStore.instance.forget(id));
-    _sweep = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => _reassembler?.evictExpired(),
+    ChannelRequests.of(
+      connector,
+    ).register(ChannelRequestKind.photoPackets, _onPacketsAsked);
+    _sweep = Timer.periodic(const Duration(seconds: 5), (_) {
+      _reassembler?.evictExpired();
+      _showReceiving();
+      _sentPhotos.removeWhere(
+        (_, p) => DateTime.now().difference(p.startedAt) >= photoReceiveWindow,
+      );
+    });
+  }
+
+  /// The photos being received, for the chat ([receiving]).
+  void _showReceiving() {
+    final now = DateTime.now();
+    final pending = _reassembler?.receiving ?? const <ImageReceiving>[];
+    _asked.removeWhere((key, _) => !pending.any((r) => r.key == key));
+    receiving.value = [
+      for (final r in pending)
+        if (!connector.isSenderBlocked(_senderName(r.key.senderPrefix)))
+          () {
+            final lost = _lostBits(r, now);
+            final asked = _asked[r.key];
+            return (
+              key: r.key,
+              senderName: _senderName(r.key.senderPrefix),
+              received: r.received,
+              total: r.total,
+              lost: _bitCount(lost),
+              canAsk:
+                  lost != 0 &&
+                  r.key.dataType == dataTypeMeshTraxPhoto &&
+                  now.difference(r.firstSeen) < askWithin &&
+                  (asked == null || now.difference(asked.at) >= askRest),
+              asked: asked?.packets ?? 0,
+            );
+          }(),
+    ];
+  }
+
+  /// The packets of photo [r] known lost by [now], one bit each: a missing
+  /// one below the highest that came, as a sender finishes with a packet
+  /// before the next; all that are missing once nothing came for
+  /// [askSilence]. None while the repair packet may still come and rebuild
+  /// the one lost.
+  static int _lostBits(ImageReceiving r, DateTime now) {
+    final silent = now.difference(r.lastSeen) >= askSilence;
+    final lost = silent
+        ? r.missing
+        : r.missing & ((1 << r.highest.clamp(0, 16)) - 1);
+    final repairMayCome = !r.hasParity && !silent;
+    return repairMayCome && _bitCount(lost) <= 1 ? 0 : lost;
+  }
+
+  static int _bitCount(int bits) {
+    var count = 0;
+    for (var b = bits; b != 0; b &= b - 1) {
+      count++;
+    }
+    return count;
+  }
+
+  static List<int> _bitIndexes(int bits) => [
+    for (var i = 0; i < 16; i++)
+      if (bits & (1 << i) != 0) i,
+  ];
+
+  /// Asks the sender of photo [key], being received, for the packets known
+  /// lost ([PhotoReceiving.lost]): one request, through the chat. False
+  /// when nothing can be asked for now, or the radio didn't take it.
+  Future<bool> askForRest(ImageStreamKey key) async {
+    final r = _reassembler?.receiving.where((r) => r.key == key).firstOrNull;
+    final channel = connector.channels
+        .where((c) => c.index == key.channelIndex)
+        .firstOrNull;
+    if (r == null || channel == null) return false;
+    final lost = _lostBits(r, DateTime.now());
+    if (lost == 0) return false;
+    _asked[key] = (at: DateTime.now(), packets: _bitCount(lost));
+    _showReceiving();
+    _log(
+      'asking ${_hex4(key.senderPrefix)} for packets '
+      '${_bitIndexes(lost).map((i) => i + 1).join(', ')} of ${idText(key.imgId)}',
+    );
+    try {
+      final sent = await ChannelRequests.of(connector).send(
+        channel,
+        kind: ChannelRequestKind.photoPackets,
+        asked: key.senderPrefix,
+        body: photoPacketsRequest(
+          imgId: key.imgId,
+          total: r.total,
+          missing: lost,
+        ),
+      );
+      return sent != null;
+    } on ChannelPacketsFailed catch (why) {
+      _log('could not ask for the rest of ${idText(key.imgId)}: $why');
+      return false;
+    }
+  }
+
+  /// A receiver on [channel] asks for packets of a photo of mine: they go
+  /// again once [askGather] has passed, gathered with any other asks for
+  /// it, each at most once per [askRest] and in at most [askRounds] rounds,
+  /// while the receivers still keep the rest ([photoReceiveWindow]).
+  void _onPacketsAsked(Channel channel, ChannelRequest request) {
+    final asked = readPhotoPacketsRequest(request.body);
+    final photo = asked == null ? null : _sentPhotos[asked.imgId];
+    if (asked == null ||
+        photo == null ||
+        photo.idKey != channel.idKey ||
+        photo.dataPackets != asked.total ||
+        DateTime.now().difference(photo.startedAt) >= photoReceiveWindow) {
+      return;
+    }
+    final wanted = asked.missing & ((1 << photo.blobs.length) - 1);
+    if (wanted == 0) return;
+    _log(
+      '${_hex4(request.asker)} asked for packets '
+      '${_bitIndexes(wanted).map((i) => i + 1).join(', ')} of '
+      '${idText(photo.imgId)}',
+    );
+    photo.asked |= wanted;
+    photo.gather ??= Timer(askGather, () => _answer(photo, channel));
+  }
+
+  /// Sends again the packets of [photo] its receivers asked for: the chat
+  /// sends each once, in their turn after any photo still going, each with
+  /// its retry byte counting the copies before it ([_SentPhoto.copy]).
+  void _answer(_SentPhoto photo, Channel channel) {
+    photo.gather = null;
+    final now = DateTime.now();
+    final indexes = [
+      for (final i in _bitIndexes(photo.asked))
+        if (photo.answered[i] == null ||
+            now.difference(photo.answered[i]!) >= askRest)
+          i,
+    ];
+    photo.asked = 0;
+    if (indexes.isEmpty ||
+        _disposed ||
+        now.difference(photo.startedAt) >= photoReceiveWindow) {
+      return;
+    }
+    if (photo.rounds >= askRounds) {
+      _log('${idText(photo.imgId)} was asked for too often: not sent again');
+      return;
+    }
+    photo.rounds++;
+    for (final i in indexes) {
+      photo.answered[i] = now;
+    }
+    _log(
+      'sending packets ${indexes.map((i) => i + 1).join(', ')} of '
+      '${idText(photo.imgId)} again, as asked',
+    );
+    unawaited(
+      connector
+          .sendChannelPackets(
+            channel: channel,
+            groupId: '${photo.messageId}-asked${photo.rounds}',
+            dataType: dataTypeMeshTraxPhoto,
+            packets: [for (final i in indexes) photo.blobs[i]],
+            again: (packet, _) => photo.copy(packet),
+            same: samePhotoPacket,
+            gap: photo.gap,
+            zeroHop: photo.zeroHop,
+            once: true,
+            onPacket: (n, step) {
+              if (step == ChannelPacketStep.sending ||
+                  step == ChannelPacketStep.again) {
+                photo.sends[indexes[n]]++;
+              }
+            },
+            onCopy: photo.repeats == null || _disposed
+                ? null
+                : (n, path, width) =>
+                      _heardOwnPacket(photo.repeats!, indexes[n], path, width),
+          )
+          .catchError(
+            (Object e) => _log('could not send ${idText(photo.imgId)} again: $e'),
+          ),
     );
   }
 
@@ -282,11 +571,11 @@ class PhotoMesh {
     }
     void giveBack() {
       if (HeardService.instance.heardBy(sent.messageId)?.isNotEmpty ?? false) {
-        _log('an observer heard ${_id(imgId)}: its time through repeaters stays');
+        _log('an observer heard ${idText(imgId)}: its time through repeaters stays');
         return;
       }
       _log(
-        'no repeater carried ${_id(imgId)}, and one was heard in the last '
+        'no repeater carried ${idText(imgId)}, and one was heard in the last '
         'minute: its time through repeaters is given back',
       );
       unawaited(notePhotoNotCarried(counted.radio, counted.at));
@@ -310,7 +599,9 @@ class PhotoMesh {
   static AppLocalizations get _l10n =>
       lookupAppLocalizations(NotificationService().locale);
 
-  static String _id(int imgId) => '#${imgId.toRadixString(16).padLeft(2, '0')}';
+  /// "#3a": how the chat names photo [imgId].
+  static String idText(int imgId) =>
+      '#${imgId.toRadixString(16).padLeft(2, '0')}';
 
   /// What the chat shows for a photo that didn't arrive whole: quietly, with
   /// no retry and nothing partial. Counts the repair packet, which MeshTrax
@@ -320,11 +611,11 @@ class PhotoMesh {
     AppLocalizations l10n,
     ImageReassemblyFailure f,
   ) {
-    if (f.isCorrupt) return l10n.photo_needsNewer(_id(f.key.imgId));
+    if (f.isCorrupt) return l10n.photo_needsNewer(idText(f.key.imgId));
     // The repair packet is the sender's choice, so it counts once it came.
     final repair = f.hadParity ? 1 : 0;
     return l10n.photo_incomplete(
-      _id(f.key.imgId),
+      idText(f.key.imgId),
       f.receivedDataChunks + repair,
       f.total + repair,
     );
@@ -380,8 +671,8 @@ class PhotoMesh {
   /// "📷 Photo #3a": the photo's own id keeps two photos from one sender
   /// within five minutes from being merged as one message heard twice.
   static String _text(int imgId, String? tag) => tag == null
-      ? _l10n.photo_message(_id(imgId))
-      : _l10n.photo_messageWithTag(_id(imgId), tag);
+      ? _l10n.photo_message(idText(imgId))
+      : _l10n.photo_messageWithTag(idText(imgId), tag);
 
   /// Files a received photo in its channel's chat.
   Future<void> _fileReceived(ImageReassemblyResult r) async {
@@ -401,8 +692,8 @@ class PhotoMesh {
         channelIndex: r.key.channelIndex,
         senderName: sender,
         text: parts == null
-            ? _l10n.photo_unreadable(_id(r.key.imgId))
-            : _l10n.photo_needsNewer(_id(r.key.imgId)),
+            ? _l10n.photo_unreadable(idText(r.key.imgId))
+            : _l10n.photo_needsNewer(idText(r.key.imgId)),
         isOutgoing: false,
         hops: r.fewestHops,
         packetHash:
@@ -597,6 +888,16 @@ class PhotoMesh {
             hasRepair: chunks.hasParity,
             messageId: messageId,
           );
+    final photo = _sentPhotos[chunks.imgId] = _SentPhoto(
+      messageId: messageId,
+      imgId: chunks.imgId,
+      idKey: channel.idKey,
+      blobs: chunks.blobs,
+      hasRepair: chunks.hasParity,
+      gap: gap,
+      zeroHop: zeroHop,
+      repeats: sent,
+    );
     final sw = Stopwatch();
     try {
       await connector.sendChannelPackets(
@@ -604,17 +905,22 @@ class PhotoMesh {
         groupId: messageId,
         dataType: dataTypeMeshTraxPhoto,
         packets: chunks.blobs,
-        again: photoPacketAgain,
+        again: (packet, _) => photo.copy(packet),
         same: samePhotoPacket,
         gap: gap,
         zeroHop: zeroHop,
         againWithin: photoReceiveWindow * 0.75,
         onPacket: (index, step) {
+          if (step == ChannelPacketStep.sending ||
+              step == ChannelPacketStep.again) {
+            photo.sends[index]++;
+          }
           if (_disposed) return;
           final repair = chunks.hasParity && index == packets - 1;
           switch (step) {
             case ChannelPacketStep.sending || ChannelPacketStep.again:
               if (index == 0 && step == ChannelPacketStep.sending) {
+                photo.startedAt = DateTime.now();
                 sw.start();
                 if (sent != null) unawaited(_count(sent));
               }
@@ -640,7 +946,7 @@ class PhotoMesh {
               if (index == packets - 1) {
                 sending.value = Map.of(sending.value)..remove(messageId);
                 _log(
-                  'sent ${_id(chunks.imgId)} on channel ${channel.index} as '
+                  'sent ${idText(chunks.imgId)} on channel ${channel.index} as '
                   '$packets packets ${zeroHop ? 'zero hop' : 'as a flood'}, '
                   '${gap.inMilliseconds} ms apart or more, in '
                   '${sw.elapsedMilliseconds} ms',
@@ -653,7 +959,7 @@ class PhotoMesh {
             : (index, path, width) => _heardOwnPacket(sent, index, path, width),
       );
     } on ChannelPacketsFailed catch (why) {
-      _log('could not send ${_id(chunks.imgId)}: $why');
+      _log('could not send ${idText(chunks.imgId)}: $why');
       _say(messageId, PhotoSendStep.failed, error: PhotoSendException.from(why));
       await connector.failOwnSend(messageId);
       connector.waitForRepeats(messageId, waiting: false);
@@ -666,7 +972,7 @@ class PhotoMesh {
     }
     _log(
       'repeaters passed on ${sent.passedOnCount} of $packets packets of '
-      '${_id(chunks.imgId)}; copies heard: ${sent.copies}',
+      '${idText(chunks.imgId)}; copies heard: ${sent.copies}',
     );
     _giveBackIfNotCarried(sent, chunks.imgId);
     _showRepeats(sent);
@@ -694,5 +1000,8 @@ class PhotoMesh {
     _disposed = true;
     _datagrams.cancel();
     _sweep.cancel();
+    for (final photo in _sentPhotos.values) {
+      photo.gather?.cancel();
+    }
   }
 }

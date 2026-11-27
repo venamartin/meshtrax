@@ -10,7 +10,9 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/region_helper.dart';
 import 'package:meshtrax/models/channel_message.dart';
+import 'package:meshtrax/models/channel_request.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
+import 'package:meshtrax/services/channel_requests.dart';
 import 'package:meshtrax/services/heard_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
@@ -19,11 +21,13 @@ import 'package:meshtrax/services/photo_store.dart';
 import 'package:meshtrax/services/region_service.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxheard/traxheard.dart' show Sighting, channelDataPacketHash;
 import 'package:traxpix/traxpix.dart'
     show
+        ImageChunkSet,
         ImageCodecRatePoint,
         ImageStreamMetadata,
         PhotoExtras,
@@ -32,7 +36,9 @@ import 'package:traxpix/traxpix.dart'
         kImageRetryByteOffset,
         kPhotoItemSubjectOnly,
         photoPacketAgain,
+        photoPacketsRequest,
         photoPayload,
+        readPhotoPacketsRequest,
         samePhotoPacket;
 
 // A photo goes into the chat at once; the chat then sends its packets one
@@ -222,10 +228,12 @@ void main() {
     MeshCoreConnector.channelRepeatWait = const Duration(milliseconds: 300);
     MeshCoreConnector.radioQuietMs = 50;
     PhotoMesh.resetForTest();
+    ChannelRequests.resetForTest();
   });
 
   tearDown(() {
     PhotoMesh.resetForTest();
+    ChannelRequests.resetForTest();
     MeshCoreConnector.channelRepeatWait = repeatWait;
     MeshCoreConnector.radioQuietMs = radioQuiet;
   });
@@ -843,6 +851,184 @@ void main() {
       await send(r);
       await Future<void>.delayed(const Duration(milliseconds: 400));
       expect(photoLastSentViaRepeaters(r.selfPublicKeyHex), isNull);
+    });
+  });
+
+  group('lost packets asked for', () {
+    final gather = PhotoMesh.askGather;
+    final rest = PhotoMesh.askRest;
+    final silence = PhotoMesh.askSilence;
+
+    setUp(() {
+      PhotoMesh.askGather = const Duration(milliseconds: 100);
+      PackageInfo.setMockInitialValues(
+        appName: 'MeshTrax',
+        packageName: 'com.vena.meshtrax',
+        version: '1.12.1',
+        buildNumber: '252',
+        buildSignature: '',
+      );
+    });
+
+    tearDown(() {
+      PhotoMesh.askGather = gather;
+      PhotoMesh.askRest = rest;
+      PhotoMesh.askSilence = silence;
+    });
+
+    /// A photo of 4 data packets and the repair packet, from BEEF.
+    ImageChunkSet theirs(int imgId) => buildImageChunks(
+      payload: Uint8List.fromList(List.generate(600, (i) => i * 3)),
+      metadata: const ImageStreamMetadata(rate: ImageCodecRatePoint.ft8),
+      senderPrefix: 0xBEEF,
+      imgId: imgId,
+      parity: true,
+    );
+
+    /// The photo packets [r] took, without its requests.
+    List<Uint8List> photoPackets(_Radio r) => [
+      for (var i = 0; i < r.blobs.length; i++)
+        if (r.types[i] == 0x0172) r.blobs[i],
+    ];
+
+    /// Waits until [r] took [count] photo packets, or 5 seconds.
+    Future<void> taken(_Radio r, int count) async {
+      for (var i = 0; i < 100 && photoPackets(r).length < count; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      expect(photoPackets(r), hasLength(count));
+    }
+
+    /// [asker] asks [asked] on Trip for packets [missing] of photo [imgId]
+    /// of [total] data packets.
+    void ask(
+      _Radio r,
+      int imgId,
+      int missing, {
+      int total = 4,
+      int asker = 0xBEEF,
+      int asked = 0x7777,
+    }) {
+      final request = ChannelRequest(
+        kind: ChannelRequestKind.photoPackets,
+        id: 9,
+        asker: asker,
+        asked: asked,
+        build: 252,
+        body: photoPacketsRequest(imgId: imgId, total: total, missing: missing),
+      );
+      r.handleFrameForTest(_received(request.encode(), 1, dataType: 0x0173));
+    }
+
+    test('a photo coming in shows how far it came; asking for the rest asks '
+        'its sender for just the lost packets, with this build', () async {
+      final r = await radio((n, index) => true);
+      PhotoMesh.of(r);
+      final photo = theirs(0x3a);
+      r.handleFrameForTest(_received(photo.blobs[0], 1));
+      await pumpEventQueue();
+      var line = PhotoMesh.receiving.value.single;
+      expect(line.senderName, 'Node beef');
+      expect((line.received, line.total, line.lost, line.canAsk), (
+        1,
+        4,
+        0,
+        false,
+      ));
+
+      // Packet 4 came, so packets 2 and 3 were lost on the way.
+      r.handleFrameForTest(_received(photo.blobs[3], 1));
+      await pumpEventQueue();
+      line = PhotoMesh.receiving.value.single;
+      expect((line.received, line.lost, line.canAsk), (2, 2, true));
+
+      expect(await PhotoMesh.of(r).askForRest(line.key), isTrue);
+      final i = r.types.indexOf(0x0173);
+      expect(r.paths[i], 0xFF);
+      final request = ChannelRequest.decode(r.blobs[i])!;
+      expect(request.kind, ChannelRequestKind.photoPackets);
+      expect(request.build, 252);
+      expect(request.asker, 0x7777);
+      expect(request.asked, 0xBEEF);
+      expect(readPhotoPacketsRequest(request.body), (
+        imgId: 0x3a,
+        total: 4,
+        missing: 0x06,
+      ));
+      line = PhotoMesh.receiving.value.single;
+      expect((line.canAsk, line.asked), (false, 2));
+    });
+
+    test('one packet missing is not lost while the repair packet may still '
+        'rebuild it; after a silence it is', () async {
+      PhotoMesh.askSilence = const Duration(milliseconds: 200);
+      final r = await radio((n, index) => true);
+      PhotoMesh.of(r);
+      final photo = theirs(0x3a);
+      r.handleFrameForTest(_received(photo.blobs[0], 1));
+      r.handleFrameForTest(_received(photo.blobs[2], 1));
+      await pumpEventQueue();
+      expect(PhotoMesh.receiving.value.single.lost, 0);
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      // Any packet that comes shows the photos again: another photo's.
+      r.handleFrameForTest(_received(theirs(0x3b).blobs[0], 1));
+      await pumpEventQueue();
+      final line = PhotoMesh.receiving.value.firstWhere(
+        (l) => l.key.imgId == 0x3a,
+      );
+      expect((line.lost, line.canAsk), (2, true));
+    });
+
+    test('the sender sends just the packets asked for, each once, its retry '
+        'byte counting the copies before; asked again within the rest, not '
+        'again', () async {
+      final r = await radio((n, index) => true);
+      await send(r, bytes: 600);
+      final sent = photoPackets(r);
+      expect(_indexes(sent), [0, 1, 2, 3]);
+      final imgId = sent[0][2];
+
+      ask(r, imgId, 0x06);
+      await taken(r, 6);
+      final again = photoPackets(r).sublist(4);
+      expect(_indexes(again), [1, 2]);
+      expect(_retries(again), [1, 1]);
+      expect(samePhotoPacket(again[0], sent[1]), isTrue);
+      expect(r.paths.last, 0xFF);
+
+      ask(r, imgId, 0x02);
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(photoPackets(r), hasLength(6));
+    });
+
+    test('a photo goes again as asked at most 3 times, each copy one more '
+        'in its retry byte', () async {
+      PhotoMesh.askRest = Duration.zero;
+      final r = await radio((n, index) => true);
+      await send(r, bytes: 600);
+      final imgId = photoPackets(r)[0][2];
+      for (var round = 1; round <= 3; round++) {
+        ask(r, imgId, 0x02);
+        await taken(r, 4 + round);
+      }
+      ask(r, imgId, 0x02);
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final again = photoPackets(r).sublist(4);
+      expect(_indexes(again), [1, 1, 1]);
+      expect(_retries(again), [1, 2, 3]);
+    });
+
+    test('a request the sender can\'t answer is left alone', () async {
+      final r = await radio((n, index) => true);
+      await send(r, bytes: 600);
+      final imgId = photoPackets(r)[0][2];
+      ask(r, imgId, 0x02, total: 5); // not this photo's count
+      ask(r, (imgId + 1) & 0xFF, 0x02); // not a photo of mine
+      ask(r, imgId, 0x02, asked: 0x1234); // asked of another node
+      ask(r, imgId, 0x02, asker: 0x7777); // my own request heard back
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(photoPackets(r), hasLength(4));
     });
   });
 }

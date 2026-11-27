@@ -402,4 +402,47 @@ void main() {
       expect(ids.next(), 0);
     });
   });
+
+  group('asking for lost packets', () {
+    test('the packets a photo lacks are one bit each', () {
+      final blobs = photo(600, parity: false).blobs;
+      expect(blobs, hasLength(4));
+      final (packets, _) = collect([blobs[0], blobs[2]]);
+      expect(missingPacketBits(packets), 0x0A);
+    });
+
+    test('a request names the photo, its data packets and the ones lacked',
+        () {
+      final body = photoPacketsRequest(imgId: 0x3a, total: 4, missing: 0x06);
+      expect(body, [0x3a, 4, 0x00, 0x06]);
+      expect(readPhotoPacketsRequest(body), (
+        imgId: 0x3a,
+        total: 4,
+        missing: 0x06,
+      ));
+    });
+
+    test('bytes past the 4 it knows are left for later kinds of the body',
+        () {
+      final body = Uint8List.fromList([0x3a, 4, 0x00, 0x06, 0xEE, 0xFF]);
+      expect(readPhotoPacketsRequest(body)?.missing, 0x06);
+    });
+
+    test('a short body or an impossible count is no request', () {
+      expect(readPhotoPacketsRequest(Uint8List.fromList([0x3a, 4, 0])), null);
+      expect(
+        readPhotoPacketsRequest(Uint8List.fromList([0x3a, 0, 0, 1])),
+        null,
+      );
+      expect(
+        readPhotoPacketsRequest(Uint8List.fromList([0x3a, 16, 0, 1])),
+        null,
+      );
+    });
+
+    test('bits past the repair packet are dropped', () {
+      final body = Uint8List.fromList([0x3a, 4, 0xFF, 0xFF]);
+      expect(readPhotoPacketsRequest(body)?.missing, 0x1F);
+    });
+  });
 }

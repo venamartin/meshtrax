@@ -239,6 +239,39 @@ class AppLocalizationsBg extends AppLocalizations {
   String get photo_getPhotosWifi => 'It waits for Wi‑Fi.';
 
   @override
+  String photo_receiving(String id, String name, int got, int total) {
+    return '📷 Photo $id from $name: $got of $total packets so far';
+  }
+
+  @override
+  String photo_receivingLost(
+    String id,
+    String name,
+    int got,
+    int total,
+    int lost,
+  ) {
+    return '📷 Photo $id from $name: $got of $total packets, $lost lost';
+  }
+
+  @override
+  String get photo_askForRest => 'Ask for the rest';
+
+  @override
+  String photo_askedFor(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Asked for $count packets',
+      one: 'Asked for 1 packet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photo_askFailed => 'Couldn\'t ask for the rest';
+
+  @override
   String get photo_waitingToSend => 'Waiting to send';
 
   @override

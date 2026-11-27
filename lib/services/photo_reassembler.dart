@@ -178,11 +178,50 @@ class _CompletedImage {
   _CompletedImage(this.at, this.packets);
 }
 
+/// A photo being received, as it stands.
+class ImageReceiving {
+  final ImageStreamKey key;
+
+  /// Its data packets.
+  final int total;
+
+  /// The data packets in.
+  final int received;
+
+  /// The data packets it lacks, one bit each: packet i at bit i
+  /// ([missingPacketBits]).
+  final int missing;
+
+  final bool hasParity;
+
+  /// The highest packet index seen; the repair packet is [total].
+  final int highest;
+
+  final DateTime firstSeen;
+  final DateTime lastSeen;
+  final int? fewestHops;
+
+  const ImageReceiving({
+    required this.key,
+    required this.total,
+    required this.received,
+    required this.missing,
+    required this.hasParity,
+    required this.highest,
+    required this.firstSeen,
+    required this.lastSeen,
+    this.fewestHops,
+  });
+}
+
 class _PendingImage {
   final ImageStreamKey key;
   final ImagePackets packets;
   final DateTime firstSeen;
   DateTime lastSeen;
+
+  /// The highest packet index seen; the repair packet is the data count.
+  int highest = -1;
 
   /// The fewest repeaters any copy of a packet came through; null when none
   /// said.
@@ -274,6 +313,22 @@ class ImageReassembler {
 
   /// Keys of the photos being received (test/debug aid).
   Iterable<ImageStreamKey> get pendingKeys => _pending.keys;
+
+  /// The photos being received, as they stand.
+  List<ImageReceiving> get receiving => [
+    for (final entry in _pending.values)
+      ImageReceiving(
+        key: entry.key,
+        total: entry.packets.total,
+        received: entry.packets.received,
+        missing: missingPacketBits(entry.packets),
+        hasParity: entry.packets.hasParity,
+        highest: entry.highest,
+        firstSeen: entry.firstSeen,
+        lastSeen: entry.lastSeen,
+        fewestHops: entry.fewestHops,
+      ),
+  ];
 
   /// Number of finished photos remembered for late copies.
   int get completedCount => _recentlyCompleted.length;
@@ -381,6 +436,7 @@ class ImageReassembler {
     }
     entry.lastSeen = at;
     entry.heard(hops);
+    if (header.index > entry.highest) entry.highest = header.index;
 
     switch (entry.packets.add(header, body)) {
       case ImagePacketAdded.duplicate:
@@ -395,6 +451,7 @@ class ImageReassembler {
         );
         fresh.packets.add(header, body);
         fresh.heard(hops);
+        fresh.highest = header.index;
         _pending[key] = fresh;
         return ImageChunkOutcome(ImageChunkStatus.conflicting, header: header);
       case ImagePacketAdded.accepted:

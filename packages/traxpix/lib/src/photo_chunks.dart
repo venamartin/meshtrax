@@ -727,3 +727,52 @@ bool _sameBytes(Uint8List a, Uint8List b) {
   }
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// Asking for lost packets
+// ---------------------------------------------------------------------------
+
+/// The data packets [packets] still lacks, one bit each: packet i at bit i.
+int missingPacketBits(ImagePackets packets) {
+  var bits = 0;
+  for (var i = 0; i < packets.total; i++) {
+    if (!packets.bodies.containsKey(i)) bits |= 1 << i;
+  }
+  return bits;
+}
+
+/// The body of a request for the packets of photo [imgId], of [total] data
+/// packets, that the asker is missing: [missing], one bit each, packet i at
+/// bit i and the repair packet at bit [total].
+///
+/// ```
+///   off  size  field
+///   0    1     photo id
+///   1    1     data packets
+///   2    2     missing, big-endian
+/// ```
+///
+/// The app sends it as a channel request; the photo's sender answers with
+/// the packets again ([photoPacketAgain]). A longer body is read as far as
+/// this.
+Uint8List photoPacketsRequest({
+  required int imgId,
+  required int total,
+  required int missing,
+}) => Uint8List.fromList([
+  imgId & 0xFF,
+  total & 0xFF,
+  (missing >> 8) & 0xFF,
+  missing & 0xFF,
+]);
+
+/// What a [photoPacketsRequest] body asks for, or null when it can't be one.
+({int imgId, int total, int missing})? readPhotoPacketsRequest(
+  Uint8List body,
+) {
+  if (body.length < 4) return null;
+  final total = body[1];
+  if (total == 0 || total > kImageMaxDataChunks) return null;
+  final missing = ((body[2] << 8) | body[3]) & ((1 << (total + 1)) - 1);
+  return (imgId: body[0], total: total, missing: missing);
+}

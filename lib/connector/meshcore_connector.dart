@@ -8460,11 +8460,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// observers hear this radio lately. Two or more, or an observer heard it:
   /// done. Texts sent meanwhile go between them.
   ///
-  /// A packet sent again is [again] of the packet and how many times it went
-  /// before (the receivers' format makes it a new packet on the air), and
-  /// goes only within [againWithin] of the group's first packet, while the
-  /// receivers still keep the rest. A copy a repeater passes on is one [same]
-  /// as the packet sent. [gap]: the least time from one packet to the next.
+  /// Each packet goes as [again] of it and how many times it went before, 0
+  /// the first time, made just before it goes: the receivers' format makes a
+  /// packet sent again a new packet on the air. A packet goes again only
+  /// within [againWithin] of the group's first packet, while the receivers
+  /// still keep the rest. A copy a repeater passes on is one [same] as the
+  /// packet sent. [gap]: the least time from one packet to the next.
   /// [zeroHop]: to the radios in range only; nothing waits or goes again.
   /// [groupId] names the group, and packet n's send id is `groupId/n`, n
   /// from 1, as the observer server is asked about it.
@@ -8474,15 +8475,22 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// the last packet is done with, when the returned future completes. It
   /// throws [ChannelPacketsFailed] when the radio didn't take a packet: the
   /// rest don't go.
+  ///
+  /// With [once], each packet goes once and is done with when the radio has
+  /// it: no wait for a repeat, nothing sent again, observers not asked. With
+  /// [ahead], the group goes at once, as a text does, not after the groups
+  /// still going.
   Future<void> sendChannelPackets({
     required Channel channel,
     required String groupId,
     required int dataType,
     required List<Uint8List> packets,
-    required Uint8List Function(Uint8List packet, int sendsBefore) again,
-    required bool Function(Uint8List copy, Uint8List sent) same,
+    Uint8List Function(Uint8List packet, int sendsBefore)? again,
+    bool Function(Uint8List copy, Uint8List sent)? same,
     Duration gap = Duration.zero,
     bool zeroHop = false,
+    bool once = false,
+    bool ahead = false,
     Duration? againWithin,
     void Function(int index, ChannelPacketStep step)? onPacket,
     void Function(int index, Uint8List path, int pathHashSize)? onCopy,
@@ -8491,13 +8499,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       id: groupId,
       idKey: channel.idKey,
       dataType: dataType,
-      again: again,
-      same: same,
+      again: again ?? (packet, _) => packet,
+      same: same ?? listEquals,
       zeroHop: zeroHop,
+      once: once,
       againWithin: againWithin,
       onPacket: onPacket,
       onCopy: onCopy,
     );
+    if (ahead) return _sendPacketGroup(group, packets, gap);
     final job = _packetGroups.then((_) => _sendPacketGroup(group, packets, gap));
     _packetGroups = job.then((_) {}, onError: (Object _) {});
     return job;
@@ -8528,7 +8538,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         group.onPacket?.call(i, ChannelPacketStep.done);
       }
       // Copies can still come back, as a text's echo can.
-      if (!group.zeroHop) await Future<void>.delayed(channelRepeatWait);
+      if (!group.zeroHop && !group.once) {
+        await Future<void>.delayed(channelRepeatWait);
+      }
     } finally {
       for (final packet in packets) {
         _channelPackets.remove(packet.id);
@@ -8557,10 +8569,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       _failChannelPacket(packet, ChannelPacketsFailed(connected: isConnected));
       return;
     }
-    final sendsBefore = packet.sends;
-    final blob = sendsBefore == 0
-        ? packet.blob
-        : group.again(packet.blob, sendsBefore);
     packet.oneMore = oneMore;
     if (!oneMore) {
       _channelMessageTimers[packet.id]?.cancel();
@@ -8578,6 +8586,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         (!oneMore && !_channelMessageTimers.containsKey(packet.id))) {
       return;
     }
+    final sendsBefore = packet.sends;
+    final blob = group.again(packet.blob, sendsBefore);
     packet.sends++;
     packet.lastHandedOver = DateTime.now();
     group.startedAt ??= packet.lastHandedOver;
@@ -8585,7 +8595,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       packet.index,
       sendsBefore == 0 ? ChannelPacketStep.sending : ChannelPacketStep.again,
     );
-    if (!group.zeroHop && !_isNearbyOnly(live.idKey)) {
+    if (!group.zeroHop && !group.once && !_isNearbyOnly(live.idKey)) {
       final region = regionService?.regionOf(live.idKey);
       onChannelPacketSent?.call((
         id: packet.id,
@@ -8623,6 +8633,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final live = _liveChannelByIdKey(packet.group.idKey);
     if (packet.oneMore ||
         packet.group.zeroHop ||
+        packet.group.once ||
         live == null ||
         _isNearbyOnly(live.idKey)) {
       packet.settle();
@@ -15302,12 +15313,16 @@ class _ChannelPacketGroup {
     required this.again,
     required this.same,
     required this.zeroHop,
+    this.once = false,
     this.againWithin,
     this.onPacket,
     this.onCopy,
   });
 
   final String id;
+
+  /// Each packet goes once, done with when the radio has it.
+  final bool once;
 
   /// The channel's identity: its slot can move on a resync.
   final String idKey;
@@ -15330,7 +15345,7 @@ class _ChannelPacket {
   final _ChannelPacketGroup group;
   final int index;
 
-  /// As it goes the first time.
+  /// As handed over: each send goes as the group's again of it.
   final Uint8List blob;
 
   /// How many times it went to the radio.
