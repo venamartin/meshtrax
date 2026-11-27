@@ -22,8 +22,11 @@ void main() {
   });
 
   /// One run of the app with the log on, and its store to wait for writes.
-  (AppDebugLogService, AppDebugLogStore) run({int maxLines = 100}) {
-    final store = AppDebugLogStore(dir, maxLines: maxLines);
+  (AppDebugLogService, AppDebugLogStore) run({
+    int maxLines = 100,
+    int loadLines = 100,
+  }) {
+    final store = AppDebugLogStore(dir, maxLines: maxLines, loadLines: loadLines);
     stores.add(store);
     return (AppDebugLogService(store: store)..setEnabled(true), store);
   }
@@ -93,7 +96,7 @@ void main() {
 
   test('the files keep the newest lines, and twice the limit at most',
       () async {
-    final (first, firstStore) = run(maxLines: 5);
+    final (first, firstStore) = run(maxLines: 5, loadLines: 5);
     for (var i = 1; i <= 12; i++) {
       first.info('line $i');
       if (i.isEven) await firstStore.flush();
@@ -105,9 +108,67 @@ void main() {
     ];
     expect(onDisk.length, inInclusiveRange(5, 10));
 
-    final (second, _) = run(maxLines: 5);
+    final (second, _) = run(maxLines: 5, loadLines: 5);
     await second.restore();
     expect(shown(second), [for (var i = 8; i <= 12; i++) 'line $i']);
+  });
+
+  test('a run brings back only the newest lines it keeps in memory; the '
+      'files keep the rest', () async {
+    final (first, firstStore) = run(loadLines: 3);
+    for (var i = 1; i <= 10; i++) {
+      first.info('line $i');
+    }
+    await firstStore.flush();
+
+    final (second, _) = run(loadLines: 3);
+    await second.restore();
+    expect(shown(second), ['line 8', 'line 9', 'line 10']);
+    final onDisk = File('${dir.path}/app.log')
+        .readAsLinesSync()
+        .where((line) => line.isNotEmpty);
+    expect(onDisk, hasLength(10));
+  });
+
+  test('an export holds every line both files keep, oldest first, at the '
+      'level asked, under the line naming the build', () async {
+    final (log, store) = run(maxLines: 4, loadLines: 2);
+    for (var i = 1; i <= 6; i++) {
+      i.isEven ? log.warn('warn $i') : log.info('info $i');
+      await store.flush(); // app.log turns over after 4 lines
+    }
+    final out = File('${dir.path}/export.txt');
+
+    expect(await log.exportToFile(out.path), isTrue);
+    final all = out.readAsLinesSync();
+    expect(all.first, matches(r'^MeshTrax .+ debug log, exported '));
+    expect([for (final l in all.skip(1)) l.split('] ').last],
+        ['info 1', 'warn 2', 'info 3', 'warn 4', 'info 5', 'warn 6']);
+
+    expect(
+        await log.exportToFile(out.path, minLevel: AppDebugLogLevel.warning),
+        isTrue);
+    expect([for (final l in out.readAsLinesSync().skip(1)) l.split('] ').last],
+        ['warn 2', 'warn 4', 'warn 6']);
+  });
+
+  test('an export skips a line cut short by a stop of the app', () async {
+    final (first, firstStore) = run();
+    first.info('kept');
+    await firstStore.flush();
+    File('${dir.path}/app.log').writeAsBytesSync([
+      ...utf8.encode('\n{"t":17641,"m":"cut'),
+      0xF0,
+      0x9F,
+    ], mode: FileMode.append);
+    final (second, secondStore) = run();
+    second.info('after');
+    await secondStore.flush();
+
+    final out = File('${dir.path}/export.txt');
+    expect(await second.exportToFile(out.path), isTrue);
+    expect([for (final l in out.readAsLinesSync().skip(1)) l.split('] ').last],
+        ['kept', 'after']);
   });
 
   test('a line cut short by a stop of the app costs only itself', () async {
