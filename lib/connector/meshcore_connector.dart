@@ -35,6 +35,7 @@ import '../helpers/smaz.dart';
 import '../helpers/timeout_helper.dart';
 import '../services/app_debug_log_service.dart';
 import '../services/ble_debug_log_service.dart';
+import '../services/dm_measure_log.dart';
 import '../services/companion_cli_service.dart';
 import '../services/linux_ble_error_classifier.dart';
 import '../services/linux_ble_pairing_service_stub.dart'
@@ -2012,6 +2013,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       RetryServiceConfig(
         sendMessage: _sendMessageDirect,
         maxSendHoldMs: TimeoutHelper.maxSendHoldMs,
+        measureLog: _measure,
         sendOnRoute: sendOnRoute,
         addMessage: _addMessage,
         updateMessage: _updateMessage,
@@ -2484,6 +2486,66 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     int snrByte,
     Uint8List payload,
   )? onPassingCopyHeard;
+
+  /// The area the radio is in now, as Pathfinder knows it, or null; set by
+  /// the path graph service. Only the measurement lines read it, as a
+  /// keyed hash ([MeasureLog.area]).
+  String? Function()? measureAreaKey;
+
+  /// The measurement lines, written to the debug log while it is on.
+  late final MeasureLog _measure = MeasureLog(
+    write: (line) => _appDebugLogService?.info(line, tag: 'Measure'),
+    areaKey: () => measureAreaKey?.call(),
+    salt: _measureSalt,
+  );
+
+  static const _measureSaltKey = 'measure_area_salt';
+
+  /// Whether the measurement lines are being written: the debug log is on.
+  bool get _measuring => _appDebugLogService?.enabled ?? false;
+
+  /// A copy of a DM or room post to me was opened: which way it came and
+  /// how well it was heard.
+  void _measureGot(PassingCopy copy, _RawPacket packet, int snrByte) {
+    _measure.line('got', {
+      'c': MeasureLog.contact(pubKeyToHex(copy.senderKey)),
+      'ts': copy.timestamp,
+      'n': copy.attempt + 1,
+      'room': copy.isRoomPost ? 1 : null,
+      'route': packet.isFlood ? 'flood' : 'routed',
+      'left': packet.isFlood
+          ? null
+          : PathHelper.getHopCount(copy.hopsLeft, stride: copy.hopWidth),
+      'hops': packet.isFlood ? packet.hopCount : null,
+      'r': packet.isFlood
+          ? PathHelper.lastHopHex(packet.pathBytes, stride: packet.hashSize)
+          : null,
+      'w': packet.hashSize,
+      'db': snrByte.toSigned(8) / 4,
+      'a': _measure.area(),
+    });
+  }
+
+  /// This phone's secret for the measurement lines' area hashes: made once,
+  /// kept in the settings, never written anywhere else. Null without
+  /// settings to keep it in, and then no area is written.
+  String? _measureSalt() {
+    try {
+      final prefs = PrefsManager.instance;
+      var salt = prefs.getString(_measureSaltKey);
+      if (salt == null) {
+        final random = math.Random.secure();
+        salt = [
+          for (var i = 0; i < 16; i++)
+            random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+        ].join();
+        unawaited(prefs.setString(_measureSaltKey, salt));
+      }
+      return salt;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// A flooded DM or room post to this radio that the app opened itself
   /// from the copy the radio logged, a sync round-trip before the radio
@@ -9722,6 +9784,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       contactKeys: _contacts.map((c) => c.publicKey),
     );
     if (copy == null) return;
+    _measureGot(copy, packet, snrByte);
     onPassingCopyHeard?.call(
       pubKeyToHex(copy.senderKey),
       copy.hopsLeft,
@@ -9772,7 +9835,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// after that is confirmed as if the radio had.
   /// What the app saw of the ACK is kept for that moment too: it tells
   /// apart the attempts of one DM that share an ACK code.
-  void _noteAckHeard(_RawPacket packet) {
+  void _noteAckHeard(_RawPacket packet, double dB) {
     var heard = PassingCopyOpener.heardAck(packet.payloadType, packet.payload);
     if (heard == null && packet.payloadType == payloadTypePATH) {
       final opener = _passingCopyOpener;
@@ -9785,7 +9848,28 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         contactKeys: _contacts.map((c) => c.publicKey),
       );
     }
-    if (heard == null || _heardAckTimers.containsKey(heard.code)) return;
+    if (heard == null) return;
+    // Every copy of an ACK for a DM of mine, the later ones too: which way
+    // back carried it, and how well it was heard.
+    if (_retryService?.isOurAck(heard.code) ?? false) {
+      _measure.line('ackcopy', {
+        'h': ackHashToHex(heard.code),
+        'kind': switch (packet.payloadType) {
+          payloadTypeMULTIPART => 'multi',
+          payloadTypePATH => 'path',
+          _ => 'ack',
+        },
+        'route': packet.isFlood ? 'flood' : 'routed',
+        'left': packet.isFlood ? null : math.max(0, packet.hopCount),
+        'r': packet.isFlood
+            ? PathHelper.lastHopHex(packet.pathBytes, stride: packet.hashSize)
+            : null,
+        'w': packet.hashSize,
+        'db': dB,
+        'a': _measure.area(),
+      });
+    }
+    if (_heardAckTimers.containsKey(heard.code)) return;
     final ack = heard.code;
     final waited = _retryService?.waitingForAck(ack);
     if (waited == null && !_pendingRepeaterAcks.containsKey(ackHashToHex(ack))) {
@@ -9937,7 +10021,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// before (simulator 2026-11-21: the first DM after a move got its second
   /// ACK on the old ranking, and that was the one ACK that could arrive).
   void _sendSecondAckFor(_RawPacket packet, int snrByte) {
-    if (!_appSendsSecondAck) return;
+    // Opened for the measurement lines too, while the debug log is on.
+    if (!_appSendsSecondAck && !_measuring) return;
     final opener = _passingCopyOpener;
     final me = _selfPublicKey;
     if (opener == null || me == null || !listEquals(opener.selfKey, me)) {
@@ -9951,6 +10036,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       contactKeys: _contacts.map((c) => c.publicKey),
     );
     if (copy == null) return;
+    _measureGot(copy, packet, snrByte);
+    if (!_appSendsSecondAck) return;
     if (!_remember(_secondAckSent, pubKeyToHex(copy.ack.sublist(0, 4)))) {
       return;
     }
@@ -10226,7 +10313,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       final raw = reader.readRemainingBytes();
       final packet = _parseRawPacket(raw);
       if (packet == null) return;
-      _noteAckHeard(packet);
+      final dB = frame[1].toSigned(8) / 4;
+      _noteAckHeard(packet, dB);
       _notePathReply(packet);
       // A repeater's own advert, zero hops: a repeater transmission
       // reached me just as surely as a relayed packet (the parked-message
@@ -10237,7 +10325,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           (packet.payload[100] & 0x0F) == advTypeRepeater &&
           !_isSharedAdvertRoute(packet.routeType, packet.pathBytes.length)) {
         _retryService?.noteRepeaterHeard();
-        _noteHeardFrom(PathHelper.pubKeyPrefix(packet.payload, stride: 3));
+        final prefix = PathHelper.pubKeyPrefix(packet.payload, stride: 3);
+        _noteHeardFrom(prefix);
+        _measure.noteHeard(PathHelper.hopHex(prefix), dB, from: 'advert');
       }
       // Message liveness, any hash width (the raw copy of my own flooded
       // DM carries [their byte][my byte]; a flood with hops passed through
@@ -10248,7 +10338,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           _retryService?.noteRepeaterHeard();
           final lastHop =
               PathHelper.lastHop(packet.pathBytes, stride: packet.hashSize);
-          if (lastHop != null) _noteHeardFrom(lastHop);
+          if (lastHop != null) {
+            _noteHeardFrom(lastHop);
+            _measure.noteHeard(PathHelper.hopHex(lastHop), dB, from: 'flood');
+          }
         }
         final me = _selfPublicKey;
         if (packet.payloadType == _payloadTypeTxtMsg &&
@@ -10257,6 +10350,16 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             packet.payload[1] == me[0] &&
             packet.payload[0] != me[0]) {
           _retryService?.noteOwnFloodEcho(packet.payload[0]);
+          // The first repeater on the echo's path heard my flood.
+          _measure.line('echo', {
+            'd': PathHelper.hopHex([packet.payload[0]]),
+            'r': PathHelper.firstHopHex(packet.pathBytes,
+                stride: packet.hashSize),
+            'w': packet.hashSize,
+            'hops': packet.hopCount,
+            'db': dB,
+            'a': _measure.area(),
+          });
         }
         // A DM or room post to me ([my byte][their byte]): kept until the
         // radio hands over the decoded message, for its path line.
@@ -13508,6 +13611,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _usbFrameSubscription?.cancel();
     _notifySubscription?.cancel();
     _notifyListenersTimer?.cancel();
+    _measure.flushHeard();
     _reconnectTimer?.cancel();
     _batteryPollTimer?.cancel();
     _gpsPollTimer?.cancel();

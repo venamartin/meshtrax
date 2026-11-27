@@ -331,6 +331,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
     connector.onFloodCopyOpened = _onFloodCopyOpened;
+    connector.measureAreaKey = () => _graph?.currentCell;
     final keeper = _keeper = RadioRouteKeeper(
       // Not during a download: a contact the radio dropped is still listed, and
       // writing its route would add it back and evict another.
@@ -593,6 +594,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
     _connector?.onFloodCopyOpened = null;
+    _connector?.measureAreaKey = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
     _connector?.onSendOutcome = null;
@@ -1111,6 +1113,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           source: RouteSource.graph,
           estDelivery: r.estDelivery,
           guessedLinks: r.guessedLinks,
+          liveAgeMillis: r.liveAgeMillis,
         );
     final found = graph.findRoutes(contact.publicKeyHex, count: 3);
     return [
