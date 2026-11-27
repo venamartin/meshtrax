@@ -24,17 +24,14 @@ ImageChunkSet photo(int length, {int imgId = 11, bool parity = true}) =>
       parity: parity,
     );
 
-/// Adds [blobs], packets of [dataType], to one [ImagePackets] in the given
-/// order, and returns it with what each add made of its packet.
-(ImagePackets, List<ImagePacketAdded>) collect(
-  List<Uint8List> blobs, {
-  int dataType = dataTypeMeshTraxPhoto,
-}) {
+/// Adds [blobs] to one [ImagePackets] in the given order, and returns it
+/// with what each add made of its packet.
+(ImagePackets, List<ImagePacketAdded>) collect(List<Uint8List> blobs) {
   ImagePackets? packets;
   final added = <ImagePacketAdded>[];
   for (final blob in blobs) {
-    final header = parseImageChunkHeader(blob, dataType: dataType)!;
-    packets ??= ImagePackets(total: header.total, dataType: dataType);
+    final header = parseImageChunkHeader(blob)!;
+    packets ??= ImagePackets(total: header.total);
     added.add(
       packets.add(header, Uint8List.sublistView(blob, header.bodyOffset)),
     );
@@ -54,8 +51,6 @@ void main() {
       expect(kImageChunkFirstCapacity, 150);
       expect(kImageChunkCapacity, 151);
       expect(kImageMaxPayloadBytes, 150 + 14 * 151);
-      expect(imageChunkHeaderBytes(dataTypeMeshTraxPhotoV1), 4);
-      expect(imageChunkBodyBytes(dataTypeMeshTraxPhotoV1), 152);
     });
 
     test('a full photo packet fits the raw log with a 3-repeater path', () {
@@ -74,12 +69,8 @@ void main() {
       expect(imageDataChunkCount(ImageCodecRateStats.ft8.maxBytes), 6);
     });
 
-    test('photos go as 0172, and 1.12.0\'s 0170 are still photos', () {
+    test('photos go as 0172', () {
       expect(dataTypeMeshTraxPhoto, 0x0172);
-      expect(isMeshTraxPhotoDataType(0x0172), isTrue);
-      expect(isMeshTraxPhotoDataType(0x0170), isTrue);
-      expect(isMeshTraxPhotoDataType(0x0171), isFalse, reason: 'TRAX');
-      expect(isMeshTraxPhotoDataType(0x0173), isFalse);
     });
   });
 
@@ -207,11 +198,6 @@ void main() {
   });
 
   group('reading a packet\'s header', () {
-    test('another data type is no photo packet', () {
-      expect(parseImageChunkHeader(photo(100).blobs[0], dataType: 0x0171),
-          isNull);
-    });
-
     test('malformed blobs read as null', () {
       expect(parseImageChunkHeader(Uint8List(4)), isNull, reason: 'short');
       expect(parseImageChunkHeader(Uint8List(kImageChunkBlobBytes + 1)),
@@ -220,20 +206,6 @@ void main() {
       expect(parseImageChunkHeader(zeroTotal), isNull);
       final pastTotal = Uint8List.fromList(photo(100).blobs[0])..[3] = 0x31;
       expect(parseImageChunkHeader(pastTotal), isNull);
-    });
-
-    test('1.12.0\'s packets have no retry byte: the body starts at 4', () {
-      final v1 = Uint8List.fromList([0x12, 0x34, 9, 0x01, 0x82, 1, 2, 3]);
-      final header = parseImageChunkHeader(v1, dataType: dataTypeMeshTraxPhotoV1)!;
-      expect(header.retry, 0);
-      expect(header.bodyOffset, 4);
-      final (packets, _) = collect([v1], dataType: dataTypeMeshTraxPhotoV1);
-      final photo = packets.rebuild()!;
-      expect(photo.metadata, const ImageStreamMetadata(
-        rate: ImageCodecRatePoint.ft8,
-        hasExtras: true,
-      ));
-      expect(photo.data, [1, 2, 3]);
     });
 
     test('senderPrefixFromKey needs two bytes', () {

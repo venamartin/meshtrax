@@ -153,27 +153,6 @@ void main() {
     });
   });
 
-  group('MeshTrax 1.12.0\'s photos', () {
-    test('its packets, 0170 without the retry byte, still make a photo', () {
-      final payload = payloadOf(161);
-      final v1 = [
-        Uint8List.fromList([
-          0x12, 0x34, 7, 0x02, ft8Meta.encode(), ...payload.sublist(0, 151), //
-        ]),
-        Uint8List.fromList([0x12, 0x34, 7, 0x12, ...payload.sublist(151)]),
-      ];
-      final r = ImageReassembler();
-      expect(
-        r.addChunk(v1[1], dataType: dataTypeMeshTraxPhotoV1).status,
-        ImageChunkStatus.accepted,
-      );
-      final done = r.addChunk(v1[0], dataType: dataTypeMeshTraxPhotoV1);
-      expect(done.status, ImageChunkStatus.completed);
-      expect(done.result!.data, payload);
-      expect(done.result!.key.dataType, dataTypeMeshTraxPhotoV1);
-    });
-  });
-
   group('the window', () {
     test('is 20 minutes: a photo whose packets come 15 minutes apart still '
         'completes', () {

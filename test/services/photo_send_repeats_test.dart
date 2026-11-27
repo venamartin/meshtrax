@@ -32,7 +32,6 @@ import 'package:traxpix/traxpix.dart'
         ImageStreamMetadata,
         PhotoExtras,
         buildImageChunks,
-        dataTypeMeshTraxPhotoV1,
         kImageRetryByteOffset,
         kPhotoItemSubjectOnly,
         photoPacketAgain,
@@ -582,7 +581,8 @@ void main() {
       expect(photo.text, isNot(contains('incomplete')));
     });
 
-    test('a photo from MeshTrax 1.12.0, as 0170, still arrives', () async {
+    test('a packet of 0170, as MeshTrax 1.12.0 sent photos, is no photo',
+        () async {
       final r = await radio((n, index) => false);
       PhotoMesh.of(r);
       final meta = const ImageStreamMetadata(
@@ -592,12 +592,14 @@ void main() {
         _received(
           [0xBE, 0xEF, 0x25, 0x01, meta, ...List.filled(120, 7)],
           0x41,
-          dataType: dataTypeMeshTraxPhotoV1,
+          dataType: 0x0170,
         ),
       );
-      final photo = await row(r);
-      expect(photo.text, contains('#25'));
-      expect(photo.isOutgoing, isFalse);
+      await pumpEventQueue(times: 200);
+      final rows = await r.loadChannelMessagesFor(
+        r.channels.firstWhere((c) => c.index == 1),
+      );
+      expect(rows.where(PhotoMesh.isPhotoMessage), isEmpty);
     });
   });
 

@@ -14,15 +14,10 @@ class ImageStreamKey {
   final int imgId;
   final int channelIndex;
 
-  /// The data type its packets came as: 1.12.0's photos are another stream
-  /// than the same sender's own, should their ids meet.
-  final int dataType;
-
   const ImageStreamKey({
     required this.senderPrefix,
     required this.imgId,
     required this.channelIndex,
-    this.dataType = dataTypeMeshTraxPhoto,
   });
 
   @override
@@ -30,11 +25,10 @@ class ImageStreamKey {
       other is ImageStreamKey &&
       other.senderPrefix == senderPrefix &&
       other.imgId == imgId &&
-      other.channelIndex == channelIndex &&
-      other.dataType == dataType;
+      other.channelIndex == channelIndex;
 
   @override
-  int get hashCode => Object.hash(senderPrefix, imgId, channelIndex, dataType);
+  int get hashCode => Object.hash(senderPrefix, imgId, channelIndex);
 
   @override
   String toString() =>
@@ -231,7 +225,7 @@ class _PendingImage {
     required this.key,
     required int total,
     required this.firstSeen,
-  }) : packets = ImagePackets(total: total, dataType: key.dataType),
+  }) : packets = ImagePackets(total: total),
        lastSeen = firstSeen;
 
   void heard(int? hops) {
@@ -370,7 +364,7 @@ class ImageReassembler {
     }
   }
 
-  /// Feeds one received packet, [blob] of [dataType]. [hops]: how many
+  /// Feeds one received photo packet, [blob]. [hops]: how many
   /// repeaters this copy came through, 0 when heard from the sender's own
   /// radio; null when not known. The photo keeps the fewest.
   ///
@@ -378,7 +372,6 @@ class ImageReassembler {
   /// a caller that only ever calls [addChunk] still gets the window.
   ImageChunkOutcome addChunk(
     Uint8List blob, {
-    int dataType = dataTypeMeshTraxPhoto,
     int channelIndex = 0,
     int? hops,
     DateTime? now,
@@ -386,7 +379,7 @@ class ImageReassembler {
     final at = now ?? _clock();
     evictExpired(now: at);
 
-    final header = parseImageChunkHeader(blob, dataType: dataType);
+    final header = parseImageChunkHeader(blob);
     if (header == null) {
       return const ImageChunkOutcome(ImageChunkStatus.malformed);
     }
@@ -398,10 +391,9 @@ class ImageReassembler {
       senderPrefix: header.senderPrefix,
       imgId: header.imgId,
       channelIndex: channelIndex,
-      dataType: dataType,
     );
     final body = Uint8List.sublistView(blob, header.bodyOffset);
-    if (!ImagePackets(total: header.total, dataType: dataType).fits(
+    if (!ImagePackets(total: header.total).fits(
       header,
       body,
     )) {

@@ -15,7 +15,8 @@ app's. The package is pure Dart and has no screens; the model itself runs in
   retry byte: a packet sent again carries how many times it went before
   (`photoPacketAgain`), so it is a new packet that repeaters pass on again,
   and a receiver takes it as the same packet (`samePhotoPacket`). MeshTrax
-  1.12.0 sent `0x0170` packets without the byte; they are still read.
+  1.12.0 sent `0x0170` packets without the byte; later releases don't read
+  them.
 - **The app sends them.** It hands a photo's packets to its chat, which sends
   them one at a time under a channel text's rules, as a flood or zero hop.
 - **Receiving.** The app collects received packets for a while, and

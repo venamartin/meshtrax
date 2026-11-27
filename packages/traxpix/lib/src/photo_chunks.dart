@@ -38,8 +38,8 @@
 /// repeats: copies match without it ([samePhotoPacket]), and only the body
 /// goes into the photo.
 ///
-/// MeshTrax 1.12.0 sent [dataTypeMeshTraxPhotoV1] (0x0170): the same packets
-/// without the retry byte. They are still read, never sent.
+/// MeshTrax 1.12.0 sent photos as 0x0170, without the retry byte. Later
+/// releases neither send nor read 0x0170.
 ///
 /// Data packet body:
 ///   * packet 0: `[meta]` + payload. `meta` is [ImageStreamMetadata] packed as
@@ -48,11 +48,11 @@
 ///     payload opens with the photo's extras ([photoPayload]), then the image
 ///     bytes.
 ///   * others: image bytes
-///   * at most [imageChunkBodyBytes] bytes.
+///   * at most [kImageChunkBodyBytes] bytes.
 ///
 /// Repair packet body:
 ///   * `[len_xor]` + XOR of every data packet's body, each zero-padded to
-///     [imageChunkBodyBytes].
+///     [kImageChunkBodyBytes].
 ///   * `len_xor` is the XOR of the data bodies' LENGTHS, so a lost packet's
 ///     length is `len_xor ^ XOR(lengths of the bodies that came)`, and the
 ///     last (short) packet can be rebuilt without sending a total length.
@@ -92,14 +92,6 @@ import 'rate_point.dart';
 /// (meshcore-dev/MeshCore#3925). Its packets carry the retry byte.
 const int dataTypeMeshTraxPhoto = 0x0172;
 
-/// The data type MeshTrax 1.12.0 sent photos as: packets without the retry
-/// byte. Read still, never sent. 0171 is TRAX's.
-const int dataTypeMeshTraxPhotoV1 = 0x0170;
-
-/// Whether [dataType] carries photo packets.
-bool isMeshTraxPhotoDataType(int dataType) =>
-    dataType == dataTypeMeshTraxPhoto || dataType == dataTypeMeshTraxPhotoV1;
-
 /// Maximum blob we will ever put in one GRP_DATA packet.
 ///
 /// Binding limits, smallest first:
@@ -129,20 +121,11 @@ const int kImageRetryByteOffset = 4;
 /// The retry byte's bits that count the sends before this one.
 const int kImageRetryCountMask = 0x0F;
 
-/// The header of a packet of [dataType]: 1.12.0's had no retry byte.
-int imageChunkHeaderBytes(int dataType) =>
-    dataType == dataTypeMeshTraxPhotoV1 ? 4 : kImageChunkHeaderBytes;
-
 /// The repair packet spends one body byte on the XOR of the data body
 /// lengths.
 const int kImageParityLengthBytes = 1;
 
-/// Maximum body bytes in any packet of [dataType], data or repair.
-int imageChunkBodyBytes(int dataType) =>
-    kImageChunkBlobBytes - imageChunkHeaderBytes(dataType) -
-    kImageParityLengthBytes;
-
-/// Maximum body bytes in a packet as MeshTrax sends it.
+/// Maximum body bytes in any packet, data or repair.
 const int kImageChunkBodyBytes =
     kImageChunkBlobBytes - kImageChunkHeaderBytes - kImageParityLengthBytes;
 
@@ -309,12 +292,8 @@ class ImageChunkHeader {
   /// 1..15.
   final int total;
 
-  /// How many times the packet went before this copy: 0 the first time, and
-  /// always 0 in a packet of [dataTypeMeshTraxPhotoV1].
+  /// How many times the packet went before this copy: 0 the first time.
   final int retry;
-
-  /// [dataTypeMeshTraxPhoto], or [dataTypeMeshTraxPhotoV1].
-  final int dataType;
 
   const ImageChunkHeader({
     required this.senderPrefix,
@@ -322,13 +301,12 @@ class ImageChunkHeader {
     required this.index,
     required this.total,
     this.retry = 0,
-    this.dataType = dataTypeMeshTraxPhoto,
   });
 
   bool get isParity => index == total;
 
   /// Where the packet's body starts.
-  int get bodyOffset => imageChunkHeaderBytes(dataType);
+  int get bodyOffset => kImageChunkHeaderBytes;
 
   @override
   String toString() =>
@@ -347,14 +325,10 @@ int? senderPrefixFromKey(List<int>? publicKey) {
   return ((publicKey[0] & 0xFF) << 8) | (publicKey[1] & 0xFF);
 }
 
-/// Reads the header of [blob], a packet of [dataType], or null if it cannot
-/// be one.
-ImageChunkHeader? parseImageChunkHeader(
-  Uint8List blob, {
-  int dataType = dataTypeMeshTraxPhoto,
-}) {
-  if (!isMeshTraxPhotoDataType(dataType)) return null;
-  if (blob.length < imageChunkHeaderBytes(dataType)) return null;
+/// Reads the header of [blob], a packet of [dataTypeMeshTraxPhoto], or null
+/// if it cannot be one.
+ImageChunkHeader? parseImageChunkHeader(Uint8List blob) {
+  if (blob.length < kImageChunkHeaderBytes) return null;
   if (blob.length > kImageChunkBlobBytes) return null;
   final total = blob[3] & 0x0F;
   if (total == 0) return null;
@@ -365,10 +339,7 @@ ImageChunkHeader? parseImageChunkHeader(
     imgId: blob[2] & 0xFF,
     index: index,
     total: total,
-    retry: dataType == dataTypeMeshTraxPhotoV1
-        ? 0
-        : blob[kImageRetryByteOffset] & kImageRetryCountMask,
-    dataType: dataType,
+    retry: blob[kImageRetryByteOffset] & kImageRetryCountMask,
   );
 }
 
@@ -586,14 +557,11 @@ class ImageRebuilt {
 /// The packets of one photo collected so far, and the photo they make once
 /// every data packet is in, or all but one and the repair packet.
 ///
-/// Out-of-order and duplicate tolerant. Every packet must be of one
-/// [dataType] and say the same [total].
+/// Out-of-order and duplicate tolerant. Every packet must say the same
+/// [total].
 class ImagePackets {
   /// Number of data packets the photo has.
   final int total;
-
-  /// The data type its packets came as.
-  final int dataType;
 
   /// Data packet bodies by index.
   final Map<int, Uint8List> bodies = <int, Uint8List>{};
@@ -601,9 +569,7 @@ class ImagePackets {
   /// The repair packet's body, once it came.
   Uint8List? parityBody;
 
-  ImagePackets({required this.total, this.dataType = dataTypeMeshTraxPhoto});
-
-  int get _bodyBytes => imageChunkBodyBytes(dataType);
+  ImagePackets({required this.total});
 
   bool get hasParity => parityBody != null;
 
@@ -614,8 +580,8 @@ class ImagePackets {
   /// a repair packet with its length byte, and no data body longer than the
   /// repair packet could cover.
   bool fits(ImageChunkHeader header, Uint8List body) => header.isParity
-      ? body.isNotEmpty && body.length <= _bodyBytes + kImageParityLengthBytes
-      : body.length <= _bodyBytes;
+      ? body.isNotEmpty && body.length <= kImageChunkBodyBytes + kImageParityLengthBytes
+      : body.length <= kImageChunkBodyBytes;
 
   /// Adds packet [header] with [body].
   ImagePacketAdded add(ImageChunkHeader header, Uint8List body) {
@@ -643,7 +609,7 @@ class ImagePackets {
   /// packet, so the repair packet comes afterwards and was never held: it is
   /// recomputed from the bodies rather than guessed at.
   bool repeats(ImageChunkHeader header, Uint8List body) {
-    if (header.total != total || header.dataType != dataType) return false;
+    if (header.total != total) return false;
     final known = header.isParity
         ? (parityBody ?? _expectedParityBody())
         : bodies[header.index];
@@ -654,7 +620,7 @@ class ImagePackets {
     if (bodies.length != total) return null;
     return _parityBody(
       [for (var i = 0; i < total; i++) bodies[i]!],
-      _bodyBytes,
+      kImageChunkBodyBytes,
     );
   }
 
@@ -671,7 +637,7 @@ class ImagePackets {
     ).firstWhere((i) => !bodies.containsKey(i));
     final parity = parityBody!;
     var lengthXor = parity[0] & 0xFF;
-    final xor = Uint8List(_bodyBytes);
+    final xor = Uint8List(kImageChunkBodyBytes);
     final parityData = parity.length - kImageParityLengthBytes;
     for (var i = 0; i < parityData && i < xor.length; i++) {
       xor[i] = parity[kImageParityLengthBytes + i];
@@ -682,13 +648,13 @@ class ImagePackets {
         xor[i] ^= body[i];
       }
     }
-    if (lengthXor > _bodyBytes) return null; // corrupt repair packet
+    if (lengthXor > kImageChunkBodyBytes) return null; // corrupt repair packet
     if (missing == 0 && lengthXor < kImageChunkZeroMetadataBytes) return null;
     // Only the LAST data packet may be short; every earlier one is full by
     // construction. Without this, a single flipped bit in the length byte
     // silently yields a truncated photo reported as complete, which is worse
     // than failing: the caller has no way to know the bytes are wrong.
-    if (missing < total - 1 && lengthXor != _bodyBytes) return null;
+    if (missing < total - 1 && lengthXor != kImageChunkBodyBytes) return null;
     bodies[missing] = Uint8List.sublistView(xor, 0, lengthXor);
     return _assemble(recovered: true);
   }

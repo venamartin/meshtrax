@@ -133,10 +133,7 @@ class _SentPhoto {
   /// of it that went before, so no two copies are one packet on the air,
   /// which repeaters would pass on only once.
   Uint8List copy(Uint8List packet) {
-    final index = parseImageChunkHeader(
-      packet,
-      dataType: dataTypeMeshTraxPhoto,
-    )?.index;
+    final index = parseImageChunkHeader(packet)?.index;
     if (index == null || index >= sends.length) return packet;
     return photoPacketAgain(packet, sends[index]);
   }
@@ -300,12 +297,11 @@ class PhotoMesh {
 
   PhotoMesh._(this.connector) {
     _datagrams = connector.channelDatagrams.listen((d) {
-      if (!isMeshTraxPhotoDataType(d.dataType)) return;
+      if (d.dataType != dataTypeMeshTraxPhoto) return;
       // Path length 0xFF: it came direct, which a photo does only zero hop.
       final hops = PathHelper.pathLenHops(d.pathLen);
       _ensureReassembler()?.addChunk(
         d.payload,
-        dataType: d.dataType,
         channelIndex: d.channel.index,
         hops: hops < 0 ? 0 : hops,
       );
@@ -316,10 +312,9 @@ class PhotoMesh {
     // arrive twice, which the reassembler ignores. The chat takes copies of
     // packets of mine it's still listening for before they get here.
     connector.onRawChannelData = (channelIndex, dataType, blob, path, width) {
-      if (!isMeshTraxPhotoDataType(dataType)) return;
+      if (dataType != dataTypeMeshTraxPhoto) return;
       _ensureReassembler()?.addChunk(
         blob,
-        dataType: dataType,
         channelIndex: channelIndex,
         hops: PathHelper.getHopCount(path, stride: width),
       );
@@ -359,7 +354,6 @@ class PhotoMesh {
               lost: _bitCount(lost),
               canAsk:
                   lost != 0 &&
-                  r.key.dataType == dataTypeMeshTraxPhoto &&
                   now.difference(r.firstSeen) < askWithin &&
                   (asked == null || now.difference(asked.at) >= askRest),
               asked: asked?.packets ?? 0,
