@@ -20,7 +20,8 @@ typedef TrackMotion = ({double? heading, double? speed, Duration? stillFor});
 /// is kept every 25 m, never before its reading changes. A piece closes once
 /// its points don't fit one report, or at a break: where live readings
 /// stopped for 2 minutes or the position jumped. Nothing is drawn or sent
-/// across a break.
+/// across a break. The line shows the points as kept; reports carry them
+/// thinned.
 class TraxTrack extends ChangeNotifier {
   TraxTrack(this._connector, {DateTime Function()? clock, Random? random})
     : _clock = clock ?? DateTime.now,
@@ -48,12 +49,19 @@ class TraxTrack extends ChangeNotifier {
 
   /// The closed pieces' points, the oldest pieces going first.
   static const _maxPoints = 10000;
+
+  /// The closed pieces' points as kept, for the line; beyond this many the
+  /// oldest show thinned.
+  static const _maxKeptPoints = 20000;
   static const _saveEvery = Duration(minutes: 1);
 
   static String keyFor(String radioKey) => 'trax_track_$radioKey';
 
   /// Closed, oldest first, thinned to [TrackPiece.epsilonM].
   final _pieces = <TrackPiece>[];
+
+  /// The closed pieces' points as kept since the app started, by minute.
+  final _kept = <int, List<TrailPoint>>{};
 
   /// The open piece's points as kept, oldest first.
   final _open = <TrackPoint>[];
@@ -72,6 +80,12 @@ class TraxTrack extends ChangeNotifier {
   int _keepHours = MemberTrack.defaultKeepHours;
 
   bool get recording => _recording;
+
+  /// Whether the radio's reading is live: one came within [gap].
+  bool get live {
+    final at = _liveAt;
+    return at != null && _clock().difference(at) <= gap;
+  }
 
   /// How long each piece is kept after its last point: TRAX settings' "Keep
   /// my track".
@@ -177,9 +191,27 @@ class TraxTrack extends ChangeNotifier {
     );
   }
 
-  /// The lines to draw behind the dot, each oldest first: all of the track
-  /// kept.
-  List<List<TrailPoint>> get recent => trackLines([..._pieces, ?_openPiece]);
+  /// The lines to draw behind the dot, each oldest first: all of the track,
+  /// with its points as kept since the app started and those before as
+  /// reports carry them. While the reading is live, the line runs on from
+  /// the last point kept to [dot].
+  List<List<TrailPoint>> lines({TrailPoint? dot}) {
+    final open = [for (final p in _open) (lat: p.lat, lon: p.lon)];
+    if (dot != null && open.isNotEmpty && live) open.add(dot);
+    return trackLines([
+      for (final p in _pieces)
+        switch (_kept[p.minute]) {
+          final points? => TrackPiece(
+            minute: p.minute,
+            endMinute: p.endMinute,
+            points: points,
+          ),
+          null => p,
+        },
+      if (open.length >= 2)
+        TrackPiece(minute: _openMinute, endMinute: _openMinute, points: open),
+    ]);
+  }
 
   TrackPiece? get _openPiece => _open.length < 2
       ? null
@@ -271,21 +303,34 @@ class TraxTrack extends ChangeNotifier {
 
   void _close() {
     if (_open.length >= 2) {
+      final points = [for (final p in _open) (lat: p.lat, lon: p.lon)];
+      _kept[_openMinute] = points;
       _pieces.add(
         TrackPiece(
           minute: _openMinute,
           endMinute: max(_openMinute, TrackPiece.minuteOf(_open.last.at)),
-          points: simplify([
-            for (final p in _open) (lat: p.lat, lon: p.lon),
-          ], TrackPiece.epsilonM),
+          points: simplify(points, TrackPiece.epsilonM),
         ),
       );
       var count = _pieces.fold(0, (n, p) => n + p.points.length);
       while (count > _maxPoints && _pieces.length > 1) {
         count -= _pieces.removeAt(0).points.length;
       }
+      _forgetKept();
     }
     _open.clear();
+  }
+
+  /// The kept points of pieces gone, and the oldest beyond
+  /// [_maxKeptPoints].
+  void _forgetKept() {
+    final minutes = {for (final p in _pieces) p.minute};
+    _kept.removeWhere((minute, _) => !minutes.contains(minute));
+    var count = _kept.values.fold(0, (n, p) => n + p.length);
+    for (final minute in _kept.keys.toList()..sort()) {
+      if (count <= _maxKeptPoints) break;
+      count -= _kept.remove(minute)!.length;
+    }
   }
 
   /// Drops what ended more than [keepHours] ago; true when anything went.
@@ -294,6 +339,7 @@ class TraxTrack extends ChangeNotifier {
     final before = _pieces.length;
     _pieces.removeWhere((p) => p.endMinute < oldest);
     var changed = _pieces.length != before;
+    if (changed) _forgetKept();
     if (_open.isNotEmpty && TrackPiece.minuteOf(_open.last.at) < oldest) {
       _open.clear();
       changed = true;
@@ -316,6 +362,7 @@ class TraxTrack extends ChangeNotifier {
     if (key.isEmpty || key == _radioKey) return;
     _radioKey = key;
     _pieces.clear();
+    _kept.clear();
     _open.clear();
     final raw = PrefsManager.instance.getString(keyFor(key));
     if (raw == null) return;
