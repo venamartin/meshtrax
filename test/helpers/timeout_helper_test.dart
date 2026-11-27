@@ -66,4 +66,12 @@ void main() {
       expect(TimeoutHelper.attemptMs(60000, 2, 3), TimeoutHelper.maxMs);
     });
   });
+
+  group('the wait for RESP_CODE_SENT', () {
+    test('a copy that may be held back waits that much longer', () {
+      expect(TimeoutHelper.preSentTimeoutMs(0), 15000);
+      expect(TimeoutHelper.maxSendHoldMs, 18000);
+      expect(TimeoutHelper.preSentTimeoutMs(TimeoutHelper.maxSendHoldMs), 33000);
+    });
+  });
 }

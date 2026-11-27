@@ -223,6 +223,10 @@ class MessageRetryService extends ChangeNotifier {
   final Map<String, Set<int>> _resendAttempts = {};
   final Map<String, int> _wireAttempts = {};
   final Map<String, int> _wireRungs = {};
+  // For each message, the try every attempt number it went out with
+  // belongs to: a resend's number is above the ladder's, and a copy heard
+  // later is filed under its try by it, not under the number itself.
+  final Map<String, Map<int, int>> _rungOfWire = {};
   // Every send the radio took for each ACK code: the firmware hashes only
   // an attempt's low two bits into its ACK (composeMsgPacket), so attempts
   // 0 and 4 of one DM share a code, as a rung and its resends do.
@@ -567,9 +571,11 @@ class MessageRetryService extends ChangeNotifier {
   /// next attempt with this one's bytes (simulator, 2026-11-24).
   bool awaitsAck(
           String contactKey, int timestampSeconds, String text, int attempt) =>
-      // Any message it could be: two with one text in one second read the
-      // same here, and the one that failed first still waits for a late ACK.
+      // Any message still on its ladder that it could be: two with one text
+      // in one second read the same here. One that failed or was delivered
+      // sends nothing more: its late ACK needs no new copy.
       _pendingMessages.entries.any((e) =>
+          _onLadder(e.key, e.value) &&
           e.value.text == text &&
           e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
               timestampSeconds &&
@@ -577,10 +583,19 @@ class MessageRetryService extends ChangeNotifier {
           _wireAttempts[e.key] == attempt &&
           _wireRungs[e.key] == e.value.retryCount);
 
+  /// Whether [message] is still on its ladder: not failed, not delivered.
+  bool _onLadder(String messageId, Message message) =>
+      message.status != MessageStatus.failed &&
+      !_resolvedMessages.contains(messageId);
+
+  /// The message still on its ladder that a copy of [text] to [contactKey]
+  /// stamped [timestampSeconds] belongs to. A failed one is left alone: its
+  /// late-ACK grace runs on (audit 2026-11-27: a late copy cancelled it).
   String? _messageIdOf(String contactKey, int timestampSeconds, String text) =>
       _pendingMessages.entries
           .where(
             (e) =>
+                _onLadder(e.key, e.value) &&
                 e.value.text == text &&
                 e.value.timestamp.millisecondsSinceEpoch ~/ 1000 ==
                     timestampSeconds &&
@@ -690,6 +705,7 @@ class MessageRetryService extends ChangeNotifier {
       }
       _wireAttempts[messageId] = wireAttempt;
       _wireRungs[messageId] = attempt;
+      (_rungOfWire[messageId] ??= {})[wireAttempt] = attempt;
       _registerExpectedAck(
           messageId, message, contact, wireAttempt, timestampSeconds);
       if (!same) {
@@ -777,7 +793,7 @@ class MessageRetryService extends ChangeNotifier {
     // busy, etc.) the message would stay at 'pending' forever.  Start a fallback
     // timer here that triggers _handleTimeout if updateMessageFromSent() hasn't
     // already started a real timer.
-    final preSentTimeoutMs = 15000 + holdMs;
+    final preSentTimeoutMs = TimeoutHelper.preSentTimeoutMs(holdMs);
     _timeoutTimers[messageId]?.cancel();
     _timeoutTimers[messageId] = Timer(
       Duration(milliseconds: preSentTimeoutMs),
@@ -1082,9 +1098,12 @@ class MessageRetryService extends ChangeNotifier {
     for (final MapEntry(key: id, value: message)
         in _pendingMessages.entries) {
       final contact = _pendingContacts[id];
-      // A routed attempt goes out under its own number.
-      final selection = _attemptRoutes[id]?[wireAttempt];
-      if (contact == null ||
+      // The try that went out under this number: a resend's number is not
+      // its try's.
+      final rung = _rungOfWire[id]?[wireAttempt];
+      final selection = rung == null ? null : _attemptRoutes[id]?[rung];
+      if (rung == null ||
+          contact == null ||
           contact.publicKeyHex != contactKey ||
           message.timestamp.millisecondsSinceEpoch ~/ 1000 !=
               timestampSeconds ||
@@ -1103,23 +1122,23 @@ class MessageRetryService extends ChangeNotifier {
       }
       final hops = done ~/ hopWidth;
       final heard = _passedOn[id] ??= {};
-      final before = heard[wireAttempt] ?? 0;
+      final before = heard[rung] ?? 0;
       if (before >= hops) return;
-      heard[wireAttempt] = hops;
-      if (message.retryCount == wireAttempt) {
+      heard[rung] = hops;
+      if (message.retryCount == rung) {
         _passOnTimers.remove(id)?.cancel();
       }
       // How long it took is logged: the wait is sized from firmware
       // defaults, and a repeater's owner can set its delay longer.
       final sentAt = message.sentAt;
-      final after = sentAt == null || message.retryCount != wireAttempt
+      final after = sentAt == null || message.retryCount != rung
           ? ''
           : ', ${DateTime.now().difference(sentAt).inMilliseconds} ms '
               'after the radio took it';
       config.debugLogService?.info(
         '${PathHelper.formatPathHex(route.sublist(done - hopWidth, done), stride: hopWidth)} '
         'passed "${_short(message.text)}" to ${contact.name} on '
-        '(attempt ${wireAttempt + 1}, hop $hops of ${selection.hopCount}$after)',
+        '(attempt ${rung + 1}, hop $hops of ${selection.hopCount}$after)',
         tag: 'AckHash',
       );
       if (before == 0) config.onPassedOn?.call(contact, selection);
@@ -1215,6 +1234,9 @@ class MessageRetryService extends ChangeNotifier {
         'sending the same packet again (${quick + 1}/$maxQuickResends)',
         tag: 'AckHash',
       );
+      // The copy may wait for quiet air: the attempt waits for it, as a
+      // routed attempt's second copy does ([_notPassedOn]).
+      _startPreSentTimer(messageId, copy: true, holdMs: config.maxSendHoldMs);
       _send(messageId, same: true);
       return;
     }
@@ -1447,6 +1469,7 @@ class MessageRetryService extends ChangeNotifier {
     _resendAttempts.remove(messageId);
     _wireAttempts.remove(messageId);
     _wireRungs.remove(messageId);
+    _rungOfWire.remove(messageId);
     _timeoutTimers.remove(messageId);
     _resolvedMessages.remove(messageId);
   }

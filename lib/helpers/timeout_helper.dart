@@ -33,6 +33,25 @@ class TimeoutHelper {
   /// delay a budget cannot succeed on any path.
   static const int minAttemptMs = 3000;
 
+  /// How long the app waits for RESP_CODE_SENT after handing the radio a
+  /// DM before it gives the attempt up. The companion answers as soon as it
+  /// queues the packet (CMD_SEND_TXT_MSG); this covers a busy Bluetooth link.
+  /// No firmware symbol: it is the app's own safety net.
+  static const int preSentWaitMs = 15000;
+
+  /// The pre-sent wait for a copy the sender may still hold back for up to
+  /// [holdMs] (the send backoff and the wait for quiet air).
+  static int preSentTimeoutMs(int holdMs) => preSentWaitMs + holdMs;
+
+  /// The longest backoff before a DM, on the worst radio stats.
+  static const int contactMsgBackoffMaxMs = 15000;
+
+  /// The longest a DM waits for the air to go quiet before it is sent.
+  static const int radioQuietMaxWaitMs = 3000;
+
+  /// The longest a DM's copy can be held back before the radio takes it.
+  static const int maxSendHoldMs = contactMsgBackoffMaxMs + radioQuietMaxWaitMs;
+
   /// tx_delay_factor (companion and simple_repeater NodePrefs defaults): a
   /// repeater forwarding a flood waits a random share of this many airtimes.
   static const double repeaterTxDelayFactor = 0.5;

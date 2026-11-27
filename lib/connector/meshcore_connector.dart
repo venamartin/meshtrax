@@ -846,7 +846,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   DateTime _lastContactMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastChannelMsgRxTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _radioQuietMs = 3000;
-  static const int _radioQuietMaxWaitMs = 3000;
+  static const int _radioQuietMaxWaitMs = TimeoutHelper.radioQuietMaxWaitMs;
   // Channel sends fire right after the inbound burst the user was reading, so
   // they need a longer window to find a quiet gap before transmitting into the
   // still-propagating mesh. DMs keep the shorter ceiling: their 15s pre-sent
@@ -856,7 +856,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
   /// When companion radio stats are unavailable, keep the legacy fixed backoff.
   static const int _contactMsgBackoffFallbackMs = 5000;
   static const int _contactMsgBackoffMinMs = 500;
-  static const int _contactMsgBackoffMaxMs = 15000;
+  static const int _contactMsgBackoffMaxMs = TimeoutHelper.contactMsgBackoffMaxMs;
   int _pollingInterval = 30;
   bool _batteryRequested = false;
   bool _awaitingSelfInfo = false;
@@ -2010,7 +2010,7 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
     _retryService?.initialize(
       RetryServiceConfig(
         sendMessage: _sendMessageDirect,
-        maxSendHoldMs: _contactMsgBackoffMaxMs + _radioQuietMaxWaitMs,
+        maxSendHoldMs: TimeoutHelper.maxSendHoldMs,
         sendOnRoute: sendOnRoute,
         addMessage: _addMessage,
         updateMessage: _updateMessage,
