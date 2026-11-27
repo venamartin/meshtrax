@@ -107,11 +107,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photo_includePosition => 'Include location';
 
   @override
-  String photo_positionFromRadio(String distance) {
-    return 'Your radio\'s location now, to about $distance';
-  }
-
-  @override
   String get photo_noPosition => 'Your radio has no location';
 
   @override
@@ -560,12 +555,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String newChat_contactCount(int count) {
     return '$count contacts';
   }
-
-  @override
-  String get newChat_newContact => 'New Contact';
-
-  @override
-  String get newChat_newChannel => 'New Channel';
 
   @override
   String get newChat_myContacts => 'My Contacts';
@@ -2201,9 +2190,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get radioAsk_rowLabel => 'Radio answer';
-
-  @override
   String get contact_nickname => 'Nickname';
 
   @override
@@ -2287,16 +2273,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channels_shareChannelInstructions =>
-      'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code';
+      'Scan QR code to add channel.';
 
   @override
   String get channels_secretKey => 'Secret Key';
 
   @override
   String get channels_meshcoreUri => 'MeshCore URI';
-
-  @override
-  String get channels_shareChannelQr => 'Scan Channel QR Code';
 
   @override
   String get channels_shareChannelWarning =>
@@ -2342,23 +2325,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channels_standardPublicPsk => 'Standard public PSK';
 
   @override
-  String get channels_pskHex => 'PSK (Hex)';
-
-  @override
   String get channels_generateRandomPsk => 'Generate random PSK';
-
-  @override
-  String get channels_enterChannelName => 'Please enter a channel name';
-
-  @override
-  String get channels_pskMustBe32Hex => 'PSK must be 32 hex characters';
 
   @override
   String get channels_addChannelConfirmation =>
       'Do you want to add the following channel?';
-
-  @override
-  String get channels_channelAddedSuccess => 'Channel added successfully.';
 
   @override
   String get channels_noAvailableChannelSlots => 'No available channel slots.';
@@ -2394,9 +2365,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get channels_publicChannelAdded => 'Public channel added';
-
-  @override
   String get channels_sortBy => 'Sort by';
 
   @override
@@ -2418,35 +2386,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channels_createPrivateChannelDesc => 'Secured with a secret key.';
 
   @override
-  String get channels_joinPrivateChannel => 'Manually Add Channel';
-
-  @override
-  String get channels_joinPrivateChannelDesc => 'Via private key and name.';
-
-  @override
   String get channels_joinPublicChannel => 'Join the Public Channel';
 
   @override
   String get channels_joinPublicChannelDesc => 'Anyone can join this channel.';
 
   @override
-  String get channels_joinHashtagChannel => 'Create a Hashtag Channel';
-
-  @override
-  String get channels_joinHashtagChannelDesc =>
-      'Anyone can join hashtag channels.';
-
-  @override
   String get channels_scanQrCode => 'Scan a QR Code';
 
   @override
   String get channels_scanQrCodeComingSoon => 'Coming soon';
-
-  @override
-  String get channels_enterHashtag => 'Enter hashtag';
-
-  @override
-  String get channels_hashtagHint => 'e.g. #team';
 
   @override
   String get channels_keepCapitals => 'Keep capitals';
@@ -2486,9 +2435,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get common_copyToClipboard => 'Copy to clipboard';
-
-  @override
-  String get contacts_copyContactToClipboard => 'Copy My Contact to Clipboard';
 
   @override
   String get chat_typeMessage => 'Type a message...';
@@ -4487,9 +4433,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contacts_addContactFromClipboard => 'Add Contact from Clipboard';
 
   @override
-  String get contacts_ShareContact => 'Copy contact to Clipboard';
-
-  @override
   String get contacts_ShareContactZeroHop => 'Share contact by advert';
 
   @override
@@ -4503,38 +4446,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contacts_zeroHopContactAdvertFailed => 'Failed to send contact.';
 
   @override
-  String get contacts_contactAdvertCopied => 'Advert copied to Clipboard.';
-
-  @override
   String get contacts_contactAdvertCopyFailed =>
       'Copying advert to Clipboard failed.';
 
   @override
   String get contacts_addContact => 'Add Contact';
-
-  @override
-  String get contacts_scanQrCode => 'Scan Contact QR';
-
-  @override
-  String get contacts_scanQrCodeDesc =>
-      'Scan a contact QR code from the MeshCore app';
-
-  @override
-  String get contacts_enterIdHash => 'Manually Enter Contact';
-
-  @override
-  String get contacts_enterIdHashDesc =>
-      'Paste a contact advert or meshcore:// link';
-
-  @override
-  String get contacts_advertHint => 'meshcore://... or public key hex';
-
-  @override
-  String get contacts_import => 'Import';
-
-  @override
-  String get contacts_scanContactInstructions =>
-      'Scan a MeshCore contact QR code';
 
   @override
   String get notification_activityTitle => 'MeshCore Activity';
@@ -4699,9 +4615,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoveredContacts_addContact => 'Add Contact';
-
-  @override
-  String get discoveredContacts_copyContact => 'Copy Contact to clipboard';
 
   @override
   String get discoveredContacts_deleteContact => 'Delete Discovered Contact';
@@ -5832,22 +5745,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_zoomOut => 'Zoom out';
 
   @override
-  String get gps_title => 'GPS';
-
-  @override
   String get gps_on => 'GPS on';
 
   @override
   String get gps_off => 'GPS off';
-
-  @override
-  String get gps_onHint => 'The radio updates its location from the GPS.';
-
-  @override
-  String get gps_offHint => 'Off saves battery. A fix can take a few minutes.';
-
-  @override
-  String get gps_asking => 'Asking the radio...';
 
   @override
   String get gps_noPosition =>
@@ -5858,11 +5759,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gps_altitude => 'Altitude';
-
-  @override
-  String gps_readAgo(String ago) {
-    return 'Read from the radio $ago ago';
-  }
 
   @override
   String get gps_turnOnTitle => 'Turn on GPS?';
@@ -8067,61 +7963,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get common_less => 'Less';
 
   @override
-  String get locationSharing_title => 'Who can see my location';
-
-  @override
-  String get locationSharing_someone => 'Someone can see your location';
-
-  @override
-  String get locationSharing_nobody => 'Nobody can see your location';
-
-  @override
   String get locationSharing_noPosition =>
       'Your radio has no location yet, so nobody can see it';
 
   @override
-  String get locationSharing_everyone =>
-      'Everyone who hears your radio can see your location';
-
-  @override
-  String get locationSharing_allContacts =>
-      'All your contacts can see your location';
-
-  @override
-  String get locationSharing_someContacts =>
-      'Contacts you allowed can see your location';
-
-  @override
   String get locationSharing_adverts => 'Location in adverts';
-
-  @override
-  String get locationSharing_advertsHint =>
-      'Your adverts carry your location, so anyone who hears your radio sees it.';
-
-  @override
-  String get locationSharing_contactsHeader =>
-      'Contacts who can ask your radio';
-
-  @override
-  String get locationSharing_noTelemetry =>
-      'None. Your radio answers no telemetry requests.';
-
-  @override
-  String get locationSharing_noContacts => 'No contact is allowed to ask.';
-
-  @override
-  String locationSharing_allContactsRow(int count) {
-    return 'All your contacts ($count)';
-  }
-
-  @override
-  String get locationSharing_partLocation => 'Location';
-
-  @override
-  String get locationSharing_partBattery => 'Battery';
-
-  @override
-  String get locationSharing_partSensors => 'Sensors';
 
   @override
   String get dialog_positionHint => 'Paste coordinates or a maps link';
@@ -8131,13 +7977,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationSharing_share => 'Share my location';
-
-  @override
-  String get locationSharing_shareOnHint => 'Turn off to hide it from everyone';
-
-  @override
-  String get locationSharing_shareOffHint =>
-      'Turn on to let contacts with permission see it';
 
   @override
   String get chats_advertise => 'Advertise';
@@ -8324,16 +8163,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Tap the map to set the location, or type the numbers.';
-
-  @override
-  String get channels_pasteLink => 'Paste a link';
-
-  @override
-  String get channels_pasteLinkDesc => 'A meshcore:// channel link you copied.';
-
-  @override
-  String get channels_pasteLinkNone =>
-      'There is no channel link on the clipboard.';
 
   @override
   String get settings_locationGpsNote =>

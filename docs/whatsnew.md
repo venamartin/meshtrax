@@ -2,6 +2,22 @@
 
 Newest first. Unfamiliar words are explained in the [glossary](glossary.md).
 
+## 1.12.0
+
+- TRAX mode (experimental): one tap takes your group's radios off the regular mesh for a trip, and one tap brings them back. Every member's location goes to the trip channel with the trail behind it, up to 48 hours back. Ask their radio finds a member even with their phone off. How TRAX works opens when you switch.
+- An SOS repeats until you cancel it and always alerts. On Samsung phones, MeshTrax shows how to let SOS alerts through Do not disturb.
+- Photos in channels (experimental; Android 64-bit, iPhone and Mac): a photo goes as a few radio packets, and an AI model rebuilds it on the phones that receive it. Faces are blurred before it's sent. Subject only and Auto crop send just what matters.
+- Regions: a channel's messages can travel only through one area's repeaters.
+- Routes on the water: with NOAA charts downloaded, plan a boat trip offline and see what blocks it.
+- My location is one button for the GPS and for who can see where you are. The map follows you with your speed, heading and altitude, and a location you send can carry them too. Locations other apps send as loc:, [LOC] or [WAY] show as cards.
+- One page adds a contact or a channel: paste, type or scan a link, a key, a contact card or a #hashtag. Copy a contact as a link or as text.
+- Direct messages stay on a route that works instead of flooding after one miss, and MeshTrax opens DMs and counts ACKs that the radio drops.
+- A channel message shows as delivered only when a repeater passed it on. When only one repeater carried it, it goes once more.
+- Repeaters get a status card, every command in the help, and Repeat On/Off chips.
+- Messages can have bulleted lists, and code text has its own font.
+- The App Debug Log keeps its lines after a restart or an install.
+- On Linux, messages pop up and play an alert tone.
+
 ## 1.11.0
 
 - Line of sight and radio reach, offline: see whether two points can hear each other, or how far your radio reaches and who is in range, from the downloaded contours. It works below sea level too, from Death Valley to the Salton Sea.

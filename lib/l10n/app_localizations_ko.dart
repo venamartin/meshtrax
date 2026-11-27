@@ -19,7 +19,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String photo_enableHint(String size) {
-    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+    return '무전기로 사진을 보내고 볼 수 있습니다. 이 휴대폰에 $size 크기의 사진용 모델이 필요합니다.';
   }
 
   @override
@@ -28,8 +28,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get photo_squareIntro =>
-      'Pick a photo, then choose the square to send.';
+  String get photo_squareIntro => '사진을 고른 다음 보낼 정사각형 영역을 선택하세요.';
 
   @override
   String get photo_takePhoto => '사진 찍기';
@@ -47,14 +46,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_preview => '미리 보기';
 
   @override
-  String get photo_changeCrop => 'Change crop';
+  String get photo_changeCrop => '자르기 변경';
 
   @override
   String get photo_checkingAndCoding => '사진을 검사하고 인코딩하는 중…';
 
   @override
   String get photo_modelMissing =>
-      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+      '이 기기에는 사진용 모델이 없습니다. 다운로드하려면 \'앱 설정\'의 \'메시징\'에서 \'사진\'을 켜세요.';
 
   @override
   String get photo_previewNoMemory =>
@@ -75,15 +74,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get photo_tagTitle => '태그 (선택 사항)';
 
   @override
-  String get photo_blurFaces => 'Blur faces';
+  String get photo_blurFaces => '얼굴 흐리게';
 
   @override
   String photo_facesBlurred(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count faces blurred',
-      one: '1 face blurred',
+      other: '얼굴 $count개를 흐리게 처리함',
     );
     return '$_temp0';
   }
@@ -93,23 +91,16 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count faces covered in grey: blurred, the photo didn\'t pass the safety check',
-      one: '1 face covered in grey: blurred, the photo didn\'t pass the safety check',
+      other: '얼굴 $count개를 회색으로 가림: 흐리게 처리한 사진이 안전 검사를 통과하지 못했습니다',
     );
     return '$_temp0';
   }
 
   @override
-  String get photo_includePosition => 'Include location';
+  String get photo_includePosition => '위치 포함';
 
   @override
-  String photo_positionFromRadio(String distance) {
-    return 'Your radio\'s location now, to about $distance';
-  }
-
-  @override
-  String get photo_noPosition => 'Your radio has no location';
+  String get photo_noPosition => '무전기에 위치가 없습니다';
 
   @override
   String get photo_distance10km => '10 km';
@@ -125,47 +116,44 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String photo_positionAt(String position, String distance) {
-    return '$position, to about $distance';
+    return '$position (오차 약 $distance)';
   }
 
   @override
-  String get photo_zeroHop => 'Zero hop';
+  String get photo_zeroHop => '제로 홉';
 
   @override
-  String get photo_subjectOnly => 'Subject only';
+  String get photo_subjectOnly => '피사체만';
 
   @override
-  String get photo_autoCrop => 'Auto crop';
+  String get photo_autoCrop => '자동 자르기';
 
   @override
-  String get photo_tapWhatMatters =>
-      'Tap what matters. Tap more things to add them.';
+  String get photo_tapWhatMatters => '중요한 것을 탭하세요. 다른 것을 더 탭하면 추가됩니다.';
 
   @override
-  String get photo_outlining => 'Outlining…';
+  String get photo_outlining => '윤곽을 찾는 중…';
 
   @override
-  String get photo_clearTaps => 'Clear';
+  String get photo_clearTaps => '지우기';
 
   @override
-  String get photo_nothingThere =>
-      'Nothing to outline there. Tap the middle of it.';
+  String get photo_nothingThere => '그곳에는 윤곽을 잡을 것이 없습니다. 대상의 가운데를 탭하세요.';
 
   @override
-  String get photo_zeroHopNearbyOnly => 'This channel is Nearby only';
+  String get photo_zeroHopNearbyOnly => '이 채널은 \'근처만\'입니다';
 
   @override
-  String get photo_repairPacket => 'Repair packet';
+  String get photo_repairPacket => '복구용 패킷';
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
     String _temp0 = intl.Intl.pluralLogic(
       packets,
       locale: localeName,
-      other: '$packets packets',
-      one: '1 packet',
+      other: '패킷 $packets개',
     );
-    return '$_temp0 · about $sendTime to send';
+    return '$_temp0 · 전송에 약 $sendTime';
   }
 
   @override
@@ -196,12 +184,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String photo_sendingPacketAgain(int sent, int total) {
-    return 'Packet $sent of $total again';
+    return '패킷 $sent/$total (다시 보냄)';
   }
 
   @override
   String photo_passedOnSome(int heard, int total) {
-    return 'Sent · repeaters passed on $heard of its $total packets';
+    return '전송됨 · 리피터가 패킷 $total개 중 $heard개를 전달함';
   }
 
   @override
@@ -221,74 +209,72 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get photo_confirmTitle => 'Send photo';
+  String get photo_confirmTitle => '사진 보내기';
 
   @override
   String photo_openChannelTitle(String channel) {
-    return 'Photos on $channel';
+    return '$channel의 사진';
   }
 
   @override
   String get photo_openChannelNotEveryone =>
-      'Most people here won\'t see it: only MeshTrax shows photos.';
+      '여기 있는 대부분의 사람은 볼 수 없습니다: 사진을 표시하는 앱은 MeshTrax뿐입니다.';
 
   @override
   String photo_openChannelAirtime(String airtime, int messages) {
-    return 'This photo takes $airtime on air, as much as $messages text messages.';
+    return '이 사진은 전파를 $airtime 동안 사용합니다. 텍스트 메시지 $messages개와 같은 양입니다.';
   }
 
   @override
   String get photo_openChannelRepeaters =>
-      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+      '이를 전달하는 리피터마다 주변 모두가 함께 쓰는 주파수에서 사진 전체를 다시 보냅니다.';
 
   @override
   String get photo_openChannelBetter =>
-      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+      '더 나은 방법: 상대가 가까이 있으면 제로 홉, 또는 사진을 원하는 사람들과의 개인 채널. 여백을 줄여 자르세요: 단순한 사진일수록 패킷이 적습니다.';
 
   @override
-  String get photo_dontShowAgain => 'Don\'t show this again';
+  String get photo_dontShowAgain => '다시 보지 않기';
 
   @override
   String photo_confirmAirtime(int packets, String airtime, int messages) {
-    return '$packets packets, $airtime on air: as much as $messages text messages.';
+    return '패킷 $packets개, 전파 사용 $airtime: 텍스트 메시지 $messages개 분량입니다.';
   }
 
   @override
   String photo_confirmOpenChannel(String channel) {
-    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+    return '$channel에서 MeshTrax를 쓰는 사람은 누구나 볼 수 있습니다. 다른 앱은 사진을 표시하지 않습니다.';
   }
 
   @override
-  String get photo_confirmFlood =>
-      'Each repeater that hears it sends it again.';
+  String get photo_confirmFlood => '이를 들은 리피터마다 다시 보냅니다.';
 
   @override
-  String get photo_confirmZeroHop =>
-      'Zero hop: only radios in direct range get it.';
+  String get photo_confirmZeroHop => '제로 홉: 직접 닿는 범위의 무전기만 받습니다.';
 
   @override
-  String get photo_label => 'AI reconstructed';
+  String get photo_label => 'AI 재구성';
 
   @override
-  String get photo_tapToView => 'Tap to view';
+  String get photo_tapToView => '탭하여 보기';
 
   @override
-  String get photo_enhance => 'Enhance 4×';
+  String get photo_enhance => '4배 화질 향상';
 
   @override
-  String get photo_enhancing => 'Enhancing…';
+  String get photo_enhancing => '화질 향상 중…';
 
   @override
-  String get photo_save => 'Save';
+  String get photo_save => '저장';
 
   @override
-  String get photo_saved => 'Saved to your photos';
+  String get photo_saved => '내 사진에 저장했습니다';
 
   @override
-  String get photo_saveFailed => 'Couldn\'t save the photo.';
+  String get photo_saveFailed => '사진을 저장하지 못했습니다.';
 
   @override
-  String get photo_details => 'About this photo';
+  String get photo_details => '이 사진 정보';
 
   @override
   String photo_caption(int bytes) {
@@ -296,33 +282,31 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get photo_enlargedNote =>
-      'Enhanced 4× on this phone: fine detail may be made up.';
+  String get photo_enlargedNote => '이 휴대폰에서 4배 화질 향상됨: 세부는 만들어진 것일 수 있습니다.';
 
   @override
   String get photo_enlargeNoMemory =>
-      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+      '지금은 확대할 여유 메모리가 부족합니다. 다른 앱을 닫은 다음 다시 시도하세요.';
 
   @override
-  String get photo_enlargeFlagged =>
-      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+  String get photo_enlargeFlagged => '확대한 이미지가 안전 검사를 통과하지 못해 표시하지 않습니다.';
 
   @override
-  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+  String get photo_enlargeFailed => '사진을 확대하지 못했습니다.';
 
   @override
-  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+  String get photo_enlargeAutomatically => '사진 자동 확대';
 
   @override
   String get photo_enlargeAutomaticallyHint =>
-      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+      '꺼짐: 전체 화면 사진을 탭하면 4배 확대합니다. 켜짐: 열 때 바로 확대합니다.';
 
   @override
-  String get photo_ignoreTimeLimits => 'Ignore the photo time limits';
+  String get photo_ignoreTimeLimits => '사진 시간 제한 무시';
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos through repeaters without waiting between them.';
+      '테스트용: 사진 사이에 기다리지 않고 리피터를 거쳐 사진을 보냅니다.';
 
   @override
   String get photo_rebuilding => '재구성 중… 약 20초';
@@ -358,7 +342,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get photo_reportBody =>
-      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+      '사진은 이 휴대폰에서 즉시 영구적으로 숨겨지고, 신고는 지금 또는 인터넷에 연결될 때 앱에서 MeshTrax 개발자에게 전송됩니다. 휴대폰의 다른 정보는 전송되지 않습니다.';
 
   @override
   String get photo_reportInclude => '사진 포함';
@@ -368,15 +352,13 @@ class AppLocalizationsKo extends AppLocalizations {
       '사진을 재구성할 수 있는 수백 바이트의 코드입니다. 이미지 자체는 아닙니다.';
 
   @override
-  String get photo_reportReason => 'What\'s wrong? (optional)';
+  String get photo_reportReason => '무엇이 문제인가요? (선택 사항)';
 
   @override
-  String get photo_reportedSent =>
-      'Photo hidden, and the report is sent. Thank you.';
+  String get photo_reportedSent => '사진을 숨기고 신고를 보냈습니다. 감사합니다.';
 
   @override
-  String get photo_reportedQueued =>
-      'Photo hidden. The report will be sent when there\'s internet.';
+  String get photo_reportedQueued => '사진을 숨겼습니다. 신고는 인터넷에 연결되면 전송됩니다.';
 
   @override
   String photo_reportPending(String name) {
@@ -384,11 +366,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get photo_reportPendingHint => 'Waiting for internet to send';
+  String get photo_reportPendingHint => '인터넷 연결을 기다리는 중';
 
   @override
-  String get photo_reportStillWaiting =>
-      'Still no internet. It will be sent later.';
+  String get photo_reportStillWaiting => '아직 인터넷에 연결되지 않았습니다. 나중에 전송됩니다.';
 
   @override
   String get photo_autoRebuild => '받은 사진 자동 재구성';
@@ -520,7 +501,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String photo_needsNewer(String id) {
-    return '📷 Photo $id needs a newer MeshTrax';
+    return '📷 사진 $id: 최신 MeshTrax가 필요합니다';
   }
 
   @override
@@ -556,12 +537,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String newChat_contactCount(int count) {
     return '연락처 $count개';
   }
-
-  @override
-  String get newChat_newContact => '새 연락처';
-
-  @override
-  String get newChat_newChannel => '새 채널';
 
   @override
   String get newChat_myContacts => '내 연락처';
@@ -600,7 +575,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_ok => '알겠습니다';
 
   @override
-  String get common_experimental => 'EXPERIMENTAL';
+  String get common_experimental => '실험적';
 
   @override
   String get common_connect => '연결';
@@ -1106,46 +1081,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_tellGroupHint => '여행 채널에 올립니다. 다른 사람은 한 번 탭으로 따라옵니다.';
 
   @override
-  String get trax_keepTrack => 'Keep my track';
+  String get trax_keepTrack => '내 이동 경로 보관';
 
   @override
   String get trax_keepTrackHint =>
-      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+      '나와 여행 그룹의 지도에 선이 얼마나 오래전까지 남는지입니다. 그보다 오래된 부분은 모든 휴대폰에서 삭제됩니다.';
 
   @override
   String trax_keepTrackHours(int hours) {
-    return '$hours hours';
+    return '$hours시간';
   }
 
   @override
-  String get trax_keepTrackWeek => '1 week';
+  String get trax_keepTrackWeek => '1주일';
 
   @override
-  String get trax_icon => 'Your icon';
+  String get trax_icon => '내 아이콘';
 
   @override
-  String get trax_iconHint => 'How the trip sees you on the map.';
+  String get trax_iconHint => '여행 그룹의 지도에 내가 어떻게 보이는지입니다.';
 
   @override
-  String get trax_iconHike => 'Hike';
+  String get trax_iconHike => '하이킹';
 
   @override
-  String get trax_iconVehicle => 'Vehicle';
+  String get trax_iconVehicle => '차량';
 
   @override
-  String get trax_iconBoat => 'Boat';
+  String get trax_iconBoat => '보트';
 
   @override
-  String get trax_iconMotorcycle => 'Motorcycle';
+  String get trax_iconMotorcycle => '오토바이';
 
   @override
-  String get trax_iconBicycle => 'Bicycle';
+  String get trax_iconBicycle => '자전거';
 
   @override
-  String get trax_iconAircraft => 'Aircraft';
+  String get trax_iconAircraft => '항공기';
 
   @override
-  String get trax_iconCamp => 'Camp';
+  String get trax_iconCamp => '캠프';
 
   @override
   String trax_followBody(String name, String time) {
@@ -1288,15 +1263,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trax_mayBeOld => '오래되었을 수 있음';
 
   @override
-  String get trax_askTrack => 'Ask for track';
+  String get trax_askTrack => '이동 경로 요청';
 
   @override
   String trax_trackAsked(String time) {
-    return 'Track asked $time';
+    return '$time에 이동 경로 요청함';
   }
 
   @override
-  String get trax_group => 'TRAX group';
+  String get trax_group => 'TRAX 그룹';
 
   @override
   String get trax_tripChannelLocation => 'TRAX 모드에서는 내 위치가 이 채널로 전송돼요.';
@@ -1741,11 +1716,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appSettings_messaging => '메시징';
 
   @override
-  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
+  String get appSettings_maxDirectMessageTries => '다이렉트 메시지 최대 시도 횟수';
 
   @override
   String get appSettings_maxDirectMessageTriesSubtitle =>
-      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
+      '다이렉트 메시지나 룸 게시물을 실패로 표시하기 전까지의 전송 시도 횟수입니다. 처음 몇 번은 알려진 경로로 보내고, 나머지는 플러드로 보냅니다.';
 
   @override
   String get appSettings_maxChannelMessageRetries => '채널 메시지 최대 재시도 횟수';
@@ -2137,16 +2112,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get radioAsk_askAgain => '다시 묻기';
 
   @override
-  String get radioAsk_trackAsked =>
-      'Also asked their phone for their track; it shows on the map.';
+  String get radioAsk_trackAsked => '상대 휴대폰에도 이동 경로를 요청했습니다. 지도에 표시됩니다.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {
     return '$name의 무전기 · $time';
   }
-
-  @override
-  String get radioAsk_rowLabel => '무전기 응답';
 
   @override
   String get contact_nickname => '닉네임';
@@ -2229,17 +2200,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_shareChannel => '채널 공유';
 
   @override
-  String get channels_shareChannelInstructions =>
-      'QR 코드를 스캔해 채널을 추가하세요.\n메뉴 → 채널 추가 → QR 코드를 스캔';
+  String get channels_shareChannelInstructions => 'QR 코드를 스캔해 채널을 추가하세요.';
 
   @override
   String get channels_secretKey => '비밀 키';
 
   @override
   String get channels_meshcoreUri => 'MeshCore URI';
-
-  @override
-  String get channels_shareChannelQr => '채널 QR 코드 스캔';
 
   @override
   String get channels_shareChannelWarning =>
@@ -2285,22 +2252,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_standardPublicPsk => '표준 공공 PSK';
 
   @override
-  String get channels_pskHex => 'PSK (헥스)';
-
-  @override
   String get channels_generateRandomPsk => '임의의 PSK 생성';
 
   @override
-  String get channels_enterChannelName => '채널 이름을 입력해 주세요.';
-
-  @override
-  String get channels_pskMustBe32Hex => 'PSK(개인식별키)는 32자리 16진수 문자여야 합니다.';
-
-  @override
   String get channels_addChannelConfirmation => '다음 채널을 추가하시겠습니까?';
-
-  @override
-  String get channels_channelAddedSuccess => '채널을 추가했습니다.';
 
   @override
   String get channels_noAvailableChannelSlots => '사용 가능한 채널 슬롯이 없습니다.';
@@ -2336,9 +2291,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get channels_publicChannelAdded => '공개 채널 추가';
-
-  @override
   String get channels_sortBy => '정렬 기준 선택';
 
   @override
@@ -2360,34 +2312,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get channels_createPrivateChannelDesc => '비밀 키로 암호화되어 있습니다.';
 
   @override
-  String get channels_joinPrivateChannel => '개인 채널에 참여하기';
-
-  @override
-  String get channels_joinPrivateChannelDesc => '비밀 키를 수동으로 입력합니다.';
-
-  @override
   String get channels_joinPublicChannel => '공개 채널에 참여하세요';
 
   @override
   String get channels_joinPublicChannelDesc => '누구나 이 채널에 참여할 수 있습니다.';
 
   @override
-  String get channels_joinHashtagChannel => '해시태그 채널에 참여하세요';
-
-  @override
-  String get channels_joinHashtagChannelDesc => '누구나 해시태그 채널에 참여할 수 있습니다.';
-
-  @override
   String get channels_scanQrCode => 'QR 코드를 스캔';
 
   @override
   String get channels_scanQrCodeComingSoon => '곧 출시';
-
-  @override
-  String get channels_enterHashtag => '해시태그 입력';
-
-  @override
-  String get channels_hashtagHint => '예: #팀';
 
   @override
   String get channels_keepCapitals => '대문자 유지';
@@ -2427,9 +2361,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get common_copyToClipboard => '클립보드에 복사';
-
-  @override
-  String get contacts_copyContactToClipboard => '내 연락처를 클립보드에 복사';
 
   @override
   String get chat_typeMessage => '메시지를 입력하세요...';
@@ -3518,10 +3449,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get repeater_cliQuickDiscovery => '이웃 발견하기';
 
   @override
-  String get repeater_cliQuickRepeatOn => 'Repeat On';
+  String get repeater_cliQuickRepeatOn => '중계 켜기';
 
   @override
-  String get repeater_cliQuickRepeatOff => 'Repeat Off';
+  String get repeater_cliQuickRepeatOff => '중계 끄기';
 
   @override
   String get repeater_cliHelpAdvert => '광고 패킷을 발송';
@@ -3709,180 +3640,172 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get repeater_cliHelpIntro =>
-      'Tap a command to put it in the box, then replace the parts in curly brackets. Tap a get button to read that setting. These are the commands of firmware 1.18; older firmware may not have them all.';
+      '명령을 탭하면 입력란에 들어갑니다. 그런 다음 중괄호 안의 부분을 바꾸세요. get 버튼을 탭하면 그 설정을 읽습니다. 펌웨어 1.18의 명령이며, 이전 펌웨어에는 일부 명령이 없을 수 있습니다.';
 
   @override
-  String get repeater_cliSectionRadio => 'Radio';
+  String get repeater_cliSectionRadio => '무전기';
 
   @override
-  String get repeater_cliSectionPower => 'Power';
+  String get repeater_cliSectionPower => '전원';
 
   @override
-  String get repeater_cliSectionRegions => 'Regions';
+  String get repeater_cliSectionRegions => '지역';
 
   @override
-  String get repeater_cliSectionSensors => 'Sensors';
+  String get repeater_cliSectionSensors => '센서';
 
   @override
-  String get repeater_cliSectionRoom => 'Room Server';
+  String get repeater_cliSectionRoom => '방 서버';
 
   @override
   String get repeater_cliHelpAdvertZeroHop =>
-      'Sends an advert that only radios in direct range hear. Repeaters don\'t pass it on.';
+      '직접 닿는 범위의 무전기만 듣는 광고를 보냅니다. 리피터는 전달하지 않습니다.';
 
   @override
   String get repeater_cliHelpClockSync =>
-      'Sets the device\'s clock to your phone\'s time. The clock can only move forward.';
+      '장치의 시계를 휴대폰 시간에 맞춥니다. 시계는 앞으로만 갈 수 있습니다.';
 
   @override
   String get repeater_cliHelpTime =>
-      'Sets the clock to a Unix time in seconds. The clock can only move forward.';
+      '시계를 Unix 시간(초)으로 설정합니다. 시계는 앞으로만 갈 수 있습니다.';
 
   @override
-  String get repeater_cliHelpBoard => 'Shows the board\'s maker and model.';
+  String get repeater_cliHelpBoard => '보드의 제조사와 모델을 표시합니다.';
 
   @override
-  String get repeater_cliHelpGetRole =>
-      'Shows the firmware\'s role, such as repeater or room server.';
+  String get repeater_cliHelpGetRole => '리피터나 방 서버 같은 펌웨어의 역할을 표시합니다.';
 
   @override
-  String get repeater_cliHelpGetPublicKey => 'Shows the device\'s public key.';
+  String get repeater_cliHelpGetPublicKey => '장치의 공개 키를 표시합니다.';
 
   @override
   String get repeater_cliHelpClkReboot =>
-      'Sets the clock back to May 2024 and reboots. Use it when the clock is ahead, then run clock sync.';
+      '시계를 2024년 5월로 되돌리고 재부팅합니다. 시계가 앞서 있을 때 사용한 뒤 clock sync를 실행하세요.';
 
   @override
   String get repeater_cliHelpPowerOff =>
-      'Turns the device off until its button is pressed or its power is cycled. shutdown does the same.';
+      '버튼을 누르거나 전원을 껐다 켤 때까지 장치를 끕니다. shutdown도 같습니다.';
 
   @override
   String get repeater_cliHelpStartOta =>
-      'Starts a firmware update over the air, on boards that support it. The reply says how to connect.';
+      '지원하는 보드에서 무선 펌웨어 업데이트를 시작합니다. 연결 방법은 응답에 나옵니다.';
 
   @override
-  String get repeater_cliHelpRoomPost =>
-      'Posts a message in the room from the room server itself.';
+  String get repeater_cliHelpRoomPost => '방 서버 자체 이름으로 룸에 메시지를 게시합니다.';
 
   @override
-  String get repeater_cliHelpGetFreq => 'Shows the radio frequency in MHz.';
+  String get repeater_cliHelpGetFreq => '무선 주파수를 MHz로 표시합니다.';
 
   @override
-  String get repeater_cliHelpSetTxPower =>
-      'Sets the LoRa transmit power in dBm. It takes effect at once.';
+  String get repeater_cliHelpSetTxPower => 'LoRa 송신 출력을 dBm으로 설정합니다. 바로 적용됩니다.';
 
   @override
   String get repeater_cliHelpSetDutyCycle =>
-      'Sets the share of time the radio may spend sending, in percent. It\'s the air-time factor in other units.';
+      '무전기가 송신에 쓸 수 있는 시간 비율을 퍼센트로 설정합니다. 에어타임 계수를 다른 단위로 나타낸 것입니다.';
 
   @override
   String get repeater_cliHelpSetCad =>
-      'Turns channel activity detection on or off: the radio listens for other LoRa signals before it sends.';
+      '채널 활동 감지를 켜거나 끕니다: 무전기가 보내기 전에 다른 LoRa 신호를 듣습니다.';
 
   @override
-  String get repeater_cliHelpSetRxGain =>
-      'Turns boosted receive gain on or off, on radios that have it.';
+  String get repeater_cliHelpSetRxGain => '지원하는 무전기에서 수신 이득 증폭을 켜거나 끕니다.';
 
   @override
   String get repeater_cliHelpSetExtraSf =>
-      'LR2021 radios only: also listens for up to three more spreading factors.';
+      'LR2021 무전기만 해당: 최대 3개의 확산 인자를 추가로 수신합니다.';
 
   @override
   String get repeater_cliHelpSetOwnerInfo =>
-      'Sets the owner details the device gives with its name and version when asked. Use | for a new line.';
+      '요청을 받으면 장치가 이름, 버전과 함께 알려 주는 소유자 정보를 설정합니다. 줄바꿈에는 |를 쓰세요.';
 
   @override
   String get repeater_cliHelpSetFloodMaxUnscoped =>
-      'Like flood.max, but for flood packets sent without a region.';
+      'flood.max와 같지만, 지역 없이 보낸 플러드 패킷에 적용됩니다.';
 
   @override
   String get repeater_cliHelpSetFloodMaxAdvert =>
-      'Like flood.max, but for adverts. The default is 8.';
+      'flood.max와 같지만, 광고에 적용됩니다. 기본값은 8입니다.';
 
   @override
   String get repeater_cliHelpSetLoopDetect =>
-      'Sets how strictly the repeater drops flood packets that go round in a loop. The default is minimal.';
+      '루프를 도는 플러드 패킷을 리피터가 얼마나 엄격하게 버릴지 설정합니다. 기본값은 minimal입니다.';
 
   @override
   String get repeater_cliHelpSetPathHashMode =>
-      'Sets how many bytes each hop adds to a packet\'s path: 0 for 1 byte, 1 for 2 bytes, 2 for 3 bytes.';
+      '홉마다 패킷 경로에 추가하는 바이트 수를 설정합니다: 0은 1바이트, 1은 2바이트, 2는 3바이트입니다.';
 
   @override
   String get repeater_cliHelpSetPrvKey =>
-      'Replaces the device\'s identity with this private key. Reboot to apply. The old identity is lost unless you saved its key.';
+      '장치의 ID를 이 개인 키로 바꿉니다. 적용하려면 재부팅하세요. 키를 저장해 두지 않았다면 이전 ID는 사라집니다.';
 
   @override
   String get repeater_cliHelpPower =>
-      'Shows the battery voltage, and whether USB, solar or other external power is connected.';
+      '배터리 전압과 USB, 태양광 또는 기타 외부 전원이 연결되어 있는지 표시합니다.';
 
   @override
-  String get repeater_cliHelpPowerSaving => 'Shows whether power saving is on.';
+  String get repeater_cliHelpPowerSaving => '절전이 켜져 있는지 표시합니다.';
 
   @override
   String get repeater_cliHelpPowerSavingSet =>
-      'Turns power saving on or off. nRF52 boards start saving at once, ESP32 boards after 2 minutes.';
+      '절전을 켜거나 끕니다. nRF52 보드는 즉시, ESP32 보드는 2분 후에 절전을 시작합니다.';
 
   @override
-  String get repeater_cliHelpGetPwrmgtSupport =>
-      'Shows whether the board has power management.';
+  String get repeater_cliHelpGetPwrmgtSupport => '보드에 전원 관리 기능이 있는지 표시합니다.';
 
   @override
   String get repeater_cliHelpGetPwrmgtSource =>
-      'Shows whether the device runs on external power or on its battery.';
+      '장치가 외부 전원으로 작동하는지 배터리로 작동하는지 표시합니다.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootReason =>
-      'Shows why the device last started and why it last shut down.';
+      '장치가 마지막으로 시작된 이유와 마지막으로 꺼진 이유를 표시합니다.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootMv =>
-      'Shows the battery voltage when the device last started.';
+      '장치가 마지막으로 시작될 때의 배터리 전압을 표시합니다.';
 
   @override
-  String get repeater_cliHelpGetBootloaderVer =>
-      'Shows the bootloader version, on nRF52 boards.';
+  String get repeater_cliHelpGetBootloaderVer => 'nRF52 보드에서 부트로더 버전을 표시합니다.';
 
   @override
   String get repeater_cliHelpDiscoverNeighbors =>
-      'Asks nearby repeaters to answer, to fill the neighbors list.';
+      '근처 리피터에 응답을 요청해 이웃 목록을 채웁니다.';
 
   @override
-  String get repeater_cliHelpRegions =>
-      'Lists the regions and which ones may flood (F).';
+  String get repeater_cliHelpRegions => '지역 목록과 플러드가 허용된 지역(F)을 표시합니다.';
 
   @override
   String get repeater_cliHelpRegionDef =>
-      'Adds regions in one command: each name goes under the one before it. Write name|parent to put the next name under that parent instead.';
+      '한 번의 명령으로 여러 지역을 추가합니다: 각 이름은 바로 앞 이름의 하위에 들어갑니다. name|parent라고 쓰면 다음 이름을 대신 그 상위 지역 아래에 넣습니다.';
 
   @override
   String get repeater_cliHelpRegionList =>
-      'Lists the regions that may flood (allowed) or may not (denied).';
+      '플러드가 허용된(allowed) 지역 또는 허용되지 않은(denied) 지역을 표시합니다.';
 
   @override
   String get repeater_cliHelpRegionDefault =>
-      'Shows the default region: the one this device\'s own flood packets go out in.';
+      '기본 지역을 표시합니다: 이 장치가 직접 보내는 플러드 패킷이 쓰는 지역입니다.';
 
   @override
   String get repeater_cliHelpRegionDefaultSet =>
-      'Sets the default region, or <null> for none. A new name is added as a region. Saved at once.';
+      '기본 지역을 설정합니다. 없음으로 하려면 <null>을 쓰세요. 새 이름은 지역으로 추가됩니다. 바로 저장됩니다.';
 
   @override
-  String get repeater_cliHelpGpsDiag =>
-      'Shows GPS details for finding problems.';
+  String get repeater_cliHelpGpsDiag => '문제를 찾기 위한 GPS 세부 정보를 표시합니다.';
 
   @override
   String get repeater_cliHelpSensorList =>
-      'Lists the board\'s sensor settings. Add a number to start further down the list.';
+      '보드의 센서 설정을 표시합니다. 숫자를 붙이면 목록의 더 아래부터 시작합니다.';
 
   @override
-  String get repeater_cliHelpSensorGet => 'Shows one sensor setting.';
+  String get repeater_cliHelpSensorGet => '센서 설정 하나를 표시합니다.';
 
   @override
-  String get repeater_cliHelpSensorSet => 'Changes one sensor setting.';
+  String get repeater_cliHelpSensorSet => '센서 설정 하나를 변경합니다.';
 
   @override
   String get repeater_cliHelpSetBridgeChannel =>
-      'Sets the Wi-Fi channel for ESP-NOW bridges.';
+      'ESP-NOW 브리지의 Wi-Fi 채널을 설정합니다.';
 
   @override
   String get repeater_commandsListTitle => '명령 목록';
@@ -4382,9 +4305,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_addContactFromClipboard => '복사본에서 연락처 추가';
 
   @override
-  String get contacts_ShareContact => '연락처를 복사';
-
-  @override
   String get contacts_ShareContactZeroHop => '광고를 통해 연락처 공유';
 
   @override
@@ -4398,34 +4318,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contacts_zeroHopContactAdvertFailed => '연락처 전송에 실패했습니다.';
 
   @override
-  String get contacts_contactAdvertCopied => '광고 내용이 복사되었습니다.';
-
-  @override
   String get contacts_contactAdvertCopyFailed => '광고를 클립보드에 복사하는 데 실패했습니다.';
 
   @override
   String get contacts_addContact => '연락처 추가';
-
-  @override
-  String get contacts_scanQrCode => '연락처 QR 스캔';
-
-  @override
-  String get contacts_scanQrCodeDesc => 'MeshCore 앱의 연락처 QR 코드를 스캔합니다';
-
-  @override
-  String get contacts_enterIdHash => '연락처 직접 입력';
-
-  @override
-  String get contacts_enterIdHashDesc => '연락처 광고 또는 meshcore:// 링크 붙여넣기';
-
-  @override
-  String get contacts_advertHint => 'meshcore://... 또는 공개 키 hex';
-
-  @override
-  String get contacts_import => '가져오기';
-
-  @override
-  String get contacts_scanContactInstructions => 'MeshCore 연락처 QR 코드를 스캔하세요';
 
   @override
   String get notification_activityTitle => '메쉬코어 활동';
@@ -4586,9 +4482,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get discoveredContacts_addContact => '연락처 추가';
-
-  @override
-  String get discoveredContacts_copyContact => '복사';
 
   @override
   String get discoveredContacts_deleteContact => '발견된 연락처 삭제';
@@ -5678,22 +5571,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get map_zoomOut => '축소';
 
   @override
-  String get gps_title => 'GPS';
-
-  @override
   String get gps_on => 'GPS 켜짐';
 
   @override
   String get gps_off => 'GPS 꺼짐';
-
-  @override
-  String get gps_onHint => '무전기가 GPS로 위치를 업데이트합니다.';
-
-  @override
-  String get gps_offHint => '끄면 배터리를 아낍니다. 위치를 잡는 데 몇 분 걸릴 수 있습니다.';
-
-  @override
-  String get gps_asking => '무전기에 묻는 중...';
 
   @override
   String get gps_noPosition => '아직 위치가 없습니다. 실외에서는 첫 위치를 잡는 데 몇 분 걸릴 수 있습니다.';
@@ -5703,11 +5584,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get gps_altitude => '고도';
-
-  @override
-  String gps_readAgo(String ago) {
-    return '$ago 전에 무전기에서 읽음';
-  }
 
   @override
   String get gps_turnOnTitle => 'GPS를 켤까요?';
@@ -6046,84 +5922,80 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tray_noRadioPosition => '무전기에 아직 위치가 없습니다. 지도에서 선택하세요.';
 
   @override
-  String get location_sendPositionOnly => 'Only the position';
+  String get location_sendPositionOnly => '위치만';
 
   @override
-  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+  String get location_sendWithMotion => '위치, 진행 방향, 속도, 고도';
 
   @override
-  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+  String get location_motionNotKnown => '진행 방향과 속도를 아직 알 수 없습니다';
 
   @override
-  String get add_title => 'New Channel or Contact';
+  String get add_title => '새 채널 또는 연락처';
 
   @override
-  String get add_or => 'Or';
+  String get add_or => '또는';
 
   @override
-  String get add_hashtagRow => 'Join a hashtag channel';
+  String get add_hashtagRow => '해시태그 채널 참여';
 
   @override
-  String get add_hashtagRowHelp => 'Type its name after the #';
+  String get add_hashtagRowHelp => '# 뒤에 이름을 입력하세요';
 
   @override
-  String get add_keyRow => 'Enter a name and a key';
+  String get add_keyRow => '이름과 키 입력';
 
   @override
-  String get add_keyRowHelp =>
-      'A channel\'s secret key, or a contact\'s public key';
+  String get add_keyRowHelp => '채널의 비밀 키 또는 연락처의 공개 키';
 
   @override
-  String get add_name => 'Name';
+  String get add_name => '이름';
 
   @override
-  String get add_key => 'Key';
+  String get add_key => '키';
 
   @override
-  String get add_keyInvalid =>
-      'A channel\'s key is 32 characters, a contact\'s 64.';
+  String get add_keyInvalid => '채널 키는 32자, 연락처 키는 64자입니다.';
 
   @override
-  String get add_typePerson => 'Person';
+  String get add_typePerson => '사람';
 
   @override
-  String get add_box => 'Paste or type';
+  String get add_box => '붙여넣기 또는 입력';
 
   @override
-  String get add_boxHint =>
-      'A meshcore:// link, <key:type:name>, #hashtag or a key';
+  String get add_boxHint => 'meshcore:// 링크, <key:type:name>, #해시태그 또는 키';
 
   @override
-  String get add_paste => 'Paste';
+  String get add_paste => '붙여넣기';
 
   @override
-  String get add_clipboardEmpty => 'There\'s nothing to paste.';
+  String get add_clipboardEmpty => '붙여넣을 내용이 없습니다.';
 
   @override
-  String get add_unreadableTitle => 'Nothing to add yet';
+  String get add_unreadableTitle => '아직 추가할 것이 없습니다';
 
   @override
   String get add_unreadable =>
-      'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.';
+      '연락처: meshcore:// 링크, <key:type:name>, 연락처 카드 또는 64자 키. 채널: meshcore:// 링크, #해시태그 또는 이름과 함께 32자 비밀 키.';
 
   @override
-  String get add_contactName => 'Name (optional)';
+  String get add_contactName => '이름 (선택 사항)';
 
   @override
-  String get add_scanInstructions => 'Scan a contact or channel QR code';
+  String get add_scanInstructions => '연락처 또는 채널 QR 코드를 스캔하세요';
 
   @override
-  String get add_scanUnreadable =>
-      'That QR code isn\'t a contact or a channel.';
+  String get add_scanUnreadable => '그 QR 코드는 연락처나 채널이 아닙니다.';
 
   @override
-  String get copy_link => 'Copy link';
+  String get copy_link => '링크 복사';
 
   @override
-  String get copy_asText => 'Copy as text';
+  String get copy_asText => '텍스트로 복사';
 
   @override
-  String get share_asText => 'As text';
+  String get share_asText => '텍스트 형식';
 
   @override
   String get dialog_insert => '삽입';
@@ -6269,11 +6141,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sos_dndStepsSamsung =>
-      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+      '설정의 \'방해 금지 모드\'가 열립니다. \'앱 알림\', \'앱 추가\'를 차례로 탭하고 MeshTrax를 선택한 다음 \'SOS 알림\'만 켜세요.';
 
   @override
   String get sos_dndStepsOther =>
-      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+      '설정의 \'SOS 알림\'이 열립니다: \'방해 금지 모드 무시\'를 켜세요. 그곳에 이 스위치가 없으면 \'방해 금지 모드\'를 열어 알림이 허용되는 앱을 찾고, MeshTrax를 추가한 다음 \'SOS 알림\'을 켜세요.';
 
   @override
   String get notification_sosChannel => 'SOS 알림';
@@ -6308,7 +6180,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get appSettings_sosLetThroughDnd =>
-      'Do Not Disturb silences it. Tap to let it through.';
+      '방해 금지 모드에서는 울리지 않습니다. 탭하여 울리도록 허용하세요.';
 
   @override
   String get appSettings_sosBlocked => '휴대폰에서 SOS 알림이 꺼져 있습니다. 탭하여 켜세요.';
@@ -7545,22 +7417,20 @@ class AppLocalizationsKo extends AppLocalizations {
       '드라이브의 경로 데이터가 이 기기의 모든 지역을 포함하지 않습니다.';
 
   @override
-  String get offlineMaps_kindWaterRouting => 'Water routing';
+  String get offlineMaps_kindWaterRouting => '수상 길찾기';
 
   @override
-  String get offlineMaps_kindWaterRoutingDetail => 'Routes on the water';
+  String get offlineMaps_kindWaterRoutingDetail => '물 위 길찾기';
 
   @override
-  String get offlineMaps_waterRoutingWithChart =>
-      'Routes on the water. Its chart comes too.';
+  String get offlineMaps_waterRoutingWithChart => '물 위 길찾기. 해당 해도도 함께 받습니다.';
 
   @override
   String get offlineMaps_waterRoutingUpdatesChart =>
-      'Routes on the water. Its chart updates too.';
+      '물 위 길찾기. 해당 해도도 함께 업데이트됩니다.';
 
   @override
-  String get offlineMaps_waterRoutingRebuilding =>
-      'Being rebuilt for new charts';
+  String get offlineMaps_waterRoutingRebuilding => '새 해도에 맞춰 다시 만드는 중';
 
   @override
   String get map_search => '검색';
@@ -7596,96 +7466,95 @@ class AppLocalizationsKo extends AppLocalizations {
   String get route_pin => '지정한 위치';
 
   @override
-  String get water_yourBoat => 'Your boat';
+  String get water_yourBoat => '내 보트';
 
   @override
   String get water_yourBoatIntro =>
-      'Every trip on the water keeps to these. Change them later in Route options.';
+      '모든 물 위 길찾기는 이 설정을 따릅니다. 나중에 \'길찾기 옵션\'에서 바꿀 수 있습니다.';
 
   @override
   String water_boatDraft(String draft, String keel) {
-    return '$draft draft + $keel';
+    return '흘수 $draft + $keel';
   }
 
   @override
   String water_boatOffLand(String distance) {
-    return '$distance off land';
+    return '육지에서 $distance';
   }
 
   @override
   String water_boatMast(String height) {
-    return '$height mast';
+    return '마스트 $height';
   }
 
   @override
-  String get water_classRestricted => 'Restricted area';
+  String get water_classRestricted => '제한 구역';
 
   @override
-  String get water_classCaution => 'Caution area';
+  String get water_classCaution => '주의 구역';
 
   @override
-  String get water_classMilitary => 'Military area';
+  String get water_classMilitary => '군사 구역';
 
   @override
-  String get water_classAnchorage => 'Anchorage';
+  String get water_classAnchorage => '묘박지';
 
   @override
-  String get water_classDumping => 'Dumping ground';
+  String get water_classDumping => '토사 투기장';
 
   @override
-  String get water_classTrafficLane => 'Traffic lane';
+  String get water_classTrafficLane => '통항로';
 
   @override
-  String get water_classSeparation => 'Separation zone';
+  String get water_classSeparation => '분리대';
 
   @override
-  String get water_classPrecautionary => 'Precautionary area';
+  String get water_classPrecautionary => '경계 구역';
 
   @override
-  String get water_classInshoreTraffic => 'Inshore traffic zone';
+  String get water_classInshoreTraffic => '연안 통항대';
 
   @override
-  String get water_classMarineFarm => 'Marine farm';
+  String get water_classMarineFarm => '해상 양식장';
 
   @override
-  String get water_classBridge => 'Bridge';
+  String get water_classBridge => '다리';
 
   @override
-  String get water_classCable => 'Overhead cable';
+  String get water_classCable => '가공 케이블';
 
   @override
-  String get water_classPipe => 'Overhead pipe';
+  String get water_classPipe => '가공 파이프';
 
   @override
-  String get water_classConveyor => 'Conveyor';
+  String get water_classConveyor => '컨베이어';
 
   @override
-  String get water_classGate => 'Gate';
+  String get water_classGate => '수문';
 
   @override
-  String get water_movedLand => 'that point is on land or off the charts';
+  String get water_movedLand => '그 지점이 육지이거나 해도 밖입니다';
 
   @override
-  String get water_movedShallow => 'it\'s too shallow there';
+  String get water_movedShallow => '그곳은 너무 얕습니다';
 
   @override
-  String get water_movedHazard =>
-      'it\'s near a hazard too shallow for the boat';
+  String get water_movedHazard => '보트가 지나가기에 너무 얕은 위험물 근처입니다';
 
   @override
-  String get water_movedNoEntry => 'entry is prohibited there';
+  String get water_movedNoEntry => '그곳은 진입 금지입니다';
 
   @override
-  String get water_movedMast => 'something there is lower than the mast';
+  String get water_movedMast => '그곳에 마스트보다 낮은 것이 있습니다';
 
   @override
   String water_startMoved(String distance, String why) {
-    return 'Starts $distance from the point picked: $why.';
+    return '선택한 지점에서 $distance 떨어진 곳에서 시작합니다: $why.';
   }
 
   @override
   String water_endMoved(String distance, String why) {
-    return 'Ends $distance from the point picked: $why.';
+    return '선택한 지점에서 $distance 떨어진 곳에서 끝납니다: $why.';
   }
 
   @override
@@ -7695,7 +7564,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String band,
     String draft,
   ) {
-    return 'Ends $distance before $destination: charted $band. Drafts to $draft get through.';
+    return '$destination까지 $distance 남기고 끝납니다: 해도상 수심 $band. 흘수 $draft까지는 지나갈 수 있습니다.';
   }
 
   @override
@@ -7704,7 +7573,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String destination,
     String band,
   ) {
-    return 'Ends $distance before $destination: charted $band, too shallow to get through.';
+    return '$destination까지 $distance 남기고 끝납니다: 해도상 수심 $band, 너무 얕아 지나갈 수 없습니다.';
   }
 
   @override
@@ -7713,127 +7582,124 @@ class AppLocalizationsKo extends AppLocalizations {
     String destination,
     String objects,
   ) {
-    return 'Ends $distance before $destination: $objects too low for the mast.';
+    return '$destination까지 $distance 남기고 끝납니다: $objects이(가) 마스트보다 낮습니다.';
   }
 
   @override
   String water_endsShortNoWater(String distance, String destination) {
-    return 'Ends $distance before $destination: no charted water joins them.';
+    return '$destination까지 $distance 남기고 끝납니다: 해도상 이어지는 물길이 없습니다.';
   }
 
   @override
   String water_endsShortTooLong(String distance, String destination) {
-    return 'Ends $distance before $destination: too long for one route. Plan it in parts.';
+    return '$destination까지 $distance 남기고 끝납니다: 한 번의 길찾기로는 너무 깁니다. 나누어 계획하세요.';
   }
 
   @override
   String water_leastDepth(String depth) {
-    return 'Least depth: charted $depth';
+    return '최소 수심: 해도상 $depth';
   }
 
   @override
   String water_lowestClearance(String height) {
-    return 'Lowest clearance $height';
+    return '최저 통과 높이 $height';
   }
 
   @override
   String water_lowestClearanceUnder(String height, String name) {
-    return 'Lowest clearance $height, $name';
+    return '최저 통과 높이 $height, $name';
   }
 
   @override
   String water_shallower(String depth) {
-    return 'Shallower than $depth';
+    return '$depth보다 얕음';
   }
 
   @override
-  String get water_poorSurvey => 'Poorly surveyed';
+  String get water_poorSurvey => '측량 불충분';
 
   @override
-  String get water_needsOpening => 'needs opening';
+  String get water_needsOpening => '다리를 열어야 함';
 
   @override
-  String get water_magneticModelOld =>
-      'Bearings from a magnetic model valid to 2030';
+  String get water_magneticModelOld => '방위는 2030년까지 유효한 자기 모델 기준';
 
   @override
   String water_couldntKeep(String distance) {
-    return 'Closer than $distance to land';
+    return '육지에서 $distance 이내';
   }
 
   @override
-  String get water_onTheWay => 'On the way';
+  String get water_onTheWay => '가는 길에 있는 것';
 
   @override
   String water_stretch(String length, String from) {
-    return '$length, from $from along';
+    return '$length, $from 지점부터';
   }
 
   @override
-  String get water_speed => 'Speed';
+  String get water_speed => '속도';
 
   @override
-  String get water_draft => 'Draft';
+  String get water_draft => '흘수';
 
   @override
-  String get water_underKeel => 'Room under the keel';
+  String get water_underKeel => '용골 아래 여유';
 
   @override
-  String get water_preferDepth => 'Preferred depth';
+  String get water_preferDepth => '선호 수심';
 
   @override
-  String get water_none => 'None';
+  String get water_none => '없음';
 
   @override
-  String get water_mastHeight => 'Mast height';
+  String get water_mastHeight => '마스트 높이';
 
   @override
-  String get water_offLand => 'Distance off land';
+  String get water_offLand => '육지와의 거리';
 
   @override
-  String get water_avoidLanes => 'Traffic lanes';
+  String get water_avoidLanes => '통항로';
 
   @override
-  String get water_avoidSecurity => 'Security zones';
+  String get water_avoidSecurity => '보안 구역';
 
   @override
-  String get water_avoidOpening => 'Bridges that open';
+  String get water_avoidOpening => '개폐식 다리';
 
   @override
-  String get water_notForNavigation => 'Not for navigation';
+  String get water_notForNavigation => '항해용 아님';
 
   @override
-  String get water_noData =>
-      'Download Water routing for this chart area in Offline maps.';
+  String get water_noData => '\'오프라인 지도\'에서 이 해도 구역의 \'수상 길찾기\'를 다운로드하세요.';
 
   @override
   String water_routingMissing(String area) {
-    return 'Water routing for $area isn\'t on this phone.';
+    return '$area의 수상 길찾기가 이 휴대폰에 없습니다.';
   }
 
   @override
-  String get route_onLand => 'Route on land';
+  String get route_onLand => '육지로 길찾기';
 
   @override
-  String get route_onWater => 'Route on the water';
+  String get route_onWater => '물 위로 길찾기';
 
   @override
-  String get water_noTiles => 'No water routing here';
+  String get water_noTiles => '이곳에는 수상 길찾기가 없습니다';
 
   @override
   String get water_mixedBuilds =>
-      'Update water routing in Offline maps: its areas are of different builds.';
+      '\'오프라인 지도\'에서 수상 길찾기를 업데이트하세요: 구역마다 버전이 다릅니다.';
 
   @override
-  String get water_noWater => 'No water here the boat can use';
+  String get water_noWater => '이곳에는 보트가 다닐 수 있는 물길이 없습니다';
 
   @override
   String water_unchartedSpans(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Under $count spans with no charted clearance',
-      one: 'Under 1 span with no charted clearance',
+      other: '해도에 통과 높이가 없는 $count곳 아래를 지남',
     );
     return '$_temp0';
   }
@@ -7857,55 +7723,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get common_less => '접기';
 
   @override
-  String get locationSharing_title => '내 위치를 볼 수 있는 사람';
-
-  @override
-  String get locationSharing_someone => '누군가 내 위치를 볼 수 있어요';
-
-  @override
-  String get locationSharing_nobody => '아무도 내 위치를 볼 수 없어요';
-
-  @override
   String get locationSharing_noPosition => '무전기에 아직 위치가 없어서 아무도 볼 수 없어요';
 
   @override
-  String get locationSharing_everyone => '내 무전기를 수신하는 누구나 내 위치를 볼 수 있어요';
-
-  @override
-  String get locationSharing_allContacts => '모든 연락처가 내 위치를 볼 수 있어요';
-
-  @override
-  String get locationSharing_someContacts => '허용한 연락처가 내 위치를 볼 수 있어요';
-
-  @override
   String get locationSharing_adverts => '광고에 위치 포함';
-
-  @override
-  String get locationSharing_advertsHint =>
-      '광고에 내 위치가 담겨서 내 무전기를 수신하는 누구나 볼 수 있어요.';
-
-  @override
-  String get locationSharing_contactsHeader => '내 무전기에 요청할 수 있는 연락처';
-
-  @override
-  String get locationSharing_noTelemetry => '없음. 무전기가 텔레메트리 요청에 응답하지 않아요.';
-
-  @override
-  String get locationSharing_noContacts => '허용된 연락처가 없어요.';
-
-  @override
-  String locationSharing_allContactsRow(int count) {
-    return '모든 연락처 ($count)';
-  }
-
-  @override
-  String get locationSharing_partLocation => '위치';
-
-  @override
-  String get locationSharing_partBattery => '배터리';
-
-  @override
-  String get locationSharing_partSensors => '센서';
 
   @override
   String get dialog_positionHint => '좌표나 지도 링크를 붙여 넣으세요';
@@ -7915,12 +7736,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get locationSharing_share => '내 위치 공유';
-
-  @override
-  String get locationSharing_shareOnHint => '끄면 모두에게 숨겨져요';
-
-  @override
-  String get locationSharing_shareOffHint => '켜면 허용한 연락처가 볼 수 있어요';
 
   @override
   String get chats_advertise => '광고';
@@ -8103,15 +7918,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_locationTapMap => '지도를 탭하여 위치를 정하거나 숫자를 입력하세요.';
-
-  @override
-  String get channels_pasteLink => '링크 붙여넣기';
-
-  @override
-  String get channels_pasteLinkDesc => '복사한 meshcore:// 채널 링크.';
-
-  @override
-  String get channels_pasteLinkNone => '클립보드에 채널 링크가 없습니다.';
 
   @override
   String get settings_locationGpsNote =>
@@ -8511,7 +8317,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get repeaterRegions_hasChildren =>
-      'The repeater still has regions under this one. Remove those first.';
+      '리피터에 아직 이 지역 아래의 지역이 있습니다. 먼저 그 지역들을 제거하세요.';
 
   @override
   String repeaterRegions_refused(String reply) {
@@ -8540,8 +8346,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '범위 안의 무전기만 받습니다. 한 번만 보내고 다시 시도하지 않습니다.';
 
   @override
-  String get channelRegion_nearbyTrip =>
-      'TRAX reports on this channel won\'t be passed on by other radios.';
+  String get channelRegion_nearbyTrip => '이 채널의 TRAX 보고는 다른 무전기가 전달하지 않습니다.';
 
   @override
   String nearbyRegions_withPlain(String names) {
@@ -8594,249 +8399,247 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get myLocation_title => 'My location';
+  String get myLocation_title => '내 위치';
 
   @override
-  String get myLocation_onlyYou => 'Only you';
+  String get myLocation_onlyYou => '나만';
 
   @override
-  String get myLocation_people => 'People you picked can ask';
+  String get myLocation_people => '내가 고른 사람이 물어볼 수 있음';
 
   @override
-  String get myLocation_everyone => 'Everyone saved on your radio can ask';
+  String get myLocation_everyone => '무전기에 저장된 모든 사람이 물어볼 수 있음';
 
   @override
-  String get myLocation_adverts => 'In your adverts';
+  String get myLocation_adverts => '내 광고에 포함';
 
   @override
-  String get myLocation_gpsNoFix => 'GPS on, no fix yet';
+  String get myLocation_gpsNoFix => 'GPS 켜짐, 아직 위치 없음';
 
   @override
-  String get myLocation_radioGps => 'Radio GPS';
+  String get myLocation_radioGps => '무전기 GPS';
 
   @override
   String myLocation_fix(String ago, String position) {
-    return 'Fix $ago ago · $position';
+    return '$ago 전에 잡은 위치 · $position';
   }
 
   @override
-  String get myLocation_noFix => 'No fix yet.';
+  String get myLocation_noFix => '아직 위치를 잡지 못했습니다.';
 
   @override
-  String get myLocation_offSaves => 'Off saves battery.';
+  String get myLocation_offSaves => '끄면 배터리를 아낍니다.';
 
   @override
   String myLocation_lastFix(String time) {
-    return 'Last fix $time.';
+    return '마지막으로 잡은 위치: $time.';
   }
 
   @override
-  String get myLocation_inAdverts => 'In my adverts';
+  String get myLocation_inAdverts => '내 광고에 포함';
 
   @override
-  String get myLocation_advertsHint => 'Anyone who hears your radio';
+  String get myLocation_advertsHint => '내 무전기를 수신하는 누구나';
 
   @override
   String get myLocation_advertsInfo =>
-      'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.';
+      '광고는 수신하는 누구에게나 내 위치를 전합니다: GPS로 잡은 위치, 또는 GPS가 꺼져 있으면 마지막으로 잡은 위치나 직접 입력한 위치입니다. 광고는 내가 보낼 때나 TRAX가 보낼 때만 나갑니다.';
 
   @override
-  String get myLocation_peopleWho => 'People who can ask';
+  String get myLocation_peopleWho => '물어볼 수 있는 사람';
 
   @override
-  String get myLocation_nobody => 'Nobody';
+  String get myLocation_nobody => '없음';
 
   @override
   String myLocation_allSaved(int count) {
-    return 'Everyone saved on your radio ($count)';
+    return '무전기에 저장된 모든 사람 ($count)';
   }
 
   @override
-  String get myLocation_pickPeople => 'Pick people instead';
+  String get myLocation_pickPeople => '대신 사람 고르기';
 
   @override
-  String get myLocation_batterySensors => 'Battery and sensors';
+  String get myLocation_batterySensors => '배터리와 센서';
 
   @override
-  String get myLocation_peopleHint =>
-      'They can ask your radio where it is, and its battery.';
+  String get myLocation_peopleHint => '내 무전기에 위치와 배터리를 물어볼 수 있습니다.';
 
   @override
-  String get myLocation_addSomeone => 'Add someone';
+  String get myLocation_addSomeone => '사람 추가';
 
   @override
   String myLocation_search(int count) {
-    return 'Search $count contacts';
+    return '연락처 $count개 검색';
   }
 
   @override
-  String get myLocation_recent => 'Recent messages';
+  String get myLocation_recent => '최근 메시지';
 
   @override
-  String get myLocation_canAsk => 'Can ask';
+  String get myLocation_canAsk => '물어볼 수 있음';
 
   @override
-  String get iconHelp_title => 'What the icons mean';
+  String get iconHelp_title => '아이콘의 의미';
 
   @override
-  String get iconHelp_tap => 'Tap an icon in the bar to open it.';
+  String get iconHelp_tap => '상단 바의 아이콘을 탭하면 열립니다.';
 
   @override
-  String get iconHelp_radio => 'Radio';
+  String get iconHelp_radio => '무전기';
 
   @override
-  String get iconHelp_battery => 'Radio battery';
+  String get iconHelp_battery => '무전기 배터리';
 
   @override
-  String get iconHelp_batteryText => 'Tap for volts.';
+  String get iconHelp_batteryText => '탭하면 전압을 표시합니다.';
 
   @override
-  String get iconHelp_signal => 'Signal';
+  String get iconHelp_signal => '신호';
 
   @override
   String get iconHelp_signalText =>
-      'How well your radio hears the best repeater near you. Tap for the list.';
+      '내 무전기가 근처의 가장 좋은 리피터를 얼마나 잘 듣는지 나타냅니다. 탭하면 목록을 볼 수 있습니다.';
 
   @override
-  String get iconHelp_repeaters => 'Repeaters heard';
+  String get iconHelp_repeaters => '들린 리피터';
 
   @override
-  String get iconHelp_repeatersText =>
-      'How many · the best one\'s code · how long ago';
+  String get iconHelp_repeatersText => '개수 · 가장 좋은 리피터의 코드 · 경과 시간';
 
   @override
-  String get iconHelp_traxOff => 'TRAX mode off';
+  String get iconHelp_traxOff => 'TRAX 모드 꺼짐';
 
   @override
-  String get iconHelp_traxOn => 'TRAX mode on';
+  String get iconHelp_traxOn => 'TRAX 모드 켜짐';
 
   @override
-  String get iconHelp_traxOnText => 'Your radio is on the group\'s frequency.';
+  String get iconHelp_traxOnText => '무전기가 그룹의 주파수에 있습니다.';
 
   @override
-  String get iconHelp_who => 'My location: who can see it';
+  String get iconHelp_who => '내 위치: 볼 수 있는 사람';
 
   @override
-  String get iconHelp_people => 'People you picked';
+  String get iconHelp_people => '내가 고른 사람';
 
   @override
-  String get iconHelp_peopleText => 'They can ask your radio where it is.';
+  String get iconHelp_peopleText => '내 무전기에 위치를 물어볼 수 있습니다.';
 
   @override
-  String get iconHelp_advertsText => 'Anyone who hears your radio.';
+  String get iconHelp_advertsText => '내 무전기를 수신하는 누구나.';
 
   @override
-  String get iconHelp_gps => 'My location: radio GPS';
+  String get iconHelp_gps => '내 위치: 무전기 GPS';
 
   @override
-  String get iconHelp_filled => 'Filled: GPS on';
+  String get iconHelp_filled => '채워짐: GPS 켜짐';
 
   @override
-  String get iconHelp_outline => 'Outline: GPS off';
+  String get iconHelp_outline => '테두리만: GPS 꺼짐';
 
   @override
-  String get iconHelp_dashed => 'Dashed: no GPS fix yet';
+  String get iconHelp_dashed => '점선: 아직 GPS 위치를 잡지 못함';
 
   @override
-  String get iconHelp_red => 'Red: no fix, and someone can see it';
+  String get iconHelp_red => '빨간색: 위치 없음, 누군가 볼 수 있음';
 
   @override
-  String get locationNote_title => 'One location button';
+  String get locationNote_title => '위치 버튼이 하나로';
 
   @override
   String get locationNote_body =>
-      'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
+      '\'GPS\'와 \'내 위치를 볼 수 있는 사람\'이 이제 하나의 버튼입니다. 모양으로 누가 내 위치를 볼 수 있는지 알 수 있습니다. 채워져 있으면 GPS가 켜져 있다는 뜻입니다.';
 
   @override
-  String get traxGuide_title => 'How TRAX works';
+  String get traxGuide_title => 'TRAX 작동 방식';
 
   @override
   String get traxGuide_lead =>
-      'TRAX shares where everyone is over your radios alone: no cell service, no repeaters. Say you\'re out front, friends are behind you, and more join tomorrow.';
+      'TRAX는 휴대폰 신호도 리피터도 없이 무전기만으로 모두의 위치를 공유합니다. 내가 맨 앞에 있고, 친구들은 뒤에 있으며, 내일 더 많은 사람이 합류한다고 해 봅시다.';
 
   @override
-  String get traxGuide_beforeTitle => 'Before you go';
+  String get traxGuide_beforeTitle => '출발 전';
 
   @override
   String get traxGuide_before =>
-      'Make a private channel for the trip. Everyone joins it, adds each other as contacts and posts on it once.';
+      '여행용 개인 채널을 만듭니다. 모두가 참여해 서로를 연락처에 추가하고, 채널에 한 번 글을 씁니다.';
 
   @override
-  String get traxGuide_trailheadTitle => 'At the trailhead';
+  String get traxGuide_trailheadTitle => '출발 지점에서';
 
   @override
   String get traxGuide_trailhead =>
-      'Once your radio has a GPS fix, tap the boot print and Switch to TRAX. Your radio moves to the group\'s frequency, and the others get “Switch too?”.';
+      '무전기가 GPS 위치를 잡으면 발자국 아이콘을 탭하고 \'TRAX로 전환\'을 누르세요. 무전기가 그룹의 주파수로 옮겨 가고, 다른 사람들에게는 \'함께 전환할까요?\'가 표시됩니다.';
 
   @override
-  String get traxGuide_trailTitle => 'On the trail';
+  String get traxGuide_trailTitle => '이동 중';
 
   @override
   String get traxGuide_trail =>
-      'Each phone sends its radio\'s location to the trip channel every minute or two, and its track now and then. The three people button on the map lists everyone: how far, which way, when heard.';
+      '각 휴대폰은 1~2분마다 무전기 위치를 여행 채널로 보내고, 가끔 이동 경로도 보냅니다. 지도의 세 사람 버튼을 누르면 모두의 목록이 나옵니다: 거리, 방향, 들린 시각.';
 
   @override
-  String get traxGuide_behindTitle => 'Friends behind you';
+  String get traxGuide_behindTitle => '뒤에 있는 친구들';
 
   @override
   String get traxGuide_behind =>
-      'Every radio passes the others\' messages on, so theirs reach the front through you. They see you as your icon on the map; a tap shows your track to follow.';
+      '모든 무전기가 다른 사람의 메시지를 전달하므로, 뒤에 있는 사람들의 메시지는 나를 거쳐 앞까지 닿습니다. 그들의 지도에는 내가 내 아이콘으로 보이고, 탭하면 따라올 수 있도록 내 이동 경로가 표시됩니다.';
 
   @override
-  String get traxGuide_quietTitle => 'Someone quiet?';
+  String get traxGuide_quietTitle => '소식이 없는 사람이 있나요?';
 
   @override
   String get traxGuide_quiet =>
-      'Their card says when they were last heard. Ask their radio: it answers by itself, even with their phone off.';
+      '그 사람의 카드에 마지막으로 들린 시각이 표시됩니다. 그 사람의 무전기에 물어보세요: 휴대폰이 꺼져 있어도 무전기가 스스로 응답합니다.';
 
   @override
-  String get traxGuide_joinTitle => 'Joining the next day';
+  String get traxGuide_joinTitle => '다음 날 합류하기';
 
   @override
   String get traxGuide_join =>
-      'Add the trip channel. In TRAX settings pick it and the trip\'s end, and Long range if the group uses it. Then switch. Everyone\'s track from the last 2 days arrives bit by bit.';
+      '여행 채널을 추가합니다. TRAX 설정에서 그 채널과 여행 종료를 고르고, 그룹이 쓰고 있다면 \'장거리\'도 고릅니다. 그런 다음 전환합니다. 지난 2일 동안의 모두의 이동 경로가 조금씩 도착합니다.';
 
   @override
   String get traxGuide_sosTitle => 'SOS';
 
   @override
   String get traxGuide_sos =>
-      'In the trip chat, tap + then SOS. The group gets your location every 2 minutes until you cancel.';
+      '여행 채팅에서 +를 탭한 다음 SOS를 탭하세요. 취소할 때까지 그룹이 2분마다 내 위치를 받습니다.';
 
   @override
-  String get traxGuide_endTitle => 'When the trip ends';
+  String get traxGuide_endTitle => '여행이 끝나면';
 
   @override
   String get traxGuide_end =>
-      'MeshTrax asks you to leave. Until you do, the regular mesh can\'t hear you.';
+      'MeshTrax가 TRAX에서 나가라고 알려 줍니다. 나갈 때까지 일반 메시에서는 내 소리를 듣지 못합니다.';
 
   @override
-  String get traxGuide_iconsTitle => 'The icons';
+  String get traxGuide_iconsTitle => '아이콘';
 
   @override
-  String get traxGuide_member => 'A member, as the icon they picked';
+  String get traxGuide_member => '멤버 (본인이 고른 아이콘)';
 
   @override
-  String get traxGuide_memberText => 'Yours is in TRAX settings.';
+  String get traxGuide_memberText => '내 아이콘은 TRAX 설정에 있습니다.';
 
   @override
-  String get traxGuide_old => 'Grey: their GPS position may be old';
+  String get traxGuide_old => '회색: GPS 위치가 오래되었을 수 있음';
 
   @override
-  String get traxGuide_you => 'You';
+  String get traxGuide_you => '나';
 
   @override
-  String get traxGuide_yourTrack => 'Your track';
+  String get traxGuide_yourTrack => '내 이동 경로';
 
   @override
-  String get traxGuide_theirTrack => 'Their track, while their card is open';
+  String get traxGuide_theirTrack => '그 사람의 이동 경로 (카드가 열려 있는 동안)';
 
   @override
-  String get traxGuide_tripChannel => 'The trip channel';
+  String get traxGuide_tripChannel => '여행 채널';
 
   @override
-  String get traxGuide_tripChannelText => 'First in Chats while TRAX is on.';
+  String get traxGuide_tripChannelText => 'TRAX가 켜져 있는 동안 \'채팅\'의 맨 위에 있습니다.';
 
   @override
-  String get traxGuide_dontShowAgain => 'Don\'t show this again';
+  String get traxGuide_dontShowAgain => '다시 보지 않기';
 }

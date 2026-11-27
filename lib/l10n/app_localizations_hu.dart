@@ -19,7 +19,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String photo_enableHint(String size) {
-    return 'Send and see photos over the radio. Needs the $size photo model on this phone.';
+    return 'Fotók küldése és megtekintése a rádión keresztül. Ehhez a fotómodell ($size) kell ezen a telefonon.';
   }
 
   @override
@@ -29,7 +29,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get photo_squareIntro =>
-      'Pick a photo, then choose the square to send.';
+      'Válasszon egy fotót, majd az elküldendő négyzetet.';
 
   @override
   String get photo_takePhoto => 'Fotó készítése';
@@ -48,14 +48,14 @@ class AppLocalizationsHu extends AppLocalizations {
   String get photo_preview => 'Előnézet';
 
   @override
-  String get photo_changeCrop => 'Change crop';
+  String get photo_changeCrop => 'Kivágás módosítása';
 
   @override
   String get photo_checkingAndCoding => 'A fotó ellenőrzése és kódolása…';
 
   @override
   String get photo_modelMissing =>
-      'The photo model isn\'t on this device. Turn on Photos in App settings, Messaging, to download it.';
+      'A fotómodell nincs ezen az eszközön. A letöltéséhez kapcsolja be a Fotók lehetőséget az Alkalmazási beállítások, Üzenetek küldése részben.';
 
   @override
   String get photo_previewNoMemory =>
@@ -78,15 +78,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String get photo_tagTitle => 'Címke (nem kötelező)';
 
   @override
-  String get photo_blurFaces => 'Blur faces';
+  String get photo_blurFaces => 'Arcok elmosása';
 
   @override
   String photo_facesBlurred(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count faces blurred',
-      one: '1 face blurred',
+      other: '$count arc elmosva',
+      one: '1 arc elmosva',
     );
     return '$_temp0';
   }
@@ -97,22 +97,17 @@ class AppLocalizationsHu extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count faces covered in grey: blurred, the photo didn\'t pass the safety check',
-      one: '1 face covered in grey: blurred, the photo didn\'t pass the safety check',
+          '$count arc szürkével letakarva: elmosással a fotó nem ment át a biztonsági ellenőrzésen',
+      one: '1 arc szürkével letakarva: elmosással a fotó nem ment át a biztonsági ellenőrzésen',
     );
     return '$_temp0';
   }
 
   @override
-  String get photo_includePosition => 'Include location';
+  String get photo_includePosition => 'Helyzet csatolása';
 
   @override
-  String photo_positionFromRadio(String distance) {
-    return 'Your radio\'s location now, to about $distance';
-  }
-
-  @override
-  String get photo_noPosition => 'Your radio has no location';
+  String get photo_noPosition => 'A rádiójának nincs helyzete';
 
   @override
   String get photo_distance10km => '10 km';
@@ -128,47 +123,48 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String photo_positionAt(String position, String distance) {
-    return '$position, to about $distance';
+    return '$position, kb. $distance pontossággal';
   }
 
   @override
-  String get photo_zeroHop => 'Zero hop';
+  String get photo_zeroHop => 'Ugrás nélkül';
 
   @override
-  String get photo_subjectOnly => 'Subject only';
+  String get photo_subjectOnly => 'Csak a lényeg';
 
   @override
-  String get photo_autoCrop => 'Auto crop';
+  String get photo_autoCrop => 'Automatikus kivágás';
 
   @override
   String get photo_tapWhatMatters =>
-      'Tap what matters. Tap more things to add them.';
+      'Koppintson a lényegre. További dolgokat koppintással adhat hozzá.';
 
   @override
-  String get photo_outlining => 'Outlining…';
+  String get photo_outlining => 'Körvonalazás…';
 
   @override
-  String get photo_clearTaps => 'Clear';
+  String get photo_clearTaps => 'Törlés';
 
   @override
   String get photo_nothingThere =>
-      'Nothing to outline there. Tap the middle of it.';
+      'Ott nincs mit körvonalazni. Koppintson a közepére.';
 
   @override
-  String get photo_zeroHopNearbyOnly => 'This channel is Nearby only';
+  String get photo_zeroHopNearbyOnly =>
+      'Ez a csatorna „Csak a közelben” módban van';
 
   @override
-  String get photo_repairPacket => 'Repair packet';
+  String get photo_repairPacket => 'Javítócsomag';
 
   @override
   String photo_sendFigures(int packets, String sendTime) {
     String _temp0 = intl.Intl.pluralLogic(
       packets,
       locale: localeName,
-      other: '$packets packets',
-      one: '1 packet',
+      other: '$packets csomag',
+      one: '1 csomag',
     );
-    return '$_temp0 · about $sendTime to send';
+    return '$_temp0 · a küldés kb. $sendTime';
   }
 
   @override
@@ -199,12 +195,12 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String photo_sendingPacketAgain(int sent, int total) {
-    return 'Packet $sent of $total again';
+    return '$sent. csomag ($total közül) újra';
   }
 
   @override
   String photo_passedOnSome(int heard, int total) {
-    return 'Sent · repeaters passed on $heard of its $total packets';
+    return 'Elküldve · a repeaterek $heard/$total csomagját adták tovább';
   }
 
   @override
@@ -224,74 +220,74 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get photo_confirmTitle => 'Send photo';
+  String get photo_confirmTitle => 'Fotó küldése';
 
   @override
   String photo_openChannelTitle(String channel) {
-    return 'Photos on $channel';
+    return 'Fotók itt: $channel';
   }
 
   @override
   String get photo_openChannelNotEveryone =>
-      'Most people here won\'t see it: only MeshTrax shows photos.';
+      'Itt a legtöbben nem fogják látni: csak a MeshTrax jelenít meg fotókat.';
 
   @override
   String photo_openChannelAirtime(String airtime, int messages) {
-    return 'This photo takes $airtime on air, as much as $messages text messages.';
+    return 'Ez a fotó $airtime adásidőt foglal, annyit, mint $messages szöveges üzenet.';
   }
 
   @override
   String get photo_openChannelRepeaters =>
-      'Each repeater that passes it on sends all of it again, on a frequency everyone around you shares.';
+      'Minden repeater, amely továbbadja, újra elküldi az egészet, egy olyan frekvencián, amelyen a környékén mindenki osztozik.';
 
   @override
   String get photo_openChannelBetter =>
-      'Better: zero hop when the people are close, or a private channel with the people who want photos. Crop tight: a simpler picture is fewer packets.';
+      'Jobb: ugrás nélkül, ha az emberek közel vannak, vagy egy privát csatorna azokkal, akik fotókat szeretnének. Vágja ki szorosan: az egyszerűbb kép kevesebb csomag.';
 
   @override
-  String get photo_dontShowAgain => 'Don\'t show this again';
+  String get photo_dontShowAgain => 'Ne jelenjen meg többé';
 
   @override
   String photo_confirmAirtime(int packets, String airtime, int messages) {
-    return '$packets packets, $airtime on air: as much as $messages text messages.';
+    return '$packets csomag, $airtime adásidő: annyi, mint $messages szöveges üzenet.';
   }
 
   @override
   String photo_confirmOpenChannel(String channel) {
-    return 'Anyone on $channel using MeshTrax can see it. Other apps don\'t show photos.';
+    return 'A(z) $channel csatornán mindenki láthatja, aki MeshTraxot használ. Más alkalmazások nem jelenítenek meg fotókat.';
   }
 
   @override
   String get photo_confirmFlood =>
-      'Each repeater that hears it sends it again.';
+      'Minden repeater, amely hallja, újra elküldi.';
 
   @override
   String get photo_confirmZeroHop =>
-      'Zero hop: only radios in direct range get it.';
+      'Ugrás nélkül: csak a közvetlen hatótávon belüli rádiók kapják meg.';
 
   @override
-  String get photo_label => 'AI reconstructed';
+  String get photo_label => 'AI által rekonstruált';
 
   @override
-  String get photo_tapToView => 'Tap to view';
+  String get photo_tapToView => 'Koppintson a megtekintéshez';
 
   @override
-  String get photo_enhance => 'Enhance 4×';
+  String get photo_enhance => 'Feljavítás 4×';
 
   @override
-  String get photo_enhancing => 'Enhancing…';
+  String get photo_enhancing => 'Feljavítás…';
 
   @override
-  String get photo_save => 'Save';
+  String get photo_save => 'Mentés';
 
   @override
-  String get photo_saved => 'Saved to your photos';
+  String get photo_saved => 'Mentve a fotói közé';
 
   @override
-  String get photo_saveFailed => 'Couldn\'t save the photo.';
+  String get photo_saveFailed => 'Nem sikerült menteni a fotót.';
 
   @override
-  String get photo_details => 'About this photo';
+  String get photo_details => 'A fotóról';
 
   @override
   String photo_caption(int bytes) {
@@ -300,32 +296,33 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get photo_enlargedNote =>
-      'Enhanced 4× on this phone: fine detail may be made up.';
+      '4×-es feljavítás ezen a telefonon: a finom részletek kitaláltak lehetnek.';
 
   @override
   String get photo_enlargeNoMemory =>
-      'Not enough free memory to enlarge it now. Close other apps, then try again.';
+      'Most nincs elég szabad memória a nagyításhoz. Zárjon be más alkalmazásokat, majd próbálja újra.';
 
   @override
   String get photo_enlargeFlagged =>
-      'The enlarged picture didn\'t pass the safety check, so it isn\'t shown.';
+      'A nagyított kép nem ment át a biztonsági ellenőrzésen, ezért nem jelenik meg.';
 
   @override
-  String get photo_enlargeFailed => 'Couldn\'t enlarge the photo.';
+  String get photo_enlargeFailed => 'Nem sikerült nagyítani a fotót.';
 
   @override
-  String get photo_enlargeAutomatically => 'Enlarge photos automatically';
+  String get photo_enlargeAutomatically => 'Fotók automatikus nagyítása';
 
   @override
   String get photo_enlargeAutomaticallyHint =>
-      'Off: tap a photo full screen to enlarge it 4×. On: it enlarges as it opens.';
+      'Ki: koppintson egy teljes képernyős fotóra a 4×-es nagyításhoz. Be: megnyitáskor nagyítódik.';
 
   @override
-  String get photo_ignoreTimeLimits => 'Ignore the photo time limits';
+  String get photo_ignoreTimeLimits =>
+      'A fotók időkorlátainak figyelmen kívül hagyása';
 
   @override
   String get photo_ignoreTimeLimitsHint =>
-      'For testing: send photos through repeaters without waiting between them.';
+      'Teszteléshez: fotók küldése repeatereken keresztül, várakozás nélkül.';
 
   @override
   String get photo_rebuilding => 'Rekonstruálás… kb. 20 s';
@@ -362,7 +359,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get photo_reportBody =>
-      'The photo is hidden on this phone straight away, for good, and a report goes to the MeshTrax developer from the app, now or when there\'s internet. Nothing else from your phone is sent.';
+      'A fotó ezen a telefonon azonnal és végleg elrejtődik, az alkalmazás pedig jelentést küld a MeshTrax fejlesztőjének, most vagy amikor lesz internet. Semmi más nem megy el a telefonjáról.';
 
   @override
   String get photo_reportInclude => 'A fotó csatolása';
@@ -372,15 +369,15 @@ class AppLocalizationsHu extends AppLocalizations {
       'A kódja, néhány száz bájt, amelyből rekonstruálható. Nem maga a kép.';
 
   @override
-  String get photo_reportReason => 'What\'s wrong? (optional)';
+  String get photo_reportReason => 'Mi a gond? (nem kötelező)';
 
   @override
   String get photo_reportedSent =>
-      'Photo hidden, and the report is sent. Thank you.';
+      'Fotó elrejtve, a jelentés elküldve. Köszönjük.';
 
   @override
   String get photo_reportedQueued =>
-      'Photo hidden. The report will be sent when there\'s internet.';
+      'Fotó elrejtve. A jelentés akkor megy el, amikor lesz internet.';
 
   @override
   String photo_reportPending(String name) {
@@ -388,11 +385,11 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get photo_reportPendingHint => 'Waiting for internet to send';
+  String get photo_reportPendingHint => 'Internetre vár a küldéshez';
 
   @override
   String get photo_reportStillWaiting =>
-      'Still no internet. It will be sent later.';
+      'Még mindig nincs internet. Később megy el.';
 
   @override
   String get photo_autoRebuild => 'Fogadott fotók automatikus rekonstruálása';
@@ -526,7 +523,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String photo_needsNewer(String id) {
-    return '📷 Photo $id needs a newer MeshTrax';
+    return '📷 Fotó $id: újabb MeshTrax kell hozzá';
   }
 
   @override
@@ -562,12 +559,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String newChat_contactCount(int count) {
     return '$count kapcsolat';
   }
-
-  @override
-  String get newChat_newContact => 'Új kapcsolat';
-
-  @override
-  String get newChat_newChannel => 'Új csatorna';
 
   @override
   String get newChat_myContacts => 'Saját kapcsolatok';
@@ -606,7 +597,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_ok => 'Rendben';
 
   @override
-  String get common_experimental => 'EXPERIMENTAL';
+  String get common_experimental => 'KÍSÉRLETI';
 
   @override
   String get common_connect => 'Kapcsolódj';
@@ -1138,46 +1129,46 @@ class AppLocalizationsHu extends AppLocalizations {
       'Közzéteszi a túracsatornán; a többiek egy koppintással követik.';
 
   @override
-  String get trax_keepTrack => 'Keep my track';
+  String get trax_keepTrack => 'Nyomvonalam megőrzése';
 
   @override
   String get trax_keepTrackHint =>
-      'How far back your line goes, for you and the trip. Older parts are deleted on every phone.';
+      'Milyen messzire nyúlik vissza a vonala, Önnek és a túrának. A régebbi részek minden telefonon törlődnek.';
 
   @override
   String trax_keepTrackHours(int hours) {
-    return '$hours hours';
+    return '$hours óra';
   }
 
   @override
-  String get trax_keepTrackWeek => '1 week';
+  String get trax_keepTrackWeek => '1 hét';
 
   @override
-  String get trax_icon => 'Your icon';
+  String get trax_icon => 'Az Ön ikonja';
 
   @override
-  String get trax_iconHint => 'How the trip sees you on the map.';
+  String get trax_iconHint => 'Így látja Önt a túra a térképen.';
 
   @override
-  String get trax_iconHike => 'Hike';
+  String get trax_iconHike => 'Túrázás';
 
   @override
-  String get trax_iconVehicle => 'Vehicle';
+  String get trax_iconVehicle => 'Jármű';
 
   @override
-  String get trax_iconBoat => 'Boat';
+  String get trax_iconBoat => 'Hajó';
 
   @override
-  String get trax_iconMotorcycle => 'Motorcycle';
+  String get trax_iconMotorcycle => 'Motorkerékpár';
 
   @override
-  String get trax_iconBicycle => 'Bicycle';
+  String get trax_iconBicycle => 'Kerékpár';
 
   @override
-  String get trax_iconAircraft => 'Aircraft';
+  String get trax_iconAircraft => 'Repülő';
 
   @override
-  String get trax_iconCamp => 'Camp';
+  String get trax_iconCamp => 'Tábor';
 
   @override
   String trax_followBody(String name, String time) {
@@ -1325,15 +1316,15 @@ class AppLocalizationsHu extends AppLocalizations {
   String get trax_mayBeOld => 'lehet, hogy régi';
 
   @override
-  String get trax_askTrack => 'Ask for track';
+  String get trax_askTrack => 'Nyomvonal kérése';
 
   @override
   String trax_trackAsked(String time) {
-    return 'Track asked $time';
+    return 'Nyomvonal kérve: $time';
   }
 
   @override
-  String get trax_group => 'TRAX group';
+  String get trax_group => 'TRAX csoport';
 
   @override
   String get trax_tripChannelLocation =>
@@ -1804,11 +1795,12 @@ class AppLocalizationsHu extends AppLocalizations {
   String get appSettings_messaging => 'Üzenetek küldése';
 
   @override
-  String get appSettings_maxDirectMessageTries => 'Max Direct Message Tries';
+  String get appSettings_maxDirectMessageTries =>
+      'Közvetlen üzenet max. kísérletszáma';
 
   @override
   String get appSettings_maxDirectMessageTriesSubtitle =>
-      'Send attempts before a direct message or room post is marked failed. Known routes get the first tries; the rest flood.';
+      'Küldési kísérletek, mielőtt egy közvetlen üzenet vagy szobabejegyzés sikertelennek minősül. Az első kísérletek az ismert útvonalakon mennek; a többi elárasztással.';
 
   @override
   String get appSettings_maxChannelMessageRetries =>
@@ -2222,15 +2214,12 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get radioAsk_trackAsked =>
-      'Also asked their phone for their track; it shows on the map.';
+      'A telefonjától is kértük a nyomvonalát; megjelenik a térképen.';
 
   @override
   String radioAsk_mapLabel(String name, String time) {
     return '$name rádiója · $time';
   }
-
-  @override
-  String get radioAsk_rowLabel => 'A rádió válasza';
 
   @override
   String get contact_nickname => 'Becenév';
@@ -2317,16 +2306,13 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get channels_shareChannelInstructions =>
-      'Olvassa be a QR-kódot a csatorna hozzáadásához.\nMenü → Csatorna hozzáadása → Scanned egy QR-kódot';
+      'Olvassa be a QR-kódot a csatorna hozzáadásához.';
 
   @override
   String get channels_secretKey => 'Titkos kulcs';
 
   @override
   String get channels_meshcoreUri => 'MeshCore-URI';
-
-  @override
-  String get channels_shareChannelQr => 'Csatorna QR-kódjának beolvasása';
 
   @override
   String get channels_shareChannelWarning =>
@@ -2373,24 +2359,11 @@ class AppLocalizationsHu extends AppLocalizations {
       'Általános, állami által finanszírozott PSK';
 
   @override
-  String get channels_pskHex => 'PSK (Hexadecimális kód)';
-
-  @override
   String get channels_generateRandomPsk => 'Véletlenszerűen generáljon PSK-t';
-
-  @override
-  String get channels_enterChannelName => 'Kérjük, adja meg egy csatorna nevét';
-
-  @override
-  String get channels_pskMustBe32Hex =>
-      'A PSK 32-bázisú hexadecimális karakterből áll.';
 
   @override
   String get channels_addChannelConfirmation =>
       'Hozzá szeretné adni a következő csatornát?';
-
-  @override
-  String get channels_channelAddedSuccess => 'A csatorna hozzáadva.';
 
   @override
   String get channels_noAvailableChannelSlots => 'Nincs szabad csatornahely.';
@@ -2426,9 +2399,6 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get channels_publicChannelAdded => 'A nyilvános csatorna hozzáadva';
-
-  @override
   String get channels_sortBy => 'Szűrés';
 
   @override
@@ -2451,14 +2421,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Titkos kulcs segítségével védelem.';
 
   @override
-  String get channels_joinPrivateChannel =>
-      'Csatlakozzon egy privát csatornához';
-
-  @override
-  String get channels_joinPrivateChannelDesc =>
-      'Kézzel adja meg a titkos kulcsot.';
-
-  @override
   String get channels_joinPublicChannel =>
       'Csatlakozzon a nyilvános csatornához';
 
@@ -2467,24 +2429,10 @@ class AppLocalizationsHu extends AppLocalizations {
       'Bárki csatlakozhat ehhez a csatornához.';
 
   @override
-  String get channels_joinHashtagChannel =>
-      'Csatlakozzon egy hashtage-os csatornához';
-
-  @override
-  String get channels_joinHashtagChannelDesc =>
-      'Bárkinek lehet csatlakoznia a hashtagekhez tartozó csatornához.';
-
-  @override
   String get channels_scanQrCode => 'Scanned egy QR-kódot';
 
   @override
   String get channels_scanQrCodeComingSoon => 'Hamarosan';
-
-  @override
-  String get channels_enterHashtag => 'Írja be a hashtaget';
-
-  @override
-  String get channels_hashtagHint => 'pl. #csapat';
 
   @override
   String get channels_keepCapitals => 'Nagybetűk megtartása';
@@ -2524,10 +2472,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get common_copyToClipboard => 'Másolás a vágólapra';
-
-  @override
-  String get contacts_copyContactToClipboard =>
-      'Saját kapcsolat másolása a vágólapra';
 
   @override
   String get chat_typeMessage => 'Írjon üzenetet...';
@@ -3654,10 +3598,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get repeater_cliQuickDiscovery => 'Fedezd fel a szomszédokat';
 
   @override
-  String get repeater_cliQuickRepeatOn => 'Repeat On';
+  String get repeater_cliQuickRepeatOn => 'Továbbítás be';
 
   @override
-  String get repeater_cliQuickRepeatOff => 'Repeat Off';
+  String get repeater_cliQuickRepeatOff => 'Továbbítás ki';
 
   @override
   String get repeater_cliHelpAdvert => 'Elküldi egy hirdetési csomagot';
@@ -3864,180 +3808,184 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get repeater_cliHelpIntro =>
-      'Tap a command to put it in the box, then replace the parts in curly brackets. Tap a get button to read that setting. These are the commands of firmware 1.18; older firmware may not have them all.';
+      'Koppintson egy parancsra, hogy bekerüljön a mezőbe, majd cserélje ki a kapcsos zárójelben lévő részeket. Egy get gombra koppintva kiolvashatja az adott beállítást. Ezek az 1.18-as firmware parancsai; a régebbi firmware-ekben nem biztos, hogy mind megvan.';
 
   @override
-  String get repeater_cliSectionRadio => 'Radio';
+  String get repeater_cliSectionRadio => 'Rádió';
 
   @override
-  String get repeater_cliSectionPower => 'Power';
+  String get repeater_cliSectionPower => 'Tápellátás';
 
   @override
-  String get repeater_cliSectionRegions => 'Regions';
+  String get repeater_cliSectionRegions => 'Régiók';
 
   @override
-  String get repeater_cliSectionSensors => 'Sensors';
+  String get repeater_cliSectionSensors => 'Érzékelők';
 
   @override
-  String get repeater_cliSectionRoom => 'Room Server';
+  String get repeater_cliSectionRoom => 'Szobaszerver';
 
   @override
   String get repeater_cliHelpAdvertZeroHop =>
-      'Sends an advert that only radios in direct range hear. Repeaters don\'t pass it on.';
+      'Olyan hirdetést küld, amelyet csak a közvetlen hatótávon belüli rádiók hallanak. A repeaterek nem adják tovább.';
 
   @override
   String get repeater_cliHelpClockSync =>
-      'Sets the device\'s clock to your phone\'s time. The clock can only move forward.';
+      'A készülék óráját a telefonja idejére állítja. Az óra csak előre állítható.';
 
   @override
   String get repeater_cliHelpTime =>
-      'Sets the clock to a Unix time in seconds. The clock can only move forward.';
+      'Az órát egy másodpercben megadott Unix-időre állítja. Az óra csak előre állítható.';
 
   @override
-  String get repeater_cliHelpBoard => 'Shows the board\'s maker and model.';
+  String get repeater_cliHelpBoard =>
+      'Megmutatja az alaplap gyártóját és típusát.';
 
   @override
   String get repeater_cliHelpGetRole =>
-      'Shows the firmware\'s role, such as repeater or room server.';
+      'Megmutatja a firmware szerepét, például repeater vagy szobaszerver.';
 
   @override
-  String get repeater_cliHelpGetPublicKey => 'Shows the device\'s public key.';
+  String get repeater_cliHelpGetPublicKey =>
+      'Megmutatja a készülék nyilvános kulcsát.';
 
   @override
   String get repeater_cliHelpClkReboot =>
-      'Sets the clock back to May 2024 and reboots. Use it when the clock is ahead, then run clock sync.';
+      'Az órát 2024 májusára állítja vissza, és újraindít. Akkor használja, ha az óra siet, utána futtassa a clock sync parancsot.';
 
   @override
   String get repeater_cliHelpPowerOff =>
-      'Turns the device off until its button is pressed or its power is cycled. shutdown does the same.';
+      'Kikapcsolja a készüléket, amíg meg nem nyomják a gombját, vagy ki-be nem kapcsolják az áramellátását. A shutdown ugyanezt teszi.';
 
   @override
   String get repeater_cliHelpStartOta =>
-      'Starts a firmware update over the air, on boards that support it. The reply says how to connect.';
+      'Vezeték nélküli firmware-frissítést indít azokon az alaplapokon, amelyek támogatják. A válasz megmondja, hogyan csatlakozzon.';
 
   @override
   String get repeater_cliHelpRoomPost =>
-      'Posts a message in the room from the room server itself.';
+      'Üzenetet tesz közzé a szobában magának a szobaszervernek a nevében.';
 
   @override
-  String get repeater_cliHelpGetFreq => 'Shows the radio frequency in MHz.';
+  String get repeater_cliHelpGetFreq =>
+      'Megmutatja a rádiófrekvenciát MHz-ben.';
 
   @override
   String get repeater_cliHelpSetTxPower =>
-      'Sets the LoRa transmit power in dBm. It takes effect at once.';
+      'Beállítja a LoRa adóteljesítményét dBm-ben. Azonnal érvényes.';
 
   @override
   String get repeater_cliHelpSetDutyCycle =>
-      'Sets the share of time the radio may spend sending, in percent. It\'s the air-time factor in other units.';
+      'Beállítja, hogy a rádió az idő hány százalékában adhat. Ugyanaz, mint az adásidő-tényező, csak más mértékegységben.';
 
   @override
   String get repeater_cliHelpSetCad =>
-      'Turns channel activity detection on or off: the radio listens for other LoRa signals before it sends.';
+      'Be- vagy kikapcsolja a csatornaaktivitás-észlelést: a rádió adás előtt figyeli, vannak-e más LoRa-jelek.';
 
   @override
   String get repeater_cliHelpSetRxGain =>
-      'Turns boosted receive gain on or off, on radios that have it.';
+      'Be- vagy kikapcsolja a megnövelt vételi erősítést azokon a rádiókon, amelyeken van ilyen.';
 
   @override
   String get repeater_cliHelpSetExtraSf =>
-      'LR2021 radios only: also listens for up to three more spreading factors.';
+      'Csak LR2021 rádiók: legfeljebb három további szórási tényezőt is figyel.';
 
   @override
   String get repeater_cliHelpSetOwnerInfo =>
-      'Sets the owner details the device gives with its name and version when asked. Use | for a new line.';
+      'Beállítja a tulajdonosi adatokat, amelyeket a készülék kérésre a nevével és verziójával együtt megad. Új sorhoz használja a | jelet.';
 
   @override
   String get repeater_cliHelpSetFloodMaxUnscoped =>
-      'Like flood.max, but for flood packets sent without a region.';
+      'Mint a flood.max, de a régió nélkül küldött elárasztásos csomagokra.';
 
   @override
   String get repeater_cliHelpSetFloodMaxAdvert =>
-      'Like flood.max, but for adverts. The default is 8.';
+      'Mint a flood.max, de a hirdetésekre. Az alapérték 8.';
 
   @override
   String get repeater_cliHelpSetLoopDetect =>
-      'Sets how strictly the repeater drops flood packets that go round in a loop. The default is minimal.';
+      'Beállítja, milyen szigorúan dobja el a repeater a körbe járó elárasztásos csomagokat. Az alapérték: minimal.';
 
   @override
   String get repeater_cliHelpSetPathHashMode =>
-      'Sets how many bytes each hop adds to a packet\'s path: 0 for 1 byte, 1 for 2 bytes, 2 for 3 bytes.';
+      'Beállítja, hány bájtot ad hozzá minden ugrás a csomag útvonalához: 0: 1 bájt, 1: 2 bájt, 2: 3 bájt.';
 
   @override
   String get repeater_cliHelpSetPrvKey =>
-      'Replaces the device\'s identity with this private key. Reboot to apply. The old identity is lost unless you saved its key.';
+      'Lecseréli a készülék identitását erre a privát kulcsra. Újraindítás után lép életbe. A régi identitás elvész, hacsak nem mentette el a kulcsát.';
 
   @override
   String get repeater_cliHelpPower =>
-      'Shows the battery voltage, and whether USB, solar or other external power is connected.';
+      'Megmutatja az akkumulátor feszültségét, és hogy csatlakozik-e USB-, napelemes vagy más külső tápellátás.';
 
   @override
-  String get repeater_cliHelpPowerSaving => 'Shows whether power saving is on.';
+  String get repeater_cliHelpPowerSaving =>
+      'Megmutatja, hogy be van-e kapcsolva az energiatakarékos mód.';
 
   @override
   String get repeater_cliHelpPowerSavingSet =>
-      'Turns power saving on or off. nRF52 boards start saving at once, ESP32 boards after 2 minutes.';
+      'Be- vagy kikapcsolja az energiatakarékos módot. Az nRF52 alaplapok azonnal, az ESP32 alaplapok 2 perc után kezdenek takarékoskodni.';
 
   @override
   String get repeater_cliHelpGetPwrmgtSupport =>
-      'Shows whether the board has power management.';
+      'Megmutatja, hogy az alaplapon van-e energiagazdálkodás.';
 
   @override
   String get repeater_cliHelpGetPwrmgtSource =>
-      'Shows whether the device runs on external power or on its battery.';
+      'Megmutatja, hogy a készülék külső tápról vagy akkumulátorról működik.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootReason =>
-      'Shows why the device last started and why it last shut down.';
+      'Megmutatja, miért indult el és miért kapcsolt ki legutóbb a készülék.';
 
   @override
   String get repeater_cliHelpGetPwrmgtBootMv =>
-      'Shows the battery voltage when the device last started.';
+      'Megmutatja az akkumulátor feszültségét a készülék legutóbbi indulásakor.';
 
   @override
   String get repeater_cliHelpGetBootloaderVer =>
-      'Shows the bootloader version, on nRF52 boards.';
+      'Megmutatja a bootloader verzióját nRF52 alaplapokon.';
 
   @override
   String get repeater_cliHelpDiscoverNeighbors =>
-      'Asks nearby repeaters to answer, to fill the neighbors list.';
+      'Megkéri a közeli repeatereket, hogy válaszoljanak, így feltölti a szomszédlistát.';
 
   @override
   String get repeater_cliHelpRegions =>
-      'Lists the regions and which ones may flood (F).';
+      'Listázza a régiókat, és hogy melyikekben szabad elárasztani (F).';
 
   @override
   String get repeater_cliHelpRegionDef =>
-      'Adds regions in one command: each name goes under the one before it. Write name|parent to put the next name under that parent instead.';
+      'Egy paranccsal több régiót ad hozzá: minden név az előtte lévő alá kerül. Írjon name|parent alakot, ha a következő nevet inkább ez alá a szülő alá szeretné tenni.';
 
   @override
   String get repeater_cliHelpRegionList =>
-      'Lists the regions that may flood (allowed) or may not (denied).';
+      'Listázza azokat a régiókat, amelyekben szabad (allowed) vagy nem szabad (denied) elárasztani.';
 
   @override
   String get repeater_cliHelpRegionDefault =>
-      'Shows the default region: the one this device\'s own flood packets go out in.';
+      'Megmutatja az alapértelmezett régiót: azt, amelyben a készülék saját elárasztásos csomagjai kimennek.';
 
   @override
   String get repeater_cliHelpRegionDefaultSet =>
-      'Sets the default region, or <null> for none. A new name is added as a region. Saved at once.';
+      'Beállítja az alapértelmezett régiót, vagy <null> esetén egyiket sem. Az új név régióként adódik hozzá. Azonnal mentődik.';
 
   @override
   String get repeater_cliHelpGpsDiag =>
-      'Shows GPS details for finding problems.';
+      'GPS-részleteket mutat a hibakereséshez.';
 
   @override
   String get repeater_cliHelpSensorList =>
-      'Lists the board\'s sensor settings. Add a number to start further down the list.';
+      'Listázza az alaplap érzékelőbeállításait. Adjon meg egy számot, ha lejjebb szeretné kezdeni a listát.';
 
   @override
-  String get repeater_cliHelpSensorGet => 'Shows one sensor setting.';
+  String get repeater_cliHelpSensorGet => 'Megmutat egy érzékelőbeállítást.';
 
   @override
-  String get repeater_cliHelpSensorSet => 'Changes one sensor setting.';
+  String get repeater_cliHelpSensorSet => 'Módosít egy érzékelőbeállítást.';
 
   @override
   String get repeater_cliHelpSetBridgeChannel =>
-      'Sets the Wi-Fi channel for ESP-NOW bridges.';
+      'Beállítja a Wi-Fi-csatornát az ESP-NOW hidakhoz.';
 
   @override
   String get repeater_commandsListTitle => 'Parancsok listája';
@@ -4555,9 +4503,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'Adjon hozzá egy kapcsolatot a kiválasztott listából';
 
   @override
-  String get contacts_ShareContact => 'Másolja a kapcsolatot a kiválasztóba';
-
-  @override
   String get contacts_ShareContactZeroHop =>
       'Ossza meg a kapcsolatot hirdetés segítségével';
 
@@ -4574,39 +4519,11 @@ class AppLocalizationsHu extends AppLocalizations {
       'Nem sikerült a kapcsolatot elküldeni.';
 
   @override
-  String get contacts_contactAdvertCopied => 'A hirdetés másolva a vágólapra.';
-
-  @override
   String get contacts_contactAdvertCopyFailed =>
       'Az hirdetés másolása a vágólapra sikertelen.';
 
   @override
   String get contacts_addContact => 'Kapcsolat hozzáadása';
-
-  @override
-  String get contacts_scanQrCode => 'Kapcsolat QR-kódjának beolvasása';
-
-  @override
-  String get contacts_scanQrCodeDesc =>
-      'Kapcsolat QR-kódjának beolvasása a MeshCore alkalmazásból';
-
-  @override
-  String get contacts_enterIdHash => 'Kapcsolat kézi megadása';
-
-  @override
-  String get contacts_enterIdHashDesc =>
-      'Illesszen be egy kapcsolathirdetést vagy meshcore:// linket';
-
-  @override
-  String get contacts_advertHint =>
-      'meshcore://... vagy nyilvános kulcs hexben';
-
-  @override
-  String get contacts_import => 'Importálás';
-
-  @override
-  String get contacts_scanContactInstructions =>
-      'Olvasson be egy MeshCore kapcsolat-QR-kódot';
 
   @override
   String get notification_activityTitle => 'MeshCore tevékenységek';
@@ -4779,10 +4696,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get discoveredContacts_addContact => 'Adjon személyhez';
-
-  @override
-  String get discoveredContacts_copyContact =>
-      'Másolja a kapcsolatot a vágólapra';
 
   @override
   String get discoveredContacts_deleteContact =>
@@ -5928,23 +5841,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get map_zoomOut => 'Kicsinyítés';
 
   @override
-  String get gps_title => 'GPS';
-
-  @override
   String get gps_on => 'GPS be';
 
   @override
   String get gps_off => 'GPS ki';
-
-  @override
-  String get gps_onHint => 'A rádió a GPS-ből frissíti a pozícióját.';
-
-  @override
-  String get gps_offHint =>
-      'Kikapcsolva kíméli az akkumulátort. A pozíció megtalálása néhány percig tarthat.';
-
-  @override
-  String get gps_asking => 'A rádió lekérdezése...';
 
   @override
   String get gps_noPosition =>
@@ -5955,11 +5855,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get gps_altitude => 'Magasság';
-
-  @override
-  String gps_readAgo(String ago) {
-    return '$ago ezelőtt kiolvasva a rádióból';
-  }
 
   @override
   String get gps_turnOnTitle => 'Bekapcsolja a GPS-t?';
@@ -6303,84 +6198,84 @@ class AppLocalizationsHu extends AppLocalizations {
       'A rádiójának még nincs pozíciója. Válasszon egyet a térképen.';
 
   @override
-  String get location_sendPositionOnly => 'Only the position';
+  String get location_sendPositionOnly => 'Csak a pozíció';
 
   @override
-  String get location_sendWithMotion => 'Position, heading, speed and altitude';
+  String get location_sendWithMotion => 'Pozíció, irány, sebesség és magasság';
 
   @override
-  String get location_motionNotKnown => 'Heading and speed aren\'t known yet';
+  String get location_motionNotKnown => 'Az irány és a sebesség még nem ismert';
 
   @override
-  String get add_title => 'New Channel or Contact';
+  String get add_title => 'Új csatorna vagy kapcsolat';
 
   @override
-  String get add_or => 'Or';
+  String get add_or => 'Vagy';
 
   @override
-  String get add_hashtagRow => 'Join a hashtag channel';
+  String get add_hashtagRow => 'Csatlakozás hashtag-csatornához';
 
   @override
-  String get add_hashtagRowHelp => 'Type its name after the #';
+  String get add_hashtagRowHelp => 'Írja be a nevét a # után';
 
   @override
-  String get add_keyRow => 'Enter a name and a key';
+  String get add_keyRow => 'Név és kulcs megadása';
 
   @override
   String get add_keyRowHelp =>
-      'A channel\'s secret key, or a contact\'s public key';
+      'Egy csatorna titkos kulcsa vagy egy kapcsolat nyilvános kulcsa';
 
   @override
-  String get add_name => 'Name';
+  String get add_name => 'Név';
 
   @override
-  String get add_key => 'Key';
+  String get add_key => 'Kulcs';
 
   @override
   String get add_keyInvalid =>
-      'A channel\'s key is 32 characters, a contact\'s 64.';
+      'Egy csatorna kulcsa 32 karakter, egy kapcsolaté 64.';
 
   @override
-  String get add_typePerson => 'Person';
+  String get add_typePerson => 'Személy';
 
   @override
-  String get add_box => 'Paste or type';
+  String get add_box => 'Illessze be vagy írja be';
 
   @override
   String get add_boxHint =>
-      'A meshcore:// link, <key:type:name>, #hashtag or a key';
+      'Egy meshcore:// link, <key:type:name>, #hashtag vagy egy kulcs';
 
   @override
-  String get add_paste => 'Paste';
+  String get add_paste => 'Beillesztés';
 
   @override
-  String get add_clipboardEmpty => 'There\'s nothing to paste.';
+  String get add_clipboardEmpty => 'Nincs mit beilleszteni.';
 
   @override
-  String get add_unreadableTitle => 'Nothing to add yet';
+  String get add_unreadableTitle => 'Még nincs mit hozzáadni';
 
   @override
   String get add_unreadable =>
-      'For a contact: a meshcore:// link, <key:type:name>, a contact card or a 64-character key. For a channel: a meshcore:// link, a #hashtag, or a 32-character secret key with its name.';
+      'Kapcsolathoz: egy meshcore:// link, <key:type:name>, egy névjegy vagy egy 64 karakteres kulcs. Csatornához: egy meshcore:// link, egy #hashtag vagy egy 32 karakteres titkos kulcs a nevével.';
 
   @override
-  String get add_contactName => 'Name (optional)';
+  String get add_contactName => 'Név (nem kötelező)';
 
   @override
-  String get add_scanInstructions => 'Scan a contact or channel QR code';
+  String get add_scanInstructions =>
+      'Olvassa be egy kapcsolat vagy csatorna QR-kódját';
 
   @override
-  String get add_scanUnreadable =>
-      'That QR code isn\'t a contact or a channel.';
+  String get add_scanUnreadable => 'Ez a QR-kód nem kapcsolat és nem csatorna.';
 
   @override
-  String get copy_link => 'Copy link';
+  String get copy_link => 'Link másolása';
 
   @override
-  String get copy_asText => 'Copy as text';
+  String get copy_asText => 'Másolás szövegként';
 
   @override
-  String get share_asText => 'As text';
+  String get share_asText => 'Szövegként';
 
   @override
   String get dialog_insert => 'Beszúrás';
@@ -6530,11 +6425,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get sos_dndStepsSamsung =>
-      'Settings opens on Do not disturb. Tap App notifications, then Add apps, pick MeshTrax and turn on SOS alerts only.';
+      'A Beállítások a Ne zavarjanak oldalon nyílnak meg. Koppintson az Alkalmazásértesítések, majd az Alkalmazások hozzáadása elemre, válassza ki a MeshTraxot, és csak az SOS-riasztásokat kapcsolja be.';
 
   @override
   String get sos_dndStepsOther =>
-      'Settings opens on SOS alerts: turn on Override Do Not Disturb. If your phone has no such switch there, open Do Not Disturb, find the apps allowed to interrupt, add MeshTrax and turn on SOS alerts.';
+      'A Beállítások az SOS-riasztásoknál nyílnak meg: kapcsolja be a Ne zavarjanak mód felülbírálása kapcsolót. Ha a telefonján ott nincs ilyen kapcsoló, nyissa meg a Ne zavarjanak beállítást, keresse meg a megszakításra jogosult alkalmazásokat, adja hozzá a MeshTraxot, és kapcsolja be az SOS-riasztásokat.';
 
   @override
   String get notification_sosChannel => 'SOS-riasztások';
@@ -6573,7 +6468,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get appSettings_sosLetThroughDnd =>
-      'Do Not Disturb silences it. Tap to let it through.';
+      'A Ne zavarjanak mód elnémítja. Koppintson az átengedéséhez.';
 
   @override
   String get appSettings_sosBlocked =>
@@ -7861,22 +7756,22 @@ class AppLocalizationsHu extends AppLocalizations {
       'A meghajtó útvonaladatai nem fedik le az eszköz összes régióját.';
 
   @override
-  String get offlineMaps_kindWaterRouting => 'Water routing';
+  String get offlineMaps_kindWaterRouting => 'Vízi útvonaltervezés';
 
   @override
-  String get offlineMaps_kindWaterRoutingDetail => 'Routes on the water';
+  String get offlineMaps_kindWaterRoutingDetail => 'Útvonalak a vízen';
 
   @override
   String get offlineMaps_waterRoutingWithChart =>
-      'Routes on the water. Its chart comes too.';
+      'Útvonalak a vízen. A tengeri térkép is letöltődik vele.';
 
   @override
   String get offlineMaps_waterRoutingUpdatesChart =>
-      'Routes on the water. Its chart updates too.';
+      'Útvonalak a vízen. A tengeri térkép is frissül vele.';
 
   @override
   String get offlineMaps_waterRoutingRebuilding =>
-      'Being rebuilt for new charts';
+      'Újraépítés alatt az új tengeri térképekhez';
 
   @override
   String get map_search => 'Keresés';
@@ -7918,96 +7813,97 @@ class AppLocalizationsHu extends AppLocalizations {
   String get route_pin => 'Kijelölt pont';
 
   @override
-  String get water_yourBoat => 'Your boat';
+  String get water_yourBoat => 'Az Ön hajója';
 
   @override
   String get water_yourBoatIntro =>
-      'Every trip on the water keeps to these. Change them later in Route options.';
+      'Minden vízi útvonal ezekhez igazodik. Később az Útvonal-beállításokban módosíthatja őket.';
 
   @override
   String water_boatDraft(String draft, String keel) {
-    return '$draft draft + $keel';
+    return '$draft merülés + $keel';
   }
 
   @override
   String water_boatOffLand(String distance) {
-    return '$distance off land';
+    return '$distance a parttól';
   }
 
   @override
   String water_boatMast(String height) {
-    return '$height mast';
+    return '$height árboc';
   }
 
   @override
-  String get water_classRestricted => 'Restricted area';
+  String get water_classRestricted => 'Korlátozott terület';
 
   @override
-  String get water_classCaution => 'Caution area';
+  String get water_classCaution => 'Figyelmeztető terület';
 
   @override
-  String get water_classMilitary => 'Military area';
+  String get water_classMilitary => 'Katonai terület';
 
   @override
-  String get water_classAnchorage => 'Anchorage';
+  String get water_classAnchorage => 'Horgonyzóhely';
 
   @override
-  String get water_classDumping => 'Dumping ground';
+  String get water_classDumping => 'Lerakóhely';
 
   @override
-  String get water_classTrafficLane => 'Traffic lane';
+  String get water_classTrafficLane => 'Forgalmi sáv';
 
   @override
-  String get water_classSeparation => 'Separation zone';
+  String get water_classSeparation => 'Elválasztó zóna';
 
   @override
-  String get water_classPrecautionary => 'Precautionary area';
+  String get water_classPrecautionary => 'Elővigyázatossági terület';
 
   @override
-  String get water_classInshoreTraffic => 'Inshore traffic zone';
+  String get water_classInshoreTraffic => 'Parti forgalmi zóna';
 
   @override
-  String get water_classMarineFarm => 'Marine farm';
+  String get water_classMarineFarm => 'Haltenyészet';
 
   @override
-  String get water_classBridge => 'Bridge';
+  String get water_classBridge => 'Híd';
 
   @override
-  String get water_classCable => 'Overhead cable';
+  String get water_classCable => 'Légkábel';
 
   @override
-  String get water_classPipe => 'Overhead pipe';
+  String get water_classPipe => 'Légi csővezeték';
 
   @override
-  String get water_classConveyor => 'Conveyor';
+  String get water_classConveyor => 'Szállítószalag';
 
   @override
-  String get water_classGate => 'Gate';
+  String get water_classGate => 'Zsilipkapu';
 
   @override
-  String get water_movedLand => 'that point is on land or off the charts';
+  String get water_movedLand =>
+      'az a pont szárazföldön vagy a tengeri térképeken kívül van';
 
   @override
-  String get water_movedShallow => 'it\'s too shallow there';
+  String get water_movedShallow => 'ott túl sekély a víz';
 
   @override
   String get water_movedHazard =>
-      'it\'s near a hazard too shallow for the boat';
+      'olyan veszély közelében van, amely túl sekélyen van a hajónak';
 
   @override
-  String get water_movedNoEntry => 'entry is prohibited there';
+  String get water_movedNoEntry => 'oda tilos a behajózás';
 
   @override
-  String get water_movedMast => 'something there is lower than the mast';
+  String get water_movedMast => 'ott valami alacsonyabb az árbocnál';
 
   @override
   String water_startMoved(String distance, String why) {
-    return 'Starts $distance from the point picked: $why.';
+    return 'Az útvonal a kiválasztott ponttól $distance távolságra kezdődik: $why.';
   }
 
   @override
   String water_endMoved(String distance, String why) {
-    return 'Ends $distance from the point picked: $why.';
+    return 'Az útvonal a kiválasztott ponttól $distance távolságra ér véget: $why.';
   }
 
   @override
@@ -8017,7 +7913,7 @@ class AppLocalizationsHu extends AppLocalizations {
     String band,
     String draft,
   ) {
-    return 'Ends $distance before $destination: charted $band. Drafts to $draft get through.';
+    return 'Az útvonal $destination előtt $distance távolságra véget ér: a térkép szerint $band mély. Legfeljebb $draft merülésű hajók jutnak át.';
   }
 
   @override
@@ -8026,7 +7922,7 @@ class AppLocalizationsHu extends AppLocalizations {
     String destination,
     String band,
   ) {
-    return 'Ends $distance before $destination: charted $band, too shallow to get through.';
+    return 'Az útvonal $destination előtt $distance távolságra véget ér: a térkép szerint $band mély, túl sekély az áthaladáshoz.';
   }
 
   @override
@@ -8035,127 +7931,127 @@ class AppLocalizationsHu extends AppLocalizations {
     String destination,
     String objects,
   ) {
-    return 'Ends $distance before $destination: $objects too low for the mast.';
+    return 'Az útvonal $destination előtt $distance távolságra véget ér: $objects túl alacsony az árbochoz.';
   }
 
   @override
   String water_endsShortNoWater(String distance, String destination) {
-    return 'Ends $distance before $destination: no charted water joins them.';
+    return 'Az útvonal $destination előtt $distance távolságra véget ér: a térképen nincs összekötő víz.';
   }
 
   @override
   String water_endsShortTooLong(String distance, String destination) {
-    return 'Ends $distance before $destination: too long for one route. Plan it in parts.';
+    return 'Az útvonal $destination előtt $distance távolságra véget ér: túl hosszú egyetlen útvonalhoz. Tervezze meg részletekben.';
   }
 
   @override
   String water_leastDepth(String depth) {
-    return 'Least depth: charted $depth';
+    return 'Legkisebb mélység: a térkép szerint $depth';
   }
 
   @override
   String water_lowestClearance(String height) {
-    return 'Lowest clearance $height';
+    return 'Legkisebb szabad magasság $height';
   }
 
   @override
   String water_lowestClearanceUnder(String height, String name) {
-    return 'Lowest clearance $height, $name';
+    return 'Legkisebb szabad magasság $height, $name';
   }
 
   @override
   String water_shallower(String depth) {
-    return 'Shallower than $depth';
+    return 'Sekélyebb, mint $depth';
   }
 
   @override
-  String get water_poorSurvey => 'Poorly surveyed';
+  String get water_poorSurvey => 'Hiányosan felmért';
 
   @override
-  String get water_needsOpening => 'needs opening';
+  String get water_needsOpening => 'nyitni kell';
 
   @override
   String get water_magneticModelOld =>
-      'Bearings from a magnetic model valid to 2030';
+      'Irányszögek egy 2030-ig érvényes mágneses modellből';
 
   @override
   String water_couldntKeep(String distance) {
-    return 'Closer than $distance to land';
+    return 'A parthoz közelebb, mint $distance';
   }
 
   @override
-  String get water_onTheWay => 'On the way';
+  String get water_onTheWay => 'Útközben';
 
   @override
   String water_stretch(String length, String from) {
-    return '$length, from $from along';
+    return '$length, $from megtétele után';
   }
 
   @override
-  String get water_speed => 'Speed';
+  String get water_speed => 'Sebesség';
 
   @override
-  String get water_draft => 'Draft';
+  String get water_draft => 'Merülés';
 
   @override
-  String get water_underKeel => 'Room under the keel';
+  String get water_underKeel => 'Szabad víz a gerinc alatt';
 
   @override
-  String get water_preferDepth => 'Preferred depth';
+  String get water_preferDepth => 'Kívánt mélység';
 
   @override
-  String get water_none => 'None';
+  String get water_none => 'Nincs';
 
   @override
-  String get water_mastHeight => 'Mast height';
+  String get water_mastHeight => 'Árbocmagasság';
 
   @override
-  String get water_offLand => 'Distance off land';
+  String get water_offLand => 'Távolság a parttól';
 
   @override
-  String get water_avoidLanes => 'Traffic lanes';
+  String get water_avoidLanes => 'Forgalmi sávok';
 
   @override
-  String get water_avoidSecurity => 'Security zones';
+  String get water_avoidSecurity => 'Biztonsági zónák';
 
   @override
-  String get water_avoidOpening => 'Bridges that open';
+  String get water_avoidOpening => 'Nyitható hidak';
 
   @override
-  String get water_notForNavigation => 'Not for navigation';
+  String get water_notForNavigation => 'Navigációra nem alkalmas';
 
   @override
   String get water_noData =>
-      'Download Water routing for this chart area in Offline maps.';
+      'Töltse le ehhez a tengeri térképterülethez a Vízi útvonaltervezést az Offline térképek alatt.';
 
   @override
   String water_routingMissing(String area) {
-    return 'Water routing for $area isn\'t on this phone.';
+    return 'A(z) $area vízi útvonaladatai nincsenek ezen a telefonon.';
   }
 
   @override
-  String get route_onLand => 'Route on land';
+  String get route_onLand => 'Útvonal szárazföldön';
 
   @override
-  String get route_onWater => 'Route on the water';
+  String get route_onWater => 'Útvonal vízen';
 
   @override
-  String get water_noTiles => 'No water routing here';
+  String get water_noTiles => 'Itt nincs vízi útvonaltervezés';
 
   @override
   String get water_mixedBuilds =>
-      'Update water routing in Offline maps: its areas are of different builds.';
+      'Frissítse a Vízi útvonaltervezést az Offline térképek alatt: a területei különböző kiadásúak.';
 
   @override
-  String get water_noWater => 'No water here the boat can use';
+  String get water_noWater => 'Itt nincs a hajó számára használható víz';
 
   @override
   String water_unchartedSpans(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Under $count spans with no charted clearance',
-      one: 'Under 1 span with no charted clearance',
+      other: '$count hídnyílás alatt, a térképen jelöletlen szabad magassággal',
+      one: '1 hídnyílás alatt, a térképen jelöletlen szabad magassággal',
     );
     return '$_temp0';
   }
@@ -8179,61 +8075,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get common_less => 'Kevesebb';
 
   @override
-  String get locationSharing_title => 'Ki láthatja a helyzetemet';
-
-  @override
-  String get locationSharing_someone => 'Valaki láthatja a helyzetét';
-
-  @override
-  String get locationSharing_nobody => 'Senki sem láthatja a helyzetét';
-
-  @override
   String get locationSharing_noPosition =>
       'A rádiójának még nincs helyzete, így senki sem láthatja';
 
   @override
-  String get locationSharing_everyone =>
-      'Mindenki, aki hallja a rádióját, láthatja a helyzetét';
-
-  @override
-  String get locationSharing_allContacts =>
-      'Minden partnere láthatja a helyzetét';
-
-  @override
-  String get locationSharing_someContacts =>
-      'Az Ön által engedélyezett partnerek láthatják a helyzetét';
-
-  @override
   String get locationSharing_adverts => 'Helyzet a bejelentésekben';
-
-  @override
-  String get locationSharing_advertsHint =>
-      'A bejelentései tartalmazzák a helyzetét, így bárki láthatja, aki hallja a rádióját.';
-
-  @override
-  String get locationSharing_contactsHeader =>
-      'Partnerek, akik lekérdezhetik a rádióját';
-
-  @override
-  String get locationSharing_noTelemetry =>
-      'Senki. A rádiója nem válaszol telemetriai kérésekre.';
-
-  @override
-  String get locationSharing_noContacts => 'Egy partnernek sincs engedélye.';
-
-  @override
-  String locationSharing_allContactsRow(int count) {
-    return 'Minden partnere ($count)';
-  }
-
-  @override
-  String get locationSharing_partLocation => 'Helyzet';
-
-  @override
-  String get locationSharing_partBattery => 'Akku';
-
-  @override
-  String get locationSharing_partSensors => 'Érzékelők';
 
   @override
   String get dialog_positionHint =>
@@ -8244,14 +8090,6 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get locationSharing_share => 'Helyzetem megosztása';
-
-  @override
-  String get locationSharing_shareOnHint =>
-      'Kapcsolja ki, hogy mindenki elől elrejtse';
-
-  @override
-  String get locationSharing_shareOffHint =>
-      'Kapcsolja be, hogy az engedéllyel rendelkező partnerek lássák';
 
   @override
   String get chats_advertise => 'Bejelentés';
@@ -8443,16 +8281,6 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get settings_locationTapMap =>
       'Koppints a térképre a pozíció megadásához, vagy írd be a számokat.';
-
-  @override
-  String get channels_pasteLink => 'Hivatkozás beillesztése';
-
-  @override
-  String get channels_pasteLinkDesc =>
-      'Egy kimásolt meshcore:// csatornahivatkozás.';
-
-  @override
-  String get channels_pasteLinkNone => 'A vágólapon nincs csatornahivatkozás.';
 
   @override
   String get settings_locationGpsNote =>
@@ -8873,7 +8701,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get repeaterRegions_hasChildren =>
-      'The repeater still has regions under this one. Remove those first.';
+      'A jelismétlőn még vannak régiók e régió alatt. Előbb azokat távolítsa el.';
 
   @override
   String repeaterRegions_refused(String reply) {
@@ -8904,7 +8732,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get channelRegion_nearbyTrip =>
-      'TRAX reports on this channel won\'t be passed on by other radios.';
+      'A csatornán küldött TRAX jelentéseket más rádiók nem adják tovább.';
 
   @override
   String nearbyRegions_withPlain(String names) {
@@ -8960,249 +8788,252 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String get myLocation_title => 'My location';
+  String get myLocation_title => 'Saját helyzet';
 
   @override
-  String get myLocation_onlyYou => 'Only you';
+  String get myLocation_onlyYou => 'Csak Ön';
 
   @override
-  String get myLocation_people => 'People you picked can ask';
+  String get myLocation_people => 'Az Ön által kiválasztottak megkérdezhetik';
 
   @override
-  String get myLocation_everyone => 'Everyone saved on your radio can ask';
+  String get myLocation_everyone => 'A rádióján mentett mindenki megkérdezheti';
 
   @override
-  String get myLocation_adverts => 'In your adverts';
+  String get myLocation_adverts => 'A hirdetéseiben';
 
   @override
-  String get myLocation_gpsNoFix => 'GPS on, no fix yet';
+  String get myLocation_gpsNoFix => 'GPS be, még nincs pozíció';
 
   @override
-  String get myLocation_radioGps => 'Radio GPS';
+  String get myLocation_radioGps => 'A rádió GPS-e';
 
   @override
   String myLocation_fix(String ago, String position) {
-    return 'Fix $ago ago · $position';
+    return 'Pozíció $ago ezelőtt · $position';
   }
 
   @override
-  String get myLocation_noFix => 'No fix yet.';
+  String get myLocation_noFix => 'Még nincs pozíció.';
 
   @override
-  String get myLocation_offSaves => 'Off saves battery.';
+  String get myLocation_offSaves => 'Kikapcsolva kíméli az akkumulátort.';
 
   @override
   String myLocation_lastFix(String time) {
-    return 'Last fix $time.';
+    return 'Utolsó pozíció: $time.';
   }
 
   @override
-  String get myLocation_inAdverts => 'In my adverts';
+  String get myLocation_inAdverts => 'A hirdetéseimben';
 
   @override
-  String get myLocation_advertsHint => 'Anyone who hears your radio';
+  String get myLocation_advertsHint => 'Bárki, aki hallja a rádióját';
 
   @override
   String get myLocation_advertsInfo =>
-      'Your adverts carry your location to anyone who hears them: the GPS fix, or with the GPS off the last fix or a typed location. They go out only when you send one, or TRAX does.';
+      'A hirdetései mindenkihez eljuttatják a helyzetét, aki hallja őket: a GPS-pozíciót, vagy kikapcsolt GPS mellett az utolsó pozíciót vagy egy beírt helyzetet. Csak akkor mennek ki, amikor Ön küld egyet, vagy a TRAX küld.';
 
   @override
-  String get myLocation_peopleWho => 'People who can ask';
+  String get myLocation_peopleWho => 'Akik megkérdezhetik';
 
   @override
-  String get myLocation_nobody => 'Nobody';
+  String get myLocation_nobody => 'Senki';
 
   @override
   String myLocation_allSaved(int count) {
-    return 'Everyone saved on your radio ($count)';
+    return 'A rádióján mentett mindenki ($count)';
   }
 
   @override
-  String get myLocation_pickPeople => 'Pick people instead';
+  String get myLocation_pickPeople => 'Inkább személyek kiválasztása';
 
   @override
-  String get myLocation_batterySensors => 'Battery and sensors';
+  String get myLocation_batterySensors => 'Akku és érzékelők';
 
   @override
   String get myLocation_peopleHint =>
-      'They can ask your radio where it is, and its battery.';
+      'Megkérdezhetik a rádióját, hol van, és milyen az akkuja.';
 
   @override
-  String get myLocation_addSomeone => 'Add someone';
+  String get myLocation_addSomeone => 'Valaki hozzáadása';
 
   @override
   String myLocation_search(int count) {
-    return 'Search $count contacts';
+    return 'Keresés $count kapcsolat között';
   }
 
   @override
-  String get myLocation_recent => 'Recent messages';
+  String get myLocation_recent => 'Legutóbbi üzenetek';
 
   @override
-  String get myLocation_canAsk => 'Can ask';
+  String get myLocation_canAsk => 'Megkérdezheti';
 
   @override
-  String get iconHelp_title => 'What the icons mean';
+  String get iconHelp_title => 'Mit jelentenek az ikonok';
 
   @override
-  String get iconHelp_tap => 'Tap an icon in the bar to open it.';
+  String get iconHelp_tap => 'Koppintson egy ikonra a sávon a megnyitásához.';
 
   @override
-  String get iconHelp_radio => 'Radio';
+  String get iconHelp_radio => 'Rádió';
 
   @override
-  String get iconHelp_battery => 'Radio battery';
+  String get iconHelp_battery => 'A rádió akkuja';
 
   @override
-  String get iconHelp_batteryText => 'Tap for volts.';
+  String get iconHelp_batteryText =>
+      'Koppintson a feszültség megjelenítéséhez.';
 
   @override
-  String get iconHelp_signal => 'Signal';
+  String get iconHelp_signal => 'Jel';
 
   @override
   String get iconHelp_signalText =>
-      'How well your radio hears the best repeater near you. Tap for the list.';
+      'Milyen jól hallja a rádiója a legjobb közeli repeatert. Koppintson a listáért.';
 
   @override
-  String get iconHelp_repeaters => 'Repeaters heard';
+  String get iconHelp_repeaters => 'Hallott repeaterek';
 
   @override
   String get iconHelp_repeatersText =>
-      'How many · the best one\'s code · how long ago';
+      'Hány darab · a legjobb kódja · mennyi ideje';
 
   @override
-  String get iconHelp_traxOff => 'TRAX mode off';
+  String get iconHelp_traxOff => 'TRAX mód ki';
 
   @override
-  String get iconHelp_traxOn => 'TRAX mode on';
+  String get iconHelp_traxOn => 'TRAX mód be';
 
   @override
-  String get iconHelp_traxOnText => 'Your radio is on the group\'s frequency.';
+  String get iconHelp_traxOnText => 'A rádiója a csoport frekvenciáján van.';
 
   @override
-  String get iconHelp_who => 'My location: who can see it';
+  String get iconHelp_who => 'Saját helyzet: ki láthatja';
 
   @override
-  String get iconHelp_people => 'People you picked';
+  String get iconHelp_people => 'Az Ön által kiválasztottak';
 
   @override
-  String get iconHelp_peopleText => 'They can ask your radio where it is.';
+  String get iconHelp_peopleText => 'Megkérdezhetik a rádióját, hol van.';
 
   @override
-  String get iconHelp_advertsText => 'Anyone who hears your radio.';
+  String get iconHelp_advertsText => 'Bárki, aki hallja a rádióját.';
 
   @override
-  String get iconHelp_gps => 'My location: radio GPS';
+  String get iconHelp_gps => 'Saját helyzet: a rádió GPS-e';
 
   @override
-  String get iconHelp_filled => 'Filled: GPS on';
+  String get iconHelp_filled => 'Kitöltött: GPS be';
 
   @override
-  String get iconHelp_outline => 'Outline: GPS off';
+  String get iconHelp_outline => 'Körvonal: GPS ki';
 
   @override
-  String get iconHelp_dashed => 'Dashed: no GPS fix yet';
+  String get iconHelp_dashed => 'Szaggatott: még nincs GPS-pozíció';
 
   @override
-  String get iconHelp_red => 'Red: no fix, and someone can see it';
+  String get iconHelp_red => 'Piros: nincs pozíció, és valaki láthatja';
 
   @override
-  String get locationNote_title => 'One location button';
+  String get locationNote_title => 'Egyetlen helyzetgomb';
 
   @override
   String get locationNote_body =>
-      'GPS and Who can see my location are now one button. Its shape shows who can see your location. Filled means GPS is on.';
+      'A GPS és a „Ki láthatja a helyzetemet” mostantól egyetlen gomb. Az alakja mutatja, ki láthatja a helyzetét. A kitöltött azt jelenti, hogy a GPS be van kapcsolva.';
 
   @override
-  String get traxGuide_title => 'How TRAX works';
+  String get traxGuide_title => 'Hogyan működik a TRAX';
 
   @override
   String get traxGuide_lead =>
-      'TRAX shares where everyone is over your radios alone: no cell service, no repeaters. Say you\'re out front, friends are behind you, and more join tomorrow.';
+      'A TRAX csak a rádiókon keresztül osztja meg, ki hol van: mobilhálózat és repeaterek nélkül. Tegyük fel, hogy Ön elöl halad, a barátai Ön mögött jönnek, holnap pedig még többen csatlakoznak.';
 
   @override
-  String get traxGuide_beforeTitle => 'Before you go';
+  String get traxGuide_beforeTitle => 'Indulás előtt';
 
   @override
   String get traxGuide_before =>
-      'Make a private channel for the trip. Everyone joins it, adds each other as contacts and posts on it once.';
+      'Hozzon létre egy privát csatornát a túrához. Mindenki csatlakozik hozzá, felveszik egymást kapcsolatként, és egyszer írnak rá.';
 
   @override
-  String get traxGuide_trailheadTitle => 'At the trailhead';
+  String get traxGuide_trailheadTitle => 'A kiindulópontnál';
 
   @override
   String get traxGuide_trailhead =>
-      'Once your radio has a GPS fix, tap the boot print and Switch to TRAX. Your radio moves to the group\'s frequency, and the others get “Switch too?”.';
+      'Amint a rádiójának van GPS-pozíciója, koppintson a bakancsnyomra, majd a Váltás TRAX-ra gombra. A rádiója a csoport frekvenciájára áll, a többiek pedig megkapják az „Ön is vált?” kérdést.';
 
   @override
-  String get traxGuide_trailTitle => 'On the trail';
+  String get traxGuide_trailTitle => 'Az ösvényen';
 
   @override
   String get traxGuide_trail =>
-      'Each phone sends its radio\'s location to the trip channel every minute or two, and its track now and then. The three people button on the map lists everyone: how far, which way, when heard.';
+      'Minden telefon egy-két percenként elküldi a rádiója helyzetét a túracsatornára, és időnként a nyomvonalát is. A térképen a három emberkét ábrázoló gomb mindenkit listáz: milyen messze vannak, merre, mikor hallották őket.';
 
   @override
-  String get traxGuide_behindTitle => 'Friends behind you';
+  String get traxGuide_behindTitle => 'Barátok Ön mögött';
 
   @override
   String get traxGuide_behind =>
-      'Every radio passes the others\' messages on, so theirs reach the front through you. They see you as your icon on the map; a tap shows your track to follow.';
+      'Minden rádió továbbadja a többiek üzeneteit, így az övéik Önön keresztül jutnak el az élre. A térképen az Ön ikonjaként látják Önt; egy koppintás megmutatja a nyomvonalát, amelyet követhetnek.';
 
   @override
-  String get traxGuide_quietTitle => 'Someone quiet?';
+  String get traxGuide_quietTitle => 'Valaki hallgat?';
 
   @override
   String get traxGuide_quiet =>
-      'Their card says when they were last heard. Ask their radio: it answers by itself, even with their phone off.';
+      'A kártyáján látszik, mikor hallották utoljára. Kérdezze le a rádióját: magától válaszol, akkor is, ha a telefonja ki van kapcsolva.';
 
   @override
-  String get traxGuide_joinTitle => 'Joining the next day';
+  String get traxGuide_joinTitle => 'Csatlakozás másnap';
 
   @override
   String get traxGuide_join =>
-      'Add the trip channel. In TRAX settings pick it and the trip\'s end, and Long range if the group uses it. Then switch. Everyone\'s track from the last 2 days arrives bit by bit.';
+      'Vegye fel a túracsatornát. A TRAX beállításokban válassza ki, adja meg a túra végét, és válassza a Nagy hatótávot, ha a csoport azt használja. Aztán váltson. Mindenki elmúlt 2 napi nyomvonala apránként érkezik meg.';
 
   @override
   String get traxGuide_sosTitle => 'SOS';
 
   @override
   String get traxGuide_sos =>
-      'In the trip chat, tap + then SOS. The group gets your location every 2 minutes until you cancel.';
+      'A túracsatorna csevegésében koppintson a + gombra, majd az SOS-re. A csoport 2 percenként megkapja a helyzetét, amíg vissza nem vonja.';
 
   @override
-  String get traxGuide_endTitle => 'When the trip ends';
+  String get traxGuide_endTitle => 'Amikor a túra véget ér';
 
   @override
   String get traxGuide_end =>
-      'MeshTrax asks you to leave. Until you do, the regular mesh can\'t hear you.';
+      'A MeshTrax megkéri, hogy lépjen ki. Amíg ki nem lép, a szokásos mesh hálózat nem hallja Önt.';
 
   @override
-  String get traxGuide_iconsTitle => 'The icons';
+  String get traxGuide_iconsTitle => 'Az ikonok';
 
   @override
-  String get traxGuide_member => 'A member, as the icon they picked';
+  String get traxGuide_member => 'Egy tag, az általa választott ikonnal';
 
   @override
-  String get traxGuide_memberText => 'Yours is in TRAX settings.';
+  String get traxGuide_memberText => 'Az Önét a TRAX beállításokban találja.';
 
   @override
-  String get traxGuide_old => 'Grey: their GPS position may be old';
+  String get traxGuide_old => 'Szürke: a GPS-pozíciója lehet, hogy régi';
 
   @override
-  String get traxGuide_you => 'You';
+  String get traxGuide_you => 'Ön';
 
   @override
-  String get traxGuide_yourTrack => 'Your track';
+  String get traxGuide_yourTrack => 'Az Ön nyomvonala';
 
   @override
-  String get traxGuide_theirTrack => 'Their track, while their card is open';
+  String get traxGuide_theirTrack =>
+      'Az ő nyomvonala, amíg a kártyája nyitva van';
 
   @override
-  String get traxGuide_tripChannel => 'The trip channel';
+  String get traxGuide_tripChannel => 'A túracsatorna';
 
   @override
-  String get traxGuide_tripChannelText => 'First in Chats while TRAX is on.';
+  String get traxGuide_tripChannelText =>
+      'Első a Csevegések között, amíg a TRAX be van kapcsolva.';
 
   @override
-  String get traxGuide_dontShowAgain => 'Don\'t show this again';
+  String get traxGuide_dontShowAgain => 'Ne jelenjen meg többé';
 }

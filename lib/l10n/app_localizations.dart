@@ -263,12 +263,6 @@ abstract class AppLocalizations {
   /// **'Include location'**
   String get photo_includePosition;
 
-  /// No description provided for @photo_positionFromRadio.
-  ///
-  /// In en, this message translates to:
-  /// **'Your radio\'s location now, to about {distance}'**
-  String photo_positionFromRadio(String distance);
-
   /// No description provided for @photo_noPosition.
   ///
   /// In en, this message translates to:
@@ -970,18 +964,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} contacts'**
   String newChat_contactCount(int count);
-
-  /// No description provided for @newChat_newContact.
-  ///
-  /// In en, this message translates to:
-  /// **'New Contact'**
-  String get newChat_newContact;
-
-  /// No description provided for @newChat_newChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'New Channel'**
-  String get newChat_newChannel;
 
   /// No description provided for @newChat_myContacts.
   ///
@@ -3815,12 +3797,6 @@ abstract class AppLocalizations {
   /// **'{name}\'s radio · {time}'**
   String radioAsk_mapLabel(String name, String time);
 
-  /// No description provided for @radioAsk_rowLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio answer'**
-  String get radioAsk_rowLabel;
-
   /// No description provided for @contact_nickname.
   ///
   /// In en, this message translates to:
@@ -3980,7 +3956,7 @@ abstract class AppLocalizations {
   /// No description provided for @channels_shareChannelInstructions.
   ///
   /// In en, this message translates to:
-  /// **'Scan QR code to add channel.\nMenu → Add Channel → Scan QR Code'**
+  /// **'Scan QR code to add channel.'**
   String get channels_shareChannelInstructions;
 
   /// No description provided for @channels_secretKey.
@@ -3994,12 +3970,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MeshCore URI'**
   String get channels_meshcoreUri;
-
-  /// No description provided for @channels_shareChannelQr.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan Channel QR Code'**
-  String get channels_shareChannelQr;
 
   /// No description provided for @channels_shareChannelWarning.
   ///
@@ -4073,41 +4043,17 @@ abstract class AppLocalizations {
   /// **'Standard public PSK'**
   String get channels_standardPublicPsk;
 
-  /// No description provided for @channels_pskHex.
-  ///
-  /// In en, this message translates to:
-  /// **'PSK (Hex)'**
-  String get channels_pskHex;
-
   /// No description provided for @channels_generateRandomPsk.
   ///
   /// In en, this message translates to:
   /// **'Generate random PSK'**
   String get channels_generateRandomPsk;
 
-  /// No description provided for @channels_enterChannelName.
-  ///
-  /// In en, this message translates to:
-  /// **'Please enter a channel name'**
-  String get channels_enterChannelName;
-
-  /// No description provided for @channels_pskMustBe32Hex.
-  ///
-  /// In en, this message translates to:
-  /// **'PSK must be 32 hex characters'**
-  String get channels_pskMustBe32Hex;
-
   /// No description provided for @channels_addChannelConfirmation.
   ///
   /// In en, this message translates to:
   /// **'Do you want to add the following channel?'**
   String get channels_addChannelConfirmation;
-
-  /// No description provided for @channels_channelAddedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel added successfully.'**
-  String get channels_channelAddedSuccess;
 
   /// No description provided for @channels_noAvailableChannelSlots.
   ///
@@ -4157,12 +4103,6 @@ abstract class AppLocalizations {
   /// **'Channel \"{name}\" updated'**
   String channels_channelUpdated(String name);
 
-  /// No description provided for @channels_publicChannelAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'Public channel added'**
-  String get channels_publicChannelAdded;
-
   /// No description provided for @channels_sortBy.
   ///
   /// In en, this message translates to:
@@ -4205,18 +4145,6 @@ abstract class AppLocalizations {
   /// **'Secured with a secret key.'**
   String get channels_createPrivateChannelDesc;
 
-  /// No description provided for @channels_joinPrivateChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'Manually Add Channel'**
-  String get channels_joinPrivateChannel;
-
-  /// No description provided for @channels_joinPrivateChannelDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Via private key and name.'**
-  String get channels_joinPrivateChannelDesc;
-
   /// No description provided for @channels_joinPublicChannel.
   ///
   /// In en, this message translates to:
@@ -4229,18 +4157,6 @@ abstract class AppLocalizations {
   /// **'Anyone can join this channel.'**
   String get channels_joinPublicChannelDesc;
 
-  /// No description provided for @channels_joinHashtagChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'Create a Hashtag Channel'**
-  String get channels_joinHashtagChannel;
-
-  /// No description provided for @channels_joinHashtagChannelDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Anyone can join hashtag channels.'**
-  String get channels_joinHashtagChannelDesc;
-
   /// No description provided for @channels_scanQrCode.
   ///
   /// In en, this message translates to:
@@ -4252,18 +4168,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming soon'**
   String get channels_scanQrCodeComingSoon;
-
-  /// No description provided for @channels_enterHashtag.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter hashtag'**
-  String get channels_enterHashtag;
-
-  /// No description provided for @channels_hashtagHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. #team'**
-  String get channels_hashtagHint;
 
   /// No description provided for @channels_keepCapitals.
   ///
@@ -4330,12 +4234,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy to clipboard'**
   String get common_copyToClipboard;
-
-  /// No description provided for @contacts_copyContactToClipboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy My Contact to Clipboard'**
-  String get contacts_copyContactToClipboard;
 
   /// No description provided for @chat_typeMessage.
   ///
@@ -7750,12 +7648,6 @@ abstract class AppLocalizations {
   /// **'Add Contact from Clipboard'**
   String get contacts_addContactFromClipboard;
 
-  /// No description provided for @contacts_ShareContact.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy contact to Clipboard'**
-  String get contacts_ShareContact;
-
   /// No description provided for @contacts_ShareContactZeroHop.
   ///
   /// In en, this message translates to:
@@ -7780,12 +7672,6 @@ abstract class AppLocalizations {
   /// **'Failed to send contact.'**
   String get contacts_zeroHopContactAdvertFailed;
 
-  /// No description provided for @contacts_contactAdvertCopied.
-  ///
-  /// In en, this message translates to:
-  /// **'Advert copied to Clipboard.'**
-  String get contacts_contactAdvertCopied;
-
   /// No description provided for @contacts_contactAdvertCopyFailed.
   ///
   /// In en, this message translates to:
@@ -7797,48 +7683,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Contact'**
   String get contacts_addContact;
-
-  /// No description provided for @contacts_scanQrCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan Contact QR'**
-  String get contacts_scanQrCode;
-
-  /// No description provided for @contacts_scanQrCodeDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan a contact QR code from the MeshCore app'**
-  String get contacts_scanQrCodeDesc;
-
-  /// No description provided for @contacts_enterIdHash.
-  ///
-  /// In en, this message translates to:
-  /// **'Manually Enter Contact'**
-  String get contacts_enterIdHash;
-
-  /// No description provided for @contacts_enterIdHashDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a contact advert or meshcore:// link'**
-  String get contacts_enterIdHashDesc;
-
-  /// No description provided for @contacts_advertHint.
-  ///
-  /// In en, this message translates to:
-  /// **'meshcore://... or public key hex'**
-  String get contacts_advertHint;
-
-  /// No description provided for @contacts_import.
-  ///
-  /// In en, this message translates to:
-  /// **'Import'**
-  String get contacts_import;
-
-  /// No description provided for @contacts_scanContactInstructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan a MeshCore contact QR code'**
-  String get contacts_scanContactInstructions;
 
   /// No description provided for @notification_activityTitle.
   ///
@@ -8091,12 +7935,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Contact'**
   String get discoveredContacts_addContact;
-
-  /// No description provided for @discoveredContacts_copyContact.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy Contact to clipboard'**
-  String get discoveredContacts_copyContact;
 
   /// No description provided for @discoveredContacts_deleteContact.
   ///
@@ -9886,12 +9724,6 @@ abstract class AppLocalizations {
   /// **'Zoom out'**
   String get map_zoomOut;
 
-  /// No description provided for @gps_title.
-  ///
-  /// In en, this message translates to:
-  /// **'GPS'**
-  String get gps_title;
-
   /// No description provided for @gps_on.
   ///
   /// In en, this message translates to:
@@ -9903,24 +9735,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPS off'**
   String get gps_off;
-
-  /// No description provided for @gps_onHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The radio updates its location from the GPS.'**
-  String get gps_onHint;
-
-  /// No description provided for @gps_offHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Off saves battery. A fix can take a few minutes.'**
-  String get gps_offHint;
-
-  /// No description provided for @gps_asking.
-  ///
-  /// In en, this message translates to:
-  /// **'Asking the radio...'**
-  String get gps_asking;
 
   /// No description provided for @gps_noPosition.
   ///
@@ -9939,12 +9753,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Altitude'**
   String get gps_altitude;
-
-  /// No description provided for @gps_readAgo.
-  ///
-  /// In en, this message translates to:
-  /// **'Read from the radio {ago} ago'**
-  String gps_readAgo(String ago);
 
   /// No description provided for @gps_turnOnTitle.
   ///
@@ -13817,101 +13625,17 @@ abstract class AppLocalizations {
   /// **'Less'**
   String get common_less;
 
-  /// No description provided for @locationSharing_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Who can see my location'**
-  String get locationSharing_title;
-
-  /// No description provided for @locationSharing_someone.
-  ///
-  /// In en, this message translates to:
-  /// **'Someone can see your location'**
-  String get locationSharing_someone;
-
-  /// No description provided for @locationSharing_nobody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nobody can see your location'**
-  String get locationSharing_nobody;
-
   /// No description provided for @locationSharing_noPosition.
   ///
   /// In en, this message translates to:
   /// **'Your radio has no location yet, so nobody can see it'**
   String get locationSharing_noPosition;
 
-  /// No description provided for @locationSharing_everyone.
-  ///
-  /// In en, this message translates to:
-  /// **'Everyone who hears your radio can see your location'**
-  String get locationSharing_everyone;
-
-  /// No description provided for @locationSharing_allContacts.
-  ///
-  /// In en, this message translates to:
-  /// **'All your contacts can see your location'**
-  String get locationSharing_allContacts;
-
-  /// No description provided for @locationSharing_someContacts.
-  ///
-  /// In en, this message translates to:
-  /// **'Contacts you allowed can see your location'**
-  String get locationSharing_someContacts;
-
   /// No description provided for @locationSharing_adverts.
   ///
   /// In en, this message translates to:
   /// **'Location in adverts'**
   String get locationSharing_adverts;
-
-  /// No description provided for @locationSharing_advertsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your adverts carry your location, so anyone who hears your radio sees it.'**
-  String get locationSharing_advertsHint;
-
-  /// No description provided for @locationSharing_contactsHeader.
-  ///
-  /// In en, this message translates to:
-  /// **'Contacts who can ask your radio'**
-  String get locationSharing_contactsHeader;
-
-  /// No description provided for @locationSharing_noTelemetry.
-  ///
-  /// In en, this message translates to:
-  /// **'None. Your radio answers no telemetry requests.'**
-  String get locationSharing_noTelemetry;
-
-  /// No description provided for @locationSharing_noContacts.
-  ///
-  /// In en, this message translates to:
-  /// **'No contact is allowed to ask.'**
-  String get locationSharing_noContacts;
-
-  /// No description provided for @locationSharing_allContactsRow.
-  ///
-  /// In en, this message translates to:
-  /// **'All your contacts ({count})'**
-  String locationSharing_allContactsRow(int count);
-
-  /// No description provided for @locationSharing_partLocation.
-  ///
-  /// In en, this message translates to:
-  /// **'Location'**
-  String get locationSharing_partLocation;
-
-  /// No description provided for @locationSharing_partBattery.
-  ///
-  /// In en, this message translates to:
-  /// **'Battery'**
-  String get locationSharing_partBattery;
-
-  /// No description provided for @locationSharing_partSensors.
-  ///
-  /// In en, this message translates to:
-  /// **'Sensors'**
-  String get locationSharing_partSensors;
 
   /// No description provided for @dialog_positionHint.
   ///
@@ -13930,18 +13654,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share my location'**
   String get locationSharing_share;
-
-  /// No description provided for @locationSharing_shareOnHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn off to hide it from everyone'**
-  String get locationSharing_shareOnHint;
-
-  /// No description provided for @locationSharing_shareOffHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn on to let contacts with permission see it'**
-  String get locationSharing_shareOffHint;
 
   /// No description provided for @chats_advertise.
   ///
@@ -14266,24 +13978,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the map to set the location, or type the numbers.'**
   String get settings_locationTapMap;
-
-  /// No description provided for @channels_pasteLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a link'**
-  String get channels_pasteLink;
-
-  /// No description provided for @channels_pasteLinkDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'A meshcore:// channel link you copied.'**
-  String get channels_pasteLinkDesc;
-
-  /// No description provided for @channels_pasteLinkNone.
-  ///
-  /// In en, this message translates to:
-  /// **'There is no channel link on the clipboard.'**
-  String get channels_pasteLinkNone;
 
   /// No description provided for @settings_locationGpsNote.
   ///
