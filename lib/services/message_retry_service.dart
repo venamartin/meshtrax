@@ -95,6 +95,9 @@ class RetryServiceConfig {
   // ran out. Floods are never reported through onAttemptResult (nothing
   // to judge a route by), but Pathfinder still needs to know.
   final void Function(Contact, {required bool delivered})? onFloodAttemptEnded;
+  // The longest the sender may hold a copy back for a quiet radio. It
+  // says when the radio takes the copy ([MessageRetryService.radioTakes]).
+  final int maxSendHoldMs;
   final AppSettingsService? appSettingsService;
   final AppDebugLogService? debugLogService;
 
@@ -121,6 +124,7 @@ class RetryServiceConfig {
     this.onLadderEnded,
     this.onSendOutcome,
     this.onFloodAttemptEnded,
+    this.maxSendHoldMs = 0,
     this.appSettingsService,
     this.debugLogService,
   });
@@ -693,7 +697,7 @@ class MessageRetryService extends ChangeNotifier {
         // Before the send, as always: its RESP_CODE_SENT replaces this
         // timer with the real one, and can arrive while the send is
         // awaited.
-        _startPreSentTimer(messageId);
+        _startPreSentTimer(messageId, holdMs: config.maxSendHoldMs);
       }
       await config.sendMessage(
           contact, message.text, wireAttempt, timestampSeconds);
@@ -750,19 +754,33 @@ class MessageRetryService extends ChangeNotifier {
     }
   }
 
+  /// The radio is taking a copy of the DM [text] to [contactKey] stamped
+  /// [timestampSeconds] now, after any wait for a quiet radio: its answer
+  /// is due from this moment, not from when the copy was made (field
+  /// 2026-11-26: a copy held 15 s was given up as it went out, and the
+  /// attempt was lost).
+  void radioTakes(String contactKey, int timestampSeconds, String text) {
+    final id = _messageIdOf(contactKey, timestampSeconds, text);
+    final status = id == null ? null : _pendingMessages[id]?.status;
+    if (id == null || status == null) return;
+    _startPreSentTimer(id, copy: status == MessageStatus.sent);
+  }
+
   /// [copy]: the attempt's packet is going out a second time
   /// ([_notPassedOn]); the message stays "sent" while it does.
-  void _startPreSentTimer(String messageId, {bool copy = false}) {
+  /// [holdMs]: how long the sender may still hold the copy back.
+  void _startPreSentTimer(String messageId,
+      {bool copy = false, int holdMs = 0}) {
     final config = _config;
 
     // Safety timer: if RESP_CODE_SENT never arrives (silent BLE failure, device
     // busy, etc.) the message would stay at 'pending' forever.  Start a fallback
     // timer here that triggers _handleTimeout if updateMessageFromSent() hasn't
     // already started a real timer.
-    const preSentTimeoutMs = 15000;
+    final preSentTimeoutMs = 15000 + holdMs;
     _timeoutTimers[messageId]?.cancel();
     _timeoutTimers[messageId] = Timer(
-      const Duration(milliseconds: preSentTimeoutMs),
+      Duration(milliseconds: preSentTimeoutMs),
       () {
         // Only act if the message is still pending (no RESP_CODE_SENT received yet)
         final status = _pendingMessages[messageId]?.status;
@@ -1015,7 +1033,8 @@ class MessageRetryService extends ChangeNotifier {
         '${contact.name} on: sending the same packet once more',
         tag: 'AckHash',
       );
-      _startPreSentTimer(messageId, copy: true);
+      _startPreSentTimer(messageId,
+          copy: true, holdMs: _config?.maxSendHoldMs ?? 0);
       _send(messageId, same: true);
       return;
     }
