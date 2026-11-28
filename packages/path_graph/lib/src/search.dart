@@ -71,11 +71,13 @@ class PathFinder {
       config.doorstepWeight * -math.log(candidateConfidence(c, nowMillis));
 
   /// The usable links, each with its cost, by the repeater it leaves. A
-  /// link is usable in the direction packets were seen to travel it, and
-  /// only that direction. The graph never infers the reverse (owner,
-  /// 2026-10-13): a route is a chain of links each observed the way the
-  /// packet will go. How well a link is rated counts both its directions
-  /// ([Estimator.priorQuality]; owner, 2026-11-28).
+  /// link heard in one direction is a link in both (owner, 2026-11-28: "A
+  /// to B heard many times we have to presume B to A. If we find it fails,
+  /// then it loses weight"): it is rated by the direction it is heard best
+  /// in, and a send that fails over it is held against the direction it
+  /// went ([Estimator.calibratedP], [Estimator.presumedP]). This replaces
+  /// the rule of 2026-10-13, that a route is a chain of links each
+  /// observed the way the packet will go.
   /// Quality is priced per link and per doorstep. A link touching a
   /// [moving] repeater counts only while fresh
   /// ([PathGraphConfig.mobileFreshMinutes]).
@@ -99,23 +101,40 @@ class PathFinder {
     for (final entry in edges.entries) {
       final (from, to) = entry.key;
       final reverse = edges[(to, from)];
-      if (!estimator.usable(entry.value, nowMillis, reverse: reverse)) {
-        continue;
-      }
+      // A link touching a moving repeater counts only while one of its
+      // directions is fresh.
+      final heardAt = math.max(
+          entry.value.lastObserved ?? 0, reverse?.lastObserved ?? 0);
       if ((moving.contains(from) || moving.contains(to)) &&
-          nowMillis - (entry.value.lastObserved ?? 0) > freshMs) {
+          nowMillis - heardAt > freshMs) {
         continue;
       }
-      (adjacency[from] ??= []).add(
-          (
-        to,
-        entry.key,
-        estimator.edgeCost(entry.value, nowMillis, reverse: reverse),
-        false
-      ));
+      if (estimator.usable(entry.value, nowMillis, reverse: reverse)) {
+        (adjacency[from] ??= []).add((
+          to,
+          entry.key,
+          estimator.edgeCost(entry.value, nowMillis, reverse: reverse),
+          false
+        ));
+      }
+      // The same link the other way, of which nothing is on record:
+      // presumed.
+      if (reverse == null &&
+          estimator.hasEvidence(entry.value) &&
+          estimator.presumedP(entry.value, nowMillis) >= config.pThreshold) {
+        (adjacency[to] ??= []).add((
+          from,
+          (to, from),
+          estimator.presumedCost(entry.value, nowMillis),
+          false
+        ));
+      }
     }
     for (final key in guessed) {
-      if (edges.containsKey(key)) continue;
+      // The reverse of a link on record is a link already.
+      if (edges.containsKey(key) || edges.containsKey((key.$2, key.$1))) {
+        continue;
+      }
       (adjacency[key.$1] ??= [])
           .add((key.$2, key, estimator.guessedCost, true));
     }
@@ -260,14 +279,16 @@ class PathFinder {
     for (var i = 0; i < hops.length - 1; i++) {
       final guessed = i < guessedLinks.length && guessedLinks[i];
       final e = edges[(hops[i], hops[i + 1])];
+      final reverse = edges[(hops[i + 1], hops[i])];
       final p = guessed
           ? config.guessQ
-          : e == null
-              ? 1.0
-              : estimator
-                  .calibratedP(e, nowMillis,
-                      reverse: edges[(hops[i + 1], hops[i])])
-                  .clamp(0.01, 1.0);
+          : e != null
+              ? estimator
+                  .calibratedP(e, nowMillis, reverse: reverse)
+                  .clamp(0.01, 1.0)
+              : reverse != null
+                  ? estimator.presumedP(reverse, nowMillis).clamp(0.01, 1.0)
+                  : 1.0;
       hopProbabilities.add(p);
       guesses.add(guessed);
       delivery *= p;

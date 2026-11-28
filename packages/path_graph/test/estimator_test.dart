@@ -61,25 +61,38 @@ void main() {
         reason: 'heard once, days ago: gone');
   });
 
-  // Owner, 2026-11-28. A radio hears packets on their way to it, so a far
-  // link is heard often coming in and seldom going out, and a send needs
-  // the way out. Field graph: on the best routes out a link was heard 898
-  // times the way a send goes and 3,424 times the other way.
-  test('a link is rated by the average of its two directions', () {
+  // Owner, 2026-11-28: "A to B heard many times we have to presume B to
+  // A. If we find it fails, then it loses weight."
+  test('a link is rated by the direction it is heard best in', () {
     final often = edge(traffic: 1000, last: 0, obs: 1000);
     final seldom = edge(traffic: 1, last: 0, obs: 1);
     final q = est.heardQuality;
-    expect(est.priorQuality(often, 0, reverse: often), closeTo(q(often, 0), 1e-9),
-        reason: 'heard often both ways: nearly sure');
-    expect(est.priorQuality(seldom, 0, reverse: often),
-        closeTo((q(seldom, 0) + q(often, 0)) / 2, 1e-9),
-        reason: 'the way heard well vouches for the way out');
-    expect(est.priorQuality(seldom, 0, reverse: often), greaterThan(0.5));
-    expect(est.priorQuality(often, 0), closeTo(q(often, 0) / 2, 1e-9),
-        reason: 'only ever heard one way: half at most');
-    expect(est.priorQuality(often, 0), lessThan(0.5));
-    expect(est.priorQuality(seldom, 0, reverse: seldom),
-        closeTo(q(seldom, 0), 1e-9));
+    expect(est.priorQuality(seldom, 0, reverse: often), q(often, 0),
+        reason: 'the way heard well stands for the way out');
+    expect(est.priorQuality(often, 0, reverse: seldom), q(often, 0));
+    expect(est.priorQuality(often, 0), q(often, 0),
+        reason: 'heard one way only: presumed as good the other way');
+    expect(est.priorQuality(null, 0, reverse: often), q(often, 0),
+        reason: 'never heard this way at all');
+    expect(est.presumedP(often, 0), closeTo(q(often, 0), 1e-9));
+    expect(est.priorQuality(seldom, 0, reverse: seldom), q(seldom, 0));
+  });
+
+  test('failures take weight from the direction they were in', () {
+    final often = edge(traffic: 1000, last: 0, obs: 1000);
+    // Sent on six times and never heard this way, with no delivery.
+    final tried = edge(s: 0, n: 6);
+    expect(est.hasEvidence(tried), isFalse);
+    expect(est.usable(tried, 0, reverse: often), isTrue,
+        reason: 'the other way is the evidence');
+    expect(est.calibratedP(tried, 0, reverse: often),
+        lessThan(est.presumedP(often, 0) * 0.6));
+    expect(est.calibratedP(often, 0, reverse: tried),
+        closeTo(est.presumedP(often, 0), 1e-9),
+        reason: 'the way in lost nothing');
+    final later = (5 * config.failureHalfLifeHours * hour).round();
+    expect(est.calibratedP(tried, later, reverse: edge(traffic: 1000, last: later)),
+        greaterThan(0.95), reason: 'a suspicion fades');
   });
 
   test('a traced link keeps its measured level, whatever the other way',
@@ -118,9 +131,7 @@ void main() {
     expect(est.usable(quiet, 0), isFalse, reason: 'no evidence at all');
 
     final busy = edge(traffic: 50, last: 0, obs: 50);
-    expect(est.calibratedP(busy, 0, reverse: busy), closeTo(50 / 60, 1e-9));
-    expect(est.calibratedP(busy, 0), closeTo(25 / 60, 1e-9),
-        reason: 'heard one way only');
+    expect(est.calibratedP(busy, 0), closeTo(50 / 60, 1e-9));
     expect(est.usable(busy, 0), isTrue);
   });
 

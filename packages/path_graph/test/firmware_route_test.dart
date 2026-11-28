@@ -53,15 +53,14 @@ void main() {
     expect(result, isA<RouteResult>());
     final route = result as RouteResult;
     expect(route.pathBytes, firmwareRoute);
-    expect(route.hopProbabilities.single, closeTo(1 / 22, 0.005),
-        reason: 'seen once, one way, never tallied: rated low until '
-            'heard more');
+    expect(route.hopProbabilities.single, closeTo(1 / 11, 0.01),
+        reason: 'seen once, never tallied: rated low until heard more');
   });
 
-  // Owner, 2026-11-28: both directions of a link count towards its rating.
-  // The route out is the same route; nothing is needed of the return
-  // direction for it to be a route (owner, 2026-10-13).
-  test('the return direction heard too raises the link, not the route', () {
+  // Owner, 2026-11-28: a link is rated by the direction it is heard best
+  // in.
+  test('the return direction heard often raises the link, not the route',
+      () {
     learnFirmwareRoute();
     final before = graph.findPath(bobPk) as RouteResult;
     for (var i = 0; i < 20; i++) {

@@ -58,32 +58,45 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
-* **2026-11-28 — both directions of a link count towards its rating, and
-  sightings fade only while the radio is listened to.** Two faults found
-  on the field graph of 2026-11-27, asking where Pathfinder still fails.
-  * **A radio hears packets on their way to it.** A far link is heard
-    often coming in and seldom going out, and a send needs the way out:
-    on the best routes out, a link was heard 898 times the way a send
-    goes and 3,424 times the other way (medians), and 40% of links were
-    only ever heard one way. A link's rating is now the average of the
-    two directions' ratings (`Estimator.priorQuality`, `reverse`). Two
-    fixed repeaters hear each other about alike, so the direction heard
-    well vouches for the other; a link only ever heard one way is rated
-    at most 50%. Nothing else changes about direction: a link never heard
-    the way a send goes is still not a link (2026-10-13), and a traced
-    level stands as measured.
-    * Against how links carried the owner's own sends (588 links, 1,714
-      tries), the average ranked them better than the sending direction
-      alone: rank correlation 0.21 against 0.06. Links heard often both
-      ways carried 26% of tries; heard often one way only, 8 to 9%;
-      neither, 5%. The record is thin and a failure is charged to every
-      link of its route, so this ranks links and proves little more.
-    * Replay through the module, 3,087 contacts: 466 routed where 451
-      were, none lost. A link's sending direction is then heard less on
-      the routes chosen (the weakest a median of 82 times, was 170),
-      which is the trade.
-    * `pThreshold` 0.05 becomes 0.02, so a link heard once, one way, is
-      still a link for about two days.
+* **2026-11-28 — a link heard one way is presumed the other way; a
+  contact's doorstep lasts weeks; sightings fade only while the radio is
+  listened to.** Three faults found on the field graph of 2026-11-27,
+  asking where Pathfinder still fails.
+  * **A link heard one way is a link both ways.** Owner: "we must treat
+    two repeaters that constantly have one way communication as a possible
+    path. A to B heard many times we have to presume B to A. If we find it
+    fails, then it loses weight." This replaces the rule of 2026-10-13
+    (a route is a chain of links each observed the way the packet will
+    go) and the splice of 2026-10-23, which turned round only a contact's
+    last few paths, as guesses at a fixed 30%, two to a route.
+    * Why: a radio hears packets on their way to it. A far link is heard
+      often coming in and seldom, or never, going out, and a send needs
+      the way out. On the best routes out, a link was heard 898 times the
+      way a send goes and 3,424 times the other way (medians); 40% of
+      links were only ever heard one way; 68 of 368 far doorsteps had no
+      route out at all.
+    * How: a link is rated by the direction it is heard best in, both
+      ways (`Estimator.priorQuality`, `presumedP`), and the search offers
+      the reverse of every link on record (`PathFinder.links`). Nothing is
+      written down that was not heard or tried. What tells the two
+      directions apart is this radio's own sends: a delivery or a failure
+      counts for the direction it went, and a failure fades as on any
+      link.
+    * A first version rated a link by the average of its two directions
+      and never made the reverse a link. It followed the owner's send
+      history (links heard often both ways carried 26% of tries, one way
+      only 8 to 9%) more than his rule; that history is thin and biased by
+      route length, and the version was replaced before it was built into
+      anything.
+    * Dropped with the splice: its guards (a link heard in two packets
+      ten minutes apart, a hop of 60 km at most, two guessed hops to a
+      route). A link heard once or twice is rated low instead. The
+      splice's code is still in the package and can no longer fire.
+  * **A contact's doorstep is kept for weeks.** Owner: "I may not talk
+    with my brother whose doorstep is AA77 for a week, but it doesn't mean
+    that his doorstep disappeared." `ingressHalfLifeHours` 12 becomes 30
+    days. What moves a contact is hearing them somewhere else, which still
+    halves the old doorstep at each sighting, not time.
   * **Sightings faded by the clock, and the clock ran while the app was
     off** or the radio on another mesh: replayed, after seven days not
     listening 156 of 292 far doorsteps were still routable, with nothing
@@ -93,6 +106,14 @@ me and who hears my contact, what path bytes should this DM use?*
     between (`GraphStore.unfade`). The last moment listened is kept in
     the database (`listened_until`), so a killed app is a gap too. Times
     are left as they are; only the weight moves.
+  * **Replay through the module, 3,087 contacts:** 878 routed where 451
+    were, none lost: 427 that flooded now have a route, nearly all because
+    their doorstep is still known. The weakest link of a best route,
+    counted in the direction it is heard best, was heard 462 times at the
+    median (216 before); 110 routes use a presumed link. A lookup takes
+    about twice as long (7.8 ms on a PC), with the reverse of every link
+    in the search.
+  * **Not shown:** that these routes deliver. The air decides.
 
 * **2026-11-27 — a link is rated by how often it is heard.** Owner: "If
   repeater A hears repeater B 1000 times it is good", asked for many
