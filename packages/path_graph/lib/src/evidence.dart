@@ -577,8 +577,6 @@ class EvidenceStore {
   void recordRelayedSighting(String contactPubkey, int arrival) =>
       _lastRelayed[contactPubkey] = arrival;
 
-  void markDirty((String, String) key) => _dirty.add(key);
-
   /// Retention removal. The row leaves memory now and the database on
   /// the next flush.
   void removeEntry((String, String) key) {
