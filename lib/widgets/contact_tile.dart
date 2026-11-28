@@ -4,6 +4,7 @@ import '../connector/meshcore_protocol.dart';
 import '../l10n/l10n.dart';
 import '../utils/platform_info.dart';
 import 'contact_name.dart';
+import 'meshtrax_pill.dart';
 import 'shares_position_icon.dart';
 import 'unread_badge.dart';
 
@@ -42,6 +43,9 @@ class ContactTile extends StatelessWidget {
   /// The real name the user gave the contact, beside its radio name.
   final String? realName;
 
+  /// Their phone runs MeshTrax ([MeshTraxPill]).
+  final bool runsMeshTrax;
+
   const ContactTile({
     super.key,
     required this.contact,
@@ -54,6 +58,7 @@ class ContactTile extends StatelessWidget {
     this.sharesPosition = false,
     this.routeLabel,
     this.realName,
+    this.runsMeshTrax = false,
   });
 
   @override
@@ -82,10 +87,20 @@ class ContactTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: ContactName(
-                  contact.name,
-                  realName: realName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: ContactName(
+                        contact.name,
+                        realName: realName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (runsMeshTrax) ...[
+                      const SizedBox(width: 6),
+                      const MeshTraxPill(),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),

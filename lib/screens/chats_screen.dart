@@ -36,6 +36,7 @@ import '../widgets/trax_dialogs.dart';
 import '../widgets/trax_sheet.dart';
 import '../widgets/icon_help.dart';
 import '../widgets/my_location_button.dart';
+import '../widgets/meshtrax_pill.dart';
 import '../widgets/nickname_pill.dart';
 import '../widgets/pathfinder_mesh_banner.dart';
 import '../widgets/quick_switch_bar.dart';
@@ -1173,6 +1174,13 @@ class _ChatsScreenState extends State<ChatsScreen>
                                                     case final pill?) ...[
                                                   const SizedBox(width: 6),
                                                   NicknamePill(pill),
+                                                ],
+                                              if (item.contact?.publicKeyHex
+                                                  case final key?)
+                                                if (connector
+                                                    .runsMeshTrax(key)) ...[
+                                                  const SizedBox(width: 6),
+                                                  const MeshTraxPill(),
                                                 ],
                                               if (isTrip) ...[
                                                 const SizedBox(width: 6),
