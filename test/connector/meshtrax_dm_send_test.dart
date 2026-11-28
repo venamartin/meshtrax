@@ -320,6 +320,48 @@ void main() {
     expect(arrived, hasLength(1));
   });
 
+  test('my next DM tells them which ACK of theirs I heard', () async {
+    c.handleFrameForTest(_ackFromA());
+    await c.sendMessage(a, 'first');
+    await until(() => c.ours.isNotEmpty);
+    final first = DirectMessage.decode(opened(c.ours.single).message)!;
+    expect(first.ackHeardOf, isNull, reason: 'no ACK of theirs heard yet');
+    c.handleFrameForTest(_ackFromA(number: first.number));
+    await settle();
+
+    await c.sendMessage(a, 'second');
+    await until(() => c.ours.length == 2);
+    final second = DirectMessage.decode(opened(c.ours[1]).message)!;
+    expect(second.ackHeardOf, (number: first.number, tryNumber: 0));
+  });
+
+  test('with that note to carry, a text of the full room still goes as '
+      'MeshTrax', () async {
+    // The radio holds no route: the tries flood, as the box assumes.
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    DirectMessage dmIn(Uint8List frame) => DirectMessage.decode(unframeDirect(
+            MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!
+        .message)!;
+    c.handleFrameForTest(_ackFromA());
+    await c.sendMessage(a, 'first');
+    await until(() => c.ours.isNotEmpty);
+    c.handleFrameForTest(_ackFromA(number: dmIn(c.ours.single).number));
+    await settle();
+
+    // Nothing Smaz can shrink, and exactly the room the box counts.
+    final fits = List.generate(126, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, fits);
+    await until(() => c.ours.length == 2);
+    expect(c.firmwareDms, isEmpty);
+    final dm = dmIn(c.ours[1]);
+    expect(dm.text, hasLength(126));
+    expect(c.ours[1].length - 2, lessThanOrEqualTo(heardPacketMaxBytes - 16),
+        reason: 'still heard after eight repeaters added their codes');
+  });
+
   test("a text too long to be heard goes the firmware's way", () async {
     c.handleFrameForTest(_ackFromA());
     // Nothing Smaz can shrink.

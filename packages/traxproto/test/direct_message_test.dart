@@ -52,6 +52,19 @@ void main() {
     expect(back.text, 'hi'.codeUnits);
   });
 
+  // Owner, 2026-11-28: the receiver must learn that its ACK arrived.
+  test('the ACK that was heard: two bytes for the message before', () {
+    final dm = DirectMessage(
+        number: 9, ackHeard: DirectMessage.ackHeardFor(9, 8, 1));
+    expect(dm.encode(), _hex('0809' '5021'));
+    final back = DirectMessage.decode(dm.encode())!;
+    expect(back.ackHeardOf, (number: 8, tryNumber: 1));
+    expect(DirectMessage.decode(dmBytes)!.ackHeardOf, isNull);
+    expect(DirectMessage.ackHeardFor(9, 9, 0), 0, reason: 'not an earlier one');
+    expect(DirectMessage.ackHeardFor(9, 12, 0), 0);
+    expect(DirectMessage.ackHeardFor(9, 8, 32), 0);
+  });
+
   test('an ACK, byte for byte', () {
     final ack = DirectAck(
       number: 5,

@@ -45,6 +45,7 @@ Uint8List _dm({
   List<int>? route,
   List<int>? hears,
   List<int>? heardBy,
+  int ackHeard = 0,
 }) {
   final text = MeshTraxDmText.pack(said);
   return MeshTraxPacket.seal(
@@ -62,6 +63,7 @@ Uint8List _dm({
         heardBy: heardBy,
         packing: text.packing,
         text: text.bytes,
+        ackHeard: ackHeard,
       ).encode(),
       senderSortsAbove: false,
     ),
@@ -431,6 +433,42 @@ void main() {
       c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 3), '1000')));
       await rawPackets(4);
       expect(lost, ['A:1000,7777', 'A:1000,C419']);
+    });
+
+    test('their next DM says my ACK reached them: Pathfinder is told the '
+        'way it went', () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      final arrived = <String>[], lost = <String>[];
+      String hops(PathSelection r) =>
+          PathHelper.formatPathHex(r.pathBytes, stride: 2);
+      c.onMeshTraxAckArrived = (_, route) => arrived.add(hops(route));
+      c.onMeshTraxAckLost = (_, route) => lost.add(hops(route));
+      // Message 7: try 0 answered by 1000,7777, try 1 by 1000,C419.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      await rawPackets(1);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 1), '1000')));
+      await rawPackets(2);
+      expect(lost, ['1000,7777']);
+      // Message 8 says the ACK of message 7, try 1, was heard.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(number: 8, ackHeard: DirectMessage.ackHeardFor(8, 7, 1)),
+          '1000')));
+      expect(arrived, ['1000,C419']);
+      // Said again on its next try: told once.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(
+              number: 8,
+              tryNumber: 1,
+              ackHeard: DirectMessage.ackHeardFor(8, 7, 1)),
+          '1000')));
+      expect(arrived, hasLength(1));
+      // The ACK that was late, not lost: it is told when they say so.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(number: 9, ackHeard: DirectMessage.ackHeardFor(9, 7, 0)),
+          '1000')));
+      expect(arrived, ['1000,C419', '1000,7777']);
     });
 
     test('a route the user pinned is used as the radio holds it', () async {

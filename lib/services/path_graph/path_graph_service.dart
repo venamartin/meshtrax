@@ -335,6 +335,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onMeshTraxEnds = _onMeshTraxEnds;
     connector.onMeshTraxTryArrived = _onMeshTraxTryArrived;
     connector.onMeshTraxAckLost = _onMeshTraxAckLost;
+    connector.onMeshTraxAckArrived = _onMeshTraxAckArrived;
     connector.onMeshTraxRouteTravelled = _onMeshTraxRouteTravelled;
     connector.measureAreaKey = () => _graph?.currentCell;
     // Sightings fade only while the graph is being fed.
@@ -605,6 +606,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onMeshTraxEnds = null;
     _connector?.onMeshTraxTryArrived = null;
     _connector?.onMeshTraxAckLost = null;
+    _connector?.onMeshTraxAckArrived = null;
     _connector?.onMeshTraxRouteTravelled = null;
     _connector?.measureAreaKey = null;
     _connector?.onContactMessageCopy = null;
@@ -1136,6 +1138,33 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         tag: 'PathGraph');
     graph.reportSendResult(Uint8List.fromList(route.pathBytes), false,
         contactPubkey: contact.publicKeyHex, stride: route.hashSize);
+    _failedTries[_tryKey(contact, route)] = null;
+    _notifySoon();
+  }
+
+  /// An ACK of mine on [route] reached them, their next DM says: a
+  /// delivery over it. One taken for lost because they sent the message
+  /// again before it got there has that taken back.
+  void _onMeshTraxAckArrived(Contact contact, PathSelection route) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || route.useFlood) return;
+    final key = _tryKey(contact, route);
+    final path = Uint8List.fromList(route.pathBytes);
+    final wasLost = _failedTries.containsKey(key);
+    appLogger.info(
+        'ACK to ${contact.name} via ${_hops(route.pathBytes, route.hashSize)} '
+        'reached them (their next DM says so): the route delivered'
+        '${wasLost ? ", and the failure held against it is taken back" : ""}',
+        tag: 'PathGraph');
+    if (wasLost) {
+      graph.reportArrivedAfterAll(path,
+          contactPubkey: contact.publicKeyHex,
+          stride: route.hashSize,
+          hopsHeard: _failedTries.remove(key));
+    } else {
+      graph.reportSendResult(path, true,
+          contactPubkey: contact.publicKeyHex, stride: route.hashSize);
+    }
     _notifySoon();
   }
 

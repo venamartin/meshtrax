@@ -10016,6 +10016,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _meshTraxAcked.clear();
     _meshTraxAckWays.clear();
     _meshTraxAckRoute.clear();
+    _meshTraxAckRouteByTry.clear();
     _meshTraxTravelledTold.clear();
     // ACKs still held go nowhere: the link they were meant for is gone.
     for (final t in _rawPacketTimers) {
@@ -10216,6 +10217,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// message again.
   void Function(Contact contact, PathSelection route)? onMeshTraxAckLost;
 
+  /// An ACK of mine sent on [route] reached them: their next DM says so.
+  void Function(Contact contact, PathSelection route)? onMeshTraxAckArrived;
+
   /// A routed DM or ACK of theirs was heard after it had passed the
   /// repeaters [travelled], in that order, [width] bytes a code: each link
   /// between them carried it. (A flood's path is in the open and is read
@@ -10231,8 +10235,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   // number ([_sendMeshTraxAck]).
   final Map<String, Set<String>> _meshTraxAckWays = {};
 
-  // The route the last ACK of each of those messages went on.
+  // The route the last ACK of each of those messages went on, and the
+  // route of each ACK by its try, until their next DM says which reached
+  // them.
   final Map<String, PathSelection> _meshTraxAckRoute = {};
+  final Map<String, PathSelection> _meshTraxAckRouteByTry = {};
+
+  // By contact: the newest ACK of theirs that answered a try of mine, told
+  // back to them in my next DM (DirectMessage.ack_heard).
+  final Map<String, ({int number, int tryNumber})> _meshTraxAckHeardLast = {};
 
   // Routed packets of theirs already told to Pathfinder
   // ([onMeshTraxRouteTravelled]), by payload: how many repeaters of the
@@ -10448,6 +10459,20 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
 
     if ((_firmwareVerCode ?? 0) < 13) return;
+    // An ACK of mine that reached them: the way it went works.
+    final heard = dm.ackHeardOf;
+    final arrivedOn = heard == null
+        ? null
+        : _meshTraxAckRouteByTry.remove(
+            '${contact.publicKeyHex}:${heard.number}:${heard.tryNumber}');
+    if (arrivedOn != null) {
+      // Not also the ACK a later try is taken to have lost.
+      final answered = '${contact.publicKeyHex}:${heard!.number}';
+      if (identical(_meshTraxAckRoute[answered], arrivedOn)) {
+        _meshTraxAckRoute.remove(answered);
+      }
+      onMeshTraxAckArrived?.call(contact, arrivedOn);
+    }
     final message = '${contact.publicKeyHex}:${dm.number}';
     final arrived = (_meshTraxTriesArrived.remove(message) ?? 0) |
         (1 << (dm.tryNumber & 31));
@@ -10482,6 +10507,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       TimeoutHelper.ackDelayMs,
       message: message,
     );
+    final ackRoute = _meshTraxAckRoute[message];
+    if (ackRoute != null) {
+      _meshTraxAckRouteByTry['$message:${dm.tryNumber}'] = ackRoute;
+      _cap(_meshTraxAckRouteByTry);
+    }
     _appDebugLogService?.info(
       'MeshTrax DM ${dm.number} from ${contact.name}, try ${dm.tryNumber}: '
       'its ACK goes $way',
@@ -10532,9 +10562,12 @@ final frame = buildRepeaterDiscoveryFrame(tag);
           .where((r) => !tried.contains(_ackRouteKey(r)))
           .firstOrNull;
       tried.add(_ackRouteKey(route));
-      if (message != null && route != null && route.hopCount > 0) {
-        _meshTraxAckRoute[message] = route;
-        _cap(_meshTraxAckRoute);
+      if (message != null) {
+        _meshTraxAckRoute.remove(message);
+        if (route != null && route.hopCount > 0) {
+          _meshTraxAckRoute[message] = route;
+          _cap(_meshTraxAckRoute);
+        }
       }
     }
     final routeBytes = route == null
@@ -10664,6 +10697,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     final sent = _meshTraxSent.remove('$key:${ack.number}:${ack.tryNumber}');
     if (sent == null) return;
+    _meshTraxAckHeardLast[key] =
+        (number: ack.number, tryNumber: ack.tryNumber);
+    _cap(_meshTraxAckHeardLast);
     _meshTraxTried.remove(sent.message);
     if (sent.route.useFlood && ack.cameBy.isNotEmpty) {
       onPathReplyHeard?.call(
@@ -10766,7 +10802,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       pathBytes: s.useFlood ? _meshTraxFloodHops * width : route.length,
       scoped: scope != null,
     );
-    Uint8List blobWith(({Uint8List hears, Uint8List heardBy})? ends) =>
+    final lastAck = _meshTraxAckHeardLast[key];
+    final ackHeard = lastAck == null
+        ? 0
+        : DirectMessage.ackHeardFor(
+            number, lastAck.number, lastAck.tryNumber);
+    Uint8List blobWith(
+      ({Uint8List hears, Uint8List heardBy})? ends, {
+      bool ack = true,
+    }) =>
         frameDirect(
           DirectMessage(
             number: number,
@@ -10778,12 +10822,15 @@ final frame = buildRepeaterDiscoveryFrame(tag);
             codeBytes: width == 2 ? 0 : width,
             packing: packed.packing,
             text: packed.bytes,
+            ackHeard: ack ? ackHeard : 0,
           ).encode(),
           senderSortsAbove: _keySortsAbove(me, contact.publicKey),
         );
-    // The two lists go when there is room for them beside the text.
+    // Beside the text, while there is room: the two lists and the ACK of
+    // theirs that was heard, then that alone, then the text alone.
     var blob = blobWith(meshTraxEnds?.call(width));
     if (blob.length > room) blob = blobWith(null);
+    if (blob.length > room) blob = blobWith(null, ack: false);
     // A text too long to be heard goes the firmware's way.
     if (blob.length > room) return false;
     final payload = MeshTraxPacket.seal(
