@@ -788,16 +788,19 @@ Uint8List buildGetChannelFrame(int channelIndex) {
 
 // Build CMD_SEND_CHANNEL_DATA frame (companion v1.15+, firmware ver 11+),
 // sent by flood. Format: [cmd][channel_idx][path_len 0xFF][data_type u16 LE]
-// [payload]. The radio answers OK, or ERR when it can't send.
+// [payload]. With [zeroHop], path_len 0: the radio sends it DIRECT with no
+// hops, to the radios in range only (Mesh::sendZeroHop); no repeater passes
+// it on. The radio answers OK, or ERR when it can't send.
 Uint8List buildSendChannelDataFrame(
   int channelIndex,
   int dataType,
-  Uint8List payload,
-) {
+  Uint8List payload, {
+  bool zeroHop = false,
+}) {
   return Uint8List.fromList([
     cmdSendChannelData,
     channelIndex,
-    0xFF,
+    zeroHop ? 0 : 0xFF,
     dataType & 0xFF,
     dataType >> 8 & 0xFF,
     ...payload,
