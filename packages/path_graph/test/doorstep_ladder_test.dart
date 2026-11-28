@@ -46,7 +46,8 @@ void main() {
       [...a277, ...f5ee, ...aa77],
       [...a277, ...f5ee, ...c0de],
     ]) {
-      for (final id in ['x', 'y']) {
+      // Heard often: links a route can count on.
+      for (var id = 0; id < 30; id++) {
         graph.observePath(path(hops), 2, const ObservationOrigin.anonymous(),
             lastHopHeard: false, messageId: '$id$hops');
       }

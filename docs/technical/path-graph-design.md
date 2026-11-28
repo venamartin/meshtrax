@@ -58,6 +58,43 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-27 — a link is rated by how often it is heard.** Owner: "If
+  repeater A hears repeater B 1000 times it is good", asked for many
+  times. The 2026-08-05 entry below gave the sighting count to "prior
+  confidence and tie-breaks" only, and the tie-break was never built: a
+  link's quality was one fixed 50% unless it had been traced, so the
+  search ran on hop count. Field graph of 2026-11-27: 15,024 links,
+  859,636 sightings, counts from 1 to 28,333, and 96% of links at
+  exactly 50%; a DM went over a link heard twice beside links heard two
+  thousand times, and 10 of 11 routed tries in that log failed.
+  * **The rating:** sightings still held / (sightings still held + 10)
+    (`PathGraphConfig.heardHalf`). A traced dB still wins where there is
+    one; deliveries and failures of my own sends move it as before. Each
+    sighting is one transmission the far repeater received (a repeater
+    passes a flood on from the first copy it hears, `Mesh::routeRecvPacket`).
+  * **Sightings fade as they are added** (`EdgeState.addTraffic`, half
+    of them gone in 48 h). They were added to a lifetime sum that faded
+    only from the last sighting, so one sighting gave a link busy weeks
+    ago its whole count back. A delivery of mine counts as a sighting.
+  * **A link is left out only when it has faded to next to nothing**
+    (`pThreshold` 0.05, was 0.40): heard once, it serves for about two
+    days at a low rating. Failures lower a link's rating and no longer
+    shut out one that is heard often.
+  * **Counts stored before this are brought down once**
+    (`EdgeState.fadeLifetimeCount`, stamped `traffic_faded` in the
+    database and in a checkpoint): kept as they were, 81% of best routes
+    held a link not heard for three days.
+  * **Replay of that graph through the module, 3,087 contacts:** the
+    weakest link of a best route had been heard 15 times (median), now
+    170; under 20 times on 52% of routes, now 12%; a link not heard for
+    three days on 61%, now 5%. Routes are a repeater longer at the
+    median (4 to 5), and 16 of 467 routed contacts flood instead: no
+    corridor of links still heard.
+  * **Not shown yet:** that these routes deliver more often. The record
+    of the owner's own sends is too thin to tell (141 links tried three
+    times or more, a failure charged to every link of its route). The
+    simulator and the air are next.
+
 * **2026-11-24 — a failed try is charged by where it broke; one missed
   ACK drops nothing.** Owner: "it jumps to flood really fast on
   failures, even when the other person has not moved", "one failed ack
@@ -888,6 +925,9 @@ path is **first-arrival, not best** ("first packet wins") — worth
 remembering when judging firmware-chosen out_paths.
 
 ## Weight model
+
+> Changed 2026-11-27 (see the decision log): a link's quality comes from
+> how often it is heard. The "never as p" rule below is history.
 
 * **"p" must be defined (review fix — highest-leverage correction)**: an
   EWMA of passive sightings is a *traffic* tally, not a delivery
