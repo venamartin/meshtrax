@@ -5057,17 +5057,6 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hops',
-      one: 'hop',
-    );
-    return 'route ($count $_temp0, waarvan $guessed gegokt)';
-  }
-
-  @override
   String get chat_statusQueued => 'In wachtrij';
 
   @override
@@ -5144,10 +5133,6 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Het kost tijd. Een nieuwe kaart is nog leeg, dus in het begin gaan je berichten via flood, totdat Pathfinder een route heeft geleerd. Na een paar uur luisteren op één plek begint Pathfinder routes aan te bieden, en elk bericht dat aankomt of mislukt, maakt de kaart beter. Verwacht er de eerste dag weinig van, en telkens als je op een nieuwe plek bent, eerst weer minder.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Soms vult Pathfinder een gat op met een gok: een verbinding die tot nu toe alleen in de andere richting is gehoord. De statusregel onder het bericht toont dan hoeveel hops gegokt zijn. Komt het bericht aan, dan zijn ze bevestigd; mislukt het, dan kost dat één poging en wordt er niets onthouden.';
 
   @override
   String get pathfinderHelp_discover =>

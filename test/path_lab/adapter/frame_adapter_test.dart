@@ -481,12 +481,12 @@ void main() {
     expect(adapter.packetLog.first.verdict, contains('no logged flood'));
   });
 
-  test('a copy of the reply that arrives after PATH_UPDATED is kept as a hint',
+  test('a copy of the reply that arrives after PATH_UPDATED credits nobody anew',
       () {
     // Simulator (2026-10-24): the short copy came first, the radio stored
     // the route and told the app, and the long copy landed 0.6 s later.
-    // It is the same reply heard the long way round: a splice hint, no
-    // second doorstep credit.
+    // It is the same reply heard the long way round: no second doorstep
+    // credit.
     const roomPk = '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f'
         '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f' '3f'
         '3f' '3f' '3f' '3f' '3f' '3f';
@@ -503,8 +503,6 @@ void main() {
         payloadType: 0x08, path: [0x13, 0x12, 0xA2, 0x77], payload: [0xAB, 0x3F, 7, 7]));
 
     expect(graph.ingressCandidates(roomPk).single.repeaterHash, 'BEEF');
-    final hints = graph.hintsFor(roomPk).map((h) => h.hops.join(','));
-    expect(hints, ['5B98,F5EE,AA77,A277']);
     expect(adapter.packetLog.map((e) => e.verdict),
         anyElement(contains('late copy')));
   });

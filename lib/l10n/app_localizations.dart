@@ -8542,12 +8542,6 @@ abstract class AppLocalizations {
   /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
   String chat_kindRoute(int count);
 
-  /// A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).
-  ///
-  /// In en, this message translates to:
-  /// **'route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)'**
-  String chat_kindRouteGuessed(int count, int guessed);
-
   /// No description provided for @chat_statusQueued.
   ///
   /// In en, this message translates to:
@@ -8649,12 +8643,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
   String get pathfinderHelp_learning;
-
-  /// No description provided for @pathfinderHelp_guessed.
-  ///
-  /// In en, this message translates to:
-  /// **'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.'**
-  String get pathfinderHelp_guessed;
 
   /// No description provided for @pathfinderHelp_discover.
   ///

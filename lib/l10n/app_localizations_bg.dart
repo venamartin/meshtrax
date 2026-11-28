@@ -5094,17 +5094,6 @@ class AppLocalizationsBg extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'скока',
-      one: 'скок',
-    );
-    return 'маршрут ($count $_temp0, $guessed по предположение)';
-  }
-
-  @override
   String get chat_statusQueued => 'На опашка';
 
   @override
@@ -5182,10 +5171,6 @@ class AppLocalizationsBg extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Нужно му е време. Новата карта още не знае нищо, затова в началото съобщенията ви се изпращат до цялата мрежа, докато не научи маршрут. След няколко часа слушане на едно място започва да предлага маршрути и научава повече от всяка доставка или неуспех. Не очаквайте много от него през първия ден, нито всеки път, когато отидете на ново място.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Понякога запълва празнина с предположение: връзка, която е чувал да се използва само в обратната посока. Тогава редът под съобщението показва колко скока са по предположение. Доставката ги потвърждава; неуспехът струва един опит и нищо не се запомня.';
 
   @override
   String get pathfinderHelp_discover =>

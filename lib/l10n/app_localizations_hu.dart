@@ -5086,17 +5086,6 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ugrás',
-      one: 'ugrás',
-    );
-    return 'útvonal ($count $_temp0, ebből $guessed tippelt)';
-  }
-
-  @override
   String get chat_statusQueued => 'Sorban áll';
 
   @override
@@ -5174,10 +5163,6 @@ class AppLocalizationsHu extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Időre van szüksége. Egy friss térkép még semmit sem tud, ezért eleinte az üzenetei az egész hálózatra mennek ki, amíg meg nem tanul egy útvonalat. Miután néhány órán át egy helyen figyelt, elkezd útvonalakat ajánlani, és minden sikeres vagy sikertelen kézbesítésből tovább tanul. Az első napon ne várjon tőle sokat, és akkor sem, amikor új helyre megy.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Néha egy hiányzó szakaszt tippeléssel pótol: olyan összeköttetéssel, amelynek eddig csak az ellenkező irányú forgalmát hallotta. Ilyenkor az üzenet alatti sor azt is mutatja, hány ugrást tippelt. A sikeres kézbesítés igazolja ezeket; a kudarc egy kísérletbe kerül, és semmit sem jegyez meg belőle.';
 
   @override
   String get pathfinderHelp_discover =>

@@ -5073,23 +5073,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'saltos',
-      one: 'salto',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'supostos',
-      one: 'suposto',
-    );
-    return 'rota ($count $_temp0, $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'Na fila';
 
   @override
@@ -5166,10 +5149,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Ele precisa de tempo. Um mapa recém-criado não sabe nada, então no começo suas mensagens usam a inundação até ele aprender uma rota. Depois de algumas horas ouvindo no mesmo lugar, ele começa a oferecer rotas, e cada entrega ou falha o ensina um pouco mais. No primeiro dia, não espere muito dele, e sempre que você mudar de lugar ele volta a render menos.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Às vezes ele preenche uma lacuna com uma suposição: uma ligação que só ouviu sendo usada no sentido contrário. A linha da mensagem então mostra quantos saltos são supostos. Uma entrega os confirma; uma falha custa uma tentativa e nada fica guardado.';
 
   @override
   String get pathfinderHelp_discover =>

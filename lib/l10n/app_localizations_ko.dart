@@ -4851,17 +4851,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '홉',
-      one: '홉',
-    );
-    return '경로 ($count$_temp0, 그중 $guessed홉은 추측)';
-  }
-
-  @override
   String get chat_statusQueued => '대기 중';
 
   @override
@@ -4938,10 +4927,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       '학습에는 시간이 걸립니다. 새 지도는 아무것도 모르기 때문에 경로를 배울 때까지 처음에는 메시지가 플러드로 전송됩니다. 한곳에서 몇 시간 동안 들은 뒤부터 경로를 제안하기 시작하며, 전달에 성공하든 실패하든 그때마다 더 많이 배웁니다. 첫날에는 큰 기대를 하지 마세요. 새로운 곳으로 이동할 때마다 한동안은 다시 효과가 떨어집니다.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      '때로는 경로의 빈 곳을 추측으로 채우기도 합니다. 반대 방향으로 쓰이는 것만 들어 본 링크를 쓰는 것입니다. 그러면 메시지 상태 줄에 추측한 홉 수가 표시됩니다. 전달되면 그 홉이 맞다는 것이 확인되고, 실패하면 시도 한 번만 잃을 뿐 아무것도 기억하지 않습니다.';
 
   @override
   String get pathfinderHelp_discover =>

@@ -222,15 +222,4 @@ void main() {
     expect(bytesOf(graph.findPath(roomPk)), [...a277, ...beef],
         reason: 'the live route ends at a doorstep that fails them');
   });
-
-  test('a failed splice charges neither end', () {
-    setupMesh();
-    graph.reportSendResult(path([...a277, ...f5ee]), false,
-        contactPubkey: roomPk, guessedLinks: const [true]);
-    graph.reportSendResult(path([...a277, ...f5ee]), false,
-        contactPubkey: roomPk, guessedLinks: const [true]);
-
-    expect(bytesOf(graph.findPath(roomPk)), f5ee,
-        reason: 'guesses that fail say nothing about the doorsteps');
-  });
 }

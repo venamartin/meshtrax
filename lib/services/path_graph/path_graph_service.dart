@@ -1043,7 +1043,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       bool delivered, int? tripMs, int? hopsHeard) {
     final graph = _graph;
     if (graph == null || selection.useFlood) return;
-    final guessed = selection.guessedHops;
     final heard = (hopsHeard ?? 0) > 0;
     final where = hopsHeard == null
         ? ''
@@ -1055,17 +1054,13 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
                 'repeater is not in doubt';
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
-        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name}'
-        '${guessed > 0 ? ", $guessed hop${guessed == 1 ? "" : "s"} guessed" : ""})'
-        '${delivered ? " — first hop credited as hearing me" : ""}'
-        '${delivered && guessed > 0 ? ", guessed hops now proven" : ""}'
-        '${!delivered && guessed > 0 ? " — a guess failed, nothing recorded" : where}',
+        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name})'
+        '${delivered ? " — first hop credited as hearing me" : where}',
         tag: 'PathGraph');
     graph.reportSendResult(Uint8List.fromList(selection.pathBytes), delivered,
         contactPubkey: contact.publicKeyHex,
         tripTimeMs: tripMs,
         stride: selection.hashSize,
-        guessedLinks: selection.guessedLinks,
         // Heard passing it on, the first hop was credited then.
         proveEgress: !(delivered && heard),
         hopsHeard: hopsHeard);
@@ -1119,7 +1114,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           useFlood: false,
           source: RouteSource.graph,
           estDelivery: r.estDelivery,
-          guessedLinks: r.guessedLinks,
           liveAgeMillis: r.liveAgeMillis,
         );
     graph.setPicksOwnWayBack(

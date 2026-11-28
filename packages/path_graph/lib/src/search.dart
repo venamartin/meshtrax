@@ -6,9 +6,7 @@ import 'graph_store.dart';
 
 class RouteFound {
   const RouteFound(this.hops, this.estDelivery, this.hopProbabilities,
-      {required this.egressProven,
-      required this.ingressProven,
-      this.guessedLinks = const []});
+      {required this.egressProven, required this.ingressProven});
 
   /// Repeater hash hex per hop, first hop = my doorstep.
   final List<String> hops;
@@ -17,18 +15,13 @@ class RouteFound {
   /// Calibrated p of each between-hop link, hops[i]→hops[i+1].
   final List<double> hopProbabilities;
 
-  /// Per between-hop link: a reverse guessed from the contact's inbound
-  /// path (the splice), not a link observed in the sending direction.
-  final List<bool> guessedLinks;
-
   /// Whether each end of the route was proven in the sending direction.
   final bool egressProven;
   final bool ingressProven;
 }
 
-/// One usable step out of a repeater: where to, the link's key, its cost,
-/// and whether it is a splice guess rather than an observed link.
-typedef Step = (String to, (String, String) key, double cost, bool guessed);
+/// One usable step out of a repeater: where to, the link's key, its cost.
+typedef Step = (String to, (String, String) key, double cost);
 
 /// Multi-source/multi-target Dijkstra over the bidirectional-usable
 /// subgraph. Candidates enter through virtual edges costed by their
@@ -84,17 +77,10 @@ class PathFinder {
   ///
   /// Built once for a run of searches at one instant (the alternatives);
   /// each search adds its own penalties.
-  ///
-  /// [guessed] are the splice's reverse guesses for this query (already
-  /// vetted by the caller): each is usable at [Estimator.guessedCost]
-  /// unless the store already has that direction, in which case the store
-  /// decides and the guess is ignored. Observed links are listed first,
-  /// so a tie goes to the observed one.
   Map<String, List<Step>> links({
     required Map<(String, String), EdgeState> edges,
     required int nowMillis,
     Set<String> moving = const {},
-    Set<(String, String)> guessed = const {},
   }) {
     final freshMs = (config.mobileFreshMinutes * 60 * 1000).round();
     final adjacency = <String, List<Step>>{};
@@ -114,7 +100,6 @@ class PathFinder {
           to,
           entry.key,
           estimator.edgeCost(entry.value, nowMillis, reverse: reverse),
-          false
         ));
       }
       // The same link the other way, of which nothing is on record:
@@ -126,23 +111,14 @@ class PathFinder {
           from,
           (to, from),
           estimator.presumedCost(entry.value, nowMillis),
-          false
         ));
       }
-    }
-    for (final key in guessed) {
-      // The reverse of a link on record is a link already.
-      if (edges.containsKey(key) || edges.containsKey((key.$2, key.$1))) {
-        continue;
-      }
-      (adjacency[key.$1] ??= [])
-          .add((key.$2, key, estimator.guessedCost, true));
     }
     return adjacency;
   }
 
-  /// [adjacency] from [links] at the same [nowMillis], [moving] and
-  /// [guessed], or null to build it here.
+  /// [adjacency] from [links] at the same [nowMillis] and [moving], or
+  /// null to build it here.
   RouteFound? search({
     required List<Candidate> egress,
     required List<Candidate> ingress,
@@ -150,15 +126,13 @@ class PathFinder {
     required int nowMillis,
     Map<(String, String), double> penalties = const {},
     Set<String> moving = const {},
-    Set<(String, String)> guessed = const {},
     Map<String, List<Step>>? adjacency,
   }) {
     final sources = egress.where((c) => c.repeaterHash != directHash).toList();
     final targets = ingress.where((c) => c.repeaterHash != directHash).toList();
     if (sources.isEmpty || targets.isEmpty) return null;
 
-    adjacency ??= links(
-        edges: edges, nowMillis: nowMillis, moving: moving, guessed: guessed);
+    adjacency ??= links(edges: edges, nowMillis: nowMillis, moving: moving);
 
     const virtualSource = '<SRC>';
     final targetCost = {
@@ -167,10 +141,7 @@ class PathFinder {
 
     final dist = <String, double>{};
     final hopsTo = <String, int>{virtualSource: 0};
-    final guessesTo = <String, int>{virtualSource: 0};
     final prev = <String, String>{};
-    // Whether the step that reached each node was a guess.
-    final viaGuess = <String, bool>{};
     final visited = <String>{};
     // Next to settle: the cheapest, and of equal costs the one reached
     // first — so a tie always goes the same way.
@@ -189,9 +160,7 @@ class PathFinder {
       if (cost < (dist[s.repeaterHash] ?? double.infinity)) {
         reach(s.repeaterHash, cost);
         hopsTo[s.repeaterHash] = 1;
-        guessesTo[s.repeaterHash] = 0;
         prev[s.repeaterHash] = virtualSource;
-        viaGuess[s.repeaterHash] = false;
       }
     }
 
@@ -215,19 +184,15 @@ class PathFinder {
         }
       }
 
-      for (final (v, key, base, isGuess) in adjacency[u] ?? const <Step>[]) {
+      for (final (v, key, base) in adjacency[u] ?? const <Step>[]) {
         if (visited.contains(v)) continue;
         final hops = hopsTo[u]! + 1;
         if (hops > config.maxHops) continue;
-        final guesses = guessesTo[u]! + (isGuess ? 1 : 0);
-        if (guesses > config.maxGuessedHops) continue;
         final nd = dist[u]! + (base + (penalties[key] ?? 0));
         if (nd < (dist[v] ?? double.infinity)) {
           reach(v, nd);
           hopsTo[v] = hops;
-          guessesTo[v] = guesses;
           prev[v] = u;
-          viaGuess[v] = isGuess;
         }
       }
     }
@@ -235,37 +200,28 @@ class PathFinder {
     if (bestTarget == null) return null;
 
     final hops = <String>[];
-    final guessedLinks = <bool>[];
     String? cur = bestTarget;
     while (cur != null && cur != virtualSource) {
       hops.insert(0, cur);
-      if (prev[cur] != virtualSource) guessedLinks.insert(0, viaGuess[cur]!);
       cur = prev[cur];
     }
     return score(hops,
-        egress: sources,
-        ingress: targets,
-        edges: edges,
-        nowMillis: nowMillis,
-        guessedLinks: guessedLinks);
+        egress: sources, ingress: targets, edges: edges, nowMillis: nowMillis);
   }
 
   /// [hops] priced as a route. est. delivery: doorstep confidence ×
   /// forward-edge p × far-side confidence. Without the candidate terms a
   /// 1-hop route has no edges at all and reads 100% — a repeater merely
   /// HEARD once (inferred, unproven in the sending direction) must not
-  /// display certainty the cost function never believed.
-  ///
-  /// [guessedLinks], per between-hop link, marks the splice's guesses:
-  /// the store has no such link, so they are priced at
-  /// [PathGraphConfig.guessQ] rather than read as certain.
+  /// display certainty the cost function never believed. A link nothing
+  /// was heard on in this direction is priced as its other direction is
+  /// ([Estimator.presumedP]).
   RouteFound score(
     List<String> hops, {
     required List<Candidate> egress,
     required List<Candidate> ingress,
     required Map<(String, String), EdgeState> edges,
     required int nowMillis,
-    List<bool> guessedLinks = const [],
   }) {
     final source =
         egress.where((s) => s.repeaterHash == hops.first).firstOrNull;
@@ -275,28 +231,20 @@ class PathFinder {
         (source == null ? 1.0 : candidateConfidence(source, nowMillis)) *
             (target == null ? 1.0 : candidateConfidence(target, nowMillis));
     final hopProbabilities = <double>[];
-    final guesses = <bool>[];
     for (var i = 0; i < hops.length - 1; i++) {
-      final guessed = i < guessedLinks.length && guessedLinks[i];
       final e = edges[(hops[i], hops[i + 1])];
       final reverse = edges[(hops[i + 1], hops[i])];
-      final p = guessed
-          ? config.guessQ
-          : e != null
-              ? estimator
-                  .calibratedP(e, nowMillis, reverse: reverse)
-                  .clamp(0.01, 1.0)
-              : reverse != null
-                  ? estimator.presumedP(reverse, nowMillis).clamp(0.01, 1.0)
-                  : 1.0;
-      hopProbabilities.add(p);
-      guesses.add(guessed);
-      delivery *= p;
+      final p = e != null
+          ? estimator.calibratedP(e, nowMillis, reverse: reverse)
+          : reverse != null
+              ? estimator.presumedP(reverse, nowMillis)
+              : 1.0;
+      hopProbabilities.add(p.clamp(0.01, 1.0));
+      delivery *= hopProbabilities.last;
     }
     return RouteFound(hops, delivery, hopProbabilities,
         egressProven: source?.proven ?? false,
-        ingressProven: target?.proven ?? false,
-        guessedLinks: guesses);
+        ingressProven: target?.proven ?? false);
   }
 }
 

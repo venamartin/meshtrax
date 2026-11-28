@@ -5101,23 +5101,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'sauts',
-      one: 'saut',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'devinés',
-      one: 'deviné',
-    );
-    return 'itinéraire ($count $_temp0, dont $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'En file d\'attente';
 
   @override
@@ -5194,10 +5177,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Il lui faut du temps. Une carte toute neuve ne sait rien : au début, vos messages sont donc envoyés à tout le réseau, jusqu\'à ce qu\'il apprenne un itinéraire. Après quelques heures d\'écoute au même endroit, il commence à proposer des itinéraires, et chaque remise ou échec lui en apprend davantage. N\'en attendez pas grand-chose le premier jour, ni à chaque fois que vous changez d\'endroit.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Parfois, il comble un vide en devinant : un lien qu\'il n\'a entendu utilisé que dans l\'autre sens. La ligne sous le message indique alors combien de sauts ont été devinés. Une remise les confirme ; un échec coûte une tentative, et rien n\'est retenu.';
 
   @override
   String get pathfinderHelp_discover =>

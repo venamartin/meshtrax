@@ -753,7 +753,6 @@ class MessageRetryService extends ChangeNotifier {
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
       routeSource: selection.source ?? RouteSource.firmware,
-      guessedHops: selection.guessedHops,
     );
     // A flood's echoes are told apart by attempt from its start.
     if (selection.useFlood && !(before?.useFlood ?? false)) {
@@ -811,7 +810,6 @@ class MessageRetryService extends ChangeNotifier {
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
       routeSource: selection.source ?? RouteSource.firmware,
-      guessedHops: selection.guessedHops,
     );
 
     final attempt = message.retryCount;

@@ -147,10 +147,9 @@ void main() {
 
   String fmtRoute(PathGraph graph, PathResult r) => switch (r) {
         DirectResult() => 'direct',
-        RouteResult(:final pathBytes, :final estDelivery, :final guessedHops) =>
+        RouteResult(:final pathBytes, :final estDelivery) =>
           '${PathHelper.formatPathHex(pathBytes, stride: graph.hashWidthBytes)} '
-              '(${(estDelivery * 100).toStringAsFixed(0)}%'
-              '${guessedHops > 0 ? ", $guessedHops guessed" : ""})',
+              '(${(estDelivery * 100).toStringAsFixed(0)}%)',
         FloodResult(:final reason) => 'flood — ${reason.name}',
       };
 
@@ -177,12 +176,6 @@ void main() {
       blog('   alternative ${i + 1}:           ${fmtRoute(graph, alt)}');
     }
     blog('route back:                ${fmtRoute(graph, graph.findReturnPath(pk))}');
-    final hints = graph.hintsFor(pk);
-    blog('inbound paths kept as hints (${hints.length}): '
-        '${hints.isEmpty ? "(none)" : hints.map((h) => '${h.hops.join(",")} @${DateTime.fromMillisecondsSinceEpoch(h.at).toIso8601String().substring(11, 19)}').join(' | ')}');
-    final guesses = graph.hintGuessesFor(pk);
-    blog('reverse guesses the guard allows (${guesses.length}): '
-        '${guesses.isEmpty ? "(none)" : guesses.map((g) => '${g.$1}→${g.$2}').join(' ')}');
   }
 
   Contact live(Contact c) => radio.connector.contacts
@@ -207,7 +200,7 @@ void main() {
         .firstOrNull;
     blog('post "$text": status $status · attempts ${(row?.retryCount ?? 0) + 1} · '
         'went ${row == null || (row.pathLength ?? -1) < 0 ? "as a flood" : "on ${PathHelper.formatPathHex(row.pathBytes, stride: row.pathHashSize ?? 2)}"}'
-        '${(row?.guessedHops ?? 0) > 0 ? " (${row!.guessedHops} guessed)" : ""} · '
+        ' · '
         'source ${row?.routeSource.name} · trip ${row?.tripTimeMs ?? "-"} ms');
     await Future<void>.delayed(const Duration(seconds: 8));
     return status;
@@ -408,34 +401,39 @@ void main() {
       return;
     }
     final pk = roomA!.publicKeyHex;
-    // Removing links to force a splice was wrong: it deleted the very
-    // corridors a splice joins onto. The splice fires or not on its own.
+    // A route over a link nothing was heard on in that direction, presumed
+    // from the other (owner, 2026-11-28): two posts show whether it carries.
     final result = graph.findPath(pk);
-    dump('before the splice posts', roomA!);
-    if (result is RouteResult && result.guessedHops > 0) {
-      blog('Pathfinder offers a SPLICE with ${result.guessedHops} guessed hop(s): '
-          '${fmtRoute(graph, result)}');
-    } else {
-      blog('no splice offered: best is ${fmtRoute(graph, result)} '
-          '(a fully observed route, a live PATH route, or no usable hint) '
+    dump('before the posts', roomA!);
+    List<(String, String)> presumed(RouteResult r) {
+      final edges = graph.snapshot().edges;
+      final hops = [
+        for (var i = 0; i < r.pathBytes.length; i += 2)
+          hex(r.pathBytes.sublist(i, i + 2)).replaceAll(' ', '')
+      ];
+      return [
+        for (var i = 0; i < hops.length - 1; i++)
+          if (!edges.containsKey((hops[i], hops[i + 1])))
+            (hops[i], hops[i + 1])
+      ];
+    }
+
+    final links = result is RouteResult ? presumed(result) : const [];
+    if (links.isEmpty) {
+      blog('no presumed link on the best route: ${fmtRoute(graph, result)} '
           '— no posts, nothing new to learn on the air');
       return;
     }
-    await post(roomA!, 'Test $hm: guess 1');
-    await post(roomA!, 'Test $hm: guess 2');
-    dump('after the splice posts', roomA!);
+    blog('Pathfinder offers a route with ${links.length} presumed link(s): '
+        '${fmtRoute(graph, result)}');
+    await post(roomA!, 'Test $hm: presumed 1');
+    await post(roomA!, 'Test $hm: presumed 2');
+    dump('after the posts', roomA!);
     final snap = graph.snapshot();
-    if (result.guessedHops > 0) {
-      final hops = [
-        for (var i = 0; i < result.pathBytes.length; i += 2)
-          hex(result.pathBytes.sublist(i, i + 2)).replaceAll(' ', '')
-      ];
-      for (var i = 0; i < hops.length - 1; i++) {
-        if (!result.guessedLinks[i]) continue;
-        final e = snap.edges[(hops[i], hops[i + 1])];
-        blog('guessed link ${hops[i]}→${hops[i + 1]} after the posts: '
-            '${e == null ? "not in the graph (no delivery proved it)" : "s=${e.s} n=${e.n} (proven forward)"}');
-      }
+    for (final (from, to) in links) {
+      final e = snap.edges[(from, to)];
+      blog('presumed link $from→$to after the posts: '
+          '${e == null ? "nothing recorded" : "s=${e.s} n=${e.n} failures ${e.failWeight.toStringAsFixed(1)}"}');
     }
   });
 
@@ -586,8 +584,7 @@ void main() {
           r.attempt = row.retryCount;
           r.route = route;
           blog('reply ${r.n} attempt ${row.retryCount + 1}: $route · '
-              '${row.routeSource.name}'
-              '${row.guessedHops > 0 ? ' · ${row.guessedHops} guessed' : ''}');
+              '${row.routeSource.name}');
         }
         if (row.status != r.status) {
           r.status = row.status;

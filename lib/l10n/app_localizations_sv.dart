@@ -5033,17 +5033,6 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'hopp',
-      one: 'hopp',
-    );
-    return 'rutt ($count $_temp0, varav $guessed på gissning)';
-  }
-
-  @override
   String get chat_statusQueued => 'I kö';
 
   @override
@@ -5121,10 +5110,6 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Det tar tid. En ny karta är tom, så i början skickas dina meddelanden med översvämning tills den har lärt sig en rutt. Efter några timmars lyssnande på samma plats börjar Pathfinder erbjuda rutter, och den lär sig mer av varje leverans och varje misslyckande. Räkna inte med mycket den första dagen, och inte heller varje gång du kommer till en ny plats.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Ibland fyller Pathfinder en lucka med en gissning: en länk som bara har hörts i motsatt riktning. Statusraden under meddelandet visar då hur många hopp som gissades. Kommer meddelandet fram, är de bekräftade; misslyckas det, kostar det ett försök och inget sparas.';
 
   @override
   String get pathfinderHelp_discover =>

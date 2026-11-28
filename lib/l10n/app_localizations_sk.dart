@@ -5058,27 +5058,6 @@ class AppLocalizationsSk extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'skokov',
-      many: 'skoku',
-      few: 'skoky',
-      one: 'skok',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'odhadnutých',
-      many: 'odhadnutého',
-      few: 'odhadnuté',
-      one: 'odhadnutý',
-    );
-    return 'trasou ($count $_temp0, $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'Vo fronte';
 
   @override
@@ -5157,10 +5136,6 @@ class AppLocalizationsSk extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Potrebuje čas. Nová mapa ešte nič nevie, takže spočiatku vaše správy odchádzajú záplavou, kým sa nenaučí trasu. Po niekoľkých hodinách počúvania na jednom mieste začne ponúkať trasy a s každým doručením či zlyhaním sa naučí viac. Prvý deň od neho veľa nečakajte a po každom presune na nové miesto opäť menej.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Niekedy vyplní medzeru odhadom: spojením, ktoré zatiaľ počul len v opačnom smere. Riadok pod správou potom ukáže, koľko skokov bolo odhadnutých. Doručenie ich potvrdí; zlyhanie stojí jeden pokus a nič sa neuloží.';
 
   @override
   String get pathfinderHelp_discover =>

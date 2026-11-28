@@ -811,7 +811,6 @@ class MessageStore {
       'pathHashSize': msg.pathHashSize,
       if (msg.pathFromPacket) 'pathFromPacket': true,
       'routeSource': msg.routeSource.name,
-      'guessedHops': msg.guessedHops,
       'reactions': msg.reactions,
       'reactionSenders': msg.reactionSenders,
       'reactionStatuses': msg.reactionStatuses.map(
@@ -866,7 +865,6 @@ class MessageStore {
       routeSource: RouteSource.values
               .asNameMap()[json['routeSource'] as String?] ??
           RouteSource.firmware,
-      guessedHops: json['guessedHops'] as int? ?? 0,
       reactions:
           (json['reactions'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, value as int),

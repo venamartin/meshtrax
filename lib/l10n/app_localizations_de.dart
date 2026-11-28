@@ -5082,17 +5082,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Sprünge',
-      one: 'Sprung',
-    );
-    return 'Route ($count $_temp0, davon $guessed geraten)';
-  }
-
-  @override
   String get chat_statusQueued => 'In Warteschlange';
 
   @override
@@ -5170,10 +5159,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Pathfinder braucht Zeit. Eine neue Karte ist leer, deshalb fluten Ihre Nachrichten anfangs das Netz, bis Pathfinder eine Route gelernt hat. Nach einigen Stunden Zuhören an einem Ort beginnt Pathfinder, Routen anzubieten, und jede Zustellung und jeder Fehlschlag bringt ihm mehr bei. Erwarten Sie am ersten Tag nicht viel davon, und nach jedem Ortswechsel zunächst wieder weniger.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Manchmal schließt Pathfinder eine Lücke, indem er rät: mit einer Verbindung, die er bisher nur in der Gegenrichtung gehört hat. Die Statuszeile der Nachricht zeigt dann, wie viele Sprünge geraten wurden. Eine Zustellung bestätigt sie; ein Fehlschlag kostet einen Versuch, und es wird nichts gespeichert.';
 
   @override
   String get pathfinderHelp_discover =>

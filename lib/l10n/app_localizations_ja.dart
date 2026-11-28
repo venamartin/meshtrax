@@ -4840,17 +4840,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ホップ',
-      one: 'ホップ',
-    );
-    return 'ルート（$count$_temp0、うち$guessedホップは推測）';
-  }
-
-  @override
   String get chat_statusQueued => '送信待ち';
 
   @override
@@ -4927,10 +4916,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       '学習には時間がかかります。まっさらな地図は何も知らないので、ルートを学習するまで、最初のうちはメッセージがフラッドで送られます。1か所で数時間聞き続けるとルートを提案し始め、届いても届かなくても、そのたびにさらに学習します。初日はあまり期待しないでください。新しい場所に移るたびに、しばらくはまた効果が下がります。';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'ルートに足りない部分があると、推測で補うこともあります。推測とは、逆方向で使われるのを聞いただけのリンクのことです。その場合、メッセージの状態表示に推測したホップ数が示されます。届けば推測が正しかったことが確かめられ、届かなくても、むだになるのは1回の試行だけで、何も記録されません。';
 
   @override
   String get pathfinderHelp_discover =>

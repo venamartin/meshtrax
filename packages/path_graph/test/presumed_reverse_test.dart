@@ -79,8 +79,6 @@ void main() {
 
     final route = graph.findPath(bobPk) as RouteResult;
     expect(route.pathBytes, wayToBob);
-    expect(route.guessedLinks, everyElement(isFalse),
-        reason: 'presumed links are links, not guesses');
     expect(route.hopProbabilities[1], greaterThan(0.7),
         reason: 'AD77→1000, never heard that way, rated as 1000→AD77 is');
     expect(route.hopProbabilities[1], closeTo(rating('1000', 'AD77'), 1e-9));
