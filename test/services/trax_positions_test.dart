@@ -38,6 +38,7 @@ import 'package:meshtrax/widgets/app_map.dart';
 import 'package:meshtrax/widgets/map_controls.dart';
 import 'package:meshtrax/widgets/speed_card.dart';
 import 'package:meshtrax/widgets/trax_sheet.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxmap/traxmap.dart';
@@ -261,6 +262,10 @@ Contact _contact(String name, int b) => Contact(
 final _t0 = DateTime(2026, 11, 22, 9);
 const _here = (lat: 36.4570, lon: -116.8660);
 
+/// Half a step of a report's position on the air: 2^-24 of 180° north and of
+/// 360° east.
+const _halfStepLat = 5.4e-6, _halfStepLon = 1.1e-5;
+
 TraxReport _report(
   int b, {
   DateTime? sentAt,
@@ -278,12 +283,10 @@ TraxReport _report(
 }) => TraxReport(
   seq: 0,
   senderPrefix: _key(b).sublist(0, 4),
-  session: 7,
   sentAt: sentAt ?? _t0,
   lat: lat,
   lon: lon,
   mayBeOld: mayBeOld,
-  requester: true,
   name: name,
   track: track,
   heading: heading,
@@ -312,7 +315,7 @@ ChannelDatagram _datagram(
 /// later version starts with, then [rest].
 Uint8List _later(int b, {DateTime? sentAt, List<int> rest = const []}) {
   final out = Uint8List(TraxHeader.size + rest.length)
-    ..[0] = 0x21
+    ..[0] = 0x31
     ..setRange(1, 5, _key(b))
     ..setRange(TraxHeader.size, TraxHeader.size + rest.length, rest);
   final seconds = (sentAt ?? _t0).millisecondsSinceEpoch ~/ 1000;
@@ -407,8 +410,8 @@ void main() {
       radio.datagrams.add(_datagram(_report(0x11, lat: 36.5, lon: -116.9)));
 
       final p = positions.of(bo)!;
-      expect(p.lat, closeTo(36.5, 1e-9));
-      expect(p.lon, closeTo(-116.9, 1e-9));
+      expect(p.lat, closeTo(36.5, _halfStepLat));
+      expect(p.lon, closeTo(-116.9, _halfStepLon));
       expect(p.heardAt, _t0);
       expect(positions.of(cy), isNull);
     });
@@ -431,6 +434,26 @@ void main() {
 
       expect(positions.all, isEmpty);
       expect(positions.newer, {'22222222': _t0});
+    });
+
+    test('an ask, and MeshTrax 1.12.0\'s reports and asks, put no one on the '
+        'map and say nothing', () {
+      // Version 1, with a 12-byte header of its own.
+      Uint8List v1(int first) => Uint8List(29)
+        ..[0] = first
+        ..setRange(2, 6, _key(0x22));
+      final ask = TraxAsk(
+        senderPrefix: _key(0x33).sublist(0, 4),
+        sentAt: _t0,
+        target: _key(0x22).sublist(0, 4),
+      );
+      radio.datagrams
+        ..add(_bytes(v1(0x12)))
+        ..add(_bytes(v1(0x13)))
+        ..add(_bytes(ask.encode()));
+
+      expect(positions.all, isEmpty);
+      expect(positions.newer, isEmpty);
     });
 
     test('a report this app reads ends it, and it goes a day after they '
@@ -470,7 +493,7 @@ void main() {
           ),
         );
 
-      expect(positions.of(bo)!.lat, closeTo(36.5, 1e-9));
+      expect(positions.of(bo)!.lat, closeTo(36.5, _halfStepLat));
     });
 
     test('from the backlog, it was heard when it was sent', () {
@@ -611,7 +634,11 @@ void main() {
         north: -2500,
       );
       expect(positions.of(bo)!.track.pieces, hasLength(2));
-      expect(positions.of(bo)!.lat, closeTo(_here.lat, 1e-6), reason: 'older');
+      expect(
+        positions.of(bo)!.lat,
+        closeTo(_here.lat, _halfStepLat),
+        reason: 'older',
+      );
     });
 
     test('each piece goes as many hours after its last point as its member '
@@ -636,7 +663,7 @@ void main() {
         async.elapse(const Duration(minutes: 15));
         expect(positions.of(bo)!.track.isEmpty, isTrue);
         expect(positions.of(bo)!.line, isEmpty, reason: 'the tail too');
-        expect(positions.of(bo)!.lat, closeTo(_here.lat, 1e-6));
+        expect(positions.of(bo)!.lat, closeTo(_here.lat, _halfStepLat));
         positions.dispose();
       });
     });
@@ -789,6 +816,13 @@ void main() {
         );
         radio.read(36.4570, -116.8660);
         radio.changedAt = _t0;
+        PackageInfo.setMockInitialValues(
+          appName: 'MeshTrax',
+          packageName: 'com.vena.meshtrax',
+          version: '1.12.1',
+          buildNumber: '252',
+          buildSignature: '',
+        );
         final beacon = TraxBeaconService(
           radio,
           trax,
@@ -807,17 +841,17 @@ void main() {
         expect(type, traxshareDataType);
         final r = TraxReport.decode(payload)!;
         expect(r.senderPrefix, _key(0xAB).sublist(0, 4));
-        expect(r.lat, closeTo(36.4570, 1e-9));
+        expect(r.lat, closeTo(36.4570, _halfStepLat));
         expect(r.altitude, -86);
         expect(r.battery, 81);
-        expect(r.requester, isTrue);
         expect(r.mayBeOld, isFalse);
-        expect(r.name, 'Trail Radio');
+        expect((r.name, r.build), ('Trail Radio', 252));
 
         // Two people: every minute, ±20 %.
         async.elapse(const Duration(seconds: 72));
         expect(radio.sends, hasLength(2));
-        expect(TraxReport.decode(radio.sends.last.$3)!.name, isNull);
+        final next = TraxReport.decode(radio.sends.last.$3)!;
+        expect((next.name, next.build), (null, null));
 
         trax.on = false;
         trax.changed();
@@ -1016,9 +1050,7 @@ void main() {
                 channel: _trip,
                 dataType: traxshareDataType,
                 payload: TraxAsk(
-                  seq: 1,
                   senderPrefix: _key(0x11).sublist(0, 4),
-                  session: 3,
                   sentAt: fake(),
                   target: _key(target).sublist(0, 4),
                   have: have,
@@ -1498,7 +1530,11 @@ void main() {
       double lat() => marker(tester, 'trip:11111111').position.latitude;
       expect(ids(tester), isNot(contains('node:${boOnMap.publicKeyHex}')));
       expect(marker(tester, 'trip:11111111').label, 'Bo');
-      expect(lat(), closeTo(36.4570, 1e-6), reason: 'TRAX, newer than advert');
+      expect(
+        lat(),
+        closeTo(36.4570, _halfStepLat),
+        reason: 'TRAX, newer than advert',
+      );
       expect(
         ids(tester),
         contains('node:${cyOnMap.publicKeyHex}'),

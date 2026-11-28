@@ -6,6 +6,7 @@ import 'package:traxshare/traxshare.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../models/channel_datagram.dart';
+import '../utils/app_build.dart';
 import '../utils/app_logger.dart';
 import 'trax_service.dart';
 import 'trax_track.dart';
@@ -41,6 +42,7 @@ class TraxBeaconService extends ChangeNotifier {
     track = TraxTrack(_connector, clock: _clock, random: _random)
       ..addListener(notifyListeners);
     _asks = _connector.channelDatagrams.listen(_onDatagram);
+    unawaited(appBuild().then((build) => _build = build));
     _connector.addListener(_sync);
     _trax.addListener(_sync);
     _sync();
@@ -56,7 +58,11 @@ class TraxBeaconService extends ChangeNotifier {
   final DateTime Function() _clock;
   late final StreamSubscription<ChannelDatagram> _asks;
 
-  /// The radio's name goes in the first report, then this often.
+  /// This app's build, beside the name; 0 until the platform says.
+  int _build = 0;
+
+  /// The radio's name and this app's build go in the first report, then
+  /// this often.
   static const nameEvery = Duration(minutes: 30);
 
   /// A reading this recent is sent as it is; an older one is read again.
@@ -75,7 +81,6 @@ class TraxBeaconService extends ChangeNotifier {
   bool _running = false;
   bool _sending = false;
   bool _disposed = false;
-  int _session = 0;
   int _seq = 0;
   DateTime? _nameSentAt;
   DateTime? _sentAt;
@@ -111,7 +116,6 @@ class TraxBeaconService extends ChangeNotifier {
     if (wanted && c.supportsChannelData) {
       if (_running) return;
       _running = true;
-      _session = _random.nextInt(0x10000);
       _seq = 0;
       _nameSentAt = null;
       _trailSentAt = null;
@@ -195,7 +199,6 @@ class TraxBeaconService extends ChangeNotifier {
       return false;
     }
     final now = _clock();
-    final changed = c.selfGpsChangedAt;
     final trailDue =
         _trailAsked ||
         _trailSentAt == null ||
@@ -214,8 +217,9 @@ class TraxBeaconService extends ChangeNotifier {
         !olderDue &&
         (_nameSentAt == null || now.difference(_nameSentAt!) >= nameEvery);
     final name = nameDue ? c.selfName : null;
+    final build = nameDue ? _build : 0;
     final anchor = wirePosition(gps.latitude, gps.longitude);
-    final room = TraxReport.trackRoom(name: name);
+    final room = TraxReport.trackRoom(name: name, build: build);
     final block = trailDue
         ? track.trail(anchor, room)
         : answering
@@ -227,7 +231,6 @@ class TraxBeaconService extends ChangeNotifier {
     final report = TraxReport(
       seq: _seq,
       senderPrefix: Uint8List.fromList(key.sublist(0, 4)),
-      session: _session,
       sentAt: now,
       lat: gps.latitude,
       lon: gps.longitude,
@@ -236,12 +239,11 @@ class TraxBeaconService extends ChangeNotifier {
       heading: motion?.heading,
       speed: motion?.speed,
       stillFor: motion?.stillFor,
-      fixAge: changed == null ? null : now.difference(changed),
       battery: c.batteryPercent,
       mayBeOld: !c.selfGpsIsFresh,
-      requester: true,
       icon: _trax.setup.icon,
       name: name,
+      build: build == 0 ? null : build,
       track: block,
     );
     _seq = (_seq + 1) & 0xFF;

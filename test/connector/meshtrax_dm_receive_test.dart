@@ -12,6 +12,7 @@ import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traxproto/traxproto.dart';
+import 'package:traxshare/traxshare.dart';
 
 // MeshTrax's own DM: a packet the other phone built, which the radio knows
 // no channel for and only logs. The app opens it from any copy heard, stores
@@ -362,6 +363,24 @@ void main() {
     c.handleFrameForTest(Uint8List.fromList(
         [27, 0x30, 0, 0, 0, 0xFF, 0x72, 0x01, blob.length, ...blob]));
     expect(c.runsMeshTrax(a.publicKeyHex), isFalse);
+  });
+
+  test('a TRAX packet marks its sender, read from its header; one from '
+      '1.12.0 marks nobody', () async {
+    await connect();
+    void heard(List<int> blob) => c.handleFrameForTest(Uint8List.fromList(
+        [27, 0x30, 0, 0, 0, 0xFF, 0x71, 0x01, blob.length, ...blob]));
+    // Version 1 had the key's start at bytes 2 to 5.
+    heard([0x12, 7, ...aPub.sublist(0, 4), ...List.filled(23, 0)]);
+    expect(c.runsMeshTrax(a.publicKeyHex), isFalse);
+    heard(TraxReport(
+      seq: 0,
+      senderPrefix: aPub.sublist(0, 4),
+      sentAt: DateTime.utc(2026, 11, 27, 12),
+      lat: 36.457,
+      lon: -116.866,
+    ).encode());
+    expect(c.runsMeshTrax(a.publicKeyHex), isTrue);
   });
 
   test("without the radio's key nothing is opened", () async {

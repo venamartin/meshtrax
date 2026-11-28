@@ -8,12 +8,13 @@ import 'package:traxshare/traxshare.dart';
 const _v2 = [0x21, 0xB4, 0xE1, 0x02, 0x9C, 0x2D, 0xE3, 0x01, 0x6B];
 
 void main() {
-  test('the header of version 2', () {
+  test('the header of version 2, both ways', () {
     final h = TraxHeader.decode(Uint8List.fromList(_v2))!;
     expect(h.version, 2);
     expect(h.kind, 1);
     expect(h.senderPrefix, [0xB4, 0xE1, 0x02, 0x9C]);
     expect(h.sentAt, DateTime.utc(2026, 11, 21, 18, 30, 5));
+    expect(h.encode(), _v2);
   });
 
   test('a packet from the future reads the same: a later version, another '

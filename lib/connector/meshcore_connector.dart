@@ -12,7 +12,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
 import 'package:traxpix/traxpix.dart' show dataTypeMeshTraxPhoto;
 import 'package:traxproto/traxproto.dart';
-import 'package:traxshare/traxshare.dart' show traxshareDataType;
+import 'package:traxshare/traxshare.dart' show TraxHeader, traxshareDataType;
 
 import '../models/channel.dart';
 import '../models/channel_request.dart' show dataTypeChannelRequest;
@@ -10149,10 +10149,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// trax-mode.md, channel-requests.md). The one chat contact whose key
   /// starts that way runs MeshTrax (owner, 2026-11-27: "a photo send would
   /// tell us too"). Two contacts that start alike are left alone.
-  void _noteMeshTraxChannelPacket(int dataType, List<int> blob) {
+  void _noteMeshTraxChannelPacket(int dataType, Uint8List blob) {
     final prefix = switch (dataType) {
       dataTypeMeshTraxPhoto when blob.length >= 2 => blob.sublist(0, 2),
-      traxshareDataType when blob.length >= 6 => blob.sublist(2, 6),
+      traxshareDataType => TraxHeader.decode(blob)?.senderPrefix,
       dataTypeChannelRequest when blob.length >= 7 => blob.sublist(5, 7),
       _ => null,
     };

@@ -3,3 +3,4 @@
 library;
 
 export 'src/direct_message.dart';
+export 'src/trax.dart';
