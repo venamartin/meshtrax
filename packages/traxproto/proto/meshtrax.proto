@@ -68,6 +68,12 @@ message DirectMessage {
 
   // The text, packed as `packing` says.
   bytes text = 9;
+
+  // The newest answer (DirectAck) of the receiver's that reached the sender,
+  // so the receiver knows the way it sent that answer works: (this message's
+  // `number` less the answered message's) x 32 + the answered `try`. Two
+  // bytes on the air for the message before this one. 0, not sent: none.
+  uint32 ack_heard = 10;
 }
 
 // The answer to a DirectMessage: data type 0x0176, sealed the same way,

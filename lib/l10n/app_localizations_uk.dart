@@ -4266,6 +4266,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get channelPath_directPath => 'Прямий';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Отримано дорогою, лишалося: $hops';
   }
@@ -5102,19 +5114,6 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'стрибків',
-      many: 'стрибків',
-      few: 'стрибки',
-      one: 'стрибок',
-    );
-    return 'маршрут ($count $_temp0, припущених: $guessed)';
-  }
-
-  @override
   String get chat_statusQueued => 'У черзі';
 
   @override
@@ -5194,10 +5193,6 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Йому потрібен час. Нова карта ще нічого не знає, тож спочатку ваші повідомлення надсилаються на всю мережу, доки він не вивчить маршрут. Після кількох годин прослуховування в одному місці він починає пропонувати маршрути, а кожна доставка чи невдача вчить його чогось нового. У перший день не чекайте від нього багато, а в кожному новому місці — знову менше.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Іноді він заповнює прогалину припущенням: зв\'язком, який чув лише в зворотному напрямку. Тоді в рядку стану повідомлення видно, скільки стрибків припущено. Доставка їх підтверджує, а невдача коштує одну спробу, і нічого не запам\'ятовується.';
 
   @override
   String get pathfinderHelp_discover =>

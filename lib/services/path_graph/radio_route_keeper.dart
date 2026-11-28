@@ -27,13 +27,6 @@ import '../../utils/app_logger.dart';
 /// a stored route Pathfinder no longer lists is replaced or cleared at once;
 /// after a ladder of mine ran out, the contact is left alone until the graph
 /// has heard of its failures ([failedLadderHold]).
-///
-/// Splices (owner, 2026-10-24): a route with guessed hops may hold the
-/// stored route only at rung 0 and only with one guess; from the first
-/// step down the rungs are proven routes, then flood. A splice whose ACK
-/// was lost is retired for that contact, here and not in the graph, until
-/// a send of mine delivers on it — otherwise the same wrong guess would be
-/// written again for every new message while the hint stays fresh.
 class RadioRouteKeeper {
   RadioRouteKeeper({
     required this.contacts,
@@ -70,31 +63,9 @@ class RadioRouteKeeper {
   final Map<String, DateTime> _lastWrite = {};
   // Per contact: left alone until the timer fires, see [onLadderEnded].
   final Map<String, Timer> _holdOff = {};
-  // Per contact: guessed links ("FROM>TO") of splices that lost an ACK while
-  // held. Any route carrying one is not held again until a send of mine
-  // delivers over that link (simulator 2026-10-24: retiring the route let
-  // the same wrong guess back in on every alternative that carried it).
-  final Map<String, Set<String>> _retired = {};
-
-  /// How many guessed hops a route may carry and still hold the stored
-  /// route at rung 0.
-  static const maxGuessedHopsHeld = 1;
 
   static String routeKey(PathSelection r) =>
       r.hopCount == 0 ? 'direct' : '${r.hashSize}:${r.pathBytes.join(',')}';
-
-  /// The route's between-hop links as "FROM>TO", guessed ones only when
-  /// [guessedOnly].
-  static Set<String> linkKeys(PathSelection r, {bool guessedOnly = false}) {
-    if (r.useFlood || r.hopCount < 2) return const {};
-    final hops = PathHelper.formatPathHex(r.pathBytes, stride: r.hashSize)
-        .split(',');
-    return {
-      for (var i = 0; i < hops.length - 1; i++)
-        if (!guessedOnly || (i < r.guessedLinks.length && r.guessedLinks[i]))
-          '${hops[i]}>${hops[i + 1]}',
-    };
-  }
   Timer? _syncTimer;
   bool _syncing = false;
   bool _disposed = false;
@@ -140,9 +111,6 @@ class RadioRouteKeeper {
           '(${episode.newestAckOnRoute ? "on the stored route" : "a flood"}) '
           'never reached them',
           tag: 'PathGraph');
-      if (episode.newestAckOnRoute) {
-        _retireHeldSplice(contact, key, episode.ackRoute);
-      }
     }
     if (direct) episode.directCopies++;
     episode.newestDirect = direct;
@@ -166,24 +134,9 @@ class RadioRouteKeeper {
     unawaited(_apply(key));
   }
 
-  /// The route the last ACK went on, [held], was a splice: it is not held
-  /// again for this contact until a send of mine proves it.
-  void _retireHeldSplice(Contact contact, String key, PathSelection? held) {
-    if (held == null || held.guessedHops == 0) return;
-    (_retired[key] ??= {}).addAll(linkKeys(held, guessedOnly: true));
-    appLogger.info(
-        'the stored route to ${contact.name} (${_describe(held)}, '
-        '${held.guessedHops} hop${held.guessedHops == 1 ? "" : "s"} guessed) '
-        'lost an ACK: not held again until a send of mine proves it',
-        tag: 'PathGraph');
-  }
-
-  /// A send of mine delivered on [route]: the route is proven, a retired
-  /// splice of it may be held again, and the contact is not left alone.
+  /// A send of mine delivered on [route]: the contact is not left alone.
   void onDelivered(String contactKey, PathSelection route) {
     _holdOff.remove(_key(contactKey))?.cancel();
-    if (route.useFlood) return;
-    _retired[_key(contactKey)]?.removeAll(linkKeys(route));
   }
 
   /// The radio's route to [contactKey] may no longer be Pathfinder's: the
@@ -240,7 +193,6 @@ class RadioRouteKeeper {
       hold.cancel();
     }
     _holdOff.clear();
-    _retired.clear();
   }
 
   Future<void> _syncAll() async {
@@ -303,11 +255,9 @@ class RadioRouteKeeper {
             !(routes?.any((r) => holds(contact, r)) ?? true);
         if (inCooldown && !want.useFlood && !dropped) return;
         _lastWrite[key] = DateTime.now();
-        final guessed = want.guessedHops;
         appLogger.info(
             'stored route to ${contact.name} set to '
             '${want.useFlood ? "none (ACKs flood)" : _describe(want)}'
-            '${guessed > 0 ? ", $guessed hop${guessed == 1 ? "" : "s"} guessed" : ""}'
             '${dropped ? " (Pathfinder dropped ${_describeStored(contact)})" : ""}',
             tag: 'PathGraph');
         await writeRoute(contact, want);
@@ -327,43 +277,24 @@ class RadioRouteKeeper {
         : rungFor(
             directCopies: episode.directCopies,
             newestDirect: episode.newestDirect);
-    if (rung == 0) return _rung0(contact, routes);
+    if (rung == 0) return _ladderFor(contact, routes)?.first;
     // The ladder a send would have run from the held route: that route
-    // first (its rung is the one that failed), then proven routes only.
+    // first (its rung is the one that failed), then Pathfinder's.
     final ladder = episode!.ladder ??=
-        _ladderFor(contact, routes, provenOnly: true, first: episode.held);
+        _ladderFor(contact, routes, first: episode.held);
     if (ladder == null) return null;
     return rung < ladder.length ? ladder[rung] : PathSelection.flood(radioWidth());
   }
 
-  /// The route held before any step down: Pathfinder's best among routes
-  /// with at most [maxGuessedHopsHeld] guessed hops that are not retired.
-  PathSelection? _rung0(Contact contact, List<PathSelection>? routes) {
-    final retired = _retired[_key(contact.publicKeyHex)] ?? const <String>{};
-    return _ladderFor(contact, routes,
-        keep: (r) =>
-            r.guessedHops <= maxGuessedHopsHeld &&
-            linkKeys(r, guessedOnly: true).every((l) => !retired.contains(l)))
-        ?.first;
-  }
-
-  /// The DM ladder for [contact] over Pathfinder's [routes], [keep] only;
-  /// [provenOnly] keeps routes with no guessed hop (the step-down rungs);
-  /// [first] goes ahead of them whatever it is.
+  /// The DM ladder for [contact] over Pathfinder's [routes]; [first] goes
+  /// ahead of them whatever it is.
   List<PathSelection>? _ladderFor(Contact contact, List<PathSelection>? routes,
-      {bool provenOnly = false,
-      bool Function(PathSelection)? keep,
-      PathSelection? first}) {
+      {PathSelection? first}) {
     if (routes == null) return null;
     return planAttempts(contact,
         radioWidth: radioWidth(),
         budget: budget(),
-        graphRoutes: [
-          ?first,
-          for (final r in routes)
-            if ((!provenOnly || r.guessedHops == 0) && (keep?.call(r) ?? true))
-              r,
-        ]);
+        graphRoutes: [?first, ...routes]);
   }
 
   static bool _eligible(Contact contact) =>

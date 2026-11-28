@@ -76,6 +76,15 @@ class EdgeState {
     lastFailed = arrival;
   }
 
+  /// One failure counted at some time before [arrival] was no failure: it
+  /// is taken off what is still held.
+  void takeBackFailure(int arrival, double halfLifeHours) {
+    final held = failuresAt(arrival, halfLifeHours);
+    if (held == 0) return;
+    failWeight = math.max(0, held - 1);
+    lastFailed = arrival;
+  }
+
   /// Sightings still held, fading from [lastObserved] as [failWeight] does
   /// from [lastFailed]: the link's weight.
   double trafficWeight = 0;
@@ -268,6 +277,20 @@ class GraphStore {
     _seenOrder.clear();
     await _db.delete(_db.graphEdges).go();
     await _db.delete(_db.graphNodes).go();
+  }
+
+  /// The radio could hear nothing for [gapMillis] (the app was not
+  /// connected): the sightings held are given back what that time will
+  /// fade them by, so a link is no weaker for not having been listened
+  /// for. Times are left as they are.
+  void unfade(int gapMillis, double halfLifeHours) {
+    final factor =
+        math.pow(2, gapMillis / (1000 * 60 * 60) / halfLifeHours).toDouble();
+    for (final entry in edges.entries) {
+      if (entry.value.trafficWeight == 0) continue;
+      entry.value.trafficWeight *= factor;
+      _dirtyEdges.add(entry.key);
+    }
   }
 
   /// [EdgeState.fadeLifetimeCount] for every link, once for a database

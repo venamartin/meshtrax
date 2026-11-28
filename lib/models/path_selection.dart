@@ -33,10 +33,6 @@ class PathSelection {
   final RouteSource? source;
   // The graph's delivery estimate; only a graph route has one.
   final double? estDelivery;
-  // Per between-hop link of a graph route: a splice guess (the reverse of
-  // a link heard on the contact's inbound path) rather than an observed
-  // link. Empty when nothing was guessed.
-  final List<bool> guessedLinks;
   // How long ago a flood of mine took this route to them, when it is the
   // route their path reply named; null for a route the graph ranked. For
   // the log: who chose a try's route.
@@ -49,7 +45,6 @@ class PathSelection {
     required this.useFlood,
     this.source,
     this.estDelivery,
-    this.guessedLinks = const [],
     this.liveAgeMillis,
   });
 
@@ -63,11 +58,7 @@ class PathSelection {
         hashSize = radioWidth,
         useFlood = true,
         estDelivery = null,
-        guessedLinks = const [],
         liveAgeMillis = null;
-
-  /// How many of the route's links are splice guesses.
-  int get guessedHops => guessedLinks.where((g) => g).length;
 
   /// Whether [contact], as the radio holds it, stores this route: what the
   /// radio's own sends and ACKs to that contact go out on.
@@ -126,7 +117,6 @@ PathSelection resolvePathSelection(
       useFlood: false,
       source: selection.source,
       estDelivery: selection.estDelivery,
-      guessedLinks: selection.guessedLinks,
     );
   }
 

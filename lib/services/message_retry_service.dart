@@ -691,6 +691,21 @@ class MessageRetryService extends ChangeNotifier {
           _wireAttempts[e.key] == attempt &&
           _wireRungs[e.key] == e.value.retryCount);
 
+  /// The try of the DM [text] to [contactKey] stamped [timestampSeconds]
+  /// that is going out now goes as MeshTrax's own packet ([meshTrax]) or as
+  /// a standard, firmware message: kept on the message, for the chat.
+  void noteSentVia(String contactKey, int timestampSeconds, String text,
+      {required bool meshTrax}) {
+    final id = _messageIdOf(contactKey, timestampSeconds, text);
+    final message = id == null ? null : _pendingMessages[id];
+    if (id == null || message == null || message.viaMeshTrax == meshTrax) {
+      return;
+    }
+    final updated = message.copyWith(viaMeshTrax: meshTrax);
+    _pendingMessages[id] = updated;
+    _config?.updateMessage(updated);
+  }
+
   /// Whether [message] is still on its ladder: not failed, not delivered.
   bool _onLadder(String messageId, Message message) =>
       message.status != MessageStatus.failed &&
@@ -738,7 +753,6 @@ class MessageRetryService extends ChangeNotifier {
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
       routeSource: selection.source ?? RouteSource.firmware,
-      guessedHops: selection.guessedHops,
     );
     // A flood's echoes are told apart by attempt from its start.
     if (selection.useFlood && !(before?.useFlood ?? false)) {
@@ -796,7 +810,6 @@ class MessageRetryService extends ChangeNotifier {
       pathBytes: Uint8List.fromList(selection.pathBytes),
       pathHashSize: selection.hashSize,
       routeSource: selection.source ?? RouteSource.firmware,
-      guessedHops: selection.guessedHops,
     );
 
     final attempt = message.retryCount;

@@ -3973,6 +3973,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelPath_directPath => '直连';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return '途中收到，剩余：$hops';
   }
@@ -4717,17 +4729,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '跳',
-      one: '跳',
-    );
-    return '路由（$count $_temp0，其中 $guessed 跳为推测）';
-  }
-
-  @override
   String get chat_statusQueued => '排队中';
 
   @override
@@ -4804,10 +4805,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       '学习需要时间。全新的地图一无所知，所以在学到路由之前，您的消息起初会以泛洪方式发出。在同一个地方收听几个小时后，它才开始提供路由，而每一次送达或失败都会让它学到更多。第一天别对它抱太大期望；每次换到新的地方，效果也会再次变差一段时间。';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      '有时它会用猜测来填补路由中的空缺，也就是使用一条它只听到过反方向使用的链路。这时消息的状态行会显示有几跳是猜测的。送达即证明这几跳可用；失败只会多花一次尝试，也不会记住任何东西。';
 
   @override
   String get pathfinderHelp_discover =>

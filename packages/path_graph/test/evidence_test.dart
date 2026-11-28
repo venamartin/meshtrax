@@ -230,13 +230,37 @@ void main() {
     expect(byHash, {'5CBB': 3.0, 'A277': 1.5});
   });
 
-  test('an unrefreshed contact doorstep fades in hours, not days', () {
+  // Owner, 2026-11-28: "I may not talk with my brother whose doorstep is
+  // AA77 for a week, but it doesn't mean that his doorstep disappeared."
+  // It faded in 12 hours.
+  test("a contact's doorstep is still there after weeks of silence", () {
     graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
         const ObservationOrigin.pubkeyConfirmed(bobPk));
-    nowMillis += 2 * 60 * 60 * 1000;
-    expect(graph.ingressCandidates(bobPk), isNotEmpty);
-    nowMillis += 4 * 24 * 60 * 60 * 1000;
-    expect(graph.ingressCandidates(bobPk), isEmpty);
+    const day = 24 * 60 * 60 * 1000;
+    nowMillis += 7 * day;
+    final afterAWeek = graph.ingressCandidates(bobPk).single;
+    expect(afterAWeek.repeaterHash, 'A277');
+    expect(afterAWeek.weight, greaterThan(2.5), reason: 'of 3 when heard');
+    nowMillis += 21 * day;
+    expect(graph.ingressCandidates(bobPk).single.weight, greaterThan(1.4));
+    nowMillis += 365 * day;
+    expect(graph.ingressCandidates(bobPk), isEmpty,
+        reason: 'not for ever');
+  });
+
+  test('hearing them somewhere else still moves them at once', () {
+    graph.observePath(path([0xA2, 0x77, 0x13, 0x12]), 2,
+        const ObservationOrigin.pubkeyConfirmed(bobPk), messageId: 'one');
+    nowMillis += 7 * 24 * 60 * 60 * 1000;
+    for (final id in ['two', 'three', 'four']) {
+      graph.observePath(path([0x5C, 0xBB, 0x13, 0x12]), 2,
+          const ObservationOrigin.pubkeyConfirmed(bobPk), messageId: id);
+    }
+    final rows = graph.ingressCandidates(bobPk);
+    expect(rows.first.repeaterHash, '5CBB');
+    expect(rows.first.weight,
+        greaterThan(10 * rows.firstWhere((c) => c.repeaterHash == 'A277').weight),
+        reason: 'each sighting elsewhere halves the old doorstep');
   });
 
   test('allowInferredEndpoints restores the guess, flagged', () async {

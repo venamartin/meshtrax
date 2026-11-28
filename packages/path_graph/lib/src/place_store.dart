@@ -81,10 +81,6 @@ class PlaceStore {
     return best;
   }
 
-  /// Whether any row in [cells] belongs to [self].
-  bool anyIn(String self, Set<String> cells) =>
-      rows.keys.any((k) => k.$1 == self && cells.contains(k.$2));
-
   /// Drops rows last seen more than [fadeDays] before [today].
   int sweep(int today, int fadeDays) {
     var removed = 0;

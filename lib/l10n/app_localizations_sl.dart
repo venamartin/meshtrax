@@ -4226,6 +4226,18 @@ class AppLocalizationsSl extends AppLocalizations {
   String get channelPath_directPath => 'Neposredni';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Prejeto na poti, preostalo: $hops';
   }
@@ -5047,27 +5059,6 @@ class AppLocalizationsSl extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'skokov',
-      few: 'skoki',
-      two: 'skoka',
-      one: 'skok',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'predpostavljenih',
-      few: 'predpostavljeni',
-      two: 'predpostavljena',
-      one: 'predpostavljen',
-    );
-    return 'po poti ($count $_temp0, $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'V čakalni vrsti';
 
   @override
@@ -5147,10 +5138,6 @@ class AppLocalizationsSl extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Potrebuje čas. Nov zemljevid še ne ve ničesar, zato vaša sporočila sprva odhajajo poplavno, dokler se ne nauči poti. Po nekaj urah poslušanja na enem mestu začne ponujati poti in se z vsako dostavo ali neuspehom nauči več. Prvi dan od njega ne pričakujte veliko, po vsakem premiku na novo mesto pa spet manj.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Včasih vrzel zapolni s predpostavko: s povezavo, ki jo je doslej slišal le v nasprotni smeri. Vrstica pod sporočilom nato pove, koliko skokov je bilo predpostavljenih. Dostava jih potrdi; neuspeh stane en poskus in nič se ne shrani.';
 
   @override
   String get pathfinderHelp_discover =>

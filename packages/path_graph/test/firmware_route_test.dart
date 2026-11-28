@@ -57,13 +57,19 @@ void main() {
         reason: 'seen once, never tallied: rated low until heard more');
   });
 
-  test('the return direction changes nothing for the route out', () {
+  // Owner, 2026-11-28: a link is rated by the direction it is heard best
+  // in.
+  test('the return direction heard often raises the link, not the route',
+      () {
     learnFirmwareRoute();
-    final before = (graph.findPath(bobPk) as RouteResult).estDelivery;
-    graph.observePath(path([0x10, 0x00, 0xA2, 0x77]), 2,
-        const ObservationOrigin.anonymous(), lastHopHeard: false);
-    expect((graph.findPath(bobPk) as RouteResult).estDelivery,
-        closeTo(before, 1e-6));
+    final before = graph.findPath(bobPk) as RouteResult;
+    for (var i = 0; i < 20; i++) {
+      graph.observePath(path([0x10, 0x00, 0xA2, 0x77]), 2,
+          const ObservationOrigin.anonymous(), lastHopHeard: false);
+    }
+    final after = graph.findPath(bobPk) as RouteResult;
+    expect(after.pathBytes, before.pathBytes);
+    expect(after.estDelivery, greaterThan(before.estDelivery * 4));
   });
 
   final longer = path([0xA2, 0x77, 0xA1, 0x77, 0x10, 0x00]);

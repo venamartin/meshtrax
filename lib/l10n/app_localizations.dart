@@ -7192,6 +7192,24 @@ abstract class AppLocalizations {
   /// **'Direct'**
   String get channelPath_directPath;
 
+  /// Under the message box of a contact whose phone runs MeshTrax, beside a MeshTrax mark: how many bytes of the message are left before it no longer fits a MeshTrax message
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String chat_meshTraxBytesLeft(int count);
+
+  /// Under the message box of a contact whose phone runs MeshTrax, when the text no longer fits a MeshTrax message and will be sent the radio's standard way
+  ///
+  /// In en, this message translates to:
+  /// **'Too long for MeshTrax: goes as a standard message'**
+  String get chat_meshTraxTooLong;
+
+  /// Small line under a sent direct message to a contact on MeshTrax that went the radio's standard way, not as a MeshTrax message
+  ///
+  /// In en, this message translates to:
+  /// **'Standard message'**
+  String get chat_sentStandard;
+
   /// Path line of a DM the app opened from a copy still on its route; hops = the repeaters it still had to pass, e.g. BEEF or AD77,BEEF
   ///
   /// In en, this message translates to:
@@ -8524,12 +8542,6 @@ abstract class AppLocalizations {
   /// **'route ({count} {count, plural, =1{hop} other{hops}})'**
   String chat_kindRoute(int count);
 
-  /// A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).
-  ///
-  /// In en, this message translates to:
-  /// **'route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)'**
-  String chat_kindRouteGuessed(int count, int guessed);
-
   /// No description provided for @chat_statusQueued.
   ///
   /// In en, this message translates to:
@@ -8631,12 +8643,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.'**
   String get pathfinderHelp_learning;
-
-  /// No description provided for @pathfinderHelp_guessed.
-  ///
-  /// In en, this message translates to:
-  /// **'Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.'**
-  String get pathfinderHelp_guessed;
 
   /// No description provided for @pathfinderHelp_discover.
   ///

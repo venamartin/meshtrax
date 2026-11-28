@@ -4238,6 +4238,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get channelPath_directPath => 'Guardar';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Captado en camino, faltaba: $hops';
   }
@@ -5062,23 +5074,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'saltos',
-      one: 'salto',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'supuestos',
-      one: 'supuesto',
-    );
-    return 'ruta ($count $_temp0, $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'En cola';
 
   @override
@@ -5155,10 +5150,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Necesita tiempo. Un mapa recién creado no sabe nada, así que al principio tus mensajes usan la inundación hasta que aprende una ruta. Tras unas horas escuchando en un mismo lugar empieza a ofrecer rutas, y cada entrega o fallo le enseña algo más. El primer día no esperes mucho de él, y cada vez que te muevas a un sitio nuevo volverá a rendir menos.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'A veces rellena un hueco con una suposición: un enlace que solo ha oído funcionar en el sentido contrario. La línea del mensaje indica entonces cuántos saltos son supuestos. Una entrega los confirma; un fallo cuesta un intento y no se guarda nada.';
 
   @override
   String get pathfinderHelp_discover =>

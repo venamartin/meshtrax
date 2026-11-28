@@ -6,8 +6,10 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/meshtrax_dm.dart';
 import 'package:meshtrax/helpers/meshtrax_packet.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
+import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,7 +39,14 @@ const said = 'Are you at the trailhead yet?';
 final routeBack = _hex('BEEFAD77A277');
 
 /// A's DM to B (A's key sorts below B's), as its payload.
-Uint8List _dm({int number = 7, int tryNumber = 0, List<int>? route}) {
+Uint8List _dm({
+  int number = 7,
+  int tryNumber = 0,
+  List<int>? route,
+  List<int>? hears,
+  List<int>? heardBy,
+  int ackHeard = 0,
+}) {
   final text = MeshTraxDmText.pack(said);
   return MeshTraxPacket.seal(
     secret,
@@ -50,8 +59,11 @@ Uint8List _dm({int number = 7, int tryNumber = 0, List<int>? route}) {
         tryNumber: tryNumber,
         time: sentAt,
         route: route,
+        hears: hears,
+        heardBy: heardBy,
         packing: text.packing,
         text: text.bytes,
+        ackHeard: ackHeard,
       ).encode(),
       senderSortsAbove: false,
     ),
@@ -331,6 +343,288 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     expect(await rows(atLeast: 0), isEmpty);
     expect(c.rawPackets, isEmpty);
+  });
+
+  // Owner, 2026-11-28, a contact who has driven from home to Santa Cruz:
+  // the route the radio holds leads to where they were. With Pathfinder
+  // running the ACK goes Pathfinder's way or by flood, and each further
+  // try's ACK takes another way.
+  group("with Pathfinder running, the ACK goes Pathfinder's way", () {
+    PathSelection way(String hex, double est) => PathSelection(
+          pathBytes: _hex(hex),
+          hopCount: hex.length ~/ 4,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: est,
+        );
+
+    /// How the raw-send frame [frame] goes: its route as hex, or 'flood'.
+    String wayOf(Uint8List frame) {
+      if (frame[2] & 0x03 != 0x02) return 'flood';
+      final hops = frame[3] & 0x3F;
+      return frame
+          .sublist(4, 4 + hops * 2)
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join()
+          .toUpperCase();
+    }
+
+    test('no route from Pathfinder: a flood, not the route the radio holds',
+        () async {
+      await connect();
+      c.graphRouteCandidates = (_) => const [];
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      final frame = (await rawPackets(1)).single;
+      expect(wayOf(frame), 'flood',
+          reason: 'the stored route BEEF,AD77,A277 leads to where they were');
+      final ack = DirectAck.decode(unframeDirect(
+              MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!
+          .message)!;
+      expect(ack.route, isEmpty);
+    });
+
+    test('each try of a message is answered another way, then by flood',
+        () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      for (var t = 0; t < 4; t++) {
+        c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: t), '1000')));
+        await rawPackets(t + 1);
+      }
+      expect([for (final f in c.rawPackets) wayOf(f)],
+          ['10007777', '1000C419', 'flood', 'flood']);
+    });
+
+    test('the next message starts from the best way again', () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      c.handleFrameForTest(_rxLog(_flooded(_dm(number: 7), '1000')));
+      await rawPackets(1);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(number: 8), '1000')));
+      await rawPackets(2);
+      expect([for (final f in c.rawPackets) wayOf(f)], ['10007777', '10007777']);
+    });
+
+    // Owner, 2026-11-28: the ACK's data must not go to waste. A message
+    // sent again says the ACK of the try before did not arrive.
+    test('they send it again: Pathfinder is told the way that lost the ACK',
+        () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      final lost = <String>[];
+      c.onMeshTraxAckLost = (contact, route) => lost.add(
+          '${contact.name}:${PathHelper.formatPathHex(route.pathBytes, stride: 2)}');
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      await rawPackets(1);
+      // Another copy of the same try says nothing.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000BEEF')));
+      expect(lost, isEmpty);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 1), '1000')));
+      await rawPackets(2);
+      expect(lost, ['A:1000,7777']);
+      // The third try's ACK went by 1000,C419; the fourth's is a flood, and
+      // a flood has no route to hold anything against.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 2), '1000')));
+      await rawPackets(3);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 3), '1000')));
+      await rawPackets(4);
+      expect(lost, ['A:1000,7777', 'A:1000,C419']);
+    });
+
+    test('their next DM says my ACK reached them: Pathfinder is told the '
+        'way it went', () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      final arrived = <String>[], lost = <String>[];
+      String hops(PathSelection r) =>
+          PathHelper.formatPathHex(r.pathBytes, stride: 2);
+      c.onMeshTraxAckArrived = (_, route) => arrived.add(hops(route));
+      c.onMeshTraxAckLost = (_, route) => lost.add(hops(route));
+      // Message 7: try 0 answered by 1000,7777, try 1 by 1000,C419.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      await rawPackets(1);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 1), '1000')));
+      await rawPackets(2);
+      expect(lost, ['1000,7777']);
+      // Message 8 says the ACK of message 7, try 1, was heard.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(number: 8, ackHeard: DirectMessage.ackHeardFor(8, 7, 1)),
+          '1000')));
+      expect(arrived, ['1000,C419']);
+      // Said again on its next try: told once.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(
+              number: 8,
+              tryNumber: 1,
+              ackHeard: DirectMessage.ackHeardFor(8, 7, 1)),
+          '1000')));
+      expect(arrived, hasLength(1));
+      // The ACK that was late, not lost: it is told when they say so.
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(number: 9, ackHeard: DirectMessage.ackHeardFor(9, 7, 0)),
+          '1000')));
+      expect(arrived, ['1000,C419', '1000,7777']);
+    });
+
+    test('a route the user pinned is used as the radio holds it', () async {
+      await connect();
+      c.graphRouteCandidates = (_) => [way('10007777', 0.6)];
+      await c.setPathOverride(a, pathLen: 3, pathBytes: routeBack);
+      a = c.contacts.single;
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      expect(wayOf((await rawPackets(1)).single), 'BEEFAD77A277');
+    });
+  });
+
+  // What Pathfinder is told: as of a flooded firmware DM the app opened,
+  // the repeaters the copy had passed, whose first heard the sender.
+  group('Pathfinder hears of it', () {
+    late List<(String, List<int>, int, int)> told;
+    Future<void> listen() async {
+      await connect();
+      told = [];
+      c.onFloodCopyOpened = (key, path, width, snr, payload) =>
+          told.add((key, path, width, snr));
+    }
+
+    test('a flooded DM: the path it came by', () async {
+      await listen();
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277BEEF')));
+      final (key, path, width, snr) = told.single;
+      expect(key, a.publicKeyHex);
+      expect(path, _hex('A277BEEF'));
+      expect(width, 2);
+      expect(snr, 0x30);
+    });
+
+    test('a routed DM on its way: its route as far as it had come', () async {
+      await listen();
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x41, 0xBE, 0xEF,
+        ..._dm(route: _hex('A277AD77BEEF')),
+      ])));
+      expect(told.single.$2, _hex('A277AD77'));
+    });
+
+    test('a routed DM heard from their own radio: no repeater between us',
+        () async {
+      await listen();
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x43, ..._hex('A277AD77BEEF'),
+        ..._dm(route: _hex('A277AD77BEEF')),
+      ])));
+      expect(told.single.$2, isEmpty);
+    });
+
+    test('a routed packet: the links between the repeaters it passed, each '
+        'once', () async {
+      await listen();
+      final links = <(List<int>, int)>[];
+      c.onMeshTraxRouteTravelled =
+          (travelled, width) => links.add((travelled, width));
+      final payload = _dm(route: _hex('A277AD771000BEEF'));
+      // As AD77 passes it on, then as BEEF hands it over.
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x42, ..._hex('1000BEEF'), ...payload,
+      ])));
+      expect(links.single.$1, _hex('A277AD77'));
+      expect(links.single.$2, 2);
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ...payload,
+      ])));
+      expect(links, hasLength(2));
+      expect(links[1].$1, _hex('AD771000BEEF'),
+          reason: 'from the last repeater told of: A277>AD77 is not twice');
+      // The same copy again adds nothing.
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ...payload,
+      ])));
+      expect(links, hasLength(2));
+    });
+
+    test('a flood, or a route of one repeater, has no link inside it',
+        () async {
+      await listen();
+      var called = 0;
+      c.onMeshTraxRouteTravelled = (_, _) => called++;
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277BEEF')));
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ..._dm(number: 9, route: _hex('A277')),
+      ])));
+      expect(called, 0);
+    });
+
+    test('a route that does not fit the hops still to go says nothing',
+        () async {
+      await listen();
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x41, 0xBE, 0xEF,
+        ..._dm(route: _hex('A2771000')),
+      ])));
+      expect(told, isEmpty);
+      expect((await rows()).single.text, said, reason: 'still a message');
+    });
+
+    test('their ACK: the way it came', () async {
+      await listen();
+      final ack = MeshTraxPacket.seal(
+        secret,
+        toByte: bPub[0],
+        fromByte: aPub[0],
+        dataType: dataTypeMeshTraxAck,
+        blob: frameDirect(
+          DirectAck(number: 3, route: _hex('A277BEEF')).encode(),
+          senderSortsAbove: false,
+        ),
+      );
+      // As A277 passes it on: BEEF still to go.
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x41, 0xBE, 0xEF, ...ack,
+      ])));
+      expect(told.single.$2, _hex('A277'));
+    });
+  });
+
+  // Owner, 2026-11-27: "We know what we can hear and we know what can hear
+  // us." Each phone sends its two lists; Pathfinder gets the other phone's.
+  group('the repeaters each phone hears and is heard by', () {
+    test("their lists in a DM are handed to Pathfinder", () async {
+      await connect();
+      final got = <(List<int>, List<int>, int)>[];
+      c.onMeshTraxEnds =
+          (contact, hears, heardBy, width) => got.add((hears, heardBy, width));
+      c.handleFrameForTest(_rxLog(_flooded(
+          _dm(hears: _hex('100085'), heardBy: _hex('A2778A630B00')), 'A277')));
+      final (hears, heardBy, width) = got.single;
+      expect(hears, _hex('100085'));
+      expect(heardBy, _hex('A2778A630B00'));
+      expect(width, 2);
+    });
+
+    test('a DM without them hands nothing over', () async {
+      await connect();
+      var calls = 0;
+      c.onMeshTraxEnds = (_, _, _, _) => calls++;
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277')));
+      expect(calls, 0);
+    });
+
+    test("my lists go in the ACK", () async {
+      await connect();
+      c.meshTraxEnds = (width) {
+        expect(width, 2);
+        return (hears: _hex('BEEF88'), heardBy: _hex('BEEF00A2777F'));
+      };
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277')));
+      final ack = ackIn((await rawPackets(1)).single);
+      expect(ack.hears, _hex('BEEF88'));
+      expect(ack.heardBy, _hex('BEEF00A2777F'));
+    });
   });
 
   // Owner, 2026-11-27: "a photo send would tell us too."

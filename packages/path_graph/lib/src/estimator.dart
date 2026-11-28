@@ -19,7 +19,7 @@ class PathGraphConfig {
     this.maxHops = 32,
     this.egressHalfLifeMinutes = 45,
     this.egressProvenDecayFactor = 4,
-    this.ingressHalfLifeHours = 12,
+    this.ingressHalfLifeHours = 24 * 30,
     this.contactSupersedeFactor = 0.5,
     this.contactMissesBeforeLast = 2,
     this.newestBeforeRecord = false,
@@ -45,12 +45,6 @@ class PathGraphConfig {
     this.slashFactorProven = 0.3,
     this.slashFactorInferred = 0.2,
     this.allowInferredEndpoints = false,
-    this.guessQ = 0.3,
-    this.maxGuessedHops = 2,
-    this.hintFreshMinutes = 10,
-    this.hintLinkMinAgeMinutes = 10,
-    this.hintMaxHopKm = 60,
-    this.hintsPerContact = 4,
     this.contactFailGate = 2,
   });
 
@@ -68,37 +62,6 @@ class PathGraphConfig {
   /// it again proves the wrong direction. Negative-only, like
   /// [selfFailGate].
   final int contactFailGate;
-
-  /// The splice (owner, 2026-10-23/24): a contact's recent inbound flood
-  /// path, read backwards, offers the reverse of each repeater-to-repeater
-  /// link on it as a GUESS for one search, never stored. My end still has
-  /// to be a proven doorstep; the search joins my proven corridor to the
-  /// reversed tail wherever that is cheapest. A guessed hop is priced at
-  /// this delivery estimate: a link heard often in the sending direction
-  /// beats a guess, and a guess beats a link heard only a few times.
-  final double guessQ;
-
-  /// A route may carry at most this many guessed hops.
-  final int maxGuessedHops;
-
-  /// An inbound path older than this is no hint: their doorstep and the
-  /// corridor may both have moved on.
-  final double hintFreshMinutes;
-
-  /// Ducting guard (owner: "crazy paths" from atmospheric conditions must
-  /// not drive routes). A link is reversible as a guess only when its
-  /// observed direction was heard in two different packets and first seen
-  /// at least this long before the hint. Ducting makes new links; stable
-  /// corridors have history. Copies of one flood always carry distinct
-  /// paths, so two sightings means two packets.
-  final double hintLinkMinAgeMinutes;
-
-  /// Where both repeaters have advert positions, a hop longer than this
-  /// cannot be a normal LoRa hop and is not reversed.
-  final double hintMaxHopKm;
-
-  /// Distinct inbound paths kept per contact, newest first.
-  final int hintsPerContact;
 
   /// Let a route START at a doorstep I only ever heard (a reciprocity
   /// guess about MY end). Off by default: a repeater that hears me is
@@ -134,6 +97,20 @@ class PathGraphConfig {
   /// route had been heard 6 times (median) and not for three days on 60%
   /// of routes; rated this way, 66 times and 0%. The result barely moves
   /// from 3 to 150.
+  ///
+  /// A link heard one way is presumed to work the other way (owner,
+  /// 2026-11-28: "A to B heard many times we have to presume B to A. If we
+  /// find it fails, then it loses weight"). A radio hears packets on their
+  /// way to it, so a far link is heard often coming in and seldom, or
+  /// never, going out, and a send needs the way out: on the same field
+  /// graph, on the best routes out, a link was heard 898 times the way a
+  /// send goes and 3,424 times the other way (medians), 40% of links were
+  /// only ever heard one way, and 68 of 368 far doorsteps had no route
+  /// out at all. So a link is rated by the direction it is heard best in,
+  /// in both directions ([Estimator.calibratedP], [Estimator.presumedP]),
+  /// and what tells the two directions apart is what this radio's own
+  /// sends find: a delivery or a failure counts for the direction it
+  /// went.
   final double heardHalf;
 
   /// Monotone SNR→quality map anchors (dB).
@@ -169,14 +146,18 @@ class PathGraphConfig {
   /// this many times slower than an inferred last-hop guess.
   final double egressProvenDecayFactor;
 
-  /// A contact's doorstep list answers "which repeater hears them RIGHT
-  /// NOW" (2026-09-25). Antenna gain is reciprocal and a handheld is
-  /// out-transmitted by the repeater, so a repeater that heard them
-  /// almost always reaches them — the heard-from row is a route end.
-  /// The list must therefore forget fast: an unrefreshed row fades in
-  /// hours, every fresh sighting slashes the others
+  /// A contact's doorstep is a repeater that heard them, and it is kept
+  /// for weeks without a word from them (owner, 2026-11-28: "I may not
+  /// talk with my brother whose doorstep is AA77 for a week, but it
+  /// doesn't mean that his doorstep disappeared"). Antenna gain is
+  /// reciprocal and a handheld is out-transmitted by the repeater, so a
+  /// repeater that heard them almost always reaches them: the heard-from
+  /// row is a route end. What moves a contact is hearing them somewhere
+  /// else, not time: every fresh sighting slashes the others
   /// ([contactSupersedeFactor]), and their own packets overrule a doorstep
-  /// that stopped hearing them ([contactMissesBeforeLast]).
+  /// that stopped hearing them ([contactMissesBeforeLast]). It was 12
+  /// hours, after which a contact not heard since yesterday had no known
+  /// end and was flooded to.
   final double ingressHalfLifeHours;
 
   /// Every attributed first-hop sighting multiplies the contact's other
@@ -393,12 +374,6 @@ class PathGraphConfig {
         slashFactorInferred: slashFactorInferred,
         allowInferredEndpoints:
             allowInferredEndpoints ?? this.allowInferredEndpoints,
-        guessQ: guessQ,
-        maxGuessedHops: maxGuessedHops,
-        hintFreshMinutes: hintFreshMinutes,
-        hintLinkMinAgeMinutes: hintLinkMinAgeMinutes,
-        hintMaxHopKm: hintMaxHopKm,
-        hintsPerContact: hintsPerContact,
         contactFailGate: contactFailGate,
       );
 }
@@ -419,18 +394,35 @@ class Estimator {
     return ((db - config.snrZeroQualityDb) / span).clamp(0.0, 1.0);
   }
 
-  /// Prior quality q₀ for THIS direction: a traced SNR when we have one,
-  /// else how often the link is heard ([PathGraphConfig.heardHalf]).
-  double priorQuality(EdgeState e, int nowMillis) {
-    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
+  /// How often this direction of a link is heard, as a rating
+  /// ([PathGraphConfig.heardHalf]).
+  double heardQuality(EdgeState e, int nowMillis) {
     final heard = decayedTraffic(e, nowMillis);
     return heard / (heard + config.heardHalf);
   }
 
-  /// Prior confidence n₀: how often this direction has been seen scales
-  /// trust in q₀.
-  double priorConfidence(EdgeState e, int nowMillis) {
-    final t = decayedTraffic(e, nowMillis);
+  /// Prior quality q₀ of a link in one direction: a traced SNR when that
+  /// direction has one, else how often the link is heard in the direction
+  /// it is heard best in ([e] this direction, [reverse] the other; either
+  /// may never have been heard).
+  double priorQuality(EdgeState? e, int nowMillis, {EdgeState? reverse}) {
+    if (e?.measuredSnr != null) return snrQuality(e!.measuredSnr!);
+    return math.max(
+      e == null ? 0.0 : heardQuality(e, nowMillis),
+      reverse == null ? 0.0 : heardQuality(reverse, nowMillis),
+    );
+  }
+
+  /// Prior confidence n₀: how often the link has been seen scales trust in
+  /// q₀.
+  double priorConfidence(EdgeState e, int nowMillis, {EdgeState? reverse}) =>
+      _confidence(e, reverse, nowMillis);
+
+  double _confidence(EdgeState? e, EdgeState? reverse, int nowMillis) {
+    final t = math.max(
+      e == null ? 0.0 : decayedTraffic(e, nowMillis),
+      reverse == null ? 0.0 : decayedTraffic(reverse, nowMillis),
+    );
     final scale = t / (t + config.trafficConfidenceHalf);
     return config.n0Min + (config.n0Max - config.n0Min) * scale;
   }
@@ -439,33 +431,47 @@ class Estimator {
   double decayedFailures(EdgeState e, int nowMillis) =>
       e.failuresAt(nowMillis, config.failureHalfLifeHours);
 
-  /// Calibrated delivery probability: local attempts override the prior.
-  /// Deliveries count for good, failures only while recent.
-  double calibratedP(EdgeState e, int nowMillis) {
-    final n0 = priorConfidence(e, nowMillis);
-    return (e.s + priorQuality(e, nowMillis) * n0) /
-        (e.s + decayedFailures(e, nowMillis) + n0);
+  double _p(EdgeState? e, EdgeState? reverse, int nowMillis) {
+    final n0 = _confidence(e, reverse, nowMillis);
+    final s = e?.s ?? 0;
+    final failed = e == null ? 0.0 : decayedFailures(e, nowMillis);
+    return (s + priorQuality(e, nowMillis, reverse: reverse) * n0) /
+        (s + failed + n0);
   }
+
+  /// Calibrated delivery probability of a link in the direction [e]:
+  /// this radio's own sends that way override the prior. Deliveries count
+  /// for good, failures only while recent. [reverse] is the same link the
+  /// other way.
+  double calibratedP(EdgeState e, int nowMillis, {EdgeState? reverse}) =>
+      _p(e, reverse, nowMillis);
+
+  /// The same for a link never heard, sent on or traced in this direction,
+  /// only in the other ([heardOtherWay]): presumed to work this way too.
+  double presumedP(EdgeState heardOtherWay, int nowMillis) =>
+      _p(null, heardOtherWay, nowMillis);
 
   /// Any evidence the link exists: a sighting, a delivery or a trace. A
   /// failed attempt alone is not one.
   bool hasEvidence(EdgeState e) =>
       e.s > 0 || e.obsCount > 0 || e.measuredSnr != null;
 
-  /// Usable in this direction.
-  bool usable(EdgeState e, int nowMillis) =>
-      hasEvidence(e) && calibratedP(e, nowMillis) >= config.pThreshold;
+  /// Usable in this direction: there is evidence of the link, in either
+  /// direction, and what this radio's sends found has not brought it
+  /// below the cut-off.
+  bool usable(EdgeState e, int nowMillis, {EdgeState? reverse}) =>
+      (hasEvidence(e) || (reverse != null && hasEvidence(reverse))) &&
+      calibratedP(e, nowMillis, reverse: reverse) >= config.pThreshold;
 
   /// Edge cost for the search: −log(p) + τ.
-  double edgeCost(EdgeState e, int nowMillis) {
-    final p = calibratedP(e, nowMillis).clamp(0.01, 1.0);
-    return -math.log(p) + config.tau;
-  }
+  double edgeCost(EdgeState e, int nowMillis, {EdgeState? reverse}) =>
+      _cost(calibratedP(e, nowMillis, reverse: reverse));
 
-  /// Cost of a guessed reverse hop ([PathGraphConfig.guessQ]). The hair
-  /// above the formula breaks any tie with an observed link in the
-  /// observed link's favour.
-  double get guessedCost => -math.log(config.guessQ) + config.tau + 1e-9;
+  /// The cost of a link presumed from its other direction ([presumedP]).
+  double presumedCost(EdgeState heardOtherWay, int nowMillis) =>
+      _cost(presumedP(heardOtherWay, nowMillis));
+
+  double _cost(double p) => -math.log(p.clamp(0.01, 1.0)) + config.tau;
 }
 
 /// Great-circle distance between two advert positions.

@@ -331,7 +331,15 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
     connector.onFloodCopyOpened = _onFloodCopyOpened;
+    connector.meshTraxEnds = _meshTraxEnds;
+    connector.onMeshTraxEnds = _onMeshTraxEnds;
+    connector.onMeshTraxTryArrived = _onMeshTraxTryArrived;
+    connector.onMeshTraxAckLost = _onMeshTraxAckLost;
+    connector.onMeshTraxAckArrived = _onMeshTraxAckArrived;
+    connector.onMeshTraxRouteTravelled = _onMeshTraxRouteTravelled;
     connector.measureAreaKey = () => _graph?.currentCell;
+    // Sightings fade only while the graph is being fed.
+    live.setListening(connector.isConnected && !_onOtherMesh);
     final keeper = _keeper = RadioRouteKeeper(
       // Not during a download: a contact the radio dropped is still listed, and
       // writing its route would add it back and evict another.
@@ -594,6 +602,12 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
     _connector?.onFloodCopyOpened = null;
+    _connector?.meshTraxEnds = null;
+    _connector?.onMeshTraxEnds = null;
+    _connector?.onMeshTraxTryArrived = null;
+    _connector?.onMeshTraxAckLost = null;
+    _connector?.onMeshTraxAckArrived = null;
+    _connector?.onMeshTraxRouteTravelled = null;
     _connector?.measureAreaKey = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
@@ -684,6 +698,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     _radioReady = ready;
+    graph.setListening(connector.isConnected && !_onOtherMesh);
 
     final mesh = meshOf(connector);
     if (mesh != null && mesh != _mesh && _ownsDatabase) {
@@ -1036,7 +1051,6 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       bool delivered, int? tripMs, int? hopsHeard) {
     final graph = _graph;
     if (graph == null || selection.useFlood) return;
-    final guessed = selection.guessedHops;
     final heard = (hopsHeard ?? 0) > 0;
     final where = hopsHeard == null
         ? ''
@@ -1048,20 +1062,25 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
                 'repeater is not in doubt';
     appLogger.info(
         '${delivered ? "delivered" : "failed"} to ${contact.name} via '
-        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name}'
-        '${guessed > 0 ? ", $guessed hop${guessed == 1 ? "" : "s"} guessed" : ""})'
-        '${delivered ? " — first hop credited as hearing me" : ""}'
-        '${delivered && guessed > 0 ? ", guessed hops now proven" : ""}'
-        '${!delivered && guessed > 0 ? " — a guess failed, nothing recorded" : where}',
+        '${_hops(selection.pathBytes, selection.hashSize)} (${selection.source?.name})'
+        '${delivered ? " — first hop credited as hearing me" : where}',
         tag: 'PathGraph');
     graph.reportSendResult(Uint8List.fromList(selection.pathBytes), delivered,
         contactPubkey: contact.publicKeyHex,
         tripTimeMs: tripMs,
         stride: selection.hashSize,
-        guessedLinks: selection.guessedLinks,
         // Heard passing it on, the first hop was credited then.
         proveEgress: !(delivered && heard),
         hopsHeard: hopsHeard);
+    final tryKey = _tryKey(contact, selection);
+    if (delivered) {
+      _failedTries.remove(tryKey);
+    } else {
+      _failedTries[tryKey] = hopsHeard;
+      while (_failedTries.length > 64) {
+        _failedTries.remove(_failedTries.keys.first);
+      }
+    }
     if (selection.source == RouteSource.graph) {
       if (delivered) {
         _graphDelivered++;
@@ -1071,6 +1090,89 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (!delivered) _considerDiscover(contact.publicKeyHex);
+    _notifySoon();
+  }
+
+  // Sends given up as failed, by contact and route: how many hops each was
+  // heard passing on, as the graph was told ([_onMeshTraxTryArrived]).
+  final Map<String, int?> _failedTries = {};
+
+  static String _tryKey(Contact contact, PathSelection route) =>
+      '${contact.publicKeyHex}|${RadioRouteKeeper.routeKey(route)}';
+
+  /// A try given up as failed reached them after all: their ACK of a later
+  /// try says so. The failure is taken back and the try is a delivery.
+  void _onMeshTraxTryArrived(Contact contact, PathSelection route) {
+    final graph = _graph;
+    final key = _tryKey(contact, route);
+    if (graph == null || _onOtherMesh || !_failedTries.containsKey(key)) {
+      return;
+    }
+    final hopsHeard = _failedTries.remove(key);
+    appLogger.info(
+        'the try to ${contact.name} via '
+        '${_hops(route.pathBytes, route.hashSize)} arrived after all (their '
+        'ACK of a later try says so): its failure is taken back, the route '
+        'delivered',
+        tag: 'PathGraph');
+    graph.reportArrivedAfterAll(Uint8List.fromList(route.pathBytes),
+        contactPubkey: contact.publicKeyHex,
+        stride: route.hashSize,
+        hopsHeard: hopsHeard);
+    if (route.source == RouteSource.graph) {
+      _graphFailed--;
+      _graphDelivered++;
+      _keeper?.onDelivered(contact.publicKeyHex, route);
+    }
+    _notifySoon();
+  }
+
+  /// An ACK of mine on [route] did not reach them: a send that failed, with
+  /// nobody listened for along it.
+  void _onMeshTraxAckLost(Contact contact, PathSelection route) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || route.useFlood) return;
+    appLogger.info(
+        'ACK to ${contact.name} via ${_hops(route.pathBytes, route.hashSize)} '
+        'did not reach them: held against the route',
+        tag: 'PathGraph');
+    graph.reportSendResult(Uint8List.fromList(route.pathBytes), false,
+        contactPubkey: contact.publicKeyHex, stride: route.hashSize);
+    _failedTries[_tryKey(contact, route)] = null;
+    _notifySoon();
+  }
+
+  /// An ACK of mine on [route] reached them, their next DM says: a
+  /// delivery over it. One taken for lost because they sent the message
+  /// again before it got there has that taken back.
+  void _onMeshTraxAckArrived(Contact contact, PathSelection route) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || route.useFlood) return;
+    final key = _tryKey(contact, route);
+    final path = Uint8List.fromList(route.pathBytes);
+    final wasLost = _failedTries.containsKey(key);
+    appLogger.info(
+        'ACK to ${contact.name} via ${_hops(route.pathBytes, route.hashSize)} '
+        'reached them (their next DM says so): the route delivered'
+        '${wasLost ? ", and the failure held against it is taken back" : ""}',
+        tag: 'PathGraph');
+    if (wasLost) {
+      graph.reportArrivedAfterAll(path,
+          contactPubkey: contact.publicKeyHex,
+          stride: route.hashSize,
+          hopsHeard: _failedTries.remove(key));
+    } else {
+      graph.reportSendResult(path, true,
+          contactPubkey: contact.publicKeyHex, stride: route.hashSize);
+    }
+    _notifySoon();
+  }
+
+  /// A routed MeshTrax packet of a contact's passed these repeaters: the
+  /// links between them, heard carrying a packet as a flood's are.
+  void _onMeshTraxRouteTravelled(Uint8List travelled, int width) {
+    if (_onOtherMesh) return;
+    _graph?.observePath(travelled, width, const ObservationOrigin.anonymous());
     _notifySoon();
   }
 
@@ -1112,9 +1214,10 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           useFlood: false,
           source: RouteSource.graph,
           estDelivery: r.estDelivery,
-          guessedLinks: r.guessedLinks,
           liveAgeMillis: r.liveAgeMillis,
         );
+    graph.setPicksOwnWayBack(
+        contact.publicKeyHex, connector.runsMeshTrax(contact.publicKeyHex));
     final found = graph.findRoutes(contact.publicKeyHex, count: 3);
     return [
       switch (found.best) {
@@ -1174,6 +1277,77 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       int snrByte, Uint8List payload) {
     if (_onOtherMesh) return;
     _adapter?.attributeOpenedCopy(pubkeyHex, pathBytes, width, snrByte, payload);
+    _notifySoon();
+  }
+
+  /// How many repeaters each of the two lists in a MeshTrax DM or ACK
+  /// names: three bytes each on the air.
+  static const _endsPerList = 3;
+
+  /// A repeater counts as heard where the radio is now for this long.
+  static const _heardNow = Duration(minutes: 30);
+
+  /// What this radio knows for certain about its own end, for the other
+  /// phone's Pathfinder: the repeaters it hears, by how well, and the
+  /// repeaters that hear it and may start a route now.
+  ({Uint8List hears, Uint8List heardBy}) _meshTraxEnds(int width) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || width != graph.hashWidthBytes) {
+      return (hears: Uint8List(0), heardBy: Uint8List(0));
+    }
+    Uint8List pack(Iterable<Candidate> rows, double? Function(Candidate) dB) {
+      final out = BytesBuilder();
+      for (final c in rows.take(_endsPerList)) {
+        final level = dB(c);
+        out
+          ..add(PathHelper.parsePathHex(c.repeaterHash, stride: width).path)
+          ..addByte(level == null ? 0 : level.round().clamp(-127, 127) + 128);
+      }
+      return out.toBytes();
+    }
+
+    final mine = [
+      for (final c in graph.egressCandidates())
+        if (c.repeaterHash != directHash) c,
+    ];
+    final since =
+        DateTime.now().subtract(_heardNow).millisecondsSinceEpoch;
+    final heard = [
+      for (final c in mine)
+        if (c.heard && c.lastSeen >= since) c,
+    ]..sort((a, b) => (b.downlinkSnr ?? -99).compareTo(a.downlinkSnr ?? -99));
+    return (
+      hears: pack(heard, (c) => c.downlinkSnr),
+      heardBy: pack(
+        mine.where((c) => c.proven && graph.doorstepHold(c) == null),
+        (c) => c.uplinkSnr,
+      ),
+    );
+  }
+
+  /// [contact]'s phone said which repeaters it hears and which hear it. A
+  /// repeater that hears them is their doorstep, as when it is seen first
+  /// on a packet of theirs; one they hear is where a route to them ends.
+  void _onMeshTraxEnds(
+      Contact contact, Uint8List hears, Uint8List heardBy, int width) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || width != graph.hashWidthBytes) return;
+    final key = contact.publicKeyHex;
+    final entry = width + 1;
+    // One sighting, however many repeaters it names: none pushes another
+    // down.
+    final sighting = 'ends:$key:${DateTime.now().millisecondsSinceEpoch}';
+    for (var i = 0; i + entry <= heardBy.length; i += entry) {
+      graph.observeContactSender(
+          key, Uint8List.sublistView(heardBy, i, i + width), width,
+          confirmed: true, messageId: sighting);
+    }
+    for (var i = 0; i + entry <= hears.length; i += entry) {
+      final level = hears[i + width];
+      graph.observeContactHears(
+          key, PathHelper.hopHex(hears.sublist(i, i + width)),
+          snr: level == 0 ? null : (level - 128).toDouble());
+    }
     _notifySoon();
   }
 

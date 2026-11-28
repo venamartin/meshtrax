@@ -99,14 +99,19 @@ Uint8List _selfInfo() {
   return w.toBytes();
 }
 
-Uint8List _contactFrame() {
+Uint8List _contactFrame({bool route = true}) {
   final w = BytesBuilder();
   w.addByte(respCodeContact);
   w.add(aPub);
   w.addByte(advTypeChat);
   w.addByte(0);
-  w.addByte(0x43); // 3 hops, 2 bytes each
-  w.add(Uint8List(maxPathSize)..setRange(0, routeToA.length, routeToA));
+  if (route) {
+    w.addByte(0x43); // 3 hops, 2 bytes each
+    w.add(Uint8List(maxPathSize)..setRange(0, routeToA.length, routeToA));
+  } else {
+    w.addByte(0xFF);
+    w.add(Uint8List(maxPathSize));
+  }
   w.add(Uint8List(maxNameSize)..setRange(0, 1, 'A'.codeUnits));
   w.add(Uint8List.fromList([1, 0, 0, 0]));
   w.add(Uint8List(8));
@@ -117,7 +122,13 @@ Uint8List _rxLog(List<int> packet) =>
     Uint8List.fromList([pushCodeLogRxData, 0x30, 0xEC, ...packet]);
 
 /// A MeshTrax ACK from A to B, flooded through A277.
-Uint8List _ackFromA({int number = 0, int tryNumber = 0}) => _rxLog([
+Uint8List _ackFromA({
+  int number = 0,
+  int tryNumber = 0,
+  int? triesArrived,
+  List<int>? cameBy,
+}) =>
+    _rxLog([
   (payloadTypeGRPDATA << 2) | 0x01,
   0x41, 0xA2, 0x77,
   ...MeshTraxPacket.seal(
@@ -126,8 +137,12 @@ Uint8List _ackFromA({int number = 0, int tryNumber = 0}) => _rxLog([
     fromByte: aPub[0],
     dataType: dataTypeMeshTraxAck,
     blob: frameDirect(
-      DirectAck(number: number, tryNumber: tryNumber, triesArrived: 1 << tryNumber)
-          .encode(),
+      DirectAck(
+        number: number,
+        tryNumber: tryNumber,
+        triesArrived: triesArrived ?? 1 << tryNumber,
+        cameBy: cameBy,
+      ).encode(),
       senderSortsAbove: false,
     ),
   ),
@@ -198,6 +213,33 @@ void main() {
     await settle();
     expect(c.firmwareDms, hasLength(1));
     expect(c.ours, isEmpty);
+    expect((await mine('one')).viaMeshTrax, isNull,
+        reason: 'nothing to say about the way it went');
+  });
+
+  // Owner, 2026-11-27: the message box counts against "the flood figure,
+  // 126 packed bytes".
+  test('the room the message box counts against is 126 packed bytes', () {
+    expect(c.meshTraxDmTextRoom, 126);
+  });
+
+  test('a text of exactly that room goes as MeshTrax, one byte more does not',
+      () async {
+    // The radio holds no route: the try floods, as the box assumes.
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    c.handleFrameForTest(_ackFromA());
+    // Nothing Smaz can shrink.
+    final fits = List.generate(126, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, fits);
+    await until(() => c.ours.isNotEmpty);
+    expect(c.ours, hasLength(1));
+    expect(c.firmwareDms, isEmpty);
+    expect(c.ours.single.length - 2, lessThanOrEqualTo(heardPacketMaxBytes - 16),
+        reason: 'still heard after eight repeaters added their codes');
+    expect((await mine(fits)).viaMeshTrax, isTrue);
   });
 
   test("a firmware DM from them is answered once with MeshTrax's hello",
@@ -237,6 +279,7 @@ void main() {
     expect(dm.packing, textSmaz, reason: 'packed without a setting');
     final stored = await mine('Meet at the trailhead at nine');
     expect(stored.status, MessageStatus.sent);
+    expect(stored.viaMeshTrax, isTrue, reason: 'the way it went');
     expect(dm.time, stored.timestamp.millisecondsSinceEpoch ~/ 1000);
 
     // An ACK for another try or another message changes nothing.
@@ -252,6 +295,73 @@ void main() {
         MessageStatus.delivered);
   });
 
+  // Owner, 2026-11-28: the ACK's data must not go to waste. Their ACK lists
+  // every try of the message that reached them.
+  test('their ACK of a later try names a try whose own ACK never came: '
+      'Pathfinder is told it arrived', () async {
+    c.handleFrameForTest(_ackFromA());
+    final arrived = <List<int>>[];
+    c.onMeshTraxTryArrived = (contact, route) =>
+        arrived.add(route.pathBytes.sublist(0, route.hopCount * route.hashSize));
+    await c.sendMessage(a, 'did the first one get there');
+    await until(() => c.ours.isNotEmpty);
+    final dm = DirectMessage.decode(opened(c.ours.single).message)!;
+
+    // An ACK that lists only its own try says nothing of another.
+    c.handleFrameForTest(_ackFromA(number: dm.number, tryNumber: 1));
+    expect(arrived, isEmpty);
+    // Try 1's ACK, listing tries 0 and 1.
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, tryNumber: 2, triesArrived: 5));
+    expect(arrived, [routeToA]);
+    // Told once.
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, tryNumber: 3, triesArrived: 13));
+    expect(arrived, hasLength(1));
+  });
+
+  test('my next DM tells them which ACK of theirs I heard', () async {
+    c.handleFrameForTest(_ackFromA());
+    await c.sendMessage(a, 'first');
+    await until(() => c.ours.isNotEmpty);
+    final first = DirectMessage.decode(opened(c.ours.single).message)!;
+    expect(first.ackHeardOf, isNull, reason: 'no ACK of theirs heard yet');
+    c.handleFrameForTest(_ackFromA(number: first.number));
+    await settle();
+
+    await c.sendMessage(a, 'second');
+    await until(() => c.ours.length == 2);
+    final second = DirectMessage.decode(opened(c.ours[1]).message)!;
+    expect(second.ackHeardOf, (number: first.number, tryNumber: 0));
+  });
+
+  test('with that note to carry, a text of the full room still goes as '
+      'MeshTrax', () async {
+    // The radio holds no route: the tries flood, as the box assumes.
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    DirectMessage dmIn(Uint8List frame) => DirectMessage.decode(unframeDirect(
+            MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!
+        .message)!;
+    c.handleFrameForTest(_ackFromA());
+    await c.sendMessage(a, 'first');
+    await until(() => c.ours.isNotEmpty);
+    c.handleFrameForTest(_ackFromA(number: dmIn(c.ours.single).number));
+    await settle();
+
+    // Nothing Smaz can shrink, and exactly the room the box counts.
+    final fits = List.generate(126, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, fits);
+    await until(() => c.ours.length == 2);
+    expect(c.firmwareDms, isEmpty);
+    final dm = dmIn(c.ours[1]);
+    expect(dm.text, hasLength(126));
+    expect(c.ours[1].length - 2, lessThanOrEqualTo(heardPacketMaxBytes - 16),
+        reason: 'still heard after eight repeaters added their codes');
+  });
+
   test("a text too long to be heard goes the firmware's way", () async {
     c.handleFrameForTest(_ackFromA());
     // Nothing Smaz can shrink.
@@ -260,6 +370,66 @@ void main() {
     await until(() => c.firmwareDms.isNotEmpty);
     expect(c.ours, isEmpty);
     expect(c.firmwareDms, hasLength(1));
+    expect((await mine(long)).viaMeshTrax, isFalse,
+        reason: 'to a contact on MeshTrax, but as a standard message');
+  });
+
+  // The radio holds no route to them, so the try floods; MeshTrax's ACK
+  // names the repeaters that flood passed, as a path reply does.
+  test("a flooded try's ACK tells Pathfinder the way the flood took",
+      () async {
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    final replies = <(String, List<int>, int)>[];
+    c.onPathReplyHeard =
+        (contact, path, width) => replies.add((contact.publicKeyHex, path, width));
+    c.handleFrameForTest(_ackFromA());
+
+    await c.sendMessage(a, 'which way');
+    await until(() => c.ours.isNotEmpty);
+    final frame = c.ours.single;
+    expect(frame.sublist(0, 4),
+        [cmdSendRawPacket, 1, (payloadTypeGRPDATA << 2) | 0x01, 0x40],
+        reason: 'a flood, 2-byte codes');
+    final framed =
+        unframeDirect(MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!;
+    final dm = DirectMessage.decode(framed.message)!;
+    expect(dm.route, isEmpty, reason: 'a flood carries no route');
+
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, cameBy: _hex('A2771000')));
+    await settle();
+    final (key, path, width) = replies.single;
+    expect(key, a.publicKeyHex);
+    expect(path, _hex('A2771000'));
+    expect(width, 2);
+    expect((await mine('which way')).status, MessageStatus.delivered);
+  });
+
+  test('my two lists go in the DM when there is room beside the text',
+      () async {
+    c.meshTraxEnds =
+        (width) => (hears: _hex('BEEF88'), heardBy: _hex('BEEF00A2777F'));
+    c.handleFrameForTest(_ackFromA());
+
+    await c.sendMessage(a, 'short one');
+    await until(() => c.ours.isNotEmpty);
+    final short = DirectMessage.decode(opened(c.ours.last).message)!;
+    expect(short.hears, _hex('BEEF88'));
+    expect(short.heardBy, _hex('BEEF00A2777F'));
+    c.handleFrameForTest(_ackFromA(number: short.number));
+
+    // Nothing Smaz can shrink, sized to fit the packet only without them.
+    final long = List.generate(130, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, long);
+    await until(() => c.ours.length > 1);
+    final tight = DirectMessage.decode(opened(c.ours.last).message)!;
+    expect(utf8.decode(tight.text), long);
+    expect(tight.hears, isEmpty, reason: 'the text comes first');
+    expect(tight.heardBy, isEmpty);
+    expect(c.firmwareDms, isEmpty);
   });
 
   test('two messages get different numbers', () async {

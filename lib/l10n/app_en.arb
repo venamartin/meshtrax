@@ -2109,6 +2109,23 @@
   "channelPath_unknownPath": "Unknown",
   "channelPath_floodPath": "Flood",
   "channelPath_directPath": "Direct",
+  "chat_meshTraxBytesLeft": "{count} left",
+  "@chat_meshTraxBytesLeft": {
+    "description": "Under the message box of a contact whose phone runs MeshTrax, beside a MeshTrax mark: how many bytes of the message are left before it no longer fits a MeshTrax message",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_meshTraxTooLong": "Too long for MeshTrax: goes as a standard message",
+  "@chat_meshTraxTooLong": {
+    "description": "Under the message box of a contact whose phone runs MeshTrax, when the text no longer fits a MeshTrax message and will be sent the radio's standard way"
+  },
+  "chat_sentStandard": "Standard message",
+  "@chat_sentStandard": {
+    "description": "Small line under a sent direct message to a contact on MeshTrax that went the radio's standard way, not as a MeshTrax message"
+  },
   "channelPath_pickedUpOnItsWay": "Picked up on its way, {hops} still to go",
   "@channelPath_pickedUpOnItsWay": {
     "description": "Path line of a DM the app opened from a copy still on its route; hops = the repeaters it still had to pass, e.g. BEEF or AD77,BEEF",
@@ -2588,18 +2605,6 @@
       }
     }
   },
-  "chat_kindRouteGuessed": "route ({count} {count, plural, =1{hop} other{hops}}, {guessed} guessed)",
-  "@chat_kindRouteGuessed": {
-    "description": "A Pathfinder route of which some hops were guessed from the contact's inbound path (the splice).",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "guessed": {
-        "type": "int"
-      }
-    }
-  },
   "chat_statusQueued": "Queued",
   "chat_channelNoSign": "Sent · no sign of who got it",
   "@chat_channelNoSign": {
@@ -2702,7 +2707,6 @@
   "pathfinderHelp_what": "Your radio remembers one route to each contact. When a message on that route fails, MeshTrax floods the whole mesh instead. Pathfinder listens to everything the radio hears: repeater announcements, channel chatter, other people's messages. From that it builds a map of which repeaters hear each other, which ones hear you, and which ones hear each of your contacts.",
   "pathfinderHelp_how": "When you send a message, Pathfinder tries its best route first, then its next best, and floods only as a last resort. An amber path icon marks a message that went out on a Pathfinder route.",
   "pathfinderHelp_learning": "It needs time. A fresh map knows nothing, so at first your messages flood the mesh until it learns a route. After some hours of listening in one place it starts to offer routes, and every delivery or failure teaches it more. Expect little from it on the first day, and less again whenever you move somewhere new.",
-  "pathfinderHelp_guessed": "Sometimes it fills a gap with a guess: a link it has only heard used in the other direction. The message line then says how many hops were guessed. A delivery proves them; a failure costs one attempt and nothing is remembered.",
   "pathfinderHelp_discover": "When it isn't sure which repeaters can hear you here, Pathfinder sends one short Discover (at most every 10 minutes, only after a send has failed) and, with a GPS radio, remembers on this phone which repeaters heard you in each area of about 500 m, never your exact spot.",
   "pathfinderHelp_off": "Turn Pathfinder off and the radio routes exactly as it did before.",
   "pathfinderHelp_dontShowAgain": "Don't show this again",

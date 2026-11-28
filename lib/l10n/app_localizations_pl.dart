@@ -4256,6 +4256,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get channelPath_directPath => 'Bezpośrednio';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Odebrane po drodze, pozostało: $hops';
   }
@@ -5083,19 +5095,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'skoków',
-      many: 'skoków',
-      few: 'skoki',
-      one: 'skok',
-    );
-    return 'trasą ($count $_temp0, przypuszczalnych: $guessed)';
-  }
-
-  @override
   String get chat_statusQueued => 'W kolejce';
 
   @override
@@ -5175,10 +5174,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Potrzebuje czasu. Nowa mapa nic jeszcze nie wie, więc na początku Twoje wiadomości są wysyłane zalewem, dopóki nie pozna trasy. Po kilku godzinach nasłuchu w jednym miejscu zaczyna proponować trasy, a każde dostarczenie lub niepowodzenie uczy go czegoś nowego. Pierwszego dnia nie spodziewaj się po nim zbyt wiele, a w każdym nowym miejscu — znowu mniej.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'Czasem wypełnia lukę przypuszczeniem: połączeniem, które słyszał tylko w przeciwnym kierunku. Wtedy w wierszu stanu wiadomości widać, ile skoków jest przypuszczalnych. Dostarczenie je potwierdza, a niepowodzenie kosztuje jedną próbę i nic nie zostaje zapamiętane.';
 
   @override
   String get pathfinderHelp_discover =>

@@ -4250,6 +4250,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get channelPath_directPath => 'Salva';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Captato lungo il percorso, mancava: $hops';
   }
@@ -5075,23 +5087,6 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String chat_kindRouteGuessed(int count, int guessed) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'salti',
-      one: 'salto',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      guessed,
-      locale: localeName,
-      other: 'ipotizzati',
-      one: 'ipotizzato',
-    );
-    return 'percorso ($count $_temp0, $guessed $_temp1)';
-  }
-
-  @override
   String get chat_statusQueued => 'In coda';
 
   @override
@@ -5169,10 +5164,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get pathfinderHelp_learning =>
       'Ha bisogno di tempo. Una mappa appena creata non sa nulla, quindi all\'inizio i tuoi messaggi usano l\'inondazione finché non impara un percorso. Dopo qualche ora di ascolto nello stesso luogo comincia a proporre percorsi, e ogni consegna o fallimento gli insegna qualcosa in più. Il primo giorno non aspettarti molto, e ogni volta che ti sposti in un posto nuovo tornerà a rendere meno.';
-
-  @override
-  String get pathfinderHelp_guessed =>
-      'A volte colma una lacuna con un\'ipotesi: un collegamento che ha sentito usare solo nella direzione opposta. La riga del messaggio indica allora quanti salti sono ipotizzati. Una consegna li conferma; un fallimento costa un tentativo e non viene memorizzato nulla.';
 
   @override
   String get pathfinderHelp_discover =>

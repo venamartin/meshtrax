@@ -45,6 +45,7 @@ class DirectMessage {
     this.codeBytes = 0,
     this.packing = textPlain,
     List<int>? text,
+    this.ackHeard = 0,
   })  : route = Uint8List.fromList(route ?? const []),
         hears = Uint8List.fromList(hears ?? const []),
         heardBy = Uint8List.fromList(heardBy ?? const []),
@@ -59,6 +60,23 @@ class DirectMessage {
   int codeBytes;
   int packing;
   Uint8List text;
+  int ackHeard;
+
+  /// [ackHeard] for the answer to try [tryNumber] of the message numbered
+  /// [answered], in a message numbered [number]. 0 when it cannot be said:
+  /// the answered message is not an earlier one, or the try is above 31.
+  static int ackHeardFor(int number, int answered, int tryNumber) {
+    final back = number - answered;
+    if (back <= 0 || back > 0x3FFFFFF || tryNumber < 0 || tryNumber > 31) {
+      return 0;
+    }
+    return back * 32 + tryNumber;
+  }
+
+  /// The message number and try [ackHeard] names, null when it names none.
+  ({int number, int tryNumber})? get ackHeardOf => ackHeard < 32
+      ? null
+      : (number: number - ackHeard ~/ 32, tryNumber: ackHeard % 32);
 
   Uint8List encode() {
     final w = CodedBufferWriter();
@@ -71,6 +89,7 @@ class DirectMessage {
     if (codeBytes != 0) w.writeField(7, PbFieldType.OU3, codeBytes);
     if (packing != 0) w.writeField(8, PbFieldType.OU3, packing);
     if (text.isNotEmpty) w.writeField(9, PbFieldType.OY, text);
+    if (ackHeard != 0) w.writeField(10, PbFieldType.OU3, ackHeard);
     return w.toBuffer();
   }
 
@@ -101,6 +120,8 @@ class DirectMessage {
           m.packing = r.readUint32();
         } else if (tag == _tag(9, WIRETYPE_LENGTH_DELIMITED)) {
           m.text = r.readBytes();
+        } else if (tag == _tag(10, WIRETYPE_VARINT)) {
+          m.ackHeard = r.readUint32();
         } else if (!r.skipField(tag)) {
           return m;
         }

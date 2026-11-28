@@ -387,7 +387,7 @@ class PathLabAdapter {
   // copies of it count as the same reply, whose contact, and its payload
   // fingerprint. A copy arriving after the radio told us about the first
   // one (0.6 s later in the simulator, two seconds in the field) is the
-  // same reply heard the long way round: a splice hint, nothing else.
+  // same reply heard the long way round: its links, nothing else.
   final Map<int, ({DateTime until, String contact, String fingerprint})>
       _consumedPathReplies = {};
 
@@ -787,12 +787,11 @@ class PathLabAdapter {
     if (packet.payloadType == _payloadTypePath) {
       final consumed = _consumedPathReplies[packet.payload[1]];
       if (consumed != null && now.isBefore(consumed.until)) {
-        if (payloadFingerprint(packet.payload) == consumed.fingerprint &&
-            graph.observeInboundCopy(
-                consumed.contact, packet.pathBytes, packet.stride)) {
+        if (payloadFingerprint(packet.payload) == consumed.fingerprint) {
+          graph.observeInboundCopy(
+              consumed.contact, packet.pathBytes, packet.stride);
           _log('path reply', _fmtHops(packet.pathBytes, packet.stride),
-              'late copy of the reply already credited — kept as a hint',
-              snrByte / 4.0);
+              'late copy of the reply already credited', snrByte / 4.0);
         }
         return;
       }

@@ -54,9 +54,15 @@ void main() {
     expect(via.pathBytes, [0xA2, 0x77, 0x13, 0x12, 0x5C, 0xBB, 0xF8, 0x57]);
   });
 
-  test('a leg seen only in the opposite direction is not', () {
+  // Owner, 2026-11-28: a link heard one way is presumed the other way.
+  test('a leg seen only in the opposite direction is presumed', () {
     graph.observePath(path([0xE8, 0x00, 0x5C, 0xBB]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
+    expect((graph.findRouteVia('5CBB', 'E800') as RouteResult).pathBytes,
+        [0xA2, 0x77, 0x13, 0x12, 0x5C, 0xBB, 0xE8, 0x00]);
+  });
+
+  test('a leg nothing was ever heard on is not a leg', () {
     expect((graph.findRouteVia('5CBB', 'E800') as FloodResult).reason,
         FloodReason.noCorridor);
   });
@@ -84,11 +90,11 @@ void main() {
       expect(back.pathBytes, [0x5C, 0xBB, 0x13, 0x12, 0xA2, 0x77]);
     });
 
-    test('a link seen only the other way is not used back', () {
+    test('a link seen only the other way is presumed back', () {
       hearViaA277();
       expect(
-          (graph.findReturnPathFromRepeater('F857') as FloodResult).reason,
-          FloodReason.noCorridor);
+          (graph.findReturnPathFromRepeater('F857') as RouteResult).pathBytes,
+          [0xF8, 0x57, 0x5C, 0xBB, 0x13, 0x12, 0xA2, 0x77]);
     });
 
     test('a repeater I hear is a one-hop route back', () {

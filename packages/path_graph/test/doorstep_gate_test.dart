@@ -43,9 +43,10 @@ void main() {
       path(hop), 2, const ObservationOrigin.pubkeyConfirmed(bobPk),
       lastHopHeard: false);
 
-  /// A packet reached me with [hop] as its last repeater.
+  /// A packet reached me with [hop] as its last repeater, from a repeater
+  /// that is no way to Bob: a link heard one way is a link both ways.
   void heardLast(List<int> hop) => graph.observePath(
-      path([0x13, 0x12, ...hop]), 2, const ObservationOrigin.anonymous());
+      path([0x90, 0x09, ...hop]), 2, const ObservationOrigin.anonymous());
 
   void failed(List<int> route) =>
       graph.reportSendResult(path(route), false, contactPubkey: bobPk);

@@ -67,12 +67,16 @@ void main() {
     expect((result as RouteResult).pathBytes, [0xA2, 0x77, 0x13, 0x12]);
   });
 
-  test('a corridor seen only in the opposite direction floods', () {
+  // Owner, 2026-11-28: "A to B heard many times we have to presume B to
+  // A." It floods only where nothing was heard on the link at all.
+  test('a corridor seen only in the opposite direction is presumed', () {
     anchor();
+    expect((graph.findPath(bobPk) as FloodResult).reason,
+        FloodReason.noCorridor);
     graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
         const ObservationOrigin.anonymous(), lastHopHeard: false);
-    final result = graph.findPath(bobPk);
-    expect((result as FloodResult).reason, FloodReason.noCorridor);
+    expect((graph.findPath(bobPk) as RouteResult).pathBytes,
+        [0xA2, 0x77, 0x13, 0x12]);
   });
 
   test('no candidates floods with noEvidence', () {
@@ -170,16 +174,25 @@ void main() {
       }
     }
 
-    heard([0xA2, 0x77], [0xBE, 0xEF], 200);
-    heard([0xBE, 0xEF], [0x13, 0x12], 200);
-    heard([0xA2, 0x77], [0x5C, 0xBB], 200);
-    heard([0x5C, 0xBB], [0x13, 0x12], 2);
+    // Each link heard both ways.
+    void both(List<int> a, List<int> b, int times) {
+      heard(a, b, times);
+      heard(b, a, times);
+    }
+
+    both([0xA2, 0x77], [0xBE, 0xEF], 200);
+    both([0xBE, 0xEF], [0x13, 0x12], 200);
+    both([0xA2, 0x77], [0x5C, 0xBB], 200);
+    both([0x5C, 0xBB], [0x13, 0x12], 2);
     final route = graph.findPath(bobPk) as RouteResult;
     expect(route.pathBytes, [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
     expect(route.hopProbabilities, everyElement(greaterThan(0.9)));
   });
 
-  test('a longer corridor heard often beats a short one barely heard', () {
+  // Owner, 2026-11-28: a radio hears packets on their way to it, so a far
+  // link is heard often coming in and seldom going out. A corridor heard
+  // constantly coming in is preferred going out over one barely heard.
+  test('a corridor heard often the other way beats one barely heard', () {
     anchor();
     void heard(List<int> a, List<int> b, int times) {
       for (var i = 0; i < times; i++) {
@@ -188,27 +201,15 @@ void main() {
       }
     }
 
-    heard([0xA2, 0x77], [0x13, 0x12], 1);
-    heard([0xA2, 0x77], [0xBE, 0xEF], 200);
-    heard([0xBE, 0xEF], [0x13, 0x12], 200);
-    expect((graph.findPath(bobPk) as RouteResult).pathBytes,
-        [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
-  });
-
-  test('a link not heard for days gives way to one still heard', () {
-    anchor();
-    for (var i = 0; i < 200; i++) {
-      graph.observePath(path([0xA2, 0x77, 0x5C, 0xBB, 0x13, 0x12]), 2,
-          const ObservationOrigin.anonymous(), lastHopHeard: false);
-    }
-    nowMillis += 20 * 24 * 60 * 60 * 1000;
-    anchor();
-    for (var i = 0; i < 20; i++) {
-      graph.observePath(path([0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]), 2,
-          const ObservationOrigin.anonymous(), lastHopHeard: false);
-    }
-    expect((graph.findPath(bobPk) as RouteResult).pathBytes,
-        [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
+    // Through BEEF: never heard going out, constantly coming in.
+    heard([0x13, 0x12], [0xBE, 0xEF], 300);
+    heard([0xBE, 0xEF], [0xA2, 0x77], 300);
+    // Through 5CBB: heard a few times going out, never coming in.
+    heard([0xA2, 0x77], [0x5C, 0xBB], 6);
+    heard([0x5C, 0xBB], [0x13, 0x12], 6);
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.pathBytes, [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
+    expect(route.hopProbabilities, everyElement(greaterThan(0.9)));
   });
 
   test('multi-hop route through the trunk', () {
