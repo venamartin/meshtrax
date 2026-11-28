@@ -545,6 +545,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                                 connector.realNameFor(contact.publicKeyHex),
                             sharesPosition:
                                 connector.positionVisibleTo(contact),
+                            runsMeshTrax:
+                                connector.runsMeshTrax(contact.publicKeyHex),
                             onTap: () async {
                               if (!isDiscovered) {
                                 _openChat(contact);

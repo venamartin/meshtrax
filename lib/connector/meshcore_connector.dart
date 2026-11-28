@@ -10,9 +10,12 @@ import 'package:flutter/widgets.dart'
     show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
+import 'package:traxpix/traxpix.dart' show dataTypeMeshTraxPhoto;
 import 'package:traxproto/traxproto.dart';
+import 'package:traxshare/traxshare.dart' show traxshareDataType;
 
 import '../models/channel.dart';
+import '../models/channel_request.dart' show dataTypeChannelRequest;
 import '../models/channel_datagram.dart';
 import '../models/channel_message.dart';
 import '../models/companion_radio_stats.dart';
@@ -8407,6 +8410,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       fromBacklog: _isSyncingQueuedMessages && !_completedFirstQueueDrain,
       pathLen: frame[5],
     );
+    _noteMeshTraxChannelPacket(datagram.dataType, datagram.payload);
     if (_channelsVerified) {
       _emitDatagram(datagram);
     } else {
@@ -10130,9 +10134,51 @@ final frame = buildRepeaterDiscoveryFrame(tag);
 
   /// Contacts whose phone has sent this radio one of MeshTrax's own packets
   /// on this connection, by key: their MeshTrax opens the DMs it is sent.
-  final Set<String> _meshTraxContacts = {};
+  /// Kept between runs of the app, and it follows what is heard: a contact
+  /// is added when one of those packets arrives and taken off when tries
+  /// sent that way go unanswered ([_sendMeshTraxDm]).
+  late final Set<String> _meshTraxContacts = {
+    ...?PrefsManager.instance.getStringList(_meshTraxContactsPref),
+  };
+  static const _meshTraxContactsPref = 'meshtrax_contacts';
   bool runsMeshTrax(String contactKeyHex) =>
       _meshTraxContacts.contains(contactKeyHex);
+
+  /// A photo, a trip report or a request on a channel: only MeshTrax sends
+  /// them, and each names its sender by the start of their key (photos.md,
+  /// trax-mode.md, channel-requests.md). The one chat contact whose key
+  /// starts that way runs MeshTrax (owner, 2026-11-27: "a photo send would
+  /// tell us too"). Two contacts that start alike are left alone.
+  void _noteMeshTraxChannelPacket(int dataType, List<int> blob) {
+    final prefix = switch (dataType) {
+      dataTypeMeshTraxPhoto when blob.length >= 2 => blob.sublist(0, 2),
+      traxshareDataType when blob.length >= 6 => blob.sublist(2, 6),
+      dataTypeChannelRequest when blob.length >= 7 => blob.sublist(5, 7),
+      _ => null,
+    };
+    if (prefix == null) return;
+    Contact? sender;
+    for (final c in _contacts) {
+      if (c.type != advTypeChat ||
+          c.publicKey.length < prefix.length ||
+          !listEquals(c.publicKey.sublist(0, prefix.length), prefix)) {
+        continue;
+      }
+      if (sender != null) return;
+      sender = c;
+    }
+    if (sender != null) _setRunsMeshTrax(sender.publicKeyHex, true);
+  }
+
+  void _setRunsMeshTrax(String contactKeyHex, bool runs) {
+    final changed = runs
+        ? _meshTraxContacts.add(contactKeyHex)
+        : _meshTraxContacts.remove(contactKeyHex);
+    if (!changed) return;
+    unawaited(PrefsManager.instance
+        .setStringList(_meshTraxContactsPref, _meshTraxContacts.toList()));
+    notifyListeners();
+  }
 
   /// A MeshTrax ACK from [contact] was opened.
   void Function(Contact contact, DirectAck ack)? onMeshTraxAckHeard;
@@ -10241,7 +10287,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final text = MeshTraxDmText.unpack(dm.packing, dm.text);
     final me = _selfPublicKey;
     if (text == null || me == null) return;
-    _meshTraxContacts.add(contact.publicKeyHex);
+    _setRunsMeshTrax(contact.publicKeyHex, true);
     final head = <int>[
       respCodeContactMsgRecvV3,
       snrByte & 0xFF,
@@ -10409,7 +10455,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// PUSH_CODE_SEND_CONFIRMED says of a firmware DM.
   void _meshTraxAckHeard(Contact contact, DirectAck ack) {
     final key = contact.publicKeyHex;
-    _meshTraxContacts.add(key);
+    _setRunsMeshTrax(key, true);
     onMeshTraxAckHeard?.call(contact, ack);
     final sent = _meshTraxSent.remove('$key:${ack.number}:${ack.tryNumber}');
     if (sent == null) return;
@@ -10488,7 +10534,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _cap(_meshTraxTried);
     if (!tried.contains(attempt) &&
         tried.length >= _meshTraxTriesBeforeFirmware) {
-      _meshTraxContacts.remove(key);
+      _setRunsMeshTrax(key, false);
       appLogger.info(
         'No MeshTrax ACK from ${contact.name} for '
         '$_meshTraxTriesBeforeFirmware tries: this try goes the '
@@ -11276,6 +11322,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       if (3 + length > plain.length) continue;
       final dataType = plain[0] | (plain[1] << 8);
       final blob = Uint8List.sublistView(plain, 3, 3 + length);
+      _noteMeshTraxChannelPacket(dataType, blob);
       final path = packet.isFlood ? packet.pathBytes : Uint8List(0);
       if (path.isNotEmpty &&
           _ownChannelPacketCopy(channel, dataType, blob, path, packet.hashSize)) {

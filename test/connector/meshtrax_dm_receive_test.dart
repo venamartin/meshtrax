@@ -333,6 +333,37 @@ void main() {
     expect(c.rawPackets, isEmpty);
   });
 
+  // Owner, 2026-11-27: "a photo send would tell us too."
+  test('a photo packet on a channel marks its sender, and it is remembered',
+      () async {
+    await connect();
+    var told = 0;
+    c.addListener(() => told++);
+    // RESP_CODE_CHANNEL_DATA_RECV: slot 0, data type 0x0172, a photo packet
+    // that starts with the first two bytes of A's key.
+    final blob = [aPub[0], aPub[1], 7, 0x12, 0, 1, 2, 3];
+    c.handleFrameForTest(Uint8List.fromList(
+        [27, 0x30, 0, 0, 0, 0xFF, 0x72, 0x01, blob.length, ...blob]));
+    expect(c.runsMeshTrax(a.publicKeyHex), isTrue);
+    // Redraws are gathered up and sent a moment later.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(told, greaterThan(0), reason: 'the contact list redraws');
+
+    // Another run of the app.
+    c.dispose();
+    c = _Connector();
+    expect(c.runsMeshTrax(a.publicKeyHex), isTrue);
+  });
+
+  test('a photo packet from a key no chat contact starts with marks nobody',
+      () async {
+    await connect();
+    final blob = [0x11, 0x22, 7, 0x12, 0, 1, 2, 3];
+    c.handleFrameForTest(Uint8List.fromList(
+        [27, 0x30, 0, 0, 0, 0xFF, 0x72, 0x01, blob.length, ...blob]));
+    expect(c.runsMeshTrax(a.publicKeyHex), isFalse);
+  });
+
   test("without the radio's key nothing is opened", () async {
     await connect(keyExport: false);
     c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277')));
