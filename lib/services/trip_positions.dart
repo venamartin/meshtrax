@@ -189,13 +189,8 @@ class TripPosition {
 /// days, so a member's last known place stays after their reports stop.
 /// Their track is kept as long as their phone says ("Keep my track").
 class TripPositions extends ChangeNotifier {
-  TripPositions(
-    this._connector,
-    this._trax, {
-    DateTime Function()? clock,
-    Random? random,
-  }) : _clock = clock ?? DateTime.now,
-       _session = (random ?? Random()).nextInt(0x10000) {
+  TripPositions(this._connector, this._trax, {DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now {
     _datagrams = _connector.channelDatagrams.listen(_onDatagram);
     _connector.addListener(_onConnector);
     _expiry = Timer.periodic(_expireEvery, (_) => _expire());
@@ -205,7 +200,6 @@ class TripPositions extends ChangeNotifier {
   final MeshCoreConnector _connector;
   final TraxService _trax;
   final DateTime Function() _clock;
-  final int _session;
   late final StreamSubscription<ChannelDatagram> _datagrams;
   late final Timer _expiry;
 
@@ -236,7 +230,6 @@ class TripPositions extends ChangeNotifier {
   final _newer = <String, DateTime>{};
   String _radioKey = '';
   Timer? _saveTimer;
-  int _seq = 0;
 
   Iterable<TripPosition> get all => _byPrefix.values;
 
@@ -277,9 +270,7 @@ class TripPositions extends ChangeNotifier {
       return false;
     }
     final ask = TraxAsk(
-      seq: _seq,
       senderPrefix: Uint8List.fromList(self.sublist(0, 4)),
-      session: _session,
       sentAt: _clock(),
       target: Uint8List.fromList([
         for (var i = 0; i < 8; i += 2)
@@ -287,7 +278,6 @@ class TripPositions extends ChangeNotifier {
       ]),
       have: _byPrefix[prefix]?.track.held() ?? const [],
     );
-    _seq = (_seq + 1) & 0xFF;
     if (!await _connector.sendChannelData(
       trip,
       traxshareDataType,
@@ -333,9 +323,11 @@ class TripPositions extends ChangeNotifier {
     if (d.dataType != traxshareDataType) return;
     final trip = _trax.tripChannel;
     if (trip == null || d.channel.idKey != trip.idKey) return;
+    final header = TraxHeader.decode(d.payload);
+    if (header == null || _isMine(header.senderPrefix)) return;
+    if (header.version > TraxReport.version) return _heardNewer(header, d);
     final report = TraxReport.decode(d.payload);
-    if (report == null) return _heardNewer(d);
-    if (_isMine(report.senderPrefix)) return;
+    if (report == null) return;
     final prefix = pubKeyToHex(report.senderPrefix);
     final before = _byPrefix[prefix];
     final now = _clock();
@@ -383,9 +375,7 @@ class TripPositions extends ChangeNotifier {
 
   /// A TRAX version this app doesn't read: only who sent it and when, from
   /// the header every later version starts with.
-  void _heardNewer(ChannelDatagram d) {
-    final header = TraxHeader.decode(d.payload);
-    if (header == null || _isMine(header.senderPrefix)) return;
+  void _heardNewer(TraxHeader header, ChannelDatagram d) {
     final heardAt = d.fromBacklog && header.sentAt.isBefore(d.receivedAt)
         ? header.sentAt.toLocal()
         : d.receivedAt;

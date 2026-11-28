@@ -20,7 +20,6 @@ class SimPerson {
   }) : _random = random,
        _start = start,
        _rounds = PieceRounds(random),
-       _session = random.nextInt(0x10000),
        battery = 90 + random.nextInt(11),
        _nextAt = start.add(Duration(seconds: 10 + random.nextInt(21)));
 
@@ -32,7 +31,6 @@ class SimPerson {
   final Random _random;
   final DateTime _start;
   final PieceRounds _rounds;
-  final int _session;
   int battery;
   int _seq = 0;
   DateTime _nextAt;
@@ -152,7 +150,6 @@ class SimPerson {
     final report = TraxReport(
       seq: _seq,
       senderPrefix: prefix,
-      session: _session,
       sentAt: now,
       lat: here.lat,
       lon: here.lon,
@@ -160,9 +157,7 @@ class SimPerson {
       heading: still ? null : _lastHeading,
       speed: still ? null : _lastSpeed,
       stillFor: still ? Duration(seconds: mover.stillSeconds) : null,
-      fixAge: Duration(seconds: _random.nextInt(10)),
       battery: battery,
-      requester: true,
       icon: mover is Driver ? TraxMapIcon.vehicle : TraxMapIcon.hike,
       name: sendName,
       track: block,

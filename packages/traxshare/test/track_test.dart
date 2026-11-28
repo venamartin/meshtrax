@@ -68,7 +68,6 @@ TraxReport _report({TrackBlock? track, String? name, TrailPoint? at}) =>
     TraxReport(
       seq: 1,
       senderPrefix: Uint8List.fromList([1, 2, 3, 4]),
-      session: 9,
       sentAt: _sent,
       lat: (at ?? _start).lat,
       lon: (at ?? _start).lon,
@@ -180,11 +179,16 @@ void main() {
       );
       final bytes = _report(track: block).encode();
       expect(TraxReport.decode(bytes.sublist(0, bytes.length - 2)), isNull);
-      for (final (at, value) in [(29, 0), (30, 0), (31, 0), (36, 0)]) {
-        final broken = Uint8List.fromList(bytes)..[at] = value;
-        expect(TraxReport.decode(broken), isNull, reason: 'byte $at');
+      // The grid, the hours kept, the number of pieces, the first one's
+      // number of points.
+      final at =
+          bytes.length -
+          block.encode(wirePosition(_start.lat, _start.lon)).length;
+      for (final i in [0, 1, 2, 7]) {
+        final broken = Uint8List.fromList(bytes)..[at + i] = 0;
+        expect(TraxReport.decode(broken), isNull, reason: 'byte $i');
       }
-      final tooMany = Uint8List.fromList(bytes)..[36] = 250;
+      final tooMany = Uint8List.fromList(bytes)..[at + 7] = 250;
       expect(TraxReport.decode(tooMany), isNull);
     });
   });
@@ -333,15 +337,13 @@ void main() {
   group('the ask', () {
     test('reads back: who asks, whom, and the pieces held', () {
       final ask = TraxAsk(
-        seq: 4,
         senderPrefix: Uint8List.fromList([9, 8, 7, 6]),
-        session: 77,
         sentAt: _sent,
         target: Uint8List.fromList([1, 2, 3, 4]),
         have: [_now - 5, _now - 70000 % 65536, _now - 10080],
       );
       final bytes = ask.encode();
-      expect(bytes.length, 17 + 6);
+      expect(bytes.length, 15 + 6);
       final back = TraxAsk.decode(bytes)!;
       expect(back.target, [1, 2, 3, 4]);
       expect(back.senderPrefix, [9, 8, 7, 6]);
@@ -351,20 +353,59 @@ void main() {
       expect(TraxAsk.decode(_report().encode()), isNull, reason: 'a report');
     });
 
-    test('at most 70 held fit, and anything broken is null', () {
+    test('the bytes follow the plan', () {
       final ask = TraxAsk(
-        seq: 0,
+        senderPrefix: Uint8List.fromList([9, 8, 7, 6]),
+        sentAt: DateTime.utc(2026, 11, 21, 18, 30, 5),
+        target: Uint8List.fromList([1, 2, 3, 4]),
+        have: const [0x12345, 0x10001],
+      );
+      expect(ask.encode(), [
+        0x22, // version 2, kind 2
+        9, 8, 7, 6, // asker
+        0x2D, 0xE3, 0x01, 0x6B, // sent at
+        0, // flags
+        1, 2, 3, 4, // the member asked
+        2, // pieces held
+        0x45, 0x23, 0x01, 0x00, // their minutes, low 16 bits
+      ]);
+    });
+
+    test('spare flag bits and fields from the future change nothing', () {
+      final bytes = TraxAsk(
         senderPrefix: Uint8List(4),
-        session: 0,
+        sentAt: _sent,
+        target: Uint8List.fromList([1, 2, 3, 4]),
+        have: [_now - 5],
+      ).encode();
+      final later = Uint8List.fromList([...bytes, 0x78, 0x2A, 0xA2, 0x01, 0])
+        ..[9] = 0xFF;
+      final back = TraxAsk.decode(later)!;
+      expect(back.target, [1, 2, 3, 4]);
+      expect(back.have, [_now - 5]);
+    });
+
+    test('at most 71 held fit, and anything broken is null', () {
+      final ask = TraxAsk(
+        senderPrefix: Uint8List(4),
         sentAt: _sent,
         target: Uint8List(4),
         have: [for (var i = 0; i < 100; i++) _now - i],
       );
       final bytes = ask.encode();
       expect(bytes.length, TraxReport.maxSize);
-      expect(TraxAsk.decode(bytes)!.have, hasLength(70));
+      expect(TraxAsk.decode(bytes)!.have, hasLength(71));
       expect(TraxAsk.decode(bytes.sublist(0, 20)), isNull);
+      expect(TraxAsk.decode(bytes.sublist(0, 14)), isNull);
       expect(TraxAsk.decode(Uint8List(3)), isNull);
+      final tail = Uint8List.fromList([...bytes, 0xA2, 0x01]);
+      expect(
+        TraxAsk.decode(tail),
+        isNull,
+        reason: 'a tail that doesn\'t parse',
+      );
+      final v1 = Uint8List.fromList(bytes)..[0] = 0x13;
+      expect(TraxAsk.decode(v1), isNull, reason: 'version 1');
     });
   });
 }

@@ -14,7 +14,7 @@
 // MeshTrax's data types, the one list of them (the block 0x0170 to 0x017F,
 // meshcore-dev/MeshCore#3925):
 //   0x0170  photos as MeshTrax 1.12.0 sent them; retired
-//   0x0171  TRAX            docs/technical/trax-mode.md
+//   0x0171  TRAX            TraxReportGrowth, TraxAskGrowth below
 //   0x0172  photos          docs/technical/photos.md
 //   0x0173  requests        docs/technical/channel-requests.md
 //   0x0174  kept for replies to requests; not built
@@ -95,3 +95,44 @@ message DirectAck {
   bytes heard_by = 8;
   uint32 code_bytes = 9;
 }
+
+// TRAX: data type 0x0171, on a trip's private channel, what a member's
+// MeshTrax sends in TRAX mode (docs/technical/trax-mode.md). Every packet
+// from version 2 on starts with the same 9 bytes: byte 0 is the version << 4
+// | the kind, bytes 1 to 4 the first 4 bytes of the sender's key, bytes 5 to
+// 8 when it was sent, in seconds since 1970. Of a later version, a reader
+// reads only these, to say whose location it can't show. This is version
+// 2. Each kind's fixed bytes follow, then its message below; a
+// message that doesn't parse drops the packet. Every number is
+// little-endian.
+
+// After a REPORT's (kind 1) fixed bytes 9 to 22: flags (bit 0 moving, bit 1
+// still, bit 2 may be an old position; bits 3 to 7 spare), latitude and
+// longitude in 2^24ths of their range (u24 each, from -90 and -180), seq,
+// heading in 256ths of a turn, speed in 0.5 m/s while moving or minutes
+// still, altitude in metres (i16, -32768 not known), the radio's battery in
+// % (255 not known), the icon.
+message TraxReportGrowth {
+  // The sender's radio name: UTF-8, at most 20 bytes, cut at a character.
+  // In the first report, then every 30 minutes.
+  string name = 1;
+
+  // The sender's app build, beside the name.
+  uint32 build = 2;
+
+  // Pieces of the sender's track, newest first: 3 bytes (the grid in metres,
+  // the hours a piece is kept, the number of pieces), 5 a piece (the low 16
+  // bits of its first point's minute since 1970, the latest at or before the
+  // report's minute + 2 with them; its span in minutes, u16; its number of
+  // points), then every point, each piece's newest first, as a step east then
+  // north from the point before (the first from the report's position) in
+  // grid units: zigzag, then exp-Golomb of order 3, most significant bit
+  // first, zero bits to the end of the byte.
+  bytes track = 3;
+}
+
+// After an ASK's (kind 2) fixed bytes from 9: flags (all 8 spare), the first
+// 4 bytes of the key of the member asked, the number of their track's pieces
+// the asker holds, then each one's minute (its low 16 bits, u16). Nothing in
+// it yet.
+message TraxAskGrowth {}

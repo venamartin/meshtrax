@@ -1,7 +1,6 @@
-/// Locations on a private channel: the version 1 report a trip member's
-/// MeshTrax sends in TRAX mode, how often it goes, the pieces of their track
-/// it carries, the ask for the rest, and the header every later version
-/// starts with.
+/// Locations on a private channel: the report a trip member's MeshTrax sends
+/// in TRAX mode, how often it goes, the pieces of their track it carries,
+/// the ask for the rest, and the header every version starts with.
 library;
 
 export 'src/ask.dart';

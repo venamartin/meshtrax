@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:traxproto/traxproto.dart';
+
+import 'header.dart';
 import 'track.dart';
 import 'trail.dart';
 
@@ -9,27 +12,23 @@ import 'trail.dart';
 /// firmware's docs/number_allocations.md (meshcore-dev/MeshCore#3925).
 const traxshareDataType = 0x0171;
 
-/// What a member goes by, as the trip sees them on the map. A report
-/// carries it in the low 4 bits of byte 28: 0 is [hike], as builds before
-/// test build 243 send, and one this build doesn't know is [hike] too.
-/// New ones go at the end.
+/// What a member goes by, as the trip sees them on the map: byte 22 of a
+/// report. One this build doesn't know is [hike]. New ones go at the end.
 enum TraxMapIcon { hike, vehicle, boat, motorcycle, bicycle, aircraft, camp }
 
-/// A member's location, as version 1's REPORT (subtype 2) carries it. The
-/// layout is version 1 of the closed location-sharing plan (#240); later
-/// fields add to it rather than replace it. How TRAX uses it:
-/// docs/technical/trax-mode.md.
+/// A member's location, as TRAX version 2's REPORT (kind 1) carries it. How
+/// TRAX uses it: docs/technical/trax-mode.md.
 ///
-/// 29 bytes: a 12-byte header (version and subtype, seq, sender prefix,
-/// session, sent at), then the field mask, the position, the fix age,
-/// heading, speed, altitude, battery, and the icon in the low 4 bits of the
-/// last byte (the high 4 are free). Multi-byte numbers are little-endian. The sender's name may follow, then pieces of their track
+/// 23 fixed bytes: the [TraxHeader], the flags (bit 0 moving, bit 1 still,
+/// bit 2 may be old; bits 3–7 spare), latitude and longitude ([lat24],
+/// [lon24]), seq, heading, speed or minutes still, altitude, battery and
+/// icon. Multi-byte numbers are little-endian. Then [TraxReportGrowth]
+/// (meshtrax.proto): the sender's name and build, and pieces of their track
 /// ([TrackBlock]), all within [maxSize].
 class TraxReport {
   const TraxReport({
     required this.seq,
     required this.senderPrefix,
-    required this.session,
     required this.sentAt,
     required this.lat,
     required this.lon,
@@ -37,20 +36,20 @@ class TraxReport {
     this.heading,
     this.speed,
     this.stillFor,
-    this.fixAge,
     this.battery,
     this.mayBeOld = false,
-    this.requester = false,
     this.icon = TraxMapIcon.hike,
     this.name,
+    this.build,
     this.track,
   });
 
-  static const version = 1;
-  static const subtype = 2;
+  static const version = 2;
+  static const kind = 1;
 
-  /// The size without a trail or a name: the largest at its airtime cost.
-  static const size = 29;
+  /// The fixed bytes. With the channel's 3 bytes of framing they fill 2
+  /// cipher blocks, with 6 to spare.
+  static const size = 23;
 
   /// The most a report may take, a track and a name included.
   static const maxSize = 157;
@@ -58,22 +57,11 @@ class TraxReport {
   /// The longest name carried, in UTF-8 bytes.
   static const maxNameBytes = 20;
 
-  static const _headingBit = 1 << 0;
-  static const _speedBit = 1 << 1;
-  static const _altitudeBit = 1 << 2;
-  static const _fixAgeBit = 1 << 3;
-  static const _movingBit = 1 << 4;
-  static const _requesterBit = 1 << 5;
-  static const _batteryBit = 1 << 6;
-
-  /// A trail, as builds before test build 243 sent it, where the name is
-  /// now: such a report's name isn't read.
-  static const _trailBit = 1 << 10;
-  static const _mayBeOldBit = 1 << 11;
-  static const _stillBit = 1 << 12;
-  static const _trackBit = 1 << 13;
-  static const _extensionBit = 1 << 15;
-  static const _nameTag = 1;
+  static const _movingBit = 1 << 0;
+  static const _stillBit = 1 << 1;
+  static const _mayBeOldBit = 1 << 2;
+  static const _noAltitude = -32768;
+  static const _noBattery = 255;
 
   /// Per sender, +1 on every send; wraps at 256.
   final int seq;
@@ -81,9 +69,6 @@ class TraxReport {
   /// The first 4 bytes of the sender's public key: a claim, not proof,
   /// since anyone holding the channel key can send.
   final Uint8List senderPrefix;
-
-  /// A random u16, new for each TRAX session.
-  final int session;
 
   /// The sender's phone clock, in whole seconds.
   final DateTime sentAt;
@@ -104,9 +89,6 @@ class TraxReport {
   /// minutes, 255 at most.
   final Duration? stillFor;
 
-  /// Since the radio's reading last changed; null when unknown.
-  final Duration? fixAge;
-
   /// The radio's battery, 0–100 %.
   final int? battery;
 
@@ -114,188 +96,140 @@ class TraxReport {
   /// stored position, not a live fix.
   final bool mayBeOld;
 
-  /// Sent by the session's requester; a TRAX beacon is its own session.
-  final bool requester;
-
   final TraxMapIcon icon;
 
   /// The sender's radio name, for members who aren't a contact.
   final String? name;
 
+  /// The sender's app build.
+  final int? build;
+
   /// The way the sender came: their trail ([fitTrack]) or one older piece
   /// of their track, in no more than [trackRoom].
   final TrackBlock? track;
 
-  /// The bytes a track may take beside [name].
-  static int trackRoom({String? name}) {
-    final cut = name == null ? 0 : _cut(name).length;
-    return maxSize - size - (cut == 0 ? 0 : 3 + cut);
+  /// The bytes a track may take beside [name] and [build].
+  static int trackRoom({String? name, int? build}) {
+    final beside = _growth(name, build, null).encode().length;
+    // The track's tag, then its length: 1 byte up to 127, else 2.
+    final left = maxSize - size - beside - 1;
+    return left <= 128 ? left - 1 : max(left - 2, 127);
   }
 
-  /// The report as sent. [random] fills a saturated fix age, so a parked
-  /// radio's reports don't repeat a whole cipher block.
-  Uint8List encode({Random? random}) {
-    final cut = name == null ? null : _cut(name!);
-    final nameBytes = cut == null || cut.isEmpty ? null : cut;
+  Uint8List encode() {
     final track = this.track;
-    final trackBytes = track == null || track.pieces.isEmpty
-        ? null
-        : track.encode(wirePosition(lat, lon));
-    final at = size + (nameBytes == null ? 0 : 3 + nameBytes.length);
-    final out = Uint8List(at + (trackBytes?.length ?? 0));
+    final growth = _growth(
+      name,
+      build,
+      track == null || track.pieces.isEmpty
+          ? null
+          : track.encode(wirePosition(lat, lon)),
+    ).encode();
+    final out = Uint8List(size + growth.length);
     final data = ByteData.sublistView(out);
-    var mask = 0;
-    if (altitude != null) mask |= _altitudeBit;
-    if (heading != null) mask |= _headingBit | _movingBit;
-    if (speed != null) mask |= _speedBit | _movingBit;
-    if (stillFor != null && heading == null && speed == null) {
-      mask |= _stillBit;
-    }
-    if (requester) mask |= _requesterBit;
-    if (battery != null) mask |= _batteryBit;
-    if (mayBeOld) mask |= _mayBeOldBit;
-    if (trackBytes != null) mask |= _trackBit;
-    if (nameBytes != null) mask |= _extensionBit;
-    final ageSeconds = fixAge?.inSeconds;
-    if (ageSeconds != null && ageSeconds >= 0xFFFF) {
-      mask |= _mayBeOldBit;
-      final r = random ?? Random.secure();
-      out[21] = r.nextInt(256);
-      out[22] = r.nextInt(256);
-    } else if (ageSeconds != null) {
-      mask |= _fixAgeBit;
-      data.setUint16(21, max(ageSeconds, 0), Endian.little);
-    }
-
-    out[0] = version << 4 | subtype;
-    out[1] = seq & 0xFF;
-    out.setRange(2, 6, senderPrefix);
-    data.setUint16(6, session & 0xFFFF, Endian.little);
-    data.setUint32(8, sentAt.millisecondsSinceEpoch ~/ 1000, Endian.little);
-    data.setUint16(12, mask, Endian.little);
-    // Accuracy class 0, as the radio reports it, in the low 5 bits.
-    _putBits(out, 14, 5, 26, lonUnits(lon));
-    _putBits(out, 14, 31, 25, latUnits(lat));
-    if (heading case final h?) out[23] = (h * 256 / 360).round() % 256;
-    if (speed case final v?) out[24] = (v / 0.5).round().clamp(0, 255);
-    if (mask & _stillBit != 0) out[24] = stillFor!.inMinutes.clamp(0, 255);
-    if (altitude != null) {
-      data.setInt16(25, altitude!.clamp(-32768, 32767), Endian.little);
-    }
-    if (battery != null) out[27] = battery!.clamp(0, 100);
-    out[28] = icon.index;
-    if (nameBytes != null) {
-      out[size] = 2 + nameBytes.length;
-      out[size + 1] = _nameTag;
-      out[size + 2] = nameBytes.length;
-      out.setRange(size + 3, at, nameBytes);
-    }
-    if (trackBytes != null) out.setRange(at, out.length, trackBytes);
+    final moving = heading != null || speed != null;
+    final still = !moving && stillFor != null;
+    out.setRange(
+      0,
+      TraxHeader.size,
+      TraxHeader(
+        version: version,
+        kind: kind,
+        senderPrefix: senderPrefix,
+        sentAt: sentAt,
+      ).encode(),
+    );
+    out[9] =
+        (moving ? _movingBit : 0) |
+        (still ? _stillBit : 0) |
+        (mayBeOld ? _mayBeOldBit : 0);
+    _put24(data, 10, lat24(lat));
+    _put24(data, 13, lon24(lon));
+    out[16] = seq & 0xFF;
+    if (heading case final h?) out[17] = (h * 256 / 360).round() % 256;
+    if (speed case final v?) out[18] = (v / 0.5).round().clamp(0, 255);
+    if (still) out[18] = stillFor!.inMinutes.clamp(0, 255);
+    data.setInt16(
+      19,
+      altitude?.clamp(-32767, 32767) ?? _noAltitude,
+      Endian.little,
+    );
+    out[21] = battery?.clamp(0, 100) ?? _noBattery;
+    out[22] = icon.index;
+    out.setRange(size, out.length, growth);
     return out;
   }
 
-  /// A version 1 REPORT, or null for anything else or a malformed one.
+  /// A version 2 REPORT, or null for anything else or a malformed one: a
+  /// tail that doesn't parse, or a track that doesn't read to its end.
   static TraxReport? decode(Uint8List data) {
-    if (data.length < size) return null;
-    if (data[0] >> 4 != version || data[0] & 0x0F != subtype) return null;
-    final d = ByteData.sublistView(data);
-    final mask = d.getUint16(12, Endian.little);
-    final latU = _getBits(data, 14, 31, 25);
-    final lonU = _getBits(data, 14, 5, 26);
-    if (latU > 18000000 || lonU >= 36000000) return null;
-    final lat = latU / 100000 - 90, lon = lonU / 100000 - 180;
-    final sentAt = DateTime.fromMillisecondsSinceEpoch(
-      d.getUint32(8, Endian.little) * 1000,
-      isUtc: true,
-    );
-    String? name;
-    var at = size;
-    if (mask & _extensionBit != 0 && mask & _trailBit == 0) {
-      name = _readName(data, at);
-      if (data.length > at) at += 1 + data[at];
+    final header = TraxHeader.decode(data);
+    if (header == null ||
+        header.version != version ||
+        header.kind != kind ||
+        data.length < size) {
+      return null;
     }
+    final growth = TraxReportGrowth.decode(Uint8List.sublistView(data, size));
+    if (growth == null) return null;
+    final d = ByteData.sublistView(data);
+    final at = positionOf(_get24(d, 10), _get24(d, 13));
     TrackBlock? track;
-    if (mask & _trackBit != 0) {
-      final read = TrackBlock.decode((lat: lat, lon: lon), sentAt, data, at);
-      if (read == null) return null;
+    if (growth.track.isNotEmpty) {
+      final read = TrackBlock.decode(at, header.sentAt, growth.track, 0);
+      if (read == null || read.bytes != growth.track.length) return null;
       track = read.block;
     }
-    final battery = data[27];
+    final flags = data[9];
+    final moving = flags & _movingBit != 0;
+    final altitude = d.getInt16(19, Endian.little);
+    final battery = data[21];
     return TraxReport(
-      seq: data[1],
-      senderPrefix: Uint8List.fromList(data.sublist(2, 6)),
-      session: d.getUint16(6, Endian.little),
-      sentAt: sentAt,
-      lat: lat,
-      lon: lon,
-      altitude: mask & _altitudeBit != 0 ? d.getInt16(25, Endian.little) : null,
-      heading: mask & _headingBit != 0 ? data[23] * 360 / 256 : null,
-      speed: mask & _speedBit != 0 ? data[24] * 0.5 : null,
-      stillFor: mask & (_stillBit | _speedBit) == _stillBit
-          ? Duration(minutes: data[24])
+      seq: data[16],
+      senderPrefix: header.senderPrefix,
+      sentAt: header.sentAt,
+      lat: at.lat,
+      lon: at.lon,
+      altitude: altitude == _noAltitude ? null : altitude,
+      heading: moving ? data[17] * 360 / 256 : null,
+      speed: moving ? data[18] * 0.5 : null,
+      stillFor: !moving && flags & _stillBit != 0
+          ? Duration(minutes: data[18])
           : null,
-      fixAge: mask & _fixAgeBit != 0
-          ? Duration(seconds: d.getUint16(21, Endian.little))
-          : null,
-      battery: mask & _batteryBit != 0 && battery <= 100 ? battery : null,
-      mayBeOld: mask & _mayBeOldBit != 0,
-      requester: mask & _requesterBit != 0,
-      icon:
-          TraxMapIcon.values.elementAtOrNull(data[28] & 0x0F) ??
-          TraxMapIcon.hike,
-      name: name,
+      battery: battery <= 100 ? battery : null,
+      mayBeOld: flags & _mayBeOldBit != 0,
+      icon: TraxMapIcon.values.elementAtOrNull(data[22]) ?? TraxMapIcon.hike,
+      name: growth.name.isEmpty ? null : growth.name,
+      build: growth.build == 0 ? null : growth.build,
       track: track,
     );
   }
 
-  /// [s] in UTF-8, cut at a character boundary to [maxNameBytes].
-  static Uint8List _cut(String s) {
-    final out = BytesBuilder();
+  static TraxReportGrowth _growth(String? name, int? build, Uint8List? track) =>
+      TraxReportGrowth(
+        name: name == null ? '' : _cut(name),
+        build: build ?? 0,
+        track: track,
+      );
+
+  /// [s] cut at a character boundary to [maxNameBytes] of UTF-8.
+  static String _cut(String s) {
+    final out = StringBuffer();
+    var bytes = 0;
     for (final rune in s.runes) {
-      final bytes = utf8.encode(String.fromCharCode(rune));
-      if (out.length + bytes.length > maxNameBytes) break;
-      out.add(bytes);
+      final char = String.fromCharCode(rune);
+      bytes += utf8.encode(char).length;
+      if (bytes > maxNameBytes) break;
+      out.write(char);
     }
-    return out.toBytes();
+    return out.toString();
   }
 
-  /// Tag 1 from the extension block at [at]; unknown tags are skipped.
-  static String? _readName(Uint8List data, int at) {
-    if (data.length <= at) return null;
-    final end = at + 1 + data[at];
-    if (end > data.length) return null;
-    var i = at + 1;
-    while (i + 2 <= end) {
-      final tag = data[i], length = data[i + 1];
-      if (i + 2 + length > end) return null;
-      if (tag == _nameTag) {
-        if (length == 0) return null;
-        return utf8.decode(
-          data.sublist(i + 2, i + 2 + length),
-          allowMalformed: true,
-        );
-      }
-      i += 2 + length;
-    }
-    return null;
+  static void _put24(ByteData d, int at, int v) {
+    d.setUint16(at, v & 0xFFFF, Endian.little);
+    d.setUint8(at + 2, v >> 16);
   }
 
-  // Bit by bit, so the 56-bit position never needs more than 32-bit
-  // arithmetic, which is all a web build has.
-  static void _putBits(Uint8List b, int start, int offset, int width, int v) {
-    for (var i = 0; i < width; i++) {
-      if ((v >> i) & 1 == 0) continue;
-      final p = offset + i;
-      b[start + (p >> 3)] |= 1 << (p & 7);
-    }
-  }
-
-  static int _getBits(Uint8List b, int start, int offset, int width) {
-    var v = 0;
-    for (var i = 0; i < width; i++) {
-      final p = offset + i;
-      if ((b[start + (p >> 3)] >> (p & 7)) & 1 == 1) v |= 1 << i;
-    }
-    return v;
-  }
+  static int _get24(ByteData d, int at) =>
+      d.getUint16(at, Endian.little) | d.getUint8(at + 2) << 16;
 }

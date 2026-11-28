@@ -171,12 +171,20 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
 - **How often:** 30 s × the people in the group (you plus the trip members, at least 2). That's 1 minute for two people and 2 for four.
   - A slower preset stretches it by its airtime compared with SF7 / 62.5 kHz (214 ms for a 37-byte packet).
   - Each send moves by ±20 % at random, and the first goes 10 to 30 s after TRAX mode starts.
-- **The report** (`TraxReport`, `packages/traxshare`) is 29 bytes, 37 on air. It carries:
-  - the position to 1e-5°, the fix age and the altitude;
-  - the radio's battery, and a "may be old" flag;
-  - how the person is moving. While moving, that is heading (1.4° steps) and speed (0.5 m/s steps), worked out over the last 50 m or more of the track, because the radio reports positions in 11 m steps. From 2 minutes after the last move, it is "not moving" (bit 12) and for how many minutes, held in the speed byte.
-  - the sender's name every 30 minutes;
-  - their icon (`TraxMapIcon`) in the low 4 bits of the last byte, in every report: 0 is Hike, as builds before test build 243 send, and one a build doesn't know shows as Hike. The high 4 bits are free.
+- **The report** (`TraxReport`, `packages/traxshare`): version 2, kind 1. Its 23 fixed bytes go in 37 on air, with room for 6 more. It carries:
+  - the position in 2^24ths of 180° north and 360° east: steps of 1.2 m and 1.9 m in Death Valley;
+  - the altitude, the radio's battery, and a "may be old" flag;
+  - how the person is moving. While moving, that is heading (1.4° steps) and speed (0.5 m/s steps), worked out over the last 50 m or more of the track, because the radio reports positions in 11 m steps. From 2 minutes after the last move, it is "not moving" and for how many minutes, in the speed byte;
+  - their icon (`TraxMapIcon`), in every report; one a build doesn't know shows as Hike;
+  - the sender's name and app build every 30 minutes, after the fixed bytes.
+- **The layout** (`TraxReportGrowth` in `packages/traxproto/proto/meshtrax.proto` says it all, byte by byte):
+  - bytes 0 to 8: the header every version starts with (see Versions below);
+  - byte 9: flags. Bit 0 moving, bit 1 still, bit 2 may be old; bits 3 to 7 are spare;
+  - bytes 10 to 15: latitude and longitude, 3 bytes each;
+  - byte 16: seq, +1 on every send;
+  - bytes 17 and 18: heading, and speed or minutes still;
+  - bytes 19 to 22: altitude (-32768 when not known), battery (255 when not known), icon;
+  - then the protobuf fields: name (1), build (2), track (3). Fields a phone doesn't know are skipped. A tail that doesn't parse drops the report. Every number is little-endian.
 - **The data type** is `0x0171` (`71 01` on air), in MeshTrax's block `0x0170` to `0x017F`, requested in meshcore-dev/MeshCore#3925. Channel datagrams need companion firmware 1.15 (version code 11). On older firmware the sheet says "This radio's firmware can't send your location to the trip. Update it."
 - **Your track** (`TraxTrack`): while TRAX mode is on, the radio is read every 10 s, and a point is kept every 25 m. It is kept in pieces (`TrackPiece`), for your own line on the map and for the reports; there is no list of saved tracks.
   - A piece closes once its points, thinned to 10 m on an 8 m grid, would take more than 108 bytes, or at 500 points. The next starts at its last point.
@@ -184,8 +192,7 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
   - A piece is named by the minute of its first point. Two begun in one minute are named a minute apart.
   - Each piece is deleted Keep my track's hours after its last point, here and on the trip's phones: the hours go with it. Until then it stays across restarts and TRAX mode off and on.
   - Your own line on the map shows the points as kept since the app started, and runs on to your dot while the reading is live. Pieces closed before a restart show as reports carry them, thinned to 10 m.
-- **What a report carries of it** (`TrackBlock`, mask bit 13, after the report's 29 bytes and the name): the grid, the hours kept, and for each piece its minute (low 16 bits), its span in minutes and its number of points. Then come all the points, newest first, each a step from the one before, the first from the report's position, as zigzag exp-Golomb (k = 3) on the grid. At most 157 bytes with the name.
-  - Builds before test build 243 sent a trail with bit 10, before the name. Between them and later builds, positions still go both ways, but tracks don't, and an older build's name only comes in a report without a trail.
+- **What a report carries of it** (`TrackBlock`, the report's track field): the grid, the hours kept, and for each piece its minute (low 16 bits), its span in minutes and its number of points. Then come all the points, newest first, each a step from the one before, the first from the report's position, as zigzag exp-Golomb (k = 3) on the grid. At most 157 bytes with the name: 131 for the track alone.
   - **The trail** goes in the first report, then every 5th, and never sooner than 10 minutes after the last. It carries the open piece, then as many closed ones as lie within 10 miles, whole. They are thinned alike: Douglas-Peucker from 10 m, doubled until they fit, then bisected to within 1 m, on a grid of max(8, ε/2) m.
   - **One older piece** goes halfway between trails, alone, at its finest and without the name. Each piece goes once a round, in a new random order every round, except those the latest trail carried at their finest. A piece closed during a round waits for the next. A phone that hears only some reports gets the track bit by bit.
   - Trails add about 0.25 % airtime for two people and 2.5 % for ten, and older pieces up to as much again. Thinned to 10 m rather than 15 m (2026-11-27), a kilometre of track takes about 27 % more bytes, measured on a winding trail, so pieces cover less ground and the older ones take that much longer to go round. With two to four people a trail goes every 10 minutes, so ten older pieces take about 100 minutes; with ten people, about 250.
@@ -195,27 +202,29 @@ In TRAX mode, each member's MeshTrax sends its radio's location to the trip chan
 
 ### The ask
 
-A member's MeshTrax asks another's for their track with a `TraxAsk`: version 1, subtype 3, on the trip channel, with the same data type.
+A member's MeshTrax asks another's for their track with a `TraxAsk`: version 2, kind 2, on the trip channel, with the same data type.
 
-- 17 bytes, and 2 for each piece held: the reports' 12-byte header, the first 4 bytes of the key of the member asked, how many pieces are held, then each one's minute (low 16 bits). It lists only pieces held at their finest (grid 8 m), up to 70.
+- 15 bytes, and 2 for each piece held: the header, a flags byte (all 8 bits spare), the first 4 bytes of the key of the member asked, how many pieces are held, then each one's minute (low 16 bits). It lists only pieces held at their finest (grid 8 m), up to 71. Then its protobuf fields (`TraxAskGrowth`), none yet.
 - The member's phone, in TRAX mode and connected, answers within about 3 s with a trail. Then it sends each piece the asker lacks, newest first and alone in a report, a tenth of the interval apart (6 s for two people, 30 s for ten) and at least 3 s apart. Pieces that trail carried at their finest are left out.
 - An ask heard while the app was away isn't answered: the asker asks again.
 - To get a member's track the next day: open the TRAX group and tap them. Their card has Ask; a contact with no location yet is asked straight away.
 - Each piece costs about 0.6 s of airtime at the mesh's own preset, before relays.
 
-### A later version
+### Versions
 
 Every TRAX packet from version 2 on starts with the same 9 bytes, in every later version too (`TraxHeader`, `packages/traxshare`):
 - byte 0: the version × 16 + the kind (kind 0 is never sent);
 - bytes 1 to 4: the first 4 bytes of the sender's key;
 - bytes 5 to 8: when it was sent, in seconds since 1970 (UTC), little-endian.
 
-This app reads version 1, which has its own layout and keeps its own reader. From a later version it reads only these 9 bytes, never the rest:
+This app reads version 2. From a later version it reads only these 9 bytes, never the rest:
 - That member's row in the TRAX group and the TRAX sheet says "Update MeshTrax to see Ana", with when they were heard.
 - A sender with no contact or name here shows as "Update MeshTrax to see someone on this trip".
 - The notice goes once a report this app reads comes from that radio, or a day after the last later-version packet.
 
-1.12.0 and earlier drop later versions without a word.
+A kind this version doesn't know is dropped: a new kind never carries what an existing one does.
+
+Version 1 (MeshTrax 1.12.0) and version 2 drop each other's packets without a word: everyone on a trip updates.
 
 ### The group check
 

@@ -3,14 +3,13 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connector/meshcore_connector.dart';
 import '../models/channel.dart';
 import '../models/channel_datagram.dart';
 import '../models/channel_request.dart';
+import '../utils/app_build.dart';
 import '../utils/app_logger.dart';
-import '../utils/platform_info.dart';
 
 /// Requests MeshTrax nodes make of each other on a channel
 /// ([dataTypeChannelRequest]): sends them through the chat, and hands each
@@ -40,24 +39,10 @@ class ChannelRequests {
 
   /// This app's build, which every request carries
   /// ([ChannelRequest.build]).
-  final Future<int> _build = _appBuild();
+  final Future<int> _build = appBuild();
 
   ChannelRequests._(this.connector) {
     _datagrams = connector.channelDatagrams.listen(_onDatagram);
-  }
-
-  /// The number after the + in this app's version; 0 when the platform
-  /// doesn't say.
-  static Future<int> _appBuild() async {
-    try {
-      final code = int.tryParse((await PackageInfo.fromPlatform()).buildNumber);
-      if (code == null) return 0;
-      // A split APK's versionCode is the build plus 1000 times its ABI
-      // (Flutter's --split-per-abi): arm64's 2252 is build 252.
-      return PlatformInfo.isAndroid ? code % 1000 : code;
-    } on Object catch (_) {
-      return 0;
-    }
   }
 
   /// [handler] takes the requests of [kind] asked of this radio, with the

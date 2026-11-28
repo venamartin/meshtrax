@@ -6,14 +6,22 @@ typedef TrailPoint = ({double lat, double lon});
 
 const _metresPerDegree = 111320.0;
 
-/// A report's position as the wire carries it, in 0.00001° steps. A trail
-/// is measured from it, so both ends start from the same point.
+/// A report's position as the wire carries it: latitude and longitude in
+/// 2^24ths of their range, steps of 1.2 m north and 2.4 m east at the
+/// equator. A trail is measured from it, so both ends start from the same
+/// point.
 TrailPoint wirePosition(double lat, double lon) =>
-    (lat: latUnits(lat) / 100000 - 90, lon: lonUnits(lon) / 100000 - 180);
+    positionOf(lat24(lat), lon24(lon));
 
-int latUnits(double lat) => ((lat.clamp(-90.0, 90.0) + 90) * 100000).round();
+const _steps = 1 << 24;
 
-int lonUnits(double lon) => ((lon + 180) * 100000).round() % 36000000;
+int lat24(double lat) =>
+    min(((lat.clamp(-90.0, 90.0) + 90) * _steps / 180).round(), _steps - 1);
+
+int lon24(double lon) => ((lon + 180) * _steps / 360).round() % _steps;
+
+TrailPoint positionOf(int lat24, int lon24) =>
+    (lat: lat24 * 180 / _steps - 90, lon: lon24 * 360 / _steps - 180);
 
 /// The bits of [points], MSB first: for each point in turn, its step east
 /// then north from the point before it (the first from [anchor]), in units

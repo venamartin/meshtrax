@@ -444,9 +444,7 @@ void main() {
         at + 600,
         asks: {
           at: TraxAsk(
-            seq: 0,
             senderPrefix: Uint8List.fromList([1, 2, 3, 4]),
-            session: 9,
             sentAt: start.add(const Duration(seconds: at)),
             target: Uint8List.fromList([0xA1, 0xA2, 0xA3, 0xA4]),
             have: have,
