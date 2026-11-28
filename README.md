@@ -93,6 +93,8 @@ sudo usermod -aG dialout $USER   # then log out and back in
 
 Without the installer, download `meshtrax-linux-x64-v….zip` (PC) or `meshtrax-linux-arm64-v….zip` (Raspberry Pi) from the [releases page](https://github.com/venamartin/meshtrax/releases), unzip it, and run `./meshtrax` in the folder.
 
+No internet? Put [`install.sh`](https://raw.githubusercontent.com/venamartin/meshtrax/master/install.sh) in one folder with the zip for your machine and its `.sha1` file, for example on a USB drive, and run `bash install.sh` there. It installs that zip, checked against the `.sha1`, without going online. If the folder holds several versions, it takes the newest, and it never replaces a newer MeshTrax unless you ask with `--version`. Releases carry `install.sh` beside their zips, so a folder of a release's files is ready as it is.
+
 To pin a specific version, or to remove MeshTrax:
 
 ```bash
@@ -102,7 +104,7 @@ curl -fsSL https://raw.githubusercontent.com/venamartin/meshtrax/master/install.
 
 #### Ubuntu and other desktop Linux on a 64-bit PC
 
-MeshTrax runs on Ubuntu 22.04 or newer, Debian 12, Linux Mint 21 or newer, and Fedora 36 or newer. A normal desktop install already has what the app needs. The installer itself needs `curl` and `unzip`, which Ubuntu doesn't always include:
+MeshTrax runs on Ubuntu 22.04 or newer, Debian 12, Linux Mint 21 or newer, and Fedora 36 or newer. A normal desktop install already has what the app needs. The installer itself needs `unzip`, and `curl` to download, which Ubuntu doesn't always include:
 
 ```bash
 sudo apt install curl unzip
