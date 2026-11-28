@@ -1297,6 +1297,62 @@ class PathGraph {
     _scheduleFlush();
   }
 
+  /// A send on [pathBytes] that [reportSendResult] was told had failed did
+  /// arrive: their ACK of a later try lists it among the tries that
+  /// reached them, so it was its ACK that was lost and not the packet
+  /// (owner, 2026-11-28: the ACK's data must not go to waste). The failure
+  /// is taken back from every link and from both doorsteps it was held
+  /// against, and the send counts as the delivery it was. [hopsHeard] as
+  /// the failure was reported.
+  void reportArrivedAfterAll(
+    Uint8List pathBytes, {
+    required String contactPubkey,
+    int? stride,
+    int? hopsHeard,
+  }) {
+    contactPubkey = contactPubkey.toLowerCase();
+    stride ??= _selfStride;
+    if (pathBytes.isEmpty ||
+        stride < hashWidthBytes ||
+        pathBytes.length % stride != 0) {
+      return;
+    }
+    final arrival = _arrivalMillis;
+    final hopCount = pathBytes.length ~/ stride;
+    for (var i = 0; i < hopCount - 1; i++) {
+      // Heard passing the packet on, this link was credited then.
+      if (hopsHeard != null && hopsHeard >= i + 2) continue;
+      final from = _hopHex(pathBytes, stride, i);
+      final to = _hopHex(pathBytes, stride, i + 1);
+      final edge = _store.edges.putIfAbsent((from, to),
+          () => EdgeState(source: 'observed', firstObserved: arrival));
+      // A packet thought never to have left my doorstep tried no link.
+      if (hopsHeard == 0) {
+        edge.n++;
+      } else {
+        edge.takeBackFailure(arrival, config.failureHalfLifeHours);
+      }
+      edge.s++;
+      edge.addTraffic(1, arrival, config.trafficHalfLifeHours);
+      _store.heard(from, NodeSource.observed, arrival);
+      _store.heard(to, NodeSource.observed, arrival);
+      _store.markEdgeDirty(from, to);
+    }
+    final first = _hopHex(pathBytes, stride, 0);
+    final end = _hopHex(pathBytes, stride, hopCount - 1);
+    _silentAt.remove(first.toUpperCase());
+    _failedToward[first.toUpperCase()]?.remove(contactPubkey);
+    _missedEnds[contactPubkey]?.remove(end);
+    final self = _selfPubkey;
+    if (self != null) {
+      _evidence.recordProvenEgress(self, first, arrival);
+      _notePlace(first);
+    }
+    _evidence.recordProvenIngress(contactPubkey, end, arrival);
+    _reachedSinceMove.add(contactPubkey);
+    _scheduleFlush();
+  }
+
   /// Trace result: top-grade evidence — the only source of middle-hop
   /// SNR. [hops] are bucket-width hash hex in traversal order; [snrs][i] is
   /// the level at which hops[i] heard the *previous* transmission (so

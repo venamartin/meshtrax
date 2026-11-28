@@ -122,7 +122,12 @@ Uint8List _rxLog(List<int> packet) =>
     Uint8List.fromList([pushCodeLogRxData, 0x30, 0xEC, ...packet]);
 
 /// A MeshTrax ACK from A to B, flooded through A277.
-Uint8List _ackFromA({int number = 0, int tryNumber = 0, List<int>? cameBy}) =>
+Uint8List _ackFromA({
+  int number = 0,
+  int tryNumber = 0,
+  int? triesArrived,
+  List<int>? cameBy,
+}) =>
     _rxLog([
   (payloadTypeGRPDATA << 2) | 0x01,
   0x41, 0xA2, 0x77,
@@ -135,7 +140,7 @@ Uint8List _ackFromA({int number = 0, int tryNumber = 0, List<int>? cameBy}) =>
       DirectAck(
         number: number,
         tryNumber: tryNumber,
-        triesArrived: 1 << tryNumber,
+        triesArrived: triesArrived ?? 1 << tryNumber,
         cameBy: cameBy,
       ).encode(),
       senderSortsAbove: false,
@@ -288,6 +293,31 @@ void main() {
     await settle();
     expect((await mine('Meet at the trailhead at nine')).status,
         MessageStatus.delivered);
+  });
+
+  // Owner, 2026-11-28: the ACK's data must not go to waste. Their ACK lists
+  // every try of the message that reached them.
+  test('their ACK of a later try names a try whose own ACK never came: '
+      'Pathfinder is told it arrived', () async {
+    c.handleFrameForTest(_ackFromA());
+    final arrived = <List<int>>[];
+    c.onMeshTraxTryArrived = (contact, route) =>
+        arrived.add(route.pathBytes.sublist(0, route.hopCount * route.hashSize));
+    await c.sendMessage(a, 'did the first one get there');
+    await until(() => c.ours.isNotEmpty);
+    final dm = DirectMessage.decode(opened(c.ours.single).message)!;
+
+    // An ACK that lists only its own try says nothing of another.
+    c.handleFrameForTest(_ackFromA(number: dm.number, tryNumber: 1));
+    expect(arrived, isEmpty);
+    // Try 1's ACK, listing tries 0 and 1.
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, tryNumber: 2, triesArrived: 5));
+    expect(arrived, [routeToA]);
+    // Told once.
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, tryNumber: 3, triesArrived: 13));
+    expect(arrived, hasLength(1));
   });
 
   test("a text too long to be heard goes the firmware's way", () async {

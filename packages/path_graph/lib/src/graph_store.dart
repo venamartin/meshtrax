@@ -76,6 +76,15 @@ class EdgeState {
     lastFailed = arrival;
   }
 
+  /// One failure counted at some time before [arrival] was no failure: it
+  /// is taken off what is still held.
+  void takeBackFailure(int arrival, double halfLifeHours) {
+    final held = failuresAt(arrival, halfLifeHours);
+    if (held == 0) return;
+    failWeight = math.max(0, held - 1);
+    lastFailed = arrival;
+  }
+
   /// Sightings still held, fading from [lastObserved] as [failWeight] does
   /// from [lastFailed]: the link's weight.
   double trafficWeight = 0;

@@ -333,6 +333,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onFloodCopyOpened = _onFloodCopyOpened;
     connector.meshTraxEnds = _meshTraxEnds;
     connector.onMeshTraxEnds = _onMeshTraxEnds;
+    connector.onMeshTraxTryArrived = _onMeshTraxTryArrived;
+    connector.onMeshTraxAckLost = _onMeshTraxAckLost;
+    connector.onMeshTraxRouteTravelled = _onMeshTraxRouteTravelled;
     connector.measureAreaKey = () => _graph?.currentCell;
     // Sightings fade only while the graph is being fed.
     live.setListening(connector.isConnected && !_onOtherMesh);
@@ -600,6 +603,9 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onFloodCopyOpened = null;
     _connector?.meshTraxEnds = null;
     _connector?.onMeshTraxEnds = null;
+    _connector?.onMeshTraxTryArrived = null;
+    _connector?.onMeshTraxAckLost = null;
+    _connector?.onMeshTraxRouteTravelled = null;
     _connector?.measureAreaKey = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
@@ -1064,6 +1070,15 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
         // Heard passing it on, the first hop was credited then.
         proveEgress: !(delivered && heard),
         hopsHeard: hopsHeard);
+    final tryKey = _tryKey(contact, selection);
+    if (delivered) {
+      _failedTries.remove(tryKey);
+    } else {
+      _failedTries[tryKey] = hopsHeard;
+      while (_failedTries.length > 64) {
+        _failedTries.remove(_failedTries.keys.first);
+      }
+    }
     if (selection.source == RouteSource.graph) {
       if (delivered) {
         _graphDelivered++;
@@ -1073,6 +1088,62 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (!delivered) _considerDiscover(contact.publicKeyHex);
+    _notifySoon();
+  }
+
+  // Sends given up as failed, by contact and route: how many hops each was
+  // heard passing on, as the graph was told ([_onMeshTraxTryArrived]).
+  final Map<String, int?> _failedTries = {};
+
+  static String _tryKey(Contact contact, PathSelection route) =>
+      '${contact.publicKeyHex}|${RadioRouteKeeper.routeKey(route)}';
+
+  /// A try given up as failed reached them after all: their ACK of a later
+  /// try says so. The failure is taken back and the try is a delivery.
+  void _onMeshTraxTryArrived(Contact contact, PathSelection route) {
+    final graph = _graph;
+    final key = _tryKey(contact, route);
+    if (graph == null || _onOtherMesh || !_failedTries.containsKey(key)) {
+      return;
+    }
+    final hopsHeard = _failedTries.remove(key);
+    appLogger.info(
+        'the try to ${contact.name} via '
+        '${_hops(route.pathBytes, route.hashSize)} arrived after all (their '
+        'ACK of a later try says so): its failure is taken back, the route '
+        'delivered',
+        tag: 'PathGraph');
+    graph.reportArrivedAfterAll(Uint8List.fromList(route.pathBytes),
+        contactPubkey: contact.publicKeyHex,
+        stride: route.hashSize,
+        hopsHeard: hopsHeard);
+    if (route.source == RouteSource.graph) {
+      _graphFailed--;
+      _graphDelivered++;
+      _keeper?.onDelivered(contact.publicKeyHex, route);
+    }
+    _notifySoon();
+  }
+
+  /// An ACK of mine on [route] did not reach them: a send that failed, with
+  /// nobody listened for along it.
+  void _onMeshTraxAckLost(Contact contact, PathSelection route) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || route.useFlood) return;
+    appLogger.info(
+        'ACK to ${contact.name} via ${_hops(route.pathBytes, route.hashSize)} '
+        'did not reach them: held against the route',
+        tag: 'PathGraph');
+    graph.reportSendResult(Uint8List.fromList(route.pathBytes), false,
+        contactPubkey: contact.publicKeyHex, stride: route.hashSize);
+    _notifySoon();
+  }
+
+  /// A routed MeshTrax packet of a contact's passed these repeaters: the
+  /// links between them, heard carrying a packet as a flood's are.
+  void _onMeshTraxRouteTravelled(Uint8List travelled, int width) {
+    if (_onOtherMesh) return;
+    _graph?.observePath(travelled, width, const ObservationOrigin.anonymous());
     _notifySoon();
   }
 

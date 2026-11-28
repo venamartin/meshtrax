@@ -6,6 +6,7 @@ import 'package:meshtrax/connector/meshcore_connector.dart';
 import 'package:meshtrax/connector/meshcore_protocol.dart';
 import 'package:meshtrax/helpers/meshtrax_dm.dart';
 import 'package:meshtrax/helpers/meshtrax_packet.dart';
+import 'package:meshtrax/helpers/path_helper.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
 import 'package:meshtrax/models/path_selection.dart';
@@ -405,6 +406,33 @@ void main() {
       expect([for (final f in c.rawPackets) wayOf(f)], ['10007777', '10007777']);
     });
 
+    // Owner, 2026-11-28: the ACK's data must not go to waste. A message
+    // sent again says the ACK of the try before did not arrive.
+    test('they send it again: Pathfinder is told the way that lost the ACK',
+        () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      final lost = <String>[];
+      c.onMeshTraxAckLost = (contact, route) => lost.add(
+          '${contact.name}:${PathHelper.formatPathHex(route.pathBytes, stride: 2)}');
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      await rawPackets(1);
+      // Another copy of the same try says nothing.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000BEEF')));
+      expect(lost, isEmpty);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 1), '1000')));
+      await rawPackets(2);
+      expect(lost, ['A:1000,7777']);
+      // The third try's ACK went by 1000,C419; the fourth's is a flood, and
+      // a flood has no route to hold anything against.
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 2), '1000')));
+      await rawPackets(3);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: 3), '1000')));
+      await rawPackets(4);
+      expect(lost, ['A:1000,7777', 'A:1000,C419']);
+    });
+
     test('a route the user pinned is used as the radio holds it', () async {
       await connect();
       c.graphRouteCandidates = (_) => [way('10007777', 0.6)];
@@ -453,6 +481,44 @@ void main() {
         ..._dm(route: _hex('A277AD77BEEF')),
       ])));
       expect(told.single.$2, isEmpty);
+    });
+
+    test('a routed packet: the links between the repeaters it passed, each '
+        'once', () async {
+      await listen();
+      final links = <(List<int>, int)>[];
+      c.onMeshTraxRouteTravelled =
+          (travelled, width) => links.add((travelled, width));
+      final payload = _dm(route: _hex('A277AD771000BEEF'));
+      // As AD77 passes it on, then as BEEF hands it over.
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x42, ..._hex('1000BEEF'), ...payload,
+      ])));
+      expect(links.single.$1, _hex('A277AD77'));
+      expect(links.single.$2, 2);
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ...payload,
+      ])));
+      expect(links, hasLength(2));
+      expect(links[1].$1, _hex('AD771000BEEF'),
+          reason: 'from the last repeater told of: A277>AD77 is not twice');
+      // The same copy again adds nothing.
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ...payload,
+      ])));
+      expect(links, hasLength(2));
+    });
+
+    test('a flood, or a route of one repeater, has no link inside it',
+        () async {
+      await listen();
+      var called = 0;
+      c.onMeshTraxRouteTravelled = (_, _) => called++;
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), 'A277BEEF')));
+      c.handleFrameForTest(_rxLog(Uint8List.fromList([
+        (payloadTypeGRPDATA << 2) | 0x02, 0x40, ..._dm(number: 9, route: _hex('A277')),
+      ])));
+      expect(called, 0);
     });
 
     test('a route that does not fit the hops still to go says nothing',
