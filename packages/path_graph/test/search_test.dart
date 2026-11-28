@@ -170,13 +170,54 @@ void main() {
       }
     }
 
-    heard([0xA2, 0x77], [0xBE, 0xEF], 200);
-    heard([0xBE, 0xEF], [0x13, 0x12], 200);
-    heard([0xA2, 0x77], [0x5C, 0xBB], 200);
-    heard([0x5C, 0xBB], [0x13, 0x12], 2);
+    // Each link heard both ways.
+    void both(List<int> a, List<int> b, int times) {
+      heard(a, b, times);
+      heard(b, a, times);
+    }
+
+    both([0xA2, 0x77], [0xBE, 0xEF], 200);
+    both([0xBE, 0xEF], [0x13, 0x12], 200);
+    both([0xA2, 0x77], [0x5C, 0xBB], 200);
+    both([0x5C, 0xBB], [0x13, 0x12], 2);
     final route = graph.findPath(bobPk) as RouteResult;
     expect(route.pathBytes, [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
     expect(route.hopProbabilities, everyElement(greaterThan(0.9)));
+  });
+
+  // Owner, 2026-11-28: the way a link is heard well vouches for the way a
+  // send goes, so a corridor heard coming in is preferred going out over
+  // one barely heard either way.
+  test('a corridor heard often the other way beats one barely heard', () {
+    anchor();
+    void heard(List<int> a, List<int> b, int times) {
+      for (var i = 0; i < times; i++) {
+        graph.observePath(path([...a, ...b]), 2,
+            const ObservationOrigin.anonymous(), lastHopHeard: false);
+      }
+    }
+
+    // Out through BEEF: heard a few times going out, constantly coming in.
+    heard([0xA2, 0x77], [0xBE, 0xEF], 3);
+    heard([0xBE, 0xEF], [0x13, 0x12], 3);
+    heard([0x13, 0x12], [0xBE, 0xEF], 300);
+    heard([0xBE, 0xEF], [0xA2, 0x77], 300);
+    // Out through 5CBB: heard a few times going out, never coming in.
+    heard([0xA2, 0x77], [0x5C, 0xBB], 6);
+    heard([0x5C, 0xBB], [0x13, 0x12], 6);
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.pathBytes, [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
+    expect(route.hopProbabilities, everyElement(greaterThan(0.5)));
+  });
+
+  test('a link never heard the way a send goes is not a link', () {
+    anchor();
+    for (var i = 0; i < 300; i++) {
+      graph.observePath(path([0x13, 0x12, 0xA2, 0x77]), 2,
+          const ObservationOrigin.anonymous(), lastHopHeard: false);
+    }
+    expect(graph.findPath(bobPk), isA<FloodResult>(),
+        reason: 'the other direction is never made into a link');
   });
 
   test('a longer corridor heard often beats a short one barely heard', () {

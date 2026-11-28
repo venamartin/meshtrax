@@ -72,9 +72,10 @@ class PathFinder {
 
   /// The usable links, each with its cost, by the repeater it leaves. A
   /// link is usable in the direction packets were seen to travel it, and
-  /// only that direction. The graph never infers the reverse, and it
-  /// demands nothing about the reverse either (owner, 2026-10-13): a
-  /// route is a chain of links each observed the way the packet will go.
+  /// only that direction. The graph never infers the reverse (owner,
+  /// 2026-10-13): a route is a chain of links each observed the way the
+  /// packet will go. How well a link is rated counts both its directions
+  /// ([Estimator.priorQuality]; owner, 2026-11-28).
   /// Quality is priced per link and per doorstep. A link touching a
   /// [moving] repeater counts only while fresh
   /// ([PathGraphConfig.mobileFreshMinutes]).
@@ -97,13 +98,21 @@ class PathFinder {
     final adjacency = <String, List<Step>>{};
     for (final entry in edges.entries) {
       final (from, to) = entry.key;
-      if (!estimator.usable(entry.value, nowMillis)) continue;
+      final reverse = edges[(to, from)];
+      if (!estimator.usable(entry.value, nowMillis, reverse: reverse)) {
+        continue;
+      }
       if ((moving.contains(from) || moving.contains(to)) &&
           nowMillis - (entry.value.lastObserved ?? 0) > freshMs) {
         continue;
       }
       (adjacency[from] ??= []).add(
-          (to, entry.key, estimator.edgeCost(entry.value, nowMillis), false));
+          (
+        to,
+        entry.key,
+        estimator.edgeCost(entry.value, nowMillis, reverse: reverse),
+        false
+      ));
     }
     for (final key in guessed) {
       if (edges.containsKey(key)) continue;
@@ -255,7 +264,10 @@ class PathFinder {
           ? config.guessQ
           : e == null
               ? 1.0
-              : estimator.calibratedP(e, nowMillis).clamp(0.01, 1.0);
+              : estimator
+                  .calibratedP(e, nowMillis,
+                      reverse: edges[(hops[i + 1], hops[i])])
+                  .clamp(0.01, 1.0);
       hopProbabilities.add(p);
       guesses.add(guessed);
       delivery *= p;

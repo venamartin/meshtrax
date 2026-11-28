@@ -47,18 +47,46 @@ void main() {
   // Owner, 2026-11-27: "If repeater A hears repeater B 1000 times it is
   // good." Every unmeasured link used to stand at one fixed 50%.
   test('an unmeasured link is rated by how often it is heard', () {
-    expect(est.priorQuality(edge(traffic: 1, last: 0), 0), closeTo(1 / 11, 1e-9));
-    expect(est.priorQuality(edge(traffic: config.heardHalf, last: 0), 0),
+    expect(est.heardQuality(edge(traffic: 1, last: 0), 0), closeTo(1 / 11, 1e-9));
+    expect(est.heardQuality(edge(traffic: config.heardHalf, last: 0), 0),
         closeTo(0.5, 1e-9));
-    expect(est.priorQuality(edge(traffic: 1000, last: 0), 0), greaterThan(0.98));
+    expect(est.heardQuality(edge(traffic: 1000, last: 0), 0), greaterThan(0.98));
     final days8 = (4 * config.trafficHalfLifeHours * hour).round();
-    expect(est.priorQuality(edge(traffic: 160, last: 0), days8),
+    expect(est.heardQuality(edge(traffic: 160, last: 0), days8),
         closeTo(0.5, 1e-9),
         reason: 'not heard for four half-lives: a sixteenth is left');
     expect(est.usable(edge(traffic: 1, last: 0, obs: 1), 0), isTrue,
         reason: 'heard once just now: weak, still a link');
     expect(est.usable(edge(traffic: 1, last: 0, obs: 1), days8), isFalse,
         reason: 'heard once, days ago: gone');
+  });
+
+  // Owner, 2026-11-28. A radio hears packets on their way to it, so a far
+  // link is heard often coming in and seldom going out, and a send needs
+  // the way out. Field graph: on the best routes out a link was heard 898
+  // times the way a send goes and 3,424 times the other way.
+  test('a link is rated by the average of its two directions', () {
+    final often = edge(traffic: 1000, last: 0, obs: 1000);
+    final seldom = edge(traffic: 1, last: 0, obs: 1);
+    final q = est.heardQuality;
+    expect(est.priorQuality(often, 0, reverse: often), closeTo(q(often, 0), 1e-9),
+        reason: 'heard often both ways: nearly sure');
+    expect(est.priorQuality(seldom, 0, reverse: often),
+        closeTo((q(seldom, 0) + q(often, 0)) / 2, 1e-9),
+        reason: 'the way heard well vouches for the way out');
+    expect(est.priorQuality(seldom, 0, reverse: often), greaterThan(0.5));
+    expect(est.priorQuality(often, 0), closeTo(q(often, 0) / 2, 1e-9),
+        reason: 'only ever heard one way: half at most');
+    expect(est.priorQuality(often, 0), lessThan(0.5));
+    expect(est.priorQuality(seldom, 0, reverse: seldom),
+        closeTo(q(seldom, 0), 1e-9));
+  });
+
+  test('a traced link keeps its measured level, whatever the other way',
+      () {
+    final traced = edge(measuredSnr: 6.0);
+    expect(est.priorQuality(traced, 0, reverse: edge(traffic: 1000, last: 0)),
+        est.snrQuality(6.0));
   });
 
   test('a sighting adds to what is left of the count, not to what was', () {
@@ -90,7 +118,9 @@ void main() {
     expect(est.usable(quiet, 0), isFalse, reason: 'no evidence at all');
 
     final busy = edge(traffic: 50, last: 0, obs: 50);
-    expect(est.calibratedP(busy, 0), closeTo(50 / 60, 1e-9));
+    expect(est.calibratedP(busy, 0, reverse: busy), closeTo(50 / 60, 1e-9));
+    expect(est.calibratedP(busy, 0), closeTo(25 / 60, 1e-9),
+        reason: 'heard one way only');
     expect(est.usable(busy, 0), isTrue);
   });
 

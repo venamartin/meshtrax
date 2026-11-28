@@ -14,7 +14,7 @@ class PathGraphConfig {
     this.heardHalf = 10,
     this.snrFullQualityDb = 8,
     this.snrZeroQualityDb = -18,
-    this.pThreshold = 0.05,
+    this.pThreshold = 0.02,
     this.failureHalfLifeHours = 24,
     this.maxHops = 32,
     this.egressHalfLifeMinutes = 45,
@@ -134,6 +134,17 @@ class PathGraphConfig {
   /// route had been heard 6 times (median) and not for three days on 60%
   /// of routes; rated this way, 66 times and 0%. The result barely moves
   /// from 3 to 150.
+  ///
+  /// Both directions of a link count, as their average
+  /// ([Estimator.priorQuality]): a radio hears packets on their way to it,
+  /// so a far link is heard often coming in and seldom going out, and a
+  /// send needs the way out (the same field graph: on the best routes out,
+  /// a link was heard 898 times the way a send goes and 3,424 times the
+  /// other way, at the median). Two fixed repeaters hear each other about
+  /// alike, so the direction heard well vouches for the other, and a link
+  /// only ever heard one way is rated at most 50%. Against how the links
+  /// carried the owner's own sends, the average ranked them far better
+  /// than the sending direction alone (rank correlation 0.21 against 0.06).
   final double heardHalf;
 
   /// Monotone SNR→quality map anchors (dB).
@@ -419,12 +430,22 @@ class Estimator {
     return ((db - config.snrZeroQualityDb) / span).clamp(0.0, 1.0);
   }
 
-  /// Prior quality q₀ for THIS direction: a traced SNR when we have one,
-  /// else how often the link is heard ([PathGraphConfig.heardHalf]).
-  double priorQuality(EdgeState e, int nowMillis) {
-    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
+  /// How often this direction of a link is heard, as a rating
+  /// ([PathGraphConfig.heardHalf]).
+  double heardQuality(EdgeState e, int nowMillis) {
     final heard = decayedTraffic(e, nowMillis);
     return heard / (heard + config.heardHalf);
+  }
+
+  /// Prior quality q₀ for THIS direction: a traced SNR when we have one,
+  /// else the average of how often the link is heard this way and the
+  /// other way ([reverse], the same link's other direction; none when it
+  /// was never heard).
+  double priorQuality(EdgeState e, int nowMillis, {EdgeState? reverse}) {
+    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
+    return (heardQuality(e, nowMillis) +
+            (reverse == null ? 0 : heardQuality(reverse, nowMillis))) /
+        2;
   }
 
   /// Prior confidence n₀: how often this direction has been seen scales
@@ -441,9 +462,9 @@ class Estimator {
 
   /// Calibrated delivery probability: local attempts override the prior.
   /// Deliveries count for good, failures only while recent.
-  double calibratedP(EdgeState e, int nowMillis) {
+  double calibratedP(EdgeState e, int nowMillis, {EdgeState? reverse}) {
     final n0 = priorConfidence(e, nowMillis);
-    return (e.s + priorQuality(e, nowMillis) * n0) /
+    return (e.s + priorQuality(e, nowMillis, reverse: reverse) * n0) /
         (e.s + decayedFailures(e, nowMillis) + n0);
   }
 
@@ -453,12 +474,13 @@ class Estimator {
       e.s > 0 || e.obsCount > 0 || e.measuredSnr != null;
 
   /// Usable in this direction.
-  bool usable(EdgeState e, int nowMillis) =>
-      hasEvidence(e) && calibratedP(e, nowMillis) >= config.pThreshold;
+  bool usable(EdgeState e, int nowMillis, {EdgeState? reverse}) =>
+      hasEvidence(e) &&
+      calibratedP(e, nowMillis, reverse: reverse) >= config.pThreshold;
 
   /// Edge cost for the search: −log(p) + τ.
-  double edgeCost(EdgeState e, int nowMillis) {
-    final p = calibratedP(e, nowMillis).clamp(0.01, 1.0);
+  double edgeCost(EdgeState e, int nowMillis, {EdgeState? reverse}) {
+    final p = calibratedP(e, nowMillis, reverse: reverse).clamp(0.01, 1.0);
     return -math.log(p) + config.tau;
   }
 

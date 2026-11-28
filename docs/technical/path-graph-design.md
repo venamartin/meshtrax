@@ -58,6 +58,42 @@ me and who hears my contact, what path bytes should this DM use?*
 
 ## Decision log
 
+* **2026-11-28 — both directions of a link count towards its rating, and
+  sightings fade only while the radio is listened to.** Two faults found
+  on the field graph of 2026-11-27, asking where Pathfinder still fails.
+  * **A radio hears packets on their way to it.** A far link is heard
+    often coming in and seldom going out, and a send needs the way out:
+    on the best routes out, a link was heard 898 times the way a send
+    goes and 3,424 times the other way (medians), and 40% of links were
+    only ever heard one way. A link's rating is now the average of the
+    two directions' ratings (`Estimator.priorQuality`, `reverse`). Two
+    fixed repeaters hear each other about alike, so the direction heard
+    well vouches for the other; a link only ever heard one way is rated
+    at most 50%. Nothing else changes about direction: a link never heard
+    the way a send goes is still not a link (2026-10-13), and a traced
+    level stands as measured.
+    * Against how links carried the owner's own sends (588 links, 1,714
+      tries), the average ranked them better than the sending direction
+      alone: rank correlation 0.21 against 0.06. Links heard often both
+      ways carried 26% of tries; heard often one way only, 8 to 9%;
+      neither, 5%. The record is thin and a failure is charged to every
+      link of its route, so this ranks links and proves little more.
+    * Replay through the module, 3,087 contacts: 466 routed where 451
+      were, none lost. A link's sending direction is then heard less on
+      the routes chosen (the weakest a median of 82 times, was 170),
+      which is the trade.
+    * `pThreshold` 0.05 becomes 0.02, so a link heard once, one way, is
+      still a link for about two days.
+  * **Sightings faded by the clock, and the clock ran while the app was
+    off** or the radio on another mesh: replayed, after seven days not
+    listening 156 of 292 far doorsteps were still routable, with nothing
+    wrong with any link. `PathGraph.setListening` is told when the radio
+    is connected and on this graph's mesh; when listening starts again
+    after an hour or more, the sightings held are given back the time in
+    between (`GraphStore.unfade`). The last moment listened is kept in
+    the database (`listened_until`), so a killed app is a gap too. Times
+    are left as they are; only the weight moves.
+
 * **2026-11-27 — a link is rated by how often it is heard.** Owner: "If
   repeater A hears repeater B 1000 times it is good", asked for many
   times. The 2026-08-05 entry below gave the sighting count to "prior
