@@ -44,8 +44,29 @@ void main() {
     expect(est.usable(e, 0), isTrue);
   });
 
-  test('an unmeasured edge sits at the passive default', () {
-    expect(est.priorQuality(edge()), config.passiveDefaultQ);
+  // Owner, 2026-11-27: "If repeater A hears repeater B 1000 times it is
+  // good." Every unmeasured link used to stand at one fixed 50%.
+  test('an unmeasured link is rated by how often it is heard', () {
+    expect(est.priorQuality(edge(traffic: 1, last: 0), 0), closeTo(1 / 11, 1e-9));
+    expect(est.priorQuality(edge(traffic: config.heardHalf, last: 0), 0),
+        closeTo(0.5, 1e-9));
+    expect(est.priorQuality(edge(traffic: 1000, last: 0), 0), greaterThan(0.98));
+    final days8 = (4 * config.trafficHalfLifeHours * hour).round();
+    expect(est.priorQuality(edge(traffic: 160, last: 0), days8),
+        closeTo(0.5, 1e-9),
+        reason: 'not heard for four half-lives: a sixteenth is left');
+    expect(est.usable(edge(traffic: 1, last: 0, obs: 1), 0), isTrue,
+        reason: 'heard once just now: weak, still a link');
+    expect(est.usable(edge(traffic: 1, last: 0, obs: 1), days8), isFalse,
+        reason: 'heard once, days ago: gone');
+  });
+
+  test('a sighting adds to what is left of the count, not to what was', () {
+    final e = edge(traffic: 1000, last: 0, obs: 1000);
+    final days20 = 20 * 24 * hour;
+    e.addTraffic(1, days20, config.trafficHalfLifeHours);
+    expect(e.trafficWeight, closeTo(1 + 1000 / 1024, 1e-9));
+    expect(e.lastObserved, days20);
   });
 
   test('traffic raises prior confidence', () {
@@ -61,7 +82,6 @@ void main() {
 
     final bad = edge(measuredSnr: 8, s: 0, n: 10);
     expect(est.calibratedP(bad, 0), lessThan(0.35));
-    expect(est.usable(bad, 0), isFalse);
   });
 
   test('passive-only edge becomes usable with traffic (reduced confidence)',
@@ -70,9 +90,8 @@ void main() {
     expect(est.usable(quiet, 0), isFalse, reason: 'no evidence at all');
 
     final busy = edge(traffic: 50, last: 0, obs: 50);
-    expect(est.calibratedP(busy, 0), closeTo(config.passiveDefaultQ, 1e-9));
-    expect(est.usable(busy, 0), isTrue,
-        reason: 'passive default clears the threshold');
+    expect(est.calibratedP(busy, 0), closeTo(50 / 60, 1e-9));
+    expect(est.usable(busy, 0), isTrue);
   });
 
   // Owner, 2026-10-31: a failure is a suspicion on every hop of the route,
@@ -80,16 +99,19 @@ void main() {
   // out of routing for good.
   test('failures fade; deliveries do not', () {
     final burned = edge(s: 0, n: 2, traffic: 50, last: 0, obs: 50);
-    expect(est.usable(burned, 0), isFalse, reason: 'two fresh failures');
+    final clean = edge(traffic: 50, last: 0, obs: 50);
+    expect(est.calibratedP(burned, 0), lessThan(est.calibratedP(clean, 0)),
+        reason: 'two fresh failures lower it');
+    expect(est.usable(burned, 0), isTrue,
+        reason: 'they do not shut out a link heard often');
     final later = (3 * config.failureHalfLifeHours * hour).round();
     expect(est.decayedFailures(burned, later), closeTo(0.25, 1e-9));
-    expect(est.usable(burned, later), isTrue);
 
     final proven = edge(s: 3, n: 3, obs: 3);
     final years = 1000 * 24 * hour;
     expect(est.calibratedP(proven, years), est.calibratedP(proven, 0),
         reason: 'deliveries never fade');
-    expect(est.calibratedP(proven, 0), closeTo(0.8, 1e-9));
+    expect(est.calibratedP(proven, 0), closeTo(0.6, 1e-9));
   });
 
   // Review 2026-10-31: adding to the stored weight re-dated every old

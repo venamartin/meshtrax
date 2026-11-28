@@ -123,11 +123,14 @@ void main() {
       }
       g.observePath(path([0x13, 0x12]), 2,
           const ObservationOrigin.pubkeyConfirmed(bobPk), lastHopHeard: false);
+      // Each link heard ten times: rated 50%.
       void both(List<int> a, List<int> b) {
-        g.observePath(path([...a, ...b]), 2,
-            const ObservationOrigin.anonymous(), lastHopHeard: false);
-        g.observePath(path([...b, ...a]), 2,
-            const ObservationOrigin.anonymous(), lastHopHeard: false);
+        for (var i = 0; i < 10; i++) {
+          g.observePath(path([...a, ...b]), 2,
+              const ObservationOrigin.anonymous(), lastHopHeard: false);
+          g.observePath(path([...b, ...a]), 2,
+              const ObservationOrigin.anonymous(), lastHopHeard: false);
+        }
       }
 
       both([0x10, 0x00], [0x13, 0x12]);
@@ -153,6 +156,59 @@ void main() {
         [0xA2, 0x77],
         reason: 'a measured weak uplink loses even without the knob');
     await measured.dispose();
+  });
+
+  // Owner, 2026-11-27: "If repeater A hears repeater B 1000 times it is
+  // good." Field graph: 96% of links stood at one fixed 50%, and a DM went
+  // over a link heard twice beside links heard two thousand times.
+  test('of two corridors the same length, the one heard often wins', () {
+    anchor();
+    void heard(List<int> a, List<int> b, int times) {
+      for (var i = 0; i < times; i++) {
+        graph.observePath(path([...a, ...b]), 2,
+            const ObservationOrigin.anonymous(), lastHopHeard: false);
+      }
+    }
+
+    heard([0xA2, 0x77], [0xBE, 0xEF], 200);
+    heard([0xBE, 0xEF], [0x13, 0x12], 200);
+    heard([0xA2, 0x77], [0x5C, 0xBB], 200);
+    heard([0x5C, 0xBB], [0x13, 0x12], 2);
+    final route = graph.findPath(bobPk) as RouteResult;
+    expect(route.pathBytes, [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
+    expect(route.hopProbabilities, everyElement(greaterThan(0.9)));
+  });
+
+  test('a longer corridor heard often beats a short one barely heard', () {
+    anchor();
+    void heard(List<int> a, List<int> b, int times) {
+      for (var i = 0; i < times; i++) {
+        graph.observePath(path([...a, ...b]), 2,
+            const ObservationOrigin.anonymous(), lastHopHeard: false);
+      }
+    }
+
+    heard([0xA2, 0x77], [0x13, 0x12], 1);
+    heard([0xA2, 0x77], [0xBE, 0xEF], 200);
+    heard([0xBE, 0xEF], [0x13, 0x12], 200);
+    expect((graph.findPath(bobPk) as RouteResult).pathBytes,
+        [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
+  });
+
+  test('a link not heard for days gives way to one still heard', () {
+    anchor();
+    for (var i = 0; i < 200; i++) {
+      graph.observePath(path([0xA2, 0x77, 0x5C, 0xBB, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous(), lastHopHeard: false);
+    }
+    nowMillis += 20 * 24 * 60 * 60 * 1000;
+    anchor();
+    for (var i = 0; i < 20; i++) {
+      graph.observePath(path([0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]), 2,
+          const ObservationOrigin.anonymous(), lastHopHeard: false);
+    }
+    expect((graph.findPath(bobPk) as RouteResult).pathBytes,
+        [0xA2, 0x77, 0xBE, 0xEF, 0x13, 0x12]);
   });
 
   test('multi-hop route through the trunk', () {

@@ -11,10 +11,10 @@ class PathGraphConfig {
     this.n0Min = 2,
     this.n0Max = 8,
     this.trafficConfidenceHalf = 6,
-    this.passiveDefaultQ = 0.5,
+    this.heardHalf = 10,
     this.snrFullQualityDb = 8,
     this.snrZeroQualityDb = -18,
-    this.pThreshold = 0.40,
+    this.pThreshold = 0.05,
     this.failureHalfLifeHours = 24,
     this.maxHops = 32,
     this.egressHalfLifeMinutes = 45,
@@ -74,10 +74,8 @@ class PathGraphConfig {
   /// link on it as a GUESS for one search, never stored. My end still has
   /// to be a proven doorstep; the search joins my proven corridor to the
   /// reversed tail wherever that is cheapest. A guessed hop is priced at
-  /// this delivery estimate, below [passiveDefaultQ] on purpose: an
-  /// overheard-only link in the sending direction (0.5) must always beat
-  /// a guess, and a one-guess splice still beats a weak proven route
-  /// (p in 0.40..0.5). Checked by replay before the field.
+  /// this delivery estimate: a link heard often in the sending direction
+  /// beats a guess, and a guess beats a link heard only a few times.
   final double guessQ;
 
   /// A route may carry at most this many guessed hops.
@@ -125,23 +123,34 @@ class PathGraphConfig {
   /// Decayed traffic at which prior confidence is halfway to n0Max.
   final double trafficConfidenceHalf;
 
-  /// Prior quality for passive-only edges (no import, no SNR).
-  final double passiveDefaultQ;
+  /// A link's quality from how often it is heard carrying packets (owner,
+  /// 2026-11-27: "If repeater A hears repeater B 1000 times it is good"):
+  /// sightings still held / (sightings still held + this). Each sighting
+  /// is one transmission the far repeater received; a link heard this many
+  /// times lately is rated 50%, one heard hundreds of times nearly sure,
+  /// and one not heard for days fades towards nothing
+  /// ([trafficHalfLifeHours]). Replay of a field graph (15,024 links): with
+  /// every unmeasured link at one fixed 50%, the weakest link of the best
+  /// route had been heard 6 times (median) and not for three days on 60%
+  /// of routes; rated this way, 66 times and 0%. The result barely moves
+  /// from 3 to 150.
+  final double heardHalf;
 
   /// Monotone SNR→quality map anchors (dB).
   final double snrFullQualityDb;
   final double snrZeroQualityDb;
 
-  /// Minimum calibrated p for an edge direction to count as usable.
+  /// Minimum calibrated p for an edge direction to count as usable. Low:
+  /// the price of a weak link keeps routes off it; this only drops links
+  /// faded to next to nothing.
   final double pThreshold;
 
   /// Failed attempts fade with this half-life; deliveries and traces never
   /// do (owner, 2026-10-31). A failure cannot say which hop broke, so it is
   /// a suspicion on every link of the route, not a fact about any of them:
-  /// the contact was off, or my first hop did not hear me. Held for good,
-  /// two failures on a link with no delivery put it below [pThreshold]
-  /// whatever its traffic (0.5 × n₀ / (2 + n₀) < 0.40 for every n₀), and
-  /// a field graph had 242 of its busiest links shut out that way.
+  /// the contact was off, or my first hop did not hear me. Held for good
+  /// they shut out links heard thousands of times (a field graph had 242
+  /// of its busiest links out that way).
   final double failureHalfLifeHours;
 
   /// Path budget: 64 wire bytes ÷ 2-byte hops.
@@ -348,7 +357,7 @@ class PathGraphConfig {
         n0Min: n0Min,
         n0Max: n0Max,
         trafficConfidenceHalf: trafficConfidenceHalf,
-        passiveDefaultQ: passiveDefaultQ,
+        heardHalf: heardHalf,
         snrFullQualityDb: snrFullQualityDb,
         snrZeroQualityDb: snrZeroQualityDb,
         pThreshold: pThreshold ?? this.pThreshold,
@@ -401,14 +410,8 @@ class Estimator {
 
   final PathGraphConfig config;
 
-  double decayedTraffic(EdgeState e, int nowMillis) {
-    final last = e.lastObserved;
-    if (last == null || e.trafficWeight == 0) return 0;
-    final hours = (nowMillis - last) / (1000 * 60 * 60);
-    if (hours <= 0) return e.trafficWeight;
-    return e.trafficWeight *
-        math.pow(0.5, hours / config.trafficHalfLifeHours);
-  }
+  double decayedTraffic(EdgeState e, int nowMillis) =>
+      e.trafficAt(nowMillis, config.trafficHalfLifeHours);
 
   /// Monotone dB → [0,1].
   double snrQuality(double db) {
@@ -417,9 +420,12 @@ class Estimator {
   }
 
   /// Prior quality q₀ for THIS direction: a traced SNR when we have one,
-  /// else the passive default.
-  double priorQuality(EdgeState e) =>
-      e.measuredSnr != null ? snrQuality(e.measuredSnr!) : config.passiveDefaultQ;
+  /// else how often the link is heard ([PathGraphConfig.heardHalf]).
+  double priorQuality(EdgeState e, int nowMillis) {
+    if (e.measuredSnr != null) return snrQuality(e.measuredSnr!);
+    final heard = decayedTraffic(e, nowMillis);
+    return heard / (heard + config.heardHalf);
+  }
 
   /// Prior confidence n₀: how often this direction has been seen scales
   /// trust in q₀.
@@ -437,7 +443,7 @@ class Estimator {
   /// Deliveries count for good, failures only while recent.
   double calibratedP(EdgeState e, int nowMillis) {
     final n0 = priorConfidence(e, nowMillis);
-    return (e.s + priorQuality(e) * n0) /
+    return (e.s + priorQuality(e, nowMillis) * n0) /
         (e.s + decayedFailures(e, nowMillis) + n0);
   }
 

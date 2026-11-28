@@ -155,7 +155,8 @@ void main() {
     final e = graph.snapshot().edges[('A277', '1312')]!;
     expect(e.s, 4, reason: 'local evidence rides through the rebuild');
     expect(e.n, 5);
-    expect(e.trafficWeight, 9.0);
+    expect(e.trafficWeight, 1.0,
+        reason: 'nine sightings in a month, faded as they came');
     expect(e.obsCount, 9);
     expect(e.measuredSnr, -3.5);
     expect(graph.snapshot().nodes['1312']!.source, NodeSource.observed,
@@ -379,6 +380,41 @@ void main() {
     file.parent.deleteSync(recursive: true);
   });
 
+  // 2026-11-27: a weight stored before sightings faded as they were added
+  // is every sighting the link ever had, and the link's rating reads it.
+  test('lifetime sighting counts are brought down once', () async {
+    const day = 24 * 3600 * 1000;
+    const last = 1792600000000;
+    final file = await atVersion(13, (db) async {
+      await db.customStatement(
+          'INSERT INTO graph_edges (from_hash, to_hash, traffic_weight, '
+          'obs_count, first_observed, last_observed, source) VALUES '
+          "('1000', 'A277', 3000, 3000, ${last - 30 * day}, $last, 'observed'), "
+          "('BEEF', 'A277', 1, 1, $last, $last, 'observed')");
+    });
+
+    Future<double> weightOf(String from) async {
+      final graph = PathGraph(NativeDatabase(file),
+          config: const PathGraphConfig(newCodeConfirmMinutes: 0));
+      await graph.init();
+      final w = graph.snapshot().edges[(from, 'A277')]!.trafficWeight;
+      await graph.dispose();
+      return w;
+    }
+
+    // 100 a day at a 48 h half-life leave 100 * 2 / ln 2.
+    expect(await weightOf('1000'), closeTo(288.5, 0.1));
+    expect(await weightOf('BEEF'), 1);
+
+    // Once: a burst heard after it stays as counted.
+    final db = PathGraphDatabase(NativeDatabase(file));
+    await db.customStatement(
+        "UPDATE graph_edges SET traffic_weight = 900 WHERE from_hash = '1000'");
+    await db.close();
+    expect(await weightOf('1000'), 900);
+    file.parent.deleteSync(recursive: true);
+  });
+
   // 2026-10-31: failures held for good had shut 242 busy links out of
   // routing; from v13 they fade, the old ones from the link's last sighting.
   test('v12 to v13: recorded failures start fading from the last sighting',
@@ -398,9 +434,11 @@ void main() {
     final burned = graph.snapshot().edges[('1000', 'A277')]!;
     expect(burned.failWeight, 17);
     expect(burned.lastFailed, seen);
-    expect(graph.estimator.usable(burned, seen), isFalse);
-    expect(graph.estimator.usable(burned, seen + 4 * 24 * 3600 * 1000), isTrue,
-        reason: '17 failures fade below a busy link\'s limit in ~3.2 days');
+    expect(graph.estimator.calibratedP(burned, seen), lessThan(0.1));
+    expect(
+        graph.estimator.calibratedP(burned, seen + 4 * 24 * 3600 * 1000),
+        greaterThan(0.35),
+        reason: '17 failures fade to about one in four days');
     final clean = graph.snapshot().edges[('BEEF', 'A277')]!;
     expect(clean.failWeight, 0);
     expect(clean.lastFailed, isNull);

@@ -44,7 +44,7 @@ void main() {
     expect(graph.ingressCandidates(bobPk).map((c) => c.repeaterHash), ['1000']);
   });
 
-  test('a corridor known only from a firmware route is routable at prior quality',
+  test('a corridor known only from a firmware route is routable, rated as seen once',
       () {
     // The login that earned the route walked A277 -> 1000 in the sending
     // direction; that is the evidence a route needs (owner, 2026-10-13).
@@ -53,8 +53,8 @@ void main() {
     expect(result, isA<RouteResult>());
     final route = result as RouteResult;
     expect(route.pathBytes, firmwareRoute);
-    expect(route.hopProbabilities.single, closeTo(0.5, 0.05),
-        reason: 'seen once, never tallied: the prior, not a measurement');
+    expect(route.hopProbabilities.single, closeTo(1 / 11, 0.01),
+        reason: 'seen once, never tallied: rated low until heard more');
   });
 
   test('the return direction changes nothing for the route out', () {

@@ -257,7 +257,8 @@ class PathGraph {
         _estimator = Estimator(config) {
     _store = GraphStore(_db,
         hashWidthBytes: hashWidthBytes,
-        failureHalfLifeHours: config.failureHalfLifeHours)
+        failureHalfLifeHours: config.failureHalfLifeHours,
+        trafficHalfLifeHours: config.trafficHalfLifeHours)
       ..onLinkSeen = _onLinkSeen;
     _evidence = EvidenceStore(_db, config, hashWidthBytes: hashWidthBytes);
     _places = PlaceStore(_db);
@@ -368,7 +369,22 @@ class PathGraph {
     // Heal rows minted before wide hops truncated into buckets.
     _store.normalizeKeys();
     _evidence.normalizeKeys();
+
+    // A database from before sightings faded as they were added holds
+    // lifetime counts. Stamped after the rows are saved: cut short, it
+    // runs again and changes nothing more.
+    final faded = await (_db.select(_db.graphMeta)
+          ..where((t) => t.key.equals(_trafficFadedKey)))
+        .getSingleOrNull();
+    if (faded == null) {
+      _store.fadeLifetimeCounts();
+      await _store.flush();
+      await _db.into(_db.graphMeta).insertOnConflictUpdate(
+          GraphMetaCompanion.insert(key: _trafficFadedKey, value: '1'));
+    }
   }
+
+  static const _trafficFadedKey = 'traffic_faded';
 
   Future<void> dispose() async {
     _flushTimer?.cancel();
@@ -1296,7 +1312,7 @@ class PathGraph {
       if (success || (hopsHeard != null && hopsHeard >= i + 2)) {
         // The packet travelled every hop: a sighting as well as a proof.
         edge.s++;
-        edge.lastObserved = arrival;
+        edge.addTraffic(1, arrival, config.trafficHalfLifeHours);
         _store.heard(from, NodeSource.observed, arrival);
         _store.heard(to, NodeSource.observed, arrival);
       } else {
@@ -1366,7 +1382,7 @@ class PathGraph {
       }
       edge.s++;
       edge.n++;
-      edge.lastObserved = arrival;
+      edge.addTraffic(1, arrival, config.trafficHalfLifeHours);
       _store.markEdgeDirty(from, to);
       _store.heard(to, NodeSource.observed, arrival);
     }
@@ -2186,6 +2202,7 @@ class PathGraph {
     return {
       'format': _sessionFormat,
       'private': true,
+      _trafficFadedKey: true,
       'saved_at': _isoFromMillis(_arrivalMillis),
       'hash_width': hashWidthBytes,
       if (mesh != null) 'mesh': mesh!.toJson(),
@@ -2343,6 +2360,11 @@ class PathGraph {
               ..obsCount = (e['obs_count'] as num?)?.toInt() ?? 0
               ..lastObserved = (e['last_observed'] as num?)?.toInt()
               ..measuredSnr = (e['measured_snr'] as num?)?.toDouble();
+        // A checkpoint from before sightings faded as they were added.
+        if (document[_trafficFadedKey] != true) {
+          edges[(e['from'] as String, e['to'] as String)]!
+              .fadeLifetimeCount(config.trafficHalfLifeHours);
+        }
       }
       for (final raw in (document['ingress'] as List?) ?? const []) {
         final i = raw as Map;
