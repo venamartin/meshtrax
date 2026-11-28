@@ -114,6 +114,9 @@ dependencies:
   # Locations on a private channel: the report TRAX mode sends
   traxshare:
     path: packages/traxshare
+  # The protobuf messages MeshTrax phones send each other
+  traxproto:
+    path: packages/traxproto
   # Routing's engine on iOS (Android's is MeshTraxRouting.kt)
   traxroute_ios:
     path: packages/traxroute_ios
