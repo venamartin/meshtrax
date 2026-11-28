@@ -11,6 +11,13 @@ import 'package:meshtrax/l10n/app_localizations.dart';
 import 'package:meshtrax/models/channel.dart';
 import 'package:meshtrax/models/channel_message.dart';
 import 'package:meshtrax/models/contact.dart';
+import 'package:meshtrax/models/trax.dart';
+import 'package:meshtrax/services/radio_ask_service.dart';
+import 'package:meshtrax/services/trax_beacon_service.dart';
+import 'package:meshtrax/services/trip_positions.dart';
+import 'package:meshtrax/services/trip_service.dart';
+import 'package:meshtrax/widgets/trax_dialogs.dart';
+import 'package:meshtrax/widgets/trax_sheet.dart';
 import 'package:meshtrax/screens/chats_screen.dart';
 import 'package:meshtrax/services/app_settings_service.dart';
 import 'package:meshtrax/services/chat_text_scale_service.dart';
@@ -28,7 +35,12 @@ import 'package:meshtrax/widgets/trax_button.dart';
 // to "GWQ…" on his phone (2026-11-18). The name is smaller now, and the
 // icons 36 dp apart.
 class _Radio extends MeshCoreConnector {
+  _Radio({this.onTrax = false});
+
   static const name = 'GWQ∆🍓';
+
+  /// On a TRAX preset, with Off-Grid Repeat on.
+  final bool onTrax;
 
   @override
   bool get isConnected => true;
@@ -44,6 +56,21 @@ class _Radio extends MeshCoreConnector {
   ];
   @override
   int? get currentSf => 7;
+  @override
+  bool? get clientRepeat => onTrax;
+  @override
+  int? get currentFreqHz => onTrax ? 918000 : 910525;
+  @override
+  int? get currentBwHz => 62500;
+  @override
+  int? get currentCr => 5;
+  @override
+  int? get firmwareVerCode => 14;
+  @override
+  String get selfPublicKeyHex => '11' * 32;
+  @override
+  Future<List<({int lowerKhz, int upperKhz})>?>
+  getAllowedRepeatFrequencies() async => null;
   @override
   bool get hasGps => true;
   @override
@@ -119,5 +146,67 @@ void main() {
       22,
       reason: 'the menu icon is the size of the others',
     );
+  });
+
+  testWidgets('TRAX mode is in the menu too, in the logo\'s orange while on, '
+      'and opens the TRAX sheet', (tester) async {
+    final radio = _Radio(onTrax: true);
+    addTearDown(radio.dispose);
+    final trax = TraxService(radio);
+    final asks = RadioAskService(radio);
+    final positions = TripPositions(radio, trax);
+    final trip = TripService(radio, trax, asks, positions: positions);
+    final beacon = TraxBeaconService(radio, trax, trip);
+    addTearDown(() {
+      beacon.dispose();
+      trip.dispose();
+      positions.dispose();
+      asks.dispose();
+      trax.dispose();
+    });
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MeshCoreConnector>.value(value: radio),
+          ChangeNotifierProvider.value(value: trax),
+          ChangeNotifierProvider.value(value: asks),
+          ChangeNotifierProvider.value(value: trip),
+          ChangeNotifierProvider.value(value: positions),
+          ChangeNotifierProvider.value(value: beacon),
+          ChangeNotifierProvider.value(value: AppSettingsService()),
+          ChangeNotifierProvider.value(value: UiViewStateService()),
+          ChangeNotifierProvider.value(value: ChatTextScaleService()),
+          ChangeNotifierProvider.value(value: PathGraphService()),
+          ChangeNotifierProvider.value(value: MessageRetryService()),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: const ChatsScreen(),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.adaptive.more));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final item = find.widgetWithText(PopupMenuItem<void>, 'TRAX mode');
+    expect(item, findsOneWidget);
+    expect(
+      tester
+          .widget<TraxIcon>(
+            find.descendant(of: item, matching: find.byType(TraxIcon)),
+          )
+          .color,
+      const Color(Trax.orange),
+    );
+
+    await tester.tap(item);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(TraxSheet), findsOneWidget);
+    expect(find.text('Leave TRAX'), findsOneWidget);
   });
 }

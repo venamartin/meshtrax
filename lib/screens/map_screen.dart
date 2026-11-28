@@ -15,6 +15,8 @@ import 'package:meshtrax/widgets/app_bar.dart';
 import 'package:meshtrax/widgets/icon_help.dart';
 import 'package:meshtrax/widgets/my_location_button.dart';
 import 'package:meshtrax/widgets/trax_button.dart';
+import 'package:meshtrax/widgets/trax_dialogs.dart';
+import 'package:meshtrax/widgets/trax_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:traxmap/latlong2.dart';
 import 'package:traxmap/traxmap.dart' hide LatLng, LatLngBounds;
@@ -1131,6 +1133,26 @@ class _MapScreenState extends State<MapScreen> {
                         style: topBarIconStyle,
                         iconSize: topBarIconSize,
                         itemBuilder: (context) => [
+                          if (context.read<TraxService?>() case final mode?
+                              when !widget.pickPosition &&
+                                  connector.isConnected)
+                            PopupMenuItem(
+                              child: Row(
+                                children: [
+                                  TraxIcon(
+                                    size: 24,
+                                    color: mode.isOn
+                                        ? const Color(Trax.orange)
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(context.l10n.trax_title),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => showTraxSheet(context),
+                            ),
                           // The map's tools first: the reach from you,
                           // where a tap on the map or a name gives the line
                           // to it, and a path trace, in the menu since
