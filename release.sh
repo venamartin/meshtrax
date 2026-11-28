@@ -42,6 +42,14 @@ if [ "$BUILD_APK" = false ] && [ "$BUILD_WINDOWS" = false ] && [ "$BUILD_LINUX" 
     exit 1
 fi
 
+# Guard: without android/key.properties, Gradle quietly signs a release APK
+# with the debug key, and that APK won't install over the app from Play or an
+# earlier release. A wrong key.properties already fails the build.
+if [ "$BUILD_APK" = true ] && [ ! -f android/key.properties ]; then
+    echo "ERROR: android/key.properties is missing, so the APK would be signed with the debug key."
+    exit 1
+fi
+
 PUBLISH_APPLE=false
 if [ "$PUBLISH_IOS" = true ] || [ "$PUBLISH_MACOS" = true ]; then
     PUBLISH_APPLE=true
