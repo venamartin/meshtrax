@@ -29,7 +29,9 @@ Package: `com.vena.meshtrax`. Upload tool: `tool/play_upload.py` (run with `uv`)
    with "not above the highest on Play" — that proves access works.
 
 `android/key.properties` and the upload keystore must also be present
-(`buildaab.sh` checks them).
+(`buildaab.sh` checks them). The GitHub APK is signed with the same key, and
+`release.sh --apk` refuses to start without `key.properties`. Without it,
+Gradle would sign the APK with the debug key.
 
 ## Releasing
 
