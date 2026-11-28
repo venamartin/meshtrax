@@ -99,14 +99,19 @@ Uint8List _selfInfo() {
   return w.toBytes();
 }
 
-Uint8List _contactFrame() {
+Uint8List _contactFrame({bool route = true}) {
   final w = BytesBuilder();
   w.addByte(respCodeContact);
   w.add(aPub);
   w.addByte(advTypeChat);
   w.addByte(0);
-  w.addByte(0x43); // 3 hops, 2 bytes each
-  w.add(Uint8List(maxPathSize)..setRange(0, routeToA.length, routeToA));
+  if (route) {
+    w.addByte(0x43); // 3 hops, 2 bytes each
+    w.add(Uint8List(maxPathSize)..setRange(0, routeToA.length, routeToA));
+  } else {
+    w.addByte(0xFF);
+    w.add(Uint8List(maxPathSize));
+  }
   w.add(Uint8List(maxNameSize)..setRange(0, 1, 'A'.codeUnits));
   w.add(Uint8List.fromList([1, 0, 0, 0]));
   w.add(Uint8List(8));
@@ -117,7 +122,8 @@ Uint8List _rxLog(List<int> packet) =>
     Uint8List.fromList([pushCodeLogRxData, 0x30, 0xEC, ...packet]);
 
 /// A MeshTrax ACK from A to B, flooded through A277.
-Uint8List _ackFromA({int number = 0, int tryNumber = 0}) => _rxLog([
+Uint8List _ackFromA({int number = 0, int tryNumber = 0, List<int>? cameBy}) =>
+    _rxLog([
   (payloadTypeGRPDATA << 2) | 0x01,
   0x41, 0xA2, 0x77,
   ...MeshTraxPacket.seal(
@@ -126,8 +132,12 @@ Uint8List _ackFromA({int number = 0, int tryNumber = 0}) => _rxLog([
     fromByte: aPub[0],
     dataType: dataTypeMeshTraxAck,
     blob: frameDirect(
-      DirectAck(number: number, tryNumber: tryNumber, triesArrived: 1 << tryNumber)
-          .encode(),
+      DirectAck(
+        number: number,
+        tryNumber: tryNumber,
+        triesArrived: 1 << tryNumber,
+        cameBy: cameBy,
+      ).encode(),
       senderSortsAbove: false,
     ),
   ),
@@ -260,6 +270,64 @@ void main() {
     await until(() => c.firmwareDms.isNotEmpty);
     expect(c.ours, isEmpty);
     expect(c.firmwareDms, hasLength(1));
+  });
+
+  // The radio holds no route to them, so the try floods; MeshTrax's ACK
+  // names the repeaters that flood passed, as a path reply does.
+  test("a flooded try's ACK tells Pathfinder the way the flood took",
+      () async {
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    final replies = <(String, List<int>, int)>[];
+    c.onPathReplyHeard =
+        (contact, path, width) => replies.add((contact.publicKeyHex, path, width));
+    c.handleFrameForTest(_ackFromA());
+
+    await c.sendMessage(a, 'which way');
+    await until(() => c.ours.isNotEmpty);
+    final frame = c.ours.single;
+    expect(frame.sublist(0, 4),
+        [cmdSendRawPacket, 1, (payloadTypeGRPDATA << 2) | 0x01, 0x40],
+        reason: 'a flood, 2-byte codes');
+    final framed =
+        unframeDirect(MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!;
+    final dm = DirectMessage.decode(framed.message)!;
+    expect(dm.route, isEmpty, reason: 'a flood carries no route');
+
+    c.handleFrameForTest(
+        _ackFromA(number: dm.number, cameBy: _hex('A2771000')));
+    await settle();
+    final (key, path, width) = replies.single;
+    expect(key, a.publicKeyHex);
+    expect(path, _hex('A2771000'));
+    expect(width, 2);
+    expect((await mine('which way')).status, MessageStatus.delivered);
+  });
+
+  test('my two lists go in the DM when there is room beside the text',
+      () async {
+    c.meshTraxEnds =
+        (width) => (hears: _hex('BEEF88'), heardBy: _hex('BEEF00A2777F'));
+    c.handleFrameForTest(_ackFromA());
+
+    await c.sendMessage(a, 'short one');
+    await until(() => c.ours.isNotEmpty);
+    final short = DirectMessage.decode(opened(c.ours.last).message)!;
+    expect(short.hears, _hex('BEEF88'));
+    expect(short.heardBy, _hex('BEEF00A2777F'));
+    c.handleFrameForTest(_ackFromA(number: short.number));
+
+    // Nothing Smaz can shrink, sized to fit the packet only without them.
+    final long = List.generate(130, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, long);
+    await until(() => c.ours.length > 1);
+    final tight = DirectMessage.decode(opened(c.ours.last).message)!;
+    expect(utf8.decode(tight.text), long);
+    expect(tight.hears, isEmpty, reason: 'the text comes first');
+    expect(tight.heardBy, isEmpty);
+    expect(c.firmwareDms, isEmpty);
   });
 
   test('two messages get different numbers', () async {

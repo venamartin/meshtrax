@@ -10183,6 +10183,18 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// A MeshTrax ACK from [contact] was opened.
   void Function(Contact contact, DirectAck ack)? onMeshTraxAckHeard;
 
+  /// Pathfinder's two lists for this radio where it is now, for a MeshTrax
+  /// DM or ACK: the repeaters it hears and the repeaters known to hear it,
+  /// the best first, each its code ([width] bytes) then one byte, the level
+  /// in whole dB plus 128, or 0 when the level is not known
+  /// (meshtrax.proto). Null, or two empty lists: nothing is sent.
+  ({Uint8List hears, Uint8List heardBy}) Function(int width)? meshTraxEnds;
+
+  /// The same two lists as [contact]'s phone sent them, [width] bytes a
+  /// code.
+  void Function(Contact contact, Uint8List hears, Uint8List heardBy, int width)?
+      onMeshTraxEnds;
+
   // The tries of a MeshTrax DM that have arrived, by sender and message
   // number, and the tries already answered.
   final Map<String, int> _meshTraxTriesArrived = {};
@@ -10201,7 +10213,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       DateTime.now().millisecondsSinceEpoch ~/ 1000 - 1767225600;
   final Map<String, int> _meshTraxNumbers = {};
   final Map<String, Set<int>> _meshTraxTried = {};
-  final Map<String, ({int code, String message})> _meshTraxSent = {};
+  final Map<String, ({int code, String message, bool flood})> _meshTraxSent =
+      {};
 
   /// A flood must still be heard after this many repeaters have added
   /// their codes to it ([MeshTraxPacket.roomFor]).
@@ -10259,11 +10272,45 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         if (dm != null) _meshTraxDmHeard(contact, secret, dm, packet, snrByte);
       } else if (opened.dataType == dataTypeMeshTraxAck) {
         final ack = DirectAck.decode(framed.message);
-        if (ack != null) _meshTraxAckHeard(contact, ack);
+        if (ack != null) _meshTraxAckHeard(contact, ack, packet, snrByte);
       }
       return true;
     }
     return false;
+  }
+
+  /// The repeaters a MeshTrax packet from a contact had passed when this
+  /// copy was heard, first one first: a flood's path, or the route the
+  /// packet says it was sent on ([carried]) less the hops this copy still
+  /// had to go. Null when the two do not fit together.
+  static Uint8List? _meshTraxTravelled(_RawPacket packet, Uint8List carried) {
+    if (packet.isFlood) return Uint8List.fromList(packet.pathBytes);
+    final passed = carried.length - packet.pathBytes.length;
+    if (passed < 0 ||
+        !listEquals<int>(carried.sublist(passed), packet.pathBytes)) {
+      return null;
+    }
+    return carried.sublist(0, passed);
+  }
+
+  /// Pathfinder is told what a MeshTrax packet from [contact] shows, as it
+  /// is told of a flooded DM the app opened ([onFloodCopyOpened]): the
+  /// first repeater on [travelled] heard them, and with none on it they
+  /// reached this radio with no repeater between.
+  void _meshTraxHeardFrom(
+    Contact contact,
+    Uint8List? travelled,
+    _RawPacket packet,
+    int snrByte,
+  ) {
+    if (travelled == null) return;
+    onFloodCopyOpened?.call(
+      contact.publicKeyHex,
+      travelled,
+      packet.hashSize,
+      snrByte.toSigned(8),
+      Uint8List.fromList(packet.payload),
+    );
   }
 
   static bool _keySortsAbove(Uint8List a, Uint8List b) {
@@ -10288,6 +10335,14 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final me = _selfPublicKey;
     if (text == null || me == null) return;
     _setRunsMeshTrax(contact.publicKeyHex, true);
+    // Before the ACK's route is chosen: it then goes by the repeater that
+    // just heard them.
+    final travelled = _meshTraxTravelled(packet, dm.route);
+    _meshTraxHeardFrom(contact, travelled, packet, snrByte);
+    if (dm.hears.isNotEmpty || dm.heardBy.isNotEmpty) {
+      onMeshTraxEnds?.call(contact, dm.hears, dm.heardBy,
+          dm.codeBytes == 0 ? 2 : dm.codeBytes);
+    }
     final head = <int>[
       respCodeContactMsgRecvV3,
       snrByte & 0xFF,
@@ -10316,9 +10371,6 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     }
     if (!_remember(_meshTraxAcked, '$message:${dm.tryNumber}')) return;
 
-    // The repeaters the copy had passed: a flood's path, or the route it
-    // was sent on less the hops it still had to go.
-    final passed = dm.route.length - packet.pathBytes.length;
     final way = _sendMeshTraxAck(
       contact,
       secret,
@@ -10326,11 +10378,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         number: dm.number,
         tryNumber: dm.tryNumber,
         triesArrived: arrived,
-        cameBy: packet.isFlood
-            ? packet.pathBytes
-            : passed > 0
-                ? dm.route.sublist(0, passed)
-                : null,
+        cameBy: travelled,
         level: (snrByte.toSigned(8) / 4).round(),
       ),
       TimeoutHelper.ackDelayMs,
@@ -10365,8 +10413,11 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         ? const <int>[]
         : route.pathBytes.sublist(0, route.hopCount * route.hashSize);
     final width = route?.hashSize ?? _pathHashByteWidth;
+    final ends = meshTraxEnds?.call(width);
     ack
       ..route = Uint8List.fromList(routeBytes)
+      ..hears = ends?.hears ?? Uint8List(0)
+      ..heardBy = ends?.heardBy ?? Uint8List(0)
       ..codeBytes = width == 2 ? 0 : width;
     final payload = MeshTraxPacket.seal(
       secret,
@@ -10453,13 +10504,34 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// A MeshTrax ACK from [contact]: they run MeshTrax, and when it answers
   /// a try of a DM of mine, that DM is delivered, as the radio's
   /// PUSH_CODE_SEND_CONFIRMED says of a firmware DM.
-  void _meshTraxAckHeard(Contact contact, DirectAck ack) {
+  ///
+  /// Pathfinder learns from it what it learns from the firmware's packets:
+  /// the ACK came some way, whose first repeater heard them; and when the
+  /// try it answers was a flood, the repeaters that flood passed on its way
+  /// to them are the route a path reply would have named
+  /// ([onPathReplyHeard]).
+  void _meshTraxAckHeard(
+    Contact contact,
+    DirectAck ack,
+    _RawPacket packet,
+    int snrByte,
+  ) {
     final key = contact.publicKeyHex;
     _setRunsMeshTrax(key, true);
+    _meshTraxHeardFrom(
+        contact, _meshTraxTravelled(packet, ack.route), packet, snrByte);
+    if (ack.hears.isNotEmpty || ack.heardBy.isNotEmpty) {
+      onMeshTraxEnds?.call(contact, ack.hears, ack.heardBy,
+          ack.codeBytes == 0 ? 2 : ack.codeBytes);
+    }
     onMeshTraxAckHeard?.call(contact, ack);
     final sent = _meshTraxSent.remove('$key:${ack.number}:${ack.tryNumber}');
     if (sent == null) return;
     _meshTraxTried.remove(sent.message);
+    if (sent.flood && ack.cameBy.isNotEmpty) {
+      onPathReplyHeard?.call(
+          contact, ack.cameBy, ack.codeBytes == 0 ? 2 : ack.codeBytes);
+    }
     final tripMs =
         _retryService?.waitingForAck(sent.code)?.inMilliseconds ?? 0;
     // The firmware's ACK carries the try number only above 3.
@@ -10553,26 +10625,30 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     final number =
         _meshTraxNumbers.putIfAbsent(message, () => _nextMeshTraxNumber++);
     _cap(_meshTraxNumbers);
-    final blob = frameDirect(
-      DirectMessage(
-        number: number,
-        tryNumber: attempt,
-        time: timestampSeconds,
-        route: route,
-        codeBytes: width == 2 ? 0 : width,
-        packing: packed.packing,
-        text: packed.bytes,
-      ).encode(),
-      senderSortsAbove: _keySortsAbove(me, contact.publicKey),
+    final room = MeshTraxPacket.roomFor(
+      pathBytes: s.useFlood ? _meshTraxFloodHops * width : route.length,
+      scoped: scope != null,
     );
+    Uint8List blobWith(({Uint8List hears, Uint8List heardBy})? ends) =>
+        frameDirect(
+          DirectMessage(
+            number: number,
+            tryNumber: attempt,
+            time: timestampSeconds,
+            route: route,
+            hears: ends?.hears,
+            heardBy: ends?.heardBy,
+            codeBytes: width == 2 ? 0 : width,
+            packing: packed.packing,
+            text: packed.bytes,
+          ).encode(),
+          senderSortsAbove: _keySortsAbove(me, contact.publicKey),
+        );
+    // The two lists go when there is room for them beside the text.
+    var blob = blobWith(meshTraxEnds?.call(width));
+    if (blob.length > room) blob = blobWith(null);
     // A text too long to be heard goes the firmware's way.
-    if (blob.length >
-        MeshTraxPacket.roomFor(
-          pathBytes: s.useFlood ? _meshTraxFloodHops * width : route.length,
-          scoped: scope != null,
-        )) {
-      return false;
-    }
+    if (blob.length > room) return false;
     final payload = MeshTraxPacket.seal(
       secret,
       toByte: contact.publicKey[0],
@@ -10590,7 +10666,8 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       me,
     );
     tried.add(attempt);
-    _meshTraxSent['$key:$number:$attempt'] = (code: code, message: message);
+    _meshTraxSent['$key:$number:$attempt'] =
+        (code: code, message: message, flood: s.useFlood);
     _cap(_meshTraxSent);
     await sendFrame(
       Uint8List.fromList([cmdSendRawPacket, s.useFlood ? 1 : 0, ...packet]),

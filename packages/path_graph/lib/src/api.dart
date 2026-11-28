@@ -454,6 +454,18 @@ class PathGraph {
   /// where I am now.
   final Set<String> _reachedSinceMove = {};
 
+  /// Contacts whose phone picks the way back itself, from what this radio
+  /// tells it of its own end with every message (a MeshTrax phone, which
+  /// answers with MeshTrax's ACK on its own Pathfinder's route). The way
+  /// back their radio holds is not what their answer rides on, so a move
+  /// of mine is no reason to flood to them first.
+  final Set<String> _picksOwnWayBack = {};
+
+  void setPicksOwnWayBack(String contactPubkey, bool picks) {
+    final key = contactPubkey.toLowerCase();
+    picks ? _picksOwnWayBack.add(key) : _picksOwnWayBack.remove(key);
+  }
+
   void setPlace(String? cell, Set<String> near) {
     final moved = cell != null && _cell != null && !_nearCells.contains(cell);
     if (moved) {
@@ -863,6 +875,28 @@ class PathGraph {
     _observationsApplied++;
     _scheduleFlush();
     return true;
+  }
+
+  /// [contactPubkey]'s own phone says it hears the repeater [hash] where
+  /// it is now, at [snr] dB when it gave a level (owner, 2026-11-27: "We
+  /// know what we can hear and we know what can hear us. Pathfinder can
+  /// fill in the middle"). A packet that leaves that repeater reaches them,
+  /// which is what a route to them ends on: the same proof a delivery
+  /// through it gives, measured at their end. A code of another width
+  /// than the graph's is dropped and counted, like any other.
+  void observeContactHears(String contactPubkey, String hash, {double? snr}) {
+    contactPubkey = contactPubkey.toLowerCase();
+    if (contactPubkey == _selfPubkey) return;
+    final code = hash.toUpperCase();
+    if (code.length != hashWidthBytes * 2) {
+      _droppedNarrow++;
+      return;
+    }
+    _store.nodeFor(code, NodeSource.observed);
+    _evidence.recordProvenIngress(contactPubkey, code, _arrivalMillis,
+        sendingSnr: snr);
+    _observationsApplied++;
+    _scheduleFlush();
   }
 
   /// Another copy of a keyed packet from [contactPubkey] that
@@ -2583,6 +2617,7 @@ class PathGraph {
     // ends where I no longer am: a route out would get there and its ACK
     // would not get back.
     if (_movedAt != null &&
+        !_picksOwnWayBack.contains(contactPubkey) &&
         !_reachedSinceMove.contains(contactPubkey) &&
         !_theirWayBackEndsHere(contactPubkey)) {
       return const PathResult.flood(FloodReason.movedSinceTheyReachedMe);

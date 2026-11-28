@@ -144,6 +144,33 @@ void main() {
       expect(graph.findPath(bobPk), isA<RouteResult>());
     });
 
+    // A MeshTrax phone answers on its own Pathfinder's route, told who
+    // hears me now by the message itself: the way back its radio holds is
+    // not what the answer rides on.
+    test("a contact whose phone picks the way back itself is routed to",
+        () {
+      corridors();
+      graph.setPlace('c1_1', const {});
+      graph.observeOwnEcho(path(a277), 2);
+      theirWayBackViaA277();
+      advance(minute);
+      graph.setPlace('c9_9', const {});
+      graph.observeDiscoverResults(
+          [const DiscoverResponse(repeaterHash: 'F5EE', uplinkSnr: 8)],
+          failureEpisode: false);
+      graph.observePath(path([0xF5, 0xEE, ...beef]), 2,
+          const ObservationOrigin.anonymous(), lastHopHeard: false);
+      expect(graph.findPath(bobPk), isA<FloodResult>());
+
+      graph.setPicksOwnWayBack(bobPk, true);
+      expect(graph.findPath(bobPk), isA<RouteResult>());
+      expect(graph.findPath(carolPk), isA<FloodResult>(),
+          reason: "nothing is known of Carol's phone");
+
+      graph.setPicksOwnWayBack(bobPk, false);
+      expect(graph.findPath(bobPk), isA<FloodResult>());
+    });
+
     test('a step to the next cell is not a move', () {
       corridors();
       graph.setPlace('c1_1', {'c1_2'});

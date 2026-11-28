@@ -331,6 +331,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.onOwnEchoHeard = _onOwnEcho;
     connector.onContactMessageHeard = _onContactMessage;
     connector.onFloodCopyOpened = _onFloodCopyOpened;
+    connector.meshTraxEnds = _meshTraxEnds;
+    connector.onMeshTraxEnds = _onMeshTraxEnds;
     connector.measureAreaKey = () => _graph?.currentCell;
     final keeper = _keeper = RadioRouteKeeper(
       // Not during a download: a contact the radio dropped is still listed, and
@@ -594,6 +596,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     _connector?.onOwnEchoHeard = null;
     _connector?.onContactMessageHeard = null;
     _connector?.onFloodCopyOpened = null;
+    _connector?.meshTraxEnds = null;
+    _connector?.onMeshTraxEnds = null;
     _connector?.measureAreaKey = null;
     _connector?.onContactMessageCopy = null;
     _connector?.onSendLadderEnded = null;
@@ -1115,6 +1119,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
           guessedLinks: r.guessedLinks,
           liveAgeMillis: r.liveAgeMillis,
         );
+    graph.setPicksOwnWayBack(
+        contact.publicKeyHex, connector.runsMeshTrax(contact.publicKeyHex));
     final found = graph.findRoutes(contact.publicKeyHex, count: 3);
     return [
       switch (found.best) {
@@ -1174,6 +1180,77 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       int snrByte, Uint8List payload) {
     if (_onOtherMesh) return;
     _adapter?.attributeOpenedCopy(pubkeyHex, pathBytes, width, snrByte, payload);
+    _notifySoon();
+  }
+
+  /// How many repeaters each of the two lists in a MeshTrax DM or ACK
+  /// names: three bytes each on the air.
+  static const _endsPerList = 3;
+
+  /// A repeater counts as heard where the radio is now for this long.
+  static const _heardNow = Duration(minutes: 30);
+
+  /// What this radio knows for certain about its own end, for the other
+  /// phone's Pathfinder: the repeaters it hears, by how well, and the
+  /// repeaters that hear it and may start a route now.
+  ({Uint8List hears, Uint8List heardBy}) _meshTraxEnds(int width) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || width != graph.hashWidthBytes) {
+      return (hears: Uint8List(0), heardBy: Uint8List(0));
+    }
+    Uint8List pack(Iterable<Candidate> rows, double? Function(Candidate) dB) {
+      final out = BytesBuilder();
+      for (final c in rows.take(_endsPerList)) {
+        final level = dB(c);
+        out
+          ..add(PathHelper.parsePathHex(c.repeaterHash, stride: width).path)
+          ..addByte(level == null ? 0 : level.round().clamp(-127, 127) + 128);
+      }
+      return out.toBytes();
+    }
+
+    final mine = [
+      for (final c in graph.egressCandidates())
+        if (c.repeaterHash != directHash) c,
+    ];
+    final since =
+        DateTime.now().subtract(_heardNow).millisecondsSinceEpoch;
+    final heard = [
+      for (final c in mine)
+        if (c.heard && c.lastSeen >= since) c,
+    ]..sort((a, b) => (b.downlinkSnr ?? -99).compareTo(a.downlinkSnr ?? -99));
+    return (
+      hears: pack(heard, (c) => c.downlinkSnr),
+      heardBy: pack(
+        mine.where((c) => c.proven && graph.doorstepHold(c) == null),
+        (c) => c.uplinkSnr,
+      ),
+    );
+  }
+
+  /// [contact]'s phone said which repeaters it hears and which hear it. A
+  /// repeater that hears them is their doorstep, as when it is seen first
+  /// on a packet of theirs; one they hear is where a route to them ends.
+  void _onMeshTraxEnds(
+      Contact contact, Uint8List hears, Uint8List heardBy, int width) {
+    final graph = _graph;
+    if (graph == null || _onOtherMesh || width != graph.hashWidthBytes) return;
+    final key = contact.publicKeyHex;
+    final entry = width + 1;
+    // One sighting, however many repeaters it names: none pushes another
+    // down.
+    final sighting = 'ends:$key:${DateTime.now().millisecondsSinceEpoch}';
+    for (var i = 0; i + entry <= heardBy.length; i += entry) {
+      graph.observeContactSender(
+          key, Uint8List.sublistView(heardBy, i, i + width), width,
+          confirmed: true, messageId: sighting);
+    }
+    for (var i = 0; i + entry <= hears.length; i += entry) {
+      final level = hears[i + width];
+      graph.observeContactHears(
+          key, PathHelper.hopHex(hears.sublist(i, i + width)),
+          snr: level == 0 ? null : (level - 128).toDouble());
+    }
     _notifySoon();
   }
 

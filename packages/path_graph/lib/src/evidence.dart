@@ -302,12 +302,17 @@ class EvidenceStore {
     _dirty.add((contactPubkey, repeaterHash));
   }
 
+  /// [sendingSnr]: the level, in dB, at which they hear the repeater,
+  /// when they said.
   void recordProvenIngress(
-      String contactPubkey, String repeaterHash, int arrival) {
-    _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
-      ..provenAt = arrival
-      ..provenCount += 1
-      ..failedSinceProof = 0;
+      String contactPubkey, String repeaterHash, int arrival,
+      {double? sendingSnr}) {
+    final e =
+        _upsert(contactPubkey, repeaterHash, EvidenceTier.proven, 3.0, arrival)
+          ..provenAt = arrival
+          ..provenCount += 1
+          ..failedSinceProof = 0;
+    if (sendingSnr != null) e.uplinkSnr = _blend(e.uplinkSnr, sendingSnr);
   }
 
   /// EWMA so repeat measurements refine rather than overwrite.
