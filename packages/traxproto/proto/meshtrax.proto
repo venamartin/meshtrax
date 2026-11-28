@@ -1,0 +1,86 @@
+// What MeshTrax phones send each other, in every format that grows.
+//
+// The rules all format owners agreed (2026-11-27):
+// - A field number is never used again and never changes its meaning or
+//   type. What grows takes a new number. Readers skip numbers they do not
+//   know.
+// - Only varint, 64-bit, length-delimited and 32-bit fields (wire types 0,
+//   1, 2 and 5). No groups.
+// - Nothing is required: a reader copes with any field missing.
+// - A `bytes` field with a layout of its own is described here, and a
+//   change to that layout takes a new field number.
+// - A packet is never encoded again by anyone who passes it on.
+syntax = "proto3";
+
+package meshtrax;
+
+// How a text is packed.
+enum TextPacking {
+  // UTF-8 as typed.
+  TEXT_PLAIN = 0;
+  // Smaz over the UTF-8 bytes (lib/helpers/smaz.dart), used when smaller.
+  TEXT_SMAZ = 1;
+}
+
+// A direct message between two MeshTrax phones: data type 0x0175, sealed
+// with the two radios' shared secret. Before these bytes comes one fixed
+// byte: the version in the top 3 bits (0), then the side bit (1 when the
+// sender's key sorts above the receiver's), then 4 spare bits (0).
+message DirectMessage {
+  // The sender's count of messages to this contact. The same for every try
+  // of one message, so the tries are one message to the receiver.
+  uint32 number = 1;
+
+  // 0 for the first try. It changes the sealed bytes, without which a
+  // repeater that carried one try drops the next as a packet it has seen.
+  uint32 try = 2;
+
+  // Seconds since 1970 by the sender's clock, when the message was written.
+  fixed32 time = 3;
+
+  // The repeaters this try was sent along, first one first, `code_bytes`
+  // each. Empty on a flood, whose path is in the packet as it arrives.
+  bytes route = 4;
+
+  // Repeaters the sender hears where it is now, the best first. For each:
+  // its code (`code_bytes`), then one byte, the level in whole dB plus 128.
+  bytes hears = 5;
+
+  // Repeaters known to hear the sender where it is now, the best first, in
+  // the layout of `hears`; a level byte of 0 says the level is not known.
+  bytes heard_by = 6;
+
+  // Bytes in a repeater code in the fields above. 0 means 2.
+  uint32 code_bytes = 7;
+
+  TextPacking packing = 8;
+
+  // The text, packed as `packing` says.
+  bytes text = 9;
+}
+
+// The answer to a DirectMessage: data type 0x0176, sealed the same way,
+// after the same fixed byte.
+message DirectAck {
+  // The message it answers, and the try whose copy was opened.
+  uint32 number = 1;
+  uint32 try = 2;
+
+  // Every try of that message that has arrived so far: bit n for try n.
+  uint32 tries_arrived = 3;
+
+  // The repeaters the opened copy had passed, first one first.
+  bytes came_by = 4;
+
+  // The level the opened copy was heard at, in whole dB.
+  sint32 level = 5;
+
+  // The repeaters this answer was sent along, first one first. Empty on a
+  // flood.
+  bytes route = 6;
+
+  // As in DirectMessage, for the phone that answers.
+  bytes hears = 7;
+  bytes heard_by = 8;
+  uint32 code_bytes = 9;
+}
