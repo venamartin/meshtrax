@@ -208,6 +208,33 @@ void main() {
     await settle();
     expect(c.firmwareDms, hasLength(1));
     expect(c.ours, isEmpty);
+    expect((await mine('one')).viaMeshTrax, isNull,
+        reason: 'nothing to say about the way it went');
+  });
+
+  // Owner, 2026-11-27: the message box counts against "the flood figure,
+  // 126 packed bytes".
+  test('the room the message box counts against is 126 packed bytes', () {
+    expect(c.meshTraxDmTextRoom, 126);
+  });
+
+  test('a text of exactly that room goes as MeshTrax, one byte more does not',
+      () async {
+    // The radio holds no route: the try floods, as the box assumes.
+    c.handleFrameForTest(Uint8List.fromList([respCodeContactsStart, 1, 0, 0, 0]));
+    c.handleFrameForTest(_contactFrame(route: false));
+    c.handleFrameForTest(Uint8List.fromList([respCodeEndOfContacts, 0, 0, 0, 0]));
+    a = c.contacts.single;
+    c.handleFrameForTest(_ackFromA());
+    // Nothing Smaz can shrink.
+    final fits = List.generate(126, (i) => 'Q7#Z'[i % 4]).join();
+    await c.sendMessage(a, fits);
+    await until(() => c.ours.isNotEmpty);
+    expect(c.ours, hasLength(1));
+    expect(c.firmwareDms, isEmpty);
+    expect(c.ours.single.length - 2, lessThanOrEqualTo(heardPacketMaxBytes - 16),
+        reason: 'still heard after eight repeaters added their codes');
+    expect((await mine(fits)).viaMeshTrax, isTrue);
   });
 
   test("a firmware DM from them is answered once with MeshTrax's hello",
@@ -247,6 +274,7 @@ void main() {
     expect(dm.packing, textSmaz, reason: 'packed without a setting');
     final stored = await mine('Meet at the trailhead at nine');
     expect(stored.status, MessageStatus.sent);
+    expect(stored.viaMeshTrax, isTrue, reason: 'the way it went');
     expect(dm.time, stored.timestamp.millisecondsSinceEpoch ~/ 1000);
 
     // An ACK for another try or another message changes nothing.
@@ -270,6 +298,8 @@ void main() {
     await until(() => c.firmwareDms.isNotEmpty);
     expect(c.ours, isEmpty);
     expect(c.firmwareDms, hasLength(1));
+    expect((await mine(long)).viaMeshTrax, isFalse,
+        reason: 'to a contact on MeshTrax, but as a standard message');
   });
 
   // The radio holds no route to them, so the try floods; MeshTrax's ACK

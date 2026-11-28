@@ -54,6 +54,11 @@ class ByteCountedTextField extends StatelessWidget {
   /// If provided, byte limits and counters will use the encoded text length.
   final String Function(String)? encoder;
 
+  /// Draws the line under the field in place of the counter: given the
+  /// text as typed and the counter this field would show.
+  final Widget Function(BuildContext context, String text, Widget counter)?
+      counterBuilder;
+
   const ByteCountedTextField({
     super.key,
     required this.maxBytes,
@@ -69,6 +74,7 @@ class ByteCountedTextField extends StatelessWidget {
     this.errorThreshold = 0.9,
     this.hideCounterWhenEmpty = true,
     this.encoder,
+    this.counterBuilder,
   });
 
   @override
@@ -123,10 +129,14 @@ class ByteCountedTextField extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4, right: 4),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: Text(
-                    '$usedBytes / $maxBytes',
-                    style: TextStyle(fontSize: 11, color: counterColor),
-                  ),
+                  child: () {
+                    final counter = Text(
+                      '$usedBytes / $maxBytes',
+                      style: TextStyle(fontSize: 11, color: counterColor),
+                    );
+                    return counterBuilder?.call(context, value.text, counter) ??
+                        counter;
+                  }(),
                 ),
               ),
           ],

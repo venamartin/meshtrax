@@ -822,6 +822,7 @@ class MessageStore {
         'claimedAt': msg.claimedAt!.millisecondsSinceEpoch,
       if (msg.passingCopyHopsLeft != null)
         'passingCopyHopsLeft': msg.passingCopyHopsLeft,
+      if (msg.viaMeshTrax != null) 'viaMeshTrax': msg.viaMeshTrax,
     };
   }
 
@@ -886,6 +887,7 @@ class MessageStore {
           ? DateTime.fromMillisecondsSinceEpoch(json['claimedAt'] as int)
           : null,
       passingCopyHopsLeft: json['passingCopyHopsLeft'] as String?,
+      viaMeshTrax: json['viaMeshTrax'] as bool?,
     );
   }
 }

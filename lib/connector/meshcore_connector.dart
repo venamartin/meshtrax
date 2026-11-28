@@ -2240,9 +2240,16 @@ class MeshCoreConnector extends ChangeNotifier with WidgetsBindingObserver {
       final outboundText = prepareContactOutboundText(contact, text);
       // The wait is over: the radio's answer is due from now.
       retry?.radioTakes(contact.publicKeyHex, timestampSeconds, text);
-      if (await _sendMeshTraxDm(contact, text, attempt, timestampSeconds)) {
-        return;
+      // Known to run MeshTrax as this try goes: it then says which way it
+      // went, MeshTrax's or, when it could not, the firmware's.
+      final theirsRunsMeshTrax = runsMeshTrax(contact.publicKeyHex);
+      final ours =
+          await _sendMeshTraxDm(contact, text, attempt, timestampSeconds);
+      if (theirsRunsMeshTrax) {
+        retry?.noteSentVia(contact.publicKeyHex, timestampSeconds, text,
+            meshTrax: ours);
       }
+      if (ours) return;
       await sendFrame(
         buildSendTextMsgFrame(
           contact.publicKey,
@@ -10219,6 +10226,33 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   /// A flood must still be heard after this many repeaters have added
   /// their codes to it ([MeshTraxPacket.roomFor]).
   static const int _meshTraxFloodHops = 8;
+
+  /// The most packed bytes of text ([MeshTraxDmText.pack]) a MeshTrax DM
+  /// carries on a flood's first try, with nothing else beside the text:
+  /// what the message box counts against, since the route is not chosen
+  /// until the message is sent. Worked out from the packet as it is built,
+  /// so the two cannot disagree. A routed try over more than three
+  /// repeaters has less room, and a try that does not fit goes the
+  /// firmware's way ([_sendMeshTraxDm]).
+  int get meshTraxDmTextRoom {
+    final width = _pathHashByteWidth;
+    final empty = frameDirect(
+      DirectMessage(
+        number: _nextMeshTraxNumber,
+        time: 0xFFFFFFFF,
+        codeBytes: width == 2 ? 0 : width,
+        packing: textSmaz,
+      ).encode(),
+      senderSortsAbove: false,
+    );
+    // The text's own tag and length: one byte each up to 127 bytes.
+    return MeshTraxPacket.roomFor(
+          pathBytes: _meshTraxFloodHops * width,
+          scoped: _passingCopyScopeKey != null,
+        ) -
+        empty.length -
+        2;
+  }
 
   /// How many tries of one message go as MeshTrax's packet with no ACK of
   /// ours before the rest go the firmware's way: their phone is most likely

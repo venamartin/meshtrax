@@ -4256,6 +4256,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get channelPath_directPath => 'Bezpośrednio';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return 'Odebrane po drodze, pozostało: $hops';
   }

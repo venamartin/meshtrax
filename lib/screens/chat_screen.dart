@@ -18,6 +18,7 @@ import '../helpers/date_time_helper.dart';
 import '../helpers/link_handler.dart';
 import '../helpers/mention_helper.dart';
 import '../helpers/message_facts.dart';
+import '../widgets/meshtrax_dm_counter.dart';
 import '../widgets/share_contact_dialog.dart';
 import '../widgets/message_status_icon.dart';
 import '../helpers/gif_helper.dart';
@@ -1825,6 +1826,16 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                     textInputAction: TextInputAction.newline,
                     hintText: context.l10n.chat_typeMessage,
                     onSubmitted: (_) => _sendMessage(connector),
+                    // A contact on MeshTrax: the bytes left of a MeshTrax
+                    // DM as the text is typed, and the way it will go.
+                    counterBuilder: !_isRoom &&
+                            connector.runsMeshTrax(widget.contact.publicKeyHex)
+                        ? (context, text, counter) => MeshTraxDmCounter(
+                              text: text,
+                              room: connector.meshTraxDmTextRoom,
+                              standard: counter,
+                            )
+                        : null,
                     encoder:
                         connector.isContactSmazEnabled(
                           widget.contact.publicKeyHex,
@@ -3262,6 +3273,11 @@ class _MessageBubble extends StatelessWidget {
                 padding: EdgeInsets.only(left: isOutgoing ? 0 : 48),
                 child: _buildReactionsDisplay(context, message, colorScheme),
               ),
+            ),
+          if (isOutgoing && message.viaMeshTrax != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 4),
+              child: SentWayMark(meshTrax: message.viaMeshTrax!),
             ),
         ],
       ),

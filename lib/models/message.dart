@@ -59,6 +59,11 @@ class Message {
   // had these hops to go ("BEEF", "AD77,BEEF"). The firmware drops such a
   // copy unopened, even one addressed to it. Null for what the radio opened.
   final String? passingCopyHopsLeft;
+  // Outgoing, to a contact whose phone runs MeshTrax: whether its latest
+  // try went as MeshTrax's own packet (true) or as a standard, firmware
+  // message (false). It can change while the message is being sent. Null
+  // for any other message.
+  final bool? viaMeshTrax;
 
   Message({
     required this.senderKey,
@@ -89,6 +94,7 @@ class Message {
     this.waitingForRepeater = false,
     this.claimedAt,
     this.passingCopyHopsLeft,
+    this.viaMeshTrax,
   }) : messageId = messageId ??
            '${timestamp.millisecondsSinceEpoch}_${pubKeyToHex(senderKey)}_${text.hashCode}',
        pathBytes = pathBytes ?? Uint8List(0),
@@ -124,6 +130,7 @@ class Message {
     Uint8List? fourByteRoomContactKey,
     DateTime? claimedAt,
     String? passingCopyHopsLeft,
+    bool? viaMeshTrax,
   }) {
     return Message(
       senderKey: senderKey,
@@ -155,6 +162,7 @@ class Message {
           fourByteRoomContactKey ?? this.fourByteRoomContactKey,
       claimedAt: claimedAt ?? this.claimedAt,
       passingCopyHopsLeft: passingCopyHopsLeft ?? this.passingCopyHopsLeft,
+      viaMeshTrax: viaMeshTrax ?? this.viaMeshTrax,
     );
   }
 

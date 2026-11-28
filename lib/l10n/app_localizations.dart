@@ -7192,6 +7192,24 @@ abstract class AppLocalizations {
   /// **'Direct'**
   String get channelPath_directPath;
 
+  /// Under the message box of a contact whose phone runs MeshTrax, beside a MeshTrax mark: how many bytes of the message are left before it no longer fits a MeshTrax message
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String chat_meshTraxBytesLeft(int count);
+
+  /// Under the message box of a contact whose phone runs MeshTrax, when the text no longer fits a MeshTrax message and will be sent the radio's standard way
+  ///
+  /// In en, this message translates to:
+  /// **'Too long for MeshTrax: goes as a standard message'**
+  String get chat_meshTraxTooLong;
+
+  /// Small line under a sent direct message to a contact on MeshTrax that went the radio's standard way, not as a MeshTrax message
+  ///
+  /// In en, this message translates to:
+  /// **'Standard message'**
+  String get chat_sentStandard;
+
   /// Path line of a DM the app opened from a copy still on its route; hops = the repeaters it still had to pass, e.g. BEEF or AD77,BEEF
   ///
   /// In en, this message translates to:

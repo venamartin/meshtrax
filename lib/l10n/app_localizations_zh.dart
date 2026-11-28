@@ -3973,6 +3973,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelPath_directPath => '直连';
 
   @override
+  String chat_meshTraxBytesLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get chat_meshTraxTooLong =>
+      'Too long for MeshTrax: goes as a standard message';
+
+  @override
+  String get chat_sentStandard => 'Standard message';
+
+  @override
   String channelPath_pickedUpOnItsWay(String hops) {
     return '途中收到，剩余：$hops';
   }
