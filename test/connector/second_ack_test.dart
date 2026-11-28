@@ -64,6 +64,14 @@ class _Connector extends MeshCoreConnector {
     String? channelSendQueueId,
     bool expectsGenericAck = false,
   }) async {
+    // The firmware's ACKs only. MeshTrax's own packets (group data: the
+    // one that tells a contact this phone runs MeshTrax) have their own
+    // tests.
+    if (data.length > 2 &&
+        data[0] == cmdSendRawPacket &&
+        (data[2] >> 2) & 0x0F == payloadTypeGRPDATA) {
+      return;
+    }
     sent.add(data);
     if (data.isNotEmpty && data[0] == cmdSendRawPacket) {
       ackAtMs.add(_clock.elapsedMilliseconds);
