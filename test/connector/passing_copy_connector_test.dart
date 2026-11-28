@@ -59,8 +59,12 @@ class _Connector extends MeshCoreConnector {
   @override
   Future<({String name, Uint8List key})?> getDefaultFloodScope() async => null;
 
-  List<Uint8List> get rawPackets =>
-      sent.where((f) => f.isNotEmpty && f[0] == cmdSendRawPacket).toList();
+  // The firmware's ACKs only. MeshTrax's own packets (group data: the one
+  // that tells a contact this phone runs MeshTrax) have their own tests.
+  List<Uint8List> get rawPackets => sent
+      .where((f) =>
+          f.length > 2 && f[0] == cmdSendRawPacket && (f[2] >> 2) & 0x0F != payloadTypeGRPDATA)
+      .toList();
 }
 
 Uint8List _selfInfo(Uint8List pubKey) {
