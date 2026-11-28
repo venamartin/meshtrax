@@ -42,6 +42,8 @@ A node takes a request only when:
 
 Anything else it ignores, quietly. Flags it doesn't know, it ignores too. A kind reads the bytes it knows and ignores any after them.
 
+A request asked of another node can still be overheard: a part of the app that overhears its kind (`ChannelRequests.overhear`) gets it, so it needn't ask for what someone else already did. Photos use this so that receivers missing the same packets don't all ask ([Photos: asking for lost packets](photos.md#asking-for-lost-packets)). A node's own requests heard back go to no one.
+
 ## Sending one
 
 `ChannelRequests.send` hands the request to the chat's queue (`MeshCoreConnector.sendChannelPackets`) with `once` and `ahead`:

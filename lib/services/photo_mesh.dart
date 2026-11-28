@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show File, Platform;
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart'
@@ -86,7 +87,10 @@ typedef PhotoSendState = ({
 /// A photo being received, for the chat: [senderName]'s photo [key], with
 /// [received] of its [total] data packets in. [lost] packets are known lost:
 /// a later one came, or nothing came for [PhotoMesh.askSilence]. [canAsk]:
-/// the rest can be asked for now. [asked]: how many were asked for last.
+/// the rest can be asked for now. [asking]: a tap's ask waits its turn
+/// ([PhotoMesh.askForRest]). [othersAsked]: others had asked for every
+/// packet lost, so this phone waits for that answer. [asked]: how many this
+/// phone asked for last.
 typedef PhotoReceiving = ({
   ImageStreamKey key,
   String senderName,
@@ -94,6 +98,8 @@ typedef PhotoReceiving = ({
   int total,
   int lost,
   bool canAsk,
+  bool asking,
+  bool othersAsked,
   int asked,
 });
 
@@ -248,6 +254,13 @@ class PhotoMesh {
   /// least time between two answers of the same packet.
   static Duration askRest = const Duration(minutes: 2);
 
+  /// After a tap on Ask for the rest, the ask waits between these two, at
+  /// random, so that of the receivers missing the same packets one asks
+  /// and the others hear it; tests shorten them.
+  static Duration askWaitLeast = const Duration(seconds: 5);
+  static Duration askWaitMost = const Duration(seconds: 30);
+  static final math.Random _random = math.Random();
+
   /// How long the sender gathers what a photo's receivers ask for before
   /// the packets go again; tests shorten it.
   static Duration askGather = const Duration(seconds: 10);
@@ -292,8 +305,16 @@ class PhotoMesh {
   final Map<int, _SentPhoto> _sentPhotos = {};
 
   /// The photos being received whose rest I asked for: when, and how many
-  /// packets.
+  /// packets; none when others had asked for them all.
   final Map<ImageStreamKey, ({DateTime at, int packets})> _asked = {};
+
+  /// The photos being received whose asks wait their turn.
+  final Set<ImageStreamKey> _asking = {};
+
+  /// What others asked the senders of photos being received here for:
+  /// when, and the packets, one bit each.
+  final Map<ImageStreamKey, List<({DateTime at, int packets})>> _othersAsks =
+      {};
 
   PhotoMesh._(this.connector) {
     _datagrams = connector.channelDatagrams.listen((d) {
@@ -323,9 +344,9 @@ class PhotoMesh {
     // A deleted photo message takes its picture and bytes with it.
     connector.onChannelMessageDeleted = (id) =>
         unawaited(PhotoStore.instance.forget(id));
-    ChannelRequests.of(
-      connector,
-    ).register(ChannelRequestKind.photoPackets, _onPacketsAsked);
+    ChannelRequests.of(connector)
+      ..register(ChannelRequestKind.photoPackets, _onPacketsAsked)
+      ..overhear(ChannelRequestKind.photoPackets, _onPacketsOverheard);
     _sweep = Timer.periodic(const Duration(seconds: 5), (_) {
       _reassembler?.evictExpired();
       _showReceiving();
@@ -340,12 +361,15 @@ class PhotoMesh {
     final now = DateTime.now();
     final pending = _reassembler?.receiving ?? const <ImageReceiving>[];
     _asked.removeWhere((key, _) => !pending.any((r) => r.key == key));
+    _othersAsks.removeWhere((key, _) => !pending.any((r) => r.key == key));
     receiving.value = [
       for (final r in pending)
         if (!connector.isSenderBlocked(_senderName(r.key.senderPrefix)))
           () {
             final lost = _lostBits(r, now);
             final asked = _asked[r.key];
+            final resting = asked != null && now.difference(asked.at) < askRest;
+            final asking = _asking.contains(r.key);
             return (
               key: r.key,
               senderName: _senderName(r.key.senderPrefix),
@@ -355,7 +379,10 @@ class PhotoMesh {
               canAsk:
                   lost != 0 &&
                   now.difference(r.firstSeen) < askWithin &&
-                  (asked == null || now.difference(asked.at) >= askRest),
+                  !asking &&
+                  !resting,
+              asking: asking,
+              othersAsked: resting && asked.packets == 0,
               asked: asked?.packets ?? 0,
             );
           }(),
@@ -389,22 +416,76 @@ class PhotoMesh {
       if (bits & (1 << i) != 0) i,
   ];
 
+  /// The packets of [bits] as the log names them, from 1: "2, 3".
+  static String _packetList(int bits) =>
+      _bitIndexes(bits).map((i) => i + 1).join(', ');
+
+  ImageReceiving? _receivingPhoto(ImageStreamKey key) =>
+      _reassembler?.receiving.where((r) => r.key == key).firstOrNull;
+
+  Channel? _channelOf(ImageStreamKey key) =>
+      connector.channels.where((c) => c.index == key.channelIndex).firstOrNull;
+
   /// Asks the sender of photo [key], being received, for the packets known
-  /// lost ([PhotoReceiving.lost]): one request, through the chat. False
-  /// when nothing can be asked for now, or the radio didn't take it.
+  /// lost ([PhotoReceiving.lost]), with one request through the chat. The
+  /// ask first waits [askWaitLeast] to [askWaitMost], at random, and then
+  /// leaves out the packets others asked for within [askRest]
+  /// ([_onPacketsOverheard]): their answer brings those. So of the
+  /// receivers missing the same packets, about one asks. With every packet
+  /// lost asked for already, nothing goes, and the rest can be asked for
+  /// again after [askRest], as after an ask. False when nothing can be
+  /// asked for, or the radio didn't take the ask.
   Future<bool> askForRest(ImageStreamKey key) async {
-    final r = _reassembler?.receiving.where((r) => r.key == key).firstOrNull;
-    final channel = connector.channels
-        .where((c) => c.index == key.channelIndex)
-        .firstOrNull;
-    if (r == null || channel == null) return false;
-    final lost = _lostBits(r, DateTime.now());
-    if (lost == 0) return false;
-    _asked[key] = (at: DateTime.now(), packets: _bitCount(lost));
+    if (_asking.contains(key)) return true;
+    final r = _receivingPhoto(key);
+    if (r == null ||
+        _channelOf(key) == null ||
+        _lostBits(r, DateTime.now()) == 0) {
+      return false;
+    }
+    final spread = askWaitMost - askWaitLeast;
+    final wait = spread > Duration.zero
+        ? askWaitLeast + spread * _random.nextDouble()
+        : askWaitLeast;
+    _asking.add(key);
     _showReceiving();
     _log(
-      'asking ${_hex4(key.senderPrefix)} for packets '
-      '${_bitIndexes(lost).map((i) => i + 1).join(', ')} of ${idText(key.imgId)}',
+      'asking ${_hex4(key.senderPrefix)} for the rest of '
+      '${idText(key.imgId)} in ${wait.inSeconds} s, unless someone else '
+      'does first',
+    );
+    await Future<void>.delayed(wait);
+    _asking.remove(key);
+    if (_disposed) return true;
+    final now = DateTime.now();
+    final photo = _receivingPhoto(key);
+    final channel = _channelOf(key);
+    final lost = photo == null ? 0 : _lostBits(photo, now);
+    // In whole by now, or given up on: nothing to ask.
+    if (photo == null || lost == 0 || channel == null) {
+      _showReceiving();
+      return channel != null;
+    }
+    var others = 0;
+    for (final a
+        in _othersAsks[key] ?? const <({DateTime at, int packets})>[]) {
+      if (now.difference(a.at) < askRest) others |= a.packets;
+    }
+    final mine = lost & ~others;
+    _asked[key] = (at: now, packets: _bitCount(mine));
+    _showReceiving();
+    if (mine == 0) {
+      _log(
+        'someone asked ${_hex4(key.senderPrefix)} for packets '
+        '${_packetList(lost)} of ${idText(key.imgId)}: waiting for that '
+        'answer',
+      );
+      return true;
+    }
+    _log(
+      'asking ${_hex4(key.senderPrefix)} for packets ${_packetList(mine)} of '
+      '${idText(key.imgId)}'
+      '${lost & others != 0 ? '; someone asked for ${_packetList(lost & others)}' : ''}',
     );
     try {
       final sent = await ChannelRequests.of(connector).send(
@@ -413,15 +494,41 @@ class PhotoMesh {
         asked: key.senderPrefix,
         body: photoPacketsRequest(
           imgId: key.imgId,
-          total: r.total,
-          missing: lost,
+          total: photo.total,
+          missing: mine,
         ),
       );
-      return sent != null;
+      if (sent != null) return true;
     } on ChannelPacketsFailed catch (why) {
       _log('could not ask for the rest of ${idText(key.imgId)}: $why');
-      return false;
     }
+    // Nothing went, so the rest can be asked for again at once.
+    _asked.remove(key);
+    _showReceiving();
+    return false;
+  }
+
+  /// Another receiver on [channel] asked the sender of a photo coming in
+  /// here too for some of its packets: an ask of mine leaves those to that
+  /// answer ([askForRest]).
+  void _onPacketsOverheard(Channel channel, ChannelRequest request) {
+    final asked = readPhotoPacketsRequest(request.body);
+    if (asked == null) return;
+    final key = ImageStreamKey(
+      senderPrefix: request.asked,
+      imgId: asked.imgId,
+      channelIndex: channel.index,
+    );
+    final photo = _receivingPhoto(key);
+    if (photo == null || photo.total != asked.total) return;
+    final now = DateTime.now();
+    (_othersAsks[key] ??= [])
+      ..removeWhere((a) => now.difference(a.at) >= askRest)
+      ..add((at: now, packets: asked.missing));
+    _log(
+      '${_hex4(request.asker)} asked ${_hex4(request.asked)} for packets '
+      '${_packetList(asked.missing)} of ${idText(asked.imgId)}',
+    );
   }
 
   /// A receiver on [channel] asks for packets of a photo of mine: they go
@@ -441,8 +548,7 @@ class PhotoMesh {
     final wanted = asked.missing & ((1 << photo.blobs.length) - 1);
     if (wanted == 0) return;
     _log(
-      '${_hex4(request.asker)} asked for packets '
-      '${_bitIndexes(wanted).map((i) => i + 1).join(', ')} of '
+      '${_hex4(request.asker)} asked for packets ${_packetList(wanted)} of '
       '${idText(photo.imgId)}',
     );
     photo.asked |= wanted;

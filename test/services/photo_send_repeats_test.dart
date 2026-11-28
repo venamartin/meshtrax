@@ -16,6 +16,7 @@ import 'package:meshtrax/services/channel_requests.dart';
 import 'package:meshtrax/services/heard_service.dart';
 import 'package:meshtrax/services/message_retry_service.dart';
 import 'package:meshtrax/services/photo_mesh.dart';
+import 'package:meshtrax/services/photo_reassembler.dart';
 import 'package:meshtrax/services/photo_rules.dart';
 import 'package:meshtrax/services/photo_store.dart';
 import 'package:meshtrax/services/region_service.dart';
@@ -33,6 +34,7 @@ import 'package:traxpix/traxpix.dart'
         PhotoExtras,
         buildImageChunks,
         kImageRetryByteOffset,
+        kImageRetryCountMask,
         kPhotoItemSubjectOnly,
         photoPacketAgain,
         photoPacketsRequest,
@@ -487,6 +489,21 @@ void main() {
     expect(ids.sublist(0, 3).toSet(), hasLength(1), reason: 'first all first');
   });
 
+  // REMOTE MAC's review of #417: copies of mine heard after the chat stopped
+  // listening for them reach the photos' receive side, which drops them.
+  test('copies of my own photo heard after it was done make no photo coming '
+      'in', () async {
+    final r = await radio((n, index) => true);
+    await send(r, bytes: 600);
+    for (final blob in List.of(r.blobs)) {
+      r.handleFrameForTest(_repeated(blob));
+      r.handleFrameForTest(_received(blob, 1));
+    }
+    await pumpEventQueue(times: 200);
+    expect(PhotoMesh.receiving.value, isEmpty);
+    await photoRow(r);
+  });
+
   test('a Nearby only channel sends its photo zero hop, with the zero-hop '
       'gap, and nothing waits or goes again', () async {
     final regions = RegionService();
@@ -880,9 +897,13 @@ void main() {
     final gather = PhotoMesh.askGather;
     final rest = PhotoMesh.askRest;
     final silence = PhotoMesh.askSilence;
+    final waitLeast = PhotoMesh.askWaitLeast;
+    final waitMost = PhotoMesh.askWaitMost;
 
     setUp(() {
       PhotoMesh.askGather = const Duration(milliseconds: 100);
+      PhotoMesh.askWaitLeast = Duration.zero;
+      PhotoMesh.askWaitMost = Duration.zero;
       PackageInfo.setMockInitialValues(
         appName: 'MeshTrax',
         packageName: 'com.vena.meshtrax',
@@ -896,6 +917,8 @@ void main() {
       PhotoMesh.askGather = gather;
       PhotoMesh.askRest = rest;
       PhotoMesh.askSilence = silence;
+      PhotoMesh.askWaitLeast = waitLeast;
+      PhotoMesh.askWaitMost = waitMost;
     });
 
     /// A photo of 4 data packets and the repair packet, from BEEF.
@@ -941,6 +964,131 @@ void main() {
       );
       r.handleFrameForTest(_received(request.encode(), 1, dataType: 0x0173));
     }
+
+    /// The requests [r] took.
+    List<ChannelRequest> requests(_Radio r) => [
+      for (var i = 0; i < r.blobs.length; i++)
+        if (r.types[i] == 0x0173) ChannelRequest.decode(r.blobs[i])!,
+    ];
+
+    /// BEEF's photo 3a coming in with packets 1 and 4: 2 and 3 are lost.
+    Future<_Radio> lostTwo() async {
+      final r = await radio((n, index) => true);
+      PhotoMesh.of(r);
+      final photo = theirs(0x3a);
+      r.handleFrameForTest(_received(photo.blobs[0], 1));
+      r.handleFrameForTest(_received(photo.blobs[3], 1));
+      await pumpEventQueue();
+      expect(PhotoMesh.receiving.value.single.lost, 2);
+      return r;
+    }
+
+    ImageStreamKey coming() => PhotoMesh.receiving.value.single.key;
+
+    // Martin, 2026-11-27: "if ten people request missing packets, we will
+    // flood the mesh. We need to group the requested resends." His pick: a
+    // random wait of 5 to 30 s.
+    test('a tap\'s ask waits its turn, and the line says so', () async {
+      PhotoMesh.askWaitLeast = const Duration(milliseconds: 300);
+      PhotoMesh.askWaitMost = const Duration(milliseconds: 300);
+      final r = await lostTwo();
+      final asked = PhotoMesh.of(r).askForRest(coming());
+      await pumpEventQueue();
+      var line = PhotoMesh.receiving.value.single;
+      expect((line.canAsk, line.asking), (false, true));
+      expect(requests(r), isEmpty);
+
+      expect(await asked, isTrue);
+      expect(readPhotoPacketsRequest(requests(r).single.body)!.missing, 0x06);
+      line = PhotoMesh.receiving.value.single;
+      expect((line.asking, line.othersAsked, line.asked), (false, false, 2));
+    });
+
+    test('someone else asked for the same packets: no ask goes, the line '
+        'says so, and after the rest the button is back', () async {
+      PhotoMesh.askRest = const Duration(milliseconds: 400);
+      final r = await lostTwo();
+      ask(r, 0x3a, 0x06, asker: 0xCAFE, asked: 0xBEEF);
+      await pumpEventQueue();
+
+      expect(await PhotoMesh.of(r).askForRest(coming()), isTrue);
+      expect(requests(r), isEmpty);
+      var line = PhotoMesh.receiving.value.single;
+      expect((line.canAsk, line.othersAsked, line.asked), (false, true, 0));
+
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      // Any packet that comes shows the photos again: another photo's.
+      r.handleFrameForTest(_received(theirs(0x3b).blobs[0], 1));
+      await pumpEventQueue();
+      line = PhotoMesh.receiving.value.firstWhere((l) => l.key.imgId == 0x3a);
+      expect((line.canAsk, line.othersAsked), (true, false));
+      expect(await PhotoMesh.of(r).askForRest(line.key), isTrue);
+      expect(readPhotoPacketsRequest(requests(r).single.body)!.missing, 0x06);
+    });
+
+    test('someone else asked for some of them: the ask is for the rest '
+        'only', () async {
+      final r = await lostTwo();
+      ask(r, 0x3a, 0x02, asker: 0xCAFE, asked: 0xBEEF);
+      await pumpEventQueue();
+      expect(await PhotoMesh.of(r).askForRest(coming()), isTrue);
+      expect(readPhotoPacketsRequest(requests(r).single.body)!.missing, 0x04);
+      expect(PhotoMesh.receiving.value.single.asked, 1);
+    });
+
+    test('an ask heard during the wait counts too', () async {
+      PhotoMesh.askWaitLeast = const Duration(milliseconds: 300);
+      PhotoMesh.askWaitMost = const Duration(milliseconds: 300);
+      final r = await lostTwo();
+      final asked = PhotoMesh.of(r).askForRest(coming());
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      ask(r, 0x3a, 0x06, asker: 0xCAFE, asked: 0xBEEF);
+      expect(await asked, isTrue);
+      expect(requests(r), isEmpty);
+      expect(PhotoMesh.receiving.value.single.othersAsked, isTrue);
+    });
+
+    test('asks for another photo, another sender\'s, another count of '
+        'packets, or older than the rest don\'t count', () async {
+      PhotoMesh.askRest = const Duration(milliseconds: 300);
+      final r = await lostTwo();
+      ask(r, 0x3a, 0x06, asker: 0xCAFE, asked: 0xBEEF);
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      ask(r, 0x3b, 0x06, asker: 0xCAFE, asked: 0xBEEF);
+      ask(r, 0x3a, 0x06, asker: 0xCAFE, asked: 0x1234);
+      ask(r, 0x3a, 0x06, total: 5, asker: 0xCAFE, asked: 0xBEEF);
+      await pumpEventQueue();
+      expect(await PhotoMesh.of(r).askForRest(coming()), isTrue);
+      expect(readPhotoPacketsRequest(requests(r).single.body)!.missing, 0x06);
+    });
+
+    // REMOTE MAC's review of #417: each copy's retry byte must count up
+    // below its ceiling (15), or copies would be alike on the air again.
+    // The most copies a packet gets: the first, 3 more with no repeater
+    // (the highest Max Channel Message Retries), 1 more after only one
+    // repeater that no observer heard, and 1 in each of the 3 rounds asked
+    // for, 8 in all; this one meets every resend but the one after one
+    // repeater.
+    test('each copy of a packet counts one more, and the most copies stay '
+        'below the retry byte\'s ceiling', () async {
+      PhotoMesh.askRest = Duration.zero;
+      final r = await radio((n, index) => false, retries: 3);
+      await send(r, bytes: 100);
+      final imgId = photoPackets(r)[0][2];
+      for (var round = 1; round <= PhotoMesh.askRounds; round++) {
+        ask(r, imgId, 0x01, total: 1);
+        await taken(r, 4 + round);
+      }
+      ask(r, imgId, 0x01, total: 1);
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(_retries(photoPackets(r)), [0, 1, 2, 3, 4, 5, 6]);
+      const mostCopies = 1 + 3 + 1 + PhotoMesh.askRounds;
+      expect(
+        mostCopies - 1,
+        lessThan(kImageRetryCountMask),
+        reason: 'the last copy\'s retry byte',
+      );
+    });
 
     test('a photo coming in shows how far it came; asking for the rest asks '
         'its sender for just the lost packets, with this build', () async {

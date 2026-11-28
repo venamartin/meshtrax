@@ -491,6 +491,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Asked for 1 packet} other{Asked for {count} packets}}'**
   String photo_askedFor(int count);
 
+  /// Beside a photo coming in, for a few seconds after a tap on Ask for the rest: the phone waits in case someone else missing the same packets asks first.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking…'**
+  String get photo_asking;
+
+  /// Beside a photo coming in: someone else already asked its sender for the packets this phone lost, so it waits for that answer instead of asking too.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone asked; waiting'**
+  String get photo_othersAsked;
+
   /// Snack bar when the radio didn't take the request for a photo's lost packets.
   ///
   /// In en, this message translates to:
