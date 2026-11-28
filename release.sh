@@ -749,6 +749,9 @@ if [ "$BUILD_LINUX" = true ] && [ -f "$LINUX_DEST_ZIP" ]; then
     if [ -f "$LINUX_DEST_SHA1" ]; then
         FILES_TO_UPLOAD+=("$LINUX_DEST_SHA1")
     fi
+    # Beside the zips (on a drive, or in a download folder), the installer
+    # needs no internet.
+    FILES_TO_UPLOAD+=("install.sh")
 fi
 
 if [ ${#FILES_TO_UPLOAD[@]} -eq 0 ]; then
