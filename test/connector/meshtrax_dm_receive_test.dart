@@ -8,6 +8,7 @@ import 'package:meshtrax/helpers/meshtrax_dm.dart';
 import 'package:meshtrax/helpers/meshtrax_packet.dart';
 import 'package:meshtrax/models/contact.dart';
 import 'package:meshtrax/models/message.dart';
+import 'package:meshtrax/models/path_selection.dart';
 import 'package:meshtrax/storage/app_database.dart';
 import 'package:meshtrax/storage/prefs_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -339,6 +340,79 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     expect(await rows(atLeast: 0), isEmpty);
     expect(c.rawPackets, isEmpty);
+  });
+
+  // Owner, 2026-11-28, a contact who has driven from home to Santa Cruz:
+  // the route the radio holds leads to where they were. With Pathfinder
+  // running the ACK goes Pathfinder's way or by flood, and each further
+  // try's ACK takes another way.
+  group("with Pathfinder running, the ACK goes Pathfinder's way", () {
+    PathSelection way(String hex, double est) => PathSelection(
+          pathBytes: _hex(hex),
+          hopCount: hex.length ~/ 4,
+          hashSize: 2,
+          useFlood: false,
+          source: RouteSource.graph,
+          estDelivery: est,
+        );
+
+    /// How the raw-send frame [frame] goes: its route as hex, or 'flood'.
+    String wayOf(Uint8List frame) {
+      if (frame[2] & 0x03 != 0x02) return 'flood';
+      final hops = frame[3] & 0x3F;
+      return frame
+          .sublist(4, 4 + hops * 2)
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join()
+          .toUpperCase();
+    }
+
+    test('no route from Pathfinder: a flood, not the route the radio holds',
+        () async {
+      await connect();
+      c.graphRouteCandidates = (_) => const [];
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      final frame = (await rawPackets(1)).single;
+      expect(wayOf(frame), 'flood',
+          reason: 'the stored route BEEF,AD77,A277 leads to where they were');
+      final ack = DirectAck.decode(unframeDirect(
+              MeshTraxPacket.open(secret, frame.sublist(4))!.blob)!
+          .message)!;
+      expect(ack.route, isEmpty);
+    });
+
+    test('each try of a message is answered another way, then by flood',
+        () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      for (var t = 0; t < 4; t++) {
+        c.handleFrameForTest(_rxLog(_flooded(_dm(tryNumber: t), '1000')));
+        await rawPackets(t + 1);
+      }
+      expect([for (final f in c.rawPackets) wayOf(f)],
+          ['10007777', '1000C419', 'flood', 'flood']);
+    });
+
+    test('the next message starts from the best way again', () async {
+      await connect();
+      c.graphRouteCandidates =
+          (_) => [way('10007777', 0.6), way('1000C419', 0.5)];
+      c.handleFrameForTest(_rxLog(_flooded(_dm(number: 7), '1000')));
+      await rawPackets(1);
+      c.handleFrameForTest(_rxLog(_flooded(_dm(number: 8), '1000')));
+      await rawPackets(2);
+      expect([for (final f in c.rawPackets) wayOf(f)], ['10007777', '10007777']);
+    });
+
+    test('a route the user pinned is used as the radio holds it', () async {
+      await connect();
+      c.graphRouteCandidates = (_) => [way('10007777', 0.6)];
+      await c.setPathOverride(a, pathLen: 3, pathBytes: routeBack);
+      a = c.contacts.single;
+      c.handleFrameForTest(_rxLog(_flooded(_dm(), '1000')));
+      expect(wayOf((await rawPackets(1)).single), 'BEEFAD77A277');
+    });
   });
 
   // What Pathfinder is told: as of a flooded firmware DM the app opened,

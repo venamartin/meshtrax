@@ -10014,6 +10014,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyAcked.clear();
     _meshTraxTriesArrived.clear();
     _meshTraxAcked.clear();
+    _meshTraxAckWays.clear();
     // ACKs still held go nowhere: the link they were meant for is gone.
     for (final t in _rawPacketTimers) {
       t.cancel();
@@ -10206,6 +10207,10 @@ final frame = buildRepeaterDiscoveryFrame(tag);
   // number, and the tries already answered.
   final Map<String, int> _meshTraxTriesArrived = {};
   final Set<String> _meshTraxAcked = {};
+
+  // The ways the ACKs of one MeshTrax DM have gone, by sender and message
+  // number ([_sendMeshTraxAck]).
+  final Map<String, Set<String>> _meshTraxAckWays = {};
 
   // Contacts told once, since the app started, that this phone runs
   // MeshTrax ([_meshTraxHello]).
@@ -10416,6 +10421,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
         level: (snrByte.toSigned(8) / 4).round(),
       ),
       TimeoutHelper.ackDelayMs,
+      message: message,
     );
     _appDebugLogService?.info(
       'MeshTrax DM ${dm.number} from ${contact.name}, try ${dm.tryNumber}: '
@@ -10424,25 +10430,50 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     );
   }
 
-  /// Sends [ack] to [contact] on this phone's own best route to them:
-  /// Pathfinder's, else the route the radio holds, else a flood. The route
-  /// taken is written into the ACK. Returns how it went, for the log.
+  /// Sends [ack] to [contact] on this phone's own way to them, written
+  /// into the ACK. Returns how it went, for the log.
+  ///
+  /// With Pathfinder running the way is Pathfinder's and never the route
+  /// the radio holds: that one was learned where the contact was, and
+  /// after they move it leads to where they are no longer, with nothing
+  /// to say so (owner, 2026-11-27: "if we do not know the way back, we
+  /// send an ACK flood"). The tries of one [message] are answered on
+  /// different ways: Pathfinder's best, then its next for each further
+  /// try, then by flood, so a way that lost one ACK is not given the next.
+  /// With no route from Pathfinder it is a flood at once.
+  ///
+  /// A route the user pinned, or Pathfinder not running: the route the
+  /// radio holds is all there is, else a flood.
   String _sendMeshTraxAck(
     Contact contact,
     Uint8List secret,
     DirectAck ack,
-    int delayMs,
-  ) {
+    int delayMs, {
+    String? message,
+  }) {
     final me = _selfPublicKey!;
-    final route = _ackRoutes(contact)?.firstOrNull ??
-        (contact.pathLength >= 0
-            ? PathSelection(
-                pathBytes: contact.path,
-                hopCount: contact.pathLength,
-                hashSize: contact.pathHashSize,
-                useFlood: false,
-              )
-            : null);
+    final pathfinder =
+        contact.pathOverride != null ? null : _ackRoutes(contact);
+    PathSelection? route;
+    if (pathfinder == null) {
+      route = contact.pathLength >= 0
+          ? PathSelection(
+              pathBytes: contact.path,
+              hopCount: contact.pathLength,
+              hashSize: contact.pathHashSize,
+              useFlood: false,
+            )
+          : null;
+    } else {
+      final tried = message == null
+          ? <String>{}
+          : _meshTraxAckWays[message] ??= <String>{};
+      _cap(_meshTraxAckWays);
+      route = pathfinder
+          .where((r) => !tried.contains(_ackRouteKey(r)))
+          .firstOrNull;
+      tried.add(_ackRouteKey(route));
+    }
     final routeBytes = route == null
         ? const <int>[]
         : route.pathBytes.sublist(0, route.hopCount * route.hashSize);
