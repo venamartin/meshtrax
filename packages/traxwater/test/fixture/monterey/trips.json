@@ -27,29 +27,41 @@
     "--off-land-nm",
     "1"
    ],
-   "tests": "The plan's starting values (6 ft draft + 2 ft, 1 nm off land, 6 kn). The distance comes first in open water: the trip keeps 1 nm outside the two harbour approaches and runs through the security zone, which it lists.",
+   "tests": "The plan's first starting values (6 ft draft + 2 ft, 1 nm off land, 6 kn). The distance comes first in open water: the trip keeps 1 nm outside the two harbour approaches and runs through the security zone, which it lists.",
    "result": {
     "name": "Monterey to Moss Landing, 1 nm off",
-    "distance_nm": 14.54,
-    "time": "2 h 25 min at 6 kn",
-    "legs": 4,
-    "funnel_legs": 59,
+    "distance_nm": 13.4,
+    "time": "2 h 14 min at 6 kn",
+    "legs": 7,
+    "funnel_legs": 44,
     "waypoints": [
      [
       -121.8915,
       36.605
      ],
      [
-      -121.8772876,
-      36.6264522
+      -121.8897495,
+      36.6065674
      ],
      [
-      -121.8981136,
-      36.7242235
+      -121.8897225,
+      36.6083707
      ],
      [
-      -121.812983,
-      36.7967776
+      -121.8872397,
+      36.6165973
+     ],
+     [
+      -121.88291,
+      36.6543788
+     ],
+     [
+      -121.8218657,
+      36.7885809
+     ],
+     [
+      -121.8143102,
+      36.7959672
      ],
      [
       -121.7915,
@@ -57,10 +69,13 @@
      ]
     ],
     "leg_nm": [
-     1.46,
-     5.96,
-     5.99,
-     1.13
+     0.13,
+     0.11,
+     0.51,
+     2.28,
+     8.59,
+     0.57,
+     1.21
     ],
     "settings": {
      "draft_ft": 6,
@@ -109,19 +124,18 @@
      "nm_shallower_than_preferred": null,
      "nm_by_band_least_depth": {
       "12 ft": 0.01,
-      "18 ft": 0.09,
-      "30 ft": 0.27,
-      "60 ft": 0.74,
-      "120 ft": 3.18,
-      "180 ft": 4.72,
-      "240 ft": 5.26,
-      "300 ft": 0.27
+      "18 ft": 0.12,
+      "30 ft": 0.24,
+      "60 ft": 3.67,
+      "120 ft": 2.99,
+      "180 ft": 6.29,
+      "240 ft": 0.07
      },
      "zoc_nm": {
-      "3": 1.46,
-      "4": 13.08
+      "3": 1.3,
+      "4": 12.1
      },
-     "security_zone_nm": 14.35,
+     "security_zone_nm": 13.17,
      "traffic_lane_nm": 0.0,
      "areas": [
       {
@@ -131,8 +145,8 @@
        "info": "Protected area, 15 CFR 922",
        "restrictions": "entry_restricted",
        "categories": "ecological_reserve",
-       "nm": 14.35,
-       "from_nm": 0.2
+       "nm": 13.17,
+       "from_nm": 0.24
       },
       {
        "id": "f905d550a718",
@@ -141,8 +155,8 @@
        "info": "Security Zone; 33 CFR 165.1183",
        "restrictions": "entry_restricted",
        "categories": "offshore_safety_zone",
-       "nm": 14.35,
-       "from_nm": 0.2
+       "nm": 13.17,
+       "from_nm": 0.24
       },
       {
        "id": "63a7a83fb01f",
@@ -150,23 +164,31 @@
        "info": "33 CFR 334.1150",
        "restrictions": "entry_restricted",
        "categories": "military_area",
-       "nm": 2.81,
-       "from_nm": 3.18
+       "nm": 4.47,
+       "from_nm": 3.03
+      },
+      {
+       "id": "c912688a13a3",
+       "class": "CTNARE",
+       "info": "COLREGS demarcation line; 33 CFR 80.1134",
+       "nm": 0.11,
+       "from_nm": 0.13
+      },
+      {
+       "id": "727464c90e92",
+       "class": "DMPGRD",
+       "info": "Depths from survey of 1933",
+       "categories": "spoil_ground",
+       "nm": 0.09,
+       "from_nm": 12.1
       },
       {
        "id": "2234b63651b8",
        "class": "ACHARE",
        "name": "Monterey Harbor Anchorage",
        "info": "Special anchorage; 33 CFR 110.1 & 110.126",
-       "nm": 0.12,
-       "from_nm": 0.06
-      },
-      {
-       "id": "c912688a13a3",
-       "class": "CTNARE",
-       "info": "COLREGS demarcation line; 33 CFR 80.1134",
-       "nm": 0.01,
-       "from_nm": 0.18
+       "nm": 0.03,
+       "from_nm": 0.11
       }
      ],
      "lowest_clearance": {
@@ -176,7 +198,7 @@
      "off_land": {
       "distance_nm": 1.0,
       "reaches_distance": true,
-      "nm_inside_in_approaches": 2.35,
+      "nm_inside_in_approaches": 2.74,
       "nm_inside_elsewhere": 0.0,
       "couldnt_keep": [],
       "approaches": {
@@ -198,14 +220,14 @@
      "triangles": 41441,
      "cross_tile_links": 26,
      "blocked_triangles": 16442,
-     "expanded": 10503,
-     "corridor_triangles": 272,
-     "load_s": 0.3,
-     "search_s": 0.46,
-     "funnel_s": 0.004,
-     "straighten_s": 1.1,
-     "funnel_cost_nm": 1695.47,
-     "trip_cost_nm": 1450.65,
+     "expanded": 15750,
+     "corridor_triangles": 323,
+     "load_s": 0.33,
+     "search_s": 0.98,
+     "funnel_s": 0.01,
+     "straighten_s": 1.72,
+     "funnel_cost_nm": 1348.14,
+     "trip_cost_nm": 1329.75,
      "funnel_inside_nm": 0.0,
      "trip_inside_nm": 0.0,
      "funnel_outside_allowed_m": 0.0,

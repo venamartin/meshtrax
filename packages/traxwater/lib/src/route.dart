@@ -8,6 +8,11 @@ import 'wrm.dart';
 
 const _nm = 1852.0;
 
+/// How far a route keeps in from either end of each edge it crosses, at
+/// most a quarter of the edge: its turns stay off the corners of the water it
+/// may use, and a river's small bends make fewer of them.
+const _cornerM = 50.0;
+
 /// US charts in feet carry depths in metres to 0.1 m (6 ft is 1.8, not
 /// 1.83), so a depth limit is compared this much low.
 const _chartRoundingM = 0.05;
@@ -22,6 +27,10 @@ const _eps = 1e-6;
 
 /// A straightened leg may leave the usable water by this much in all.
 const _tolM = 0.01;
+
+/// A leg's price counts a stretch this close to a better triangle as in it:
+/// a leg between two turns on an area's edge runs a hair inside the area.
+const _nearM = 0.5;
 
 /// Couldn't-keep stretches closer than this join, and shorter ones are left
 /// out.
@@ -438,7 +447,7 @@ class _Search {
       }
     }
     final w = Stopwatch()..start();
-    astar = _AStar(m, cost, inside).run(start, goal, gx, gy);
+    astar = _AStar(m, cost, inside).run(start, sx, sy, goal, gx, gy);
     ms = w.elapsedMilliseconds;
   }
 
@@ -823,88 +832,243 @@ class _Heap {
   }
 }
 
-/// A* over triangle centroids, through the middle of each edge crossed,
-/// least (metres in [inside], cost) compared as a pair: a trip never goes
-/// closer to land than the distance off to save anything else.
+/// A* over the steps from triangle to triangle, least (metres in [inside],
+/// cost) compared as a pair: a trip never goes closer to land than the
+/// distance off to save anything else. A step runs inside the triangle it
+/// crosses, from the middle of the edge it came in by (or the start) to the
+/// middle of the edge it leaves by (or the goal), so a long, thin triangle
+/// costs about the water a trip crosses in it, not its length.
+///
+/// The search's states are those steps: 3t + k leaves triangle t by its
+/// edge k, 3n + j by link j, and [_end] is the goal reached.
 class _AStar {
   _AStar(this.m, this.cost, this.inside)
-    : g0 = Float64List(m.triangleCount)
-        ..fillRange(0, m.triangleCount, double.infinity),
-      g1 = Float64List(m.triangleCount)
-        ..fillRange(0, m.triangleCount, double.infinity),
-      came = Int32List(m.triangleCount)..fillRange(0, m.triangleCount, -1),
-      via = Int32List(m.triangleCount),
-      closed = Uint8List(m.triangleCount);
+    : closed = Uint8List(m.triangleCount),
+      _into = Int32List(m.triangleCount)..fillRange(0, m.triangleCount, -1),
+      _n3 = 3 * m.triangleCount,
+      _end = 3 * m.triangleCount + m.linkTo.length,
+      _linkFrom = Int32List(m.linkTo.length) {
+    final states = _end + 1;
+    _g0 = Int32List(states)..fillRange(0, states, _never);
+    _g1 = Float64List(states)..fillRange(0, states, double.infinity);
+    _came = Int32List(states)..fillRange(0, states, -1);
+    _done = Uint8List(states);
+    for (var t = 0; t < m.triangleCount; t++) {
+      for (var j = m.linkStart[t]; j < m.linkStart[t + 1]; j++) {
+        _linkFrom[j] = t;
+      }
+    }
+  }
 
   final WaterMesh m;
-  final Float64List cost, inside, g0, g1;
-  final Int32List came, via;
+  final Float64List cost, inside;
+
+  /// The triangles the search has been in.
   final Uint8List closed;
+
+  /// The step the search first came into each triangle by.
+  final Int32List _into;
+  final int _n3, _end;
+  final Int32List _linkFrom;
+
+  /// Centimetres in [inside] and cost to each state.
+  late final Int32List _g0;
+  late final Float64List _g1;
+  static const _never = 0x7fffffff;
+  late final Int32List _came;
+  late final Uint8List _done;
   final _heap = _Heap();
   var expanded = 0;
   var found = false;
-  late double _gx, _gy;
+  var _start = -1, _goal = -1;
+  var _sx = 0.0, _sy = 0.0, _gx = 0.0, _gy = 0.0;
 
-  _AStar run(int start, int goal, double gx, double gy) {
-    final c = m.centroid, xy = m.xy, tri = m.tri, link = m.linkXY;
+  /// The middle of the edge [_middle] was last asked about.
+  var _mx = 0.0, _my = 0.0;
+
+  _AStar run(int start, double sx, double sy, int goal, double gx, double gy) {
+    _start = start;
+    _sx = sx;
+    _sy = sy;
+    _goal = goal;
     _gx = gx;
     _gy = gy;
-    g0[start] = 0;
-    g1[start] = 0;
-    _heap.push(0, _hypot(c[2 * start] - gx, c[2 * start + 1] - gy), start);
+    closed[start] = 1;
+    expanded = 1;
+    if (start == goal) {
+      found = true;
+      return this;
+    }
+    _leave(start, sx, sy, 0, 0, -1);
     while (_heap.isNotEmpty) {
-      final t = _heap.pop();
-      if (closed[t] != 0) continue;
-      closed[t] = 1;
-      expanded++;
-      if (t == goal) {
+      final s = _heap.pop();
+      if (_done[s] != 0) continue;
+      _done[s] = 1;
+      if (s == _end) {
+        expanded++;
         found = true;
         break;
       }
-      for (var k = 0; k < 3; k++) {
-        final nb = m.nbr[3 * t + k];
-        if (nb < 0) continue;
-        final a = 2 * tri[3 * t + k], b = 2 * tri[3 * t + (k + 1) % 3];
-        _relax(t, nb, k, (xy[a] + xy[b]) / 2, (xy[a + 1] + xy[b + 1]) / 2);
+      final r = _rev(s);
+      if (r >= 0 &&
+          (_g0[r] < _g0[s] || (_g0[r] == _g0[s] && _g1[r] < _g1[s]))) {
+        continue;
       }
-      for (var j = m.linkStart[t]; j < m.linkStart[t + 1]; j++) {
-        _relax(
-          t,
-          m.linkTo[j],
-          3 + j,
-          (link[4 * j] + link[4 * j + 2]) / 2,
-          (link[4 * j + 1] + link[4 * j + 3]) / 2,
-        );
+      final t = _to(s);
+      _middle(s);
+      final x = _mx, y = _my;
+      if (_beaten(s, t, x, y)) continue;
+      _done[s] = 2;
+      expanded++;
+      if (closed[t] == 0) {
+        closed[t] = 1;
+        _into[t] = s;
       }
+      _leave(t, x, y, _g0[s], _g1[s], s);
     }
     return this;
   }
 
-  void _relax(int t, int nb, int code, double mx, double my) {
-    if (closed[nb] != 0 || !cost[nb].isFinite) return;
-    final c = m.centroid;
-    final nx = c[2 * nb], ny = c[2 * nb + 1];
-    final d1 = _hypot(mx - c[2 * t], my - c[2 * t + 1]);
-    final d2 = _hypot(nx - mx, ny - my);
-    final n0 = ((g0[t] + d1 * inside[t] + d2 * inside[nb]) * 100).round() / 100;
-    final n1 = g1[t] + d1 * cost[t] + d2 * cost[nb];
-    if (n0 < g0[nb] || (n0 == g0[nb] && n1 < g1[nb])) {
-      g0[nb] = n0;
-      g1[nb] = n1;
-      came[nb] = t;
-      via[nb] = code;
-      _heap.push(n0, n1 + _hypot(nx - _gx, ny - _gy), nb);
+  /// Every step out of triangle [t] from (px, py), where the search got to
+  /// at (g0, g1) by step [by]; and the goal, where [t] holds it. A step
+  /// straight back never saves anything.
+  void _leave(int t, double px, double py, int g0, double g1, int by) {
+    final back = by < 0 ? -1 : _from(by);
+    for (var s = 3 * t; s < 3 * t + 3; s++) {
+      final nb = m.nbr[s];
+      if (nb < 0 || nb == back || _done[s] != 0 || !cost[nb].isFinite) {
+        continue;
+      }
+      _middle(s);
+      _try(s, t, px, py, _mx, _my, g0, g1, by, _hypot(_mx - _gx, _my - _gy));
+    }
+    for (var j = m.linkStart[t]; j < m.linkStart[t + 1]; j++) {
+      final s = _n3 + j, nb = m.linkTo[j];
+      if (nb == back || _done[s] != 0 || !cost[nb].isFinite) continue;
+      _middle(s);
+      _try(s, t, px, py, _mx, _my, g0, g1, by, _hypot(_mx - _gx, _my - _gy));
+    }
+    if (t == _goal) _try(_end, t, px, py, _gx, _gy, g0, g1, by, 0);
+  }
+
+  /// State [s], reached from (px, py) straight to (x, y) across triangle
+  /// [t], with [h] still to go at least.
+  void _try(
+    int s,
+    int t,
+    double px,
+    double py,
+    double x,
+    double y,
+    int g0,
+    double g1,
+    int by,
+    double h,
+  ) {
+    final d = _hypot(x - px, y - py);
+    final n0 = g0 + (d * inside[t] * 100).round();
+    final n1 = g1 + d * cost[t];
+    final r = s == _end ? -1 : _rev(s);
+    if (r >= 0 && (_g0[r] < n0 || (_g0[r] == n0 && _g1[r] <= n1))) return;
+    if (n0 < _g0[s] || (n0 == _g0[s] && n1 < _g1[s])) {
+      _g0[s] = n0;
+      _g1[s] = n1;
+      _came[s] = by;
+      _heap.push(n0.toDouble(), n1 + h, s);
+    }
+  }
+
+  /// Whether the search already came into triangle [t] some other way that
+  /// reaches (x, y), where step [s] comes in, no dearer: then nothing on
+  /// from [s] can be cheaper.
+  bool _beaten(int s, int t, double x, double y) {
+    if (t == _start && _noDearer(s, t, x, y, _sx, _sy, 0, 0)) return true;
+    for (var k = 3 * t; k < 3 * t + 3; k++) {
+      final nb = m.nbr[k];
+      if (nb < 0) continue;
+      for (var e = 3 * nb; e < 3 * nb + 3; e++) {
+        if (m.nbr[e] != t || e == s || _done[e] != 2) continue;
+        _middle(e);
+        if (_noDearer(s, t, x, y, _mx, _my, _g0[e], _g1[e])) return true;
+      }
+    }
+    for (var j = m.linkStart[t]; j < m.linkStart[t + 1]; j++) {
+      final nb = m.linkTo[j];
+      for (var i = m.linkStart[nb]; i < m.linkStart[nb + 1]; i++) {
+        final e = _n3 + i;
+        if (m.linkTo[i] != t || e == s || _done[e] != 2) continue;
+        _middle(e);
+        if (_noDearer(s, t, x, y, _mx, _my, _g0[e], _g1[e])) return true;
+      }
+    }
+    return false;
+  }
+
+  /// Whether (ex, ey) in triangle [t], reached for (e0, e1), goes on to
+  /// (x, y) for no more than step [s] got there for.
+  bool _noDearer(
+    int s,
+    int t,
+    double x,
+    double y,
+    double ex,
+    double ey,
+    int e0,
+    double e1,
+  ) {
+    final d = _hypot(x - ex, y - ey);
+    return e0 + (d * inside[t] * 100).round() <= _g0[s] &&
+        e1 + d * cost[t] <= _g1[s];
+  }
+
+  /// The same crossing the other way. Only the cheaper of the two is worth
+  /// going on from: what the dearer one reaches, the step before the
+  /// cheaper one reaches straight for less.
+  int _rev(int s) {
+    final t = _from(s), nb = _to(s);
+    if (s < _n3) {
+      for (var e = 3 * nb; e < 3 * nb + 3; e++) {
+        if (m.nbr[e] == t) return e;
+      }
+    } else {
+      for (var i = m.linkStart[nb]; i < m.linkStart[nb + 1]; i++) {
+        if (m.linkTo[i] == t) return _n3 + i;
+      }
+    }
+    return -1;
+  }
+
+  int _from(int s) => s < _n3 ? s ~/ 3 : _linkFrom[s - _n3];
+
+  int _to(int s) => s < _n3 ? m.nbr[s] : m.linkTo[s - _n3];
+
+  /// The step's code for [WaterMesh.portal] from the triangle it leaves.
+  int _via(int s) => s < _n3 ? s % 3 : 3 + s - _n3;
+
+  /// Sets (_mx, _my) to the middle of the edge step [s] crosses.
+  void _middle(int s) {
+    final xy = m.xy;
+    if (s < _n3) {
+      final k = s % 3;
+      final a = 2 * m.tri[s], b = 2 * m.tri[k == 2 ? s - 2 : s + 1];
+      _mx = (xy[a] + xy[b]) / 2;
+      _my = (xy[a + 1] + xy[b + 1]) / 2;
+    } else {
+      final j = 4 * (s - _n3), l = m.linkXY;
+      _mx = (l[j] + l[j + 2]) / 2;
+      _my = (l[j + 1] + l[j + 3]) / 2;
     }
   }
 
   /// The triangles from the start to [t] (closed), and the step into each
   /// after the first.
   (List<int>, List<int>) pathTo(int t) {
+    var s = t == _goal && found ? _came[_end] : _into[t];
     final tris = [t], steps = <int>[];
-    while (came[t] >= 0) {
-      steps.add(via[t]);
-      t = came[t];
-      tris.add(t);
+    while (s >= 0) {
+      steps.add(_via(s));
+      tris.add(_from(s));
+      s = _came[s];
     }
     return (tris.reversed.toList(), steps.reversed.toList());
   }
@@ -1005,11 +1169,15 @@ void _approach(
   for (final (i, j) in runs.reversed) {
     final a = math.max(i - 1, 0), b = math.min(j + 1, tris.length - 1);
     final goal = tris[b];
-    final again = _AStar(
-      m,
-      cost,
-      first,
-    ).run(tris[a], goal, m.centroid[2 * goal], m.centroid[2 * goal + 1]);
+    final c = m.centroid, from = tris[a];
+    final again = _AStar(m, cost, first).run(
+      from,
+      c[2 * from],
+      c[2 * from + 1],
+      goal,
+      c[2 * goal],
+      c[2 * goal + 1],
+    );
     if (!again.found) continue;
     ran = true;
     final (sub, subSteps) = again.pathTo(goal);
@@ -1028,7 +1196,8 @@ double _cross(
   double by,
 ) => (ax - ox) * (by - oy) - (ay - oy) * (bx - ox);
 
-/// The taut path through the corridor (a simple stupid funnel).
+/// The taut path through the corridor (a simple stupid funnel), with each
+/// edge it crosses [_cornerM] shorter at both ends.
 List<(double, double)> _funnel(
   WaterMesh m,
   List<int> tris,
@@ -1052,7 +1221,15 @@ List<(double, double)> _funnel(
           ay,
         ) >
         0;
-    gates.add(left ? (ax, ay, bx, by) : (bx, by, ax, ay));
+    final (lx, ly, rx, ry) = left ? (ax, ay, bx, by) : (bx, by, ax, ay);
+    final w = _hypot(rx - lx, ry - ly);
+    final f = w > 0 ? math.min(_cornerM, w / 4) / w : 0.0;
+    gates.add((
+      lx + (rx - lx) * f,
+      ly + (ry - ly) * f,
+      rx - (rx - lx) * f,
+      ry - (ry - ly) * f,
+    ));
   }
   gates.add((gx, gy, gx, gy));
   bool same(double ax, double ay, double bx, double by) =>
@@ -1128,10 +1305,67 @@ List<(double, double)> _funnel(
   return (t0, t1);
 }
 
+/// The part of the line p + t·d (0 ≤ t ≤ 1, [length] long) within [r] of
+/// triangle [t], given the part in it, (t0, t1): with t0 ≥ t1 when there's
+/// none.
+(double, double) _within(
+  WaterMesh m,
+  int t,
+  double px,
+  double py,
+  double dx,
+  double dy,
+  double length,
+  double r,
+  double t0,
+  double t1,
+) {
+  final xy = m.xy, tri = m.tri;
+  final ux = dx / length, uy = dy / length;
+  // In metres along the line. The triangle with the bands along its edges
+  // and the discs round its corners is convex, so their parts make one.
+  var lo = double.infinity, hi = double.negativeInfinity;
+  if (t1 > t0) (lo, hi) = (t0 * length, t1 * length);
+  for (var k = 0; k < 3; k++) {
+    final a = 2 * tri[3 * t + k], b = 2 * tri[3 * t + (k + 1) % 3];
+    final fx = px - xy[a], fy = py - xy[a + 1];
+    final off = fx * uy - fy * ux;
+    if (off.abs() <= r) {
+      final mid = -(fx * ux + fy * uy), half = math.sqrt(r * r - off * off);
+      lo = math.min(lo, mid - half);
+      hi = math.max(hi, mid + half);
+    }
+    final ex = xy[b] - xy[a], ey = xy[b + 1] - xy[a + 1];
+    final e = _hypot(ex, ey);
+    if (e == 0) continue;
+    final vx = ex / e, vy = ey / e;
+    final (a0, a1) = _slab(fx * vx + fy * vy, ux * vx + uy * vy, 0, e);
+    final (c0, c1) = _slab(fx * vy - fy * vx, ux * vy - uy * vx, -r, r);
+    final s0 = math.max(a0, c0), s1 = math.min(a1, c1);
+    if (s0 <= s1) {
+      lo = math.min(lo, s0);
+      hi = math.max(hi, s1);
+    }
+  }
+  return (math.max(lo / length, 0.0), math.min(hi / length, 1.0));
+}
+
+/// Where a + s·b is from [lo] to [hi]: (s0, s1), with s0 > s1 when nowhere.
+(double, double) _slab(double a, double b, double lo, double hi) {
+  if (b == 0) {
+    return a >= lo && a <= hi
+        ? (double.negativeInfinity, double.infinity)
+        : (double.infinity, double.negativeInfinity);
+  }
+  final s0 = (lo - a) / b, s1 = (hi - a) / b;
+  return b > 0 ? (s0, s1) : (s1, s0);
+}
+
 /// Walks the line from (px, py) to (qx, qy) through the triangles [counts]
 /// takes, exactly: calls [piece] with each stretch (as fractions of the
 /// line, in order) and the triangles covering it. Returns the metres none
-/// covers.
+/// covers. With [near], [piece] has each triangle wherever the line comes
+/// within [near] of it, and the metres returned are still those none holds.
 double _sweep(
   WaterMesh m,
   double px,
@@ -1139,20 +1373,41 @@ double _sweep(
   double qx,
   double qy,
   bool Function(int t) counts,
-  void Function(double t0, double t1, List<int> active) piece,
-) {
+  void Function(double t0, double t1, List<int> active) piece, {
+  double near = 0,
+}) {
   final dx = qx - px, dy = qy - py;
   final length = _hypot(dx, dy);
   if (length == 0) return 0;
-  final ids = <int>[], at = <double>[];
-  m.nearLine(px, py, qx, qy, _eps, (t) {
+  final ids = <int>[], at = <double>[], nearIds = <int>[], nearAt = <double>[];
+  m.nearLine(px, py, qx, qy, math.max(_eps, near), (t) {
     if (!counts(t)) return;
     final (t0, t1) = _clip(m, t, px, py, dx, dy);
     if (t1 > t0) {
       ids.add(t);
       at.addAll([t0, t1]);
     }
+    if (near > 0) {
+      final (n0, n1) = _within(m, t, px, py, dx, dy, length, near, t0, t1);
+      if (n1 > n0) {
+        nearIds.add(t);
+        nearAt.addAll([n0, n1]);
+      }
+    }
   });
+  final gap = _cover(ids, at, near > 0 ? null : piece);
+  if (near > 0) _cover(nearIds, nearAt, piece);
+  return gap * length;
+}
+
+/// Calls [piece] with each stretch of the line (as fractions of it, in
+/// order) that the stretches [at] of triangles [ids] cover, and the
+/// triangles covering it. Returns the fraction none covers.
+double _cover(
+  List<int> ids,
+  List<double> at,
+  void Function(double t0, double t1, List<int> active)? piece,
+) {
   // Events: 2k starts stretch k, 2k + 1 ends it; at a tie starts go first.
   final events = List.generate(at.length, (e) => e)
     ..sort((a, b) {
@@ -1166,7 +1421,7 @@ double _sweep(
       if (active.isEmpty) {
         gap += at[e] - from;
       } else {
-        piece(from, at[e], active);
+        piece?.call(from, at[e], active);
       }
       from = at[e];
     }
@@ -1176,7 +1431,7 @@ double _sweep(
       active.remove(ids[e >> 1]);
     }
   }
-  return (gap + 1 - math.min(1.0, from)) * length;
+  return gap + 1 - math.min(1.0, from);
 }
 
 /// Fewer legs: from each turn, the farthest later turn (up to 80 on) a
@@ -1240,8 +1495,8 @@ List<(double, double)> _straighten(
 }
 
 /// A straight leg's metres in each of [measures] and its cost, counting
-/// each stretch in the best usable triangle there (fewest metres in the
-/// measure, then the cheapest), and the metres outside usable water.
+/// each stretch in the best usable triangle within [_nearM] (fewest metres
+/// in the measure, then the cheapest), and the metres outside usable water.
 (List<double>, double, double) _price(
   WaterMesh m,
   (double, double) p,
@@ -1270,7 +1525,7 @@ List<(double, double)> _straighten(
       ins[k] += metres * measure[best];
       if (k == 0) c += metres * cost[best];
     }
-  });
+  }, near: _nearM);
   return (ins, c, gap);
 }
 
@@ -1430,7 +1685,15 @@ EndsShort _whyShort(
   if (mast != null) {
     final search = _AStar(m, rows.triangles(m, relax: _outMast), inside);
     final c = m.centroid;
-    if (search.run(start, goal, c[2 * goal], c[2 * goal + 1]).found) {
+    final ran = search.run(
+      start,
+      c[2 * start],
+      c[2 * start + 1],
+      goal,
+      c[2 * goal],
+      c[2 * goal + 1],
+    );
+    if (ran.found) {
       final low = <String, WaterArea>{};
       for (final t in search.pathTo(goal).$1) {
         final r = m.row[t];
