@@ -334,6 +334,8 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
     connector.meshTraxEnds = _meshTraxEnds;
     connector.onMeshTraxEnds = _onMeshTraxEnds;
     connector.measureAreaKey = () => _graph?.currentCell;
+    // Sightings fade only while the graph is being fed.
+    live.setListening(connector.isConnected && !_onOtherMesh);
     final keeper = _keeper = RadioRouteKeeper(
       // Not during a download: a contact the radio dropped is still listed, and
       // writing its route would add it back and evict another.
@@ -688,6 +690,7 @@ class PathGraphService extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     _radioReady = ready;
+    graph.setListening(connector.isConnected && !_onOtherMesh);
 
     final mesh = meshOf(connector);
     if (mesh != null && mesh != _mesh && _ownsDatabase) {

@@ -270,6 +270,20 @@ class GraphStore {
     await _db.delete(_db.graphNodes).go();
   }
 
+  /// The radio could hear nothing for [gapMillis] (the app was not
+  /// connected): the sightings held are given back what that time will
+  /// fade them by, so a link is no weaker for not having been listened
+  /// for. Times are left as they are.
+  void unfade(int gapMillis, double halfLifeHours) {
+    final factor =
+        math.pow(2, gapMillis / (1000 * 60 * 60) / halfLifeHours).toDouble();
+    for (final entry in edges.entries) {
+      if (entry.value.trafficWeight == 0) continue;
+      entry.value.trafficWeight *= factor;
+      _dirtyEdges.add(entry.key);
+    }
+  }
+
   /// [EdgeState.fadeLifetimeCount] for every link, once for a database
   /// from before sightings faded as they were added.
   void fadeLifetimeCounts() {

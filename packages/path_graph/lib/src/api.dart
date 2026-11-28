@@ -382,9 +382,50 @@ class PathGraph {
       await _db.into(_db.graphMeta).insertOnConflictUpdate(
           GraphMetaCompanion.insert(key: _trafficFadedKey, value: '1'));
     }
+    final listened = await (_db.select(_db.graphMeta)
+          ..where((t) => t.key.equals(_listenedUntilKey)))
+        .getSingleOrNull();
+    _listenedUntil = listened == null ? null : int.tryParse(listened.value);
   }
 
   static const _trafficFadedKey = 'traffic_faded';
+
+  // Sightings fade with the time the radio was listened to, not with the
+  // clock: a week with the app off, or away on another mesh, says nothing
+  // about a link (replay of a field graph: after seven days not listening,
+  // 156 of 292 far doorsteps were still routable). [_listenedUntil] is the
+  // last moment this graph was being fed, kept in the database so a killed
+  // app is a gap too.
+  static const _listenedUntilKey = 'listened_until';
+  static const _deafGapMillis = 60 * 60 * 1000;
+  bool _listening = false;
+  int? _listenedUntil;
+  bool _listenedDirty = false;
+
+  /// Whether heard packets are reaching this graph now (the radio is
+  /// connected and on this graph's mesh). When it starts again after an
+  /// hour or more, the sightings held are given back the time in between.
+  void setListening(bool listening) {
+    if (listening == _listening) return;
+    final now = _arrivalMillis;
+    final until = _listenedUntil;
+    if (listening && until != null && now - until >= _deafGapMillis) {
+      _store.unfade(now - until, config.trafficHalfLifeHours);
+    }
+    _listening = listening;
+    _listenedUntil = now;
+    _listenedDirty = true;
+    _scheduleFlush();
+  }
+
+  Future<void> _flushListened() async {
+    if (_listening) _listenedUntil = _arrivalMillis;
+    final until = _listenedUntil;
+    if (until == null || !(_listening || _listenedDirty)) return;
+    _listenedDirty = false;
+    await _db.into(_db.graphMeta).insertOnConflictUpdate(
+        GraphMetaCompanion.insert(key: _listenedUntilKey, value: '$until'));
+  }
 
   Future<void> dispose() async {
     _flushTimer?.cancel();
@@ -399,6 +440,7 @@ class PathGraph {
     await _store.flush();
     await _evidence.flush();
     await _places.flush();
+    await _flushListened();
   }
 
   void _scheduleFlush() {
@@ -407,6 +449,7 @@ class PathGraph {
       _store.flush();
       _evidence.flush();
       _places.flush();
+      _flushListened();
     });
   }
 
