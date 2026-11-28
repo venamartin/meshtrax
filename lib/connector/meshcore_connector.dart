@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart'
     show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart';
+import 'package:traxproto/traxproto.dart';
 
 import '../models/channel.dart';
 import '../models/channel_datagram.dart';
@@ -26,6 +27,8 @@ import '../helpers/cayenne_lpp.dart';
 import '../helpers/channel_packet.dart';
 import '../helpers/gif_helper.dart';
 import '../helpers/structured_message.dart';
+import '../helpers/meshtrax_dm.dart';
+import '../helpers/meshtrax_packet.dart';
 import '../helpers/passing_copy.dart';
 import '../helpers/path_helper.dart';
 import '../helpers/repeater_identity.dart';
@@ -9995,6 +9998,9 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _passingCopyOpener = null;
     _passingCopyScopeKey = null;
     _passingCopyAcked.clear();
+    _meshTraxContacts.clear();
+    _meshTraxTriesArrived.clear();
+    _meshTraxAcked.clear();
     // ACKs still held go nowhere: the link they were meant for is gone.
     for (final t in _rawPacketTimers) {
       t.cancel();
@@ -10117,6 +10123,180 @@ final frame = buildRepeaterDiscoveryFrame(tag);
     _sendPassingCopyAck(
       copy,
       2 + packet.pathBytes.length + packet.payload.length,
+    );
+  }
+
+  /// Contacts whose phone has sent this radio one of MeshTrax's own packets
+  /// on this connection, by key: their MeshTrax opens the DMs it is sent.
+  final Set<String> _meshTraxContacts = {};
+  bool runsMeshTrax(String contactKeyHex) =>
+      _meshTraxContacts.contains(contactKeyHex);
+
+  /// A MeshTrax ACK from [contact] was opened.
+  void Function(Contact contact, DirectAck ack)? onMeshTraxAckHeard;
+
+  // The tries of a MeshTrax DM that have arrived, by sender and message
+  // number, and the tries already answered.
+  final Map<String, int> _meshTraxTriesArrived = {};
+  final Set<String> _meshTraxAcked = {};
+
+  /// A packet of MeshTrax's own from the radio's RX log ([MeshTraxPacket]):
+  /// a DM or its ACK between this radio and a contact, opened from whichever
+  /// copy was heard, routed or flooded, with hops to go or none. The radio
+  /// knows no channel for it and leaves it alone. True when the packet is
+  /// one of these, whatever was done with it.
+  bool _openMeshTraxPacket(_RawPacket packet, int snrByte) {
+    final opener = _passingCopyOpener;
+    final me = _selfPublicKey;
+    final p = packet.payload;
+    if (opener == null ||
+        me == null ||
+        !listEquals(opener.selfKey, me) ||
+        p.length < 4) {
+      return false;
+    }
+    for (final contact in _contacts) {
+      final key = contact.publicKey;
+      if (key.length != pubKeySize) continue;
+      final toMe = p[0] == me[0] && p[1] == key[0];
+      final fromMe = p[1] == me[0] && p[0] == key[0];
+      if (!toMe && !fromMe) continue;
+      final secret = opener.sharedSecret(key);
+      if (secret == null) continue;
+      final opened = MeshTraxPacket.open(secret, p);
+      if (opened == null) continue;
+      final framed = unframeDirect(opened.blob);
+      // A later version's body is not read; and a packet of my own, heard
+      // as a repeater passes it on, is not one from them.
+      if (framed == null ||
+          framed.senderSortsAbove != _keySortsAbove(key, me)) {
+        return true;
+      }
+      if (opened.dataType == dataTypeMeshTraxDm) {
+        final dm = DirectMessage.decode(framed.message);
+        if (dm != null) _meshTraxDmHeard(contact, secret, dm, packet, snrByte);
+      } else if (opened.dataType == dataTypeMeshTraxAck) {
+        final ack = DirectAck.decode(framed.message);
+        if (ack != null) {
+          _meshTraxContacts.add(contact.publicKeyHex);
+          onMeshTraxAckHeard?.call(contact, ack);
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  static bool _keySortsAbove(Uint8List a, Uint8List b) {
+    for (var i = 0; i < a.length && i < b.length; i++) {
+      if (a[i] != b[i]) return a[i] > b[i];
+    }
+    return false;
+  }
+
+  /// A MeshTrax DM from [contact]: handed to the usual intake as the radio
+  /// hands over a DM it opened (the tries of one message carry one time and
+  /// one text, so they are one message there), and answered with MeshTrax's
+  /// ACK, once for each try, on this phone's own best route to them.
+  void _meshTraxDmHeard(
+    Contact contact,
+    Uint8List secret,
+    DirectMessage dm,
+    _RawPacket packet,
+    int snrByte,
+  ) {
+    final text = MeshTraxDmText.unpack(dm.packing, dm.text);
+    final me = _selfPublicKey;
+    if (text == null || me == null) return;
+    _meshTraxContacts.add(contact.publicKeyHex);
+    final head = <int>[
+      respCodeContactMsgRecvV3,
+      snrByte & 0xFF,
+      0,
+      0,
+      ...contact.publicKey.sublist(0, 6),
+      packet.isFlood ? packet.pathLenRaw : 0xFF,
+      txtTypePlain,
+      dm.time & 0xFF,
+      (dm.time >> 8) & 0xFF,
+      (dm.time >> 16) & 0xFF,
+      (dm.time >> 24) & 0xFF,
+    ];
+    _handleIncomingMessage(
+      Uint8List.fromList([...head, ...utf8.encode(text)]),
+      replay: true,
+    );
+
+    if ((_firmwareVerCode ?? 0) < 13) return;
+    final message = '${contact.publicKeyHex}:${dm.number}';
+    final arrived = (_meshTraxTriesArrived.remove(message) ?? 0) |
+        (1 << (dm.tryNumber & 31));
+    _meshTraxTriesArrived[message] = arrived;
+    if (_meshTraxTriesArrived.length > 64) {
+      _meshTraxTriesArrived.remove(_meshTraxTriesArrived.keys.first);
+    }
+    if (!_remember(_meshTraxAcked, '$message:${dm.tryNumber}')) return;
+
+    final route = _ackRoutes(contact)?.firstOrNull ??
+        (contact.pathLength >= 0
+            ? PathSelection(
+                pathBytes: contact.path,
+                hopCount: contact.pathLength,
+                hashSize: contact.pathHashSize,
+                useFlood: false,
+              )
+            : null);
+    final routeBytes = route == null
+        ? const <int>[]
+        : route.pathBytes.sublist(0, route.hopCount * route.hashSize);
+    final width = route?.hashSize ?? packet.hashSize;
+    // The repeaters the copy had passed: a flood's path, or the route it
+    // was sent on less the hops it still had to go.
+    final passed = dm.route.length - packet.pathBytes.length;
+    final ack = DirectAck(
+      number: dm.number,
+      tryNumber: dm.tryNumber,
+      triesArrived: arrived,
+      cameBy: packet.isFlood
+          ? packet.pathBytes
+          : passed > 0
+              ? dm.route.sublist(0, passed)
+              : null,
+      level: (snrByte.toSigned(8) / 4).round(),
+      route: routeBytes,
+      codeBytes: width == 2 ? 0 : width,
+    );
+    final payload = MeshTraxPacket.seal(
+      secret,
+      toByte: contact.publicKey[0],
+      fromByte: me[0],
+      dataType: dataTypeMeshTraxAck,
+      blob: frameDirect(
+        ack.encode(),
+        senderSortsAbove: _keySortsAbove(me, contact.publicKey),
+      ),
+    );
+    final way = route == null
+        ? 'by flood'
+        : route.hopCount == 0
+            ? 'direct (no repeater)'
+            : 'on ${PathHelper.formatPathHex(routeBytes, stride: route.hashSize)}';
+    _appDebugLogService?.info(
+      'MeshTrax DM ${dm.number} from ${contact.name}, try ${dm.tryNumber}: '
+      'its ACK goes $way',
+      tag: 'Connector',
+    );
+    _queueRawPackets(
+      [
+        route == null
+            ? MeshTraxPacket.flood(
+                payload,
+                _pathHashByteWidth,
+                scopeKey: _passingCopyScopeKey,
+              )
+            : MeshTraxPacket.routed(payload, routeBytes, route.hashSize),
+      ],
+      TimeoutHelper.ackDelayMs,
     );
   }
 
@@ -10681,7 +10861,7 @@ final frame = buildRepeaterDiscoveryFrame(tag);
       // Channel datagrams too, so a photo sent along a set path reaches every
       // radio on the way that hears it, not only the one at the end.
       if (packet.payloadType == _payloadTypeGroupData) {
-        _handleRawGroupData(packet);
+        if (!_openMeshTraxPacket(packet, frame[1])) _handleRawGroupData(packet);
         return;
       }
       if (packet.payloadType != _payloadTypeGroupText) return;
