@@ -28,6 +28,10 @@ const _eps = 1e-6;
 /// A straightened leg may leave the usable water by this much in all.
 const _tolM = 0.01;
 
+/// A leg's price counts a stretch this close to a better triangle as in it:
+/// a leg between two turns on an area's edge runs a hair inside the area.
+const _nearM = 0.5;
+
 /// Couldn't-keep stretches closer than this join, and shorter ones are left
 /// out.
 const _reportM = 25.0;
@@ -914,6 +918,7 @@ class _AStar {
       _middle(s);
       final x = _mx, y = _my;
       if (_beaten(s, t, x, y)) continue;
+      _done[s] = 2;
       expanded++;
       if (closed[t] == 0) {
         closed[t] = 1;
@@ -982,7 +987,7 @@ class _AStar {
       final nb = m.nbr[k];
       if (nb < 0) continue;
       for (var e = 3 * nb; e < 3 * nb + 3; e++) {
-        if (m.nbr[e] != t || e == s || _done[e] == 0) continue;
+        if (m.nbr[e] != t || e == s || _done[e] != 2) continue;
         _middle(e);
         if (_noDearer(s, t, x, y, _mx, _my, _g0[e], _g1[e])) return true;
       }
@@ -991,7 +996,7 @@ class _AStar {
       final nb = m.linkTo[j];
       for (var i = m.linkStart[nb]; i < m.linkStart[nb + 1]; i++) {
         final e = _n3 + i;
-        if (m.linkTo[i] != t || e == s || _done[e] == 0) continue;
+        if (m.linkTo[i] != t || e == s || _done[e] != 2) continue;
         _middle(e);
         if (_noDearer(s, t, x, y, _mx, _my, _g0[e], _g1[e])) return true;
       }
@@ -1012,7 +1017,8 @@ class _AStar {
     double e1,
   ) {
     final d = _hypot(x - ex, y - ey);
-    return e0 + d * inside[t] * 100 <= _g0[s] && e1 + d * cost[t] <= _g1[s];
+    return e0 + (d * inside[t] * 100).round() <= _g0[s] &&
+        e1 + d * cost[t] <= _g1[s];
   }
 
   /// The same crossing the other way. Only the cheaper of the two is worth
@@ -1299,10 +1305,67 @@ List<(double, double)> _funnel(
   return (t0, t1);
 }
 
+/// The part of the line p + t·d (0 ≤ t ≤ 1, [length] long) within [r] of
+/// triangle [t], given the part in it, (t0, t1): with t0 ≥ t1 when there's
+/// none.
+(double, double) _within(
+  WaterMesh m,
+  int t,
+  double px,
+  double py,
+  double dx,
+  double dy,
+  double length,
+  double r,
+  double t0,
+  double t1,
+) {
+  final xy = m.xy, tri = m.tri;
+  final ux = dx / length, uy = dy / length;
+  // In metres along the line. The triangle with the bands along its edges
+  // and the discs round its corners is convex, so their parts make one.
+  var lo = double.infinity, hi = double.negativeInfinity;
+  if (t1 > t0) (lo, hi) = (t0 * length, t1 * length);
+  for (var k = 0; k < 3; k++) {
+    final a = 2 * tri[3 * t + k], b = 2 * tri[3 * t + (k + 1) % 3];
+    final fx = px - xy[a], fy = py - xy[a + 1];
+    final off = fx * uy - fy * ux;
+    if (off.abs() <= r) {
+      final mid = -(fx * ux + fy * uy), half = math.sqrt(r * r - off * off);
+      lo = math.min(lo, mid - half);
+      hi = math.max(hi, mid + half);
+    }
+    final ex = xy[b] - xy[a], ey = xy[b + 1] - xy[a + 1];
+    final e = _hypot(ex, ey);
+    if (e == 0) continue;
+    final vx = ex / e, vy = ey / e;
+    final (a0, a1) = _slab(fx * vx + fy * vy, ux * vx + uy * vy, 0, e);
+    final (c0, c1) = _slab(fx * vy - fy * vx, ux * vy - uy * vx, -r, r);
+    final s0 = math.max(a0, c0), s1 = math.min(a1, c1);
+    if (s0 <= s1) {
+      lo = math.min(lo, s0);
+      hi = math.max(hi, s1);
+    }
+  }
+  return (math.max(lo / length, 0.0), math.min(hi / length, 1.0));
+}
+
+/// Where a + s·b is from [lo] to [hi]: (s0, s1), with s0 > s1 when nowhere.
+(double, double) _slab(double a, double b, double lo, double hi) {
+  if (b == 0) {
+    return a >= lo && a <= hi
+        ? (double.negativeInfinity, double.infinity)
+        : (double.infinity, double.negativeInfinity);
+  }
+  final s0 = (lo - a) / b, s1 = (hi - a) / b;
+  return b > 0 ? (s0, s1) : (s1, s0);
+}
+
 /// Walks the line from (px, py) to (qx, qy) through the triangles [counts]
 /// takes, exactly: calls [piece] with each stretch (as fractions of the
 /// line, in order) and the triangles covering it. Returns the metres none
-/// covers.
+/// covers. With [near], [piece] has each triangle wherever the line comes
+/// within [near] of it, and the metres returned are still those none holds.
 double _sweep(
   WaterMesh m,
   double px,
@@ -1310,20 +1373,41 @@ double _sweep(
   double qx,
   double qy,
   bool Function(int t) counts,
-  void Function(double t0, double t1, List<int> active) piece,
-) {
+  void Function(double t0, double t1, List<int> active) piece, {
+  double near = 0,
+}) {
   final dx = qx - px, dy = qy - py;
   final length = _hypot(dx, dy);
   if (length == 0) return 0;
-  final ids = <int>[], at = <double>[];
-  m.nearLine(px, py, qx, qy, _eps, (t) {
+  final ids = <int>[], at = <double>[], nearIds = <int>[], nearAt = <double>[];
+  m.nearLine(px, py, qx, qy, math.max(_eps, near), (t) {
     if (!counts(t)) return;
     final (t0, t1) = _clip(m, t, px, py, dx, dy);
     if (t1 > t0) {
       ids.add(t);
       at.addAll([t0, t1]);
     }
+    if (near > 0) {
+      final (n0, n1) = _within(m, t, px, py, dx, dy, length, near, t0, t1);
+      if (n1 > n0) {
+        nearIds.add(t);
+        nearAt.addAll([n0, n1]);
+      }
+    }
   });
+  final gap = _cover(ids, at, near > 0 ? null : piece);
+  if (near > 0) _cover(nearIds, nearAt, piece);
+  return gap * length;
+}
+
+/// Calls [piece] with each stretch of the line (as fractions of it, in
+/// order) that the stretches [at] of triangles [ids] cover, and the
+/// triangles covering it. Returns the fraction none covers.
+double _cover(
+  List<int> ids,
+  List<double> at,
+  void Function(double t0, double t1, List<int> active)? piece,
+) {
   // Events: 2k starts stretch k, 2k + 1 ends it; at a tie starts go first.
   final events = List.generate(at.length, (e) => e)
     ..sort((a, b) {
@@ -1337,7 +1421,7 @@ double _sweep(
       if (active.isEmpty) {
         gap += at[e] - from;
       } else {
-        piece(from, at[e], active);
+        piece?.call(from, at[e], active);
       }
       from = at[e];
     }
@@ -1347,7 +1431,7 @@ double _sweep(
       active.remove(ids[e >> 1]);
     }
   }
-  return (gap + 1 - math.min(1.0, from)) * length;
+  return gap + 1 - math.min(1.0, from);
 }
 
 /// Fewer legs: from each turn, the farthest later turn (up to 80 on) a
@@ -1411,8 +1495,8 @@ List<(double, double)> _straighten(
 }
 
 /// A straight leg's metres in each of [measures] and its cost, counting
-/// each stretch in the best usable triangle there (fewest metres in the
-/// measure, then the cheapest), and the metres outside usable water.
+/// each stretch in the best usable triangle within [_nearM] (fewest metres
+/// in the measure, then the cheapest), and the metres outside usable water.
 (List<double>, double, double) _price(
   WaterMesh m,
   (double, double) p,
@@ -1441,7 +1525,7 @@ List<(double, double)> _straighten(
       ins[k] += metres * measure[best];
       if (k == 0) c += metres * cost[best];
     }
-  });
+  }, near: _nearM);
   return (ins, c, gap);
 }
 

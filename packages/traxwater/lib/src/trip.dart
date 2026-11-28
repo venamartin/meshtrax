@@ -410,7 +410,8 @@ class WaterSearchStats {
   /// past the tiles it had.
   final int searches;
 
-  /// Triangles the last main search took off its queue.
+  /// The last main search's start, the edge crossings it went on from, and
+  /// its end.
   final int expanded;
   final int loadMs;
   final int searchMs;
