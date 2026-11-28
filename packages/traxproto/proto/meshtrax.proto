@@ -10,6 +10,17 @@
 // - A `bytes` field with a layout of its own is described here, and a
 //   change to that layout takes a new field number.
 // - A packet is never encoded again by anyone who passes it on.
+//
+// MeshTrax's data types, the one list of them (the block 0x0170 to 0x017F,
+// meshcore-dev/MeshCore#3925):
+//   0x0170  photos as MeshTrax 1.12.0 sent them; retired
+//   0x0171  TRAX            docs/technical/trax-mode.md
+//   0x0172  photos          docs/technical/photos.md
+//   0x0173  requests        docs/technical/channel-requests.md
+//   0x0174  kept for replies to requests; not built
+//   0x0175  direct message  DirectMessage below
+//   0x0176  its answer      DirectAck below
+//   0x0177 to 0x017F  free
 syntax = "proto3";
 
 package meshtrax;
